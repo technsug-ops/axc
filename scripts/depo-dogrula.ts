@@ -826,8 +826,28 @@ async function etiketKontrolleri() {
       /yetkiIste\("stok\.duzelt"\)/.test(blok),
     );
   }
-  /** ⚠ ARAMA KURALI ORTAK KAYNAKTAN — ayrı liste yazılsa kural ayrışırdı. */
-  kontrol("arama ORTAK kuraldan (`kodKosulu`)", /OR: kodKosulu\(temiz\)/.test(yY));
+  /**
+   * ⚠ ARAMA KURALI ORTAK KAYNAKTAN — ayrı liste yazılsa kural ayrışırdı.
+   *
+   * ⛔ ÇAPA 21.09.2026'DA BİR KATMAN YUKARI TAŞINDI — KOD YANLIŞ DEĞİLDİ.
+   * Ekran `kodKosulu(temiz)`yi DOĞRUDAN çağırıyordu; artık sessiz seçimi
+   * kapatan ortak çözüm gövdesinden geçiyor (`kodlaVaryantCoz`) ve
+   * `kodKosulu`yu O gövde kullanıyor. Niyet aynı, vekil eskidi.
+   * _(Anayasa: "dize, davranışın vekilidir — ve refaktör vekili eskitir.")_
+   */
+  kontrol(
+    "arama ORTAK gövdeden (`kodlaVaryantCoz`)",
+    /kodlaVaryantCoz\(temiz\)/.test(yY),
+  );
+  /**
+   * ⛔ VE ÇOK EŞLEŞMEDE YERLEŞTİRMİYOR. Koşul ve sonuç AYNI desende aranır:
+   * dalın koşulunu öldüren bir mutasyon, `COK_ESLESME` dizesi dosyada
+   * kaldığı için yeşil geçerdi — bu deponun en sık tekrarlayan körlüğü.
+   */
+  kontrol(
+    "  ...ve ÇOK EŞLEŞMEDE yerleştirmiyor",
+    /durum === "COK"[\s\S]{0,150}?durum: "COK_ESLESME"/.test(yY),
+  );
   /**
    * ⛔ STOK DEFTERİNE DOKUNULMAZ. Bu ekran konum yazar, adet yazmaz —
    * `StockMovement` yazsaydı sayım koruması kapsamına girerdi ve sayılmış

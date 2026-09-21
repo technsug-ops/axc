@@ -42,6 +42,7 @@ const BEKCI_BASLIGI = "1) DIŞ KAYNAK KIYASI";
 
 const KURAL = "src/lib/simulasyon/karsilastir.ts";
 const EKRAN = "src/app/simulasyon/deneme.tsx";
+const ZEMIN = "src/lib/simulasyon/urun-zemini.ts";
 
 type Mutasyon = {
   ad: string;
@@ -53,6 +54,29 @@ type Mutasyon = {
 };
 
 const MUTASYONLAR: Mutasyon[] = [
+  /*
+   * ZEMIN SESSIZ SECIM (21.09.2026) - yanlis urunun maliyetiyle kurulan bir
+   * fiyat denemesi KARLI gorunup zarar ettirirdi. Iki yon de sinaniyor:
+   * ortak govdeden cikmak, ve cok-eslesmede yine de zemin kurmak.
+   */
+  {
+    ad: "ZEMIN ORTAK GOVDEDEN CIKTI - kendi sorgusunu yaziyor",
+    yon: "KALDIRAN",
+    dosya: ZEMIN,
+    bul: "  const cozum = await kodlaVaryantCoz(temiz);",
+    koy: "  const cozum = { durum: \"TEK\" as const, id: temiz };",
+    bozdugu:
+      "arama kumesi ortak kuraldan ayrisir; Kanal SKU sorulmaz ve kod bulunamaz - varyantAra dersinin geri gelmesi",
+  },
+  {
+    ad: "COK ESLESMEDE ZEMIN YINE KURULUYOR",
+    yon: "FAZLADAN",
+    dosya: ZEMIN,
+    bul: '  if (cozum.durum !== "TEK") return null;',
+    koy: '  if (cozum.durum === "YOK") return null;',
+    bozdugu:
+      "iki adaydan biri rastgele secilir; YANLIS urunun maliyetiyle fiyat denemesi kurulur ve deneme KARLI gorunup zarar ettirir",
+  },
   {
     ad: "kargo kapisi kaldirildi (bos kargo yine sessizce gecer)",
     yon: "KALDIRAN",

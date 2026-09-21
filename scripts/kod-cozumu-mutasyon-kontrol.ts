@@ -27,6 +27,8 @@ const BEKCI_BASLIGI = "KOD ÇÖZÜMÜ";
 const GOVDE = "src/lib/varyant-kod-cozumu.ts";
 const SATIS = "src/app/satislar/satis-formu.tsx";
 const OKUYUCU = "src/app/okut/okuyucu.tsx";
+const YERLESTIR = "src/app/yerlestir/actions.ts";
+const SAYIM = "src/app/okut/sayim-actions.ts";
 
 type Mutasyon = {
   ad: string;
@@ -90,6 +92,24 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "      if (false) {",
     bozdugu:
       "form cok eslesmeyi soylemez; operatore hangi urun oldugu sorulmaz ve yanlis urune satis girilir",
+  },
+  {
+    ad: "YERLESTIRME CAKISMADA YINE RAFA YAZIYOR",
+    yon: "KALDIRAN",
+    dosya: YERLESTIR,
+    bul: '  if (cozum.durum === "COK") {',
+    koy: "  if (false) {",
+    bozdugu:
+      "iki adaydan biri rastgele secilir ve YANLIS urun rafa yazilir; depocu malı dogru koydugunu sanir",
+  },
+  {
+    ad: "SAYIM CAKISMADA YINE ADET YAZIYOR",
+    yon: "KALDIRAN",
+    dosya: SAYIM,
+    bul: '  if (cozum.durum === "COK") return { hata: "COK_ESLESME" };',
+    koy: "",
+    bozdugu:
+      "EN PAHALI HALI: sayim son sozdur, yanlis varyanta yazilan adet dogrudan deftere girer ve sayilmamis bir raf sayilmis gorunur",
   },
   {
     ad: "OKUMA EKRANI CAKISMADA ESLESTIRME TEKLIF EDIYOR",

@@ -103,14 +103,32 @@ yazılıyor** — tek varyantı pasif olan çok varyantlı bir ürün hâlâ sat
 
 ### ÖLÇÜLDÜ
 
-`kod-cozumu:dogrula` **18 ölçüt** · `kod-cozumu-mutasyon` **7/7** (zararsız
-sağlama + kaldıran + fazladan) · `arama:dogrula` 124 · `i18n` · `tsc` · `lint`
+`kod-cozumu:dogrula` **20 ölçüt** · `kod-cozumu-mutasyon` **9/9** (zararsız
+sağlama + kaldıran + fazladan) · `simulasyon-mutasyon` **8/8** · `arama` 124 ·
+`depo` 210 · `simulasyon` 182 · `i18n` · `tsc` · `lint` · `build`
+
+⚠ **`depo:dogrula`NIN HARNESS'İ YOK** — taşınan ölçütü ELDEN mutasyonla
+sınadım (mutantla çıkış `1`, geri alınca `0`, GÖRÜLDÜ). Aynı davranış ayrıca
+harness'li `kod-cozumu:dogrula` altında da ölçülüyor, yani koruma tek bacağa
+bağlı değil.
 
 ⛔ **ÜÇ MUTASYON İLK TURDA KAÇTI VE BEKÇİYİ DÜZELTTİRDİ** — üçü de anayasanın
 adı konmuş körlükleri: ① `durum: "COK"` deseni **TİP TANIMINDA** da geçiyordu,
 dönüşü `YOK`a çeviren mutasyon yeşil geçti · ② satış formunun dal **KOŞULU**
 `false` yapıldı, sözlük anahtarı dosyada kaldı · ③ okuma ekranında aynısı.
 Ölçütler koşul+sonuç **aynı desende** olacak şekilde yeniden yazıldı.
+
+⛔ **VE PUSH TURU DÖRT BEKÇİYİ KIRMIZI YAKTI — DÖRDÜ DE "ÖLÇÜTÜM ESKİDİ".**
+`arama:dogrula` (×2) · `depo:dogrula` · `simulasyon:dogrula`. Hepsi
+`kodKosulu(temiz)` çapasını arıyordu ve refaktör o çağrıyı bir katman yukarı
+taşıdı. **Hiçbiri susturulmadı** — çapa `kodlaVaryantCoz(temiz)`ye taşındı,
+niye eskidiği koda yazıldı, ve her birinin yanına _"çok eşleşmede iş yapmıyor"_
+ölçütü **koşul+sonuç aynı desende** eklendi.
+
+⭐ **VE BU DESEN ARTIK BİR AİLE:** bu oturumda refaktör **üç ayrı turda**
+bekçi çapası sildi (K230-③'te iki harness, burada dört bekçi).
+_(Anayasa: "iyi bir refaktör bekçiyi kör etmemeli" — ölçülen bedel: her
+teslimde bir tur kayıp.)_
 
 ⚠ **VE `arama:dogrula` İKİ KEZ KIRMIZI YANDI — İKİSİ DE "ÖLÇÜTÜM ESKİDİ".**
 Refaktör onun aradığı çapayı (`kodKosulu(temiz)`) sildi. Ölçüt susturulmadı,

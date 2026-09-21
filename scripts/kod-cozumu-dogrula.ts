@@ -231,6 +231,33 @@ console.log("\n3) ÇOK EŞLEŞME EKRANDA SÖYLENİYOR");
   }
 
   /**
+   * ⛔ EKRANIN YAZMASI YETMEZ — SUNUCU EYLEMİ DE DURMALI. Ekran metni
+   * çizmekten sorumlu; kararı veren yer sunucu eylemidir. Yerleştirme ve
+   * sayım yolları çok eşleşmede İŞ YAPMAMALI:
+   *   · yerleştirme yanlış ürünü rafa yazardı,
+   *   · sayım yanlış varyanta adet yazardı — ve SAYIM SON SÖZDÜR, o adet
+   *     doğrudan deftere girer.
+   *
+   * ⚠ Koşul ve sonuç aynı desende: dalın koşulunu öldüren bir mutasyon,
+   * `COK_ESLESME` dizesi dosyada kaldığı için yeşil geçerdi.
+   */
+  const eylemler: [string, string, RegExp][] = [
+    [
+      "yerleştirme eylemi",
+      "src/app/yerlestir/actions.ts",
+      /durum === "COK"[\s\S]{0,150}?durum: "COK_ESLESME"/,
+    ],
+    [
+      "sayım eylemi",
+      "src/app/okut/sayim-actions.ts",
+      /durum === "COK"[\s\S]{0,80}?hata: "COK_ESLESME"/,
+    ],
+  ];
+  for (const [ad, yol, desen] of eylemler) {
+    kontrol(`${ad} ÇOK EŞLEŞMEDE iş yapmıyor`, desen.test(yorumsuzOku(yol)));
+  }
+
+  /**
    * ⛔ OKUMA EKRANI ÇAKIŞMADA EŞLEŞTİRME TEKLİF ETMEZ. Teklif etseydi zaten
    * fazla olan bağlara bir tane daha eklenirdi — ekran arızayı BESLERDİ.
    * Ölçüt sırayla kurulur: çok-eşleşme dalı, eşleştirme teklifinden ÖNCE.

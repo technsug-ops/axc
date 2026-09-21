@@ -514,9 +514,22 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
    * ⚠ ARAMA ORTAK KOŞULDAN. Bu depoda `varyantAra` Kanal SKU'yu hiç
    * sormuyordu; kendi sorgusunu yazan her yer o kümeden ayrışır.
    */
+  /**
+   * ⛔ ÇAPA 21.09.2026'DA TAŞINDI — KOD YANLIŞ DEĞİLDİ. Zemin artık ortak
+   * çözüm gövdesinden geçiyor ve `kodKosulu`yu o gövde kullanıyor.
+   */
   kontrol(
-    "arama ortak `kodKosulu`dan geçiyor",
-    zemin.includes("kodKosulu(temiz)"),
+    "arama ortak gövdeden geçiyor (`kodlaVaryantCoz`)",
+    zemin.includes("kodlaVaryantCoz(temiz)"),
+  );
+  /**
+   * ⛔ VE ÇOK EŞLEŞMEDE ZEMİN KURULMUYOR. Yanlış ürünün maliyetiyle kurulan
+   * bir fiyat denemesi KÂRLI görünüp zarar ettirirdi; susmak yanlış cevaptan
+   * iyidir. Koşul ve sonuç aynı desende.
+   */
+  kontrol(
+    "  ...ve ÇOK EŞLEŞMEDE zemin KURULMUYOR",
+    /cozum\.durum !== "TEK"[\s\S]{0,40}?return null/.test(zemin),
   );
   /**
    * ⚠ ORTALAMA ALIŞ AÇIK PARTİDEN DEĞİL, LEDGER'DAN. Stoğu tükenmiş üründe
