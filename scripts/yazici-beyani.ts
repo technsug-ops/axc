@@ -38,6 +38,22 @@
  * zamanla kimsenin bakmadığı bir kapı olur.
  */
 export const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string }[] = [
+  /**
+   * N11 EŞLEŞTİRME (22.09.2026) — API'yi okur, `ChannelSku` yaratır. TEK
+   * SEFERLİK, kuru koşum varsayılan, K231 yazma kapısından geçer; bekçisi
+   * kapıyı, kapsamı (yalnız üç alan) ve geri alma ölçütünü sınar.
+   */
+  {
+    dosya: "canli-n11-esle.ts",
+    gerekce:
+      "K225-② N11 EŞLEŞTİRME (22.09.2026) — API'yi okur, `ChannelSku` yaratır: " +
+      "62 listeleme defterde yoktu, 58'i tek varyanta çözüldü. TEK SEFERLİK; " +
+      "kuru koşum varsayılan, `--uygula` kilidi; her kod K231 yazma kapısından " +
+      "(`kodBaskaVaryantaAitMi`) geçer, başkasının kodu AÇILMAZ; yalnız üç alan " +
+      "yazar (hesap · varyant · kanal kodu), komisyon/externalListingId YAZMAZ; " +
+      "AuditLog izi; geri alma yeniden hesaplanabilir ölçütle (`--geri --parti=`).",
+    bekcisi: "n11-esleme:dogrula",
+  },
   {
     dosya: "canli-hb-hesap-bagla.ts",
     gerekce:
