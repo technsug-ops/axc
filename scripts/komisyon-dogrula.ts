@@ -61,7 +61,7 @@ import { KANAL_SIRASI } from "../src/lib/kanal-sirasi";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 9;
+const BOLUM_SAYISI = 10;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1409,6 +1409,55 @@ console.log("\nORAN UYARISI (satış formu)");
   );
 
   kosanBolumler.push("kampanya orani okuyucusu");
+}
+
+// ===========================================================================
+//  10) KIMLIK KAPISI — kanal kodu baskasinin kimligiyse esleme ACILMAZ
+// ===========================================================================
+{
+  console.log("");
+  console.log("10) KIMLIK KAPISI (deger testi, govde cagrilir)");
+  /*
+   * K231 (21.09.2026): HBCV00000R0H0K gercek urune kanal kodu olarak
+   * baglandi, oysa ayni kod ikiz kaydin sku'suydu. Bu yukleyici de esleme
+   * YARATIYOR ve kapisi yoktu. Toplu yolda durdurulmaz: sayilir, atlanir,
+   * raporlanir. Iki yon ayri sinanir.
+   */
+  const V_A = { id: "v-a", sku: "SKU-A", barkod: "8000000000001", firmaSku: "F-A", kanalKodlari: ["TYA"] };
+  const V_B = { id: "v-b", sku: "SKU-B", barkod: "8000000000002", firmaSku: "F-B", kanalKodlari: ["HBCV-B"] };
+  const satir = (kanalKodu: string, barkod: string, satirNo: number) => ({
+    kanalKodu, ikinciKod: null, barkodlar: [barkod], oran: 10, hamOran: "10", urunAdi: null, satirNo,
+  });
+  const okumaKur = (satirlar: ReturnType<typeof satir>[]) => ({
+    platform: "HEPSIBURADA" as const, sayfa: "T", satirlar, eksikSutunlar: [],
+  });
+
+  // Dosya, A'nin barkoduyla A'yi buluyor ama kanal kodu olarak B'nin sku'sunu yaziyor.
+  const p1 = planKur(okumaKur([satir("SKU-B", "8000000000001", 2)]), [], [V_A, V_B]);
+  kontrol("baskasinin sku'su kanal kodu olamaz -> kimlikCakisti 1", p1.sayim.kimlikCakisti === 1, p1.sayim);
+  kontrol("  ...ve esleme ACILMADI", p1.yaratilacaklar.length === 0 && p1.sayim.yeniEsleme === 0, p1.yaratilacaklar.length);
+  kontrol("  ...ve ornek sahibi SOYLUYOR", p1.kimlikCakismaOrnekleri[0]?.sahipSku === "SKU-B", p1.kimlikCakismaOrnekleri[0]);
+
+  // Firma SKU ve BASKA kanalin kodu da kimliktir.
+  const p2 = planKur(okumaKur([satir("F-B", "8000000000001", 2), satir("HBCV-B", "8000000000001", 3)]), [], [V_A, V_B]);
+  kontrol("firmaSku ve baska kanal kodu da kimlik sayilir -> 2 cakisma", p2.sayim.kimlikCakisti === 2, p2.sayim.kimlikCakisti);
+
+  // YANLIS YANMA: kod hedefin KENDI barkodu -> mesru, esleme acilir.
+  const p3 = planKur(okumaKur([satir("8000000000001", "8000000000001", 2)]), [], [V_A, V_B]);
+  kontrol("hedefin kendi barkodu kanal kodu olabilir -> cakisma 0, esleme 1",
+    p3.sayim.kimlikCakisti === 0 && p3.yaratilacaklar.length === 1, p3.sayim);
+
+  // Iki varyanta dusen kod dizinden atilir — bu satir suclanmaz (beyan).
+  const V_C = { id: "v-c", sku: "SKU-C", barkod: "8000000000003", firmaSku: "ORTAK", kanalKodlari: [] };
+  const V_D = { id: "v-d", sku: "SKU-D", barkod: "8000000000004", firmaSku: "ORTAK", kanalKodlari: [] };
+  const p4 = planKur(okumaKur([satir("ORTAK", "8000000000001", 2)]), [], [V_A, V_C, V_D]);
+  kontrol("referansta zaten cakisan kod dizinden atilir -> bu satir suclanmaz", p4.sayim.kimlikCakisti === 0, p4.sayim.kimlikCakisti);
+
+  // Eski fiksturler (firmaSku/kanalKodlari VERILMEDEN) hala calisir.
+  const p5 = planKur(okumaKur([satir("YENI-KOD", "8000000000001", 2)]), [], [{ id: "v-a", sku: "SKU-A", barkod: "8000000000001" }]);
+  kontrol("istege bagli alanlar verilmeden de plan kurulur", p5.yaratilacaklar.length === 1, p5.sayim);
+
+  kosanBolumler.push("kimlik kapisi");
 }
 
 // ===========================================================================

@@ -39,6 +39,14 @@ export type VaryantKaydi = {
   barkod: string | null;
   /** Önizlemede gösterilir: hangi ürüne eşleme açılıyor. */
   sku: string;
+  /**
+   * KİMLİK KAPISI İÇİN (21.09.2026) — ikisi de isteğe bağlı ki eski
+   * fikstürler derlenmeye devam etsin; verilmezse kapı yalnız sku+barkod
+   * ile çalışır ve bu da BEYAN edilmiş bir daralmadır, sessiz değil.
+   */
+  firmaSku?: string | null;
+  /** Bu varyanta BÜTÜN hesaplarda bağlı kanal kodları. */
+  kanalKodlari?: string[];
 };
 
 export type PlanGuncelleme = {
@@ -80,6 +88,14 @@ export type KomisyonSayimi = {
   /** Aynı eşlemeye/varyanta düşen ikinci satır — ilki kazanır. */
   tekrarEden: number;
   /**
+   * ⛔ KANAL KODU BAŞKA BİR VARYANTIN KİMLİĞİ — eşleme AÇILMADI (21.09.2026).
+   * K231'i doğuran adım: `HBCV00000R0H0K` gerçek ürüne kanal kodu olarak
+   * bağlandı, oysa aynı kod ikiz kaydın sku'suydu; arama iki kayıt bulup
+   * sessizce birini seçti. Bu yükleyici de eşleme YARATIYOR ve kapısı yoktu.
+   * Toplu yolda durdurulmaz — SAYILIR, ATLANIR, RAPORLANIR.
+   */
+  kimlikCakisti: number;
+  /**
    * YAZIMDAN SONRA ORANI HÂLÂ BOŞ KALACAK EŞLEME SAYISI.
    *
    * Mimar kararı 13.08.2026: "açık sıfır, sessiz yokluk değil." Bu sayı
@@ -110,6 +126,8 @@ export type KomisyonPlani = {
   bulunamayanOrnekleri: { satirNo: number; kod: string; urunAdi: string | null }[];
   /** Oranı boş kalacak eşlemelerden örnekler (ilk ORNEK_SINIRI kadar). */
   kalanBosOranOrnekleri: { kanalKodu: string; varyantSku: string }[];
+  /** Kimlik çakışması yüzünden açılmayan eşlemeler (ilk ORNEK_SINIRI kadar). */
+  kimlikCakismaOrnekleri: { satirNo: number; kanalKodu: string; varyantSku: string; sahipSku: string }[];
 };
 
 /** Bir satırın deneyeceği tüm kod adayları — sırayla. */
@@ -130,6 +148,25 @@ export function planKur(
     varyantHarita.set(m.varyantId, m);
   }
 
+  /**
+   * KİMLİK DİZİNİ — dört rol, bir kod → tek sahip. İki farklı varyanta
+   * düşen kod dizinden ATILIR: "son gelen kazanır" bir seçim olurdu ve
+   * seçim yapılmaz (K231'in kapattığı arızanın kılık değiştirmiş hâli).
+   */
+  const kimlikSahibi = new Map<string, VaryantKaydi>();
+  const kimlikCakisik = new Set<string>();
+  for (const v of varyantlar) {
+    const kodlar = [v.sku, v.firmaSku ?? "", v.barkod ?? "", ...(v.kanalKodlari ?? [])];
+    for (const ham of kodlar) {
+      const kod = ham.trim();
+      if (kod === "") continue;
+      const onceki = kimlikSahibi.get(kod);
+      if (onceki !== undefined && onceki.id !== v.id) kimlikCakisik.add(kod);
+      else kimlikSahibi.set(kod, v);
+    }
+  }
+  for (const kod of kimlikCakisik) kimlikSahibi.delete(kod);
+
   const barkodVaryant = new Map<string, VaryantKaydi>();
   for (const v of varyantlar) {
     if (v.barkod) barkodVaryant.set(v.barkod.trim(), v);
@@ -144,10 +181,12 @@ export function planKur(
     yeniEsleme: 0,
     katalogdaYok: 0,
     tekrarEden: 0,
+    kimlikCakisti: 0,
     // Döngüden SONRA hesaplanıyor: hangi eşlemeye dokunulduğu ancak o zaman
     // biliniyor.
     kalanBosOran: 0,
   };
+  const kimlikCakismaOrnekleri: KomisyonPlani["kimlikCakismaOrnekleri"] = [];
 
   const guncellenecekler: PlanGuncelleme[] = [];
   const yaratilacaklar: PlanYaratma[] = [];
@@ -232,6 +271,24 @@ export function planKur(
         sayim.tekrarEden++;
         continue;
       }
+      /**
+       * ⛔ DÖRDÜNCÜ KAPI: yazılacak kanal kodu BAŞKA bir varyantın kimliği mi?
+       * Hedef varyantın KENDİ kodu (ör. barkodunu kanal kodu yapmak) meşrudur;
+       * yalnız başkasınınki reddedilir. Satır atlanır, sayılır, örneklenir.
+       */
+      const sahip = kimlikSahibi.get(satir.kanalKodu.trim());
+      if (sahip !== undefined && sahip.id !== varyant.id) {
+        sayim.kimlikCakisti++;
+        if (kimlikCakismaOrnekleri.length < ORNEK_SINIRI) {
+          kimlikCakismaOrnekleri.push({
+            satirNo: satir.satirNo,
+            kanalKodu: satir.kanalKodu,
+            varyantSku: varyant.sku,
+            sahipSku: sahip.sku,
+          });
+        }
+        continue;
+      }
       dokunulanVaryant.add(varyant.id);
       sayim.yeniEsleme++;
       yaratilacaklar.push({
@@ -279,6 +336,7 @@ export function planKur(
     sayim,
     guncellenecekler,
     yaratilacaklar,
+    kimlikCakismaOrnekleri,
     degisenOrnekleri,
     oranOrnekleri,
     bulunamayanOrnekleri,

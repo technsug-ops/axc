@@ -138,9 +138,13 @@ ekranın `PASİF DAHİL:` **beyanı** kayboldu ve bu kez onlar suçlandı —
 
 ### AÇIK
 
-- [ ] **Halil testi ①** — `/satislar` → sipariş **4936492065** → **Onayla**.
-      Ürün `Philips BHD500/00 5000 Series` olmalı, stok **4/1** yetmeli,
-      onay geçmeli. _(Rakam: onaydan sonra stok **3**.)_
+- [x] ~~**Halil testi ①**~~ — **GEÇTİ 21.09.2026 19:44.** Defterden teyit
+      edildi (kullanıcı beyanı değil, veri): onay damgası yazıldı, `SALE_OUT −1`
+      **doğru varyanta** düştü, stok **4 → 3** (beklenen rakamla birebir).
+      ⭐ Ve bir şeyi daha kanıtladı: kâr **hesaplandı** (`CALCULATED`,
+      NET-1 ₺663,91 · NET-2 ₺549,32). İkize bağlı kalsaydı maliyet
+      bulunamaz, `NO_COST` düşerdi — yani arıza yalnız "kaydedemiyorum"
+      değil, **kârın sessizce hesaplanamaması** idi.
 - [ ] **Halil testi ②** — `/urunler`de `HBCV00000R0H0K` aratın: **tek** kayıt
       çıkmalı ve o kayıt stoklu olan olmalı. İkiz kayıt **"Varyantları pasif"**
       rozetiyle görünmeli (kaybolmamalı — geçmişi duruyor).
@@ -190,11 +194,30 @@ sabitliyordu; ayrı sonuca çevirince kırmızı yandı. Ölçüt ve ona çapal�
 birlikte taşındı. _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez".)_
 
 ### AÇIK
-- [ ] **Toplu içe aktarmalar yazma kapısından GEÇMİYOR.** Kapı bugün ürün
-      formunda ve kanal eşleştirme ekranında; `lib/ice-aktarma/yaz.ts` ve
-      `lib/komisyon/yukle.ts` toplu yollarında ÖLÇÜLMEDİ. Toplu yolda
-      durdurmak doğru olmayabilir (tek satır yüzünden 400 satır düşerdi) —
-      doğru şekil muhtemelen **saymak ve raporlamak**. Ayrı kalem.
+- [x] ~~**Toplu içe aktarmalar yazma kapısından GEÇMİYOR.**~~ **KAPANDI
+      21.09.2026 — musluğun son yarısı.** Ölçüm iki yönde de açık buldu:
+      kimlik dizinleri kanal kodlarını hiç indekslemiyordu; kanal eşleştirmesi
+      `(hesap|varyant)` çiftine bakıyor, **kodun kendisine** bakmıyordu.
+      Şekil, aynı dosyadaki dönem kapısının şekli: **sorma, atla, raporla** —
+      iki yeni hata kodu (`KOD_BASKANIN_KANAL_KODU` · `KOD_BASKANIN_KIMLIGI`),
+      atlanan satır kimliğiyle ekrana gidiyor. ⚠ Dosya İÇİ çarpışma da
+      yakalanıyor: bir satır kodu kimlik olarak açıp başka satır kanal kodu
+      yapamaz. **DEĞER TESTİ** (`toplu-kapi:dogrula`, 13 ölçüt — gövde saf,
+      desen taranmadı) + **mutasyon 6/6** (kaldıran 3 · fazladan 2 · zararsız).
+      ⛔ **VE BİR CÜMLEM YANLIŞTI, COMMIT'TEN ÖNCE YAKALANDI.** Panoya önce
+      _"`komisyon/yukle.ts` kanal SKU yaratmaz, oraya kapı gerekmez"_ yazdım;
+      kodu okuyunca tersi çıktı — **"EKSİK EŞLEMELER" bloğu `createMany` ile
+      eşleme YARATIYOR** (dosyadaki barkodla varyantı bulup pazaryerinin
+      kodunu bağlıyor). Yani K231'i doğuran adımın üçüncü kapısı buradaydı.
+      Takıldı (22.09.2026): dört rollü kimlik dizini (`sku` · `firmaSku` ·
+      `barkod` · **bütün hesapların** kanal kodları) → başkasının kimliği
+      olan kod **eşleme açmaz**, sayılır (`kimlikCakisti`), önizlemede
+      **hangi kod · hangi ürüne · sahibi kim** diye yazar. Hedefin KENDİ
+      barkodu meşru (en yaygın durum). **Değer testi** `komisyon:dogrula`
+      10. bölüm (7 ölçüt, gövde çağrılır) + mutasyon `komisyon-kapi-mutasyon`
+      (kaldıran 2 · fazladan 2 · zararsız). _(Anayasa: "yokluk iddiası da
+      iddiadır" — üç kez bakmadan kuruldu, üçü de yanlış çıktı; bu dördüncüsü,
+      bakıldığı için yanlış çıkmadan düzeldi.)_
 
 ---
 

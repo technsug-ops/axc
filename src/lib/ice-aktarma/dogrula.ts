@@ -42,6 +42,20 @@ export type HataKodu =
   | "ARALIK_DISI"
   | "TEKRAR_DOSYADA"
   | "ZATEN_KAYITLI"
+  /**
+   * ⛔ MUSLUĞUN TOPLU YARISI — 21.09.2026. K231'de üç ikiz kayıt bulundu:
+   * bir pazaryeri kodu ikinci bir varyantın KİMLİK alanına yazılmıştı ve
+   * arama iki kayıt bulup sessizce birini seçiyordu. Elle yollar (ürün
+   * formu, kanal eşleştirme) aynı gün kapatıldı; toplu içe aktarma AÇIK
+   * kalmıştı — kimlik dizinleri kanal kodlarını hiç indekslemiyordu, kanal
+   * eşleştirmesi ise kodun kendisine değil (hesap|varyant) çiftine bakıyordu.
+   *
+   * Şekil, aynı dosyadaki dönem kapısının şekli: SORMA, ATLA, RAPORLA.
+   * Toplu yolda durdurmak tek satır yüzünden yüzlerce satırı düşürürdü;
+   * atlanan satır kimliğiyle ekrana gider.
+   */
+  | "KOD_BASKANIN_KANAL_KODU"
+  | "KOD_BASKANIN_KIMLIGI"
   | "BULUNAMADI"
   | "SKU_TANIMSIZ"
   | "GECERSIZ_SECENEK"
@@ -86,7 +100,7 @@ export type Referans = {
   /** Benzerlik uyarısı için mevcut ürün adları (marka dahil etiket). */
   mevcutUrunAdlari?: string[];
   /** Zaten tanımlı kanal-SKU eşleşmeleri. */
-  mevcutKanalSkulari: { kanalHesabiId: string; varyantId: string }[];
+  mevcutKanalSkulari: { kanalHesabiId: string; varyantId: string; kod: string }[];
   /** Parti tarihi boş bırakılırsa kullanılacak gün (UTC gece yarısı). */
   bugun: Date;
 };
@@ -286,6 +300,27 @@ export function iceAktarmaDogrula(
   const mevcutEsleme = new Set(
     referans.mevcutKanalSkulari.map((e) => `${e.kanalHesabiId}|${e.varyantId}`),
   );
+  /**
+   * KANAL KODU → VARYANT. Dördüncü rol; K231'e kadar burada YOKTU.
+   * ⚠ Aynı kod iki hesapta aynı varyanta bağlıysa sorun yok; FARKLI
+   * varyantlara bağlıysa bu zaten bir çarpışmadır ve kod dizinden atılır —
+   * "son gelen kazanır" bir seçim olurdu, seçim yapılmaz.
+   */
+  const mevcutKanalKodu = new Map<string, string>();
+  const kanalKoduCakisti = new Set<string>();
+  for (const e of referans.mevcutKanalSkulari) {
+    const k = anahtarla(e.kod);
+    const onceki = mevcutKanalKodu.get(k);
+    if (onceki !== undefined && onceki !== e.varyantId) kanalKoduCakisti.add(k);
+    else mevcutKanalKodu.set(k, e.varyantId);
+  }
+  for (const k of kanalKoduCakisti) mevcutKanalKodu.delete(k);
+  /** Bir kimlik kodunun (sku · firmaSku · barkod) sahibi — kanal kapısı için. */
+  const kimlikSahibi = (kod: string) =>
+    mevcutSku.get(anahtarla(kod))?.id ??
+    mevcutFirmaSku.get(anahtarla(kod))?.id ??
+    mevcutBarkod.get(anahtarla(kod))?.id ??
+    null;
 
   const hicSatirYok =
     veri.urunler.length === 0 &&
@@ -319,6 +354,8 @@ export function iceAktarmaDogrula(
   // =========================================================================
   /** Dosyada tanımlanan SKU -> varyant kimliği (yeni veya mevcut). */
   const dosyaSku = new Map<string, string>();
+  /** Dosyada AÇILAN varyantların üç kimlik kodu — kanal kapısı bunlara da bakar. */
+  const dosyaKimlik = new Map<string, string>();
 
   /**
    * ARTÇI HATA ÖNLEYİCİ.
@@ -417,6 +454,32 @@ export function iceAktarmaDogrula(
         });
         continue;
       }
+    }
+
+    /**
+     * ⛔ DÖRDÜNCÜ ROL: bu kimlik kodlarından biri BAŞKA bir varyantın KANAL
+     * kodu mu? Üstteki üç kontrol kimliği yalnız kimliğe karşı sınıyor;
+     * `HBCV00000R0H0K` bir varyantın sku'su olarak açılabiliyordu, oysa
+     * aynı kod başka bir varyantın Hepsiburada kodu olarak kayıtlıydı.
+     */
+    let kanalCakismasi: { alan: string; deger: string } | null = null;
+    for (const [alan, deger] of [["sku", sku], ["firmaSku", firmaSku], ["barkod", barkod]] as const) {
+      if (!deger) continue;
+      const sahip = mevcutKanalKodu.get(anahtarla(deger));
+      if (sahip !== undefined && sahip !== mevcut?.id) {
+        kanalCakismasi = { alan, deger };
+        break;
+      }
+    }
+    if (kanalCakismasi) {
+      hata({
+        sayfa: "urunler",
+        satir: satir.satirNo,
+        alan: kanalCakismasi.alan,
+        kod: "KOD_BASKANIN_KANAL_KODU",
+        deger: kanalCakismasi.deger,
+      });
+      continue;
     }
 
     // --- kategori / raf: listede yoksa HATA (kullanıcı kararı 10.08.2026) ---
@@ -545,6 +608,9 @@ export function iceAktarmaDogrula(
       rafId,
     });
     dosyaSku.set(anahtarla(sku), varyantId);
+    dosyaKimlik.set(anahtarla(sku), varyantId);
+    dosyaKimlik.set(anahtarla(firmaSku), varyantId);
+    if (barkod) dosyaKimlik.set(anahtarla(barkod), varyantId);
   }
 
   /** SKU dosyada mı sistemde mi — açılış stoğu ve kanal SKU için ortak. */
@@ -723,12 +789,35 @@ export function iceAktarmaDogrula(
       continue;
     }
 
+    // Kanal kodu boşsa sistem SKU'su kullanılır (şemada zorunlu alan).
+    const kanalKodu = oku("kanalKodu") || sku;
+
+    /**
+     * ⛔ MUSLUĞUN ÖTEKİ YARISI: bu kanal kodu BAŞKA bir varyantın KİMLİĞİ mi?
+     * `mevcutEsleme` (hesap|varyant) çiftine bakar, kodun kendisine değil.
+     * K231'i doğuran adım tam buydu — gerçek ürüne `HBCV00000R0H0K` kanal
+     * kodu olarak bağlandı, oysa aynı kod ikiz kaydın sku'suydu.
+     * ⚠ Dosyadaki YENİ varyantlar da sayılır: aynı dosyada bir satır o kodu
+     * kimlik olarak açıp bir başka satır kanal kodu olarak bağlayabilir.
+     */
+    const kimlikSahibiId =
+      kimlikSahibi(kanalKodu) ?? dosyaKimlik.get(anahtarla(kanalKodu)) ?? null;
+    if (kimlikSahibiId !== null && kimlikSahibiId !== varyantId) {
+      hata({
+        sayfa: "kanalSku",
+        satir: satir.satirNo,
+        alan: "kanalKodu",
+        kod: "KOD_BASKANIN_KIMLIGI",
+        deger: kanalKodu,
+      });
+      continue;
+    }
+
     const kayit: KanalSkuKaydi = {
       id: kimlikUret(),
       varyantId,
       kanalHesabiId: hesapId,
-      // Kanal kodu boşsa sistem SKU'su kullanılır (şemada zorunlu alan).
-      kanalKodu: oku("kanalKodu") || sku,
+      kanalKodu,
       komisyonOrani: oran,
     };
 

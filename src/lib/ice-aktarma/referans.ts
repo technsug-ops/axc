@@ -43,7 +43,8 @@ export async function referansYukle(): Promise<Referans> {
         },
       }),
       prisma.channelSku.findMany({
-        select: { channelAccountId: true, variantId: true },
+        /** `channelSku` 21.09.2026'da eklendi — yazma kapısı kodu görmeliydi. */
+        select: { channelAccountId: true, variantId: true, channelSku: true },
       }),
       // Benzerlik uyarısı için: mevcut ürünlerin marka + ad etiketi.
       prisma.product.findMany({ select: { name: true, brand: true } }),
@@ -71,6 +72,7 @@ export async function referansYukle(): Promise<Referans> {
     mevcutKanalSkulari: kanalSkulari.map((k) => ({
       kanalHesabiId: k.channelAccountId,
       varyantId: k.variantId,
+      kod: k.channelSku,
     })),
     bugun: gunDegeri(bugun),
   };

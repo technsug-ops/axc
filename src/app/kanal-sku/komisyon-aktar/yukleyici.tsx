@@ -67,6 +67,7 @@ type Onizleme = {
     katalogdaYok: number;
     tekrarEden: number;
     kalanBosOran: number;
+    kimlikCakisti: number;
   };
   yazilacak: number;
   kodCakisti: number;
@@ -84,6 +85,7 @@ type Onizleme = {
   }[];
   yeniEslemeOrnekleri: { kanalKodu: string; varyantSku: string; oran: number }[];
   kalanBosOranOrnekleri: { kanalKodu: string; varyantSku: string }[];
+  kimlikCakismaOrnekleri: { satirNo: number; kanalKodu: string; varyantSku: string; sahipSku: string }[];
 };
 
 type Yanit =
@@ -463,6 +465,23 @@ export function Yukleyici({
                   ) : null}
                   {onizleme.kodCakisti > 0 ? (
                     <li>{t("uyariKodCakisti", { sayi: onizleme.kodCakisti })}</li>
+                  ) : null}
+                  {/*
+                    ⛔ SAYILAN ŞEY EKRANDA DURUR (İlke #5 · "doğru davranışın
+                    görünmezliği de yalancı yeşildir"). Kapı satırı atlıyor;
+                    kullanıcı NİYE atlandığını burada okur — hangi kod, hangi
+                    ürüne yazılacaktı, kimin kodu çıktı.
+                  */}
+                  {onizleme.sayim.kimlikCakisti > 0 ? (
+                    <li>
+                      {t("uyariKimlikCakisti", { sayi: onizleme.sayim.kimlikCakisti })}
+                      <span className="text-muted-foreground block text-xs">
+                        {onizleme.kimlikCakismaOrnekleri
+                          .slice(0, 5)
+                          .map((o) => `${o.kanalKodu} → ${o.varyantSku} (sahibi: ${o.sahipSku})`)
+                          .join(" · ")}
+                      </span>
+                    </li>
                   ) : null}
                 </ul>
                 <p className={`text-xs ${DURUM_YAZISI.uyari}`}>

@@ -74,6 +74,7 @@ export type KomisyonOnizlemesi = {
   yeniEslemeOrnekleri: { kanalKodu: string; varyantSku: string; oran: number }[];
   /** Yazımdan sonra oranı boş kalacak eşlemelerden örnekler. */
   kalanBosOranOrnekleri: KomisyonPlani["kalanBosOranOrnekleri"];
+  kimlikCakismaOrnekleri: { satirNo: number; kanalKodu: string; varyantSku: string; sahipSku: string }[];
 };
 
 export type KomisyonDenetimi =
@@ -250,7 +251,7 @@ async function planlaVeOnizle(
     return { durum: "HATA", hatalar: [{ kod: "SATIR_YOK" }] };
   }
 
-  const [eslemeKayitlari, varyantKayitlari] = await Promise.all([
+  const [eslemeKayitlari, varyantKayitlari, tumKanalKodlari] = await Promise.all([
     prisma.channelSku.findMany({
       where: { channelAccountId },
       select: {
@@ -261,9 +262,17 @@ async function planlaVeOnizle(
       },
     }),
     prisma.productVariant.findMany({
-      select: { id: true, barcode: true, sku: true },
+      select: { id: true, barcode: true, sku: true, companySku: true },
     }),
+    /** BÜTÜN hesapların kodları — kimlik kapısı hesaba göre daralmaz. */
+    prisma.channelSku.findMany({ select: { variantId: true, channelSku: true } }),
   ]);
+  const kanalKodlariVaryantBasina = new Map<string, string[]>();
+  for (const k of tumKanalKodlari) {
+    const liste = kanalKodlariVaryantBasina.get(k.variantId) ?? [];
+    liste.push(k.channelSku);
+    kanalKodlariVaryantBasina.set(k.variantId, liste);
+  }
 
   const mevcutlar: MevcutEsleme[] = eslemeKayitlari.map((e) => ({
     id: e.id,
@@ -275,6 +284,8 @@ async function planlaVeOnizle(
     id: v.id,
     barkod: v.barcode,
     sku: v.sku,
+    firmaSku: v.companySku,
+    kanalKodlari: kanalKodlariVaryantBasina.get(v.id) ?? [],
   }));
 
   const plan = planKur(okuma, mevcutlar, varyantlar);
@@ -301,6 +312,7 @@ async function planlaVeOnizle(
         oran: y.oran,
       })),
       kalanBosOranOrnekleri: plan.kalanBosOranOrnekleri,
+      kimlikCakismaOrnekleri: plan.kimlikCakismaOrnekleri,
     },
     yazim: { guncellenecekler: plan.guncellenecekler, yaratilacaklar: temiz },
   };

@@ -142,6 +142,8 @@ export function Yukleyici() {
       case "ARALIK_DISI": return t("hataARALIK_DISI", p);
       case "TEKRAR_DOSYADA": return t("hataTEKRAR_DOSYADA", p);
       case "ZATEN_KAYITLI": return t("hataZATEN_KAYITLI", p);
+      case "KOD_BASKANIN_KANAL_KODU": return t("hataKOD_BASKANIN_KANAL_KODU", p);
+      case "KOD_BASKANIN_KIMLIGI": return t("hataKOD_BASKANIN_KIMLIGI", p);
       case "BULUNAMADI":
         return h.ek ? t("hataBULUNAMADI_ONERI", p) : t("hataBULUNAMADI", p);
       case "SKU_TANIMSIZ": return t("hataSKU_TANIMSIZ", p);
