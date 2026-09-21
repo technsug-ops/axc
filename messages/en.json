@@ -41,6 +41,18 @@
     "arsivDepoYok": "",
     "arsivHata": ""
   },
+  "KargoTarifesi": {
+    "baslik": "",
+    "aciklama": "",
+    "tarifesizOzet": "",
+    "tarifeYok": "",
+    "ozet": "",
+    "gecenGun": "",
+    "okuyucuVar": "",
+    "okuyucuYok": "",
+    "dosyaYukle": "",
+    "kapat": ""
+  },
   "KanalGonderim": {
     "dugme": "",
     "baslik": "",
@@ -152,6 +164,7 @@
     "tarife": "",
     "komisyonKapisi": "",
     "hbKargoTarife": "",
+    "kargoTarifesi": "",
     "urunKarti": "",
     "simulasyon": "",
     "menuDuzeni": "",
@@ -849,6 +862,7 @@
     "tarife": "",
     "komisyonKapisi": "",
     "hbKargoTarife": "",
+    "kargoTarifesi": "",
     "urunKarti": "",
     "simulasyon": "",
     "grupPara": "",

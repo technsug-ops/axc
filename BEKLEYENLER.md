@@ -13,6 +13,79 @@
 
 ---
 
+## 🔶 K229 — KARGO TARİFESİ KANAL BAĞIMSIZ OLDU · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+**KULLANICI TESPİTİ:** _"Bu sadece HB'ye özel değil, diğer pazaryerleri de arada
+bir değiştiriyor. Onlara has bir yer de olmalı."_ Ekranın **adında kanal
+gömülüydü** — anayasanın adlandırma kuralına da aykırı: kanal VERİ olabilir,
+YAPI olamaz.
+
+⛔ **VE EKRAN OLMAYINCA GÖRÜNMEYEN BİR ARIZA BÜYÜMÜŞ — ÖLÇÜLDÜ:**
+
+    Trendyol      4.210 satır · 10 taşıyıcı · tek parti 2026-07-16   ← 2 AY ESKİ
+    Hepsiburada  85.702 satır · 11 taşıyıcı · 2026-08-01 + 2026-09-10
+    N11 ve 9 kanal daha                       TARİFE YOK
+
+Trendyol'unki **seed'den** gelmiş (`prisma/seed-kar-motoru.ts` →
+`veri/kargo-tarifeleri.xlsx`) ve bir daha tazelenmemiş; tazeleyecek ekran da
+yoktu. Yani TY satışlarında kargo maliyeti iki aylık bir tarifeden hesaplanıyor
+ve bunu **hiçbir ekran söylemiyordu.**
+
+### YAPILAN
+
+**A) `/ayarlar/kargo-tarifesi`** — kanal kartları, komisyon ekranıyla aynı
+desen. Kart üç ÖLÇÜLMÜŞ şeyi yazar: satır sayısı · en son yürürlük tarihi ·
+**üstünden kaç gün geçtiği**. Tarifesi olmayan kanal da kart olur ve
+_"kâr hesabı kargoyu bilemez"_ diye yazar.
+
+**B) KANAL ARTIK KİMLİKLE ÇÖZÜLÜYOR.** Yazıcı kanalı
+`name: { contains: "Hepsiburada" }` ile buluyordu. Bu deponun **K13b dersi**
+o kalıbın bedelini ölçmüştü: ad alanı `"Hepsiburada — AXCALI"` üretiyor,
+eşleşme tutmuyor ve kayıtlar sessizce eleniyordu. `Channel.code` ile değişti.
+
+**C) VERİ MODELİ DEĞİŞMEDİ** — `CargoTariff.channelId` zaten herhangi bir
+kanala bağlanıyordu (ölçüldü). Eksik olan yalnız ekran ve okuyucuydu.
+
+⚠ **"BAYAT" EŞİĞİ KOYULMADI VE BU BİLİNÇLİ.** Tarifenin BİTİŞ tarihi veride
+YOK (`CargoTariff`te yalnız `effectiveFrom` var), yani "kaç günde bayatlar"
+sorusunun veriden türetilebilir cevabı yok. Uydurma bir gün sayısı, anayasanın
+_"eşik dağılımın gediğine konur"_ kuralını çiğnerdi. Ekran ÖLÇÜLEBİLİR OLANI
+yazıyor: tarih ve geçen gün. Hükmü operatör veriyor — ama artık rakamı görerek.
+
+### API — ÖLÇÜLDÜ, İDDİA EDİLMEDİ
+
+Mevcut istemcilerde **kargo TARİFESİ ucu YOK.** Trendyol'da bulunan tek kargo
+ucu `cargo-invoice/{faturaNo}/items` — o **fatura**, yani fiilen kesilen;
+ileriye dönük tarife değil. HB ve N11 istemcilerinde kargo ucu hiç yok.
+
+⚠ **"Pazaryerleri böyle bir uç yayımlamıyor" DENMİYOR — dokümanlarına
+BAKILMADI.** Yokluk iddiası da bir iddiadır; bakılmadan yazılmaz.
+
+⭐ Ve iki soru ayrı: _"bu desiyi gönderirsem ne tutar"_ (simülasyon → **tarife**)
+ile _"bu gönderiden ne kesildi"_ (denetim → **fatura**, TY'de ucu VAR).
+
+### BEKÇİ + MUTASYON
+
+    kargo-tarife-pdf:dogrula        24 → 35 ölçüt
+    kargo-tarifesi-mutasyon:kontrol      6/6  (yeni)
+
+⛔ **BEKÇİ YAZILIRKEN KENDİ KURALIMI YAKALADI:** _"adla arama kalmadı"_ ölçütü
+kırmızı yandı çünkü desen, eski hâli **ANLATAN YORUMUN** içinde eşleşiyordu.
+Anayasa: _"yorumsuz kodda arar — bir yasağı anlatan yorum, o yasağı çiğnemiş
+sayılmaz."_ Okuma kapısı eklendi.
+
+⚠ **VE HARNESS İKİ ÇAPAYI "ÖLÇÜLEMEDİ" DİYE REDDETTİ** (biri Türkçe karakter
+farkı, biri sözdizimi bozan mutasyon) — "geçti" demedi. İkisi de onarıldı.
+
+### AÇIK
+- [ ] **Halil testi** — `/ayarlar/kargo-tarifesi` açılsın; TY kartında
+      **2026-07-16** ve ~67 gün yazmalı, N11 kartında "tarife yok".
+- [ ] **Trendyol kargo tarifesi 2 aydır tazelenmiyor** — okuyucusu yok.
+      TY'nin tarife dosyası eline geçerse okuyucu yazılır.
+- [ ] **API'de kargo tarifesi ucu var mı — ÖLÇÜLMEDİ.** Dokümanlara bakılacak.
+
+---
+
 ## 🔶 K227 — TEKLİF DOSYASI **TARİFEDİR** — ESKİ KARAR ÇEVRİLDİ · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI TESPİTİ:** _"HB'de her Çarşamba ürünlerin bir kısmı için teklif
@@ -99,8 +172,33 @@ bozuk). Artık **türlerin KÜMESİ** karşılaştırılıyor — her kanal içi
 **"ÖLÇÜLEMEDİ"** dedi ve push'u durdurdu. Mutasyonlar SİLİNMEDİ; niyetleri
 korunup yeni koda taşındı. _(Anayasa: "refaktör, çapalı harness'i de taşır".)_
 
+### ✅ HALİL TESTİ GEÇTİ — 21.09.2026, canlı adres, gerçek dosyalar
+
+    HB  yükleme : 44 satır · 152 kalem · 43 eşleşen · 1 bağsız
+                  pencere 2026-09-16 → 2026-09-22  (panel sekmesiyle BİREBİR)
+    N11 yükleme : 142 kalem · 33 eşleşen ürün · pencere 2026-09-21 → 2026-10-04
+    ikisi de canlıya yazıldı (13:08 ve 13:09)
+
+⭐ **VE ZİNCİR UÇTAN UCA ÇALIŞTI — ASIL KANIT BU.** Kullanıcı fiyat denemesinde
+HB fiyatına **1801** yazdı ve komisyon kendiliğinden **%8,8** oldu; kutunun
+altında _"oran dilim tarifesinden"_ yazıyor. Yani teklif dosyası tarifeye,
+tarife dilime, dilim kâr hesabına ulaştı.
+
+⚠ **"N11 ÇALIŞMIYOR" DENDİ — ÖLÇÜM ÇÜRÜTTÜ.** Denenen ürün (Braun IRT-3030)
+N11 tekliflerinde **HİÇ YOK** (ölçüldü: 0 kalem); N11'in _"veri yok"_ demesi
+DOĞRU davranıştı. N11 teklifi OLAN bir üründe motor sorunsuz çözüyor:
+
+    1210001906501 (Stanley French Press)
+      3.500 → %16    (tepe dilim)     2.950 → %3,81
+      2.900 → %3,31                   2.500 → %3      · kaynak=DILIM
+
+_(Anayasa: "sıfır üç farklı şey olabilir" — burada "oran gelmiyor", kusur
+değil, o üründe teklif OLMAMASIYDI.)_
+
 ### AÇIK
-- [ ] **Halil testi** — canlı adreste, gerçek teklif dosyalarıyla.
+- [ ] **N11'de 46 teklif ürününün 13'ü kataloğa bağlanamadı** — o ürünlerin
+      N11 kodu bizde yok. Kapatma yolu panoda zaten duruyor: **N11 listeleme
+      senkronu** (51 kanal SKU'su hiç ölçülmemiş).
 - [ ] **Teslim 2: pazaryeri aynası ekranı** (kullanıcı kararı: ayna + **bizim
       NET kârımız**). Panelin gösterdiği her dilimin yanında o fiyata satarsan
       NET-2 yazacak — pazaryerinin asla gösteremeyeceği rakam, çünkü maliyeti

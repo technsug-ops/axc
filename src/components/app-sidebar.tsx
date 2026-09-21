@@ -151,6 +151,7 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   komisyonKapisi: Percent,
   tarife: Percent,
   /** Kargo TARİFESİ — `tedarikciler`in Truck'ıyla çakışmasın diye ayrı ikon. */
+  kargoTarifesi: Route,
   hbKargoTarife: Route,
 };
 

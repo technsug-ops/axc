@@ -78,7 +78,12 @@ export const MENU_ADRESLERI: Record<string, string> = {
    */
   komisyonKapisi: "/ayarlar/komisyon",
   tarife: "/ayarlar/tarife",
-  hbKargoTarife: "/ayarlar/hb-kargo-tarife",
+  /**
+   * K229 — kanal bağımsız kargo tarifesi kapısı. Eski `/ayarlar/hb-kargo-tarife`
+   * adresi DURUYOR (bağlantılar kırılmasın) ama menüde tek kapı görünür:
+   * adında kanal gömülü bir menü kalemi, öteki kanalları görünmez yapıyordu.
+   */
+  kargoTarifesi: "/ayarlar/kargo-tarifesi",
 };
 
 /**
@@ -171,7 +176,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "gecmisEkstre", varsayilanGrup: "grupVeri" },
   { anahtar: "komisyonKapisi", varsayilanGrup: "grupVeri" },
   { anahtar: "tarife", varsayilanGrup: "grupVeri" },
-  { anahtar: "hbKargoTarife", varsayilanGrup: "grupVeri" },
+  { anahtar: "kargoTarifesi", varsayilanGrup: "grupVeri" },
 
   // ── AYARLAR — sistemin kendisi ──────────────────────────────────────────
   { anahtar: "kullanicilar", varsayilanGrup: "grupAyarlar" },

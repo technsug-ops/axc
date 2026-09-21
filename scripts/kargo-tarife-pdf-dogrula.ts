@@ -1,7 +1,14 @@
 import { tutarBelirteclerineAyir, tutarCoz } from "../src/lib/kargo-tarife-pdf/deger";
 import { desiDizisiniDogrula, monotonlukUyarilari } from "../src/lib/kargo-tarife-pdf/dogrulama";
 import { sutunlaraEsle } from "../src/lib/kargo-tarife-pdf/sutun-esleme";
+import { readFileSync } from "node:fs";
+
 import { etkinTarihiCoz } from "../src/lib/kargo-tarife-pdf/pdf-oku";
+import {
+  gecenGunHesapla,
+  kargoOkuyucusuVarMi,
+  KARGO_OKUYUCUSU_OLAN_KANAL_KODLARI,
+} from "../src/lib/kargo/kanal-yetenegi";
 
 /**
  * ============================================================================
@@ -187,6 +194,64 @@ kontrol(
 );
 kontrol("tarih içermeyen metin → null", etkinTarihiCoz("Desi Aras Kargo DHL") === null);
 kontrol("bilinmeyen ay adı → null (uydurulmaz)", etkinTarihiCoz("10 Mart2 2026 geçerli") === null);
+
+// ---------------------------------------------------------------------------
+//  K229 - KANAL BAGIMSIZ KARGO TARIFESI
+// ---------------------------------------------------------------------------
+console.log("\nK229 - KANAL YETENEGI VE KIMLIKLE COZUM");
+
+kontrol(
+  `taban dolu - kargo okuyucusu olan kanal >= 1 (${KARGO_OKUYUCUSU_OLAN_KANAL_KODLARI.length})`,
+  KARGO_OKUYUCUSU_OLAN_KANAL_KODLARI.length >= 1,
+);
+kontrol("HEPSIBURADA okuyucusu VAR", kargoOkuyucusuVarMi("HEPSIBURADA"));
+kontrol("N11 okuyucusu YOK (beyan)", !kargoOkuyucusuVarMi("N11"));
+kontrol("TRENDYOL okuyucusu YOK (beyan)", !kargoOkuyucusuVarMi("TRENDYOL"));
+kontrol("kod buyuk/kucuk harf duyarsiz", kargoOkuyucusuVarMi("hepsiburada"));
+
+/*
+ * GECEN GUN - "bayat" HUKMU DEGIL, OLCU. Tarife yoksa null doner; sifir
+ * dondurulseydi "bugun yuklendi" gibi okunurdu.
+ */
+kontrol("tarife yoksa gecen gun null", gecenGunHesapla(null, new Date()) === null);
+kontrol(
+  "10 gun once -> 10",
+  gecenGunHesapla(new Date("2026-09-11T00:00:00Z"), new Date("2026-09-21T00:00:00Z")) === 10,
+);
+kontrol(
+  "gelecek tarihli tarife -> 0 (negatif gun yazilmaz)",
+  gecenGunHesapla(new Date("2026-10-01T00:00:00Z"), new Date("2026-09-21T00:00:00Z")) === 0,
+);
+
+/*
+ * KANAL KIMLIKLE COZULUYOR - K13b dersinin kargo tarafi.
+ * Yazici kanali `name: { contains: "Hepsiburada" }` ile buluyordu; ad bir
+ * ETIKETTIR ve "Hepsiburada - AXCALI" gibi ureyebilir. Kapsam daraltildi:
+ * desen `ortakDenetle` govdesinde araniyor.
+ */
+/**
+ * Yorumlari siler.
+ *
+ * @LOCK@ BU YARDIMCI BİR BEKÇİ KIRMIZISINDAN DOĞDU (21.09.2026): aşağıdaki
+ * "adla arama kalmadı" ölçütü kırmızı yandı çünkü desen, eski hâli ANLATAN
+ * yorumun içinde eşleşiyordu. Anayasa: _"yorumsuz kodda arar — bir yasağı
+ * anlatan yorum, o yasağı çiğnemiş sayılmaz"_.
+ */
+function yorumsuz(kaynak: string): string {
+  return kaynak
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/.*$/gm, "");
+}
+
+const yaziciKaynak = readFileSync("src/lib/kargo-tarife-pdf/yaz.ts", "utf8");
+const iOrtak = yaziciKaynak.indexOf("async function ortakDenetle");
+kontrol("ortakDenetle govdesi bulundu", iOrtak > 0);
+const ortakBlok = iOrtak > 0 ? yorumsuz(yaziciKaynak.slice(iOrtak, iOrtak + 1800)) : "";
+kontrol('kanal KOD ile bulunuyor (code: "HEPSIBURADA")', /code: "HEPSIBURADA"/.test(ortakBlok));
+kontrol(
+  "  ...ve ADLA arama KALMADI",
+  !/name: { contains: "Hepsiburada"/.test(ortakBlok),
+);
 
 console.log(
   "\n" + (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") + ` (${gecen}/${gecen + hata})\n`,

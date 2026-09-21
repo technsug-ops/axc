@@ -75,7 +75,20 @@ async function ortakDenetle(dosya: Buffer) {
     return { tamam: false as const, sonuc: { durum: "HATA" as const, kod: okuma.kod, ayrinti: okuma.ayrinti } };
   }
 
-  const kanal = await prisma.channel.findFirst({ where: { name: { contains: "Hepsiburada" } }, select: { id: true } });
+  /**
+   * ⛔ KANAL KİMLİKLE BULUNUR, ADLA DEĞİL (K229, 21.09.2026).
+   * Burada `name: { contains: "Hepsiburada" }` yazılıydı. Bu deponun K13b
+   * dersi o kalıbın bedelini ölçmüştü: ad alanı `"Hepsiburada — AXCALI"`
+   * üretiyor, eşitlik hiç tutmuyor ve kayıtlar SESSİZCE eleniyordu. Ad bir
+   * ETİKETTİR; `Channel.code` ise kimliktir ve seed'de sabittir.
+   *
+   * ⚠ Bu okuyucu HB'nin PDF biçimine özgü olduğu için kanal da sabit —
+   * ama sabit olan KOD, kırılgan olan ad değil.
+   */
+  const kanal = await prisma.channel.findFirst({
+    where: { code: "HEPSIBURADA" },
+    select: { id: true },
+  });
   if (!kanal) {
     return {
       tamam: false as const,

@@ -129,6 +129,7 @@
     "kargo-kaynagi:dogrula": "tsx scripts/kargo-kaynagi-dogrula.ts",
     "kargo-tartim-tazele:dogrula": "tsx scripts/kargo-tartim-tazele-dogrula.ts",
     "kargo-tarife-pdf:dogrula": "tsx scripts/kargo-tarife-pdf-dogrula.ts",
+    "kargo-tarifesi-mutasyon:kontrol": "tsx scripts/kargo-tarifesi-mutasyon-kontrol.ts",
     "kargo-kaynagi-mutasyon:kontrol": "tsx scripts/kargo-kaynagi-mutasyon-kontrol.ts",
     "gunluk-ozet:dogrula": "tsx scripts/gunluk-ozet-dogrula.ts",
     "gunluk-ozet-mutasyon:kontrol": "tsx scripts/gunluk-ozet-mutasyon-kontrol.ts",

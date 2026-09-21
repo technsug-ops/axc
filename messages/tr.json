@@ -41,6 +41,18 @@
     "arsivDepoYok": "Arşiv deposu bağlı değil — tarife yazıldı ama ham dosya arşivlenmedi.",
     "arsivHata": "Ham dosya arşivlenemedi — tarife yine de yazıldı."
   },
+  "KargoTarifesi": {
+    "baslik": "Kargo tarifesi",
+    "aciklama": "Her pazaryerinin desi bazlı kargo tarifesi ayrıdır ve arada bir değişir. Kart, o kanalda kaç satır tarife olduğunu, en son hangi tarihten geçerli olduğunu ve üstünden kaç gün geçtiğini yazar.",
+    "tarifesizOzet": "{adet} kanalda kargo tarifesi HİÇ yok — o kanallarda kâr hesabı kargoyu bilemez.",
+    "tarifeYok": "Bu kanalda kargo tarifesi yok.",
+    "ozet": "{satir} satır · {tasiyici} taşıyıcı · en son geçerlilik: {tarih}",
+    "gecenGun": "Son tarifenin üstünden {gun} gün geçti.",
+    "okuyucuVar": "Bu kanalın resmî kargo tarifesi dosyasını (.pdf) yükleyebilirsiniz.",
+    "okuyucuYok": "Bu kanal için kargo tarifesi okuyucusu yazılmadı — öyle bir dosya sisteme hiç gelmedi. Kanalın tarife yayımlamadığı anlamına GELMEZ; eline geçerse gönder, okuyucusu yazılır.",
+    "dosyaYukle": "Dosya yükle",
+    "kapat": "Kapat"
+  },
   "KanalGonderim": {
     "dugme": "TY'ye Gönder",
     "baslik": "Trendyol'a stok/fiyat gönder",
@@ -152,6 +164,7 @@
     "tarife": "Komisyon tarifesi",
     "komisyonKapisi": "Komisyon yükleme",
     "hbKargoTarife": "Hepsiburada kargo tarifesi",
+    "kargoTarifesi": "Kargo tarifesi",
     "urunKarti": "Ürün kârlılık kartı",
     "simulasyon": "Fiyat denemesi",
     "menuDuzeni": "Menü düzeni",
@@ -849,6 +862,7 @@
     "tarife": "Komisyon tarifesi",
     "komisyonKapisi": "Komisyon yükleme",
     "hbKargoTarife": "HB kargo tarifesi",
+    "kargoTarifesi": "Kargo tarifesi",
     "urunKarti": "Kârlılık kartı",
     "simulasyon": "Fiyat denemesi",
     "grupPara": "Para",

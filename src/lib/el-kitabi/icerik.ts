@@ -65,7 +65,7 @@ export const BOLUMLER = [
   { kimlik: "gecmisEkstre", ad: "Ayarlar — Geçmiş ekstreler" },
   { kimlik: "komisyonKapisi", ad: "Ayarlar — Komisyon yükleme" },
   { kimlik: "tarife", ad: "Ayarlar — Komisyon tarifesi" },
-  { kimlik: "hbKargoTarife", ad: "Ayarlar — Hepsiburada kargo tarifesi" },
+  { kimlik: "kargoTarifesi", ad: "Ayarlar — Kargo tarifesi" },
   { kimlik: "yedek", ad: "Yedek" },
   { kimlik: "sorun", ad: "Bir şey ters giderse" },
   { kimlik: "sozluk", ad: "Sözlük" },
@@ -147,7 +147,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   gecmisEkstre: "gecmisEkstre",
   komisyonKapisi: "komisyonKapisi",
   tarife: "tarife",
-  hbKargoTarife: "hbKargoTarife",
+  kargoTarifesi: "kargoTarifesi",
   /** Kitabın KENDİSİ — kendi kendini anlatan bölüm açmak tekrar olurdu. */
   elKitabi: null,
 };
@@ -1909,14 +1909,29 @@ ${sikHata([
 ])}
 </section>
 
-<section id="hbKargoTarife">
-${baslik("hbKargoTarife")}
-<p><strong>Ayarlar → Hepsiburada Kargo Tarifesi.</strong> Hepsiburada'nın
-desiye göre değişen resmi kargo ücret tablosunu (PDF) yükler. Satış
-formundaki kargo firması önerileri ve kâr hesabındaki kargo tutarı buradan
-okunur.</p>
+<section id="kargoTarifesi">
+${baslik("kargoTarifesi")}
+<p><strong>Ayarlar → Kargo tarifesi.</strong> Her pazaryerinin desiye göre
+değişen kargo ücret tablosu burada durur. Satış formundaki kargo firması
+önerileri ve kâr hesabındaki kargo tutarı buradan okunur.</p>
+<p><strong>Her kanalın kendi kartı var.</strong> Kart üç şeyi yazar: o kanalda
+kaç satır tarife olduğu, en son hangi tarihten geçerli olduğu ve
+<strong>üstünden kaç gün geçtiği</strong>.</p>
+<div class="ek-not dikkat"><div class="etiket">Tarifesi olmayan kanal</div>
+<p>Bir kanalda hiç kargo tarifesi yoksa kart bunu açıkça yazar — çünkü o
+kanalda <strong>kâr hesabı kargoyu bilemez</strong>. Bu susulacak bir şey
+değildir; NET olduğundan yüksek görünür.</p></div>
+<div class="ek-not"><div class="etiket">"Okuyucusu yok" ne demek</div>
+<p>Bir kanalda yükleme düğmesi yoksa, o kanalın dosyası için <strong>okuyucu
+yazılmamış</strong> demektir — kanalın tarife yayımlamadığı anlamına
+<strong>gelmez</strong>. Dosya elinize geçerse gönderin, okuyucusu yazılır.</p></div>
+<div class="ek-not"><div class="etiket">"Kaç gün geçti" bir uyarı değil, bir ölçü</div>
+<p>Sistem "bu tarife bayat" demez — çünkü tarifenin <strong>bitiş tarihi
+verisi yok</strong>, yani kaç günde bayatladığını söyleyecek bir dayanak da
+yok. Uydurma bir gün sayısı koymak yerine ekran ölçülebilir olanı yazar;
+hükmü siz verirsiniz.</p></div>
 ${neZaman(
-  "Hepsiburada satıcı panelinden yeni bir kargo tarifesi PDF'i indiğinde — komisyon tarifesi gibi haftalık DEĞİL, yalnız fiyat değişikliği olduğunda yayımlanır.",
+  "Pazaryeri satıcı panelinden yeni bir kargo tarifesi indiğinde — komisyon tarifesi gibi haftalık DEĞİL, yalnız fiyat değişikliği olduğunda yayımlanır.",
 )}
 <div class="ek-not"><div class="etiket">Önce Önizle, sonra Kaydet</div>
 <p>PDF'i seçip <strong>Önizle</strong>'ye bastığınızda sistem dosyayı okur,
