@@ -230,11 +230,26 @@ console.log("\n5) YAZICI");
     "betik kanala yazma ucu ÇAĞIRMIYOR",
     !/apiPost|apiPut|method:\s*"(POST|PUT|PATCH)"/.test(yorumsuz),
   );
-  /** ⛔ VARSAYILAN KURU: bayraksız koşum yazmamalı. */
+  /**
+   * ⛔ VARSAYILAN KURU: bayraksız koşum yazmamalı.
+   *
+   * ⚠ ÖLÇÜT TAŞINDI, SUSTURULMADI (K225, 21.09.2026). Eskiden şu aranıyordu:
+   *   `const UYGULA = process.argv.includes("--uygula")`
+   * Betik cron ucundan da koşabilsin diye bayrak PARAMETREYE çevrildi
+   * (`hbListelemeCekimKos({ yaz })`), o satır kalktı ve bekçi kırmızı yandı.
+   * **Kod yanlış değildi, ölçüt eskimişti** — garanti kaybolmadı, YER
+   * DEĞİŞTİRDİ: artık CLI sarmalayıcısında. İki şey birden sınanıyor:
+   *   ① gövdede `if (!UYGULA)` erken dönüşü duruyor (yazmadan önce kapı)
+   *   ② CLI girişi bayrağı OKUYUP geçiriyor — bayraksız koşumda `false`
+   * ⚠ ①'i tek başına sınamak yetmez: çağıran `yaz: true` sabitiyle çağırsa
+   * kapı hep açık olurdu ve ölçüt bunu göremezdi.
+   */
   kontrol(
     "varsayılan KURU (--uygula olmadan yazmaz)",
-    /const UYGULA = process\.argv\.includes\("--uygula"\)/.test(yorumsuz) &&
-      /if \(!UYGULA\)/.test(yorumsuz),
+    /if \(!UYGULA\)/.test(yorumsuz) &&
+      /hbListelemeCekimKos\(\{\s*yaz:\s*process\.argv\.includes\("--uygula"\)/.test(
+        yorumsuz,
+      ),
   );
 }
 kosanBolumler.push("yazıcı");

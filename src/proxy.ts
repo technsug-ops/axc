@@ -62,6 +62,10 @@ const ACIK_YOLLAR = [
   "/api/cron/ty-hakedis-cekim",
   // K221 — HB hakediş çekim ucu: aynı sınıf, aynı CRON_SECRET kapısı.
   "/api/cron/hb-hakedis-cekim",
+  // K225 — kanal listeleme durumu çekim ucu (TY + HB tek uçta): aynı sınıf,
+  // aynı CRON_SECRET kapısı. Dördüncü kez öğretilmesine gerek kalmadı —
+  // `cron-yollari:dogrula` bu satır eklenmeden push'u DURDURDU.
+  "/api/cron/listeleme-cekim",
   // A3/K50-a — canlı ölçüm ucu: yerel makineden canlı DB'ye TCP seviyesinde
   // erişilemediği için Vercel'in kendi havuzundan koşuyor; aynı sınıf, aynı
   // sır kapısı. ⛔ BU SATIR DA EKSİKTİ (10.09.2026'da HB ile birlikte

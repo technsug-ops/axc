@@ -454,7 +454,25 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
    */
   const betik = yorumsuz2(readFileSync("scripts/canli-kanal-listeleme-yaz.ts", "utf8"));
   dogru("başarılı koşum iz YAZIYOR", /kosumIziniYaz\(\{\s*basarili: true/.test(betik));
-  dogru("çöküş de iz yazıyor", betik.includes("main().catch("));
+  /**
+   * ⛔ ÖLÇÜT TAŞINDI, SUSTURULMADI (K225, 21.09.2026). Eskiden `main().catch(`
+   * aranıyordu; betik cron ucundan da koşabilsin diye `main()` kaldırıldı
+   * (import yan etkiyle koşmasın diye) ve o çapa düştü. **Kod yanlış
+   * değildi, ölçütün ÇAPASI silinmişti** — anayasanın "refaktör, çapalı
+   * harness'i de taşır" kuralının bu bekçideki karşılığı.
+   *
+   * ⚠ ÇAPA ADA DEĞİL DAVRANIŞA BAĞLANDI: bir `catch` bloğu içinde
+   * `basarili: false` izi yazılıyor mu, VE CLI girişi o korumalı gövdeden
+   * mi geçiyor. İkisi birden gerekli — koruma var ama kimse çağırmıyorsa
+   * çöküş yine sessiz kalır.
+   */
+  const cokusBlok = betik.slice(betik.indexOf("} catch (e: unknown) {"));
+  dogru(
+    "çöküş de iz yazıyor",
+    cokusBlok.length > 200 &&
+      /kosumIziniYaz\(\{\s*basarili: false/.test(cokusBlok) &&
+      /if \(dogrudanKosuluyor\)[\s\S]{0,200}?tyListelemeCekimKosGuvenli\(/.test(betik),
+  );
   dogru(
     "tarama düşüşü de iz yazıyor",
     /if \(!t\.tamam\)[\s\S]{0,500}kosumIziniYaz/.test(betik),

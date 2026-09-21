@@ -57,6 +57,30 @@ boşalmayı yakalamak ve o kırmızı) · zararsız yorum 🟢 (harness sağlama
 
 `api:dogrula` 187 → **237** ölçüt.
 
+⛔ **VE PUSH KAPISI DÖRT BEKÇİYLE DAHA DURDURDU — DÖRDÜ DE HAKLIYDI.** İkisi
+KAYIT eksikliği, ikisi REFAKTÖRÜN SİLDİĞİ ÇAPA:
+
+| bekçi | ne dedi | ne yapıldı |
+|---|---|---|
+| `cron-yollari:dogrula` | uç `ACIK_YOLLAR`da değil | eklendi |
+| `yetki:dogrula` | uç muafiyet listesinde değil | gerekçesiyle eklendi |
+| `hb-listeleme:dogrula` | "varsayılan KURU" ölçütü düştü | ölçüt TAŞINDI |
+| `vitrin:dogrula` | "çöküş de iz yazıyor" çapası düştü | ölçüt TAŞINDI |
+
+⭐ **İLK İKİSİ DÖRDÜNCÜ KEZ ÖĞRETİLMEDİ — BEKÇİ ÖĞRETTİ.** `ACIK_YOLLAR`a
+eklenmemiş bir cron ucu, kendi sır kapısına HİÇ ulaşamadan oturum duvarında
+**401** düşer. Bu hata K166'da, K-HB-CRON'da ve `/api/olcum`da üç kez
+yaşanmış; HB ucu **iki gün boyunca her koşumda sessizce 401 almış.** Bu sefer
+kimse fark etmek zorunda kalmadı: push durdu.
+
+⚠ **SON İKİSİ ANAYASADAKİ "REFAKTÖR, ÇAPALI HARNESS'İ DE TAŞIR" VAKASI.**
+`const UYGULA = process.argv…` ve `main().catch(` çapaları refaktörle
+silindi; **kod doğruydu, ölçütün tutunacağı yer kalmamıştı.** İkisi de
+SUSTURULMADI, davranışa yeniden bağlandı — ve ÇAĞIRANA da: yalnız gövdeye
+baksalardı, çağıran `yaz: true` sabitiyle çağırsa ölçüt bunu göremezdi.
+Dört mutasyonla sınandı (CLI hep yazsın · gövde kapısı kalksın · çöküşte iz
+yazılmasın · CLI korumasız gövdeyi çağırsın), dördü de kırmızı.
+
 ### AÇIK
 - [ ] **İlk otomatik koşum 22.09 sabahı** — `AuditLog`dan doğrulanacak.
       Koşmazsa Vercel Cron yine kaçırmış demektir ve Action'ın tuttuğu

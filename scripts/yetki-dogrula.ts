@@ -301,6 +301,10 @@ const API_ISTISNALARI = new Map<string, string>([
     "src/app/api/cron/hb-hakedis-cekim/route.ts",
     "K221: TY hakediş cron ucuyla AYNI sınıf — dış zamanlayıcı çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz.",
   ],
+  [
+    "src/app/api/cron/listeleme-cekim/route.ts",
+    "K225: kanal listeleme durumu çekimi (TY + HB tek uçta) — dış zamanlayıcı çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. ⚠ Kapı artık BEYANLA değil ÖLÇÜMLE de korunuyor: `api:dogrula` 4. bölüm her `src/app/api/cron/**/route.ts` dosyasını DİZİNDEN tarayıp sır kapısını sınıyor (21.09.2026'da açıldı — o güne kadar YAZAN cron uçlarının hiçbiri denetlenmiyordu).",
+  ],
 ]);
 {
   const korumasiz: string[] = [];
