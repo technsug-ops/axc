@@ -7,6 +7,7 @@ import { VARSAYILAN_KDV_ORANI } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { prisma } from "@/lib/prisma";
 import { kodKosulu } from "@/lib/varyant-arama-kurali";
+import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 
 /**
  * ============================================================================
@@ -114,8 +115,20 @@ export async function urunZemini(
   const temiz = kod.trim();
   if (temiz === "") return null;
 
-  const varyant = await prisma.productVariant.findFirst({
-    where: { isActive: true, OR: kodKosulu(temiz) },
+  /**
+   * ⛔ SESSİZ SEÇİM YOK (21.09.2026). Bir kod iki aktif varyanta uyuyorsa
+   * zemin KURULMAZ. Yanlış ürünün maliyetiyle kurulan bir fiyat denemesi
+   * kârlı görünüp zarar ettirirdi; susmak yanlış cevaptan iyidir.
+   *
+   * ⚠ VE BU SESSİZLİK BEYAN EDİLİYOR: çağıran bugün `null`ı "ürün
+   * bulunamadı" diye çiziyor, oysa sebep "birden fazla bulundu". Ayrım
+   * ekranda HENÜZ görünmüyor — açık kalem olarak panoda duruyor.
+   */
+  const cozum = await kodlaVaryantCoz(temiz);
+  if (cozum.durum !== "TEK") return null;
+
+  const varyant = await prisma.productVariant.findUnique({
+    where: { id: cozum.id },
     select: {
       id: true,
       name: true,

@@ -235,6 +235,7 @@
     "kopyalandi": "kopyalandı",
     "kopyalanamadi": "kopyalanamadı",
     "kodBulunamadi": "\"{kod}\" koduna ait ürün bulunamadı.",
+    "kodCokEslesti": "“{kod}” {adet} ürüne birden uyuyor. Aşağıdaki listeden hangisi olduğunu seçin — sistem sizin yerinize seçmez.",
     "kalemEklendi": "{urun} eklendi ({adet} adet).",
     "aramaHatasi": "Arama sırasında bir hata oluştu.",
     "barkodKamera": "Ürün barkodunu okut",
@@ -407,6 +408,8 @@
     "benzerVarOlanaGit": "Var olana git",
     "benzerFarkliUrun": "Hayır, bu farklı ürün — devam et",
     "kanalKodundanEslesti": "{hesap} kodu: {kod}",
+    "tumVaryantlarPasif": "Varyantları pasif — aramada çıkmaz",
+    "bazıVaryantlarPasif": "{adet} varyantı pasif",
     "varyantSayisi": "{sayi} varyant",
     "alimGir": "Alım gir"
   },
@@ -3666,6 +3669,7 @@
     "hataSayimYok": "Sayım bulunamadı.",
     "hataSayimKapali": "Bu sayım kapandı; yeni okuma girilemez.",
     "hataBulunamadi": "Bu kod hiçbir üründe bulunamadı.",
+    "hataCokEslesme": "Bu kod birden çok ürüne uyuyor — hangisi olduğu belirsiz, adet YAZILMADI. Ürün kartlarından kodu düzeltip tekrar okutun.",
     "hataBosKod": "Boş kod okutulamaz."
   },
   "Okuma": {
@@ -3685,6 +3689,7 @@
     "siparisSatiri": "{kod} · {adet} adet · {kanal}",
     "kodsuzSiparis": "(sipariş no girilmemiş)",
     "bulunamadi": "Bu kod hiçbir alanda bulunamadı: Barkod (EAN), Firma SKU, SKU, Kanal SKU, gönderi numarası.",
+    "cokEslesme": "“{kod}” {adet} ürüne birden uyuyor — hangisi olduğu belirsiz, bu yüzden hiçbiri açılmadı. Ürün kartlarından kodu düzeltin.",
     "gosterTeklifi": "Elindeki ürünün hangisi olduğunu biliyorsan gösterebilirsin. İstersen atla — hiçbir şey beklemiyor.",
     "gosterAra": "Ürünü ara (ad veya kod)",
     "gosterSec": "Bu ürün",
@@ -3989,6 +3994,7 @@
     "onceRafOkut": "Ürün okundu ama raf seçili değil — önce raf etiketini okutun.",
     "rafDegisti": "Raf değişti: {kod}. Bundan sonraki ürünler bu rafa yazılır.",
     "bulunamadi": "Bu kod ne ürün ne raf olarak bulundu: {kod}",
+    "cokEslesme": "“{kod}” {adet} ürüne birden uyuyor — hangisi olduğu belirsiz. Ürün kartlarından kodu düzeltin.",
     "gecmisBasligi": "Bu oturumda yerleştirilen {adet} ürün",
     "tasindi": "Önceki yeri: {onceki}",
     "ilkKez": "İlk kez yerleştirildi — daha önce yeri kayıtlı değildi.",

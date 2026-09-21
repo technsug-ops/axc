@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { acikOturumVarMi, bosSayimKodu } from "@/lib/sayim/oturum";
 import { kodKosulu } from "@/lib/varyant-arama-kurali";
+import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 import { yetkiIste } from "@/lib/yetki";
 
 /**
@@ -176,8 +177,18 @@ export async function sayimaOkut(
    * ⚠ Öteki 5 çağıran `isActive: true` KOYAR ve bekçi bunu ayrıca ölçer;
    * yani buradaki yokluk kuralın istisnası, kuralın çöküşü değil.
    */
-  const varyant = await prisma.productVariant.findFirst({
-    where: { OR: kodKosulu(temiz) },
+  /**
+   * ⛔ SESSİZ SEÇİM BURADA EN TEHLİKELİSİ. Sayım SON SÖZDÜR; bir kod iki
+   * varyanta uyuyorken rastgele birine adet yazmak, sayılmamış bir rafı
+   * sayılmış göstermek olurdu. Üstelik `pasifDahil` kipi çakışma ihtimalini
+   * ARTIRIYOR: pasife alınmış ikizler kapsama geri giriyor.
+   */
+  const cozum = await kodlaVaryantCoz(temiz, { pasifDahil: true });
+  if (cozum.durum === "YOK") return { hata: "BULUNAMADI" };
+  if (cozum.durum === "COK") return { hata: "COK_ESLESME" };
+
+  const varyant = await prisma.productVariant.findUnique({
+    where: { id: cozum.id },
     select: { id: true, sku: true, product: { select: { name: true } } },
   });
   if (!varyant) return { hata: "BULUNAMADI" };

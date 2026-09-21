@@ -82,6 +82,14 @@ export function Yerlestirici() {
       case "BULUNAMADI":
         setUrunNotu(t("bulunamadi", { kod: cevap.kod }));
         break;
+      /*
+       * ⛔ "BULUNAMADI" DEĞİL — TERSİ. Bu kod BİRDEN ÇOK ürüne uyuyor.
+       * İkisi aynı mesaja indirilseydi depocu var olan ürünü yeniden
+       * tanımlamaya kalkardı; yani mesaj, arızayı besleyen bir iş üretirdi.
+       */
+      case "COK_ESLESME":
+        setUrunNotu(t("cokEslesme", { kod: cevap.kod, adet: cevap.adet }));
+        break;
     }
   };
 

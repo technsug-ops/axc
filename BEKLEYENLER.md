@@ -13,6 +13,137 @@
 
 ---
 
+## 🔴 K231 — BİR KOD İKİ ÜRÜNE UYUYORDU, SİSTEM SESSİZCE BİRİNİ SEÇİYORDU · 21.09.2026 · [KOD KOŞTU + CANLI YAZIM YAPILDI — HALİL TESTİ BEKLİYOR]
+
+**KULLANICI BİLDİRİMİ:** _"Bu üründen 2 tane stok kaydı var, birinde 4 stok
+var, diğeri sıfır; sipariş geldi, 0 stoktan düşmeye çalışıyor, düşemiyor,
+siparişi kaydedemedim."_ (`HBCV00000R0H0K` · barkod `97393839282`)
+
+⛔ **EKRANDAKİ RAKAM DOĞRUYDU — VE ARIZA TAM BU YÜZDEN GİZLENDİ.**
+`Stok yetersiz (HBCV00000R0H0K: 0/1)` cümlesi kusursuzdu: o varyantın stoğu
+GERÇEKTEN sıfırdı. Yanlış olan sayı değil, **kodun hangi kayda çözüldüğüydü.**
+Doğru rakam, yanlış hedefi görünmez yaptı.
+
+### MEKANİZMA — `findFirst` + SIRALAMA YOK
+
+Beş ekran (sonradan **altı** çıktı) şunu yapıyordu:
+
+    prisma.productVariant.findFirst({ where: { OR: kodKosulu(kod) } })
+
+Bir kod iki aktif varyanta uyduğunda hangisinin geleceği **veritabanının o
+anki sırasına** kalıyor ve **kaybeden sessizce düşüyor** — ne hata, ne uyarı.
+_(Anayasa: "seçici ölçüt, evren genişlediğinde ne yapacağıyla tasarlanır —
+bugün doğru cevabı vermesi, sınanmış olduğunu göstermez.")_
+
+### KÖK — PAZARYERİ KODU KİMLİK ALANINA YAZILMIŞ
+
+Üç çiftin üçünde de aynı şey: bir kanal kodu ikinci bir varyantın
+`sku`/`firmaSku`/`barkod` alanında duruyor. Anayasadaki **üç kod rolü**
+ayrımının ihlali — Kanal SKU bir KİMLİK değil, eşleştirmedir.
+
+### ÖLÇÜM — `npm run canli:kod-carpismasi` (salt okuma, tekrar koşulabilir)
+
+    TABAN 1865 aktif varyant · 4306 benzersiz kod · ÇARPIŞAN KÜME 3
+
+    HBCV00000R0H0K · 97393839282   Philips BHD500    stok 0 <-> 4  ← bildirilen
+    221000567899                   TEFAL bıçak seti  stok 0 <-> 2
+    887961643367                   Fisher-Price      stok 0 <-> 1
+
+**İkisi henüz patlamamıştı** — o ürünlere sipariş gelmemişti.
+
+⚠ **ÖLÇÜM EŞDEĞERLERİ AÇAR VE BU ŞART:** `887961643367` ile `0887961643367`
+iki ayrı dizedir, `@unique` ikisini de kabul eder — ama arama onları **DENK**
+sayar (UPC-A ↔ EAN-13). Ham dize karşılaştırması bu çarpışmayı **göremezdi.**
+
+### YAPILAN ① — CANLI YAZIM (`npm run canli:carpisma-onar`)
+
+Kuru koşum gösterildi, sonra `--uygula`. **4 kayıt · iz bırakıldı · yerel
+anlık görüntü alındı** (`veri/ozel/carpisma-onarim-*.json`).
+
+· bloke siparişin kalemi gerçek varyanta çevrildi (sipariş ONAYSIZDI, stok
+  hareketi henüz yazılmamıştı — ledger'a dokunulmadı)
+· üç ikiz varyant pasife alındı
+
+⚠ **SİLİNMEDİ — GEÇMİŞ TAŞIYORLAR:** Philips 2, TEFAL **17**, Fisher **11**
+satış kalemi. Pasife almanın neyi gizlediği ÖNCE ölçüldü: satış ekseni/ciro/kâr
+`Sale` üzerinden okunuyor (**değişmez**), `/urunler` ve `/stok` `isActive`
+süzmüyor (**değişmez**), raporun stok ekseni süzüyor ama üçünün de stoğu `0`.
+
+⚠ **BETİK KİMLİĞE KİLİTLİ VE `--geri` TAŞIYOR.** Geri alma ölçütü **kodun
+içindeki sabit kimlik listesi** — veritabanı alanında değil, yani kırpılamaz.
+_(Anayasa: "geri alma yolu saklanan listeye değil yeniden hesaplanabilir
+ölçüte dayanır.")_
+
+**DOĞRULANDI (iz değil, VERİ):** çarpışma **3 → 0** · aktif varyant 1865 → 1862
+· sipariş artık `KUC-BR-BHD50-01`, stok **4**, onay bekliyor.
+
+### YAPILAN ② — SESSİZ SEÇİM KAPATILDI
+
+Ortak gövde: `src/lib/varyant-kod-cozumu.ts` → **seçmez, SAYAR**
+(`YOK` · `TEK` · `COK`). `YOK` ile `COK` ayrı tutuluyor; tek kefeye konsaydı
+operatör var olan ürünü **yeniden tanımlamaya** kalkar ve ikiz sayısı artardı
+— arızayı besleyen bir mesaj.
+
+⭐ **DESEN YASAĞI DOSYA LİSTESİNİ YENDİ — VE HEMEN KANITLADI.** Ben beş
+çağıran saymıştım; bekçi **altıncısını** buldu (`okut/sayim-actions.ts`).
+Elle liste tutulsaydı sayım yolu sessizce korumasız kalırdı — ve orası en
+tehlikelisi: **sayım son sözdür**, yanlış varyanta yazılan adet ledger'a girer.
+
+Ekranlar artık **söylüyor**: satış formu · alım formu (kodu arama kutusuna
+yazıp listeyi açıyor) · `/okut` · `/yerlestir` · sayım kipi.
+⛔ Ve `/okut` çakışmada **eşleştirme teklif ETMİYOR** — teklif etseydi zaten
+fazla olan bağlara bir tane daha eklenirdi.
+
+### YAPILAN ③ — DEĞİŞİKLİK EKRANDA GÖRÜNÜR OLDU
+
+`/urunler` yalnız **ürün** düzeyini gösteriyordu; aramayı süzen alan ise
+**varyantın** `isActive`i. Pasife alınan üç kayıt ekranda tamamen normal
+görünüyordu. Rozet varyant düzeyine bağlandı ve **"hepsi" ile "bazısı" ayrı
+yazılıyor** — tek varyantı pasif olan çok varyantlı bir ürün hâlâ satılabilir.
+
+### ÖLÇÜLDÜ
+
+`kod-cozumu:dogrula` **18 ölçüt** · `kod-cozumu-mutasyon` **7/7** (zararsız
+sağlama + kaldıran + fazladan) · `arama:dogrula` 124 · `i18n` · `tsc` · `lint`
+
+⛔ **ÜÇ MUTASYON İLK TURDA KAÇTI VE BEKÇİYİ DÜZELTTİRDİ** — üçü de anayasanın
+adı konmuş körlükleri: ① `durum: "COK"` deseni **TİP TANIMINDA** da geçiyordu,
+dönüşü `YOK`a çeviren mutasyon yeşil geçti · ② satış formunun dal **KOŞULU**
+`false` yapıldı, sözlük anahtarı dosyada kaldı · ③ okuma ekranında aynısı.
+Ölçütler koşul+sonuç **aynı desende** olacak şekilde yeniden yazıldı.
+
+⚠ **VE `arama:dogrula` İKİ KEZ KIRMIZI YANDI — İKİSİ DE "ÖLÇÜTÜM ESKİDİ".**
+Refaktör onun aradığı çapayı (`kodKosulu(temiz)`) sildi. Ölçüt susturulmadı,
+taşındı. İkincisi daha öğretici: taramayı yorumsuz okumaya çevirince ÜÇ
+ekranın `PASİF DAHİL:` **beyanı** kayboldu ve bu kez onlar suçlandı —
+**çağrı koddan, beyan yorumdan** okunmak zorundaymış.
+
+### AÇIK
+
+- [ ] **Halil testi ①** — `/satislar` → sipariş **4936492065** → **Onayla**.
+      Ürün `Philips BHD500/00 5000 Series` olmalı, stok **4/1** yetmeli,
+      onay geçmeli. _(Rakam: onaydan sonra stok **3**.)_
+- [ ] **Halil testi ②** — `/urunler`de `HBCV00000R0H0K` aratın: **tek** kayıt
+      çıkmalı ve o kayıt stoklu olan olmalı. İkiz kayıt **"Varyantları pasif"**
+      rozetiyle görünmeli (kaybolmamalı — geçmişi duruyor).
+- [ ] **Halil testi ③** — `/okut`ta `887961643367` okutun: artık **tek** ürün
+      açılmalı (Fisher-Price, stok 1).
+- [ ] **PASİFE ALMA DÜĞMESİ YOK — GERİ ALMA BUGÜN BETİKLE.** `isActive` alanı
+      var, `/urunler` rozeti ÇİZİYOR, ama o durumu üreten hiçbir düğme yok
+      (ölçüldü). Geri alma yolu: `npm run canli:carpisma-onar -- --geri`.
+      Ekrandan yapılabilmesi ayrı bir kalem — _kapatılamayan madde kullanıcıyı
+      yıkıcı işleme iter_ kuralının borcu.
+- [ ] **Fiyat denemesi çakışmada SUSUYOR ama SEBEBİNİ SÖYLEMİYOR.**
+      `urun-zemini` çok eşleşmede `null` dönüyor ve çağıran onu "ürün
+      bulunamadı" diye çiziyor. Yanlış ürünle zemin kurmaktan iyi, ama
+      İlke #5'e göre eksik.
+- [ ] **İKİZLER NASIL DOĞDU — ÖLÇÜLMEDİ.** Üçü de bir içe aktarmadan geliyor
+      (`dosya-maliyet-*` notlu hareketler). Hangi akışın pazaryeri kodunu
+      KİMLİK alanına yazdığı bulunmadan **dördüncüsü doğabilir**; bugünkü
+      bekçi çarpışmayı ekranda SÖYLER ama doğmasını engellemez.
+
+---
+
 ## 🔶 K230 — TEK KAPI SÖZÜ TAMAMLANDI + TARİFE AYNASI · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI SORUSU:** _"Bu ikisi arasındaki fark nedir, neden iki tane var?"_

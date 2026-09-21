@@ -6,6 +6,7 @@ import { TOPLU_TASIMA_EYLEMI, izListesi, tasimaKarari } from "@/lib/depo/tasima"
 import { YERLESTIRME_EYLEMI, yerlestirmeKarari } from "@/lib/depo/yerlestirme";
 import { prisma } from "@/lib/prisma";
 import { kodKosulu } from "@/lib/varyant-arama-kurali";
+import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 import { yetkiIste } from "@/lib/yetki";
 import { izYaz } from "@/lib/iz";
 
@@ -85,7 +86,14 @@ export type OkumaCevabi =
   | { durum: "RAF_DEGISTI"; raf: SeciliRaf }
   | { durum: "RAF_SECILMEDI" }
   | { durum: "PASIF_RAF"; kod: string }
-  | { durum: "BULUNAMADI"; kod: string };
+  | { durum: "BULUNAMADI"; kod: string }
+  /**
+   * ⛔ "BULUNAMADI" İLE AYNI KEFEYE KONMAZ. Biri "böyle bir ürün yok",
+   * öteki "birden fazla var". İkisi tek mesaja indirilseydi operatör var
+   * olan bir ürünü YENİDEN TANIMLAMAYA kalkardı — yani ikiz sayısını
+   * artıran bir mesaj üretmiş olurduk.
+   */
+  | { durum: "COK_ESLESME"; kod: string; adet: number };
 
 /**
  * OKUTULAN KODU İŞLE — ekranın tek girişi.
@@ -103,17 +111,31 @@ export async function koduIsle(
   const temiz = kod.trim();
   if (!temiz) return { durum: "BULUNAMADI", kod: temiz };
 
-  const varyant = await prisma.productVariant.findFirst({
-    where: { isActive: true, OR: kodKosulu(temiz) },
-    select: {
-      id: true,
-      sku: true,
-      name: true,
-      locationId: true,
-      location: { select: { code: true } },
-      product: { select: { name: true } },
-    },
-  });
+  /**
+   * ⛔ SESSİZ SEÇİM YOK (21.09.2026 canlı arızası). `findFirst` sıralamasız
+   * olduğu için bir kod iki aktif varyanta uyduğunda veritabanının o anki
+   * sırası kazanıyordu ve kaybeden görünmüyordu. Artık kaç karşılık olduğu
+   * SAYILIYOR; birden çoksa bu ekran seçmez.
+   */
+  const cozum = await kodlaVaryantCoz(temiz);
+  if (cozum.durum === "COK") {
+    return { durum: "COK_ESLESME", kod: temiz, adet: cozum.adaylar.length };
+  }
+
+  const varyant =
+    cozum.durum === "TEK"
+      ? await prisma.productVariant.findUnique({
+          where: { id: cozum.id },
+          select: {
+            id: true,
+            sku: true,
+            name: true,
+            locationId: true,
+            location: { select: { code: true } },
+            product: { select: { name: true } },
+          },
+        })
+      : null;
 
   /**
    * ⚠ RAF YALNIZ ÜRÜN BULUNAMAYINCA SORULUR — sıranın gerekçesi

@@ -497,6 +497,18 @@ export function Okuyucu() {
                 </div>
               ) : null}
             </div>
+          ) : sonuc.cokEslesme > 0 ? (
+            /*
+              ⛔ "BULUNAMADI" DEĞİL — TERSİ, VE EŞLEŞTİRME TEKLİFİ DE
+              ÇIKMAZ. Kod birden çok AKTİF ürüne uyuyor; burada eşleştirme
+              teklif etmek, zaten fazla olan bağlara bir tane daha eklemek
+              olurdu — yani ekran arızayı BESLERDİ.
+            */
+            <div className="space-y-3">
+              <p className="text-sm">
+                {t("cokEslesme", { kod: sonuc.kod, adet: sonuc.cokEslesme })}
+              </p>
+            </div>
           ) : (
             <div className="space-y-3">
               {/* ⚠ `text-muted-foreground`: bu bir uyarı değil, bilgi. Kırmızı YOK. */}

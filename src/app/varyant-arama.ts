@@ -1,7 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { aramaKosulu, kodKosulu } from "@/lib/varyant-arama-kurali";
+import { aramaKosulu } from "@/lib/varyant-arama-kurali";
+import {
+  kodlaVaryantCoz,
+  type KodAdayi,
+} from "@/lib/varyant-kod-cozumu";
 import {
   VARYANT_SECIMI,
   varyantiOzetle,
@@ -49,21 +53,42 @@ export async function varyantAra(sorgu: string): Promise<VaryantSonucu[]> {
  * Barkod okuyucudan / kameradan gelen kod için kullanılır: kısmi eşleşme
  * istemeyiz, yanlış ürün eklemek kötü olur.
  */
-export async function varyantKodlaBul(
-  kod: string,
-): Promise<VaryantSonucu | null> {
+export type KodBulmaSonucu =
+  | { durum: "TEK"; varyant: VaryantSonucu }
+  | { durum: "YOK" }
+  | { durum: "COK"; adaylar: KodAdayi[]; tavandaMi: boolean };
+
+export async function varyantKodlaBul(kod: string): Promise<KodBulmaSonucu> {
   await yetkiIste("urun.gor");
 
-  const temiz = kod.trim();
-  if (!temiz) return null;
+  /**
+   * ⛔ ARTIK `findFirst` YOK — VE BU BİR CANLI ARIZANIN BEDELİ.
+   * 21.09.2026: `HBCV00000R0H0K` iki aktif varyanta birden uyuyordu ve
+   * `findFirst` sıralamasız olduğu için veritabanının o anki sırası
+   * kazanıyordu. Stoğu SIFIR olan ikiz seçildi, sipariş onaylanamadı ve
+   * ekrandaki `Stok yetersiz (0/1)` rakamı DOĞRU olduğu için kimse kodu
+   * suçlamadı — arıza ürün kartında arandı.
+   *
+   * Çözüm kodu tekilleştirmek DEĞİL (veriyi temizlemek ayrı iştir), bu
+   * ekranın **seçmeyi bırakmasıdır**: kaç karşılık olduğu sayılır ve
+   * birden çoksa karar operatöre bırakılır.
+   */
+  const cozum = await kodlaVaryantCoz(kod);
+  if (cozum.durum === "YOK") return { durum: "YOK" };
+  if (cozum.durum === "COK") {
+    return { durum: "COK", adaylar: cozum.adaylar, tavandaMi: cozum.tavandaMi };
+  }
 
-  const varyant = await prisma.productVariant.findFirst({
-    where: {
-      isActive: true,
-      OR: kodKosulu(temiz),
-    },
+  /**
+   * ⚠ TAM KAYIT AYRI SORGUYLA GELİR. Çözüm gövdesi yalnız KİMLİK okur;
+   * her çağıranın kendi `select`i var ve onu ortak gövdeye taşımak beş
+   * ekranın ihtiyacını tek bir seçime hapsederdi.
+   */
+  const varyant = await prisma.productVariant.findUnique({
+    where: { id: cozum.id },
     select: VARYANT_SECIMI,
   });
 
-  return varyant ? varyantiOzetle(varyant) : null;
+  /** Kayıt iki sorgu arasında pasife alınmış olabilir — sessizce `TEK` denmez. */
+  return varyant ? { durum: "TEK", varyant: varyantiOzetle(varyant) } : { durum: "YOK" };
 }

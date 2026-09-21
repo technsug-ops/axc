@@ -132,6 +132,14 @@ export default async function UrunlerSayfasi({
           companySku: true,
           barcode: true,
           isDefault: true,
+          /**
+           * ⛔ VARYANT AKTİFLİĞİ LİSTEDE ÇEKİLİR (21.09.2026). Ekran bugüne
+           * kadar yalnız ÜRÜN düzeyini gösteriyordu; oysa aramayı süzen alan
+           * bu. Pasife alınan üç ikiz kayıt ekranda TAMAMEN normal görünüyordu
+           * — durum değişti, ekran söylemedi.
+           * _(Anayasa: "kaydedilen ≠ görünen".)_
+           */
+          isActive: true,
           // Eşleşmenin kanal kodundan geldiğini söyleyebilmek için çekilir.
           // Arama yokken `take: 0` — hiç satır gelmez, maliyeti yoktur.
           // (Koşulu `false` yapmak tipi ikiye bölüyor; take ile şekil sabit.)
@@ -304,6 +312,31 @@ export default async function UrunlerSayfasi({
                               {!urun.isActive ? (
                                 <Badge variant="secondary">
                                   {ortak("pasif")}
+                                </Badge>
+                              ) : null}
+                              {/*
+                                ⛔ VARYANT DÜZEYİ AYRI ROZETTİR. Aramayı süzen
+                                alan varyantın `isActive`i; ürün aktif olduğu
+                                hâlde varyantı pasif olabilir ve o ürün hiçbir
+                                okutmada ÇIKMAZ. Rozet olmasaydı operatör
+                                "neden bulamıyorum" diye kodu suçlardı.
+
+                                ⚠ "HEPSİ" ile "BAZISI" AYRI YAZILIR: tek
+                                varyantı pasif olan çok varyantlı bir ürün
+                                hâlâ satılabilir; ikisini tek rozete indirmek
+                                çalışan bir ürünü ölü göstermek olurdu.
+                              */}
+                              {urun.variants.length > 0 &&
+                              urun.variants.every((v) => !v.isActive) ? (
+                                <Badge variant="secondary">
+                                  {t("tumVaryantlarPasif")}
+                                </Badge>
+                              ) : urun.variants.some((v) => !v.isActive) ? (
+                                <Badge variant="outline">
+                                  {t("bazıVaryantlarPasif", {
+                                    adet: urun.variants.filter((v) => !v.isActive)
+                                      .length,
+                                  })}
                                 </Badge>
                               ) : null}
                               {(() => {

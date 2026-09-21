@@ -235,6 +235,7 @@
     "kopyalandi": "",
     "kopyalanamadi": "",
     "kodBulunamadi": "",
+    "kodCokEslesti": "",
     "kalemEklendi": "",
     "aramaHatasi": "",
     "barkodKamera": "",
@@ -407,6 +408,8 @@
     "benzerVarOlanaGit": "",
     "benzerFarkliUrun": "",
     "kanalKodundanEslesti": "",
+    "tumVaryantlarPasif": "",
+    "bazıVaryantlarPasif": "",
     "varyantSayisi": "",
     "alimGir": ""
   },
@@ -3666,6 +3669,7 @@
     "hataSayimYok": "",
     "hataSayimKapali": "",
     "hataBulunamadi": "",
+    "hataCokEslesme": "",
     "hataBosKod": ""
   },
   "Okuma": {
@@ -3685,6 +3689,7 @@
     "siparisSatiri": "",
     "kodsuzSiparis": "",
     "bulunamadi": "",
+    "cokEslesme": "",
     "gosterTeklifi": "",
     "gosterAra": "",
     "gosterSec": "",
@@ -3989,6 +3994,7 @@
     "onceRafOkut": "",
     "rafDegisti": "",
     "bulunamadi": "",
+    "cokEslesme": "",
     "gecmisBasligi": "",
     "tasindi": "",
     "ilkKez": "",

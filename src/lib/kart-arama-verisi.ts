@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { VARYANT_SECIMI, varyantiOzetle, type VaryantSonucu } from "@/lib/varyant-ozet";
 import { aramaKosulu, kodKosulu } from "@/lib/varyant-arama-kurali";
+import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 
 /**
  * ============================================================================
@@ -109,11 +110,14 @@ export async function kartKodlaBul(kod: string): Promise<{ id: string } | null> 
   const temiz = kod.trim();
   if (temiz === "") return null;
 
-  const dogrudan = await prisma.productVariant.findFirst({
-    where: { isActive: true, OR: kodKosulu(temiz) },
-    select: { id: true },
-  });
-  if (dogrudan) return dogrudan;
+  /**
+   * ⛔ SESSİZ SEÇİM YOK (21.09.2026). İki karşılığı olan bir kod, ürün
+   * kartını rastgele birine açardı. Artık tek karşılık yoksa doğrudan yol
+   * kullanılmaz ve sipariş kodu yoluna düşülür — o yol da tekilliği
+   * kendi ölçütüyle sınıyor (`varyantlar.length === 1`).
+   */
+  const cozum = await kodlaVaryantCoz(temiz);
+  if (cozum.durum === "TEK") return { id: cozum.id };
 
   const varyantlar = [...new Set(await siparisKodundanVaryantlar(temiz, true))];
   return varyantlar.length === 1 ? { id: varyantlar[0] } : null;

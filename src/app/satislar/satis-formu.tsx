@@ -326,13 +326,31 @@ export function SatisFormu({
     setBarkodMesaji(null);
 
     try {
-      const varyant = await varyantKodlaBul(kod);
-      if (!varyant) {
+      const sonuc = await varyantKodlaBul(kod);
+      if (sonuc.durum === "YOK") {
         // Bulunamadıysa kutuyu TEMİZLEMİYORUZ: yazılan metin arama olarak
         // kalsın, kullanıcı aşağıdaki sonuçlardan seçebilsin.
         setBarkodMesaji(ortak("kodBulunamadi", { kod }));
         return;
       }
+      /**
+       * ⛔ ÇOK EŞLEŞME SESSİZCE ÇÖZÜLMEZ — SORULUR. Eskiden `findFirst`
+       * birini seçiyordu ve kaybeden görünmüyordu; 21.09.2026'da stoğu
+       * SIFIR olan ikiz seçildi ve sipariş onaylanamadı.
+       *
+       * ⚠ AYRI BİR SEÇİM DİYALOĞU AÇILMADI: kod arama kutusuna yazılıyor,
+       * böylece aşağıdaki liste adayları zaten gösteriyor ve operatör
+       * oradan seçiyor. Var olan makineyi kullanmak, ikinci bir seçim
+       * ekranı yazıp ikisini ayrı ayrı bakımda tutmaktan iyidir.
+       */
+      if (sonuc.durum === "COK") {
+        setSorgu(kod);
+        setBarkodMesaji(
+          ortak("kodCokEslesti", { kod, adet: sonuc.adaylar.length }),
+        );
+        return;
+      }
+      const varyant = sonuc.varyant;
 
       await kalemEkle(varyant, adet);
       setBarkodMesaji(

@@ -24,6 +24,7 @@ import {
   satisKodKosulu,
   type KodRolu,
 } from "@/lib/varyant-arama-kurali";
+import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 import {
   VARYANT_SECIMI,
   varyantiOzetle,
@@ -116,6 +117,14 @@ export type OkumaSonucu = {
   siparisler: AcikSiparis[];
   /** Dolu ise okutulan kod bir RAF kodudur; ürün/sipariş yerine bu çizilir. */
   raf?: RafKaydi;
+  /**
+   * Kod birden çok AKTİF varyanta uyuyorsa kaç tane olduğu; tekse `0`.
+   *
+   * ⛔ SIFIR "ölçmedim" DEĞİL "tek karşılık var" DEMEKTİR — alan her
+   * okumada yazılır. Yalnız çakışmada yazılsaydı `undefined` iki anlama
+   * gelirdi ve ekran hangisi olduğunu bilemezdi.
+   */
+  cokEslesme: number;
 };
 
 
@@ -135,10 +144,21 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
   const temiz = kod.trim();
   if (!temiz) return null;
 
-  const varyant = await prisma.productVariant.findFirst({
-    where: { isActive: true, OR: kodKosulu(temiz) },
-    select: VARYANT_SECIMI,
-  });
+  /**
+   * ⛔ SESSİZ SEÇİM YOK (21.09.2026 canlı arızası). `findFirst` sıralamasız
+   * olduğu için bir kod iki aktif varyanta uyduğunda veritabanının o anki
+   * sırası kazanıyordu ve kaybeden görünmüyordu. Artık kaç karşılık olduğu
+   * SAYILIYOR; birden çoksa bu ekran seçmez.
+   */
+  const cozum = await kodlaVaryantCoz(temiz);
+  const cokEslesme = cozum.durum === "COK" ? cozum.adaylar.length : 0;
+  const varyant =
+    cozum.durum === "TEK"
+      ? await prisma.productVariant.findUnique({
+          where: { id: cozum.id },
+          select: VARYANT_SECIMI,
+        })
+      : null;
 
   /**
    * AÇIK SİPARİŞLER — yalnız varyant bulunduysa sorulur. Bulunamamış bir
@@ -410,6 +430,7 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
         kod: temiz,
         /** ⚠ Kova YAZILMADI; bu değer yalnız tipi doldurur, sayıma girmez. */
         kova: "BILINMEYEN",
+        cokEslesme: 0,
         alan: null,
         urun: null,
         siparisler: [],
@@ -472,6 +493,7 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
     kova,
     alan,
     urun: varyant ? varyantiOzetle(varyant) : null,
+    cokEslesme,
     siparisler: tumSiparisler,
   };
 }

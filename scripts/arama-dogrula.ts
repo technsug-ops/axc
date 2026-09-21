@@ -951,19 +951,38 @@ console.log("");
   );
 
   /* -- SAYIM YOLU: PASIFI COZER (BEYANLI ISTISNA) -------------------- */
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ VE ÇEVRİLDİ (21.09.2026) — KOD YANLIŞ DEĞİLDİ.
+   * Sayım yolu `kodKosulu(temiz)`yi DOĞRUDAN çağırıyordu; artık sessiz
+   * seçimi kapatan ortak çözüm gövdesinden geçiyor (`kodlaVaryantCoz`).
+   * Eski çapa (`kodKosulu(temiz)`) refaktörle silindi ve bekçi onu
+   * bulamayınca kırmızı yandı. **Eski gerekçe silinmiyor:** ölçülen şey
+   * hâlâ aynı — sayım yolu pasifi ELEMEZ ve bunu BEYAN eder.
+   * _(Anayasa: "dize, davranışın vekilidir — ve refaktör vekili eskitir.")_
+   */
   const sayimKaynagi = readFileSync("src/app/okut/sayim-actions.ts", "utf8");
-  const sayimCagri = sayimKaynagi.indexOf("kodKosulu(temiz)");
+  const sayimCagri = sayimKaynagi.indexOf("kodlaVaryantCoz(temiz");
   kontrol("sayım yolu ortak gövdeyi çağırıyor", sayimCagri >= 0);
   if (sayimCagri >= 0) {
-    /** Çağrıdan geriye dar bir pencere: `where` bloğu bu aralıkta. */
-    const pencere = sayimKaynagi.slice(Math.max(0, sayimCagri - 120), sayimCagri + 60);
+    /** Çağrıdan ileriye dar bir pencere: kip seçeneği bu aralıkta. */
+    const pencere = sayimKaynagi.slice(sayimCagri, sayimCagri + 120);
     kontrol(
-      "sayım yolu varyant düzeyinde isActive SÜZMÜYOR (pasif mal da rafta)",
-      !pencere.includes("isActive: true"),
+      "sayım yolu pasifi ELEMİYOR (pasif mal da rafta)",
+      pencere.includes("pasifDahil: true"),
     );
     kontrol(
       "sayım yolundaki bu yokluk BEYAN edilmiş (unutma değil)",
       sayimKaynagi.includes("BİLEREK YOK"),
+    );
+    /**
+     * ⛔ VE SESSİZ SEÇİM BURADA DA KAPALI. `pasifDahil` çakışma ihtimalini
+     * ARTIRIYOR (pasife alınmış ikizler kapsama geri giriyor); "COK" dalı
+     * işlenmezse sayım rastgele bir varyanta adet yazar — ve sayım SON
+     * SÖZDÜR, yanlış yazılan adet ledger'a girer.
+     */
+    kontrol(
+      "sayım yolu ÇOK EŞLEŞMEDE adet yazmıyor",
+      /durum === "COK"[\s\S]{0,80}?hata: "COK_ESLESME"/.test(sayimKaynagi),
     );
   }
 
@@ -985,7 +1004,16 @@ console.log("");
    * küçük harfe indirgenerek yapılıyor.
    * _(Anayasa: "dize, davranışın vekilidir — ve refaktör vekili eskitir".)_
    */
+  /**
+   * ⚠ İKİNCİ BEYAN BİÇİMİ EKLENDİ (21.09.2026): çözüm gövdesi pasifi
+   * KOŞULLU eliyor (`pasifDahil ? {} : { isActive: true }`), yani ne düz
+   * `isActive: true` taşıyor ne de "pasif dahil" diyor — ikisi birden.
+   * Ölçüt gevşetilmedi, İKİNCİ bir geçerli biçim tanındı: kipi AÇIKÇA
+   * seçenek olarak alan bir gövde, kararı çağırana bırakmıştır ve kararın
+   * kendisi o çağıranda ölçülür.
+   */
   const BEYAN_METNI = "PASİF DAHİL:";
+  const KIP_BEYANI = "pasifDahil";
   const GOVDE_ADLARI = ["aramaKosulu", "kodKosulu", "kodKosuluToplu"];
   const kaynaklar = readdirSync("src", { recursive: true, encoding: "utf8" })
     .filter((p) => typeof p === "string" && (p.endsWith(".ts") || p.endsWith(".tsx")))
@@ -1024,7 +1052,25 @@ console.log("");
   const cagiranlar: string[] = [];
   const beyansiz: string[] = [];
   for (const p of kaynaklar) {
-    const metin = readFileSync("src/" + p, "utf8");
+    /**
+     * ⛔ YORUMSUZ OKUNUR (21.09.2026 düzeltmesi). Bu tarama ham metni
+     * okuyordu ve bir YORUM İÇİNDEKİ örnek çağrıyı gerçek çağrı saydı:
+     * `varyant-kod-cozumu.ts`nin başlığı, kapattığı hatayı ANLATMAK için
+     * eski deseni yazıyor. Anayasa bunu adıyla anıyor — "bir yasağı ANLATAN
+     * yorum, o yasağı ÇİĞNEMİŞ sayılmaz."
+     *
+     * ⚠ Ve bu YALANCI KIRMIZIYDI: olmayan bir ihlali varmış gibi gösterip
+     * düzeltilmiş bir dosyayı suçluyordu.
+     *
+     * ⛔ AMA İKİ METİN GEREKİYOR, TEK DEĞİL — VE İLK DENEMEDE BU ATLANDI:
+     * yorumları atınca ÜÇ ekranın beyanı da kayboldu (`PASİF DAHİL:` bir
+     * YORUMDUR, olması gereken de budur) ve bekçi bu kez onları suçladı.
+     * **ÇAĞRI koddan, BEYAN yorumdan okunur.**
+     */
+    const ham = readFileSync("src/" + p, "utf8");
+    const metin = ham
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "");
     if (!metin.includes("varyant-arama-kurali")) continue;
     for (const ad of yerelAdlar(metin)) {
       let k = metin.indexOf(ad + "(");
@@ -1034,7 +1080,11 @@ console.log("");
         if (!/[A-Za-z0-9_$]/.test(onceki)) {
           cagiranlar.push(p);
           const pencere = metin.slice(Math.max(0, k - 200), k + 40);
-          if (!pencere.includes("isActive: true") && !metin.includes(BEYAN_METNI)) {
+          if (
+            !pencere.includes("isActive: true") &&
+            !ham.includes(BEYAN_METNI) &&
+            !pencere.includes(KIP_BEYANI)
+          ) {
             beyansiz.push(p);
           }
         }

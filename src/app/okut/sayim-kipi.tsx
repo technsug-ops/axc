@@ -74,6 +74,8 @@ export function SayimKipi({
         ? t("hataSayimKapali")
         : kod === "BULUNAMADI"
           ? t("hataBulunamadi")
+          : kod === "COK_ESLESME"
+            ? t("hataCokEslesme")
           : kod === "BOS_KOD"
             ? t("hataBosKod")
             : t("hataSayimYok");
