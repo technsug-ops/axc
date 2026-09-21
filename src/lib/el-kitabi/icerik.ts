@@ -63,6 +63,7 @@ export const BOLUMLER = [
   { kimlik: "menu", ad: "Ayarlar — Menü düzeni" },
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
   { kimlik: "gecmisEkstre", ad: "Ayarlar — Geçmiş ekstreler" },
+  { kimlik: "komisyonKapisi", ad: "Ayarlar — Komisyon yükleme" },
   { kimlik: "tarife", ad: "Ayarlar — Komisyon tarifesi" },
   { kimlik: "hbKargoTarife", ad: "Ayarlar — Hepsiburada kargo tarifesi" },
   { kimlik: "yedek", ad: "Yedek" },
@@ -144,6 +145,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   menuDuzeni: "menu",
   talepler: "talep",
   gecmisEkstre: "gecmisEkstre",
+  komisyonKapisi: "komisyonKapisi",
   tarife: "tarife",
   hbKargoTarife: "hbKargoTarife",
   /** Kitabın KENDİSİ — kendi kendini anlatan bölüm açmak tekrar olurdu. */
@@ -1788,6 +1790,64 @@ ${neZaman(
 dağılır. Ama sistemden önceki borçların alım kaydı yoktur; onlar dışarıdan,
 toplu olarak girilmek zorundadır. İki yol karışsaydı aynı borç iki kez
 sayılabilirdi.</p></div>
+</section>
+
+<section id="komisyonKapisi">
+${baslik("komisyonKapisi")}
+<p><strong>Ayarlar → Komisyon yükleme.</strong> Komisyon dosyalarının
+<strong>tek kapısı</strong>. Her satış kanalınız için bir kart vardır; kartta
+o kanalın kabul ettiği dosya yazar ve dosyayı kartın içine bırakırsınız.
+Kanal seçip yanlış dosya yükleme karışıklığı böylece biter.</p>
+${neZaman(
+  "Pazaryeri yeni bir komisyon dosyası yayımladığında. Trendyol Salı, Hepsiburada Çarşamba günceller.",
+)}
+
+<h3>İki farklı dosya vardır ve aynı şey değildirler</h3>
+<div class="ek-not"><div class="etiket">Dilimli komisyon tarifesi</div>
+<p>Fiyat dilimlerine göre oran veren dosya: <em>"1.750'ye düşürürsen komisyon
+%7"</em>. <strong>Fiyat denemesini</strong> besler. Bugün yalnız Trendyol
+kartında vardır.</p></div>
+<div class="ek-not"><div class="etiket">Güncel komisyon oranı listesi</div>
+<p>Ürün başına TEK güncel oran taşıyan döküm. <strong>Kâr hesabını</strong>
+besler — satış anında kayda işlenen oran budur. Üç kanalda da vardır.</p></div>
+
+<div class="ek-not dikkat"><div class="etiket">Kampanya dosyası tarife DEĞİLDİR</div>
+<p>Hepsiburada'da <strong>"Avantajlı Teklifler"</strong>, N11'de <strong>"Ürün
+Komisyon Teklifleri"</strong> diye inen dosyayı buraya yüklemeyin. O dosya
+<strong>koşullu</strong> bir tekliftir: yazan düşük oran ancak teklifi kabul
+edip fiyatı indirirseniz geçerli olur. Tarife olarak yüklenseydi sistem
+<strong>bugünkü</strong> fiyatınıza indirimli oranı uygular, komisyon
+olduğundan düşük ve <strong>kâr olduğundan yüksek</strong> görünürdü. Ekran bu
+dosyayı tanır ve reddeder.</p></div>
+
+<div class="ek-not"><div class="etiket">Kartta "yok" yazıyorsa</div>
+<p>Bir kanalın kartında bir tür için <em>"bu dosya sisteme hiç gelmedi"</em>
+yazıyorsa, bu <strong>kanalın öyle bir dosya yayımlamadığı anlamına gelmez</strong> —
+bizim o dosya için okuyucumuz olmadığı anlamına gelir. Elinize geçerse
+gönderin, okuyucusu yazılır.</p></div>
+
+<div class="ek-not"><div class="etiket">Eski biçim dosyalar da açılır</div>
+<p>Bazı pazaryerleri dosyayı eski Excel biçiminde (<code>.xls</code>) veriyor —
+N11 böyle. İkisi de okunur; dosyayı pazaryerinden indirdiğiniz gibi yükleyin,
+dönüştürmeye çalışmayın.</p></div>
+
+<p><strong>Yüklemeden önce ne yazılacağını görürsünüz.</strong> Her kutuda
+önce <strong>Göster</strong> okuma yapar ve sayıları verir; rakamlar
+beklediğiniz gibiyse <strong>Yükle</strong>.</p>
+${sikHata([
+  {
+    hata: "Kampanya (“Avantajlı Teklif”) dosyasını tarife sanıp yüklemeye çalışmak",
+    cozum: "O dosya koşulludur ve reddedilir. Kanalın güncel oranları için aynı karttaki “Güncel komisyon oranı listesi” kutusunu kullanın.",
+  },
+  {
+    hata: "Dosya seçicide N11 dosyasını görememek",
+    cozum: "Eski biçim (.xls) artık listelenir. Görünmüyorsa dosya türü süzgecini “tüm dosyalar” yapın; dosyayı dönüştürmeye gerek yok.",
+  },
+  {
+    hata: "Bir kanalın kartında “dilimli tarife yok” yazısını arıza sanmak",
+    cozum: "Arıza değil, beyandır: o kanal için okuyucumuz yok. Kart bunu gizlemez, yazar.",
+  },
+])}
 </section>
 
 <section id="tarife">

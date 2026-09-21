@@ -96,7 +96,7 @@ export function IceAktarici() {
               id="ge-dosya"
               name="dosya"
               type="file"
-              accept=".xlsx"
+              accept=".xlsx,.xls"
               className="h-11 md:h-10"
             />
             <p className="text-muted-foreground text-xs">{t("dosyaNotu")}</p>

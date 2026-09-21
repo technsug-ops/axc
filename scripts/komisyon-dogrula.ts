@@ -53,7 +53,7 @@ import { KANAL_SIRASI } from "../src/lib/kanal-sirasi";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1187,6 +1187,49 @@ console.log("\nORAN UYARISI (satış formu)");
   );
 
   kosanBolumler.push("yayım ritmi");
+}
+
+// ---------------------------------------------------------------------------
+//  7) K226 — KAMPANYA DOSYASI BU YOLDA DA TANINIYOR
+// ---------------------------------------------------------------------------
+{
+  console.log("\n7) KAMPANYA DOSYASI TANIMASI — bağ ölçülüyor");
+
+  /**
+   * ⛔ ZİNCİR, HALKALARININ VARLIĞIYLA DEĞİL BAĞLANTISIYLA SINANIR.
+   * `teklifDosyasiMi` ayrıca değer testiyle sınanıyor (`tarife:dogrula`);
+   * burada ölçülen şey BAŞKA: `komisyonDenetle` o gövdeyi GERÇEKTEN çağırıyor
+   * mu. İki kutu da aynı kampanya dosyasını alabilir ve tanıma tek yola
+   * bağlansaydı öteki kutuda "ürün listesine benzemiyor" denir, operatör
+   * elindeki dosyanın NE olduğunu yine öğrenemezdi.
+   *
+   * ⚠ KAPSAM DARALTILIYOR: desen dosyanın tamamında değil, TANINMADI dalının
+   * içinde aranıyor. `teklifDosyasiMi` import satırında da geçiyor ve dosya
+   * genelinde arayan bir ölçüt, dal silinse bile YEŞİL kalırdı.
+   */
+  const kaynak = readFileSync("src/lib/komisyon/yukle.ts", "utf8");
+  const capa = kaynak.indexOf('if (tanima.durum === "TANINMADI")');
+  kontrol("TANINMADI dalı bulundu", capa > 0);
+  const dal = capa > 0 ? kaynak.slice(capa, capa + 1200) : "";
+
+  kontrol(
+    "TANINMADI dalı teklif tanımasına DANIŞIYOR",
+    /if \(teklifDosyasiMi\(/.test(dal),
+  );
+  kontrol(
+    "  ...ve TEKLIF_DOSYASI kodunu DÖNDÜRÜYOR",
+    /kod: "TEKLIF_DOSYASI"/.test(dal),
+  );
+  /**
+   * ⚠ SIRA ÖNEMLİ: tanıma, genel "tanınmayan dosya" cevabından ÖNCE
+   * danışılmalı. Sonra danışılsaydı hiç çalışmazdı.
+   */
+  const iTeklif = dal.indexOf("teklifDosyasiMi(");
+  const iGenel = dal.indexOf('kod: "TANINMAYAN_DOSYA"');
+  kontrol("iki çapa da bulundu (varlık ayrıca kapılandı)", iTeklif >= 0 && iGenel >= 0);
+  kontrol("tanıma, genel cevaptan ÖNCE geliyor", iTeklif >= 0 && iGenel >= 0 && iTeklif < iGenel);
+
+  kosanBolumler.push("kampanya dosyası tanıması");
 }
 
 // ===========================================================================

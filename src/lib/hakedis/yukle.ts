@@ -1,4 +1,3 @@
-import readXlsxFile from "read-excel-file/node";
 
 import { prisma } from "@/lib/prisma";
 
@@ -15,7 +14,7 @@ import {
   trendyolOku,
   turkiyeDisiMi,
 } from "./okuyucu";
-import { paketiNormalle } from "@/lib/tablo/paket";
+import { tabloOku } from "@/lib/tablo/tablo-oku";
 
 /**
  * ============================================================================
@@ -103,13 +102,11 @@ export async function hakedisDenetle(
     };
   }
 
-  // Trendyol dosyaları ZIP64 + veri tanımlayıcılı geliyor; kütüphane onları
-  // açamıyor. Normalleştirici gerekiyorsa kabı değiştirir (bkz. paket.ts).
+  // TEK OKUMA KAPISI (K226): ZIP64 kabı da eski biçim (.xls) de burada çözülür.
   let ham: unknown[][];
   try {
-    const { bayt } = paketiNormalle(dosya);
-    const sayfalar = await readXlsxFile(bayt);
-    const ilk = sayfalar[0] as unknown as { sheet: string; data: unknown[][] };
+    const { sayfalar } = await tabloOku(dosya);
+    const ilk = sayfalar[0];
     if (!ilk?.data) return { durum: "HATA", hatalar: [{ kod: "SAYFA_YOK" }] };
     ham = ilk.data;
   } catch (e) {

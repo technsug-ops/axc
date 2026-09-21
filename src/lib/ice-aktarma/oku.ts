@@ -1,4 +1,5 @@
-import readXlsxFile from "read-excel-file/node";
+
+import { tabloOku } from "@/lib/tablo/tablo-oku";
 
 import { SAYFALAR, SUTUNLAR, type SayfaAnahtari } from "./sutunlar";
 
@@ -72,7 +73,12 @@ export async function dosyayiOku(
     return metin;
   }
 
-  const sayfalar = await readXlsxFile(icerik);
+  /**
+   * TEK OKUMA KAPISI (K226). ⚠ Bu yol eskiden normalleştiriciyi HİÇ
+   * çağırmıyordu — ZIP64 kabıyla gelen bir içe aktarma dosyası burada
+   * açılamazdı. Kapı ikisini de çözer.
+   */
+  const { sayfalar } = await tabloOku(icerik);
 
   const veri: HamVeri = { urunler: [], acilisStogu: [], kanalSku: [] };
   const bulunmayanSayfalar: SayfaAnahtari[] = [];

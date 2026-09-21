@@ -72,6 +72,11 @@ export const MENU_ADRESLERI: Record<string, string> = {
   veriDisari: "/ayarlar/disa-aktarma",
   geriYukleme: "/ayarlar/geri-yukleme",
   gecmisEkstre: "/ayarlar/gecmis-ekstre",
+  /**
+   * K226 — komisyon yüklemenin TEK KAPISI. Kanal kartları; her kart o
+   * kanalın kabul ettiği dosyayı adıyla yazar ve kutusunu kendi içinde açar.
+   */
+  komisyonKapisi: "/ayarlar/komisyon",
   tarife: "/ayarlar/tarife",
   hbKargoTarife: "/ayarlar/hb-kargo-tarife",
 };
@@ -164,6 +169,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "veriDisari", varsayilanGrup: "grupVeri" },
   { anahtar: "geriYukleme", varsayilanGrup: "grupVeri" },
   { anahtar: "gecmisEkstre", varsayilanGrup: "grupVeri" },
+  { anahtar: "komisyonKapisi", varsayilanGrup: "grupVeri" },
   { anahtar: "tarife", varsayilanGrup: "grupVeri" },
   { anahtar: "hbKargoTarife", varsayilanGrup: "grupVeri" },
 

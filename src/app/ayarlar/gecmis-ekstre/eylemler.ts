@@ -2,11 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
-import readXlsxFile from "read-excel-file/node";
 
 import { donemAnahtari } from "@/lib/kart-borcu";
 import { prisma } from "@/lib/prisma";
-import { paketiNormalle } from "@/lib/tablo/paket";
+import { tabloOku } from "@/lib/tablo/tablo-oku";
 import { eslesmeOnerileri, type EslesmeOnerisi } from "@/lib/gecmis/kart-eslesme";
 import {
   onizlemeKur,
@@ -51,8 +50,8 @@ async function dosyayiCoz(dosya: File): Promise<OkumaSonucu | string> {
   let sayfalar: { sheet: string; data: unknown[][] }[];
   try {
     const bayt = Buffer.from(await dosya.arrayBuffer());
-    const { bayt: duz } = paketiNormalle(bayt);
-    sayfalar = (await readXlsxFile(duz)) as unknown as typeof sayfalar;
+    // TEK OKUMA KAPISI (K226) — biçim bayttan tanınır.
+    sayfalar = (await tabloOku(bayt)).sayfalar;
   } catch {
     return t("hataDosyaOkunamadi");
   }

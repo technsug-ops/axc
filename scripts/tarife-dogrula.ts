@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 
+import { kanalYetenegi } from "../src/lib/komisyon/kanal-yetenegi";
+import { ORAN_OKUYUCUSU_OLAN } from "../src/lib/komisyon/okuyucu";
 import { ENGEL_ANAHTARI } from "../src/lib/komisyon/tarife-engeli";
 import { teklifDosyasiMi } from "../src/lib/komisyon/tarife-okuyucu";
 import {
@@ -1092,6 +1094,141 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
     ]) === false,
   );
   kontrol("boş dosya teklif sayılmıyor", teklifDosyasiMi([]) === false);
+}
+
+// ---------------------------------------------------------------------------
+//  K226 — N11 TEKLİF ŞEKLİ + KANAL YETENEĞİ
+// ---------------------------------------------------------------------------
+{
+  console.log("\nK226 — N11 TEKLİF ŞEKLİ (başlık 11. satırda)");
+
+  /**
+   * GERÇEK N11 DOSYASININ ŞEKLİ (ölçüldü 21.09.2026):
+   * üstte "Dikkat Edilmesi Gerekenler" bloğu, sonra boş satırlar, başlıklar
+   * 11. SATIRDA ve tek satırlı: `1. Teklif Üst Limit` · `1. Teklif Alt Limit`
+   * · `1. Teklif Komisyon`.
+   *
+   * ⛔ ESKİ TANIMA BUNU HİÇ GÖREMİYORDU: yalnız 0. ve 1. satıra bakıyordu ve
+   * `teklifDosyasiMi` **false** dönüyordu. Ölçüldü ve düzeltildi.
+   */
+  const n11Satirlari: unknown[][] = [
+    [null, null, "Dikkat Edilmesi Gerekenler"],
+    [null, null, '1. "Avantajlı Teklif Üst Limit" alanı...'],
+    [], [], [], [], [], [], [], [],
+    [
+      "Ürün Adı",
+      "Satıcı\n Stok Kodu",
+      "GTIN\n (Barkod)",
+      "1. Teklif\n Üst Limit",
+      "1. Teklif\n Alt Limit",
+      "1. Teklif\n Komisyon",
+      "Mevcut\n Fiyat",
+      "Mevcut\n Komisyon",
+    ],
+    ["LEGO Art", "EN10062166004", "5702017823126", 7499, 32.29, 1, 11999, 18],
+  ];
+  kontrol(
+    "N11 teklif dosyası TANINIYOR (başlık 11. satırda)",
+    teklifDosyasiMi([{ sheet: "Ürün Komisyon Teklifleri", data: n11Satirlari }]) === true,
+  );
+
+  /**
+   * ⛔ AYIRT EDİCİ KELİME `teklif`. Trendyol'un GERÇEK dilimli tarifesi
+   * `1.Fiyat Alt Limit` + `1.KOMİSYON` taşıyor — limit ve komisyon VAR ama
+   * "teklif" YOK. Ölçüt limite bağlansaydı gerçek tarife kampanya sayılır ve
+   * geçerli bir yükleme reddedilirdi.
+   */
+  kontrol(
+    "  ...'limit' + 'komisyon' YETMİYOR — 'teklif' kelimesi şart",
+    teklifDosyasiMi([
+      {
+        sheet: "S",
+        data: [
+          ["BARKOD", "1.Fiyat Alt Limit", "1.KOMİSYON", "2.Fiyat Üst Limiti"],
+          ["8697975600803", 0, 21, 1000],
+        ] as unknown[][],
+      },
+    ]) === false,
+  );
+
+  /**
+   * ⚠ TARAMA TAVANI BİR SINIRDIR VE SINIRIN YÖNÜ ÖLÇÜLÜR: 20 satırdan
+   * sonrasına bakılmıyor. Tavan olmasaydı binlerce satırlık bir dosyanın
+   * ortasındaki rastgele bir "teklif" hücresi dosyayı kampanya ilan ederdi.
+   */
+  const derinBaslik: unknown[][] = [];
+  for (let i = 0; i < 25; i++) derinBaslik.push([]);
+  derinBaslik.push(["1. Teklif Üst Limit", "1. Teklif Komisyon"]);
+  kontrol(
+    "  ...tarama tavanının ÖTESİ taranmıyor (25. satır)",
+    teklifDosyasiMi([{ sheet: "S", data: derinBaslik }]) === false,
+  );
+
+  /**
+   * ⛔ BU ÖLÇÜT BİR MUTASYON KAÇIŞINDAN DOĞDU (21.09.2026).
+   * İlk turda "teklif şartını gevşeten" mutasyon YEŞİL geçti: mevcut örnek
+   * veriler o dalı hiç çalıştırmıyordu. Anayasa: _"mutasyon kaçıyorsa ÖNCE
+   * TEST VERİSİ sorgulanır — ölçüt gevşetilmez, VERİ düzeltilir."_
+   *
+   * Ayrımı gösteren şekil: üst satırda `limit` VAR ama `teklif` YOK, alt
+   * satırda `Üst Fiyat` + `Komisyon` var. Gevşek bir ölçüt bunu kampanya
+   * sayar; doğrusu saymamaktır — kampanyayı kampanya yapan şey TEKLİFİN
+   * KENDİSİDİR, limit sütunu değil.
+   */
+  kontrol(
+    "  ...'teklif' işareti OLMAYAN iki satırlı başlık kampanya SAYILMIYOR",
+    teklifDosyasiMi([
+      {
+        sheet: "S",
+        data: [
+          ["BARKOD", "Fiyat Limit"],
+          ["Üst Fiyat", "Komisyon"],
+        ] as unknown[][],
+      },
+    ]) === false,
+  );
+
+  console.log("\nK226 — KANAL YETENEĞİ");
+
+  /**
+   * ⚠ HER TÜR İÇİN SATIR DÖNER, eksik olan da. Desteklenmeyeni listeden
+   * düşürmek, ekranda "baktım yok" ile "bu satır hiç yok"u aynı gösterirdi.
+   */
+  for (const p of ["TRENDYOL", "HEPSIBURADA", "N11"] as const) {
+    kontrol(`${p}: iki tür de satır olarak dönüyor`, kanalYetenegi(p).length === 2);
+  }
+  kontrol("tanınmayan kanal (null) da iki satır döndürüyor", kanalYetenegi(null).length === 2);
+
+  const ty = kanalYetenegi("TRENDYOL");
+  kontrol(
+    "TRENDYOL dilimli tarife KABUL EDİYOR",
+    ty.find((t) => t.tur === "DILIMLI_TARIFE")?.durum === "VAR",
+  );
+  for (const p of ["HEPSIBURADA", "N11"] as const) {
+    const y = kanalYetenegi(p).find((t) => t.tur === "DILIMLI_TARIFE");
+    kontrol(`${p} dilimli tarife KABUL ETMİYOR`, y?.durum === "YOK");
+    /** ⛔ GEREKÇESİZ "YOK" YAZILAMAZ — okuyanı çıkmaza götürür. */
+    kontrol(
+      `  ...ve sebebi BEYAN EDİLMİŞ`,
+      y?.durum === "YOK" && y.sebep === "OKUYUCU_YOK",
+    );
+  }
+
+  /**
+   * ⚠ TABAN DOLULUĞU: güncel oran okuyucusu olan platform kümesi `IMZALAR`dan
+   * TÜRETİLİYOR. Küme boşalırsa her kanal "oran okuyucusu yok" görünür ve
+   * ekran üç kanalda birden yanlış konuşur — boş küme sessizce geçmesin.
+   */
+  kontrol(
+    `oran okuyucusu olan platform >= 3 (ölçülen: ${ORAN_OKUYUCUSU_OLAN.length})`,
+    ORAN_OKUYUCUSU_OLAN.length >= 3,
+  );
+  for (const p of ["TRENDYOL", "HEPSIBURADA", "N11"] as const) {
+    kontrol(
+      `${p} güncel oran KABUL EDİYOR`,
+      kanalYetenegi(p).find((t) => t.tur === "GUNCEL_ORAN")?.durum === "VAR",
+    );
+  }
 }
 
 console.log("");

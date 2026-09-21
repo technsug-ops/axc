@@ -259,7 +259,7 @@ export function Yukleyici() {
               id="ice-dosya"
               ref={dosyaGirdisi}
               type="file"
-              accept=".xlsx"
+              accept=".xlsx,.xls"
               onChange={(e) => {
                 setDosya(e.target.files?.[0] ?? null);
                 setYanit(null);

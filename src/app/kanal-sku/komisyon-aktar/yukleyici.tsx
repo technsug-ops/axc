@@ -38,6 +38,7 @@ type Hata =
   | { kod: "HESAP_SATIS_DEGIL"; hesap: string }
   | { kod: "DOSYA_OKUNAMADI"; ayrinti: string }
   | { kod: "TANINMAYAN_DOSYA"; sayfalar: string[] }
+  | { kod: "TEKLIF_DOSYASI" }
   | { kod: "PLATFORM_UYUSMAZ"; dosya: string; hesap: string }
   | { kod: "SUTUN_EKSIK"; sutunlar: string[] }
   | { kod: "SATIR_YOK" };
@@ -89,14 +90,30 @@ type Yanit =
  * DENETLE → ÖNİZLE → ONAYLA akışı. Hakediş ve içe aktarma ekranlarıyla aynı
  * kalıp (İlke #10): aynı işlem her ekranda aynı görünür ve aynı çalışır.
  */
-export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
+export function Yukleyici({
+  hesaplar,
+  sabitHesap,
+}: {
+  hesaplar: HesapSecenegi[];
+  /**
+   * TEK KAPI KİPİ (K226): kanal kartın kendisi tarafından seçilmiş.
+   * Açılır liste çizilmez. ⚠ Sunucu hesabı YİNE denetler
+   * (`komisyonDenetle` → `PLATFORM_UYUSMAZ`); kapı kolaylıktır, yetki değil.
+   */
+  sabitHesap?: HesapSecenegi;
+}) {
   const t = useTranslations("Komisyon");
   const ortak = useTranslations("Ortak");
   const bicim = useBicim();
   const router = useRouter();
 
   const [dosya, setDosya] = useState<File | null>(null);
-  const [hesap, setHesap] = useState("");
+  /**
+   * ⚠ SABİT KİPTE BAŞLANGIÇ DEĞERİ ŞART. Boş başlasaydı gönder düğmesi
+   * `!hesap` yüzünden SESSİZCE kilitli kalırdı: kullanıcı dosyayı seçer,
+   * düğmeye basamaz ve ekranda hiçbir sebep yazmaz (İlke #5 ihlali).
+   */
+  const [hesap, setHesap] = useState(sabitHesap?.id ?? "");
   const [calisiyor, setCalisiyor] = useState<"denetle" | "yaz" | null>(null);
   const [yanit, setYanit] = useState<Yanit | null>(null);
 
@@ -136,6 +153,8 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
         return t("hataHesapSatisDegil", { hesap: h.hesap });
       case "DOSYA_OKUNAMADI":
         return t("hataDosyaOkunamadi", { ayrinti: h.ayrinti });
+      case "TEKLIF_DOSYASI":
+        return t("hataTeklifDosyasi");
       case "TANINMAYAN_DOSYA":
         return t("hataTaninmayanDosya", { sayfalar: h.sayfalar.join(", ") });
       case "PLATFORM_UYUSMAZ":
@@ -178,28 +197,30 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
           <p className="text-muted-foreground text-sm">{t("yukleAciklama")}</p>
           <p className="text-muted-foreground text-sm">{t("nasilIndirilir")}</p>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="komisyon-hesap">{t("hesapSec")} *</Label>
-              <Select value={hesap} onValueChange={setHesap}>
-                <SelectTrigger id="komisyon-hesap" className="w-full">
-                  <SelectValue placeholder={t("hesapSecin")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {hesaplar.map((h) => (
-                    <SelectItem key={h.id} value={h.id}>
-                      {h.etiket}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className={sabitHesap ? "space-y-4" : "grid gap-4 sm:grid-cols-2"}>
+            {sabitHesap ? null : (
+              <div className="space-y-2">
+                <Label htmlFor="komisyon-hesap">{t("hesapSec")} *</Label>
+                <Select value={hesap} onValueChange={setHesap}>
+                  <SelectTrigger id="komisyon-hesap" className="w-full">
+                    <SelectValue placeholder={t("hesapSecin")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hesaplar.map((h) => (
+                      <SelectItem key={h.id} value={h.id}>
+                        {h.etiket}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="komisyon-dosya">{t("dosyaSec")} *</Label>
               <Input
                 id="komisyon-dosya"
                 type="file"
-                accept=".xlsx"
+                accept=".xlsx,.xls"
                 onChange={(e) => {
                   setDosya(e.target.files?.[0] ?? null);
                   setYanit(null);

@@ -183,7 +183,7 @@ export function Yukleyici({ hesaplar }: { hesaplar: HesapSecenegi[] }) {
                 id="hakedis-dosya"
                 ref={dosyaGirdisi}
                 type="file"
-                accept=".xlsx"
+                accept=".xlsx,.xls"
                 onChange={(e) => {
                   setDosya(e.target.files?.[0] ?? null);
                   setYanit(null);

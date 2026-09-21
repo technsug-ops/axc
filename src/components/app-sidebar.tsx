@@ -148,6 +148,7 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   veriDisari: Download,
   geriYukleme: DatabaseBackup,
   gecmisEkstre: FileSpreadsheet,
+  komisyonKapisi: Percent,
   tarife: Percent,
   /** Kargo TARİFESİ — `tedarikciler`in Truck'ıyla çakışmasın diye ayrı ikon. */
   hbKargoTarife: Route,

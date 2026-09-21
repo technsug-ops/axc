@@ -34,8 +34,17 @@ type Sonuc =
 
 export function Yukleyici({
   hesaplar,
+  sabitHesap,
 }: {
   hesaplar: { id: string; etiket: string }[];
+  /**
+   * TEK KAPI KİPİ (K226): kanal ZATEN seçilmiş — kart o kanala ait.
+   * Açılır liste çizilmez, kimlik gizli alandan gider.
+   *
+   * ⚠ SUNUCU YİNE DENETLER. Gizli alan istemcide değiştirilebilir; kapı
+   * kolaylıktır, yetki değildir (`tarifeYaz` hesabı kendi doğruluyor).
+   */
+  sabitHesap?: { id: string; etiket: string };
 }) {
   const t = useTranslations("Tarife");
   const [sonuc, setSonuc] = useState<Sonuc | null>(null);
@@ -60,29 +69,37 @@ export function Yukleyici({
         gonder(e.currentTarget, false);
       }}
     >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="hesap">{t("hesap")}</Label>
-          {/*
-            ⚠ DÜZ `select` — shadcn `Select` gizli bir input kullanıyor ve
-            `new FormData(form)` ile okunması ek bağlama istiyor. Burada tek
-            alan var; karmaşıklık kazandırmıyor.
-          */}
-          <select
-            id="hesap"
-            name="hesap"
-            required
-            className="border-input bg-background h-11 w-full rounded-md border px-3 text-sm"
-            defaultValue={hesaplar.length === 1 ? hesaplar[0].id : ""}
-          >
-            <option value="">{t("hesapSec")}</option>
-            {hesaplar.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.etiket}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div
+        className={
+          sabitHesap ? "space-y-4" : "grid gap-4 sm:grid-cols-2"
+        }
+      >
+        {sabitHesap ? (
+          <input type="hidden" name="hesap" value={sabitHesap.id} />
+        ) : (
+          <div className="space-y-1.5">
+            <Label htmlFor="hesap">{t("hesap")}</Label>
+            {/*
+              ⚠ DÜZ `select` — shadcn `Select` gizli bir input kullanıyor ve
+              `new FormData(form)` ile okunması ek bağlama istiyor. Burada tek
+              alan var; karmaşıklık kazandırmıyor.
+            */}
+            <select
+              id="hesap"
+              name="hesap"
+              required
+              className="border-input bg-background h-11 w-full rounded-md border px-3 text-sm"
+              defaultValue={hesaplar.length === 1 ? hesaplar[0].id : ""}
+            >
+              <option value="">{t("hesapSec")}</option>
+              {hesaplar.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.etiket}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor="dosya">{t("dosya")}</Label>
@@ -90,7 +107,7 @@ export function Yukleyici({
             id="dosya"
             name="dosya"
             type="file"
-            accept=".xlsx"
+            accept=".xlsx,.xls"
             required
             className="h-11"
             /** Yeni dosya seçilince eski önizleme DÜŞER — bayat plan gösterilmez. */

@@ -416,29 +416,69 @@ export function dilimBul(
 const TEKLIF_AD_DESENI = /avantajl[ıi]_?teklifler/i;
 
 /**
- * Bir sayfa "teklif" yapısında mı: üst başlıkta `Teklif N`, ALT başlıkta
- * `Üst Fiyat` + `Komisyon` (iki satırlı, birleştirilmiş başlık).
+ * Başlık satırı dosyanın İLK satırı olmak zorunda değil.
  *
- * ⛔ İKİSİ BİRDEN ARANIYOR. Yalnız "Teklif" kelimesine bakmak, içinde o
- * kelime geçen bir tarife dosyasını yanlışlıkla teklif sayardı.
+ * ⚠ N11 dosyasında başlıklar **11. satırda** (üstte "Dikkat Edilmesi
+ * Gerekenler" bloğu ve boş satırlar var). Yalnız 0. ve 1. satıra bakan
+ * eski tanıma bu yüzden dosyayı HİÇ göremiyordu (ölçüldü 21.09.2026:
+ * `teklifDosyasiMi = false`).
+ */
+const BASLIK_TARAMA_TAVANI = 20;
+
+/** `teklif 1` · `1. teklif üst limit` — numaralı teklif işareti. */
+const NUMARALI_TEKLIF = /(^|\s)\d+\s*\.?\s*teklif|teklif\s*\d+/;
+
+function satirMetinleri(r: unknown[]): string[] {
+  return r.map((c) => basligiNormalle(String(c ?? ""))).filter((x) => x !== "");
+}
+
+/**
+ * Bir sayfa "teklif" (kampanya) yapısında mı?
+ *
+ * İKİ PAZARYERİ İKİ FARKLI ŞEKİL KULLANIYOR ve ikisi de aynı şeyi anlatıyor —
+ * koşullu komisyon önerisi (ölçüldü 21.09.2026, gerçek dosyalarla):
+ *
+ *     HEPSIBURADA  iki satırlı, birleştirilmiş başlık
+ *                  üst : `Teklif 1`      `Teklif 2`      `Teklif 3`
+ *                  alt : `Üst Fiyat` `Komisyon` | `Üst Fiyat` `Komisyon` | …
+ *
+ *     N11          tek satırlı başlık, 11. satırda
+ *                  `1. Teklif Üst Limit` `1. Teklif Alt Limit` `1. Teklif Komisyon`
+ *
+ * ⛔ İKİ İŞARET BİRDEN ARANIYOR — numaralı `teklif` VE ona bağlı bir
+ * komisyon/fiyat kolonu. Yalnız "teklif" kelimesine bakmak, içinde o kelime
+ * geçen bir tarife dosyasını yanlışlıkla kampanya sayardı.
+ *
+ * ⚠ AYIRT EDİCİ KELİME `teklif`: Trendyol'un GERÇEK dilimli tarifesi
+ * `1.KOMİSYON` ve `1.Fiyat Alt Limit` taşır ama "teklif" TAŞIMAZ. Ölçüt
+ * limite değil, teklif işaretine bağlı.
  */
 function teklifSayfasiMi(veri: unknown[][]): boolean {
-  if (veri.length < 2) return false;
-  const metin = (r: unknown[]) =>
-    r.map((c) => basligiNormalle(String(c ?? ""))).filter((x) => x !== "");
+  const tavan = Math.min(veri.length, BASLIK_TARAMA_TAVANI);
 
-  const ust = metin(veri[0] ?? []);
-  const alt = metin(veri[1] ?? []);
-  /**
-   * ⚠ DESEN KÜÇÜK HARF: `basligiNormalle` başlıkları Türkçe yerelinde
-   * KÜÇÜLTÜYOR (`toLocaleLowerCase("tr")`). İlk yazımda deseni büyük harf
-   * yazdım ve tanıma hiç tutmadı — bekçi yakaladı. Normalleştiricinin ne
-   * ürettiğini VARSAYMAK yerine okumak gerekiyordu.
-   */
-  const teklifBasligi = ust.some((b) => /^teklif\s*\d+$/.test(b));
-  const ustFiyat = alt.some((b) => b === basligiNormalle("Üst Fiyat"));
-  const komisyon = alt.some((b) => b === basligiNormalle("Komisyon"));
-  return teklifBasligi && ustFiyat && komisyon;
+  for (let i = 0; i < tavan; i++) {
+    const satir = satirMetinleri(veri[i] ?? []);
+    if (satir.length === 0) continue;
+    if (!satir.some((b) => NUMARALI_TEKLIF.test(b))) continue;
+
+    /**
+     * ① TEK SATIRLI ŞEKİL (N11): teklif işareti ile komisyon AYNI hücrede.
+     */
+    if (satir.some((b) => NUMARALI_TEKLIF.test(b) && b.includes("komisyon"))) {
+      return true;
+    }
+
+    /**
+     * ② İKİ SATIRLI ŞEKİL (HB): komisyon BİR ALT satırda, teklif başlığının
+     * altında. Alt satır yoksa şekil tamamlanmamıştır ve tanıma yapılmaz.
+     */
+    const alt = satirMetinleri(veri[i + 1] ?? []);
+    const ustFiyat = alt.some((b) => b === basligiNormalle("Üst Fiyat"));
+    const komisyon = alt.some((b) => b === basligiNormalle("Komisyon"));
+    if (ustFiyat && komisyon) return true;
+  }
+
+  return false;
 }
 
 /**

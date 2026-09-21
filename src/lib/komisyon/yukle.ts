@@ -1,7 +1,8 @@
-import readXlsxFile from "read-excel-file/node";
 
 import { prisma } from "@/lib/prisma";
-import { paketiNormalle } from "@/lib/tablo/paket";
+import { tabloOku } from "@/lib/tablo/tablo-oku";
+
+import { teklifDosyasiMi } from "./tarife-okuyucu";
 import { topluGuncelle } from "@/lib/toplu-guncelle";
 
 import { komisyonOku, platformTani, type SayfaGirdisi } from "./okuyucu";
@@ -47,6 +48,12 @@ export type KomisyonHatasi =
   | { kod: "HESAP_SATIS_DEGIL"; hesap: string }
   | { kod: "DOSYA_OKUNAMADI"; ayrinti: string }
   | { kod: "TANINMAYAN_DOSYA"; sayfalar: string[] }
+  /**
+   * K226 — pazaryerinin KAMPANYA/TEKLİF dosyası. Tanıma `tarife-okuyucu`da
+   * ve İKİ yoldan da danışılıyor: kullanıcı aynı dosyayı bu kutuya da
+   * bırakabilir ve "ürün listesine benzemiyor" cümlesi ne olduğunu SÖYLEMEZ.
+   */
+  | { kod: "TEKLIF_DOSYASI" }
   | { kod: "PLATFORM_UYUSMAZ"; dosya: string; hesap: string }
   | { kod: "SUTUN_EKSIK"; sutunlar: string[] }
   | { kod: "SATIR_YOK" };
@@ -127,12 +134,14 @@ export async function komisyonDenetle(
     };
   }
 
-  // Trendyol'un ürün listesi de hakediş dosyaları gibi ZIP64 + veri
-  // tanımlayıcılı geliyor (ölçüldü); normalleştirici gerekiyorsa kabı değişir.
+  /**
+   * TEK OKUMA KAPISI (K226). Trendyol'un ürün listesi ZIP64 kabıyla,
+   * N11'inki ESKİ BİÇİMLE (.xls) geliyor; ikisini de kapı çözer ve aynı
+   * şekli döndürür (ölçüldü: 0 ayrışan hücre).
+   */
   let sayfalar: SayfaGirdisi[];
   try {
-    const { bayt } = paketiNormalle(dosya);
-    sayfalar = (await readXlsxFile(bayt)) as unknown as SayfaGirdisi[];
+    sayfalar = (await tabloOku(dosya)).sayfalar;
   } catch (e) {
     return {
       durum: "HATA",
@@ -142,6 +151,18 @@ export async function komisyonDenetle(
 
   const tanima = platformTani(sayfalar ?? []);
   if (tanima.durum === "TANINMADI") {
+    /**
+     * ⛔ TANIMA, GENEL HATADAN ÖNCE (K226). "Ürün listesine benzemiyor" doğru
+     * ama KULLANIŞSIZ: operatöre elindeki dosyanın NE olduğunu söylemez.
+     * Kampanya dosyası iki kutuya da bırakılabilir — tanıma tek yola
+     * bağlansaydı öteki kutuda aynı karışıklık sürerdi.
+     *
+     * ⚠ YALNIZ HATA YOLUNDA: geçerli bir komisyon listesi buraya hiç gelmez,
+     * dolayısıyla tanıma doğru bir yüklemeyi engelleyemez.
+     */
+    if (teklifDosyasiMi(sayfalar ?? [])) {
+      return { durum: "HATA", hatalar: [{ kod: "TEKLIF_DOSYASI" }] };
+    }
     return {
       durum: "HATA",
       hatalar: [{ kod: "TANINMAYAN_DOSYA", sayfalar: tanima.sayfalar }],

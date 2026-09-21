@@ -1,7 +1,6 @@
-import readXlsxFile from "read-excel-file/node";
 
 import { prisma } from "@/lib/prisma";
-import { paketiNormalle } from "@/lib/tablo/paket";
+import { tabloOku } from "@/lib/tablo/tablo-oku";
 
 import { teklifDosyasiMi, tarifeOku, type TarifeOkumasi } from "./tarife-okuyucu";
 import {
@@ -89,15 +88,12 @@ export async function tarifeDenetle(
   let sayfalar: { sheet: string; data: unknown[][] }[] = [];
   try {
     /**
-     * NORMALLEŞTİRİCİDEN GEÇER — Trendyol dosyaları ZIP64 + veri
-     * tanımlayıcılı geliyor ve `read-excel-file` onları açamıyor
-     * (`lib/tablo/paket.ts`, ölçüm 11.08.2026).
+     * TEK OKUMA KAPISI (K226). Biçim BAYTTAN tanınır: xlsx yolu Trendyol'un
+     * ZIP64 kabı için normalleştiriciden geçer, eski biçim (.xls) kendi
+     * çözücüsüne gider. Çıplak `readXlsxFile` burada YAZILAMAZ — N11 dosyayı
+     * eski biçimde veriyor ve o çağrı kullanıcıyı suçlayan bir hata üretirdi.
      */
-    const { bayt } = paketiNormalle(dosya);
-    sayfalar = (await readXlsxFile(bayt)) as unknown as {
-      sheet: string;
-      data: unknown[][];
-    }[];
+    sayfalar = (await tabloOku(dosya)).sayfalar;
     /**
      * TARİFE SAYFASINI ARA. Dosya birden çok sayfa taşıyabilir; ilkine
      * bakıp "kolon yok" demek yanlış sayfaya bakmak olurdu.

@@ -13,6 +13,161 @@
 
 ---
 
+## 🔶 K226 — KOMİSYON YÜKLEME TEK KAPI + ESKİ BİÇİM (.xls) · 21.09.2026 · [KOŞTU — HALİL TESTİ BEKLİYOR]
+
+**KULLANICI ARIZASI:** _"Hepsiburada tarifeler panodan yüklenemiyor."_ İki
+dosya gönderildi, ikisi de düştü — ve **iki ayrı sebeple**.
+
+### ÖLÇÜM — iki dosya da TARİFE DEĞİL, aynı cinsten KAMPANYA dosyası
+
+| | Hepsiburada | N11 |
+|---|---|---|
+| dosya | `Avantajlı_Teklifler-21-09-2026-09_33.xlsx` · 290.427 bayt | `4534966-21-09-2026-09-35-13.xls` · 44.544 bayt |
+| imza | `50 4B` → gerçek xlsx | `D0 CF 11 E0` → **gerçek eski biçim .xls** |
+| sayfa | `Açıklama` + `Teklifler` | `Ürün Komisyon Teklifleri` |
+| şekil | iki satırlı: `Teklif N` / `Üst Fiyat`+`Komisyon` | tek satırlı, **11. satırda**: `1. Teklif Üst Limit/Alt Limit/Komisyon` |
+
+İkisi de **koşullu teklif**: oran ancak teklif kabul edilip fiyat düşürülürse
+geçerli. HB ekranının reddi DOĞRUYDU; N11 hiç okunamadı.
+
+### ÜÇ KUSUR
+
+**① `.xls` OKUNAMIYORDU.** `read-excel-file` kendi cümlesiyle reddediyor —
+_"You passed a legacy `.xls` file. Only `.xlsx` files are supported"_ — ama bu
+cümle kullanıcıya ULAŞMIYOR; yerine onu suçlayan bir metin görünüyordu
+(_"dosyanın bozuk olmadığından ve indirildiği hâlde olduğundan emin olun"_).
+Dosya bozuk DEĞİLDİ. ⚠ Üstelik `accept=".xlsx"` yüzünden dosya seçicide
+`.xls` dosyaları **görünmüyordu** bile.
+
+**② N11 TEKLİF DOSYASI YAKALAYICIDAN KAÇIYORDU.** Ölçüldü:
+`teklifDosyasiMi = false`. Tanıma yalnız 0. ve 1. satıra bakıyordu; N11'de
+başlıklar 11. satırda. Yani `.xls` çözülse bile kullanıcı _"sütun eksik…
+henüz desteklenmiyor"_ görecekti — doğru red, "yakında gelir" diye okunan
+yanlış mesaj.
+
+**③ EKRAN ÇIKMAZA GÖTÜRÜYORDU.** Kırmızı kutu dosyanın ne OLMADIĞINI
+yazıyor, nereye gideceğini yazmıyordu. _(Anayasa: "kural doğru mu değil,
+teslim edilebilir mi".)_
+
+### YAPILAN
+
+**A) OKUMA TEK KAPIYA ALINDI** — `src/lib/tablo/tablo-oku.ts`. Biçim
+**BAYTTAN** tanınır (ad bir iddiadır); xlsx yolu DEĞİŞMEDİ (beş kapıda
+kanıtlanmış + Trendyol ZIP64 normalleştiricisi), eski biçim SheetJS'e gider.
+`src/` altındaki **beş yükleme kapısı** (hakediş · komisyon · tarife · içe
+aktarma · geçmiş ekstre) bu gövdeye bağlandı; çıplak `readXlsxFile(` **desen
+yasağıyla** kapatıldı — dosya listesiyle değil.
+
+⛔ **İKİ YOLUN AYNI ŞEYİ SÖYLEDİĞİ ÖLÇÜLDÜ** (aynı içerik, iki kap) ve ölçüm
+**üç sessiz ayrışma** yakaladı:
+
+    ilk ölçüm      357 hücre ayrışıyor   → boş metin `""` vs `null`
+    ikinci ölçüm    93 hücre ayrışıyor   → TARİH, tam 2 SAAT kaymış
+    üçüncü ölçüm    39 hücre ayrışıyor   → metin kırpma + milisaniye
+    son ölçüm        0 hücre             ✓
+
+⚠ **EN PAHALISI SAAT DİLİMİYDİ:** SheetJS seri sayıyı **YEREL** saatte
+kuruyor. Aynı dosya Berlin'deki makinede ve UTC koşan sunucuda **iki farklı
+ana** çözülürdü ve hiçbir yerde hata vermezdi. Anayasa bunu adıyla yasaklıyor.
+Çözüm: seri sayı saf UTC aritmetiğiyle çevriliyor. Formül **tahmin edilmedi,
+ölçüldü** (n=92 tarih hücresi): `(seri − 25569) × 86400000` → **92/92**;
+`Math.round`lu hâli **0/92**.
+
+**B) KAMPANYA YAKALAYICISI İKİ ŞEKLİ DE TANIYOR.** Başlık satırı ilk 20 satır
+içinde aranıyor; hem HB'nin iki satırlı hem N11'in tek satırlı şekli.
+Ayırt edici kelime **`teklif`** — Trendyol'un gerçek tarifesi `1.KOMİSYON` +
+`1.Fiyat Alt Limit` taşır ama "teklif" TAŞIMAZ.
+
+📏 **ALTI GERÇEK DOSYAYLA ÖLÇÜLDÜ — 6/6:** N11 kampanya ✓ yakalandı · HB
+kampanya ✓ yakalandı · **TY gerçek dilimli tarife ✗ dokunulmadı** (hâlâ tarife
+olarak okunuyor) · TY indirimli rapor ✗ · HB komisyon listesi ✗ · TY temmuz
+indirimli ✗.
+
+**C) TEK KAPI EKRANI — `/ayarlar/komisyon`.** _Kullanıcı kararı: "her kanalın
+kendi yükleme stili olsun; kişi kanala tıklasın, dosyayı içine koysun."_
+Kanal kartları **veriden** türetiliyor (elle liste yok). Her kart o kanalın
+kabul ettiği dosyaları adıyla yazar; **desteklenmeyen tür de SATIR olarak
+durur** ve NİYE olmadığını söyler (sıfır satır gizlenmez). Yükleyiciler
+yeniden yazılmadı — sabit hesapla içeri alındı.
+
+⚠ **ESKİ EKRANLAR KALDI:** `/ayarlar/tarife` yüklü pencereleri ve kapsam
+boşluğu tutanağını (K49) göstermeye devam ediyor — o bir DURUM ekranı.
+
+**D) KAMPANYA TANIMASI İKİ YOLA DA BAĞLANDI.** Yakalayıcı önce yalnız TARİFE
+yolundaydı; kullanıcı aynı dosyayı **öteki kutuya** da bırakabilir ve orada
+_"ürün listesine benzemiyor"_ yazıyordu — doğru ama dosyanın NE olduğunu
+söylemeyen bir cümle. Komisyon yolu da artık danışıyor (`TEKLIF_DOSYASI`).
+⚠ Bağın KENDİSİ ölçülüyor: ölçüt `TANINMADI` dalına daraltıldı ve **sıra** da
+sınanıyor (tanıma genel cevaptan ÖNCE gelmeli, yoksa hiç çalışmaz).
+
+**E) EL KİTABI BÖLÜMÜ YAZILDI** — `el-kitabi:dogrula` push'u durdurdu:
+menüdeki her ekranın kitapta karşılığı olmak zorunda (kullanıcı kararı
+22.08.2026) ve yeni ekran yoktu. Bölüm iki dosya türünü, kampanya tuzağını ve
+`.xls` biçimini anlatıyor. _Bekçi öğretti, kimse fark etmek zorunda kalmadı._
+
+**F) ÜÇ MESAJ DÜZELTİLDİ** — kullanıcıyı suçlayan `.xls` metni, "henüz
+desteklenmiyor" diye okunan sütun mesajı ve teklif dosyası uyarısı. Üçü de
+artık aynı kartın altındaki **"Güncel komisyon oranı listesi"** kutusuna
+yönlendiriyor — hedefi VAR OLAN bir kutu.
+
+### BEKÇİ + MUTASYON
+
+    tablo-oku:dogrula                  24 ölçüt  (yeni)
+    tarife:dogrula                142 → 159 ölçüt
+    komisyon:dogrula              169 → 174 ölçüt
+    el-kitabi:dogrula                  53 ölçüt  (yeni bölüm)
+    tablo-oku-mutasyon:kontrol         13/13     (yeni)
+    teklif-tanima-mutasyon:kontrol     10/10     (yeni)
+
+⭐ **ZARARSIZ MUTASYON DA SINANDI** (yorum değişikliği → YEŞİL). Yalnız gerçek
+bozmalar denenseydi, hiçbir şey koşmayan bir harness "mükemmel" görünürdü.
+
+⛔ **VE BİR MUTASYON KAÇTI — ÖLÇÜT DEĞİL, VERİ DÜZELTİLDİ.** _"Teklif şartını
+gevşeten"_ mutasyon ilk turda yeşil geçti: mevcut örnekler o dalı hiç
+çalıştırmıyordu. Ayrımı gösteren satır eklendi (`limit` var, `teklif` yok) ve
+mutasyon kırmızıya döndü. _(Anayasa: "mutasyon kaçıyorsa önce test verisi
+sorgulanır".)_
+
+⚠ **YOL ÜSTÜNDE İKİ KAÇIŞ HATASI KENDİ ELİMDEN ÇIKTI** ve ikisini de ÖLÇÜM
+yakaladı, dikkat değil: bekçinin yorum temizleyicisine fazladan bir ters bölü
+girmişti (`/\/\\*/` — doğrusu `/\/\*/`) ve regex herhangi bir `/`'dan `*/`'a kadar **kodu
+yiyordu** — taban ölçütü 6 yerine 4 sayıyordu. _(Anayasa: "kod üreten araç,
+kaçış dizilerini bozuk yazabilir".)_
+
+### BAĞIMLILIK KARARI — kullanıcı onayıyla
+
+`.xls` için **SheetJS 0.20.3, yayıncının kendi adresinden**
+(`cdn.sheetjs.com`). Ölçüldü ve **npm'deki `xlsx` paketi ELENDİ**: tek sürümü
+`0.18.5`, **yüksek önem dereceli iki açık ve düzeltmesi YOK** (Prototype
+Pollution + ReDoS; yayıncı npm'den ayrılmış). `exceljs` eski biçimi hiç
+okumuyor. Seçilen sürümde açık **yok**, bağımlılığı **yok**.
+
+⚠ **BEDELİ BEYAN EDİLİYOR:** her kurulum ve her Vercel deploy'u
+`cdn.sheetjs.com`a bağlanır. Adres düşerse **build KIRMIZI yanar** — sessiz
+değil, görünür bir arıza; yanlış rakam üretmez.
+
+### AÇIK
+- [ ] **Halil testi** — canlı adreste, gerçek dosyalarla (liste raporda).
+- [ ] **N11'in KOMİSYON dökümü hangi biçimde iniyor — ÖLÇÜLMEDİ.** Elimizdeki
+      `.xls` dosya kampanya dosyasıydı. Ürün/komisyon dökümü de `.xls` ise
+      kapı onu da açar; `.xlsx` ise bugün zaten çalışıyordu. Kapı iki biçimi
+      de çözdüğü için **hangisi olursa olsun sonuç değişmiyor** — ama iddia
+      ölçülmeden yazılmaz.
+- [ ] **HB/N11 dilimli tarife yayımlıyor mu — BİLİNMİYOR.** Ekran "bizim
+      okuyucumuz yok" diyor, "kanal yayımlamıyor" DEMİYOR. Yokluk iddiası da
+      bir iddiadır ve ölçülmedi. Böyle bir dosya eline geçerse okuyucu yazılır.
+- [ ] **FIRSAT (kusur değil):** her iki kampanya dosyasında `Mevcut Komisyon`
+      sütunu duruyor — HB'de 45, N11'de 46 ürün için, **kanalın kendi beyanı**
+      (kaynak önceliği: `OLCULDU`). Teklif kolonlarına dokunmadan yalnız o
+      sütun okunabilir. **Karar kullanıcıya ait, sessizce yapılmadı.**
+
+⚠ **DEPODA 12 GÜVENLİK AÇIĞI VAR VE BU PAKETTEN DEĞİL** (3 orta · 8 yüksek ·
+1 kritik): `prisma`/`deepmerge-ts` · `fast-uri` · `hono` · `js-yaml` ·
+`mariadb` · `sharp`. Eklenen `xlsx` audit'te **geçmiyor**. Prisma düzeltmesi
+**kırıcı sürüm** istiyor; ayrı kalem, ayrı karar.
+
+---
+
 ## 🔶 K225 — LİSTELEME SENKRONU ZAMANLANDI · 21.09.2026 · [KOŞTU — İLK OTOMATİK KOŞUM BEKLENİYOR]
 
 K224'ün açık bıraktığı madde kapandı: _"senkron zamanlanmış değil; bugün elle

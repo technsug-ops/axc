@@ -105,7 +105,27 @@ const IMZALAR: {
   },
 ];
 
-export type SayfaGirdisi = { sheet: string; data: unknown[][] };
+/**
+ * GÜNCEL ORAN OKUYUCUSU OLAN PLATFORMLAR — imza tablosundan TÜRETİLİR.
+ *
+ * ⛔ ELLE LİSTE TUTULMAZ. Yarın dördüncü bir pazaryeri `IMZALAR`a eklenince
+ * bu küme kendiliğinden büyür; ayrı bir liste tutulsaydı yeni kanal
+ * ekranda "bu kanal desteklenmiyor" diye görünür ve kimse sebebini
+ * anlamazdı — bekçi de yeşil yanardı.
+ */
+export const ORAN_OKUYUCUSU_OLAN: readonly KomisyonPlatformu[] =
+  IMZALAR.map((i) => i.platform);
+
+/**
+ * Sayfa sözleşmesi TEK GÖVDEDEN gelir (K226 · `lib/tablo/tablo-oku`).
+ * Burada ikinci bir tanım durursa, okuma kapısı şeklini değiştirdiği gün
+ * bu modül eski şekli beklemeye devam eder ve TypeScript hiçbir şey demez —
+ * iki tanım yapısal olarak uyumlu olduğu sürece ayrışma sessizdir.
+ *
+ * ⚠ `import type`: yalnız TİP gelir, SheetJS bu saf hesap modülüne GİRMEZ.
+ */
+export type { SayfaGirdisi } from "@/lib/tablo/tablo-oku";
+import type { SayfaGirdisi } from "@/lib/tablo/tablo-oku";
 
 export type PlatformTanimasi =
   | { durum: "TANINDI"; platform: KomisyonPlatformu; sayfa: string; veri: unknown[][] }
