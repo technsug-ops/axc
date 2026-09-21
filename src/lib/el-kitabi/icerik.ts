@@ -1802,11 +1802,13 @@ ${neZaman(
   "Pazaryeri yeni bir komisyon dosyası yayımladığında. Trendyol Salı, Hepsiburada Çarşamba günceller.",
 )}
 
-<h3>İki farklı dosya vardır ve aynı şey değildirler</h3>
-<div class="ek-not"><div class="etiket">Dilimli komisyon tarifesi</div>
-<p>Fiyat dilimlerine göre oran veren dosya: <em>"1.750'ye düşürürsen komisyon
-%7"</em>. <strong>Fiyat denemesini</strong> besler. Bugün yalnız Trendyol
-kartında vardır.</p></div>
+<h3>Üç farklı dosya vardır ve aynı şey değildirler</h3>
+<div class="ek-not"><div class="etiket">Haftalık dilimli komisyon tarifesi</div>
+<p>Fiyat <strong>aralıklarına</strong> göre oran veren tablo: <em>"1.750'ye
+düşürürsen komisyon %7"</em>. <strong>Üç kanalda da vardır</strong>, sadece
+adları farklıdır — Trendyol'da "komisyon tarifesi", Hepsiburada'da
+<strong>"Avantajlı Teklifler"</strong>, N11'de <strong>"Ürün Komisyon
+Teklifleri"</strong>. Fiyat denemesini ve oran denetimini besler.</p></div>
 <div class="ek-not"><div class="etiket">Güncel komisyon oranı listesi</div>
 <p>Ürün başına TEK güncel oran taşıyan döküm. <strong>Kâr hesabını</strong>
 besler — satış anında kayda işlenen oran budur. Üç kanalda da vardır.</p></div>
@@ -1819,14 +1821,13 @@ besler — satış anında kayda işlenen oran budur. Üç kanalda da vardır.</
 bir <strong>bölümünü</strong> kapsar; tamamı için "Güncel komisyon oranı
 listesi" kutusunu kullanın.</p></div>
 
-<div class="ek-not dikkat"><div class="etiket">Kampanya dosyası tarife DEĞİLDİR</div>
-<p>Hepsiburada'da <strong>"Avantajlı Teklifler"</strong>, N11'de <strong>"Ürün
-Komisyon Teklifleri"</strong> diye inen dosyayı buraya yüklemeyin. O dosya
-<strong>koşullu</strong> bir tekliftir: yazan düşük oran ancak teklifi kabul
-edip fiyatı indirirseniz geçerli olur. Tarife olarak yüklenseydi sistem
-<strong>bugünkü</strong> fiyatınıza indirimli oranı uygular, komisyon
-olduğundan düşük ve <strong>kâr olduğundan yüksek</strong> görünürdü. Ekran bu
-dosyayı tanır ve reddeder.</p></div>
+<div class="ek-not"><div class="etiket">Teklif oranı KOŞULLUDUR — ama tablo bunu bilir</div>
+<p>Teklifte yazan düşük oran, ancak fiyatı o aralığa <strong>indirirseniz</strong>
+geçerli olur. Sistem bunu <strong>aralık</strong> olarak tutar: tablonun
+tepesinde <strong>bugünkü fiyatınızın oranı</strong> durur, indirimli oranlar
+yalnız kendi aralıklarında geçerlidir. Yani "komisyon %6'ya düşüyor" diye
+görünen bir teklif, siz fiyatı düşürmedikçe kâr hesabınıza <strong>hiç
+girmez</strong>.</p></div>
 
 <div class="ek-not"><div class="etiket">Kartta "yok" yazıyorsa</div>
 <p>Bir kanalın kartında bir tür için <em>"bu dosya sisteme hiç gelmedi"</em>

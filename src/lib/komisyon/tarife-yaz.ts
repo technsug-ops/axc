@@ -2,7 +2,9 @@
 import { prisma } from "@/lib/prisma";
 import { tabloOku } from "@/lib/tablo/tablo-oku";
 
-import { teklifDosyasiMi, tarifeOku, type TarifeOkumasi } from "./tarife-okuyucu";
+import { tarifeOku, type TarifeOkumasi } from "./tarife-okuyucu";
+import { teklifTarifesiOku, teklifTarifesiTani } from "./teklif-tarifesi";
+import { kanalPlatformu } from "./yukle";
 import {
   tarifePlaniKur,
   yazilabilirMi,
@@ -54,8 +56,16 @@ export type TarifeYuklemeSonucu =
         | "SUTUN_EKSIK"
         | "PENCERE_YOK"
         | "SATIR_YOK"
-        /** K-HB-TEKLIF — kampanya teklif dosyası; tarife DEĞİL. */
-        | "TEKLIF_DOSYASI";
+        /**
+         * K227 — dosyanın pazaryeri ile seçilen hesabın kanalı çelişiyor.
+         *
+         * ⚠ `TEKLIF_DOSYASI` KODU BURADAN KALKTI ve bu bilinçli: teklif
+         * dosyası artık REDDEDİLMİYOR, dilimli tarife olarak OKUNUYOR
+         * (bkz. `teklif-tarifesi.ts` — eski gerekçe orada, niye çevrildiğiyle
+         * birlikte duruyor). Üretilmeyen bir kodu birlikte bırakmak,
+         * "yazıcısı olmayan alan" olurdu.
+         */
+        | "PLATFORM_UYUSMAZ";
       /** Betik çıktısı için ham metin — ekranda GÖSTERİLMEZ. */
       engel: string;
       eksikler?: string[];
@@ -115,25 +125,59 @@ export async function tarifeDenetle(
     };
   }
 
-  const okuma = tarifeOku(veri, bugun);
-  const izin = yazilabilirMi(okuma);
+  let okuma = tarifeOku(veri, bugun);
+  let izin = yazilabilirMi(okuma);
+  /** Teklif dosyasından okunduysa pencere dışı kalan satır sayısı. */
+  let pencereDisi = 0;
+
   if (!izin.olur) {
     /**
-     * ⛔ TANIMA, GENEL HATADAN ÖNCE. "Sütun bulunamadı" doğru ama
-     * KULLANIŞSIZ bir teşhis: operatöre ne olduğunu da ne yapacağını da
-     * söylemez ve "eksik özellik, sonra eklenir" diye okunur. Oysa bu
-     * dosya tarife DEĞİL ve tarife olarak yüklenmesi kâr hesabını bozardı.
+     * ⛔ TEKLİF DOSYASI ARTIK REDDEDİLMİYOR — TARİFE OLARAK OKUNUYOR (K227).
      *
-     * ⚠ YALNIZ HATA YOLUNDA DANIŞILIYOR: geçerli bir tarife dosyası bu
-     * satıra hiç gelmez, dolayısıyla tanıma doğru bir yüklemeyi engelleyemez.
+     * 02.09.2026'da bu dosya reddediliyordu ve gerekçe şuydu: _"tarife
+     * tablosuna girseydi `dilimBul` bugünkü fiyata indirimli oranı
+     * uygulardı."_ ⚠ ESKİ GEREKÇE SİLİNMEDİ, KAPSAMI DÜZELTİLDİ: o korku
+     * yalnız MEVCUT FİYAT DİLİMİ tabloya konmazsa gerçek olur. Okuyucu artık
+     * tepe dilimi kuruyor (`teklif-tarifesi.ts`), dolayısıyla korkunun
+     * dayanağı kalktı.
+     *
+     * ⭐ Kullanıcı tespiti 21.09.2026: HB/N11 teklif tablosu ile Trendyol
+     * tarifesi AYNI mekanizma — üç kanalın paneli de aynı aralık tablosunu
+     * gösteriyor (ekran görüntüleriyle göz göze doğrulandı).
+     *
+     * ⚠ YALNIZ HATA YOLUNDA DENENİYOR: geçerli bir Trendyol tarifesi bu
+     * satıra hiç gelmez, dolayısıyla çalışan yol etkilenmez.
      */
-    if (teklifDosyasiMi(sayfalar, dosyaAdi)) {
-      return {
-        durum: "HATA",
-        kod: "TEKLIF_DOSYASI",
-        engel: "TEKLIF_DOSYASI: Avantajlı Teklifler kampanya dosyası",
-      };
+    const teklif = teklifTarifesiTani(sayfalar);
+    if (teklif.durum === "TANINDI") {
+      /**
+       * DOSYA İLE HESAP ÇELİŞİYORSA YAZILMAZ. N11 teklif dosyasını HB
+       * hesabına yüklemek, hiçbir kodun eşleşmediği bir yükleme üretir ve
+       * kullanıcı sistemi bozuk sanar; asıl sebep söylenir.
+       */
+      const hesap = await prisma.channelAccount.findUnique({
+        where: { id: channelAccountId },
+        include: { channel: { select: { code: true, name: true } } },
+      });
+      const hesapPlatformu = hesap ? kanalPlatformu(hesap.channel.code) : null;
+      if (hesapPlatformu !== teklif.platform) {
+        return {
+          durum: "HATA",
+          kod: "PLATFORM_UYUSMAZ",
+          engel: `PLATFORM_UYUSMAZ: dosya ${teklif.platform}, hesap ${
+            hesap?.channel.name ?? "?"
+          }`,
+        };
+      }
+
+      const teklifOkumasi = teklifTarifesiOku(teklif);
+      pencereDisi = teklifOkumasi.pencereDisi;
+      okuma = teklifOkumasi;
+      izin = yazilabilirMi(okuma);
     }
+  }
+
+  if (!izin.olur) {
     return {
       durum: "HATA",
       kod: izin.engel,
@@ -141,6 +185,7 @@ export async function tarifeDenetle(
       eksikler: "eksikler" in izin ? izin.eksikler : undefined,
     };
   }
+  void pencereDisi;
 
   const varyantlar = await prisma.productVariant.findMany({
     where: { barcode: { not: null } },

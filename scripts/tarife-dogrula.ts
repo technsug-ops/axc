@@ -1,6 +1,16 @@
 import { readFileSync } from "node:fs";
 
-import { kanalYetenegi, YUKLEME_TURLERI } from "../src/lib/komisyon/kanal-yetenegi";
+import {
+  DILIMLI_TARIFE_OKUYUCUSU_OLAN,
+  kanalYetenegi,
+  YUKLEME_TURLERI,
+} from "../src/lib/komisyon/kanal-yetenegi";
+import {
+  dilimleriKur,
+  TEKLIF_TARIFESI_OKUYUCUSU_OLAN,
+  teklifTarifesiOku,
+  teklifTarifesiTani,
+} from "../src/lib/komisyon/teklif-tarifesi";
 import { ORAN_OKUYUCUSU_OLAN } from "../src/lib/komisyon/okuyucu";
 import { ENGEL_ANAHTARI } from "../src/lib/komisyon/tarife-engeli";
 import { teklifDosyasiMi } from "../src/lib/komisyon/tarife-okuyucu";
@@ -467,9 +477,19 @@ console.log("\nKOMİSYON TARİFESİ — DOĞRULAMA\n");
    * tarafını sınamak.
    */
   kontrol("en az beş engel kodu eşlenmiş", kodlar.length >= 5, kodlar);
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ, SUSTURULMADI — GÜNCELLENDİ (K227, 21.09.2026).
+   * Burada `TEKLIF_DOSYASI` kodunun eşlemede olması aranıyordu. O kod
+   * ARTIK ÜRETİLMİYOR: teklif dosyası reddedilmiyor, dilimli tarife olarak
+   * OKUNUYOR. Yerine gelen kod dosya/hesap çelişkisini bildiriyor.
+   */
   kontrol(
-    "  ...ve TEKLIF_DOSYASI eşlemede (K-HB-TEKLIF)",
-    kodlar.includes("TEKLIF_DOSYASI"),
+    "  ...ve PLATFORM_UYUSMAZ eşlemede (K227)",
+    kodlar.includes("PLATFORM_UYUSMAZ"),
+  );
+  kontrol(
+    "  ...ve üretilmeyen TEKLIF_DOSYASI kodu eşlemede DEĞİL",
+    !kodlar.includes("TEKLIF_DOSYASI"),
   );
 
   for (const [kod, anahtar] of Object.entries(ENGEL_ANAHTARI)) {
@@ -1217,21 +1237,45 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
     "tanınmayan kanal (null) da her tür için satır döndürüyor",
     kanalYetenegi(null).length === YUKLEME_TURLERI.length,
   );
+  /**
+   * ⚠ BU ÖLÇÜT BİR MUTASYON KAÇIŞINDAN DOĞDU (21.09.2026). Yalnız SAYI
+   * sayan bir ölçüt, bir türü başka bir türle DEĞİŞTİREN mutasyonu
+   * göremiyordu: adet aynı kalıyor, küme bozuluyor. Artık TÜRLERİN
+   * KÜMESİ karşılaştırılıyor — hem de her kanal için.
+   */
+  for (const p of [null, "TRENDYOL", "HEPSIBURADA", "N11"] as const) {
+    const turler = kanalYetenegi(p).map((x) => x.tur).sort();
+    kontrol(
+      `${p ?? "null"}: dönen tür KÜMESİ beyanla aynı (tekrar yok)`,
+      JSON.stringify(turler) === JSON.stringify([...YUKLEME_TURLERI].sort()),
+    );
+  }
 
   const ty = kanalYetenegi("TRENDYOL");
   kontrol(
     "TRENDYOL dilimli tarife KABUL EDİYOR",
     ty.find((t) => t.tur === "DILIMLI_TARIFE")?.durum === "VAR",
   );
+  /**
+   * ⚠ BU ÖLÇÜT DE ESKİDİ VE ÇEVRİLDİ (K227). Eskiden HB ve N11 için
+   * _"dilimli tarife KABUL ETMİYOR"_ aranıyordu; ölçüm o kanalların AYNI
+   * tabloyu "teklif" adıyla yayımladığını gösterdi ve okuyucusu yazıldı.
+   * Artık üçü de kabul ediyor — ve bu, beyandan türetiliyor.
+   */
   for (const p of ["HEPSIBURADA", "N11"] as const) {
     const y = kanalYetenegi(p).find((t) => t.tur === "DILIMLI_TARIFE");
-    kontrol(`${p} dilimli tarife KABUL ETMİYOR`, y?.durum === "YOK");
-    /** ⛔ GEREKÇESİZ "YOK" YAZILAMAZ — okuyanı çıkmaza götürür. */
-    kontrol(
-      `  ...ve sebebi BEYAN EDİLMİŞ`,
-      y?.durum === "YOK" && y.sebep === "OKUYUCU_YOK",
-    );
+    kontrol(`${p} dilimli tarife KABUL EDİYOR (K227)`, y?.durum === "VAR");
   }
+  kontrol(
+    `taban dolu — dilimli tarife okuyucusu olan platform === 3 (${DILIMLI_TARIFE_OKUYUCUSU_OLAN.length})`,
+    DILIMLI_TARIFE_OKUYUCUSU_OLAN.length === 3,
+  );
+  kontrol(
+    "  ...ve küme TEKLİF BEYANINDAN türetiliyor (elle liste yok)",
+    TEKLIF_TARIFESI_OKUYUCUSU_OLAN.every((p) =>
+      DILIMLI_TARIFE_OKUYUCUSU_OLAN.includes(p),
+    ),
+  );
 
   /**
    * ⚠ TABAN DOLULUĞU: güncel oran okuyucusu olan platform kümesi `IMZALAR`dan
@@ -1248,6 +1292,110 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
       kanalYetenegi(p).find((t) => t.tur === "GUNCEL_ORAN")?.durum === "VAR",
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+//  K227 - TEKLIF DOSYASI -> DILIMLI TARIFE
+// ---------------------------------------------------------------------------
+{
+  console.log("\nK227 - TEKLIF DOSYASI DILIMLI TARIFE OLARAK OKUNUYOR");
+
+  /*
+   * CAPA GERCEK: asagidaki rakamlar Hepsiburada panelinin KENDI ekranindan
+   * (Braun IRT3030) goz goze dogrulandi:
+   *   Guncel 2.599,00 -> %18 | 1.801,00-1.711,01 -> %8,8
+   *   1.711,00-1.621,01 -> %7,2 | 1.621,00 ve alti -> %6
+   * Uydurma fikstur degil, kanalin kendi gosterdigi tablo.
+   */
+  const hbSayfa = [
+    {
+      sheet: "Teklifler",
+      data: [
+        ["Ürün Adı", "Satıcı Stok Kodu", "SKU", "Mevcut Fiyat", "Mevcut Komisyon", "Teklif 1", null, "Teklif 2", null, "Teklif 3", null, "Teklif Kodu"],
+        [null, null, null, null, null, "Üst Fiyat", "Komisyon", "Üst Fiyat", "Komisyon", "Üst Fiyat", "Komisyon", null],
+        ["Braun IRT3030", "HBV1", "HBV1", 2599, "18,00 %", 1801, "8,8 %", 1711, "7,2 %", 1621, "6 %", 138454357],
+      ] as unknown[][],
+    },
+  ];
+  const tHb = teklifTarifesiTani(hbSayfa);
+  kontrol("HB teklif dosyasi TANINIYOR", tHb.durum === "TANINDI" && tHb.platform === "HEPSIBURADA");
+  const dH = teklifTarifesiOku(tHb).satirlar[0]?.dilimler ?? [];
+  kontrol("dort dilim kuruldu (guncel + uc teklif)", dH.length === 4);
+  kontrol("tepe dilim UST UC ACIK ve GUNCEL komisyonu tasiyor",
+    dH[0]?.ustLimit === null && dH[0]?.oran === 18 && dH[0]?.altLimit === 1801.01);
+  kontrol("2. dilim 1.711,01 - 1.801,00 -> %8,8",
+    dH[1]?.altLimit === 1711.01 && dH[1]?.ustLimit === 1801 && dH[1]?.oran === 8.8);
+  kontrol("son dilim ALT UC ACIK -> %6",
+    dH[3]?.altLimit === null && dH[3]?.ustLimit === 1621 && dH[3]?.oran === 6);
+
+  /*
+   * EN KRITIK OLCUT - 02.09.2026'daki korkunun kendisi. Tepe dilim olmasaydi
+   * dilimBul(2599) INDIRIMLI orani dondururdu: komisyon oldugundan dusuk,
+   * kar oldugundan YUKSEK cikardi ve rakam makul gorunurdu.
+   */
+  kontrol("dilimBul(2599) -> %18 (bugunku fiyata INDIRIMLI oran UYGULANMIYOR)",
+    dilimBul(dH, 2599)?.oran === 18);
+  kontrol("dilimBul(1750) -> %8,8", dilimBul(dH, 1750)?.oran === 8.8);
+  kontrol("dilimBul(1500) -> %6", dilimBul(dH, 1500)?.oran === 6);
+  kontrol("dilim sinirlari BITISIK - 1711 ile 1711,01 farkli dilim",
+    dilimBul(dH, 1711)?.oran === 7.2 && dilimBul(dH, 1711.01)?.oran === 8.8);
+
+  /* N11: dosya iki siniri da veriyor -> TURETME YAPILMAZ. */
+  const n11: unknown[][] = [
+    [null, null, "Dikkat Edilmesi Gerekenler"],
+    [], [], [], [], [], [], [], [], [],
+    ["Ürün Adı", "Satıcı Stok Kodu", "3. Teklif Üst Limit", "3. Teklif Alt Limit", "3. Teklif Komisyon", "Mevcut Fiyat", "Mevcut Komisyon", "DEAL_ID"],
+    ["LEGO Art", "EN1", 7499, 32.29, 1, 11999, 18, 278540586],
+  ];
+  const tN = teklifTarifesiTani([{ sheet: "Urun Komisyon Teklifleri", data: n11 }]);
+  kontrol("N11 teklif dosyasi TANINIYOR (baslik 11. satirda)",
+    tN.durum === "TANINDI" && tN.platform === "N11");
+  const dN = teklifTarifesiOku(tN).satirlar[0]?.dilimler ?? [];
+  kontrol("N11: iki dilim (guncel + tek teklif)", dN.length === 2);
+  kontrol("N11: alt sinir DOSYADAN, turetilmedi", dN[1]?.altLimit === 32.29);
+  kontrol("N11: dilimBul(11999) -> %18", dilimBul(dN, 11999)?.oran === 18);
+  kontrol("N11: dilimBul(5000) -> %1", dilimBul(dN, 5000)?.oran === 1);
+
+  /* YANLIS YANMA YONU: gercek TY tarifesi teklif okuyucusuna DUSMEZ. */
+  kontrol(
+    "gercek TY tarife dosyasi teklif SAYILMIYOR",
+    teklifTarifesiTani([
+      { sheet: "S", data: [["BARKOD", "1.Fiyat Alt Limit", "1.KOMISYON"], ["869", 0, 21]] as unknown[][] },
+    ]).durum === "TANINMADI",
+  );
+
+  /*
+   * PENCERE GUNE GORE GRUPLANIR - OLCUMLE BULUNDU.
+   * HB teklifleri ayni gunun farkli DAKIKASINDA basliyor (00:07, 00:19...).
+   * Saniyeye bakan bir sayac 44 satirda 27 ayri pencere goruyordu ve
+   * 41 satir "pencere disi" cikiyordu; oysa operatorun ve panelin gordugu
+   * TEK hafta. Iki satir ayni gun, farkli dakika -> TEK pencere olmali.
+   */
+  {
+    const g1 = new Date(Date.UTC(2026, 8, 16, 0, 7));
+    const g2 = new Date(Date.UTC(2026, 8, 16, 0, 19));
+    const bit = new Date(Date.UTC(2026, 8, 22, 23, 58));
+    const iki = teklifTarifesiOku(
+      teklifTarifesiTani([
+        {
+          sheet: "Teklifler",
+          data: [
+            ["Ürün Adı", "SKU", "Başlangıç", "Bitiş", "Mevcut Fiyat", "Mevcut Komisyon", "Teklif 1", null, "Teklif Kodu"],
+            [null, null, null, null, null, null, "Üst Fiyat", "Komisyon", null],
+            ["A", "S1", g1, bit, 100, "18 %", 90, "9 %", 1],
+            ["B", "S2", g2, bit, 100, "18 %", 90, "9 %", 2],
+          ] as unknown[][],
+        },
+      ]),
+    );
+    kontrol("iki satir ayni GUN, farkli dakika -> pencere disi YOK", iki.pencereDisi === 0);
+    kontrol("  ...ve pencere kuruldu", iki.pencere !== null);
+  }
+
+  kontrol("guncel komisyon yoksa tepe dilim KURULMAZ (uydurulmaz)",
+    dilimleriKur([{ ust: 100, alt: null, oran: 5 }], null).length === 1);
+  kontrol("  ...varsa tepe dilim eklenir",
+    dilimleriKur([{ ust: 100, alt: null, oran: 5 }], 20).length === 2);
 }
 
 console.log("");

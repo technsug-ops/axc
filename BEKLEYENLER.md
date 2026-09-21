@@ -13,6 +13,104 @@
 
 ---
 
+## 🔶 K227 — TEKLİF DOSYASI **TARİFEDİR** — ESKİ KARAR ÇEVRİLDİ · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+**KULLANICI TESPİTİ:** _"HB'de her Çarşamba ürünlerin bir kısmı için teklif
+veriliyor; teklif edilen rakamı satış fiyatı olarak işaretlersen o fiyatın
+komisyonu geçerli. **Temel mantık Trendyol ile aynı.**"_
+
+⛔ **VE HAKLIYDI. 02.09.2026'daki K-HB-TEKLIF KARARI YANLIŞTI.** O gün şu
+yazılmıştı: _"Bu dosya tarife DEĞİL ve tarife olarak yüklenmesi kâr hesabını
+bozar."_ Gerekçe şuydu: `dilimBul` bugünkü fiyata indirimli oranı uygulardı.
+
+⭐ **GEREKÇE DOĞRUYDU AMA KOŞULLUYDU — VE KOŞUL HİÇ SORULMAMIŞTI:** o kayma
+yalnız **MEVCUT FİYAT DİLİMİ tabloya konmazsa** olur. Konursa
+`dilimBul(2.599)` → **%18** döner, yani doğru. Trendyol'un tarifesi de
+**aynı koşullu mekanizma** — anayasa onu kendi sözleriyle yazıyor:
+_"TY fiyat indirimi karşılığı komisyon indiriyor: 2.000'e %10, 1.750'ye
+satarsan %7"_. Yani koşulluluk ayırt edici değildi; eksik olan **tablonun
+TEPESİYDİ**. _(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı
+korur" — burada korunan şey, HB/N11'in tarifesiz kalmasıydı.)_
+
+### ÖLÇÜM — üç kanalın paneli GÖZ GÖZE karşılaştırıldı
+
+Braun IRT3030 · HB dosyası ↔ HB panelinin kendi ekranı, **birebir**:
+
+    > 1.801,00            %18     ← mevcut komisyon, üst uç AÇIK
+    1.711,01 – 1.801,00   %8,8
+    1.621,01 – 1.711,00   %7,2
+            ≤ 1.621,00    %6      ← alt uç AÇIK
+
+| kanal | dosyadaki şekil |
+|---|---|
+| Trendyol | `1.Fiyat Alt Limit … 4.KOMİSYON` · tepe dilim dosyada VAR (`ve üstü`) |
+| Hepsiburada | `Teklif 1/2/3` → yalnız **ÜST fiyat**; alt sınır bir sonrakinin **+1 kuruşu** (panel `1.711,00 - 1.621,01` yazarak doğruluyor) |
+| N11 | `N. Teklif Üst Limit + Alt Limit + Komisyon` · **iki sınır da dosyada**, türetme YOK |
+
+Dosyanın kendi notu da kanıt: _"Hesaplanan Komisyon, girilen fiyata ve
+**sunulan fiyat aralıklarına** göre otomatik hesaplanır."_ (N11)
+
+### YAPILAN
+
+**A) Yeni saf gövde** `teklif-tarifesi.ts` — teklif dosyasını `TarifeOkumasi`
+üretir, yani Trendyol okuyucusunun **çıktısının aynısı**. Aynı plan/yazma
+yolundan geçer; ikinci bir yazma yolu açılmadı.
+
+**B) Tarife yolu artık teklif dosyasını KABUL EDİYOR** — ve yalnız HATA
+dalında deneniyor, geçerli bir TY tarifesi o satıra hiç gelmiyor.
+`TEKLIF_DOSYASI` engel kodu **kaldırıldı** (üretilmeyen kod bırakılmaz);
+yerine `PLATFORM_UYUSMAZ` geldi — dosya ile hesabın kanalı çelişirse yazmaz.
+
+**C) `DILIMLI_TARIFE` artık ÜÇ kanalda** ve küme **elle değil beyandan**
+türetiliyor (`...TEKLIF_TARIFESI_OKUYUCUSU_OLAN`).
+
+**D) Kutu adları düzeltildi** (kullanıcı onayı): _"Güncel komisyon oranı
+listesi"_ → **"Haftalık komisyon oranı (ürün dökümü)"**; tarife kutusu
+**"Haftalık dilimli komisyon tarifesi"** oldu ve üç kanaldaki adlarını yazıyor.
+
+⛔ **PENCERE — ÖLÇÜM BİR KUSUR YAKALADI.** İlk yazımda pencere tam zaman
+damgasına göre gruplanıyordu ve **44 satırın 41'i "pencere dışı"** çıktı:
+HB teklifleri aynı günün farklı DAKİKASINDA başlıyor (`00:07` · `00:19`…).
+Gruplama İstanbul takvim gününe çevrildi → pencere **16.09 → 22.09**, yani
+**panelin sekmesinde yazanın aynısı**; dışarıda kalan 14 satır ekranda sayılıyor.
+
+⚠ **PENCERE YÜKLEME BAŞINA TEK — BEYAN.** Teklifler ürün başına ayrı tarih
+taşıyor (HB'de 44 üründe 27 farklı). Kayıt tek pencere tutuyor; **en yaygın**
+aralık seçiliyor. Gerekçe: dosya haftalık yükleniyor ve her yükleme o haftanın
+geçerli tekliflerini yeniden getiriyor. _Kalem başına geçerlilik şema
+değişikliği ister; bugünkü akışta karşılığı yok._
+
+### BEKÇİ + MUTASYON
+
+    tarife:dogrula   164 → 187 ölçüt
+    teklif-tanima-mutasyon:kontrol   18/18 → 23/23
+
+⛔ **EN KRİTİK ÖLÇÜT:** `dilimBul(2.599) → %18`. Tepe dilimi kaldıran mutasyon
+kırmızı yanıyor — yani 02.09'daki korkunun kendisi artık **ölçülüyor**.
+Diğerleri: kuruş payını kaldıran (dilimler çakışır) · alt sınır türetmeyi
+kaldıran (HB dilimleri açık kalır) · pencereyi saniyeye döndüren · beyanı
+boşaltan. Beşi de kırmızı.
+
+⭐ **VE BİR MUTASYON KAÇTI, ÖLÇÜT DÜZELTİLDİ.** Bir türü BAŞKA bir türle
+değiştiren mutasyon, yalnız SAYI sayan ölçütten kaçıyordu (adet aynı, küme
+bozuk). Artık **türlerin KÜMESİ** karşılaştırılıyor — her kanal için.
+
+⚠ **VE İKİ MUTASYONUN ÇAPASI REFAKTÖRLE KAYDI.** Harness _"geçti"_ demedi,
+**"ÖLÇÜLEMEDİ"** dedi ve push'u durdurdu. Mutasyonlar SİLİNMEDİ; niyetleri
+korunup yeni koda taşındı. _(Anayasa: "refaktör, çapalı harness'i de taşır".)_
+
+### AÇIK
+- [ ] **Halil testi** — canlı adreste, gerçek teklif dosyalarıyla.
+- [ ] **Teslim 2: pazaryeri aynası ekranı** (kullanıcı kararı: ayna + **bizim
+      NET kârımız**). Panelin gösterdiği her dilimin yanında o fiyata satarsan
+      NET-2 yazacak — pazaryerinin asla gösteremeyeceği rakam, çünkü maliyeti
+      bilmiyor. Fiyat denemesi motoru yeniden yazılmayacak, çağrılacak.
+- [ ] **Trendyol teklif/indirimli dosyası ölçülmedi** — TY'nin kampanya
+      dosyasında `Mevcut Komisyon` biçiminde bir kolon var mı bakılmadı.
+      "Yok" denmiyor, **bakılmadı**.
+
+---
+
 ## 🔶 K226 — KOMİSYON YÜKLEME TEK KAPI + ESKİ BİÇİM (.xls) · 21.09.2026 · [KOŞTU — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI ARIZASI:** _"Hepsiburada tarifeler panodan yüklenemiyor."_ İki

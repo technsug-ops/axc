@@ -96,20 +96,20 @@ const MUTASYONLAR: Mutasyon[] = [
       "Trendyol'un GERCEK dilimli tarifesi kampanya sayilir ve gecerli bir yukleme reddedilir — yanlis yanma",
   },
   {
-    ad: "TARİFE OKUYUCUSU BEYANI BOŞALDI",
+    ad: "TEKLIF BEYANI YETENEGE BAGLANMIYOR (spread dustu)",
     yon: "KALDIRAN",
     dosya: YETENEK,
-    bul: 'export const DILIMLI_TARIFE_OKUYUCUSU_OLAN: readonly KomisyonPlatformu[] = [\n  "TRENDYOL",\n];',
-    koy: "export const DILIMLI_TARIFE_OKUYUCUSU_OLAN: readonly KomisyonPlatformu[] = [];",
+    bul: '  ...TEKLIF_TARIFESI_OKUYUCUSU_OLAN,\n];',
+    koy: '];',
     bozdugu:
       "Trendyol karti da 'dilimli tarife yok' der; calisan tek yol ekrandan kaybolur ve kimse sebebini goremez",
   },
   {
-    ad: "BEYANA HEPSIBURADA EKLENDİ — tutulamayan söz",
-    yon: "FAZLADAN",
+    ad: "TRENDYOL BEYANDAN DUSTU - calisan yol kayboldu",
+    yon: "KALDIRAN",
     dosya: YETENEK,
-    bul: '  "TRENDYOL",\n];',
-    koy: '  "TRENDYOL",\n  "HEPSIBURADA",\n];',
+    bul: '  "TRENDYOL",\n',
+    koy: '',
     bozdugu:
       "ekran HB icin dilimli tarife kutusu acar; okuyucu YOK, yuklenen her dosya 'sutun eksik' ile duser — ekran tutamayacagi bir soz verir",
   },
@@ -221,6 +221,51 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "kutu ekranda durur ama dosya LISTE kipinde okunur; kampanya dosyasi 'taninmayan dosya' diye reddedilir",
     bekci: KOMISYON_BEKCISI,
+  },
+  {
+    ad: "TEPE DILIM KURULMUYOR - 02.09'daki korkunun kendisi",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/teklif-tarifesi.ts",
+    bul: "  if (guncelKomisyon !== null) {",
+    koy: "  if (false) {",
+    bozdugu:
+      "dilimBul bugunku fiyata en yakin INDIRIMLI orani dondurur; komisyon oldugundan dusuk, kar oldugundan YUKSEK cikar ve rakam makul gorunur",
+  },
+  {
+    ad: "DILIM SINIRLARI CAKISIYOR - kurus payi kalkti",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/teklif-tarifesi.ts",
+    bul: "const KURUS = 0.01;",
+    koy: "const KURUS = 0;",
+    bozdugu:
+      "iki dilim ayni fiyatta cakisir; 1711 hem 7,2 hem 8,8 dilimine girer ve dilimBul siraya gore rastgele birini dondurur",
+  },
+  {
+    ad: "ALT SINIR TURETILMIYOR - HB dilimleri acik kaliyor",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/teklif-tarifesi.ts",
+    bul: "      t.alt !== null ? t.alt : sonraki ? sonraki.ust + KURUS : null;",
+    koy: "      t.alt;",
+    bozdugu:
+      "HB dosyasi alt siniri vermiyor; turetilmezse her dilimin alti ACIK kalir ve dilimBul hep EN USTTEKI teklifi dondurur",
+  },
+  {
+    ad: "TEKLIF OKUYUCUSU BEYANI BOSALDI",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/teklif-tarifesi.ts",
+    bul: "export const TEKLIF_TARIFESI_OKUYUCUSU_OLAN: readonly KomisyonPlatformu[] = [\n  \"HEPSIBURADA\",\n  \"N11\",\n];",
+    koy: "export const TEKLIF_TARIFESI_OKUYUCUSU_OLAN: readonly KomisyonPlatformu[] = [];",
+    bozdugu:
+      "HB ve N11 kartlarinda dilimli tarife kutusu yeniden kapanir; calisan yol ekrandan kaybolur",
+  },
+  {
+    ad: "PENCERE SANIYEYE GORE GRUPLANIYOR",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/teklif-tarifesi.ts",
+    bul: "      const anahtar = `${gunDegeri(isTakvimGunu(b)).toISOString()}|${gunDegeri(",
+    koy: "      const anahtar = `${b.toISOString()}|${(",
+    bozdugu:
+      "ayni haftanin tekliflerini 27 ayri pencere sayar; 44 satirin 41'i 'pencere disi' cikar ve secilen pencere panelinkiyle tutmaz",
   },
 ];
 

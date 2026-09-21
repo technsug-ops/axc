@@ -1,4 +1,5 @@
 import { KAMPANYA_ORANI_OKUYUCUSU_OLAN } from "./kampanya-orani";
+import { TEKLIF_TARIFESI_OKUYUCUSU_OLAN } from "./teklif-tarifesi";
 import { ORAN_OKUYUCUSU_OLAN } from "./okuyucu";
 import type { KomisyonPlatformu } from "./model";
 
@@ -87,7 +88,14 @@ export type TurDurumu =
  * satıra o platform eklenir.
  */
 export const DILIMLI_TARIFE_OKUYUCUSU_OLAN: readonly KomisyonPlatformu[] = [
+  /** Kendi haftalık dilimli tarife dosyası (`1.KOMİSYON…4.KOMİSYON`). */
   "TRENDYOL",
+  /**
+   * K227 — HB ve N11 aynı tabloyu "teklif" adıyla yayımlıyor ve okuyucusu
+   * yazıldı (`teklif-tarifesi.ts`). Küme ELLE değil o beyandan türetiliyor;
+   * dördüncü bir kanalın okuyucusu yazıldığı gün buraya kendiliğinden girer.
+   */
+  ...TEKLIF_TARIFESI_OKUYUCUSU_OLAN,
 ];
 
 /**

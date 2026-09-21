@@ -32,10 +32,14 @@ export const ENGEL_ANAHTARI: Record<TarifeEngelKodu, string> = {
   PENCERE_YOK: "hataPencereYok",
   SATIR_YOK: "hataSatirYok",
   /**
-   * K-HB-TEKLIF (02.09.2026) — kullanıcı HB "Avantajlı Teklifler"
-   * dosyasını yükledi. Eskiden `SUTUN_EKSIK` düşüyordu: doğru ama
-   * kullanışsız teşhis, üstelik "henüz desteklenmiyor" diye okunuyordu.
-   * Bu dosya tarife DEĞİL ve tarife olarak yüklenmesi kâr hesabını bozar.
+   * K227 (21.09.2026) — dosyanın pazaryeri ile hesabın kanalı çelişiyor.
+   *
+   * ⚠ ESKİ `TEKLIF_DOSYASI` KODU KALKTI — ve gerekçesi silinmedi.
+   * 02.09.2026'da HB "Avantajlı Teklifler" dosyası _"tarife DEĞİL"_ diye
+   * reddediliyordu. 21.09'da ölçüldü: o dosya Trendyol tarifesiyle AYNI
+   * aralık tablosu (üç kanalın paneli de aynı şeyi gösteriyor). Eski
+   * korkunun dayanağı, tablonun TEPESİNİN kurulmamasıydı; kurulunca
+   * dayanak kalktı. Tamamı `teklif-tarifesi.ts` başlığında.
    */
-  TEKLIF_DOSYASI: "hataTeklifDosyasi",
+  PLATFORM_UYUSMAZ: "hataPlatformUyusmaz",
 };
