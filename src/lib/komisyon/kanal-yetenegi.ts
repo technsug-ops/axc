@@ -1,3 +1,4 @@
+import { KAMPANYA_ORANI_OKUYUCUSU_OLAN } from "./kampanya-orani";
 import { ORAN_OKUYUCUSU_OLAN } from "./okuyucu";
 import type { KomisyonPlatformu } from "./model";
 
@@ -27,12 +28,42 @@ import type { KomisyonPlatformu } from "./model";
  * ============================================================================
  */
 
-export type YuklemeTuru = "DILIMLI_TARIFE" | "GUNCEL_ORAN";
+export type YuklemeTuru =
+  | "DILIMLI_TARIFE"
+  | "GUNCEL_ORAN"
+  /** K226-4 — kampanya dosyasından YALNIZ `Mevcut Komisyon`. */
+  | "KAMPANYA_ORANI";
 
 /**
  * Bir türün NİYE olmadığı. Serbest metin DEĞİL kapalı küme: ekran metni
  * sözlükten gelir (i18n kuralı) ve gerekçesiz "yok" yazılamaz.
  */
+/**
+ * TÜRLERİN ÇALIŞMA ANI LİSTESİ — ekran ve bekçi buradan sayar.
+ *
+ * ⚠ NİYE VAR: `tarife:dogrula`da "iki tür döner" diye ELLE SAYILMIŞ bir
+ * ölçüt vardı ve üçüncü tür eklenince kırmızı yandı. Ölçüt yanlış değildi,
+ * **eskimişti** — ve elle sayılan her rakam er ya da geç eskir. Artık sayı
+ * beyandan türetiliyor.
+ *
+ * ⛔ TAMLIK DERLEME ZAMANINDA KAPILANIYOR: aşağıdaki `Record` bir tür
+ * eklenip buraya yazılmazsa DERLENMEZ. Liste böylece kendi kendine eksik
+ * kalamaz.
+ */
+export const YUKLEME_TURLERI: readonly YuklemeTuru[] = [
+  "DILIMLI_TARIFE",
+  "GUNCEL_ORAN",
+  "KAMPANYA_ORANI",
+];
+
+/** Yalnız derleme zamanı kapısı — çalışma anında kullanılmaz. */
+const _TURLER_TAM: Record<YuklemeTuru, true> = {
+  DILIMLI_TARIFE: true,
+  GUNCEL_ORAN: true,
+  KAMPANYA_ORANI: true,
+};
+void _TURLER_TAM;
+
 export type EksikSebebi = "OKUYUCU_YOK";
 
 export type TurDurumu =
@@ -72,6 +103,8 @@ export function kanalYetenegi(
   const tarifeVar =
     platform !== null && DILIMLI_TARIFE_OKUYUCUSU_OLAN.includes(platform);
   const oranVar = platform !== null && ORAN_OKUYUCUSU_OLAN.includes(platform);
+  const kampanyaVar =
+    platform !== null && KAMPANYA_ORANI_OKUYUCUSU_OLAN.includes(platform);
 
   return [
     tarifeVar
@@ -80,5 +113,8 @@ export function kanalYetenegi(
     oranVar
       ? { tur: "GUNCEL_ORAN", durum: "VAR" }
       : { tur: "GUNCEL_ORAN", durum: "YOK", sebep: "OKUYUCU_YOK" },
+    kampanyaVar
+      ? { tur: "KAMPANYA_ORANI", durum: "VAR" }
+      : { tur: "KAMPANYA_ORANI", durum: "YOK", sebep: "OKUYUCU_YOK" },
   ];
 }

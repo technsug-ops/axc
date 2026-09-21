@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { kanalYetenegi } from "../src/lib/komisyon/kanal-yetenegi";
+import { kanalYetenegi, YUKLEME_TURLERI } from "../src/lib/komisyon/kanal-yetenegi";
 import { ORAN_OKUYUCUSU_OLAN } from "../src/lib/komisyon/okuyucu";
 import { ENGEL_ANAHTARI } from "../src/lib/komisyon/tarife-engeli";
 import { teklifDosyasiMi } from "../src/lib/komisyon/tarife-okuyucu";
@@ -1194,10 +1194,29 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
    * ⚠ HER TÜR İÇİN SATIR DÖNER, eksik olan da. Desteklenmeyeni listeden
    * düşürmek, ekranda "baktım yok" ile "bu satır hiç yok"u aynı gösterirdi.
    */
+  /**
+   * ⚠ ÖLÇÜT ESKİMİŞTİ, SUSTURULMADI — GÜNCELLENDİ (21.09.2026).
+   * Burada "iki tür döner" diye ELLE SAYILMIş bir rakam vardı; üçüncü tür
+   * (kampanya oranı) eklenince kırmızı yandı. Bekçi haksız değildi ama kod da
+   * yanlış değildi: eskiyen şey ÖLÇÜTTÜ. Artık sayı BEYANDAN türetiliyor.
+   * _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez".)_
+   */
+  kontrol(
+    `tür beyanı dolu (${YUKLEME_TURLERI.length} tür)`,
+    YUKLEME_TURLERI.length >= 3,
+  );
   for (const p of ["TRENDYOL", "HEPSIBURADA", "N11"] as const) {
-    kontrol(`${p}: iki tür de satır olarak dönüyor`, kanalYetenegi(p).length === 2);
+    const y = kanalYetenegi(p);
+    kontrol(`${p}: her tür için satır dönüyor`, y.length === YUKLEME_TURLERI.length);
+    kontrol(
+      `  ...ve dönen türler beyanla BİREBİR aynı`,
+      YUKLEME_TURLERI.every((t) => y.some((x) => x.tur === t)),
+    );
   }
-  kontrol("tanınmayan kanal (null) da iki satır döndürüyor", kanalYetenegi(null).length === 2);
+  kontrol(
+    "tanınmayan kanal (null) da her tür için satır döndürüyor",
+    kanalYetenegi(null).length === YUKLEME_TURLERI.length,
+  );
 
   const ty = kanalYetenegi("TRENDYOL");
   kontrol(

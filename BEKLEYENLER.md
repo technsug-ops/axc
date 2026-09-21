@@ -190,6 +190,52 @@ liste bakım istemez. _(Anayasa: "tip listesi değil, BAĞ".)_
 **Mutasyon 10/10 → 13/13**: etiketi silen · yolu çıkaran · tipi çıplak
 birliğe döndüren; üçü de kırmızı yandı.
 
+─── ④ KAMPANYA DOSYASINDAN "MEVCUT KOMİSYON" — ÜÇÜNCÜ KUTU
+
+**KULLANICI İTİRAZI:** _"Bunları HB ve N11 yüklemek için yapmıyor muyuz zaten,
+normalde Trendyol yükleniyordu."_ İtiraz haklıydı ve iki şeyi ayırmayı
+gerektirdi:
+
+⚠ **HB/N11 YÜKLEMESİ BU PAKETTEN ÖNCE DE VARDI** — `/kanal-sku/komisyon-aktar`
+üç kanalı da **18.08.2026'dan beri** tanıyor. Trendyol'un ayrıcalığı yoktu.
+Bozuk olan **kapının bulunamaması** ve ekranın yanlış cümle kurmasıydı.
+
+⭐ **AMA İTİRAZIN ALTINDA GERÇEK BİR ŞEY VARDI:** kullanıcının ELİNDEKİ dosya
+kampanya dosyası ve içinde `Mevcut Komisyon` sütunu duruyor — kanalın o anki
+GERÇEK oranı, kaynak önceliğinde **en üst basamak**. Atmak, elimizdeki gerçek
+veriyi çöpe atmaktı.
+
+**ÖLÇÜLDÜ (gerçek dosyalar, 21.09.2026):**
+
+    HB  kampanya  44/45 satırda kod + okunabilir oran   · kataloğun 2153'te 44'ü
+    N11 kampanya  46/46 satırda kod + okunabilir oran   · kataloğun 48'de 46'sı
+    kimlik uyumu  HB 36/44 · N11 24/46 kod oran listesinde de var → aynı kod uzayı
+
+⭐ **N11'DE BU BÜYÜK:** indirdiği kampanya dosyası kataloğunun neredeyse
+tamamının güncel oranını taşıyor. HB'de küçük (%2) — orada asıl kaynak yine
+tam döküm. **Karar kullanıcıya soruldu, sessizce yapılmadı.**
+
+**YAPILAN:** kartlarda üçüncü kutu — _"Kampanya dosyasından güncel oranları
+al"_. ⛔ Teklif kolonları **OKUNMUYOR** (modül onları hiç görmüyor).
+Aynı okuyucu/plan/yazma gövdesinden geçiyor; ikinci bir yazma yolu açılmadı.
+
+⚠ **TRENDYOL KUTUSU AÇILMADI VE BU BİR ÖLÇÜM SONUCU DEĞİL, BOŞLUK:** TY
+kampanya dosyasında `Mevcut Komisyon` biçiminde tek bir güncel oran kolonu
+olup olmadığı **ölçülmedi**. "TY yayımlamıyor" denmiyor — bakılmadı.
+
+**BEKÇİ:** `komisyon:dogrula` 183 → **203** · `tarife:dogrula` 159 → **163**.
+Mutasyon **13/13** ve **18/18**.
+⛔ **EN KRİTİK ÖLÇÜT:** okuyucuyu teklif kolonuna çeviren mutasyon KIRMIZI
+yanıyor — örnek veri ayrımın iki yakasını gösteriyor (Mevcut %13 ↔ teklif %8,4).
+
+⭐ **VE HARNESS'İN ZARARSIZ MUTASYON SAĞLAMASI ANINDA İŞE YARADI.** Zararsız
+bir yorum değişikliği bekçiyi kırmızı yaktı → "YALANCI KIRMIZI" raporlandı.
+Sebep mutasyon değildi: `tarife:dogrula`da **elle sayılmış** bir ölçüt
+(_"iki tür döner"_) üçüncü tür eklenince eskimişti. **Susturulmadı,
+beyandan türetildi** (`YUKLEME_TURLERI`) ve tamlık derleme zamanında
+kapılandı. _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez".)_
+⚠ Yalnız gerçek bozmalar denenseydi bu görünmezdi.
+
 ### AÇIK
 - [ ] **Halil testi** — canlı adreste, gerçek dosyalarla (liste raporda).
 - [ ] **N11'in KOMİSYON dökümü hangi biçimde iniyor — ÖLÇÜLMEDİ.** Elimizdeki

@@ -1,5 +1,11 @@
 import { readFileSync } from "node:fs";
 
+import {
+  KAMPANYA_ORANI_OKUYUCUSU_OLAN,
+  kampanyaOraniOku,
+  kampanyaOraniTani,
+} from "../src/lib/komisyon/kampanya-orani";
+import { kanalYetenegi } from "../src/lib/komisyon/kanal-yetenegi";
 import { ORAN_OKUYUCUSU_OLAN } from "../src/lib/komisyon/okuyucu";
 /**
  * ============================================================================
@@ -55,7 +61,7 @@ import { KANAL_SIRASI } from "../src/lib/kanal-sirasi";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 8;
+const BOLUM_SAYISI = 9;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1300,6 +1306,109 @@ console.log("\nORAN UYARISI (satış formu)");
   );
 
   kosanBolumler.push("ekran platform kapsamı");
+}
+
+// ---------------------------------------------------------------------------
+//  9) K226-4 - KAMPANYA DOSYASINDAN "MEVCUT KOMISYON"
+// ---------------------------------------------------------------------------
+{
+  console.log("\n9) KAMPANYA DOSYASINDAN GUNCEL ORAN");
+
+  const hb = [
+    {
+      sheet: "Teklifler",
+      data: [
+        ["Ürün Adı", "Satıcı Stok Kodu", "SKU", "Mevcut Fiyat", "Mevcut Komisyon", "Teklif 1", "Teklif Kodu"],
+        ["Kahve Makinesi", "HBV1", "HBV1", 15269, "13,00 %", "8,4 %", 138467309],
+      ] as unknown[][],
+    },
+  ];
+  const tHb = kampanyaOraniTani(hb);
+  kontrol("HB kampanya sekli TANINIYOR", tHb.durum === "TANINDI" && tHb.platform === "HEPSIBURADA");
+  const oHb = kampanyaOraniOku(tHb);
+  kontrol("  ...kod ve oran okunuyor", oHb.satirlar.length === 1 && oHb.satirlar[0]?.kanalKodu === "HBV1");
+
+  /*
+   * EN KRITIK OLCUT - "teklif kolonlarina dokunmuyor" BIR IDDIADIR ve
+   * ornek veri ayrimin iki yakasini gosteriyor: Mevcut %13, teklif %8,4.
+   * Okuyucu teklif kolonunu okusaydi bu olcut kirmizi yanardi.
+   */
+  kontrol(
+    "  ...okunan oran MEVCUT komisyon (13), teklif orani (8,4) DEGIL",
+    oHb.satirlar[0]?.oran === 13,
+  );
+
+  const n11Data: unknown[][] = [
+    [null, null, "Dikkat Edilmesi Gerekenler"],
+    [], [], [], [], [], [], [], [], [],
+    ["Ürün Adı", "Satıcı Stok Kodu", "GTIN (Barkod)", "1. Teklif Komisyon", "Mevcut Fiyat", "Mevcut Komisyon", "DEAL_ID"],
+    ["LEGO Art", "EN1", "5702017823126", 1, 11999, 18, 278540586],
+  ];
+  const tN11 = kampanyaOraniTani([{ sheet: "Urun Komisyon Teklifleri", data: n11Data }]);
+  kontrol("N11 kampanya sekli TANINIYOR (baslik 11. satirda)", tN11.durum === "TANINDI" && tN11.platform === "N11");
+  const oN11 = kampanyaOraniOku(tN11);
+  kontrol("  ...oran MEVCUT komisyon (18), teklif orani (1) DEGIL", oN11.satirlar[0]?.oran === 18);
+  kontrol("  ...barkod ikincil eslestirme icin okunuyor", (oN11.satirlar[0]?.barkodlar ?? []).includes("5702017823126"));
+
+  kontrol(
+    "oran listesi kampanya SAYILMIYOR (yanlis yanma yonu)",
+    kampanyaOraniTani([
+      { sheet: "Listelerim", data: [["SKU", "Komisyon Orani"], ["HBV1", 13]] as unknown[][] },
+    ]).durum === "TANINMADI",
+  );
+  kontrol(
+    "Mevcut Komisyon VAR ama ozgun kolon YOK -> taninmiyor",
+    kampanyaOraniTani([
+      { sheet: "S", data: [["SKU", "Mevcut Komisyon"], ["HBV1", 13]] as unknown[][] },
+    ]).durum === "TANINMADI",
+  );
+
+  kontrol(
+    `taban dolu - kampanya orani okunabilen platform >= 2 (${KAMPANYA_ORANI_OKUYUCUSU_OLAN.length})`,
+    KAMPANYA_ORANI_OKUYUCUSU_OLAN.length >= 2,
+  );
+  for (const p of ["HEPSIBURADA", "N11"] as const) {
+    kontrol(
+      `${p}: kart kampanya kutusunu ACIYOR`,
+      kanalYetenegi(p).find((x) => x.tur === "KAMPANYA_ORANI")?.durum === "VAR",
+    );
+  }
+  const tyK = kanalYetenegi("TRENDYOL").find((x) => x.tur === "KAMPANYA_ORANI");
+  kontrol("TRENDYOL kampanya kutusu YOK (olculmedi - beyan)", tyK?.durum === "YOK");
+  kontrol("  ...ve sebebi beyan edilmis", tyK?.durum === "YOK" && tyK.sebep === "OKUYUCU_YOK");
+  kontrol("her kanal artik UC tur satiri donduruyor", kanalYetenegi("N11").length === 3);
+
+  /*
+   * ZINCIR, HALKALARININ VARLIGIYLA DEGIL BAGLANTISIYLA SINANIR.
+   * Govde yukarida DEGER testiyle sinandi; burada olculen BASKA: sunucu
+   * KAMPANYA kipinde gercekten o govdeyi cagiriyor mu. Kapsam daraltildi:
+   * desen dosyanin tamaminda degil, kip dalinin icinde araniyor (import
+   * satirinda da geciyor ve dosya genelinde arayan bir olcut, dal silinse
+   * bile YESIL kalirdi).
+   */
+  const kaynakY = readFileSync("src/lib/komisyon/yukle.ts", "utf8");
+  const iKip = kaynakY.indexOf('if (kip === "KAMPANYA_ORANI")');
+  kontrol("KAMPANYA kip dali bulundu", iKip > 0);
+  const kipDali = iKip > 0 ? kaynakY.slice(iKip, iKip + 1400) : "";
+  kontrol("kip dali kampanya tanimasini CAGIRIYOR", /kampanyaOraniTani\(/.test(kipDali));
+  kontrol("kip dali kampanya okuyucusunu CAGIRIYOR", /kampanyaOraniOku\(/.test(kipDali));
+  kontrol(
+    "kip dali AYNI plan/yazma govdesinden geciyor (ikinci yol yok)",
+    /planlaVeOnizle\(/.test(kipDali),
+  );
+  kontrol(
+    "kip dali hesap/dosya platform celiskisini DENETLIYOR",
+    /PLATFORM_UYUSMAZ/.test(kipDali),
+  );
+
+  /* Uc nokta kipi gercekten geciyor mu - orta halka. */
+  const rota = readFileSync("src/app/api/komisyon/route.ts", "utf8");
+  kontrol(
+    "uc nokta kipi formdan OKUYOR ve komisyonDenetle'ye GECIYOR",
+    /form.get\("kip"\)/.test(rota) && /komisyonDenetle\(bayt, hesapId, kip\)/.test(rota),
+  );
+
+  kosanBolumler.push("kampanya orani okuyucusu");
 }
 
 // ===========================================================================

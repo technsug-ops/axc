@@ -1811,6 +1811,14 @@ kartında vardır.</p></div>
 <p>Ürün başına TEK güncel oran taşıyan döküm. <strong>Kâr hesabını</strong>
 besler — satış anında kayda işlenen oran budur. Üç kanalda da vardır.</p></div>
 
+<div class="ek-not"><div class="etiket">Kampanya dosyasından güncel oran</div>
+<p>Hepsiburada ve N11 kartında üçüncü bir kutu var: elinizdeki
+<strong>"Avantajlı Teklifler" / "Ürün Komisyon Teklifleri"</strong> dosyasından
+<strong>yalnız "Mevcut Komisyon" sütunu</strong> alınır. Teklif kolonlarına
+<strong>dokunulmaz</strong> — onlar koşulludur. Kampanya dosyası kataloğunuzun
+bir <strong>bölümünü</strong> kapsar; tamamı için "Güncel komisyon oranı
+listesi" kutusunu kullanın.</p></div>
+
 <div class="ek-not dikkat"><div class="etiket">Kampanya dosyası tarife DEĞİLDİR</div>
 <p>Hepsiburada'da <strong>"Avantajlı Teklifler"</strong>, N11'de <strong>"Ürün
 Komisyon Teklifleri"</strong> diye inen dosyayı buraya yüklemeyin. O dosya

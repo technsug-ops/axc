@@ -172,6 +172,56 @@ const MUTASYONLAR: Mutasyon[] = [
       "dorduncu platform eklendiginde TypeScript SUSAR ve ayni kusur yeniden dogar; liste elle bakim ister",
     bekci: KOMISYON_BEKCISI,
   },
+  {
+    ad: "KAMPANYA OKUYUCUSU TEKLIF KOLONUNU OKUYOR - en pahali bozulma",
+    yon: "FAZLADAN",
+    dosya: "src/lib/komisyon/kampanya-orani.ts",
+    bul: "  return bas.findIndex((b) => b.includes(\"mevcut\") && b.includes(\"komisyon\"));",
+    koy: "  return bas.findIndex((b) => b.includes(\"teklif\") && b.includes(\"komisyon\"));",
+    bozdugu:
+      "KOSULLU teklif orani gercek oran diye yazilir; komisyon oldugundan DUSUK, kar oldugundan YUKSEK gorunur - bu paketin en basta engelledigi sey",
+    bekci: KOMISYON_BEKCISI,
+  },
+  {
+    ad: "KAMPANYA BEYANI BOSALDI",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/kampanya-orani.ts",
+    bul: "export const KAMPANYA_ORANI_OKUYUCUSU_OLAN: readonly KomisyonPlatformu[] = [\n  \"HEPSIBURADA\",\n  \"N11\",\n];",
+    koy: "export const KAMPANYA_ORANI_OKUYUCUSU_OLAN: readonly KomisyonPlatformu[] = [];",
+    bozdugu:
+      "HB ve N11 kartlarinda kampanya kutusu HIC gorunmez; calisan yol ekrandan kaybolur",
+    bekci: KOMISYON_BEKCISI,
+  },
+  {
+    ad: "BEYANA TRENDYOL EKLENDI - olculmemis soz",
+    yon: "FAZLADAN",
+    dosya: "src/lib/komisyon/kampanya-orani.ts",
+    bul: "  \"HEPSIBURADA\",\n  \"N11\",\n];",
+    koy: "  \"HEPSIBURADA\",\n  \"N11\",\n  \"TRENDYOL\",\n];",
+    bozdugu:
+      "TY kartinda kutu acilir ama o dosyanin Mevcut Komisyon kolonu OLCULMEDI; ekran tutamayacagi bir soz verir",
+    bekci: KOMISYON_BEKCISI,
+  },
+  {
+    ad: "KAMPANYA BASLIK TARAMASI 2 SATIRA DUSTU",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/kampanya-orani.ts",
+    bul: "const BASLIK_TARAMA_TAVANI = 20;",
+    koy: "const BASLIK_TARAMA_TAVANI = 2;",
+    bozdugu:
+      "N11 dosyasinda basliklar 11. satirda; kampanya kutusu N11 dosyasini HIC goremez",
+    bekci: KOMISYON_BEKCISI,
+  },
+  {
+    ad: "SUNUCUDA KAMPANYA KIPI DALI OLDURULDU",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/yukle.ts",
+    bul: "  if (kip === \"KAMPANYA_ORANI\") {",
+    koy: "  if (false) {",
+    bozdugu:
+      "kutu ekranda durur ama dosya LISTE kipinde okunur; kampanya dosyasi 'taninmayan dosya' diye reddedilir",
+    bekci: KOMISYON_BEKCISI,
+  },
 ];
 
 function bekciyiKostur(m: Mutasyon): { kod: number; ciktiVar: boolean } {

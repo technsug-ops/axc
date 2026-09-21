@@ -6,6 +6,7 @@ import { teklifDosyasiMi } from "./tarife-okuyucu";
 import { topluGuncelle } from "@/lib/toplu-guncelle";
 
 import { komisyonOku, platformTani, type SayfaGirdisi } from "./okuyucu";
+import { kampanyaOraniOku, kampanyaOraniTani } from "./kampanya-orani";
 import type { KomisyonPlatformu } from "./model";
 import {
   cakisanKodlariAyikla,
@@ -112,9 +113,20 @@ export function kanalPlatformu(kanalKodu: string): KomisyonPlatformu | null {
 /**
  * Dosyayı okur, eşleştirir, önizleme üretir. HİÇBİR ŞEY YAZMAZ.
  */
+/**
+ * Hangi kaynaktan okunuyor.
+ *
+ * ⛔ AYRI KİP, AYRI YAZMA YOLU DEĞİL. İkisi de aynı `KomisyonOkumasi`
+ * üretiyor ve aynı plan/yazma katmanından geçiyor; ikinci bir yazma yolu
+ * açılsaydı iki yol iki farklı sonuç üretebilirdi (komisyon paketinin ilk
+ * dersi tam olarak buydu).
+ */
+export type KomisyonKipi = "LISTE" | "KAMPANYA_ORANI";
+
 export async function komisyonDenetle(
   dosya: Buffer,
   channelAccountId: string,
+  kip: KomisyonKipi = "LISTE",
 ): Promise<KomisyonDenetimi> {
   const hesap = await prisma.channelAccount.findUnique({
     where: { id: channelAccountId },
@@ -147,6 +159,34 @@ export async function komisyonDenetle(
       durum: "HATA",
       hatalar: [{ kod: "DOSYA_OKUNAMADI", ayrinti: String(e).slice(0, 200) }],
     };
+  }
+
+  /**
+   * KAMPANYA KİPİ — YALNIZ `Mevcut Komisyon` OKUNUR (K226-4).
+   * Teklif kolonlarına dokunulmaz; ayrıntı ve gerekçe `kampanya-orani.ts`te.
+   */
+  if (kip === "KAMPANYA_ORANI") {
+    const kTanima = kampanyaOraniTani(sayfalar ?? []);
+    if (kTanima.durum === "TANINMADI") {
+      return {
+        durum: "HATA",
+        hatalar: [{ kod: "TANINMAYAN_DOSYA", sayfalar: kTanima.sayfalar }],
+      };
+    }
+    const hesapPlatformuK = kanalPlatformu(hesap.channel.code);
+    if (hesapPlatformuK !== kTanima.platform) {
+      return {
+        durum: "HATA",
+        hatalar: [
+          {
+            kod: "PLATFORM_UYUSMAZ",
+            dosya: kTanima.platform,
+            hesap: hesap.channel.name,
+          },
+        ],
+      };
+    }
+    return planlaVeOnizle(kampanyaOraniOku(kTanima), channelAccountId);
   }
 
   const tanima = platformTani(sayfalar ?? []);
@@ -189,7 +229,17 @@ export async function komisyonDenetle(
     };
   }
 
-  const okuma = komisyonOku(tanima);
+  return planlaVeOnizle(komisyonOku(tanima), channelAccountId);
+}
+
+/**
+ * Okunmuş satırları plana çevirir ve önizleme döndürür — İKİ KİP DE buradan
+ * geçer. Ayrı ayrı yazılsaydı biri düzeltilip öteki unutulurdu.
+ */
+async function planlaVeOnizle(
+  okuma: ReturnType<typeof komisyonOku>,
+  channelAccountId: string,
+): Promise<KomisyonDenetimi> {
   if (okuma.eksikSutunlar.length > 0) {
     return {
       durum: "HATA",

@@ -135,12 +135,23 @@ export function KanalKartlari({
                               }}
                             />
                           ) : (
+                            /*
+                              ⚠ AYNI YÜKLEYİCİ, FARKLI KİP. Kampanya kutusu
+                              için ikinci bir bileşen yazılsaydı önizleme/
+                              sonuç akışı iki yerde yaşar, biri düzeltilip
+                              öteki unutulurdu.
+                            */
                             <OranYukleyici
                               hesaplar={hesaplar}
                               sabitHesap={{
                                 id: kart.hesapId,
                                 etiket: kart.etiket,
                               }}
+                              kip={
+                                tur.tur === "KAMPANYA_ORANI"
+                                  ? "KAMPANYA_ORANI"
+                                  : "LISTE"
+                              }
                             />
                           )}
                         </div>
@@ -168,6 +179,8 @@ function basligi(tur: YuklemeTuru, t: (k: string) => string): string {
       return t("turDilimliTarife");
     case "GUNCEL_ORAN":
       return t("turGuncelOran");
+    case "KAMPANYA_ORANI":
+      return t("turKampanyaOrani");
   }
 }
 
@@ -177,5 +190,7 @@ function aciklamasi(tur: YuklemeTuru, t: (k: string) => string): string {
       return t("turDilimliTarifeNe");
     case "GUNCEL_ORAN":
       return t("turGuncelOranNe");
+    case "KAMPANYA_ORANI":
+      return t("turKampanyaOraniNe");
   }
 }

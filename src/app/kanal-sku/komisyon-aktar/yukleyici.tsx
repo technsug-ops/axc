@@ -104,6 +104,7 @@ type Yanit =
 export function Yukleyici({
   hesaplar,
   sabitHesap,
+  kip = "LISTE",
 }: {
   hesaplar: HesapSecenegi[];
   /**
@@ -112,6 +113,12 @@ export function Yukleyici({
    * (`komisyonDenetle` → `PLATFORM_UYUSMAZ`); kapı kolaylıktır, yetki değil.
    */
   sabitHesap?: HesapSecenegi;
+  /**
+   * K226-4 — KAMPANYA KİPİ. Kampanya dosyasından YALNIZ `Mevcut Komisyon`
+   * okunur; teklif kolonlarına dokunulmaz. Aynı yükleyici gövdesi, farklı
+   * kip: ikinci bir ekran yazılsaydı biri düzeltilip öteki unutulurdu.
+   */
+  kip?: "LISTE" | "KAMPANYA_ORANI";
 }) {
   const t = useTranslations("Komisyon");
   const ortak = useTranslations("Ortak");
@@ -144,6 +151,7 @@ export function Yukleyici({
       const govde = new FormData();
       govde.set("dosya", dosya);
       govde.set("hesap", hesap);
+      if (kip === "KAMPANYA_ORANI") govde.set("kip", kip);
       if (yazilsinMi) govde.set("yaz", "1");
 
       const cevap = await fetch("/api/komisyon", { method: "POST", body: govde });
@@ -203,11 +211,17 @@ export function Yukleyici({
     <div className="space-y-5">
       <Card>
         <CardHeader>
-          <CardTitle>{t("yukleBaslik")}</CardTitle>
+          <CardTitle>
+            {kip === "KAMPANYA_ORANI" ? t("kampanyaBaslik") : t("yukleBaslik")}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-muted-foreground text-sm">{t("yukleAciklama")}</p>
-          <p className="text-muted-foreground text-sm">{t("nasilIndirilir")}</p>
+          <p className="text-muted-foreground text-sm">
+            {kip === "KAMPANYA_ORANI" ? t("kampanyaAciklama") : t("yukleAciklama")}
+          </p>
+          <p className="text-muted-foreground text-sm">
+            {kip === "KAMPANYA_ORANI" ? t("kampanyaNeOkunur") : t("nasilIndirilir")}
+          </p>
 
           <div className={sabitHesap ? "space-y-4" : "grid gap-4 sm:grid-cols-2"}>
             {sabitHesap ? null : (

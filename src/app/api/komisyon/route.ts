@@ -61,10 +61,16 @@ export async function POST(istek: Request) {
   if (!hesapId) return yanitla({ durum: "COKTU", mesaj: "HESAP_YOK" }, 400);
 
   const yazilsinMi = form.get("yaz") === "1";
+  /**
+   * K226-4 — KAMPANYA KİPİ. Bilinmeyen bir değer sessizce "LISTE" sayılır:
+   * kip bir KOLAYLIKTIR, yetki değil; hangi kolonun okunacağını sunucu
+   * belirler ve kampanya kipi zaten yalnız `Mevcut Komisyon` okur.
+   */
+  const kip = form.get("kip") === "KAMPANYA_ORANI" ? "KAMPANYA_ORANI" : "LISTE";
 
   try {
     const bayt = Buffer.from(await dosya.arrayBuffer());
-    const sonuc = await komisyonDenetle(bayt, hesapId);
+    const sonuc = await komisyonDenetle(bayt, hesapId, kip);
 
     if (sonuc.durum === "HATA") {
       return yanitla({ durum: "HATA", hatalar: sonuc.hatalar });
