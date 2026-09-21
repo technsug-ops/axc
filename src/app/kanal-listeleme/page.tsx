@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AlertTriangle, PackageX } from "lucide-react";
 
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
@@ -31,6 +32,7 @@ import { prisma } from "@/lib/prisma";
 import { DURUM_KUTUSU, DURUM_YAZISI, DURUM_ZEMINI } from "@/lib/renkler";
 import { sayfaCoz } from "@/lib/sayfalama";
 import { suzgecAdresi } from "@/lib/suzgec";
+import { aramaKosulu, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { sayfaIzni } from "@/lib/yetki";
 
 /**
@@ -101,13 +103,36 @@ export default async function KanalListelemeSayfasi({
    */
   const kosullar: Record<string, unknown>[] = [];
   if (sp.kanal) kosullar.push({ channelAccountId: sp.kanal });
-  if (sp.q) {
+  const arama = (sp.q ?? "").trim();
+  if (arama) {
+    /**
+     * ⛔ ARAMA KOŞULU ORTAK GÖVDEDEN — ÇIPLAK YAZILMAZ (`arama:dogrula`).
+     *
+     * Elle yazılmış hâli `barcode: { contains: arama }` diyordu ve UPC-A ↔
+     * EAN-13 eşdeğerliğini bilmiyordu: `0194644037598` okutulunca katalogdaki
+     * `194644037598` BULUNAMAZ — ekran susmaz, YANLIŞ CEVAP verir (K100 canlı
+     * vakası). `aramaKosulu` eşdeğerleri üretir ve beş kod rolünü birden
+     * kapsar; kanal kodu için de aynı eşdeğerler kullanılır.
+     */
+    /**
+     * PASİF DAHİL: pasif varyant ELENMİYOR — ve bu bilinçli.
+     *
+     * ⛔ İKİ SEBEP, İKİSİ DE ÖLÇÜLDÜ (21.09.2026, canlı):
+     *  ① Bu ekranın sorusu "hangi MALIM satılamıyor". Bir varyantı pasife
+     *    almak rafı boşaltmaz; stoğu duran pasif bir varyant hâlâ bağlı
+     *    paradır ve elenirse o para EKRANDAN KAYBOLUR — tam gizlemek
+     *    istemediğimiz şey.
+     *  ② Arama bir SÜZGEÇTİR: aradığı SKU'yu bulamayan kullanıcı sistemi
+     *    bozuk sanır ("neden bulamıyorum" — İlke #5).
+     *
+     * ⚠ BUGÜNKÜ ETKİSİ ÖLÇÜLDÜ VE KÜÇÜK: 2258 kanal SKU'sunun yalnız 1'i
+     * pasif varyanta bağlı, stoğu YOK ve kapalı kovada DEĞİL. Yani karar
+     * bugünü değil, yarını koruyor.
+     */
     kosullar.push({
       OR: [
-        { channelSku: { contains: sp.q } },
-        { variant: { sku: { contains: sp.q } } },
-        { variant: { name: { contains: sp.q } } },
-        { variant: { barcode: { contains: sp.q } } },
+        ...kodEsdegerleri(arama).map((e) => ({ channelSku: { contains: e } })),
+        { variant: { OR: aramaKosulu(arama) } },
       ],
     });
   }
@@ -315,6 +340,18 @@ export default async function KanalListelemeSayfasi({
           altMetin={t("kutuOlculmemisAciklama")}
         />
       </div>
+
+      {/**
+       * ⚠ OKUNAN PARAMETRENİN GİRİLECEK YERİ OLMALI. `q` süzgeci kodda
+       * vardı ama ekranda kutusu YOKTU — kurulamayan bir süzgeç, tutulmayan
+       * bir sözdür. Ortak bileşen kamerayı da getirir (İlke #7).
+       */}
+      <KodAramaKutusu
+        temelAdres="/kanal-listeleme"
+        baslangic={arama}
+        tasinanlar={{ kanal: sp.kanal, durum: sp.durum }}
+        ipucu={t("aramaIpucu")}
+      />
 
       <SuzgecCubugu temelAdres="/kanal-listeleme" mevcut={sp} suzgecler={suzgecler} />
 

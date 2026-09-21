@@ -4312,6 +4312,7 @@
     "durum": "Durum",
     "olculmedi": "ölçülmedi",
     "rozetKapaliDuran": "satılamıyor",
-    "kutuKapaliDuranEksik": "son satış fiyatı × stok — {sayi} ürünün fiyatı bilinmiyor, bu toplamda YOK"
+    "kutuKapaliDuranEksik": "son satış fiyatı × stok — {sayi} ürünün fiyatı bilinmiyor, bu toplamda YOK",
+    "aramaIpucu": "Ürün adı, SKU, Firma SKU, barkod veya kanal kodu"
   }
 }
