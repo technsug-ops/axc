@@ -101,7 +101,14 @@ export async function tarifeyiYaz(form: FormData) {
         arsiv = "HATA";
       }
     }
-    revalidatePath("/ayarlar/tarife");
+    /**
+     * ⛔ TAZELENECEK ADRES, LİSTENİN ÇİZİLDİĞİ ADRESTİR (K230-③).
+     * Pencere listesi `/ayarlar/tarife`ten `/ayarlar/komisyon`a taşındı;
+     * eski adres artık yönlendirme. Burası güncellenmeseydi yükleme
+     * BAŞARILI olur, liste ESKİ hâlinde kalırdı — hata vermeyen,
+     * "yüklemedi sandım" diye okunan sessiz bir ayrışma.
+     */
+    revalidatePath("/ayarlar/komisyon");
     revalidatePath("/");
   }
 

@@ -161,7 +161,6 @@
     "komisyonAktar": "Komisyon oranı içe aktarma",
     "talepler": "Destek talepleri",
     "gecmisEkstre": "Geçmiş ekstreler",
-    "tarife": "Tarife pencereleri",
     "tarifeAynasi": "Tarife aynası",
     "komisyonKapisi": "Komisyon yükleme",
     "hbKargoTarife": "Hepsiburada kargo tarifesi",
@@ -860,7 +859,6 @@
     "nakitTakvimi": "Nakit takvimi",
     "talepler": "Destek talepleri",
     "gecmisEkstre": "Geçmiş ekstreler",
-    "tarife": "Tarife pencereleri",
     "komisyonKapisi": "Komisyon yükleme",
     "hbKargoTarife": "HB kargo tarifesi",
     "kargoTarifesi": "Kargo tarifesi",
@@ -3738,9 +3736,6 @@
     "SORUN_BULUNAMADI": "Üründe sorun bulunamadı"
   },
   "Tarife": {
-    "baslik": "Tarife pencereleri",
-    "aciklama": "Yüklü komisyon tarifelerinin kapsamı: hangi kanalda hangi aralık yüklü, arada boşluk var mı. Yükleme bu ekranda YAPILMAZ.",
-    "yuklemeNerede": "Tarife yüklemek için tek kapı:",
     "kapsamBaslik": "Yüklü pencereler",
     "kapsamYok": "Hiç tarife yüklenmemiş.",
     "kapsamSatir": "{kanal} · {baslangic} – {bitis} · {kalem} kalem",

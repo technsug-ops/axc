@@ -267,19 +267,40 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "ayni haftanin tekliflerini 27 ayri pencere sayar; 44 satirin 41'i 'pencere disi' cikar ve secilen pencere panelinkiyle tutmaz",
   },
+  /*
+   * ⚠ CAPA K230-③'TE TASINDI, SILINMEDI. Mutasyonun NIYETI ayni: ikinci bir
+   * yukleme yolu dogmasin. Sekli yeni koda tasindi - govde artik
+   * `durum.tsx`te yasiyor. Silmek, refaktorun yan etkisi olarak bir
+   * korumayi sessizce kaldirmak olurdu.
+   */
   {
-    ad: "TEK KAPI SOZU YENIDEN YARIM - durum ekranina yukleyici geri geldi",
+    ad: "TEK KAPI SOZU YENIDEN YARIM - durum govdesine yukleyici geri geldi",
     yon: "FAZLADAN",
-    dosya: "src/app/ayarlar/tarife/page.tsx",
-    bul: "          <p className=\"text-muted-foreground text-sm\">{t(\"yuklemeNerede\")}</p>",
+    dosya: "src/app/ayarlar/tarife/durum.tsx",
+    bul: "          <CardTitle className=\"text-base\">{t(\"kapsamBaslik\")}</CardTitle>",
     koy: "          <Yukleyici hesaplar={[]} />",
     bozdugu:
       "menude yine IKI yukleme yolu olur; kullanici 'bu ikisinin farki ne' diye sormak zorunda kalir - K226'da yasanan sey",
   },
+  /*
+   * ⛔ BU DEPONUN EN PAHALI YALANCI YESILI: govde kusursuz calisiyor ve
+   * onu kimse cagirmiyor ("tur 98/98 yesildi ve panelde kutu YOKTU").
+   * K230-③ tam o sinifa girdi - 394 satirlik gorunur bir blok baska dosyaya
+   * tasindi. Cagrilmadigini olcen tek sey bu mutasyon.
+   */
+  {
+    ad: "GOVDE TEK KAPIDA CIZILMIYOR - tasindi ama cagrilmadi",
+    yon: "KALDIRAN",
+    dosya: "src/app/ayarlar/komisyon/page.tsx",
+    bul: "      <TarifeDurumu />",
+    koy: "      {null}",
+    bozdugu:
+      "yuklu pencereler ve K49 kapsam bosluğu ekrandan TAMAMEN kaybolur; tsc yesil, bekci yesil, ekran bos - tasima yarim kalir",
+  },
   {
     ad: "AYNA BAGLANTISI DUSTU - rakam kaynagina goturmuyor",
     yon: "KALDIRAN",
-    dosya: "src/app/ayarlar/tarife/page.tsx",
+    dosya: "src/app/ayarlar/tarife/durum.tsx",
     bul: "                      href={`/ayarlar/tarife/${x.id}`}",
     koy: "                      href={`/ayarlar/tarife`}",
     bozdugu:

@@ -161,7 +161,6 @@
     "komisyonAktar": "",
     "talepler": "",
     "gecmisEkstre": "",
-    "tarife": "",
     "tarifeAynasi": "",
     "komisyonKapisi": "",
     "hbKargoTarife": "",
@@ -860,7 +859,6 @@
     "nakitTakvimi": "",
     "talepler": "",
     "gecmisEkstre": "",
-    "tarife": "",
     "komisyonKapisi": "",
     "hbKargoTarife": "",
     "kargoTarifesi": "",
@@ -3738,9 +3736,6 @@
     "SORUN_BULUNAMADI": ""
   },
   "Tarife": {
-    "baslik": "",
-    "aciklama": "",
-    "yuklemeNerede": "",
     "kapsamBaslik": "",
     "kapsamYok": "",
     "kapsamSatir": "",

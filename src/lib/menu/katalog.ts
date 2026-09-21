@@ -77,7 +77,6 @@ export const MENU_ADRESLERI: Record<string, string> = {
    * kanalın kabul ettiği dosyayı adıyla yazar ve kutusunu kendi içinde açar.
    */
   komisyonKapisi: "/ayarlar/komisyon",
-  tarife: "/ayarlar/tarife",
   /**
    * K229 — kanal bağımsız kargo tarifesi kapısı. Eski `/ayarlar/hb-kargo-tarife`
    * adresi DURUYOR (bağlantılar kırılmasın) ama menüde tek kapı görünür:
@@ -175,7 +174,6 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "geriYukleme", varsayilanGrup: "grupVeri" },
   { anahtar: "gecmisEkstre", varsayilanGrup: "grupVeri" },
   { anahtar: "komisyonKapisi", varsayilanGrup: "grupVeri" },
-  { anahtar: "tarife", varsayilanGrup: "grupVeri" },
   { anahtar: "kargoTarifesi", varsayilanGrup: "grupVeri" },
 
   // ── AYARLAR — sistemin kendisi ──────────────────────────────────────────

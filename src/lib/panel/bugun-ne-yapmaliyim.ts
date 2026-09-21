@@ -104,7 +104,14 @@ export const GOREV_ADRESLERI: Record<GorevAnahtari, string> = {
    * anayasadaki kart faizi kategori linki vakası. Ölçüldü (25.08.2026):
    * o gün `src/app` altında tek bir tarife yükleme ekranı yoktu.
    */
-  tarifePenceresi: "/ayarlar/tarife",
+  /**
+   * ⚠ K230-③ (21.09.2026): ekran `/ayarlar/komisyon` içine alındı. Eski
+   * adres yönlendirme olarak duruyor, yani bu satır güncellenmese de
+   * kullanıcı doğru yere varırdı — ama görev adresi bir YÖNLENDİRMEYE
+   * bel bağlayamaz: yönlendirme kalktığı gün uyarı sessizce 404'e
+   * götürürdü. Adres hedefin KENDİSİNİ gösterir.
+   */
+  tarifePenceresi: "/ayarlar/komisyon",
 };
 
 export type Gorev = {

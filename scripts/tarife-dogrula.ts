@@ -871,7 +871,13 @@ console.log("=".repeat(70));
 console.log("");
 console.log("K49b) EKRAN — DELİK GERÇEKTEN ÇİZİLİYOR MU");
 {
-  const EKRAN = readFileSync("src/app/ayarlar/tarife/page.tsx", "utf8");
+  /**
+   * ⚠ ÇAPA K230-③'TE TAŞINDI. Gövde `/ayarlar/tarife/page.tsx`ten
+   * `durum.tsx`e çıktı; bu satır güncellenmeseydi bekçi dosyayı
+   * bulamayıp ÇÖKERDİ — ya da (daha kötüsü) yönlendirme gövdesini
+   * okuyup "boşluk kuralı çağrılmıyor" diye YANLIŞ KIRMIZI yakardı.
+   */
+  const EKRAN = readFileSync("src/app/ayarlar/tarife/durum.tsx", "utf8");
 
   /**
    * ⚠ İŞARET RENDER YERİNE BAĞLI, IMPORT'A DEĞİL. `bosluklariBul` kelimesi
@@ -1420,21 +1426,56 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
    * ve menude iki yukleme yolu olustu. Kullanici sordu: "bu ikisi arasindaki
    * fark nedir, neden iki tane var?" Yarim uygulanan soz, soz olmaktan cikar.
    */
-  const durumEkrani = yorumsuzOku("src/app/ayarlar/tarife/page.tsx");
+  /*
+   * K230-③ (21.09.2026) - SOZ TAMAMEN UYGULANDI: iki menu kalemi tek kaleme
+   * indi. Kullanici ayni soruyu IKI KEZ sordu; ikinci kez sorulmasi,
+   * cevabin degil TASARIMIN sorunu oldugunu gosteriyordu.
+   *
+   * OLCUT DEGISTI VE NIYE DEGISTIGI BURADA DURUYOR: eski olcut "durum
+   * ekraninda yukleyici YOK + kapiya baglanti VAR" diyordu. Artik ayri bir
+   * durum EKRANI yok; govde kapinin icinde. Eski olcut oldugu gibi
+   * birakilsaydi yonlendirme govdesini okur ve hicbir sey olcmezdi.
+   */
+  const durumGovdesi = yorumsuzOku("src/app/ayarlar/tarife/durum.tsx");
   kontrol(
-    "tarife DURUM ekraninda yukleyici YOK (tek kapi sozu)",
-    !/<Yukleyici/.test(durumEkrani),
+    "durum GOVDESINDE yukleyici YOK (tek kapi sozu)",
+    !/<Yukleyici/.test(durumGovdesi),
   );
+  /*
+   * ⛔ EN KRITIK OLCUT: GOVDE CAGRILIYOR MU. Depoda bunun bedeli olculdu -
+   * "tur 98/98 yesildi ve panelde kutu YOKTU; govdeler kusursuz calisiyordu
+   * ve onlari kimse cagirmiyordu." Import satirini aramak yetmez; JSX'te
+   * CIZILDIGI aranir.
+   */
+  const tekKapi = yorumsuzOku("src/app/ayarlar/komisyon/page.tsx");
   kontrol(
-    "  ...ve tek kapiya baglanti VAR",
-    durumEkrani.includes("/ayarlar/komisyon"),
+    "  ...ve govde TEK KAPIDA CIZILIYOR (import degil, JSX)",
+    /<TarifeDurumu\s*\/>/.test(tekKapi),
+  );
+  /*
+   * ESKI ADRES YONLENDIRIR - SILINMEZ. Yer imi ve panel gecmisi o adrese
+   * bakiyor olabilir; 404 vermek, tasindigini soylemeyen bir kapi olurdu.
+   */
+  const eskiAdres = yorumsuzOku("src/app/ayarlar/tarife/page.tsx");
+  kontrol(
+    "  ...ve eski adres 404 degil, YONLENDIRIYOR",
+    /redirect\("\/ayarlar\/komisyon"\)/.test(eskiAdres),
+  );
+  /*
+   * MENUDE TEK KALEM KALDI. Katalogda ikisi birden dursaydi kullanici yine
+   * iki kapi gorurdu; ekrani birlestirip menuyu birakmak, sozun yarisi olur.
+   */
+  const katalog = yorumsuzOku("src/lib/menu/katalog.ts");
+  kontrol(
+    "  ...ve menude 'tarife' kalemi YOK",
+    !/anahtar: "tarife"/.test(katalog),
   );
   /*
    * RAKAM KAYNAGINA GOTURUR (Ilke #16): "152 kalem" duz metin olmamali.
    */
   kontrol(
     "pencere satiri AYNAYA baglaniyor",
-    /ayarlar\/tarife\/\${x.id}/.test(durumEkrani),
+    /ayarlar\/tarife\/\${x.id}/.test(durumGovdesi),
   );
 
   const ayna = yorumsuzOku("src/app/ayarlar/tarife/[id]/ayna.tsx");

@@ -64,7 +64,6 @@ export const BOLUMLER = [
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
   { kimlik: "gecmisEkstre", ad: "Ayarlar — Geçmiş ekstreler" },
   { kimlik: "komisyonKapisi", ad: "Ayarlar — Komisyon yükleme" },
-  { kimlik: "tarife", ad: "Ayarlar — Komisyon tarifesi" },
   { kimlik: "kargoTarifesi", ad: "Ayarlar — Kargo tarifesi" },
   { kimlik: "yedek", ad: "Yedek" },
   { kimlik: "sorun", ad: "Bir şey ters giderse" },
@@ -146,7 +145,6 @@ export const MENU_BOLUM: Record<string, string | null> = {
   talepler: "talep",
   gecmisEkstre: "gecmisEkstre",
   komisyonKapisi: "komisyonKapisi",
-  tarife: "tarife",
   kargoTarifesi: "kargoTarifesi",
   /** Kitabın KENDİSİ — kendi kendini anlatan bölüm açmak tekrar olurdu. */
   elKitabi: null,
@@ -1799,7 +1797,7 @@ ${baslik("komisyonKapisi")}
 o kanalın kabul ettiği dosya yazar ve dosyayı kartın içine bırakırsınız.
 Kanal seçip yanlış dosya yükleme karışıklığı böylece biter.</p>
 ${neZaman(
-  "Pazaryeri yeni bir komisyon dosyası yayımladığında. Trendyol Salı, Hepsiburada Çarşamba günceller.",
+  "Pazaryeri yeni bir komisyon dosyası yayımladığında. Trendyol Salı, Hepsiburada Çarşamba günceller. Panelde “Komisyon tarifesi” kutusu turuncuya döndüğünde de buraya gelinir.",
 )}
 
 <h3>Üç farklı dosya vardır ve aynı şey değildirler</h3>
@@ -1843,30 +1841,11 @@ dönüştürmeye çalışmayın.</p></div>
 <p><strong>Yüklemeden önce ne yazılacağını görürsünüz.</strong> Her kutuda
 önce <strong>Göster</strong> okuma yapar ve sayıları verir; rakamlar
 beklediğiniz gibiyse <strong>Yükle</strong>.</p>
-${sikHata([
-  {
-    hata: "Kampanya (“Avantajlı Teklif”) dosyasını tarife sanıp yüklemeye çalışmak",
-    cozum: "O dosya koşulludur ve reddedilir. Kanalın güncel oranları için aynı karttaki “Güncel komisyon oranı listesi” kutusunu kullanın.",
-  },
-  {
-    hata: "Dosya seçicide N11 dosyasını görememek",
-    cozum: "Eski biçim (.xls) artık listelenir. Görünmüyorsa dosya türü süzgecini “tüm dosyalar” yapın; dosyayı dönüştürmeye gerek yok.",
-  },
-  {
-    hata: "Bir kanalın kartında “dilimli tarife yok” yazısını arıza sanmak",
-    cozum: "Arıza değil, beyandır: o kanal için okuyucumuz yok. Kart bunu gizlemez, yazar.",
-  },
-])}
-</section>
-
-<section id="tarife">
-${baslik("tarife")}
-<p><strong>Ayarlar → Komisyon tarifesi.</strong> Pazaryerinin yayımladığı
-tam dilimli komisyon dosyasını yükler. Fiyat denemesi bu dilimleri kullanır:
-"bu ürünü 1.750'ye satarsam komisyon kaç olur" sorusunun cevabı buradan gelir.</p>
-${neZaman(
-  "Her hafta. Trendyol Salı, Hepsiburada Çarşamba yayımlıyor. Panelde “Komisyon tarifesi” kutusu turuncuya döndüğünde.",
-)}
+<h3>Yüklenen tarife pencereleri</h3>
+<p>Kartların altında, <strong>yüklediğiniz her pencere</strong> listelenir:
+hangi kanal, hangi tarihten hangi tarihe, kaç kalem. Bu liste yükleme yeri
+değil, <strong>yüklenenlerin kaydıdır</strong> — “bu haftayı yükledim mi”
+sorusunun cevabı buradadır.</p>
 <div class="ek-not dikkat"><div class="etiket">Kaçırılan hafta geri gelmez</div>
 <p>Bu dosya <strong>arşivden inmiyor</strong>. O hafta indirilmezse bir daha
 elde edilemez ve o döneme ait satışlarda fiyat denemesi hüküm veremez —
@@ -1911,6 +1890,18 @@ diğer uyarılara olan güveni götürür.</p></div>
 bitişik görünür; aradaki <strong>72 saat</strong> ancak saatle görülür.
 Bu yüzden boşluk satırı tarihi saatiyle birlikte yazar.</p>
 ${sikHata([
+  {
+    hata: "Kampanya (“Avantajlı Teklif”) dosyasını tarife sanıp yüklemeye çalışmak",
+    cozum: "O dosya koşulludur ve reddedilir. Kanalın güncel oranları için aynı karttaki “Güncel komisyon oranı listesi” kutusunu kullanın.",
+  },
+  {
+    hata: "Dosya seçicide N11 dosyasını görememek",
+    cozum: "Eski biçim (.xls) artık listelenir. Görünmüyorsa dosya türü süzgecini “tüm dosyalar” yapın; dosyayı dönüştürmeye gerek yok.",
+  },
+  {
+    hata: "Bir kanalın kartında “dilimli tarife yok” yazısını arıza sanmak",
+    cozum: "Arıza değil, beyandır: o kanal için okuyucumuz yok. Kart bunu gizlemez, yazar.",
+  },
   {
     hata: "Kırmızı boşluk satırını görüp o haftanın dosyasını indirmeye çalışmak",
     cozum: "İnmez. Tam dilimli ileri tarife yalnız yayımlandığı hafta indirilebilir; satır geçmişin kaydıdır, yapılacak iş değil.",

@@ -99,7 +99,65 @@ beyan değil **bekçi** kondu.
 mutasyon (fiyat anahtarı ve sonuç eşleşmesi) kırmızı yanıyor. Bu kusur hata
 vermediği için yalnız mutasyonla yakalanabilirdi.
 
+─── ③ AYNI SORU **İKİNCİ KEZ** SORULDU — İKİ EKRAN TEK EKRAN OLDU
+
+**KULLANICI:** _"Tarife penceresi ile komisyon yüklemenin farkı ne?"_
+
+⛔ **İKİNCİ KEZ SORULMASI, CEVABIN DEĞİL TASARIMIN SORUNU OLDUĞUNU GÖSTERİR.**
+②'de verilen cevap _"biri yükleme kapısı, öteki durum ekranı"_ idi ve doğruydu —
+ama bir ayrımı **her seferinde ANLATMAK** gerekiyorsa o ayrım ekranda GÖRÜNMÜYOR
+demektir. Menüde hâlâ iki kalem vardı ve ikisi de "komisyon/tarife" diyordu;
+kullanıcı hangisine gideceğini kodun gerekçesinden değil MENÜDEN okuyor.
+
+**YAPILAN:** iki menü kalemi **tek kaleme** indi — `Komisyon yükleme`. Yüklü
+pencereler, K49 kapsam boşluğu tutanağı ve tarife aynası bağlantıları artık
+kanal kartlarının **üstünde**, aynı ekranda.
+
+⚠ **GÖVDE TAŞINDI, YENİDEN YAZILMADI.** 394 satırlık durum gövdesi
+`src/app/ayarlar/tarife/durum.tsx`e olduğu gibi çıktı (`TarifeDurumu`).
+Özetleyerek taşımak, neyin kaybolduğunu ölçülemez yapardı. Ölçüldü — düşen
+tek şey ekranın KENDİ başlığı ve "yükleme şurada" bağlantısıydı:
+
+    düşen sözlük anahtarları : baslik · aciklama · yuklemeNerede · komisyonKapisi
+    düşen bileşenler         : Button · ExternalLink
+    düşen ölçüt              : YOK — K49 mantığı satır satır aynı
+
+⚠ **ESKİ ADRES SİLİNMEDİ, YÖNLENDİRİYOR.** `/ayarlar/tarife` → `/ayarlar/komisyon`.
+Yer imi ya da eski bir bağlantı 404 görmez. **Ama görev adresi yönlendirmeye
+bel bağlamaz:** panelin `tarifePenceresi` görevi hedefin KENDİSİNİ gösteriyor
+artık — yönlendirme kalktığı gün uyarı sessizce boşluğa götürürdü.
+
+⛔ **SESSİZ BİR KUSUR DAHA KAPANDI: TAZELENECEK ADRES.** Yükleme sonrası
+`revalidatePath` hâlâ `/ayarlar/tarife`'yi tazeliyordu. Liste artık orada
+çizilmiyor — yani yükleme BAŞARILI olur, liste ESKİ hâlinde kalırdı. Hata
+vermeyen, _"yüklemedi sandım"_ diye okunan bir ayrışma.
+
+⭐ **EN KRİTİK ÖLÇÜT: GÖVDE ÇAĞRILIYOR MU.** Bu deponun en pahalı yalancı
+yeşili tam bu sınıftaydı — _"tur 98/98 yeşildi ve panelde kutu YOKTU; gövdeler
+kusursuz çalışıyordu ve onları kimse çağırmıyordu."_ 394 satırlık görünür bir
+blok başka dosyaya taşındığında aynı tuzak açılır. Bekçi import satırını değil
+**JSX'te çizildiğini** arıyor ve `<TarifeDurumu />`'yu `{null}` yapan mutasyon
+kırmızı yanıyor.
+
+**ÖLÇÜLDÜ:** `tarife:dogrula` 198 ölçüt · `teklif-tanima-mutasyon` **29/29**
+(zararsız sağlama dâhil) · `el-kitabi` · `i18n` · `build` yeşil.
+
+⚠ **REFAKTÖR ÇAPALI HARNESS'İ DE TAŞIDI.** Değişen her dosya için
+`scripts/*mutasyon*.ts` tarandı; eski sayfaya çapalı iki mutasyon **silinmedi**,
+niyeti korunup şekli yeni koda taşındı.
+
+⚠ **EL KİTABI DA BİRLEŞTİ** — iki bölüm tek bölüm oldu, beş sık hata tek
+listede. Kod düzeltilip belge eski hâlinde kalsaydı ikinci bir ayrışma doğardı.
+
 ### AÇIK
+- [ ] **Halil testi ③** — menüde `Tarife pencereleri` kalemi GÖRÜNMEMELİ.
+      `Ayarlar → Komisyon yükleme` açılınca ÜSTTE "Yüklü pencereler" kartı,
+      ALTINDA kanal kartları olmalı. Bir pencere satırındaki **"Tarife aynası"**
+      hâlâ çalışmalı. Adres çubuğuna elle `/ayarlar/tarife` yazınca
+      `/ayarlar/komisyon`'a düşmeli (404 DEĞİL).
+- [ ] **Halil testi ③-b** — bir tarife dosyası yükleyin; **aynı ekranda**
+      "Yüklü pencereler" listesi yeni pencereyle tazelensin (eski adres
+      tazeleniyordu, liste kalırdı).
 - [ ] **Halil testi** — rakamları yukarıda ölçülmüş hâliyle raporda.
 - [ ] **Braun hiç satılmamış** → üst dilimin fiyatı yok, NET de yok. Bu DOĞRU
       davranış (uydurma baz yazılmıyor) ama satılmamış ürünlerde tepe dilim

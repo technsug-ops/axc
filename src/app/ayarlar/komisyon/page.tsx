@@ -7,6 +7,8 @@ import { kanalPlatformu } from "@/lib/komisyon/yukle";
 import { prisma } from "@/lib/prisma";
 import { sayfaIzni } from "@/lib/yetki";
 
+import { TarifeDurumu } from "../tarife/durum";
+
 import { KanalKartlari, type KanalKarti } from "./kanal-kartlari";
 
 /**
@@ -99,6 +101,16 @@ export default async function KomisyonKapisiSayfasi() {
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground mt-1 text-sm">{t("aciklama")}</p>
       </div>
+
+      {/*
+        ⛔ TARİFE DURUMU BU EKRANIN İÇİNE ALINDI (K230-③, 21.09.2026).
+        Kullanıcı İKİ KEZ sordu: _"tarife penceresi ile komisyon yüklemenin
+        farkı ne?"_ — iki menü kalemi, iki isim, ikisi de "komisyon/tarife"
+        diyordu. Ayrımı her seferinde ANLATMAK gerekiyorsa ayrım ekranda
+        görünmüyor demektir. Artık tek kapı: yükleme de, yüklenenlerin kaydı
+        da burada.
+      */}
+      <TarifeDurumu />
 
       <KanalKartlari
         kartlar={kartlar}
