@@ -63,6 +63,26 @@ yoktu — rakamı ₺11.761 şişiriyordu) · `panel:dogrula` (ham Tailwind reng
 kullanmışım, palet jetonu var) · `el-kitabi:dogrula` (menüye ekran eklenip
 kitaba yazılmamıştı). El kitabı bölümü `null` ile geçiştirilmedi, YAZILDI.
 
+⛔ **VE İKİNCİ TUR BİR BEKÇİ DAHA DURDURDU — `arama:dogrula`.** Arama koşulunu
+ELLE yazmıştım: `barcode` alanında düz `contains`. Bu, UPC-A ↔ EAN-13
+eşdeğerliğini bilmiyor — katalogda 12 haneli `194644037598` dururken okuyucu
+13 haneli `0194644037598` döndürürse UZUN sorgu KISA alanda bulunamaz ve
+ekran susmaz, **yanlış cevap verir** (K100 canlı vakası: Halil `/yerlestir`de
+okuttu, "bulunamadı" dedi, baştaki sıfır elle silinince ürün çıktı). Ortak
+gövdeye bağlandı (`aramaKosulu` + `kodEsdegerleri`).
+
+⭐ **VE O BEKÇİ İKİNCİ BİR KUSURU AÇIĞA ÇIKARDI:** `q` parametresini
+okuyordum ama ekranda **onu girecek kutu YOKTU** — kurulamayan bir süzgeç,
+tutulmayan bir sözdür. `KodAramaKutusu` eklendi; kamera da onunla geliyor
+(İlke #7).
+
+⚠ **PASİF VARYANT ELENMİYOR, BEYAN EDİLDİ** (`PASİF DAHİL:`) — ve gerekçe
+ÖLÇÜLDÜ, varsayılmadı: bir varyantı pasife almak rafı boşaltmaz; stoğu duran
+pasif bir varyant hâlâ bağlı paradır ve elenirse EKRANDAN KAYBOLUR. Ayrıca
+arama bir süzgeçtir, aradığı SKU'yu bulamayan kullanıcı sistemi bozuk sanır.
+Bugünkü etki ölçüldü ve küçük (2258 kanal SKU'sunun 1'i pasif, stoğu yok,
+kapalı kovada değil) — karar bugünü değil yarını koruyor.
+
 ⭐ **BİR EŞDEĞER MUTASYON GERÇEK BİR EKSİĞİ GÖSTERDİ:** `if (fiyat !== null)
 topla` yerine `topla(stok × (fiyat ?? 0))` yazan mutasyon YEŞİL kalıyordu ve
 bu DOĞRUYDU (`stok × 0` eklemek ile eklememek aynı). Ama `?? 0` biçimi
