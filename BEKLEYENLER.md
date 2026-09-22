@@ -136,6 +136,23 @@ taşındı. İkincisi daha öğretici: taramayı yorumsuz okumaya çevirince Ü�
 ekranın `PASİF DAHİL:` **beyanı** kayboldu ve bu kez onlar suçlandı —
 **çağrı koddan, beyan yorumdan** okunmak zorundaymış.
 
+─── ⑤ **İÇE AKTARMA PASİF SÜZMÜYORDU — 22.09.2026, kullanıcı yakaladı**
+
+HB'nin 08:16 siparişi (**4748270482**, aynı Philips) yine ikize bağlandı, yine
+`Stok yetersiz (0/1)`. Sebep: **üç içe aktarma** (`canli-hb/ty/n11-ice-aktar`)
+varyantı `kodKosuluToplu` ile arıyor ve `isActive` **süzmüyordu**. Dün aramayı
+düzelttim, içe aktarmayı düzeltmedim — _"kararın kapsamı, uygulandığı yerle
+sınırlı sayılmaz"_ dersini bir gün sonra kendim çiğnedim. Üçüne de süzgeç
+kondu; `ice-aktarma:dogrula` ölçütü taşındı + "yalnız aktif" şartı eklendi.
+
+**ONARIM (`canli-pasif-bagi-onar.ts`, kuru koşum → `--uygula`):** ölçüt
+"onaysız ∧ iptalsiz ∧ pasif varyant ∧ **stok hareketi YOK**". 30 kalem bulundu;
+**29'u 2025 tarihli Excel geçmişi** (`satis-excel`, hareketleri ikizde) —
+DOKUNULMADI, iki defter ayrışırdı. **1 kalem çevrildi** (4748270482 →
+`KUC-BR-BHD50-01`, stok 3). Veriden doğrulandı: tekrar koşum 0. İz
+`PASIF_BAGI_ONARIM`. ⚠ "Onaysız = hareketsiz" varsayımı YANLIŞTI; ölçüm
+yazımdan önce yakaladı.
+
 ### AÇIK
 
 - [x] ~~**Halil testi ①**~~ — **GEÇTİ 21.09.2026 19:44.** Defterden teyit
@@ -372,7 +389,7 @@ niyeti korunup şekli yeni koda taşındı.
 listede. Kod düzeltilip belge eski hâlinde kalsaydı ikinci bir ayrışma doğardı.
 
 ### AÇIK
-- [ ] **Halil testi ③** — menüde `Tarife pencereleri` kalemi GÖRÜNMEMELİ.
+- [x] ~~**Halil testi ③**~~ — GEÇTİ 22.09 (3·4·5 ok). ~~menüde `Tarife pencereleri` kalemi GÖRÜNMEMELİ.~~
       `Ayarlar → Komisyon yükleme` açılınca ÜSTTE "Yüklü pencereler" kartı,
       ALTINDA kanal kartları olmalı. Bir pencere satırındaki **"Tarife aynası"**
       hâlâ çalışmalı. Adres çubuğuna elle `/ayarlar/tarife` yazınca
@@ -380,7 +397,10 @@ listede. Kod düzeltilip belge eski hâlinde kalsaydı ikinci bir ayrışma doğ
 - [ ] **Halil testi ③-b** — bir tarife dosyası yükleyin; **aynı ekranda**
       "Yüklü pencereler" listesi yeni pencereyle tazelensin (eski adres
       tazeleniyordu, liste kalırdı).
-- [ ] **Halil testi** — rakamları yukarıda ölçülmüş hâliyle raporda.
+- [x] ~~**Halil testi**~~ — GEÇTİ 22.09 (6·7 ok: Braun aynası 359,83 ◆, N11 teklif oranı).
+- [ ] **⭐ İSTEK (kullanıcı, 22.09): aynada ÜRÜN ARAMA.** _"çok güzel olmuş ama
+      ürün arama yeri lazım, tek tek listeden bulmak çok zor."_ HB aynası 44,
+      N11 46 ürün; kod/ad kutusu + kamera (İlke #7) — küçük paket.
 - [ ] **Braun hiç satılmamış** → üst dilimin fiyatı yok, NET de yok. Bu DOĞRU
       davranış (uydurma baz yazılmıyor) ama satılmamış ürünlerde tepe dilim
       hep boş kalacak. Kanal liste fiyatı tutulsaydı dolardı — ayrı kalem.
@@ -455,8 +475,12 @@ sayılmaz."_ Okuma kapısı eklendi.
 farkı, biri sözdizimi bozan mutasyon) — "geçti" demedi. İkisi de onarıldı.
 
 ### AÇIK
-- [ ] **Halil testi** — `/ayarlar/kargo-tarifesi` açılsın; TY kartında
-      **2026-07-16** ve ~67 gün yazmalı, N11 kartında "tarife yok".
+- [x] ~~**Halil testi**~~ — GEÇTİ 22.09, **BULGUYLA (#8):** kullanıcı: _"listede
+      sadece alım yaptığımız Bim ve MediaMarkt da var; yükleme yalnız
+      Hepsiburada'da."_ İlki kusur: ekran `channel.findMany({isActive})` ile
+      ALIŞ kanallarını da çiziyordu → **yalnız satış hesabı olan kanallar**
+      (komisyon kapısıyla aynı ölçüt). İkincisi tasarım: okuyucu yalnız HB için
+      var, kart bunu yazıyor — TY/N11 dosyası gelirse okuyucu yazılır.
 - [x] ~~**Trendyol kargo tarifesi 2 aydır tazelenmiyor — okuyucusu yok.**~~
       **YANLIŞ ÇERÇEVE — 22.09.2026'da ölçüldü.** Kullanıcı: _"TY'nin fiilen
       kestiği kargoyu API'den okuyor olmalısın, kontrol et."_ **Okuyor:**
@@ -1031,7 +1055,7 @@ Cron `listeleme-cekim` ucuna üçüncü satır olarak girdi. `n11-listeleme:dogr
 aynı uca girdi, ilk yazımı o yapacak. Sıfır eşleşmede tarayıcı yazımı kendisi
 durdurur (anahtar uyuşmazlığı sessizce "YOK" yazmasın).
 
-- [ ] **İlk OTOMATİK koşum (N11)** — cron `listeleme-cekim` gece koşacak;
+- [x] ~~**İlk OTOMATİK koşum (N11)**~~ — **GEÇTİ 22.09 04:50 UTC.** `AuditLog`: `KANAL_KARSILASTIRMA` (TY) · `HB_LISTELEME_YAZIM` yazılan 9 · `N11_LISTELEME_YAZIM` yazılan 0 / istenen 0 (1,5 saat önce elle koşmuştu, değişen yoktu — koştuğu ve karşılaştırdığı izde). Üç kanal, tek cron, aynı dakika. ~~cron `listeleme-cekim` gece koşacak;~~
       `AuditLog action=N11_LISTELEME_YAZIM` **ikinci** kez düşmeli (ilki elle).
       ⭐ **İLK YAZIM ELLE KOŞULDU 22.09.2026** (kullanıcı: _"senkron çalışmalı
       değil mi"_; gecelik mekanizmanın aynısı): 113 listeleme · **109/109
@@ -1222,7 +1246,18 @@ tasarlandığı için bedelsiz oldu — **(b) şartının niye var olduğunun ka
 - [ ] **21.09 ödemesi bugün düştü.** Bankadaki GERÇEK tutar ile ekrandaki
       ₺90.721,41 karşılaştırılacak. _Bu tek ölçüm hem kesinti tahminini hem
       ödeme gününü birden sınar._
-- [ ] `/hakedis` → Detay → geçmiş ödemeler: her ödeme TEK satır mı, tarihi
+- [ ] ⛔ **DÜŞTÜ 22.09 (#13):** kullanıcı: _"çalışmıyor, karma karışık orası."_
+      **VERİ ÖLÇÜLDÜ (22.09, sayfanın kendi gruplamasıyla):** 7705 kalem →
+      **122 satır** = TY 92 (ödeme emri başına bir, **hiçbiri iki güne
+      bölünmüyor**) + HB 30 (emir numarası yok → gün kovası). Son satırlar
+      bankayla tutuyor (21.09 TY ₺90.739,15 · 17.09 ₺42.233,41). Yani "karma
+      karışık" olan VERİ değil, büyük ihtimalle GÖRÜNÜM — HB'nin 129 kalemlik
+      gün satırları TY'nin emirleriyle iç içe, emir numarasız. Görüntü gelince
+      hangisi olduğu belli olacak.
+      Ne gördüğü henüz belli değil — ekran görüntüsü istendi. Bilinen
+      şüpheli: gelecek ödemeler bir ödeme emrini iki tarihe bölüyor (TY
+      tahmini ₺6.197,07 eksik). Sayfa `paymentOrderId` ile grupluyor
+      (`hakedis/page.tsx:389-444`); görüntü gelince ölçülecek.
       TY panelindekiyle aynı mı?
 - [ ] `/nakit-takvimi`: geçmiş ödemeler artık günlere dağılmıyor mu?
 

@@ -51,8 +51,14 @@ export default async function KargoTarifesiSayfasi() {
   const bicim = await bicimlendirici();
   const bugun = gunDegeri(isTakvimGunu(new Date()));
 
+  /**
+   * ⛔ YALNIZ SATIŞ KANALLARI (Halil testi #8, 22.09.2026): "Bim ve MediaMarkt
+   * da listede" — onlar ALIŞ hesabı; kargo tarifesi satılan paketin
+   * maliyetidir, alış kanalının değil. Ölçüt komisyon kapısıyla aynı:
+   * en az bir aktif SATIŞ hesabı olan kanal.
+   */
   const kanallar = await prisma.channel.findMany({
-    where: { isActive: true },
+    where: { isActive: true, accounts: { some: { isActive: true, satisIcin: true } } },
     select: { id: true, code: true, name: true },
     orderBy: { name: "asc" },
   });

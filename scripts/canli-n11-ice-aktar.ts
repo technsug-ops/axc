@@ -568,8 +568,15 @@ export async function n11CekimKos(ayar: {
       ),
     ),
   ];
+    /**
+     * ⛔ YALNIZ AKTİF VARYANT (22.09.2026). K231'de pasife alınan ikiz kayıtlar
+     * burada süzülmüyordu ve HB'nin 4748270482 siparişi yine ikize bağlandı —
+     * arama düzeltilmiş, içe aktarma düzeltilmemişti. Üç içe aktarma da aynı
+     * anda düzeltildi. _(Anayasa: "kararın kapsamı, uygulandığı yerle sınırlı
+     * sayılmaz".)_
+     */
   const varyantlar = await prisma.productVariant.findMany({
-    where: { OR: kodKosuluToplu(tumKodlar) },
+    where: { isActive: true, OR: kodKosuluToplu(tumKodlar) },
     select: {
       id: true,
       barcode: true,

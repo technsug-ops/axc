@@ -685,8 +685,23 @@ const kapsamBloku = blok(kaynak, "const tumBarkodlar =", 2400);
 kontrol("kimlik arama bloğu bulundu", kapsamBloku.length > 0);
 kontrol(
   "içe aktarma ORTAK kuralı çağırıyor",
-  /where:\s*\{\s*OR:\s*kodKosuluToplu\(tumBarkodlar\)\s*\}/.test(kapsamBloku),
+  /**
+   * ⛔ ÇAPA 22.09.2026'DA TAŞINDI — KOD YANLIŞ DEĞİL, EKSİKTİ. Üç içe aktarma
+   * varyantı `isActive` süzmeden buluyordu; K231'de pasife alınan ikiz HB'nin
+   * 4748270482 siparişine yine bağlandı. Süzgeç eklendi; ölçüt "ortak kuralı
+   * çağırıyor"dan "YALNIZ AKTİF varyantta çağırıyor"a çevrildi.
+   * _(Anayasa: "kararın kapsamı, uygulandığı yerle sınırlı sayılmaz".)_
+   */
+  /where:\s*\{\s*isActive:\s*true,\s*OR:\s*kodKosuluToplu\(tumBarkodlar\)\s*\}/.test(kapsamBloku),
 );
+/** HB ve N11 aynı kusuru taşıyordu — üçü BİRLİKTE ölçülür, biri unutulmasın. */
+for (const [kanal, dosya] of [["HB", "scripts/canli-hb-ice-aktar.ts"], ["N11", "scripts/canli-n11-ice-aktar.ts"]] as const) {
+  const m = readFileSync(dosya, "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol(
+    `  ...${kanal} içe aktarması da YALNIZ AKTİF varyantı arıyor`,
+    /where:\s*\{\s*isActive:\s*true,\s*OR:\s*kodKosuluToplu\(tumKodlar\)\s*\}/.test(m),
+  );
+}
 kontrol(
   "doğrudan barcode sorgusu KALMADI (ortak kural atlanmıyor)",
   !/where:\s*\{\s*barcode:\s*\{\s*in:/.test(kapsamBloku),
