@@ -465,9 +465,15 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
     "menü: adres kayıtlı",
     /urunAnalizi: "\/rapor\/urunler"/.test(katalog),
   );
+  /*
+   * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL (K234, 22.09.2026): kullanıcı Ürün analizi'ni
+   * Para grubundan yeni "Fiyatlandırma ve Analiz" grubuna taşıdı. Ölçülen
+   * şey aynı — ekranın katalogda bir YERİ var; grup adı kararla değişti.
+   * Eski çapa ("grupPara") sessizce gevşetilmedi, yeni gruba TAŞINDI.
+   */
   dogru(
-    "menü: katalogda yeri var",
-    /\{ anahtar: "urunAnalizi", varsayilanGrup: "grupPara" \}/.test(katalog),
+    "menü: katalogda yeri var (Fiyatlandırma ve Analiz)",
+    /\{ anahtar: "urunAnalizi", varsayilanGrup: "grupFiyatAnaliz" \}/.test(katalog),
   );
 
   kosanBolumler.push("ekran-pareto");
