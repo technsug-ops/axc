@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
+import { DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaCoz } from "@/lib/sayfalama";
 import { satisKodundanVaryantIdleri } from "@/lib/satis-kodundan-varyant";
 import { aramaKosulu, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
@@ -334,11 +335,12 @@ export default async function UrunlerSayfasi({
                                 yanındaki çerçeveli "Hepsiburada kodu" etiketinin yanında
                                 metin sanıldı. Kod doğru, veri doğru, deploy güncel —
                                 yine de "rozet yok" denildi; İlke #2'nin rozet hâli:
-                                etiket etiket gibi GÖRÜNMELİ. `outline` çerçeve çiziyor.
+                                etiket etiket gibi GÖRÜNMELİ. `outline` çerçeve çiziyor; rengi `lib/renkler` sabitinden (ham Tailwind
+                                sınıfı yasak — `panel:dogrula` ilk denemede tam bunu yakaladı).
                               */}
                               {urun.variants.length > 0 &&
                               urun.variants.every((v) => !v.isActive) ? (
-                                <Badge variant="outline" className="border-amber-600/60 text-amber-800 dark:text-amber-300">
+                                <Badge variant="outline" className={DURUM_YAZISI.uyari}>
                                   {t("tumVaryantlarPasif")}
                                 </Badge>
                               ) : urun.variants.some((v) => !v.isActive) ? (
