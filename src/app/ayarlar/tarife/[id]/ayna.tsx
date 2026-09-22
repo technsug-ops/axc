@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBicim } from "@/lib/bicim-istemci";
+import { enIyiSatir, netRengi, oneriKur } from "@/lib/komisyon/net-onerisi";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
 import { dilimNetleri, type DilimNetSonucu } from "./eylemler";
@@ -54,6 +55,8 @@ export function Ayna({
   const bicim = useBicim();
   const [acik, setAcik] = useState<string | null>(null);
   const [kargo, setKargo] = useState("");
+  /** K234-②: şu anki satış fiyatı — boşsa sunucu son satışı kullanır. */
+  const [guncelFiyat, setGuncelFiyat] = useState("");
   const [sonuc, setSonuc] = useState<DilimNetSonucu | null>(null);
   const [bekliyor, basla] = useTransition();
 
@@ -62,12 +65,15 @@ export function Ayna({
   function hesapla(satir: AynaSatiri) {
     const ucret = Number(kargo.replace(",", "."));
     if (!Number.isFinite(ucret)) return;
+    const fiyatMetni = guncelFiyat.trim().replace(/\./g, "").replace(",", ".");
+    const fiyat = fiyatMetni === "" ? null : Number(fiyatMetni);
     basla(async () => {
       setSonuc(
         await dilimNetleri({
           kod: satir.kod,
           kanalKodu,
           kargoUcreti: ucret,
+          guncelFiyat: fiyat !== null && Number.isFinite(fiyat) ? fiyat : null,
           dilimler: satir.dilimler.map((d) => ({
             sira: d.sira,
             ust: d.ust,
@@ -170,6 +176,23 @@ export function Ayna({
                         </p>
                       </div>
 
+                      <div className="space-y-1.5">
+                        <Label htmlFor={`fiyat-${satir.kod}`}>{t("guncelFiyat")}</Label>
+                        {/* ⚠ YER TUTUCU "örn." — girilmiş değer sanılmasın (İlke #11). */}
+                        <Input
+                          id={`fiyat-${satir.kod}`}
+                          inputMode="decimal"
+                          className="h-11 max-w-40"
+                          placeholder={t("guncelFiyatOrnek")}
+                          value={guncelFiyat}
+                          onChange={(e) => {
+                            setGuncelFiyat(e.target.value);
+                            setSonuc(null);
+                          }}
+                        />
+                        <p className="text-muted-foreground text-xs">{t("guncelFiyatNotu")}</p>
+                      </div>
+
                       <Button
                         type="button"
                         className="min-h-11"
@@ -212,14 +235,18 @@ function Sonuclar({
   }
 
   /**
-   * ⚠ EN KÂRLI DİLİM İŞARETLENİR AMA "ÖNERİ" YAZILMAZ. Kullanıcı kararı
-   * 21.09.2026: ekran ayna + NET olsun, HÜKÜM vermesin. İşaret bir hüküm
-   * değil, gözün gideceği yer.
+   * ⚠ ESKİ KARAR (21.09.2026): "en kârlı dilim işaretlenir ama ÖNERİ
+   * yazılmaz — ekran ayna + NET olsun, hüküm vermesin." ÇEVRİLDİ (22.09,
+   * aynı kullanıcı): "Selliora bana desin ki fiyatı 1095 yap daha fazla
+   * kazan; fark ufak ama sistem önemli." Öneri ŞU ANKİ fiyata göre ve
+   * rakamıyla yazılır; gövde saf (`oneriKur`), değer testiyle kilitli.
    */
-  const netler = sonuc.satirlar
-    .map((s) => s.net2)
-    .filter((n): n is number => n !== null);
-  const enIyi = netler.length > 0 ? Math.max(...netler) : null;
+  const enIyi = enIyiSatir(sonuc.satirlar)?.net2 ?? null;
+  const oneri = oneriKur(sonuc.guncel, sonuc.satirlar);
+  const renk = (n: number | null) => {
+    const r = netRengi(n);
+    return r ? DURUM_YAZISI[r] : "";
+  };
 
   return (
     <div className="space-y-2">
@@ -245,7 +272,8 @@ function Sonuclar({
                   oran: bicim.yuzde(r.oran ?? dilim?.oran ?? 0, 2),
                 })}
               </span>
-              <span className="font-medium">
+              {/* EKSİ KIRMIZI, ARTI YEŞİL (kullanıcı 22.09) — renk sınıfı tokenden. */}
+              <span className={`font-medium ${renk(r.net2)}`}>
                 {r.net2 === null
                   ? t("netYok")
                   : t("net2", { tutar: bicim.para(r.net2, "TRY") })}
@@ -261,6 +289,43 @@ function Sonuclar({
             </div>
           );
         })}
+      </div>
+
+      {/* ŞU ANKİ FİYAT — ayrı ve vurgulu: "şu an satarsam ne kalır?" */}
+      <div className="border-border space-y-1 rounded-lg border p-3 text-sm tabular-nums">
+        {sonuc.guncel ? (
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="font-medium">{t("guncelSatir")}</span>
+            <span>{sonuc.guncel.fiyat === null ? "—" : bicim.para(sonuc.guncel.fiyat, "TRY")}</span>
+            <span className="text-muted-foreground">
+              {t("komisyon", { oran: bicim.yuzde(sonuc.guncel.oran ?? 0, 2) })}
+            </span>
+            <span className={`font-semibold ${renk(sonuc.guncel.net2)}`}>
+              {sonuc.guncel.net2 === null
+                ? t("netYok")
+                : t("net2", { tutar: bicim.para(sonuc.guncel.net2, "TRY") })}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              {sonuc.guncel.fiyatKaynagi === "GIRILEN"
+                ? t("girdiginizFiyat")
+                : sonuc.sonSatisTarihi
+                  ? t("sonSatisTarihli", { tarih: bicim.tarih(sonuc.sonSatisTarihi) })
+                  : t("sonSatistan")}
+            </span>
+          </div>
+        ) : (
+          <p className={DURUM_YAZISI.uyari}>{t("guncelYok")}</p>
+        )}
+        {oneri.tur === "ARTIR" ? (
+          <p className={`font-medium ${DURUM_YAZISI.olumlu}`}>
+            {t("oneri", {
+              fiyat: bicim.para(oneri.hedefFiyat, "TRY"),
+              fark: bicim.para(oneri.fark, "TRY"),
+            })}
+          </p>
+        ) : oneri.tur === "EN_IYI" ? (
+          <p className="text-muted-foreground">{t("oneriEnIyi")}</p>
+        ) : null}
       </div>
     </div>
   );

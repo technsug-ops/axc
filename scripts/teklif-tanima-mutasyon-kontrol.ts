@@ -329,12 +329,17 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "bir kod iki varyanta cozulunce son gelen kazanir - 21.09'da kapatilan arizanin kilik degistirmis hali",
   },
+  /*
+   * CAPA K234'TE TASINDI (22.09.2026), SILINMEDI: ayna `/tarife?pencere=<id>`
+   * adresine gecti; mutasyonun NIYETI ayni - satir, KENDI penceresine degil
+   * genel adrese giderse rakam kaynagina goturmez.
+   */
   {
     ad: "AYNA BAGLANTISI DUSTU - rakam kaynagina goturmuyor",
     yon: "KALDIRAN",
     dosya: "src/app/ayarlar/tarife/durum.tsx",
-    bul: "                      href={`/ayarlar/tarife/${x.id}`}",
-    koy: "                      href={`/ayarlar/tarife`}",
+    bul: "                      href={`/tarife?pencere=${x.id}`}",
+    koy: "                      href={`/tarife`}",
     bozdugu:
       "'152 kalem' duz metin olur; okuyan 'hangileri' diye sormak zorunda kalir ve cogu zaman sormaz (Ilke #16)",
   },

@@ -38,8 +38,8 @@ export type DilimNetSatiri = {
   sira: number;
   /** Hangi fiyat üzerinden hesaplandı. */
   fiyat: number | null;
-  /** Fiyat üst sınırdan mı, son satıştan mı geldi — etiketiyle taşınır. */
-  fiyatKaynagi: "DILIM_USTU" | "SON_SATIS" | "YOK";
+  /** Fiyat üst sınırdan mı, son satıştan mı, kullanıcının girdiğinden mi — etiketiyle taşınır. */
+  fiyatKaynagi: "DILIM_USTU" | "SON_SATIS" | "GIRILEN" | "YOK";
   oran: number | null;
   oranKaynagi: string;
   net1: number | null;
@@ -56,6 +56,17 @@ export type DilimNetSonucu =
       kdvOrani: number;
       sonSatisFiyati: number | null;
       satirlar: DilimNetSatiri[];
+      /**
+       * K234-② — ŞU ANKİ FİYATIN NET'İ. Kullanıcı 22.09: "son satış fiyatı
+       * var ama güncel olmayabilir." Sistem kanal satış fiyatını TUTMUYOR
+       * (ölçüldü: `ChannelSku`te fiyat alanı yok, listeleme senkronu da
+       * fiyat çekmiyor) — bu yüzden fiyat SORULUR; boş bırakılırsa o
+       * kanaldaki son satış kullanılır ve öyle etiketlenir. Oran, fiyatın
+       * düştüğü dilimden motor tarafından çözülür (kullanıcı dilim seçmez).
+       */
+      guncel: DilimNetSatiri | null;
+      /** Son satışın günü — "güncel olmayabilir" uyarısının ölçüsü ekranda yazsın. */
+      sonSatisTarihi: Date | null;
     };
 
 export async function dilimNetleri(girdi: {
@@ -72,9 +83,12 @@ export async function dilimNetleri(girdi: {
    */
   kanalKodu: string;
   kargoUcreti: number;
+  /** Kullanıcının yazdığı şu anki satış fiyatı; `null` → son satış. */
+  guncelFiyat: number | null;
   dilimler: DilimGirdisi[];
 }): Promise<DilimNetSonucu> {
-  await yetkiIste("kanalsku.yaz");
+  /** K234: ekran okuma izniyle açılır; hesap da aynı kapıdan (yazmaz). */
+  await yetkiIste("tarife.gor");
 
   /**
    * ⚠ İŞ GÜNÜ İSTANBUL TAKVİMİNDEN — `/simulasyon` ekranıyla AYNI ifade.
@@ -97,6 +111,37 @@ export async function dilimNetleri(girdi: {
   }
 
   const maliyet = zemin.sonAlisFiyati;
+
+  /** TEK MOTOR ÇAĞRISI — dilim satırı da "şu anki fiyat" satırı da buradan. */
+  const netHesapla = (
+    sira: number,
+    fiyat: number,
+    fiyatKaynagi: DilimNetSatiri["fiyatKaynagi"],
+  ): DilimNetSatiri => {
+    const sonuc = simulasyonKarsilastir(
+      {
+        kdvDahilMi: true,
+        alisFiyati: maliyet,
+        kdvOrani: zemin.kdvOrani,
+        kargoUcreti: girdi.kargoUcreti,
+        kanalFiyatlari: { [girdi.kanalKodu]: fiyat },
+      },
+      bugun,
+      zemin.zeminler,
+    );
+    /** ⚠ Sonuç da KOD ile bulunur; ad eşleşmesi aynı tuzağın ikinci yarısı. */
+    const kanal = sonuc.find((k) => k.kod === girdi.kanalKodu);
+    return {
+      sira,
+      fiyat,
+      fiyatKaynagi,
+      oran: kanal?.komisyonOrani ?? null,
+      oranKaynagi: kanal?.oranKaynagi ?? "YOK",
+      net1: kanal?.net1 ?? null,
+      net2: kanal?.net2 ?? null,
+    };
+  };
+
   const satirlar: DilimNetSatiri[] = girdi.dilimler.map((d) => {
     /**
      * ⚠ ÜST UCU AÇIK DİLİMİN FİYATI YOKTUR — o "bugünkü fiyatın" dilimidir.
@@ -120,30 +165,20 @@ export async function dilimNetleri(girdi: {
       };
     }
 
-    const sonuc = simulasyonKarsilastir(
-      {
-        kdvDahilMi: true,
-        alisFiyati: maliyet,
-        kdvOrani: zemin.kdvOrani,
-        kargoUcreti: girdi.kargoUcreti,
-        kanalFiyatlari: { [girdi.kanalKodu]: fiyat },
-      },
-      bugun,
-      zemin.zeminler,
-    );
-    /** ⚠ Sonuç da KOD ile bulunur; ad eşleşmesi aynı tuzağın ikinci yarısı. */
-    const kanal = sonuc.find((k) => k.kod === girdi.kanalKodu);
-
-    return {
-      sira: d.sira,
-      fiyat,
-      fiyatKaynagi,
-      oran: kanal?.komisyonOrani ?? null,
-      oranKaynagi: kanal?.oranKaynagi ?? "YOK",
-      net1: kanal?.net1 ?? null,
-      net2: kanal?.net2 ?? null,
-    };
+    return netHesapla(d.sira, fiyat, fiyatKaynagi);
   });
+
+  /** ŞU ANKİ FİYAT: girilen; yoksa son satış; o da yoksa hüküm yok. */
+  const guncelFiyat =
+    girdi.guncelFiyat !== null && Number.isFinite(girdi.guncelFiyat) && girdi.guncelFiyat > 0
+      ? girdi.guncelFiyat
+      : null;
+  const guncel: DilimNetSatiri | null =
+    guncelFiyat !== null
+      ? netHesapla(0, guncelFiyat, "GIRILEN")
+      : zemin.sonSatisFiyati !== null
+        ? netHesapla(0, zemin.sonSatisFiyati, "SON_SATIS")
+        : null;
 
   return {
     durum: "TAMAM",
@@ -152,5 +187,7 @@ export async function dilimNetleri(girdi: {
     kdvOrani: zemin.kdvOrani,
     sonSatisFiyati: zemin.sonSatisFiyati,
     satirlar,
+    guncel,
+    sonSatisTarihi: zemin.sonSatisTarihi,
   };
 }

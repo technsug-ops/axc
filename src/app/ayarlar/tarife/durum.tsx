@@ -278,7 +278,7 @@ export async function TarifeDurumu() {
                       pazaryeri görünümü açılıyor.
                     */}
                     <Link
-                      href={`/ayarlar/tarife/${x.id}`}
+                      href={`/tarife?pencere=${x.id}`}
                       className="text-primary text-sm underline underline-offset-4"
                     >
                       {tAyna("aynayiAc")}

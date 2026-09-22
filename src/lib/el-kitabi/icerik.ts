@@ -41,7 +41,7 @@ export const BOLUMLER = [
   { kimlik: "alim", ad: "Alım ve mal kabul" },
   { kimlik: "satis", ad: "Satış" },
   { kimlik: "iade", ad: "İade" },
-  { kimlik: "deneme", ad: "Fiyat denemesi — nerede satmalı" },
+  { kimlik: "deneme", ad: "Hesaplama motoru — nerede satmalı" },
   { kimlik: "kart", ad: "Kârlılık kartı" },
   { kimlik: "gider", ad: "Giderler" },
   { kimlik: "kartBorcu", ad: "Kartlar ve kart borcu" },
@@ -145,6 +145,8 @@ export const MENU_BOLUM: Record<string, string | null> = {
   talepler: "talep",
   gecmisEkstre: "gecmisEkstre",
   komisyonKapisi: "komisyonKapisi",
+  /** K234 — tarife hesaplama; anlatımı komisyon bölümünde ("her satırın yanında"). */
+  tarifeHesaplama: "komisyonKapisi",
   kargoTarifesi: "kargoTarifesi",
   /** Kitabın KENDİSİ — kendi kendini anlatan bölüm açmak tekrar olurdu. */
   elKitabi: null,
@@ -1077,7 +1079,7 @@ ${sikHata([
 
 <section id="deneme">
 ${baslik("deneme")}
-<p><strong>Sol menü → Fiyat denemesi.</strong> Tek soruyu cevaplar:
+<p><strong>Sol menü → Hesaplama motoru.</strong> (Fiyatlandırma ve Analiz grubunda.) Tek soruyu cevaplar:
 <em>bu ürünü şu fiyata satarsam elime ne kalır — ve hangi pazaryerinde en
 çok kalır?</em> Hiçbir kayıt oluşturmaz; istediğin kadar deneyebilirsin.</p>
 
@@ -1100,7 +1102,7 @@ kargo 200 ₺:</p>
 kalıyor</strong> — çünkü komisyona KDV ekleniyor ve iki ayrı sabit kesinti daha
 var. Bu tersliği gözle görmek mümkün değil; hesabı sistem yapar.</p>
 
-${ekranSemasi("Fiyat denemesi", [
+${ekranSemasi("Hesaplama motoru", [
   { no: 1, ad: "Ürünü koddan bul", aciklama: "Barkod, SKU, firma SKU ya da pazaryeri SKU'su. Okuyucuyla okutabilirsin.", genis: true },
   { no: 2, ad: "Alış fiyatı", aciklama: "Ürün bulunduysa kendiliğinden gelir — EN SON ödediğin birim maliyet. Ortalama DEĞİL: ortalama, aylar önceki bir maliyeti bugünkü denemeye karıştırır. Ortalaman özet satırında ayrıca yazar." },
   { no: 3, ad: "Satış fiyatı (ortak)", aciklama: "İsteğe bağlı. Ürün bulunduysa EN SON sattığın fiyat gelir." },
@@ -1860,8 +1862,8 @@ tarife yazılmaz. Rakamlar beklediğiniz gibiyse <strong>Yükle</strong>.</p></d
 Ekran bunu yüklemeden önce söyler. İlk yükleme eksik geldiyse düzeltmenin
 yolu budur.</p></div>
 
-<div class="ek-not"><div class="etiket">Tarife aynası — her satırın yanında</div>
-<p>Yüklü pencerelerin her satırında <strong>"Tarife aynası"</strong> bağlantısı
+<div class="ek-not"><div class="etiket">Tarife hesaplama — her satırın yanında ve menüde</div>
+<p>Yüklü pencerelerin her satırında <strong>"Tarife hesaplama"</strong> bağlantısı
 var. Tıklayınca o tarife <strong>pazaryeri panelinin dilinde</strong> açılır:
 ürün ürün fiyat aralıkları ve her aralığın komisyonu.</p>
 <p><strong>Ve panelin gösteremediği sütun:</strong> bir ürünü açıp kargo

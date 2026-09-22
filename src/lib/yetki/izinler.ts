@@ -104,6 +104,11 @@ export const IZINLER = [
   { anahtar: "kar.duzelt", grup: "para" },
   { anahtar: "kanalsku.yaz", grup: "para" },
   /**
+   * K234 (22.09.2026) — `/tarife` tarife hesaplama (salt okuma). Aynanın eski
+   * kapısı `kanalsku.yaz` bir YAZMA izniydi; okuma ekranı okuma izniyle açılır.
+   */
+  { anahtar: "tarife.gor", grup: "para" },
+  /**
    * K-OZET (11.09.2026) — GÜNLÜK ÖZET: nakit/kâr/tazminat/kart borcu
    * sinyallerini tek anlatıda birleştiren sayfa. Bu izin TEK BAŞINA
    * kapıdır — sayfa-bazlı model bunu böyle ister (bkz. dosya başlığı:

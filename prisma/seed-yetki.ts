@@ -104,6 +104,8 @@ export async function yetkiSeed(prisma: PrismaClient) {
      * Aşağıdaki döngü `SAGLAYICI_IZINLERI`ni ayrıca eliyor; bu yorum
      * yalnız "unutuldu mu?" diye bakan gözü durdurmak için.
      */
+    // 22.09.2026 — K234: /tarife (tarife hesaplama) okuma ekranı.
+    "tarife.gor",
   ];
 
   /**

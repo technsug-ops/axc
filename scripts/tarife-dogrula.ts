@@ -14,6 +14,8 @@ import {
 import { ORAN_OKUYUCUSU_OLAN } from "../src/lib/komisyon/okuyucu";
 import { ENGEL_ANAHTARI } from "../src/lib/komisyon/tarife-engeli";
 import { teklifDosyasiMi } from "../src/lib/komisyon/tarife-okuyucu";
+import { enIyiSatir, netRengi, oneriKur } from "../src/lib/komisyon/net-onerisi";
+import { aynaSatirlariniSuz, guncelPencereSec } from "../src/lib/komisyon/pencere-secimi";
 import {
   dilimBul,
   pencereCoz,
@@ -1473,9 +1475,15 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
   /*
    * RAKAM KAYNAGINA GOTURUR (Ilke #16): "152 kalem" duz metin olmamali.
    */
+  /*
+   * K234 (22.09.2026): ayna `/tarife?pencere=<id>`e TASINDI — olcut ESKIDI,
+   * kod degil. Eski capa `/ayarlar/tarife/${x.id}` idi; sessizce gevsetilmedi,
+   * yeni adrese tasindi (anayasa: "bekcinin kirmizisi her zaman 'kod yanlis'
+   * demez"). Eski adres yonlendirme olarak duruyor.
+   */
   kontrol(
-    "pencere satiri AYNAYA baglaniyor",
-    /ayarlar\/tarife\/\${x.id}/.test(durumGovdesi),
+    "pencere satiri AYNAYA baglaniyor (/tarife?pencere=)",
+    /tarife\?pencere=\$\{x\.id\}/.test(durumGovdesi),
   );
 
   const ayna = yorumsuzOku("src/app/ayarlar/tarife/[id]/ayna.tsx");
@@ -1573,6 +1581,65 @@ console.log("");
   kontrol(
     "bu hesabin kodlari listenin BASINDA (eski gerekce korundu)",
     /filter\(\(k\) => k\.channelAccountId === channelAccountId\)[\s\S]{0,200}?filter\(\(k\) => k\.channelAccountId !== channelAccountId\)/.test(yaz),
+  );
+}
+
+console.log("");
+console.log("=".repeat(70));
+console.log("K234) TARİFE HESAPLAMA — güncel pencere · arama · öneri (saf gövde)");
+console.log("=".repeat(70));
+{
+  const p = (id: string, bas: string, yuk: string) => ({
+    id,
+    pencereBaslangic: new Date(bas),
+    yuklendiAt: new Date(yuk),
+  });
+  const liste = [p("eski", "2026-09-15", "2026-09-15"), p("yeni", "2026-09-22", "2026-09-22"), p("n11", "2026-09-21", "2026-09-21")];
+  const g = guncelPencereSec(liste, undefined);
+  kontrol("seçim yoksa EN GÜNCEL pencere (başlangıcı en geç)", g.durum === "GUNCEL" && g.pencere.id === "yeni");
+  const se = guncelPencereSec(liste, "n11");
+  kontrol("adresteki kimlik listede → o pencere", se.durum === "SECILI" && se.pencere.id === "n11");
+  kontrol("adresteki kimlik listede YOK → BULUNAMADI (sessizce başka pencere açılmaz)", guncelPencereSec(liste, "silinmis").durum === "BULUNAMADI");
+  kontrol("boş kimlik = seçim yok (güncel)", guncelPencereSec(liste, "  ").durum === "GUNCEL");
+  kontrol("liste boş → BOS", guncelPencereSec([], undefined).durum === "BOS");
+  const ayniHafta = [p("ilk", "2026-09-22", "2026-09-22T08:00:00Z"), p("tekrar", "2026-09-22", "2026-09-22T12:00:00Z")];
+  const g2 = guncelPencereSec(ayniHafta, null);
+  kontrol("aynı başlangıçta SON yüklenen kazanır", g2.durum === "GUNCEL" && g2.pencere.id === "tekrar");
+
+  const satirlar = [
+    { kod: "0887961643367", urunAdi: "Fisher-Price Piyano" },
+    { kod: "8697975600803", urunAdi: "Philips OneBlade" },
+  ];
+  kontrol("boş arama hepsini bırakır", aynaSatirlariniSuz(satirlar, " ").length === 2);
+  kontrol(
+    "barkod EŞDEĞERİYLE bulur (UPC-A 887961643367 → EAN-13 0887961643367)",
+    aynaSatirlariniSuz(satirlar, "887961643367").map((s) => s.kod).join() === "0887961643367",
+    aynaSatirlariniSuz(satirlar, "887961643367").map((s) => s.kod),
+  );
+  kontrol("ürün adı parçasıyla, büyük-küçük harf duyarsız (tr)", aynaSatirlariniSuz(satirlar, "ONEBLADE")[0]?.kod === "8697975600803");
+  kontrol("uymayan metin boş döner (uydurma eşleşme yok)", aynaSatirlariniSuz(satirlar, "yok").length === 0);
+  kontrol("arama girdiyi DEĞİŞTİRMEZ (kopya döner)", aynaSatirlariniSuz(satirlar, "").length === 2 && satirlar.length === 2);
+
+  /** ÖNERİ — kullanıcının kendi örneği (22.09): 1.102'de 169,29 · 1.095,95'te 170,36. */
+  const dilimler = [
+    { fiyat: 1095.95, net2: 170.36 },
+    { fiyat: 1058.56, net2: 148.2 },
+    { fiyat: 1029.16, net2: 131.62 },
+  ];
+  kontrol("en iyi satır = en yüksek NET-2", enIyiSatir(dilimler)?.fiyat === 1095.95);
+  const o = oneriKur({ fiyat: 1102, net2: 169.29 }, dilimler);
+  kontrol(
+    "şu anki 169,29 < en iyi 170,36 → ARTIR: hedef 1.095,95, fark +1,07",
+    o.tur === "ARTIR" && o.hedefFiyat === 1095.95 && Math.abs(o.fark - 1.07) < 0.005,
+    o,
+  );
+  kontrol("şu anki fiyat zaten en iyi → EN_IYI (öneri yok)", oneriKur({ fiyat: 1095.95, net2: 170.36 }, dilimler).tur === "EN_IYI");
+  kontrol("şu anki NET yok → YOK (hüküm yok)", oneriKur({ fiyat: 1102, net2: null }, dilimler).tur === "YOK" && oneriKur(null, dilimler).tur === "YOK");
+  kontrol("kuruş tozu öneri üretmez (fark 0,004)", oneriKur({ fiyat: 1102, net2: 170.356 }, dilimler).tur === "EN_IYI");
+  kontrol("dilimlerin hiçbiri hesaplanamadıysa öneri yok (EN_IYI, uydurma hedef yok)", oneriKur({ fiyat: 1102, net2: 10 }, [{ fiyat: 1, net2: null }]).tur === "EN_IYI");
+  kontrol(
+    "NET rengi: eksi kırmızı · artı yeşil · sıfır ve bilinmeyen renksiz",
+    netRengi(-201.4) === "olumsuz" && netRengi(169.29) === "olumlu" && netRengi(0) === null && netRengi(null) === null,
   );
 }
 

@@ -131,6 +131,7 @@
     "canli:barkod-sifir": "tsx scripts/canli-barkod-sifir.ts",
     "canli:kanal-kodsuz": "tsx scripts/canli-kanal-kodsuz.ts",
     "canli:hakedis-teyit": "tsx scripts/canli-hakedis-teyit.ts",
+    "canli:menu-duzeni-yaz": "tsx scripts/canli-menu-duzeni-yaz.ts",
     "canli:hakedis-esle": "tsx scripts/canli-hakedis-esle.ts",
     "canli:k8-olcum": "tsx scripts/canli-k8-olcum.ts",
     "toplu-kargo:dogrula": "tsx scripts/toplu-kargo-dogrula.ts",

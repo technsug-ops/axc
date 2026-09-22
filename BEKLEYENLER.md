@@ -13,6 +13,102 @@
 
 ---
 
+## 🔴 K234 — "FİYATLANDIRMA VE ANALİZ" GRUBU + TARİFE HESAPLAMA EKRANI · 22.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR · menü kaydı ONAY BEKLİYOR]
+
+**KULLANICI İSTEĞİ:** _"Fiyatlandırma ve Analiz isminde bir sekme açalım;
+altına Ürün analizi · Fiyat denemesi · Kârlılık kartı · Tarife hesaplama."_
+Ardından: _"Fiyat denemesi'nin ismi Hesaplama motoru olsun"_ ve tarife
+ekranı için üç istek: _"şu anki fiyattan satarsam ne kalır"_ · _"Selliora
+bana desin ki fiyatı 1095 yap daha fazla kazan; fark ufak ama sistem
+önemli"_ · _"eksi kırmızı, artı yeşil"_ · _"arama kutusu olsa, barkodu
+girince teklif varsa çıksa"_ (#6'nın devamı).
+
+**KANAAT (verildi, kabul edildi):** dört ekran aynı soruya cevap veriyor —
+"kaça satayım, ne kalır" — üç ayrı grupta duruyordu, dördüncüsü menüde
+HİÇ yoktu (yalnız Komisyon yükleme → pencere satırından). Gruplama doğru.
+
+### YAPILAN
+
+- **Menü kataloğu:** `grupFiyatAnaliz` günlüğün hemen altında; varsayılan
+  üyeler `urunAnalizi · urunKarti · simulasyon · tarifeHesaplama`.
+  `simulasyon` günlükten gruba taşındı (25.08 kararı çevrildi, silinmedi).
+- **Adlar:** Fiyat denemesi → **Hesaplama motoru** (menü · sekme başlığı ·
+  ekran başlığı · el kitabı). Tarife aynası → **Tarife hesaplama** (aynı üç
+  yer + komisyon ekranındaki bağlantı).
+- **`/tarife`** (yeni, `tarife.gor` OKUMA izni): menü kayıt numarasına
+  gitmez; sayfa **en güncel pencereyi** açar (saf gövde `guncelPencereSec`
+  — adresteki kimlik yoksa 404, sessizce başka pencere açılmaz), üstte
+  **pencere seçici** (kanal · tarih aralığı) ve **barkod / ürün adı
+  araması** (ortak kod kutusu, kamera; barkod EŞDEĞERLERİYLE — UPC-A ↔
+  EAN-13). Eski `/ayarlar/tarife/[id]` yönlendirir; komisyon ekranındaki
+  satır bağlantısı yeni adrese.
+- **Şu anki fiyat (K234-②):** NET kutusuna **"Şu anki satış fiyatı"** alanı
+  — boş bırakılırsa o kanaldaki son satış (tarihiyle etiketli: _"son satış:
+  20.09.2026"_), yazılırsa yazılan (_"girdiğiniz fiyat"_). Oran fiyatın
+  düştüğü dilimden MOTOR tarafından çözülür; yeni hesap yok, aynı
+  `simulasyonKarsilastir`. Sistem kanal satış fiyatını TUTMUYOR (ölçüldü:
+  `ChannelSku`te fiyat alanı yok, listeleme senkronu fiyat çekmiyor) — bu
+  yüzden SORULUR, uydurulmaz.
+- **Öneri:** _"Fiyatı ₺1.095,95 yaparsanız NET-2 ₺1,07 artar."_ (yeşil) ya da
+  _"Şu anki fiyat en yüksek NET-2'yi veriyor."_ Kuruş tozu (<1 kuruş) öneri
+  üretmez. ⚠ 21.09 kararı ("hüküm vermesin") aynı kullanıcı tarafından
+  22.09'da çevrildi; ikisi de kodda.
+- **Renk:** NET-2 eksi → kırmızı, artı → yeşil, sıfır/bilinmeyen renksiz
+  (`lib/renkler` tokenleri).
+- **İzin:** `tarife.gor` (izinler + `SONRADAN_DOGAN`) — deploy sonrası
+  `npm run canli:yetki` ŞART, yoksa ekran sessizce 404.
+- **Bekçi:** `tarife:dogrula` K234 bloğu (18 değer testi: pencere seçimi ·
+  arama · öneri · renk, 221/221); menü ölçütleri (`panel:dogrula`) yeşil;
+  `teklif-tanima-mutasyon` çapası yeni adrese TAŞINDI (silinmedi).
+
+### MENÜ KAYDI — ONAY BEKLİYOR
+
+Menü sırası VERİ (`Company.menuDuzeni`) ve kayıt varsayılanı ezer; kullanıcı
+25.08'de bir düzen kaydetmiş. Kod tek başına dört kalemi taşımaz.
+`npm run canli:menu-duzeni-yaz` kuru koşumu (22.09):
+
+    çözülen kalem: eski 42 · yeni 42 · kaybolan 0
+    yeni grup: urunAnalizi · urunKarti · simulasyon · tarifeHesaplama
+    tanınmayan (eski anahtar, düşer): tarife
+
+`--uygula` ile yazılır (yerel görüntü + iz + `--geri=<dosya>`). Alternatif:
+kullanıcı Ayarlar → Menü düzeni'nden dördünü gruba sürükler.
+
+### HALİL TEST LİSTESİ
+
+1. Sol menüde **Fiyatlandırma ve Analiz** başlığı (günlük listenin altında,
+   Para'nın üstünde) → içinde Ürün analizi · Kârlılık kartı · Hesaplama
+   motoru · Tarife hesaplama. _(Menü kaydı yazıldıktan sonra; öncesinde grup
+   yalnız "Tarife hesaplama" ile görünür, öteki üçü eski yerlerinde.)_
+2. **Tarife hesaplama** → başlık "Trendyol tarife hesaplama · 22.09.2026 –
+   29.09.2026 · 724 ürün" (en güncel pencere kendiliğinden). Pencere
+   seçicisinden "Hepsiburada · 16.09 – 22.09" → 152 ürün.
+3. Arama kutusuna **027084667271** yaz (Trendyol penceresi) → tek ürün:
+   "Eğlen ve Öğren Eğitici Masalcı Tırtıl". "xyz" → "Ürün bulunamadı" +
+   Temizle. Kamera simgesi çalışır.
+4. O üründe **NET hesapla** → Kargo 107 · **Şu anki satış fiyatı boş** →
+   Göster: dilim satırları + altta "Şu anki fiyat ₺1.102,00 · komisyon
+   %11,5 · NET-2 ₺169,29 (son satış: <tarih>)" ve yeşil satır **"Fiyatı
+   ₺1.095,95 yaparsanız NET-2 ₺1,07 artar."** NET-2 rakamları yeşil.
+5. Aynı kutuda fiyata **1095,95** yaz → Göster: "Şu anki fiyat ₺1.095,95 …
+   NET-2 ₺170,36 (girdiğiniz fiyat)" ve "Şu anki fiyat en yüksek NET-2'yi
+   veriyor."
+6. Hepsiburada penceresi → **HBCV00000EURKI** (Grundig) → NET hesapla,
+   kargo 185 → NET-2'ler **kırmızı** (−₺201,40 · −₺829,03 …), öneri satırı
+   "en yüksek" ya da "artar" — hepsi eksi olsa da en az kötüyü söyler.
+7. Eski adres `/ayarlar/tarife/<id>` → `/tarife?pencere=<id>`e yönlenir;
+   Komisyon yükleme → satırdaki "Tarife hesaplama" bağlantısı aynı yere.
+8. Sekme başlığı ve menü "Hesaplama motoru"; `/simulasyon` ekranının
+   başlığı da öyle. _(mobil doğrulama kullanıcıda)_
+
+### AÇIK
+
+- Kanalın **canlı satış fiyatını** çekmek (listeleme senkronuna fiyat
+  alanı) — o gün "şu anki fiyat" sorulmaz, ölçülür. Ayrı kalem.
+- N11 penceresi 142 ürün, tarife hesaplama N11 için de çalışır (ölçülmedi).
+
+---
+
 ## 🔴 K233 — N11 HAKEDİŞİ: TRANSFER DOSYASI OKUYUCUSU · 22.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR: dosyayı yükle]
 
 **NİYE:** K232'de üç kanalın "alışık olunan arayüzü" istendi; N11'in verisi

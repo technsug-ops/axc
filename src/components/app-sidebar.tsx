@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   CalendarCheck,
+  BadgePercent,
   BarChart3,
   ListFilter,
   Banknote,
@@ -150,6 +151,8 @@ const MENU_IKONLARI: Record<string, typeof Package> = {
   gecmisEkstre: FileSpreadsheet,
   komisyonKapisi: Percent,
   tarife: Percent,
+  /** K234 — tarife hesaplama; `komisyonKapisi`nin Percent'i yükleme kapısı, bu bakma ekranı. */
+  tarifeHesaplama: BadgePercent,
   /** Kargo TARİFESİ — `tedarikciler`in Truck'ıyla çakışmasın diye ayrı ikon. */
   kargoTarifesi: Route,
   hbKargoTarife: Route,

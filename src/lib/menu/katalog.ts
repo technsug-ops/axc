@@ -78,6 +78,13 @@ export const MENU_ADRESLERI: Record<string, string> = {
    */
   komisyonKapisi: "/ayarlar/komisyon",
   /**
+   * K234 — tarife hesaplama (eski "tarife aynası"). Adres KAYIT NUMARASIZ:
+   * `/tarife` en güncel pencereyi açar, üstte seçici; eski `/ayarlar/tarife/[id]`
+   * buraya yönlendirir. Kullanıcı 22.09'da id'li adresi verdi — menüye
+   * gömülseydi gelecek Salı eski pencereyi açardı.
+   */
+  tarifeHesaplama: "/tarife",
+  /**
    * K229 — kanal bağımsız kargo tarifesi kapısı. Eski `/ayarlar/hb-kargo-tarife`
    * adresi DURUYOR (bağlantılar kırılmasın) ama menüde tek kapı görünür:
    * adında kanal gömülü bir menü kalemi, öteki kanalları görünmez yapıyordu.
@@ -93,6 +100,14 @@ export const MENU_ADRESLERI: Record<string, string> = {
  * koda yeni bir grup eklendiğinde görünmesi gerekir.
  */
 export const MENU_GRUPLARI: KatalogGrubu[] = [
+  /**
+   * FİYATLANDIRMA VE ANALİZ (kullanıcı isteği 22.09.2026, K234). Dört ekran
+   * aynı soruya cevap veriyor — "bu ürünü kaça satayım, ne kalır?" — ve üç
+   * ayrı grupta duruyordu, dördüncüsü (tarife) menüde hiç yoktu. Karar
+   * zinciri sırasıyla: analiz → kart → hesaplama motoru → tarife.
+   * ⚠ GÜNLÜĞÜN HEMEN ALTINDA: fiyat kararı sık verilen iştir, ayda bir değil.
+   */
+  { anahtar: "grupFiyatAnaliz" },
   { anahtar: "grupPara" },
   { anahtar: "grupUrunKanal" },
   { anahtar: "grupTanimlar" },
@@ -141,7 +156,17 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
    * yerleştirilmemiş durumda ve bu ekran bir süre günlük iş olacak.
    */
   { anahtar: "yerlestir", varsayilanGrup: null },
-  { anahtar: "simulasyon", varsayilanGrup: null },
+
+  // ── FİYATLANDIRMA VE ANALİZ (K234, 22.09.2026) ──────────────────────────
+  /**
+   * ⚠ `simulasyon` GÜNLÜKTEN BURAYA TAŞINDI — kullanıcı 25.08'de günlük
+   * listeye koymuştu ("Fiyat Denemesi"), 22.09'da adını "Hesaplama motoru"
+   * yapıp bu gruba aldı. Eski karar silinmedi, çevrildi.
+   */
+  { anahtar: "urunAnalizi", varsayilanGrup: "grupFiyatAnaliz" },
+  { anahtar: "urunKarti", varsayilanGrup: "grupFiyatAnaliz" },
+  { anahtar: "simulasyon", varsayilanGrup: "grupFiyatAnaliz" },
+  { anahtar: "tarifeHesaplama", varsayilanGrup: "grupFiyatAnaliz" },
 
   // ── PARA ────────────────────────────────────────────────────────────────
   { anahtar: "giderler", varsayilanGrup: "grupPara" },
@@ -152,10 +177,8 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "nakitTakvimi", varsayilanGrup: "grupPara" },
   { anahtar: "gunlukOzet", varsayilanGrup: "grupPara" },
   { anahtar: "rapor", varsayilanGrup: "grupPara" },
-  { anahtar: "urunAnalizi", varsayilanGrup: "grupPara" },
 
   // ── ÜRÜN VE KANAL ───────────────────────────────────────────────────────
-  { anahtar: "urunKarti", varsayilanGrup: "grupUrunKanal" },
   { anahtar: "kanalSkulari", varsayilanGrup: "grupUrunKanal" },
   { anahtar: "kanalListeleme", varsayilanGrup: "grupUrunKanal" },
   { anahtar: "kanalHesaplari", varsayilanGrup: "grupUrunKanal" },
