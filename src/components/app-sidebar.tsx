@@ -388,16 +388,25 @@ export function AppSidebar({
      */
     if (grup.ogeler.length === 0) return null;
 
+    /*
+     * SIKI DİKEY ARALIK (kullanıcı 22.09.2026): "sekmeler kapalıyken scroll
+     * yapmak istemiyorum." Altı grup başlığı p-2 + h-8 ile 48 px'ti; Ayarlar
+     * 673 px'lik pencerede alt bloğun altında kalıyordu. Dikey dolgu 8→2 px:
+     * grup başına 12 px, altı grupta 72 px kazanç — kapalı menü tek ekrana
+     * sığar. Yatay dolgu ve başlık yüksekliği (h-8) aynı.
+     */
     return (
-      <SidebarGroup key={grup.anahtar}>
+      <SidebarGroup key={grup.anahtar} className="py-0.5">
         {/* ⚠ BAŞLIK TIKLANABİLİR GÖRÜNÜR (İlke #2): düğme, imleç ve ok.
-            Ok yönü açık/kapalıyı söyler — gizli tıklama alanı yok. */}
+            Ok yönü açık/kapalıyı söyler — gizli tıklama alanı yok.
+            ⚠ TELEFONDA 44 px (İlke #8): etiket h-8 (32 px) — masaüstünde yeter,
+            dokunmatikte min-h-11 ile 44'e çıkar. */}
         <SidebarGroupLabel asChild>
           <button
             type="button"
             onClick={() => grubuCevir(grup.anahtar, acik)}
             aria-expanded={acik}
-            className="hover:bg-sidebar-accent flex w-full items-center justify-between rounded-md transition-colors"
+            className="hover:bg-sidebar-accent flex min-h-11 w-full items-center justify-between rounded-md transition-colors md:min-h-8"
           >
             <span>{tMenu(grup.anahtar)}</span>
             <ChevronDown

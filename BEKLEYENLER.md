@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K234 — "FİYATLANDIRMA VE ANALİZ" GRUBU + TARİFE HESAPLAMA EKRANI · 22.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR · menü kaydı ONAY BEKLİYOR]
+## 🔴 K234 — "FİYATLANDIRMA VE ANALİZ" GRUBU + TARİFE HESAPLAMA EKRANI · 22.09.2026 · [CANLIDA 835a010 — HALİL TESTİ BEKLİYOR · menü kaydını kullanıcı kendisi taşıdı]
 
 **KULLANICI İSTEĞİ:** _"Fiyatlandırma ve Analiz isminde bir sekme açalım;
 altına Ürün analizi · Fiyat denemesi · Kârlılık kartı · Tarife hesaplama."_
@@ -61,7 +61,12 @@ HİÇ yoktu (yalnız Komisyon yükleme → pencere satırından). Gruplama doğr
   arama · öneri · renk, 221/221); menü ölçütleri (`panel:dogrula`) yeşil;
   `teklif-tanima-mutasyon` çapası yeni adrese TAŞINDI (silinmedi).
 
-### MENÜ KAYDI — ONAY BEKLİYOR
+### MENÜ KAYDI — KULLANICI KENDİSİ TAŞIDI (22.09, Ayarlar → Menü düzeni)
+
+_Betik (`canli:menu-duzeni-yaz`) koşulmadı; kullanıcı üç kalemi sürükleyip kaydetti ("Menü düzeni kaydedildi"). Betik duruyor, geri alma/tekrar için._
+
+─── **③ Sıkı dikey aralık (kullanıcı 22.09): "sekmeler kapalıyken scroll yapmak istemiyorum"** — grup başlıkları arası dikey dolgu 8→2 px (grup başına 12 px, altıda 72 px); telefonda başlık 44 px dokunma hedefi (İlke #8). Halil: masaüstünde bütün gruplar kapalıyken **Ayarlar** alt bloğun üstünde, kaydırmadan görünür.
+
 
 Menü sırası VERİ (`Company.menuDuzeni`) ve kayıt varsayılanı ezer; kullanıcı
 25.08'de bir düzen kaydetmiş. Kod tek başına dört kalemi taşımaz.
