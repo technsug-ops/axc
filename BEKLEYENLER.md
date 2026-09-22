@@ -13,6 +13,85 @@
 
 ---
 
+## 🔴 K236 — "BU BARKODU OKUMUYOR" ÖLÇÜLDÜ: OKUYOR · EKSİK OLAN TEŞHİSTİ · 22.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+**KULLANICI BİLDİRİMİ:** bir Fisher-Price kutusunun fotoğrafı (UPC-A
+`8 87961 64336 7`) — _"bu tip barkodları hâlâ okumuyor sistem"._
+
+⚠ **İLK ŞÜPHELİ YİNE BİÇİM LİSTESİYDİ VE YİNE SUÇSUZ ÇIKTI.** İki kez oradan
+yandık (25.08 `ITF`, 31.08 `UPCA`); üçüncüde varsaymak yerine ÖLÇTÜM —
+kullanıcının FOTOĞRAFI, uygulamanın kendi `tarayiciSecenekleri()` ayarıyla
+çözücüden geçirildi:
+
+    24.png 1920×2560  HIZLI  285 ms   EAN13:0887961643367
+           1280×1707  HIZLI  124 ms   EAN13:0887961643367
+            960×1280  HIZLI   86 ms   EAN13:0887961643367
+            640× 853  HIZLI   28 ms   EAN13:0887961643367
+            480× 640  HIZLI   16 ms   EAN13:0887961643367
+            640× 853  ZOR    126 ms   EAN13:0887961643367
+    (23.png — ikinci fotoğraf — altı boyutun altısında da okundu)
+
+**Defter tarafı da temiz:** `887961643367` → `kodlaVaryantCoz` → **TEK** aktif
+varyant `axcali1726` (K231'de pasife alınan ikiz aramaya girmiyor). UPC-A,
+zxing'de `EAN13` olarak baştaki sıfırla dönüyor; `kodEsdegerleri` ikisini denk
+sayıyor.
+
+### ⭐ ASIL BULGU — SESSİZ EKRAN
+
+Çözücü bir şey bulamadığında ekran **hiçbir şey söylemiyordu.** Kullanıcı için
+şu üç hâl AYNI görünüyor: ① çözücü hiç çalışmıyor · ② çalışıyor ama kodu
+bulamıyor · ③ okudu, sonraki adımda bir şey oldu. Bildirim de bu yüzden
+ölçülemez kalıyor — "okumuyor" cümlesinin arkasında hangisi olduğu bilinmiyor.
+_(İlke #5 · anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim,
+denetim değildir".)_
+
+**YAPILAN:** kamera penceresine canlı **tarama hâli** satırı.
+
+    kadrajı barkoda tutun — tarama başlıyor          (hiç kare taranmadı)
+    7 kare tarandı · kod aranıyor                     (çözücü ÇALIŞIYOR)
+    40 kare tarandı, kod BULUNAMADI. Barkodu çerçeveye sığdırıp 10–20 cm
+    yaklaşın; parlama varsa açıyı değiştirin…         (ipucu)
+    okundu: 0887961643367                             (sürekli kipte)
+
+· Karar **saf gövdede** (`taramaHali`, `lib/barkod-formatlari.ts`); ekran
+  yalnız eşliyor, kendi eşiğini kurmuyor.
+· **Eşik uydurulmadı, döngüden türetildi:** tarama 250 ms'de bir tetikleniyor,
+  ölçülmüş kare maliyeti 146–668 ms (K123) → 40 kare ≈ **15–25 sn** aralıksız
+  arama.
+· ⛔ **"OKUNDU" KİLİTLİ:** yalnız SON kare okuduysa yazar. Sayaç sıfırlanmadan
+  yazsaydı, kamera başka bir şeye çevrildiğinde eski kod ekranda asılı kalır
+  ve kullanıcı okunmayan kodu okundu sanardı.
+· Sayaç **her karede** artar (okusa da okumasa da) — çözücünün çalıştığının
+  kanıtı odur.
+
+**BEKÇİ:** `kamera:dogrula` +9 değer testi (83) · `kamera-mutasyon:kontrol`
+**11/11** (yeni üç yön: okundu kilidini düşür · ipucuyu hiç yakma · sayacı
+ekrana çizme).
+
+### AÇIK — KIRILMANIN YERİ HÂLÂ BİLİNMİYOR
+
+Ölçüm çözücüyü ve defteri temize çıkardı; geriye **canlı kamera karesi**
+kalıyor (hareket bulanıklığı · odak · telefonun verdiği gerçek çözünürlük) ve
+bunu buradan ölçemem. Yeni satır tam bunu ölçülebilir yapıyor.
+
+### HALİL TEST LİSTESİ
+
+1. Herhangi bir ekranda kamera simgesine bas (ör. `/okut`). Pencerenin altında
+   **iki gri satır** olmalı: `kamera 1920×1080 @30 · odak: continuous · kare
+   1920×1080` ve altında **`… kare tarandı · kod aranıyor`** — sayı ARTMALI.
+   ⛔ Sayı artmıyorsa çözücü hiç çalışmıyordur; bunu bana söyleyin.
+2. Kamerayı boş bir yere tut, ~20 sn bekle → satır **"kod BULUNAMADI …"**
+   ipucuna dönmeli.
+3. Fisher-Price kutusunu (UPC-A `8 87961 64336 7`) okut → pencere kapanır ve
+   ürün gelir: **FISHER PRICE Eğitici Köpekçik** (`axcali1726`).
+   ⛔ GELMİYORSA: kapanmadan önceki satırda ne yazıyordu ve teşhis satırındaki
+   **çözünürlük** kaçtı — ikisini bana yazın. `640×480` yazıyorsa sebep
+   çözünürlüktür, `1920×1080` ise tarama hızı/odaktır.
+4. `/paketle` gibi sürekli kipte okut → pencere açık kalır ve satır
+   **`okundu: …`** yazar, sonra yeniden aramaya döner.
+
+---
+
 ## 🔴 K235 — SATIR KARTI: LİSTE ANATOMİSİ TEK GÖVDEYE ÇIKTI · 22.09.2026 · [① CANLIDA 9079642 · ② KOŞTU (7 ekran daha) — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI KARARI:** _"Bu sayfalar ve diğer sayfalardaki kart yapısını yeni

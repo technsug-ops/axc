@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import {
   ZOR_TARAMA_ARALIGI,
   tarayiciSecenekleri,
+  taramaHali,
   zorKareMi,
 } from "@/lib/barkod-formatlari";
 
@@ -176,6 +177,20 @@ function KameraDiyalogu({
   const [tani, setTani] = useState<string | null>(null);
 
   /**
+   * ═══ TARAMA SAYACI (K236) — "okumuyor" ile "bulamıyorum" AYRI ═════════
+   * Kullanıcı 22.09.2026: _"bu tip barkodları hâlâ okumuyor"_. Ölçüldü:
+   * gösterdiği UPC-A kutusu çözücüden HER çözünürlükte okunuyor. Eksik olan
+   * okuma değil TEŞHİSTİ — çözücü hiç çalışmasa da, çalışıp bulamasa da
+   * ekran aynı sessiz görüntüyü veriyordu. Sayaç ikisini ayırır; karar saf
+   * gövdede (`taramaHali`), burası yalnız çiziyor.
+   */
+  const [taramaOzeti, setTaramaOzeti] = useState({
+    taranan: 0,
+    ardArda: 0,
+    sonKod: null as string | null,
+  });
+
+  /**
    * ÇÖZÜCÜYE GİDEN KAREYİ OLDUĞU GİBİ İNDİR (K113 · yalnız teşhis).
    *
    * ⚠ AYRI CANVAS'A ÇİZİLİYOR, PAYLAŞILANA DEĞİL. Tarama döngüsü
@@ -237,6 +252,9 @@ function KameraDiyalogu({
      * pahalı taramayı sonsuza kadar koşardı.
      */
     let ardArdaBasarisiz = 0;
+    /** Sayaçlar döngüye ait; ekrana her karede yansıtılır (K236). */
+    let taranan = 0;
+    let sonKodYerel: string | null = null;
     let iptal = false;
     let okumaSuruyor = false;
 
@@ -372,6 +390,15 @@ function KameraDiyalogu({
           if (iptal) return;
           /** ⚠ SAYAÇ OKUMADA SIFIRLANIR — yoksa zor tarama sürekli koşar. */
           ardArdaBasarisiz = kod ? 0 : ardArdaBasarisiz + 1;
+          /**
+           * ⛔ SAYAÇ HER KAREDE ARTAR — okusa da okumasa da. "Kaç kare
+           * tarandı" sorusunun cevabı, çözücünün ÇALIŞTIĞININ kanıtıdır;
+           * yalnız başarısızları saysaydık başarılı bir okumadan sonra
+           * sayaç donar ve kanıt kaybolurdu.
+           */
+          taranan += 1;
+          if (kod) sonKodYerel = kod;
+          setTaramaOzeti({ taranan, ardArda: ardArdaBasarisiz, sonKod: sonKodYerel });
           if (kod) {
             onOkundu(kod);
             /**
@@ -418,6 +445,24 @@ function KameraDiyalogu({
       stream?.getTracks().forEach((track) => track.stop());
     };
   }, [acik, onOkundu, onKapat, t, surekli, onBosKare]);
+
+  /**
+   * ⚠ KARAR SAF GÖVDEDEN, METİN SÖZLÜKTEN. Ekran yalnız eşler; eşik ve sıra
+   * `lib/barkod-formatlari.ts`te ve bekçi orayı ÇAĞIRARAK ölçüyor.
+   */
+  const hal = taramaHali(
+    taramaOzeti.taranan,
+    taramaOzeti.ardArda,
+    taramaOzeti.sonKod,
+  );
+  const taramaMetni =
+    hal.hal === "OKUNDU"
+      ? t("taramaOkundu", { kod: hal.kod })
+      : hal.hal === "BASLADI"
+        ? t("taramaBasladi")
+        : hal.hal === "BULUNAMIYOR"
+          ? t("taramaBulunamiyor", { sayi: hal.taranan })
+          : t("taramaAriyor", { sayi: hal.taranan });
 
   return (
     <Dialog open={acik} onOpenChange={(a) => !a && onKapat()}>
@@ -474,6 +519,16 @@ function KameraDiyalogu({
         */}
         {tani ? (
           <p className="text-muted-foreground font-mono text-[11px]">{tani}</p>
+        ) : null}
+
+        {/*
+          ═══ TARAMA HÂLİ (K236) — SESSİZ EKRAN YOK ══════════════════════
+          Çözücünün çalıştığı, kaç kare tarandığı ve son okunan kod burada
+          yazar. Hata yokken de görünür: "bir şey olmuyor" hâli artık
+          ölçülebilir bir cümleye dönüşür (İlke #5).
+        */}
+        {hazir && !hata ? (
+          <p className="text-muted-foreground text-xs">{taramaMetni}</p>
         ) : null}
 
         {hazir && !hata ? (

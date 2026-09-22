@@ -192,3 +192,61 @@ export function tarayiciSecenekleri(zor: boolean) {
     maxNumberOfSymbols: 4,
   };
 }
+
+/**
+ * ============================================================================
+ *  TARAMA HÂLİ — "OKUMUYOR" İLE "BULAMIYORUM" AYRI SÖYLENİR (K236, 22.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ NİYE DOĞDU: kullanıcı bir UPC-A kutusu gösterip _"bu tip barkodları
+ *  hâlâ okumuyor"_ dedi. ÖLÇÜLDÜ — fotoğrafı uygulamanın KENDİ seçenekleriyle
+ *  çözücüden geçirildi: **her çözünürlükte okundu** (1920 · 1280 · 960 · 640 ·
+ *  480 px, hem hızlı hem zor kip; `EAN13:0887961643367`). Kod da defterde tek
+ *  aktif varyanta çözülüyor. Yani biçim listesi bu kez SUÇSUZ — iki kez oradan
+ *  yandığımız için (25.08 `ITF`, 31.08 `UPCA`) ilk şüpheli yine oydu.
+ *
+ *  ⭐ ASIL EKSİK TEŞHİSTİ: kamera bir şey bulamadığında ekran HİÇBİR ŞEY
+ *  söylemiyordu. "Çözücü hiç çalışmıyor" ile "bakıyorum ama kodu bulamıyorum"
+ *  kullanıcıya AYNI görünüyor — ikisi de sessiz bir canlı görüntü. Bildirim
+ *  de bu yüzden ölçülemez kalıyor: "okumuyor" cümlesinin arkasında hangi hâl
+ *  olduğu bilinmiyor.
+ *  _(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+ *  değildir" · İlke #5: sessiz başarısızlık yasak.)_
+ *
+ *  ⚠ EŞİK TAHMİN DEĞİL, DÖNGÜDEN TÜRETİLDİ: tarama 250 ms'de bir tetikleniyor
+ *  ve ölçülmüş kare maliyeti 146–668 ms (K123). 40 kare ≈ **15–25 saniye**
+ *  aralıksız arama demek — bir kullanıcının "bu okumuyor" demeye başladığı
+ *  eşik. Daha kısası nişan alırken bile yanar, daha uzunu geç kalır.
+ * ============================================================================
+ */
+
+/** Kaç ARD ARDA başarısız kareden sonra ekran ipucu vermeye başlar. */
+export const IPUCU_ESIGI = 40;
+
+export type TaramaHali =
+  /** Henüz hiç kare taranmadı — çözücü daha çalışmadı. */
+  | { hal: "BASLADI" }
+  /** Son kare bir kod verdi (sürekli kipte pencere açık kalır). */
+  | { hal: "OKUNDU"; kod: string }
+  /** Taranıyor, kod yok — normal nişan alma hâli. */
+  | { hal: "ARIYOR"; taranan: number }
+  /** Uzun süredir bulunamıyor — ipucu verilir. */
+  | { hal: "BULUNAMIYOR"; taranan: number };
+
+/**
+ * ⚠ SAF: yalnız sayaçlardan karar üretir, bekçi ÇAĞIRARAK ölçer.
+ * ⛔ SIRA ÖNEMLİ: önce OKUNDU sorulur ama YALNIZ ard arda başarısız sayacı
+ * sıfırken — yoksa bir kez okunan kod, kamera başka bir şeye çevrilse bile
+ * ekranda asılı kalır ve kullanıcı okunmayan kodu okundu sanar.
+ */
+export function taramaHali(
+  taranan: number,
+  ardArdaBasarisiz: number,
+  sonKod: string | null,
+): TaramaHali {
+  if (ardArdaBasarisiz === 0 && sonKod !== null && sonKod !== "") {
+    return { hal: "OKUNDU", kod: sonKod };
+  }
+  if (taranan === 0) return { hal: "BASLADI" };
+  if (ardArdaBasarisiz >= IPUCU_ESIGI) return { hal: "BULUNAMIYOR", taranan };
+  return { hal: "ARIYOR", taranan };
+}

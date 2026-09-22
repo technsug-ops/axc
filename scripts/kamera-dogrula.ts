@@ -3,6 +3,8 @@ import { RETAIL_BARCODE_FORMATS } from "zxing-wasm/reader";
 
 import {
   DESTEKLENEN_FORMATLAR,
+  IPUCU_ESIGI,
+  taramaHali,
   ZOR_TARAMA_ARALIGI,
   tarayiciSecenekleri,
   zorKareMi,
@@ -550,12 +552,60 @@ console.log("\n12) tarama maliyeti — hızlı kare esas, zor kare emniyet");
   );
 
   /**
+   * ═══ TARAMA HÂLİ (K236, 22.09.2026) — SESSİZ EKRANIN SONU ═══════════
+   * Kullanıcı "bu tip barkodları hâlâ okumuyor" dedi; ÖLÇÜLDÜ, çözücü o
+   * barkodu her çözünürlükte okuyor. Eksik olan okuma değil TEŞHİSTİ:
+   * "çözücü hiç çalışmıyor" ile "çalışıyor ama bulamıyor" ekranda aynı
+   * görünüyordu. Gövde ikisini ayırır; burası ÇAĞIRARAK ölçer.
+   */
+  kontrol("hiç kare taranmadıysa BAŞLADI", taramaHali(0, 0, null).hal === "BASLADI");
+  kontrol(
+    "  ...ilk kareler ARIYOR (sayaç görünür — çözücünün çalıştığının kanıtı)",
+    taramaHali(3, 3, null).hal === "ARIYOR",
+  );
+  {
+    const h = taramaHali(IPUCU_ESIGI, IPUCU_ESIGI, null);
+    kontrol("eşiğe gelince BULUNAMIYOR (ipucu verilir)", h.hal === "BULUNAMIYOR");
+    kontrol("  ...ve kaç kare tarandığı taşınır", h.hal === "BULUNAMIYOR" && h.taranan === IPUCU_ESIGI);
+  }
+  kontrol(
+    "eşiğin bir altı HÂLÂ ARIYOR (nişan alırken ipucu yanmaz)",
+    taramaHali(IPUCU_ESIGI - 1, IPUCU_ESIGI - 1, null).hal === "ARIYOR",
+  );
+  /**
+   * ⛔ OKUNDU YALNIZ SON KARE OKUDUYSA. Sayaç sıfırlanmadan "okundu" demek,
+   * kamera başka bir şeye çevrildiğinde eski kodu ekranda asılı bırakır ve
+   * kullanıcı okunmayan kodu okundu sanar.
+   */
+  kontrol("son kare okuduysa OKUNDU", taramaHali(5, 0, "8697975600803").hal === "OKUNDU");
+  kontrol(
+    "  ...ama arada başarısız kare varsa ARTIK okundu DEĞİL",
+    taramaHali(9, 4, "8697975600803").hal === "ARIYOR",
+  );
+  kontrol("boş dize kod OKUNDU saymaz", taramaHali(5, 0, "").hal !== "OKUNDU");
+  /** Eşik döngüden türetildi: 250 ms tetik + 146–668 ms kare ≈ 15–25 sn. */
+  kontrol("ipucu eşiği 10–120 kare arasında", IPUCU_ESIGI >= 10 && IPUCU_ESIGI <= 120);
+
+  /**
    * ⛔ ZİNCİR — GÖVDELER KUSURSUZ ÇALIŞIP KİMSE ÇAĞIRMAZSA HİÇBİR ŞEY
    * DEĞİŞMEZ. K121'de tur 98/98 yeşilken kutu ekranda yoktu; ders bu.
    */
   const okuyucuKaynagi = readFileSync("src/components/barkod-okuyucu.tsx", "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  kontrol(
+    "ekran tarama hâlini GÖVDEDEN alıyor (kendi eşiğini kurmuyor)",
+    /const hal = taramaHali\(/.test(okuyucuKaynagi) && !/IPUCU_ESIGI/.test(okuyucuKaynagi),
+  );
+  kontrol(
+    "  ...ve satırı ÇİZİYOR (gövde çalışıp kimse çağırmazsa hiçbir şey değişmez)",
+    /\{taramaMetni\}/.test(okuyucuKaynagi),
+  );
+  kontrol(
+    "  ...sayaç HER karede artıyor (okusa da okumasa da — çalıştığının kanıtı)",
+    /taranan \+= 1;/.test(okuyucuKaynagi),
+  );
+
   kontrol(
     "okuyucu seçenekleri GÖVDEDEN alıyor",
     okuyucuKaynagi.includes("tarayiciSecenekleri(zor)"),

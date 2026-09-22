@@ -916,6 +916,10 @@
     "tani": "kamera {genislik}×{yukseklik} @{kare_hizi} · odak: {odak} · kare {kare}",
     "odakYok": "desteklenmiyor",
     "taniOkunamadi": "kamera bilgisi okunamadı",
+    "taramaBasladi": "kadrajı barkoda tutun — tarama başlıyor",
+    "taramaAriyor": "{sayi} kare tarandı · kod aranıyor",
+    "taramaBulunamiyor": "{sayi} kare tarandı, kod BULUNAMADI. Barkodu çerçeveye sığdırıp 10–20 cm yaklaşın; parlama varsa açıyı değiştirin. Okunmuyorsa kodu elle yazabilirsiniz.",
+    "taramaOkundu": "okundu: {kod}",
     "kareyiKaydet": "Kareyi kaydet (teşhis)"
   },
   "Satis": {

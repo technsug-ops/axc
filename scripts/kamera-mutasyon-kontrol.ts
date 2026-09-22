@@ -113,6 +113,34 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "govde her bicimi 'acik' sayar; beyansiz eksik HIC bulunamaz ve olcut sonsuza kadar yesil yanar",
   },
+  /* ═══ K236 — TARAMA HÂLİ (sessiz ekranın sonu) ═══════════════════════ */
+  {
+    ad: "OKUNDU KILIDI DUSTU - eski kod ekranda asili kalir",
+    yon: "FAZLADAN",
+    dosya: "src/lib/barkod-formatlari.ts",
+    bul: "  if (ardArdaBasarisiz === 0 && sonKod !== null && sonKod !== \"\") {",
+    koy: "  if (sonKod !== null && sonKod !== \"\") {",
+    bozdugu:
+      "kamera baska bir seye cevrilse bile 'okundu: X' yazili kalir; kullanici okunmayan kodu okundu sanar",
+  },
+  {
+    ad: "IPUCU HIC YANMAZ - 'okumuyor' hali yine sessiz",
+    yon: "KALDIRAN",
+    dosya: "src/lib/barkod-formatlari.ts",
+    bul: "  if (ardArdaBasarisiz >= IPUCU_ESIGI) return { hal: \"BULUNAMIYOR\", taranan };",
+    koy: "  if (false) return { hal: \"BULUNAMIYOR\", taranan };",
+    bozdugu:
+      "uzun suredir bulunamayan kodda ekran hicbir sey soylemez - K236'nin duzeltmek icin var oldugu hal",
+  },
+  {
+    ad: "SAYAC EKRANA CIZILMIYOR - govde calisir, kimse gormez",
+    yon: "KALDIRAN",
+    dosya: "src/components/barkod-okuyucu.tsx",
+    bul: "          <p className=\"text-muted-foreground text-xs\">{taramaMetni}</p>",
+    koy: "          <p className=\"text-muted-foreground text-xs\" />",
+    bozdugu:
+      "K121 dersi: govde kusursuz calisir, ekranda karsiligi yoktur ve tur yesil yanar",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
