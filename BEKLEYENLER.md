@@ -13,7 +13,65 @@
 
 ---
 
-## 🔴 K232 — HAKEDİŞ "DETAY" PAZARYERİ PANELİ DÜZENİNE ÇEVRİLDİ · 22.09.2026 · [① CANLIDA e5b59ab · ② KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+## 🔴 K233 — N11 HAKEDİŞİ: TRANSFER DOSYASI OKUYUCUSU · 22.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR: dosyayı yükle]
+
+**NİYE:** K232'de üç kanalın "alışık olunan arayüzü" istendi; N11'in verisi
+sistemde HİÇ yoktu — API'de hakediş ucu bulunamadı
+(`docs/a3-hb-n11-api-kesif.md`). Kullanıcı panelin **"Ödemelerim → Arama
+Sonuç Listesi → Excel'e Aktar"** dosyasını gönderdi
+(`settlementHistories (5).xls`, BIFF, tek sayfa, **3 satır**).
+
+**ÖLÇÜLEN BİÇİM:** `Transfer Tarihi · Ödeme Türü · İşlem Tarihi · Transfer
+Durumu · Transfer Tutarı · Banka · IBAN` — satır = **bankaya giden bir
+transfer** (sipariş değil): `27-Ağu-2026 · Hakediş Ödemesi · -- · Başarılı ·
+5056.56`. Tarih Türkçe üç harfli ay (`Ağu`, `Eyl`), tutar nokta ondalık.
+Sipariş/kesinti ayrıntısı bu dosyada YOK — panelin kendi listesi de yok
+(detay, transferin üstüne tıklayınca ayrı ekranda).
+
+**YAPILAN:**
+- `n11TransferOku` (`lib/hakedis/okuyucu.ts`): satır → `HAKEDIS_TRANSFERI`
+  (yeni kod, **sipariş dışı**), sipariş no yok, `Başarılı` → ödeme tarihi =
+  transfer tarihi; ölçülmeyen durum ödendi SAYILMAZ (tarih boş, bekleyen);
+  tanınmayan ödeme türü → `DIGER` (kalem yazılır, uyarıda görünür).
+  Kimlik `tarih|tutar` (idempotent, tekrar yükleme "zaten yüklü" der).
+- ⛔ **IBAN ve banka adı HİÇBİR ALANA YAZILMAZ** — bekçi sızmadığını sınar.
+- `yukle.ts` → N11 hesabı seçilince bu okuyucu; `HakedisKanali` tipi tek
+  yerde (`"TRENDYOL" | "HEPSIBURADA" | "N11"`).
+- `/hakedis` Detay/Özet gruplaması N11'i de alır (transfer tarihi GERÇEK
+  ödeme günüdür — tahmin değil); senkron rozeti N11 için "hiç çalışmadı"
+  demeye devam eder (doğru: otomatik çekim yok).
+- **Bekçi:** `hakedis:dogrula` 3b (19 ölçüt: ay çözümü · iki tutar biçimi ·
+  durum → ödeme tarihi · DIGER · kimlik · IBAN/banka sızmadı · eksik sütun).
+- Gerçek dosya okuyucudan geçirildi (yerel prova, yazım yok): 3 satır ·
+  27.08 / 10.09 / 17.09 · üçü Başarılı → ödendi.
+
+### HALİL TEST LİSTESİ
+
+1. `/hakedis` → **Rapor yükle** → mağaza: **N11 — AXCALI** → dosya:
+   `settlementHistories (5).xls` → **Denetle**. Önizleme: _Dosyadaki satır
+   3 · Yazılacak 3 · Sipariş dışı 3 · Net toplam ₺9.321,56_
+   (5.056,56 + 2.840,42 + 1.424,58); uyarı yok.
+2. **Onayla ve yaz** → "3 kalem yazıldı."
+3. `/hakedis` → Kanal: **N11** → **Detay**: Geçmiş ödemeler'de üç satır,
+   panelinizle birebir — **17.09.2026 · ₺1.424,58** · 10.09.2026 · ₺2.840,42
+   · 27.08.2026 · ₺5.056,56, hepsi "Ödeme yapıldı"; üstte "3 ödeme · toplam
+   ₺9.321,56". Satırı açınca kalem dökümü: _Hakediş Ödemesi · 1 · tutar_;
+   sipariş listesi yok (dosyada yok).
+4. Aynı dosyayı **ikinci kez** yükle → Denetle: "3 kalem daha önce
+   yüklenmiş, tekrar yazılmayacak" ve yazılacak 0.
+5. Kanal: **Tümü** → Detay: N11 satırları TY/HB arasında tarih sırasında,
+   "N11" rozetiyle.
+
+### AÇIK
+
+- N11 transfer **detayı** (kesintiler: komisyon · kargo hizmet bedeli ·
+  ertelenen tutar) dosyada yok; panelde transferin üstüne tıklayınca açılan
+  ekranın dışa aktarımı varsa okuyucu genişletilir — kullanıcı bakacak.
+- Her hafta (Perşembe) dosyayı indirip yüklemek gerekir; otomasyon yolu yok.
+
+---
+
+## 🔴 K232 — HAKEDİŞ "DETAY" PAZARYERİ PANELİ DÜZENİNE ÇEVRİLDİ · 22.09.2026 · [① CANLIDA e5b59ab · ② CANLIDA 9b2ef78 — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI BİLDİRİMİ (Halil testi #13):** _"Çok karışık, anlamak mümkün
 değil. Müşteri alışık olduğu arayüzde hakedişlerini görsün. Toplam
@@ -171,7 +229,7 @@ ilk satırı 29.09 ₺38.490,82).
 ### AÇIK
 
 - ~~HB ve N11 panel ekranları bekleniyor~~ → **ikisi de geldi (22.09)**; HB ölçüldü
-  ve ②'de, N11 için veri yolu yok → yeni kalem (Excel'e Aktar dosyası bekleniyor).
+  ve ②'de, N11 dosyası geldi → okuyucu **K233**'te.
 - N11 için otomatik hakediş çekimi yok; Detay'da N11 seçilince ekran
   bunu **yazar** ("gruplanamıyor, dosyalar elle yükleniyor").
 - Özet sekmesi kullanıcı kararıyla dokunulmadı; "gerekirse ora ile de

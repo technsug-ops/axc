@@ -47,6 +47,15 @@ export const HAKEDIS_KODLARI = [
   "ERKEN_ODEME",
   "ULUSLARARASI_HIZMET",
   /**
+   * N11 TRANSFER SATIRI (K233, 22.09.2026). N11'in hakediş ucu YOK; panelin
+   * "Excel'e Aktar" dosyası SİPARİŞ değil TRANSFER düzeyindedir — bir satır
+   * bankaya giden bir ödeme (tarih · tür · durum · tutar). Sipariş dışıdır,
+   * kalemi olmayan bir NET rakamdır; ödeme özetinde kanalın kendi panelindeki
+   * gibi "bir satır bir ödeme" olarak görünür. Kesintileri (komisyon, kargo,
+   * ertelenen tutar) taşımaz — o ayrıntı N11'de transferin detay ekranında.
+   */
+  "HAKEDIS_TRANSFERI",
+  /**
    * TANINMAYAN TİP. Pazaryerleri yeni işlem tipi ekliyor ve haber vermiyor.
    * Sessizce atlamak, parayı kaybetmek demektir; yüklemeyi durdurmak ise
    * her yeni tipte sistemi kilitlerdi. Bu yüzden kalem YAZILIR, ham tipiyle
@@ -65,6 +74,7 @@ export const SIPARIS_DISI_KODLAR: HakedisKodu[] = [
   "HURDA_GELIRI",
   "ERKEN_ODEME",
   "ULUSLARARASI_HIZMET",
+  "HAKEDIS_TRANSFERI",
 ];
 
 /**
@@ -105,8 +115,11 @@ export type HakedisSatiri = {
 };
 
 /** Bir dosyanın okunmuş hâli. */
+/** Dosya okuyucusu olan kanallar — `yukle.ts` → `okuyucuSec` bu kümeden seçer. */
+export type HakedisKanali = "TRENDYOL" | "HEPSIBURADA" | "N11";
+
 export type HakedisOkumasi = {
-  kanal: "TRENDYOL" | "HEPSIBURADA";
+  kanal: HakedisKanali;
   satirlar: HakedisSatiri[];
   /** Tanınmayan başlıklar — okuyucu tutmadıysa sebebi burada. */
   eksikSutunlar: string[];

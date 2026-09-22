@@ -32,6 +32,7 @@ import {
   kalemTuruDokumu,
   odemeleriSuz,
   odemeToplamlari,
+  SIPARIS_DISI_KODLAR,
   siparisDokumu,
   sonrakiOdemeGunu,
   type OdemeKalemi,
@@ -58,11 +59,13 @@ import {
   tarihCoz,
   trendyolOku,
   turkiyeDisiMi,
+  n11TarihCoz,
+  n11TransferOku,
 } from "../src/lib/hakedis/okuyucu";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 9;
+const BOLUM_SAYISI = 10;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -213,6 +216,48 @@ console.log("\n3) HEPSİBURADA — uzun format");
   kontrol("kanal SKU okundu", o.satirlar[0].urunKodu === "HBCV0000BH0Q0P");
   kontrol("iade aynası ayrı kod", o.satirlar[5].kod === "KOMISYON_IADE");
   kosanBolumler.push("hepsiburada");
+
+// ===========================================================================
+console.log("\n3b) N11 — transfer listesi (Excel'e Aktar, K233)");
+// ===========================================================================
+{
+  /**
+   * Ölçülen biçim (22.09.2026, `settlementHistories (5).xls`): başlıklar
+   * birebir, tarih "27-Ağu-2026", tutar "5056.56", durum "Başarılı". Rakamlar
+   * SENTETİK — gerçek transfer tutarları depoya girmez; IBAN da sahte ve
+   * hiçbir alana sızmadığı AYRICA sınanır.
+   */
+  const N11 = [
+    ["Transfer Tarihi", "Ödeme Türü", "İşlem Tarihi", "Transfer Durumu", "Transfer Tutarı", "Banka", "IBAN"],
+    ["27-Ağu-2026", "Hakediş Ödemesi", "--", "Başarılı", "1234.56", "T.İŞ BANKASI", "TR000000000000000000000001"],
+    ["10-Eyl-2026", "Hakediş Ödemesi", "--", "Başarılı", "2.840,42", "T.İŞ BANKASI", "TR000000000000000000000001"],
+    ["17-Eyl-2026", "Hakediş Ödemesi", "--", "Beklemede", "99.9", "T.İŞ BANKASI", "TR000000000000000000000001"],
+    ["17-Eyl-2026", "İade Kesintisi", "--", "Başarılı", "-5", "T.İŞ BANKASI", "TR000000000000000000000001"],
+    ["", "", "", "", "", "", ""],
+  ];
+  const o = n11TransferOku(N11);
+  kontrol("kanal N11", o.kanal === "N11");
+  kontrol("eksik sütun yok", o.eksikSutunlar.length === 0, o.eksikSutunlar);
+  kontrol("boş satır atlandı (4 satır)", o.satirlar.length === 4, o.satirlar.length);
+  kontrol("Türkçe ay kısaltması çözüldü: 27-Ağu-2026", metin(o.satirlar[0].vadeTarihi) === "2026-08-27", metin(o.satirlar[0].vadeTarihi));
+  kontrol("  ...Eyl → 09", metin(o.satirlar[1].vadeTarihi) === "2026-09-10");
+  kontrol("n11TarihCoz tanımadığı ayda null (uydurmaz)", n11TarihCoz("27-Xyz-2026") === null);
+  kontrol("n11TarihCoz ortak biçime düşer (10.08.2026)", metin(n11TarihCoz("10.08.2026")) === "2026-08-10");
+  kontrol("nokta ondalık tutar: 1234.56", o.satirlar[0].tutar === 1234.56, o.satirlar[0].tutar);
+  kontrol("TR biçimi tutar: 2.840,42", o.satirlar[1].tutar === 2840.42, o.satirlar[1].tutar);
+  kontrol("Hakediş Ödemesi → HAKEDIS_TRANSFERI (sipariş dışı, sipariş no yok)", o.satirlar[0].kod === "HAKEDIS_TRANSFERI" && o.satirlar[0].siparisNo === null);
+  kontrol("HAKEDIS_TRANSFERI sipariş dışı kodlarda", SIPARIS_DISI_KODLAR.includes("HAKEDIS_TRANSFERI"));
+  kontrol("Başarılı → ödeme tarihi = transfer tarihi (GERÇEKLEŞMİŞ)", metin(o.satirlar[0].odemeTarihi) === "2026-08-27");
+  kontrol("Beklemede → ödeme tarihi BOŞ (ölçülmeyen durum ödendi sayılmaz)", o.satirlar[2].odemeTarihi === null);
+  kontrol("tanınmayan ödeme türü → DIGER (kalem yazılır, uyarıda görünür)", o.satirlar[3].kod === "DIGER" && o.satirlar[3].hamTip === "İade Kesintisi");
+  kontrol("kimlik tarih|tutar (idempotent)", o.satirlar[0].externalId === "2026-08-27|1234.56", o.satirlar[0].externalId);
+  /** ⛔ BANKA HESABI DEFTERE GİRMEZ — hiçbir alan IBAN ya da banka adı taşımaz. */
+  const dokum = JSON.stringify(o.satirlar);
+  kontrol("IBAN hiçbir alana sızmadı", !dokum.includes("TR0000"));
+  kontrol("banka adı hiçbir alana sızmadı", !dokum.includes("BANKASI"));
+  kontrol("eksik sütun dosyada söylenir", n11TransferOku([["Tarih", "Tutar"]]).eksikSutunlar.length > 0);
+}
+kosanBolumler.push("n11");
 }
 
 // ===========================================================================

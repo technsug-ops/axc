@@ -333,7 +333,16 @@ export default async function HakedisSayfasi({
    *  İkisi FARKLI kesinlik taşır — rozetler (`odemeEmriNo` var/yok) bunu
    *  ayırt eder.
    */
-  const API_KANALLARI = new Set(Object.keys(HAKEDIS_SENKRON_AKSIYONU));
+  /**
+   * K233 (22.09.2026): N11 de gruplamaya girer — ama API'den değil, panelin
+   * "Excel'e Aktar" TRANSFER dosyasından (`n11TransferOku`). O dosyada bir
+   * satır bir banka transferidir ve tarihi GERÇEK ödeme günüdür; yani "ödeme
+   * gününe göre grupla" kuralı N11'de tahmin değil, panelin kendi satırıdır.
+   * Küme adı bu yüzden "API" değil "ödeme özeti kanalları". Senkron rozeti
+   * (`HAKEDIS_SENKRON_AKSIYONU`) N11 için hâlâ "hiç çalışmadı" der — doğru:
+   * otomatik çekim yok, dosya elle yüklenir.
+   */
+  const API_KANALLARI = new Set([...Object.keys(HAKEDIS_SENKRON_AKSIYONU), "N11"]);
   const apiKalemleri = kalemler.filter((k) =>
     API_KANALLARI.has(k.channelAccount.channel.name),
   );

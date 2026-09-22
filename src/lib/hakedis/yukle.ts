@@ -6,9 +6,10 @@ import {
   type EslesmeSonucu,
   type MevcutSatis,
 } from "./eslestir";
-import type { HakedisSatiri } from "./model";
+import type { HakedisKanali, HakedisSatiri } from "./model";
 import {
   hepsiburadaOku,
+  n11TransferOku,
   satirAnahtari,
   taninmayanTipler,
   trendyolOku,
@@ -47,7 +48,7 @@ export type HakedisUyarisi =
   | { kod: "ZATEN_YUKLU"; sayi: number };
 
 export type HakedisOnizleme = {
-  kanal: "TRENDYOL" | "HEPSIBURADA";
+  kanal: HakedisKanali;
   /** Dosyadaki toplam satır. */
   okunan: number;
   /** Daha önce yüklenmiş, bu sefer atlanacak satırlar. */
@@ -78,6 +79,8 @@ function okuyucuSec(kanalKodu: string) {
   const k = kanalKodu.toUpperCase();
   if (k.includes("TRENDYOL")) return trendyolOku;
   if (k.includes("HEPSIBURADA")) return hepsiburadaOku;
+  /** K233: N11 panelinin "Excel'e Aktar" transfer listesi (satır = ödeme). */
+  if (k.includes("N11")) return n11TransferOku;
   return null;
 }
 
@@ -183,7 +186,7 @@ export async function hakedisDenetle(
 }
 
 function onizlemeKur(
-  kanal: "TRENDYOL" | "HEPSIBURADA",
+  kanal: HakedisKanali,
   tumSatirlar: HakedisSatiri[],
   atlanan: number,
   eslesme: EslesmeSonucu,

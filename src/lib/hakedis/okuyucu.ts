@@ -11,6 +11,7 @@ import {
   type HakedisOkumasi,
   type HakedisSatiri,
 } from "./model";
+import { gunDegeri } from "@/lib/donem";
 
 /**
  * ============================================================================
@@ -379,4 +380,108 @@ export function hepsiburadaOku(satirlar: unknown[][]): HakedisOkumasi {
   }
 
   return { kanal: "HEPSIBURADA", satirlar: cikti, eksikSutunlar: [] };
+}
+
+// ---------------------------------------------------------------------------
+//  N11 — TRANSFER LİSTESİ ("Excel'e Aktar", K233 · 22.09.2026)
+// ---------------------------------------------------------------------------
+
+/**
+ * N11'in hakediş ucu YOK (`docs/a3-hb-n11-api-kesif.md`); tek kaynak panelin
+ * "Ödemelerim → Arama Sonuç Listesi → Excel'e Aktar" dosyası. Ölçülen biçim
+ * (`settlementHistories (5).xls`, BIFF, tek sayfa, 22.09.2026):
+ *
+ *     Transfer Tarihi | Ödeme Türü      | İşlem Tarihi | Transfer Durumu | Transfer Tutarı | Banka | IBAN
+ *     27-Ağu-2026     | Hakediş Ödemesi | --           | Başarılı        | 5056.56         | ...   | TR..
+ *
+ *  · BİR SATIR = BİR BANKA TRANSFERİ (sipariş değil) → kod `HAKEDIS_TRANSFERI`,
+ *    sipariş no yok, sipariş dışı sayılır. Panelin kendi "bir satır bir ödeme"
+ *    düzeni doğrudan bu satırdır.
+ *  · Tarih "27-Ağu-2026" — Türkçe üç harfli ay kısaltması (`n11TarihCoz`).
+ *  · Tutar "5056.56" — nokta ondalık; `sayiCoz` iki biçimi de çözer.
+ *  · "Başarılı" → ödeme GERÇEKLEŞMİŞ (ödeme tarihi = transfer tarihi). Başka
+ *    bir durum ölçülmedi; ölçülmeyen durum ödendi SAYILMAZ (tarih boş kalır,
+ *    kalem bekleyen görünür, ham durum metni `ham`da durur).
+ *  · ⛔ IBAN ve Banka HİÇBİR ALANA YAZILMAZ — banka hesap numarası deftere
+ *    girmez (`ham` özeti de taşımaz). Depo herkese açık; bekçi bunu sınar.
+ *  · Kimlik: `tarih|tutar` — aynı gün aynı tutarlı iki transfer tek sayılır
+ *    (ölçülen dosyada mümkün görünmüyor; olursa satır atlanır, kaybolmaz:
+ *    yükleme "zaten yüklü" der ve kullanıcı görür).
+ */
+const N11_SUTUNLAR = {
+  tarih: ["transfer tarihi"],
+  tur: ["odeme turu", "ödeme türü"],
+  durum: ["transfer durumu"],
+  tutar: ["transfer tutari", "transfer tutarı"],
+} as const;
+
+const N11_AYLAR: Record<string, number> = {
+  oca: 1, şub: 2, sub: 2, mar: 3, nis: 4, may: 5, haz: 6,
+  tem: 7, ağu: 8, agu: 8, eyl: 9, eki: 10, kas: 11, ara: 12,
+};
+
+/** "27-Ağu-2026" → UTC gece yarısı. Tanınmazsa ortak `tarihCoz`e düşer. */
+export function n11TarihCoz(ham: unknown): Date | null {
+  const metin = String(ham ?? "").trim();
+  const m = /^(\d{1,2})-([^\d\s-]{3})-(\d{4})$/.exec(metin);
+  if (m) {
+    const ay = N11_AYLAR[m[2].toLocaleLowerCase("tr")];
+    if (ay !== undefined) return gunDegeri({ yil: Number(m[3]), ay, gun: Number(m[1]) });
+    return null;
+  }
+  return tarihCoz(ham);
+}
+
+export function n11TransferOku(satirlar: unknown[][]): HakedisOkumasi {
+  const eksikSutunlar: string[] = [];
+  if (satirlar.length === 0) {
+    return { kanal: "N11", satirlar: [], eksikSutunlar: ["(dosya boş)"] };
+  }
+  const dizin = basliklariDizinle(satirlar[0]);
+  const al = (adaylar: readonly string[]) => {
+    for (const aday of adaylar) {
+      const sira = dizin.get(aday);
+      if (sira !== undefined) return sira;
+    }
+    eksikSutunlar.push(adaylar[0]);
+    return undefined;
+  };
+  const s = {
+    tarih: al(N11_SUTUNLAR.tarih),
+    tur: al(N11_SUTUNLAR.tur),
+    durum: al(N11_SUTUNLAR.durum),
+    tutar: al(N11_SUTUNLAR.tutar),
+  };
+  if (eksikSutunlar.length > 0) return { kanal: "N11", satirlar: [], eksikSutunlar };
+
+  const cikti: HakedisSatiri[] = [];
+  for (let i = 1; i < satirlar.length; i++) {
+    const satir = satirlar[i];
+    const hucre = (sira: number | undefined) => (sira === undefined ? undefined : satir[sira]);
+    const tarihMetni = String(hucre(s.tarih) ?? "").trim();
+    const hamTip = String(hucre(s.tur) ?? "").trim();
+    if (tarihMetni === "" || hamTip === "") continue;
+    const tarih = n11TarihCoz(tarihMetni);
+    const tutar = sayiCoz(hucre(s.tutar));
+    if (tarih === null || tutar === null) continue;
+    const durum = String(hucre(s.durum) ?? "").trim();
+    /** `basligiNormalle` yalnız küçük harfe çevirir (tr), aksan SİLMEZ — karşılaştırma Türkçe harflerle. */
+    const basarili = basligiNormalle(durum) === "başarılı";
+    const kod: HakedisKodu =
+      basligiNormalle(hamTip) === "hakediş ödemesi" ? "HAKEDIS_TRANSFERI" : "DIGER";
+    cikti.push({
+      externalId: `${tarih.toISOString().slice(0, 10)}|${tutar.toFixed(2)}`,
+      kod,
+      hamTip,
+      siparisNo: null,
+      tutar,
+      paraBirimi: "TRY",
+      vadeTarihi: tarih,
+      odemeTarihi: basarili ? tarih : null,
+      urunKodu: null,
+      satirNo: i + 1,
+      ham: `${hamTip} · ${tarihMetni} · ${durum} · ${tutar}`,
+    });
+  }
+  return { kanal: "N11", satirlar: cikti, eksikSutunlar: [] };
 }
