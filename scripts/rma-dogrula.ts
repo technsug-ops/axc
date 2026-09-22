@@ -28,7 +28,8 @@ import { BILDIRIM_DURUM_RENGI } from "../src/lib/durum-renkleri";
  *
  * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
  * SESSİZCE 0 değer buldu: `split("
-")` sonrası satırlar `` ile
+")` sonrası satırlar `
+` ile
  * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
  * `^[A-Z_]+$` testi düşüyor.
  *
@@ -1366,17 +1367,22 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
       iadeSebebiMetni(null) === null,
     );
   }
+  /**
+   * ⚠ ÖLÇÜT TAŞINDI — K235-② (22.09.2026). KOD YANLIŞ DEĞİL, ÖLÇÜT ESKİDİ:
+   * liste artık tablo + telefon kartı İKİLİSİ değil, tek `SatirKarti`.
+   * Eski iki ölçüt o iki kopyayı ayrı ayrı arıyordu ve DOĞRU kodda kırmızı
+   * yandı. Ölçülen GEREKLİLİK aynı: sebep LİSTEDE çiziliyor ve telefonda da
+   * görünüyor. İkinci soru artık yapısal — tek render, ayrışma imkânsız.
+   * _(Eski gerekçe duruyor: sebep aranıyor ama görünmüyordu; "Beğenmedim"
+   * yazıp satırı bulan kullanıcı niye eşleştiğini göremiyordu — İlke #9.)_
+   */
   kontrol(
-    "sebep listede ÇİZİLİYOR (masaüstü Tür hücresi)",
-    /\{iadeSebebiMetni\(kayit\.note\) \? \([\s\S]{0,400}?\{iadeSebebiMetni\(kayit\.note\)\}/.test(
-      sayfa2,
-    ),
+    "sebep listede ÇİZİLİYOR (satır bağlamında)",
+    /baglam=\{\[[\s\S]{0,900}?iadeSebebiMetni\(kayit\.note\)/.test(sayfa2),
   );
   kontrol(
-    "  ...ve MOBİL kartta da (İlke #8/#10)",
-    /\.\.\.\(iadeSebebiMetni\(kayit\.note\)[\s\S]{0,300}?deger: iadeSebebiMetni\(kayit\.note\)/.test(
-      sayfa2,
-    ),
+    "  ...telefon için ikinci kopya YOK (tek render — İlke #8/#10 yapısal)",
+    !/ListeKarti/.test(sayfa2) && !/md:hidden/.test(sayfa2),
   );
 
   kontrol(

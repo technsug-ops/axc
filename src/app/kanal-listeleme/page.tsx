@@ -4,20 +4,12 @@ import { AlertTriangle, PackageX } from "lucide-react";
 
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
-import { ListeKarti } from "@/components/liste-karti";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
@@ -29,7 +21,7 @@ import {
   type ListelemeSatiri,
 } from "@/lib/kanal-listeleme-saglik";
 import { prisma } from "@/lib/prisma";
-import { DURUM_KUTUSU, DURUM_YAZISI, DURUM_ZEMINI } from "@/lib/renkler";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaCoz } from "@/lib/sayfalama";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { aramaKosulu, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
@@ -367,96 +359,53 @@ export default async function KanalListelemeSayfasi({
         </Card>
       ) : (
         <>
-          {/* MASAÜSTÜ */}
-          <div className="hidden md:block">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">{t("listeBasligi")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{ortak("urun")}</TableHead>
-                      <TableHead>{t("kanalKodu")}</TableHead>
-                      <TableHead>{ortak("kanalHesabi")}</TableHead>
-                      <TableHead className="text-right">{t("bizdekiStok")}</TableHead>
-                      <TableHead className="text-right">{t("kanalAdedi")}</TableHead>
-                      <TableHead>{t("durum")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {dilim.map((s) => (
-                      <TableRow key={s.id} className={s.kapali ? DURUM_ZEMINI.uyari : ""}>
-                        <TableCell>
-                          <Link
-                            href={`/kart/${s.variant.id}`}
-                            className="font-medium underline-offset-2 hover:underline"
-                          >
-                            {s.variant.name ?? s.variant.sku}
-                          </Link>
-                          <div className="mt-1">
-                            <KopyalanabilirKod deger={s.variant.sku} etiket={ortak("sku")} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <KopyalanabilirKod deger={s.channelSku} etiket={t("kanalKodu")} />
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {hesapEtiketi(s.channelAccount.channel.name, s.channelAccount.name)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">{s.stok}</TableCell>
-                        <TableCell className="text-muted-foreground text-right tabular-nums">
-                          {s.kanalAdet === null ? t("olculmedi") : s.kanalAdet}
-                        </TableCell>
-                        <TableCell>
-                          <DurumRozeti
-                            durum={s.listelemeDurumu}
-                            kapali={s.kapali}
-                            kapaliEtiketi={t("rozetKapaliDuran")}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* MOBİL */}
-          <div className="space-y-3 md:hidden">
-            {dilim.map((s) => (
-              <ListeKarti
-                key={s.id}
-                baslik={
-                  <Link href={`/kart/${s.variant.id}`} className="underline-offset-2 hover:underline">
-                    {s.variant.name ?? s.variant.sku}
-                  </Link>
-                }
-                altBaslik={<KopyalanabilirKod deger={s.variant.sku} etiket={ortak("sku")} />}
-                alanlar={[
-                  { etiket: t("kanalKodu"), deger: <KopyalanabilirKod deger={s.channelSku} etiket={t("kanalKodu")} /> },
-                  {
-                    etiket: ortak("kanalHesabi"),
-                    deger: hesapEtiketi(s.channelAccount.channel.name, s.channelAccount.name),
-                  },
-                  { etiket: t("bizdekiStok"), deger: String(s.stok) },
-                  { etiket: t("kanalAdedi"), deger: s.kanalAdet === null ? t("olculmedi") : String(s.kanalAdet) },
-                  {
-                    etiket: t("durum"),
-                    deger: (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t("listeBasligi")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/*
+                SATIR KARTI (K235-②): ürün manşet, kodlar ve stok bağlamda,
+                durum rozeti sağda. ⚠ KAPALI SATIRIN ZEMİNİ KORUNDU — tabloda
+                satır boyanıyordu; rozet tek başına bırakılsaydı "hangileri
+                kapalı" taranabilirliği düşerdi.
+              */}
+              <SatirListesi>
+                {dilim.map((s) => (
+                  <SatirKarti
+                    key={s.id}
+                    zemin={s.kapali ? "uyari" : undefined}
+                    baslik={
+                      <Link
+                        href={`/kart/${s.variant.id}`}
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {s.variant.name ?? s.variant.sku}
+                      </Link>
+                    }
+                    baglam={[
+                      <KopyalanabilirKod key="sku" deger={s.variant.sku} etiket={ortak("sku")} />,
+                      <KopyalanabilirKod
+                        key="kanalKodu"
+                        deger={s.channelSku}
+                        etiket={t("kanalKodu")}
+                      />,
+                      hesapEtiketi(s.channelAccount.channel.name, s.channelAccount.name),
+                      `${t("bizdekiStok")}: ${s.stok}`,
+                      `${t("kanalAdedi")}: ${s.kanalAdet === null ? t("olculmedi") : s.kanalAdet}`,
+                    ]}
+                    sag={
                       <DurumRozeti
                         durum={s.listelemeDurumu}
                         kapali={s.kapali}
                         kapaliEtiketi={t("rozetKapaliDuran")}
                       />
-                    ),
-                  },
-                ]}
-              />
-            ))}
-          </div>
+                    }
+                  />
+                ))}
+              </SatirListesi>
+            </CardContent>
+          </Card>
 
           <SayfalamaCubugu sayfalama={sayfalama} yol="/kanal-listeleme" parametreler={sp} />
         </>

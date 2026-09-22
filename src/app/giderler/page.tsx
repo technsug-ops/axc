@@ -11,18 +11,10 @@ import { getTranslations } from "next-intl/server";
 import { BarChart3, Pencil, Plus, Repeat } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
-import { ListeKarti } from "@/components/liste-karti";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { ayKaydir, gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { odemeMetni } from "@/lib/gider-odemesi";
@@ -297,114 +289,49 @@ export default async function GiderlerSayfasi({
           ) : null}
         </div>
       ) : (
-        <>
-          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
-          <div className="hidden overflow-x-auto rounded-lg border md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{ortak("tarih")}</TableHead>
-                  <TableHead>{ortak("kategori")}</TableHead>
-                  <TableHead>{ortak("aciklama")}</TableHead>
-                  <TableHead className="text-right">{ortak("tutar")}</TableHead>
-                  <TableHead className="text-right">{ortak("oran")}</TableHead>
-                  <TableHead className="text-right">{t("sutunKdv")}</TableHead>
-                  <TableHead className="text-right">
-                    {t("sutunNetDusen")}
-                  </TableHead>
-                  <TableHead>{ortak("eylemler")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {kayitlar.map((kayit) => {
-                  const { tutar, oran, kdv, netDusen } = parcala(kayit);
-                  return (
-                    <TableRow key={kayit.id}>
-                      <TableCell className="whitespace-nowrap">
-                        {bicim.tarih(kayit.spentAt)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span>{kayit.category.name}</span>
-                          <Badge variant="outline">
-                            {kayit.category.isFixed
-                              ? t("sabit")
-                              : t("degisken")}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground max-w-64">
-                        <span className="block truncate">
-                          {aciklamaMetni(kayit)}
-                        </span>
-                        <span className="block truncate text-xs">
-                          {odemeSatiri(kayit)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right font-medium whitespace-nowrap">
-                        {bicim.para(tutar, kayit.currency)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-right">
-                        %{oran}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-right whitespace-nowrap">
-                        {bicim.para(kdv, kayit.currency)}
-                      </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        {bicim.para(netDusen, kayit.currency)}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        <SatirEylemleri>{eylemler(kayit)}</SatirEylemleri>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* ------------------------ TELEFON: KART ---------------------- */}
-          <div className="space-y-3 md:hidden">
-            {kayitlar.map((kayit) => {
-              const { tutar, oran, kdv, netDusen } = parcala(kayit);
-              return (
-                <ListeKarti
-                  key={kayit.id}
-                  baslik={
-                    <span className="flex flex-wrap items-center gap-2">
-                      {kayit.category.name}
-                      <Badge variant="outline">
-                        {kayit.category.isFixed ? t("sabit") : t("degisken")}
-                      </Badge>
+        /*
+         * SATIR KARTI (K235-②): 8 sütunluk tablo + telefon kartı ikilisi TEK
+         * listeye indi. Manşet KATEGORİ (giderde aranan şey o), tutar sağda
+         * ve kalın; oran/KDV/net düşen bağlam satırında akar.
+         * ⚠ SÜTUN TAVANI DERDİ DE BİTTİ: `yerlesim:dogrula` bu tabloyu 8
+         * sütunla tavanın üstünde sayıyordu ve ödeme yöntemi için dokuzuncu
+         * sütun açılamıyordu (bkz. `odemeSatiri` başlığı) — bağlam satırının
+         * sütun bütçesi yok.
+         */
+        <SatirListesi>
+          {kayitlar.map((kayit) => {
+            const { tutar, oran, kdv, netDusen } = parcala(kayit);
+            return (
+              <SatirKarti
+                key={kayit.id}
+                baslik={
+                  <span className="flex flex-wrap items-center gap-2">
+                    {kayit.category.name}
+                    <Badge variant="outline">
+                      {kayit.category.isFixed ? t("sabit") : t("degisken")}
+                    </Badge>
+                  </span>
+                }
+                baglam={[
+                  bicim.tarih(kayit.spentAt),
+                  aciklamaMetni(kayit),
+                  odemeSatiri(kayit),
+                  `${ortak("oran")}: %${oran}`,
+                  `${t("sutunKdv")}: ${bicim.para(kdv, kayit.currency)}`,
+                  `${t("sutunNetDusen")}: ${bicim.para(netDusen, kayit.currency)}`,
+                ]}
+                sag={
+                  <>
+                    <span className="text-base font-semibold tabular-nums whitespace-nowrap">
+                      {bicim.para(tutar, kayit.currency)}
                     </span>
-                  }
-                  altBaslik={`${bicim.tarih(kayit.spentAt)} · ${aciklamaMetni(kayit)}`}
-                  alanlar={[
-                    {
-                      etiket: ortak("tutar"),
-                      deger: (
-                        <span className="text-base font-semibold">
-                          {bicim.para(tutar, kayit.currency)}
-                        </span>
-                      ),
-                    },
-                    { etiket: ortak("oran"), deger: `%${oran}` },
-                    {
-                      etiket: t("sutunKdv"),
-                      deger: bicim.para(kdv, kayit.currency),
-                    },
-                    {
-                      etiket: t("sutunNetDusen"),
-                      deger: bicim.para(netDusen, kayit.currency),
-                    },
-                    { etiket: t("sutunOdeme"), deger: odemeSatiri(kayit) },
-                  ]}
-                  eylemler={eylemler(kayit)}
-                />
-              );
-            })}
-          </div>
-        </>
+                    <SatirEylemleri>{eylemler(kayit)}</SatirEylemleri>
+                  </>
+                }
+              />
+            );
+          })}
+        </SatirListesi>
       )}
     </div>
   );

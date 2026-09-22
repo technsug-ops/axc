@@ -13,18 +13,10 @@ import { Eye, Pencil, Landmark, Plus } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
-import { ListeKarti } from "@/components/liste-karti";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 
@@ -118,110 +110,38 @@ export default async function KartlarSayfasi() {
           <p className="text-muted-foreground mt-1 text-sm">{t("bosIpucu")}</p>
         </div>
       ) : (
-        <>
-          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
-          <div className="hidden overflow-x-auto rounded-lg border md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("sutunKart")}</TableHead>
-                  <TableHead>{ortak("banka")}</TableHead>
-                  <TableHead>{t("son4")}</TableHead>
-                  <TableHead className="text-right">
-                    {t("kesimOdeme")}
-                  </TableHead>
-                  <TableHead className="text-right">{ortak("limit")}</TableHead>
-                  <TableHead className="text-right">
-                    {t("alimSutunu")}
-                  </TableHead>
-                  <TableHead>{ortak("durum")}</TableHead>
-                  <TableHead>{ortak("eylemler")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {kartlar.map((kart) => (
-                  <TableRow key={kart.id}>
-                    <TableCell>
-                      <Baglanti href={`/kartlar/${kart.id}`}>
-                        {kart.label}
-                      </Baglanti>
-                      {kart.holderName ? (
-                        <div className="text-muted-foreground text-xs">
-                          {kart.holderName}
-                        </div>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {kart.bankName ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      <KopyalanabilirKod
-                        deger={kart.last4}
-                        etiket={t("son4Hane")}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {gunlerMetni(kart)}
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {limitMetni(kart)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {kart._count.purchases}
-                    </TableCell>
-                    <TableCell>
-                      {kart.isActive ? (
-                        <Badge variant="secondary">{ortak("aktif")}</Badge>
-                      ) : (
-                        <Badge variant="outline">{ortak("pasif")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <SatirEylemleri>{eylemler(kart)}</SatirEylemleri>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* ------------------------ TELEFON: KART ---------------------- */}
-          <div className="space-y-3 md:hidden">
-            {kartlar.map((kart) => (
-              <ListeKarti
-                key={kart.id}
-                baslik={
-                  <Baglanti href={`/kartlar/${kart.id}`}>{kart.label}</Baglanti>
-                }
-                altBaslik={kart.bankName ?? undefined}
-                alanlar={[
-                  {
-                    etiket: t("son4Hane"),
-                    deger: (
-                      <KopyalanabilirKod
-                        deger={kart.last4}
-                        etiket={t("son4Hane")}
-                      />
-                    ),
-                  },
-                  {
-                    etiket: ortak("durum"),
-                    deger: kart.isActive ? (
-                      <Badge variant="secondary">{ortak("aktif")}</Badge>
-                    ) : (
-                      <Badge variant="outline">{ortak("pasif")}</Badge>
-                    ),
-                  },
-                  { etiket: t("kesimOdeme"), deger: gunlerMetni(kart) },
-                  { etiket: ortak("limit"), deger: limitMetni(kart) },
-                  { etiket: t("alimSayisi"), deger: kart._count.purchases },
-                  { etiket: t("sahibi"), deger: kart.holderName ?? "—" },
-                ]}
-                eylemler={eylemler(kart)}
-              />
-            ))}
-          </div>
-        </>
+        /*
+         * SATIR KARTI (K235-②, 22.09.2026): 8 sütunluk tablo + telefon kartı
+         * ikilisi TEK listeye indi. Kart bir KİMLİKTİR (etiket + banka +
+         * son 4); kesim/ödeme, limit ve alım sayısı bağlam satırında akar —
+         * yan yana karşılaştırılacak sütunlar değil.
+         */
+        <SatirListesi>
+          {kartlar.map((kart) => (
+            <SatirKarti
+              key={kart.id}
+              baslik={<Baglanti href={`/kartlar/${kart.id}`}>{kart.label}</Baglanti>}
+              baglam={[
+                kart.bankName,
+                <KopyalanabilirKod key="son4" deger={kart.last4} etiket={t("son4Hane")} />,
+                kart.holderName,
+                `${t("kesimOdeme")}: ${gunlerMetni(kart)}`,
+                `${ortak("limit")}: ${limitMetni(kart)}`,
+                `${t("alimSayisi")}: ${kart._count.purchases}`,
+              ]}
+              sag={
+                <>
+                  {kart.isActive ? (
+                    <Badge variant="secondary">{ortak("aktif")}</Badge>
+                  ) : (
+                    <Badge variant="outline">{ortak("pasif")}</Badge>
+                  )}
+                  <SatirEylemleri>{eylemler(kart)}</SatirEylemleri>
+                </>
+              }
+            />
+          ))}
+        </SatirListesi>
       )}
     </div>
   );

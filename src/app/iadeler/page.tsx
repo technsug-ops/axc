@@ -14,7 +14,7 @@ import { Eye, TriangleAlert } from "lucide-react";
 import { Baglanti } from "@/components/baglanti";
 import { ExcelIndir } from "@/components/excel-indir";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
-import { ListeKarti } from "@/components/liste-karti";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
@@ -1351,129 +1351,21 @@ export default async function IadelerSayfasi({
         </p>
       ) : (
         <>
-          {/* --- masaüstü --- */}
-          <div className="hidden overflow-x-auto rounded-lg border md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{ortak("tarih")}</TableHead>
-                  <TableHead>{ortak("siparisNo")}</TableHead>
-                  <TableHead>{ortak("kanalHesabi")}</TableHead>
-                  <TableHead>{ortak("urun")}</TableHead>
-                  <TableHead>{t("turSuzgeci")}</TableHead>
-                  <TableHead className="text-right">{ortak("adet")}</TableHead>
-                  {karGorunur ? (
-                    <>
-                      <TableHead className="text-right">
-                        {t("etkiNet2")}
-                      </TableHead>
-                      <TableHead className="text-right">{t("ceza")}</TableHead>
-                    </>
-                  ) : null}
-                  <TableHead>{ortak("eylemler")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {satirlar.map(({ kayit, veri }) => (
-                  <TableRow key={kayit.id}>
-                    <TableCell className="whitespace-nowrap">
-                      {bicim.tarih(kayit.occurredAt)}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1">
-                        <Baglanti href={`/satislar/${kayit.sale.id}`}>
-                          {kayit.sale.code ?? "—"}
-                        </Baglanti>
-                        {kayit.sale.code ? (
-                          <KopyalanabilirKod
-                            deger={kayit.sale.code}
-                            etiket={ortak("siparisNo")}
-                            sadeceIkon
-                          />
-                        ) : null}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {kayit.sale.channelAccount.channel.name} —{" "}
-                      {kayit.sale.channelAccount.name}
-                    </TableCell>
-                    <TableCell>
-                      <UzunAd
-                        metin={kayit.items
-                          .map((k) =>
-                            k.variant.name
-                              ? `${k.variant.product.name} — ${k.variant.name}`
-                              : k.variant.product.name,
-                          )
-                          .join(", ")}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {turEtiketleri[kayit.returnType]}
-                      </Badge>
-                      {/* ⭐ SEBEP — TÜR'ÜN ALTINDA. Tür "NASIL döndü"
-                          (normal / teslim edilemedi / itirazlı), sebep
-                          "NİYE döndü" der; ikisi aynı soruya bakar.
-
-                          ⛔ VE BU SATIR OLMADAN ARAMA YARIM KALIYORDU:
-                          sebep notu ARANIYOR ama satırda GÖRÜNMÜYORDU —
-                          "Beğenmedim" yazıp satırı bulan kullanıcı, niye
-                          eşleştiğini göremiyordu (İlke #9).
-
-                          ⚠ KIRPILMIYOR: serbest notlarda hüküm SONDA
-                          olabiliyor ("…ÜRÜN MÜŞTERİYE GERİ GÖNDERİLECEK").
-                          Kırpmak operasyonun kararını siler. */}
-                      {iadeSebebiMetni(kayit.note) ? (
-                        <p className="text-muted-foreground mt-1 max-w-56 text-xs">
-                          {iadeSebebiMetni(kayit.note)}
-                        </p>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      {veri.adet}
-                      <AdetRozetleri
-                        saglam={veri.saglamAdet}
-                        hasarli={veri.hasarliAdet}
-                        talepsiz={veri.talepsizHasarAdet}
-                        saglamEtiket={tIade("saglamAdet")}
-                        hasarliEtiket={tIade("hasarliAdet")}
-                        talepsizEtiket={t("talepsizKisa")}
-                      />
-                    </TableCell>
-                    {karGorunur ? (
-                      <>
-                        <TableCell className="text-right whitespace-nowrap">
-                          {veri.net2 === null
-                            ? "—"
-                            : bicim.para(veri.net2, veri.paraBirimi)}
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          {veri.ceza === 0
-                            ? "—"
-                            : bicim.para(veri.ceza, veri.paraBirimi)}
-                        </TableCell>
-                      </>
-                    ) : null}
-                    <TableCell>
-                      <SatirEylemleri>
-                        <SatirEylemi
-                          href={`/satislar/${kayit.sale.id}`}
-                          ikon={Eye}
-                          etiket={ortak("detay")}
-                        />
-                      </SatirEylemleri>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* --- telefon --- */}
-          <div className="space-y-3 md:hidden">
+          {/*
+            SATIR KARTI (K235-②, 22.09.2026). Eski hâl 9 sütunluk tablo +
+            telefon kartıydı ve ikisi AYRIŞMIŞTI: "ceza" sütunu yalnız
+            masaüstündeydi (telefonda NET-2 etkisi vardı, ceza YOKTU). Tek
+            render bunu bitirir (İlke #10).
+            ⚠ Manşet SİPARİŞ NO: iadede aranan şey o (İlke #3). Ürün, kanal,
+            tür ve sebep bağlamda; adet rozetleri, NET-2 etkisi, ceza ve
+            detay düğmesi sağda.
+            ⚠ SEBEP KIRPILMIYOR: serbest notlarda hüküm SONDA olabiliyor
+            ("…ÜRÜN MÜŞTERİYE GERİ GÖNDERİLECEK"); kırpmak operasyonun
+            kararını siler.
+          */}
+          <SatirListesi>
             {satirlar.map(({ kayit, veri }) => (
-              <ListeKarti
+              <SatirKarti
                 key={kayit.id}
                 baslik={
                   <span className="inline-flex items-center gap-1">
@@ -1489,65 +1381,64 @@ export default async function IadelerSayfasi({
                     ) : null}
                   </span>
                 }
-                alanlar={[
-                  { etiket: ortak("tarih"), deger: bicim.tarih(kayit.occurredAt) },
-                  {
-                    etiket: ortak("kanalHesabi"),
-                    deger: `${kayit.sale.channelAccount.channel.name} — ${kayit.sale.channelAccount.name}`,
-                  },
-                  {
-                    etiket: t("turSuzgeci"),
-                    deger: turEtiketleri[kayit.returnType],
-                  },
-                  /* ⚠ MOBİLDE DE VAR: aynı işlem her ekranda aynı görünür
-                     (İlke #10). Sebebi yalnız masaüstüne koymak, depoda
-                     telefonla bakan için bilgiyi yok ederdi (İlke #8). */
-                  ...(iadeSebebiMetni(kayit.note)
-                    ? [
-                        {
-                          etiket: tIade("kayitNotu"),
-                          deger: iadeSebebiMetni(kayit.note) ?? "",
-                        },
-                      ]
-                    : []),
-                  {
-                    etiket: ortak("adet"),
-                    deger: (
-                      <span>
-                        {veri.adet}
-                        <AdetRozetleri
-                          saglam={veri.saglamAdet}
-                          hasarli={veri.hasarliAdet}
-                          talepsiz={veri.talepsizHasarAdet}
-                          saglamEtiket={tIade("saglamAdet")}
-                          hasarliEtiket={tIade("hasarliAdet")}
-                          talepsizEtiket={t("talepsizKisa")}
-                        />
-                      </span>
-                    ),
-                  },
-                  ...(karGorunur
-                    ? [
-                        {
-                          etiket: t("etkiNet2"),
-                          deger:
-                            veri.net2 === null
-                              ? "—"
-                              : bicim.para(veri.net2, veri.paraBirimi),
-                        },
-                      ]
-                    : []),
+                baglam={[
+                  bicim.tarih(kayit.occurredAt),
+                  `${kayit.sale.channelAccount.channel.name} — ${kayit.sale.channelAccount.name}`,
+                  <UzunAd
+                    key="urun"
+                    metin={kayit.items
+                      .map((k) =>
+                        k.variant.name
+                          ? `${k.variant.product.name} — ${k.variant.name}`
+                          : k.variant.product.name,
+                      )
+                      .join(", ")}
+                  />,
+                  <Badge key="tur" variant="secondary">
+                    {turEtiketleri[kayit.returnType]}
+                  </Badge>,
+                  iadeSebebiMetni(kayit.note),
                 ]}
-                eylemler={
-                  <SatirEylemi
-                    href={`/satislar/${kayit.sale.id}`}
-                    ikon={Eye}
-                    etiket={ortak("detay")}
-                  />
+                sag={
+                  <>
+                    <span className="inline-flex items-center gap-1 tabular-nums">
+                      {veri.adet}
+                      <AdetRozetleri
+                        saglam={veri.saglamAdet}
+                        hasarli={veri.hasarliAdet}
+                        talepsiz={veri.talepsizHasarAdet}
+                        saglamEtiket={tIade("saglamAdet")}
+                        hasarliEtiket={tIade("hasarliAdet")}
+                        talepsizEtiket={t("talepsizKisa")}
+                      />
+                    </span>
+                    {karGorunur ? (
+                      <>
+                        <span className="tabular-nums whitespace-nowrap">
+                          {t("etkiNet2")}:{" "}
+                          {veri.net2 === null
+                            ? "—"
+                            : bicim.para(veri.net2, veri.paraBirimi)}
+                        </span>
+                        {veri.ceza === 0 ? null : (
+                          <span className="tabular-nums whitespace-nowrap">
+                            {t("ceza")}: {bicim.para(veri.ceza, veri.paraBirimi)}
+                          </span>
+                        )}
+                      </>
+                    ) : null}
+                    <SatirEylemleri>
+                      <SatirEylemi
+                        href={`/satislar/${kayit.sale.id}`}
+                        ikon={Eye}
+                        etiket={ortak("detay")}
+                      />
+                    </SatirEylemleri>
+                  </>
                 }
               />
             ))}
-          </div>
+          </SatirListesi>
 
           <SayfalamaCubugu
             sayfalama={sayfalama}

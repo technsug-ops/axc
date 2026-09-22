@@ -209,92 +209,69 @@ console.log("\nKANAL KODLARI EKRANI — KİMLİK VE ORAN LİSTEDE");
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
 
-  const baslikBloku = /<TableHeader>([\s\S]*?)<\/TableHeader>/.exec(ekranKod);
-  kontrol("başlık satırı kesilebildi", baslikBloku !== null);
-  const basliklar = baslikBloku?.[1] ?? "";
   /**
-   * ⚠ ÖLÇÜT BAŞLIK SATIRINDAN GÖVDEYE ÇEVRİLDİ — 23.08.2026.
+   * ⚠ ÖLÇÜTLER TABLODAN SATIR KARTINA TAŞINDI — K235-② (22.09.2026).
+   * KOD YANLIŞ DEĞİL, ÖLÇÜT ESKİDİ: kullanıcı kararıyla ekran artık `<Table>`
+   * çizmiyor, ortak `SatirKarti` kullanıyor ("hakedişlerdeki kart yapısı çok
+   * daha okunaklı; tüm sistemdeki liste biçimlerini yeni hale uyarla").
+   * Eski ölçütler `<TableHeader>`/`<TableBody>` kesiyordu ve DOĞRU kodda
+   * kırmızı yandı. GEVŞETİLMEDİ — ölçülen GEREKLİLİK aynı: kanal kodu ve
+   * komisyon LİSTEDE (İlke #3), kopyalanabilir (İlke #4), oran hizalı, ürün
+   * adı kırpılmıyor, yatay kaydırma yok. Üstteki eski gerekçeler duruyor.
    *
-   * İlk hâli "kanal kodu için AYRI bir `<TableHead>` var mı" diye soruyordu.
-   * O, çözümün BİR BİÇİMİNİ sabitliyordu; kullanıcının istediği ise şuydu:
-   * _"tüm bilgiyi sağa scroll yapmadan görmek istiyorum."_ Yedi sütun o
-   * isteği KARŞILAMIYORDU ve ölçüt yedi sütunu koruyordu.
-   *
-   * Doğru ölçüt: bilgi GÖVDEDE görünüyor mu (aşağıda ayrıca sınanıyor) ve
-   * tablo yatay kaydırma gerektirmeyecek kadar dar mı. Başlığın kaç parça
-   * olduğu bir uygulama ayrıntısı.
+   * ⛔ VE ESKİ MOBİL ÖLÇÜTÜ YALANCI YEŞİLDİ — TAŞIRKEN GÖRÜLDÜ:
+   *     ekranKod.slice(ekranKod.indexOf("md:hidden"))   →   length > 0
+   * `indexOf` bulamayınca `-1` döner, `slice(-1)` SON KARAKTERİ verir ve
+   * uzunluk 1 çıkar. Yani mobil blok HİÇ YOKKEN bile "kesilebildi" diyordu.
+   * _(Anayasa: "sessiz varsayılan üreten ifadeler ayrıca kapılanır".)_
+   * Yeni hâlde soru yapısal olarak düştü: TEK render var, telefon ile
+   * masaüstü ayrışamaz.
    */
-  const basliksayisi = (basliklar.match(/<TableHead[\s>]/g) ?? []).length;
+  kontrol("ekran TABLO çizmiyor (yatay kaydırma yok)", !/<Table>/.test(ekranKod));
+  kontrol("  ...ortak satır kartını kullanıyor", /<SatirKarti/.test(ekranKod));
   kontrol(
-    `tablo DAR: ${basliksayisi} sütun (yatay kaydırma istemeyecek kadar)`,
-    basliksayisi <= 4,
+    "  ...ikinci bir telefon kopyası YOK (tek render — ayrışma yapısal olarak imkânsız)",
+    !/md:hidden/.test(ekranKod) && !/ListeKarti/.test(ekranKod),
   );
-  kontrol("KOMİSYON sütunu var", /t\("sutunOran"\)/.test(basliklar));
 
   /**
-   * ⚠ BAŞLIK YETMEZ, HÜCRE DE OLMALI. Yalnız başlığa bakan bir kontrol,
-   * hücreyi boşaltan mutasyonu kaçırırdı: tabloda sütun görünür, içi boş.
+   * Satır gövdesi — bütün ölçütler bu blokta aranır.
+   * ⚠ PENCERE ÖLÇÜLDÜ (22.09.2026): `<SatirKarti` ile satırın kapanışı arası
+   * yorumsuz metinde 1868 karakter; pencere 2400'e kuruldu. Gövde büyürse dar
+   * pencere SESSİZCE körelir — sayı bu yüzden gerekçesiyle burada.
    */
-  const govdeBloku = /<TableBody>([\s\S]*?)<\/TableBody>/.exec(ekranKod);
-  kontrol("gövde bloğu kesilebildi", govdeBloku !== null);
-  const govde = govdeBloku?.[1] ?? "";
-  kontrol(
-    "  ...kanal kodu hücresi DEĞERİ basıyor",
-    /deger=\{kayit\.channelSku\}/.test(govde),
-  );
-  kontrol(
-    "  ...komisyon hücresi DEĞERİ basıyor",
-    /komisyonMetni\(kayit\)/.test(govde),
-  );
+  const satirBasi = ekranKod.indexOf("<SatirKarti");
+  kontrol("satır bloğu kesilebildi", satirBasi >= 0);
+  const govde = satirBasi >= 0 ? ekranKod.slice(satirBasi, satirBasi + 2400) : "";
+
+  kontrol("kanal kodu DEĞERİ basılıyor", /deger=\{kayit\.channelSku\}/.test(govde));
   /** Kimlik kodu tek tıkla kopyalanır (İlke #4). */
   kontrol(
-    "  ...kanal kodu KOPYALANABİLİR",
-    /<KopyalanabilirKod[\s\S]{0,120}deger=\{kayit\.channelSku\}/.test(govde),
+    "  ...ve KOPYALANABİLİR",
+    /<KopyalanabilirKod[\s\S]{0,160}deger=\{kayit\.channelSku\}/.test(govde),
   );
-  /** Rakam sütunu hizalı — virgüller alt alta gelsin (629/2182 ondalıklı). */
+  kontrol("sistem SKU'su da listede", /deger=\{kayit\.variant\.sku\}/.test(govde));
+  kontrol("KOMİSYON oranı listede", /komisyonMetni\(kayit\)/.test(govde));
+  /** Rakam hizalı — virgüller alt alta gelsin (canlıda 629/2182 ondalıklı). */
+  {
+    const i = govde.indexOf("komisyonMetni(kayit)");
+    const oranBloku = i >= 0 ? govde.slice(Math.max(0, i - 300), i + 80) : "";
+    kontrol("  ...rakam tabular-nums (virgüller hizalansın)", /tabular-nums/.test(oranBloku));
+  }
+  kontrol("  ...oranın güncelleme tarihi yanında", /sutunGuncelleme/.test(govde));
   /**
-   * ⚠ İKİ SINIF İKİ AYRI ÖĞEDE — dört sütuna inerken hücre `text-right`,
-   * içindeki rakam `tabular-nums` oldu. Tek bitişik desen arayan ölçüt
-   * DOĞRU davranışta kırmızı yandı; ikisi ayrı ayrı aranıyor.
+   * ⚠ ÜRÜN ADI KIRPILMIYOR. Tabloda `whitespace-normal` + `line-clamp-2`
+   * gerekiyordu çünkü hücre genişliği sabitti; satır kartında ad doğal sarar
+   * ve `truncate` YAZILAMAZ — yazılsaydı uzun ad yine "…" ile kesilirdi.
    */
-  const oranHucresi = govde.slice(
-    govde.indexOf("komisyonMetni(kayit)") - 400,
-    govde.indexOf("komisyonMetni(kayit)") + 80,
-  );
-  kontrol("oran hücresi kesilebildi", oranHucresi.length > 0);
-  kontrol("  ...hücre SAĞA yaslı", /text-right/.test(oranHucresi));
-  kontrol("  ...rakam tabular-nums (virgüller hizalansın)", /tabular-nums/.test(oranHucresi));
-
+  kontrol("ürün adı manşette", /\{urunAdi\(kayit\)\}/.test(govde));
+  kontrol("  ...ve KIRPILMIYOR (truncate yok)", !/truncate/.test(govde));
   /**
-   * ⚠ ÜRÜN ADI SARIYOR, KIRPILMIYOR. Kullanıcı: _"ürün isimlerini gerekiyorsa
-   * iki satır yap."_ Hücrenin varsayılanı `whitespace-nowrap` (para/tarih
-   * bölünmesin diye); ürün adında ezilmesi gerekiyor, yoksa ad tek satırda
-   * uzar ve tabloyu yana taşırır.
+   * ⭐ ÇİFT RENDER BİR AYRIŞMA ÜRETMİŞTİ: "oranı eksik" rozeti YALNIZ telefon
+   * kartındaydı; masaüstünde oranı olmayan kayıt görünmüyordu. Tek render
+   * bunu bitirdi — rozet artık satırın kendisinde.
    */
-  kontrol(
-    "ürün adı SARIYOR (nowrap eziliyor)",
-    /whitespace-normal/.test(govde),
-  );
-  kontrol(
-    "  ...en fazla iki satır (satır yüksekliği patlamasın)",
-    /line-clamp-2/.test(govde),
-  );
-
-  /**
-   * ⚠ TELEFONDA DA GÖRÜNMELİ (İlke #8: mobil eşit vatandaş). Masaüstü
-   * tablosu `md:block`, mobil kart `md:hidden` — biri düzeltilip öteki
-   * unutulursa telefonda ekran yine eski hâlinde kalır.
-   */
-  const mobilBloku = ekranKod.slice(ekranKod.indexOf("md:hidden"));
-  kontrol("mobil kart bloğu kesilebildi", mobilBloku.length > 0);
-  kontrol(
-    "  ...telefonda da kanal kodu var",
-    /etiket: t\("sutunKanalKodu"\)/.test(mobilBloku),
-  );
-  kontrol(
-    "  ...telefonda da komisyon var",
-    /etiket: t\("sutunOran"\)/.test(mobilBloku),
-  );
+  kontrol("eksik oran rozeti HER EKRANDA", /eksikOranRozeti/.test(govde));
 
   /**
    * ⚠ BOŞLUK SESSİZ BIRAKILMAZ (İlke #5) — VE İKİ BOŞLUK FARKLI ŞEY SÖYLER:
@@ -750,34 +727,43 @@ console.log("");
    * Ölçüt artık ÇAĞRI SAYIYOR: her ekranda en az iki kez (tablo + mobil).
    * Yarın üçüncü bir görünüm eklenirse sayı tutmaz ve kontrol yakalar.
    */
-  for (const [ad, yol, enAz] of [
-    ["satışlar", "src/app/satislar/page.tsx", 2],
-    ["alımlar", "src/app/alimlar/page.tsx", 2],
-    ["ürünler", "src/app/urunler/page.tsx", 2],
+  /**
+   * ⚠ ÖLÇÜT EKRANIN KENDİ ŞEKLİNDEN TÜRETİLİR — K235-② (22.09.2026).
+   * Sabit "2 çağrı" beklentisi, satır kartına geçen ekranda (tek render)
+   * DOĞRU kodu kırmızı yakıyordu: `/alimlar` artık tek yerde çiziliyor,
+   * `kartAdresi` bir kez çağrılıyor ve `md:hidden` bloğu YOK. Beklenti
+   * gevşetilmedi, KAYNAĞINA bağlandı: çift render varsa iki çağrı ve mobil
+   * blokta çağrı; tek render varsa bir çağrı ve İKİNCİ KOPYANIN OLMAMASI.
+   * Üstteki eski gerekçe (mobilin elle adres kurması) yerinde duruyor.
+   */
+  for (const [ad, yol] of [
+    ["satışlar", "src/app/satislar/page.tsx"],
+    ["alımlar", "src/app/alimlar/page.tsx"],
+    ["ürünler", "src/app/urunler/page.tsx"],
   ] as const) {
     const kaynak = readFileSync(yol, "utf8");
     const cagri = (kaynak.match(/kartAdresi\(/g) ?? []).length;
+    const mobilBasi = kaynak.indexOf("md:hidden");
+    const ciftRender = mobilBasi > 0;
     kontrol(
-      `${ad}: kart kuralı ${enAz} yerde çağrılıyor (tablo + mobil) — ${cagri}`,
-      cagri >= enAz,
+      `${ad}: kart kuralı ${ciftRender ? "2 yerde (tablo + mobil)" : "1 yerde (tek render)"} çağrılıyor — ${cagri}`,
+      cagri >= (ciftRender ? 2 : 1),
     );
     kontrol(
       `  ...${ad}: elle /kart/ adresi kurmuyor`,
       !/href=\{`\/kart\//.test(kaynak),
     );
-    /**
-     * ⚠ MOBİL BLOK AYRICA SINANIR. Sayı tutup ikisinin de TABLODA olması
-     * mümkün; `md:hidden` bloğunun içinde çağrı var mı diye bakılıyor.
-     */
-    const mobilBasi = kaynak.indexOf("md:hidden");
-    kontrol(
-      `  ...${ad}: mobil blok bulundu`,
-      mobilBasi > 0,
-    );
-    kontrol(
-      `  ...${ad}: MOBİL blokta da kart kuralı var`,
-      mobilBasi > 0 && /kartAdresi\(/.test(kaynak.slice(mobilBasi)),
-    );
+    if (ciftRender) {
+      kontrol(
+        `  ...${ad}: MOBİL blokta da kart kuralı var`,
+        /kartAdresi\(/.test(kaynak.slice(mobilBasi)),
+      );
+    } else {
+      kontrol(
+        `  ...${ad}: ikinci kopya YOK — telefon ile masaüstü ayrışamaz`,
+        !/ListeKarti/.test(kaynak),
+      );
+    }
   }
 
   /**

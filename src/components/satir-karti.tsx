@@ -1,6 +1,8 @@
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { DURUM_ZEMINI, type DurumRengi } from "@/lib/renkler";
+
 /**
  * ============================================================================
  *  SATIR KARTI — LİSTE SATIRININ ORTAK ANATOMİSİ (K235, 22.09.2026)
@@ -50,6 +52,7 @@ export function SatirKarti({
   vurgulu = false,
   baglam,
   sag,
+  zemin,
   acilir,
   acikMi = false,
 }: {
@@ -64,12 +67,23 @@ export function SatirKarti({
   baglam?: ReactNode[];
   /** Sağ blok: tutar, rozet, düğme. */
   sag?: ReactNode;
+  /**
+   * Satırın DİKKAT çeken hâli — tabloda satır zemininin boyanmasının
+   * karşılığı (ör. kanalda kapalı duran listeleme). Renk sınıfı `lib/renkler`
+   * tokenlerinden gelir; ham Tailwind rengi yazılamaz.
+   * ⚠ Verilmezse zemin YOK: her satır renkliyse hiçbiri vurgulu değildir.
+   */
+  zemin?: DurumRengi;
   /** Varsa satır açılır (`<details>` — JavaScript'siz, klavyeyle çalışır). */
   acilir?: ReactNode;
   /** Açılır satır başlangıçta açık mı. */
   acikMi?: boolean;
 }) {
-  const temizBaglam = (baglam ?? []).filter((b) => b !== null && b !== undefined && b !== false);
+  /** ⚠ BOŞ DİZE DE ELENİR: yoksa " · " ayıracı yalnız başına kalır. */
+  const temizBaglam = (baglam ?? []).filter(
+    (b) => b !== null && b !== undefined && b !== false && b !== "",
+  );
+  const zeminSinifi = zemin ? ` ${DURUM_ZEMINI[zemin]}` : "";
 
   const govde = (
     <>
@@ -102,14 +116,16 @@ export function SatirKarti({
 
   if (acilir === undefined) {
     return (
-      <div className="flex min-h-14 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2">
+      <div
+        className={`flex min-h-14 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2${zeminSinifi}`}
+      >
         {govde}
       </div>
     );
   }
 
   return (
-    <details open={acikMi} className="group rounded-lg border">
+    <details open={acikMi} className={`group rounded-lg border${zeminSinifi}`}>
       <summary className="flex min-h-14 cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2">
         {govde}
         {/* Ok yönü açık/kapalı durumu SÖYLER — tıklanabilirlik görünür (İlke #2). */}

@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { SatirKarti, SatirListesi } from "../src/components/satir-karti";
+import { DURUM_ZEMINI } from "../src/lib/renkler";
 
 /**
  * ============================================================================
@@ -118,6 +119,30 @@ console.log("\n1) ANATOMİ (gövde çağrılır, değer sınanır)");
   kontrol(
     "  ...vurgusuz manşet İRİ DEĞİL (her satır bağırmaz)",
     !siniflar(SatirKarti({ baslik: "Ad" })).some((c) => c.includes("text-lg")),
+  );
+
+  kontrol(
+    "boş dize bağlam da ELENİR (yalnız başına ayıraç kalmasın)",
+    !metinler(SatirKarti({ baslik: "M", baglam: ["", ""] })).includes(" · "),
+  );
+
+  /**
+   * ZEMİN — tabloda satır zemininin boyanmasının karşılığı (ör. kanalda
+   * kapalı duran listeleme). Renk `lib/renkler` tokeninden; verilmezse YOK.
+   */
+  kontrol(
+    "zemin verilince renk sınıfı satırda",
+    siniflar(SatirKarti({ baslik: "M", zemin: "uyari" })).some((c) => c.includes(DURUM_ZEMINI.uyari)),
+  );
+  kontrol(
+    "  ...verilmezse zemin YOK (her satır renkliyse hiçbiri vurgulu değildir)",
+    !siniflar(SatirKarti({ baslik: "M" })).some((c) => c.includes(DURUM_ZEMINI.uyari)),
+  );
+  kontrol(
+    "  ...açılır satırda da geçerli",
+    siniflar(SatirKarti({ baslik: "M", acilir: "d", zemin: "uyari" })).some((c) =>
+      c.includes(DURUM_ZEMINI.uyari),
+    ),
   );
 
   kontrol("sağ blok verilmezse çizilmez", !siniflar(SatirKarti({ baslik: "M" })).some((c) => c.includes("items-center gap-2")));

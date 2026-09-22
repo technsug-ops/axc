@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K235 — SATIR KARTI: LİSTE ANATOMİSİ TEK GÖVDEYE ÇIKTI · 22.09.2026 · [① KOŞTU (4 ekran) — HALİL TESTİ BEKLİYOR · ② 19 EKRAN AÇIK]
+## 🔴 K235 — SATIR KARTI: LİSTE ANATOMİSİ TEK GÖVDEYE ÇIKTI · 22.09.2026 · [① CANLIDA 9079642 · ② KOŞTU (7 ekran daha) — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI KARARI:** _"Bu sayfalar ve diğer sayfalardaki kart yapısını yeni
 yaptığın hakedişler sayfasındaki kart yapısına göre tekrar tasarla. Tüm
@@ -84,23 +84,89 @@ kaldı (bir satır bir ödeme + açılabilir), çapa `SatirKarti`ye taşındı v
 pencere ÖLÇÜLDÜ (973 → 1400). Aynısı `hakedis-ozeti-mutasyon` çapalarına da
 uygulandı; ikisi de silinmedi.
 
-### AÇIK — ② KALAN 19 EKRAN (çift render envanteri)
+─── **② YEDİ EKRAN DAHA ÇEVRİLDİ (kullanıcı onayı: "önerine katılıyorum")**
 
-    alimlar · alimlar/[id] · ayarlar/konumlar · envanter-degeri(+aralik) ·
-    giderler · hakedis(kontrol sekmesi) · iadeler · kanal-listeleme ·
-    kanal-sku · kartlar · rapor · rapor/urunler · satislar · satislar/[id] ·
-    stok · stok/[variantId] · urunler · urunler/[id]
+| ekran | ne değişti |
+|---|---|
+| `/kartlar` | 8 sütun + telefon kartı → satır; kesim/ödeme · limit · alım sayısı bağlamda |
+| `/ayarlar/konumlar` | raf KODU manşet (depoda aranan o), biçim uyarısı rozetiyle |
+| `/kanal-listeleme` | ürün manşet, kodlar bağlamda, durum rozeti sağda — **kapalı satırın zemini korundu** (`zemin` prop) |
+| `/giderler` | 8 sütun → satır; kategori manşet, tutar sağda kalın, oran/KDV/net düşen bağlamda |
+| `/kanal-sku` | 4 sütun → satır; **ayrışma bitti** — "oranı eksik" rozeti eskiden YALNIZ telefondaydı |
+| `/alimlar` | 7 sütun → satır; adet/kalem/kart artık hücreye sıkıştırılmıyor |
+| `/iadeler` ana liste | 9 sütun → satır; **ayrışma bitti** — "ceza" eskiden YALNIZ masaüstündeydi |
 
-**Önerilen ayrım (kullanıcı onayı bekliyor):**
-· **KARTA ÇEVRİLECEK** — satırın bir manşet değeri var: `giderler` ·
-  `kartlar` · `iadeler` · `alimlar` · `kanal-sku` · `ayarlar/konumlar` ·
-  `kanal-listeleme` · `satislar/[id]` · `alimlar/[id]`
-· **TABLO KALACAK** — sütun karşılaştırması işin kendisi: `stok` ·
-  `urunler` · `rapor` · `rapor/urunler` · `envanter-degeri` · `satislar`
-  (8 sütun, 50 satır/sayfa)
-Kullanıcı bu ayrımı çevirebilir; envanter sayısı her koşumda ekranda.
+⭐ **ÇİFT RENDER'IN ÜRETTİĞİ İKİ SESSİZ AYRIŞMA ÖLÇÜLDÜ VE KAPANDI.** Aynı
+listeyi iki kez çizmek bir stil tercihi değil, bir HATA KAYNAĞIYDI: kanal
+SKU'da eksik oran rozeti yalnız telefonda, iadede ceza sütunu yalnız
+masaüstünde vardı. Tek render bunu yapısal olarak imkânsız yapar (İlke #10).
+
+⛔ **ÖNERİM İKİ EKRANDA ÖLÇÜMLE ÇÜRÜDÜ — ÇEVRİLMEDİ.** `/alimlar/[id]`
+(beklenen · sağlam · hasarlı · kalan) ve `/satislar/[id]` (FIFO parti dökümü:
+tarih · kaynak · raf · adet · birim maliyet) SAYI KARŞILAŞTIRMA ızgaralarıdır;
+kart anatomisi o dört sayıyı bağlam satırına akıtır ve satırlar arası
+karşılaştırmayı bitirir. Kullanıcıya önerdiğim listede "çevrilecek" yazıyordu,
+ölçüm tersini söyledi ve **öneri geri alındı** _(anayasa: "onay da bir
+referanstır — ve referans doğrulanır")_. Aynı gerekçeyle `/iadeler`in iki
+analiz tablosu (kanal kırılımı · en çok iade edilen ürün) tablo kaldı.
+
+### BEKÇİ — ② TURUNDA TAŞINAN ÖLÇÜTLER
+
+Hiçbiri gevşetilmedi; hepsi **gerekliliğe** yeniden bağlandı ve gerekçesi kodda:
+- `arama:dogrula` kanal-SKU bölümü baştan sona tablo şeklindeydi (`<TableHeader>`
+  kes, KOMİSYON sütunu ara…). Gereklilik aynı kaldı: kanal kodu + komisyon
+  listede, kopyalanabilir, oran hizalı, ürün adı kırpılmıyor.
+  ⛔ **VE TAŞIRKEN ESKİ ÖLÇÜTÜN YALANCI YEŞİLİ GÖRÜLDÜ:**
+  `slice(indexOf("md:hidden"))` — `indexOf` bulamayınca `-1` döner, `slice(-1)`
+  son karakteri verir, `length > 0` DOĞRU çıkar. Mobil blok HİÇ YOKKEN bile
+  "kesilebildi" diyordu.
+- `arama:dogrula` kârlılık kartı bağlantısı: sabit "2 çağrı (tablo + mobil)"
+  beklentisi tek render'da doğru kodu kırmızı yakıyordu → ölçüt **ekranın kendi
+  şeklinden** türetiliyor (çift render varsa 2 ve mobil blokta; tek render varsa
+  1 ve İKİNCİ KOPYANIN OLMAMASI).
+- `rma:dogrula` iade sebebi: iki kopyayı ayrı ayrı arıyordu → satır bağlamında
+  aranıyor + ikinci kopyanın yokluğu.
+- `yerlesim:dogrula` taban **yeniden ölçüldü**: `<TableHeader>` taşıyan dosya
+  24 → **19**; eşik 20 → 12, gerekçesiyle. Düşüş arıza değil karar.
+- `satir-karti:dogrula` 26 ölçüt (yeni: `zemin` prop'u, boş dize bağlam) ·
+  `satir-karti-mutasyon:kontrol` 6/6; iki çapa refaktörle taşındı.
+
+### AÇIK — ③ TABLO KALAN EKRANLAR (karar: dokunulmuyor)
+
+    stok · stok/[variantId] · urunler · urunler/[id] · rapor · rapor/urunler ·
+    envanter-degeri(+aralik) · satislar · satislar/[id] · alimlar/[id] ·
+    hakedis(kontrol sekmesi) · ayarlar/kanallar
+
+Hepsinde iş **sütun karşılaştırması**. Çift render envanteri: **12**
+(`satir-karti:dogrula` her koşumda yazar). Kullanıcı tek tek "şunu da çevir"
+derse bu liste küçülür.
 
 ### HALİL TEST LİSTESİ
+
+### HALİL TEST LİSTESİ — ② (yeni çevrilen yedi ekran)
+
+6. `/kartlar` → her satır kart etiketi manşet; altında banka · son 4 (kopya
+   ikonlu) · sahibi · `Kesim/Ödeme: 5 / 15` · `Limit: ₺…` · `Alım: 12`;
+   sağda Aktif/Pasif rozeti + detay/düzenle/pasife al ikonları.
+7. `/ayarlar/konumlar` → raf kodu manşet (kopyalanabilir), standart dışı
+   kodda turuncu "biçimsiz" rozeti manşetin yanında; sağda durum + düzenle.
+8. `/kanal-listeleme` → ürün manşet; **kanalda kapalı satırların zemini
+   turuncu kaldı** (tabloda da öyleydi), rozet sağda.
+9. `/giderler` → kategori + sabit/değişken rozeti manşet; tutar sağda kalın;
+   bağlamda tarih · açıklama · ödeme yöntemi · oran · KDV · net düşen.
+10. `/kanal-sku` → **oranı olmayan kayıtta turuncu rozet artık masaüstünde
+    de var** (eskiden yalnız telefonda). Oran sağda, güncelleme tarihi
+    bağlamda.
+11. `/alimlar` → alım kodu manşet (kopya ikonlu); sipariş no · tarih · kanal
+    hesabı · ürün (kârlılık kartına gider) · `Toplam adet` · `N kalem` ·
+    kart bağlamda; tutar + durum rozeti + eylemler sağda.
+12. `/iadeler` → sipariş no manşet; **ceza artık telefonda da görünür**;
+    adet rozetleri (sağlam/hasarlı/talepsiz) ve NET-2 etkisi sağda.
+13. **Tablo kalanlar değişmedi:** `/stok` · `/urunler` · `/satislar` ·
+    `/rapor/urunler` · `/envanter-degeri` · alım ve satış DETAY sayfaları —
+    oralarda sütunları yan yana karşılaştırmak işin kendisi.
+
+### HALİL TEST LİSTESİ — ① (ilk dört ekran)
 
 1. `/tazminat` → "Talep bekleyen hasar (3)": her satır **ürün adı** manşet,
    altında `Hepsi Burada · 11481463029 · [iadeden] · Hasarlı: 1 · Talep

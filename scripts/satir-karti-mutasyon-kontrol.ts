@@ -50,8 +50,9 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "BAGLAM SUZGECI DUSTU - null baglam ekranda 'null' yazar",
     yon: "KALDIRAN",
     dosya: GOVDE,
-    bul: "  const temizBaglam = (baglam ?? []).filter((b) => b !== null && b !== undefined && b !== false);",
-    koy: "  const temizBaglam = baglam ?? [];",
+    /* ÇAPA K235-②'DE TAŞINDI: süzgece boş dize dalı eklendi. */
+    bul: "    (b) => b !== null && b !== undefined && b !== false && b !== \"\",",
+    koy: "    (b) => true,",
     bozdugu:
       "kosullu baglam icin her ekranda disarida ayri dizi kurulur; unutulan yerde ekranda 'null' ve bos ayirac cikar",
   },
@@ -59,8 +60,9 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "DOKUNMA HEDEFI KUCULDU - telefonda 56 px kalmadi",
     yon: "KALDIRAN",
     dosya: GOVDE,
-    bul: '      <div className="flex min-h-14 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2">',
-    koy: '      <div className="flex min-h-8 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2">',
+    /* ÇAPA K235-②'DE TAŞINDI: sınıf dizesi `zemin` için şablona döndü. */
+    bul: "flex min-h-14 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2",
+    koy: "flex min-h-8 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2",
     bozdugu: "Ilke #8: dokunulabilir her oge telefonda en az 44 px olmali",
   },
   {

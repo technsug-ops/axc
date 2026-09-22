@@ -180,12 +180,25 @@ console.log("\n3) SÜTUN BÜTÇESİ — liste tabloları tek ekrana sığıyor m
    * ⛔ TABAN DOLULUĞU AYRICA KANITLANIR: tarama bozulup boş dönseydi
    * aşağıdaki `filter` hiçbir şey bulamaz ve bekçi yeşil yanardı.
    */
-  /** Taban ÖLÇÜLDÜ 01.09.2026: `<TableHeader>` taşıyan 24 dosya. Eşik
-   *  tahminle değil o ölçümün altına konuldu — tarama bozulup küçülürse
-   *  yakalasın, birkaç ekran silinirse haksız yere yanmasın. */
+  /**
+   * Taban ÖLÇÜLDÜ 01.09.2026: `<TableHeader>` taşıyan 24 dosya; eşik tahminle
+   * değil o ölçümün altına (20) konulmuştu — tarama bozulup küçülürse
+   * yakalasın, birkaç ekran silinirse haksız yere yanmasın.
+   *
+   * ⚠ TABAN YENİDEN ÖLÇÜLDÜ 22.09.2026 (K235-②): 24 → 19. Düşüş bir arıza
+   * DEĞİL, KULLANICI KARARI — yedi liste ekranı tablodan ortak satır kartına
+   * geçti (tazminat · dönemler · nakit takvimi · kartlar · raf konumları ·
+   * kanal listeleme · giderler · kanal SKU · alımlar · iadeler ana listesi).
+   * Eşik 12'ye indirildi: kalan tablolar SÜTUN KARŞILAŞTIRMASI ekranları
+   * (stok · ürünler · rapor · ürün analizi · envanter · satışlar) ve onların
+   * toptan kaybolması hâlâ bir arızadır.
+   * ⛔ SAYI DEĞİŞTİKÇE GEREKÇESİYLE GÜNCELLENİR — bayat bir taban, bir
+   * sonraki dönüşümde sessizce kırmızı yanar ve "ölçüt mü eskidi, kod mu
+   * bozuldu" sorusunu cevapsız bırakır.
+   */
   kontrol(
     `tablolu ekran bulundu (${tabloluEkranlar.length})`,
-    tabloluEkranlar.length >= 20,
+    tabloluEkranlar.length >= 12,
   );
 
   const beyanlilar: string[] = [];

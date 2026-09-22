@@ -15,22 +15,13 @@ import {
 import { AlimIptalButonu } from "./iptal-butonu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
-import { IkiSatir } from "@/components/iki-satir";
 import { UzunAd } from "@/components/uzun-ad";
 import { kartAdresi } from "@/lib/kart-adresi";
-import { ListeKarti } from "@/components/liste-karti";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { DurumRozeti } from "@/components/durum-rozeti";
 import { ALIM_DURUM_RENGI } from "@/lib/durum-renkleri";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { ALIM_DURUMLARI, alimDurumEtiketleri } from "@/lib/etiketler";
 import { bicimlendirici } from "@/lib/bicim";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
@@ -507,150 +498,17 @@ export default async function AlimlarSayfasi({
         </div>
       ) : (
         <>
-          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
-          <div className="hidden overflow-x-auto rounded-lg border md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {/* İKİ AYRI KİMLİK, TEK SÜTUN AMA İKİ SATIR (İlke #3 + #9).
-                      "Alım Kodu" sistemin ürettiği kayıt numarası, "Sipariş
-                      No" tedarikçiye sorun bildirirken söylediğiniz numara.
-                      İkisi de listede DURUYOR ve kopyalanabiliyor; 14.08.2026
-                      ölçümünde ayrı sütun olmaları tabloyu ekran dışına
-                      itiyordu (bkz. components/iki-satir.tsx). */}
-                  <TableHead>{t("alimKoduVeSiparis")}</TableHead>
-                  <TableHead>{ortak("tarih")}</TableHead>
-                  <TableHead>{ortak("kanalHesabi")}</TableHead>
-                  <TableHead>{ortak("urun")}</TableHead>
-                  {/* ⚠ KART AYRI SÜTUN DEĞİL — 22.08.2026'da tutarın altına
-                      indi ve kalem sayısı ürün hücresine geçti. Ölçülen sütun
-                      tavanı 7, bu tablo 8'e çıkmıştı.
-
-                      NİYE BU EŞLEŞME: "ne kadar ödedim, hangi kartla" tek
-                      soruya iki cevaptır; kalem sayısı ise ürünün yanında,
-                      toplam adetle birlikte okunur. Hiçbir bilgi düşmedi —
-                      ikisi de kendi doğal komşusuna taşındı. */}
-                  <TableHead>{ortak("toplam")}</TableHead>
-                  <TableHead>{ortak("durum")}</TableHead>
-                  <TableHead>{ortak("eylemler")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {alimlar.map((alim) => (
-                  <TableRow key={alim.id}>
-                    <TableCell>
-                      {/* Kod link olarak zaten yazıyor; yanına sadece
-                          kopyala ikonu koyuyoruz, metin tekrarı olmasın. */}
-                      <IkiSatir
-                        ustIpucu={alim.code}
-                        ust={
-                          <span className="inline-flex items-center gap-1">
-                            <Baglanti href={alimAdresi(alim.id)}>
-                              {alim.code}
-                            </Baglanti>
-                            <KopyalanabilirKod
-                              deger={alim.code}
-                              etiket={t("alimKodu")}
-                              sadeceIkon
-                            />
-                          </span>
-                        }
-                        altIpucu={alim.supplierOrderNo ?? undefined}
-                        alt={
-                          alim.supplierOrderNo ? (
-                            <span className="inline-flex items-center gap-1">
-                              {alim.supplierOrderNo}
-                              <KopyalanabilirKod
-                                deger={alim.supplierOrderNo}
-                                etiket={ortak("siparisNo")}
-                                sadeceIkon
-                              />
-                            </span>
-                          ) : (
-                            "—"
-                          )
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {bicim.tarih(alim.purchasedAt)}
-                    </TableCell>
-                    <TableCell>
-                      {/* Kanal üstte, hesap altta: "Hepsiburada — S.Ahmet"
-                          tek satırda 169px yiyordu, iki satırda 94px. */}
-                      <IkiSatir
-                        enGenis="max-w-[8rem]"
-                        ust={alim.channelAccount?.channel.name ?? "—"}
-                        alt={alim.channelAccount?.name}
-                        ustIpucu={alim.channelAccount?.channel.name}
-                        altIpucu={alim.channelAccount?.name}
-                      />
-                    </TableCell>
-                    {/* ÜRÜN — uzun adlar sarmalı, tablo genişlemesin.
-                        ⚠ ADET AYRI SÜTUN DEĞİL, ÜRÜNÜN ALTINDA (21.08.2026).
-                        Kullanıcı "adet sütunu olsun" dedi; sütun eklendi ve
-                        `yerlesim:dogrula` KIRMIZI yandı: masaüstü tablosunun
-                        sütun tavanı 7 ve bu sayfa zaten 8'deydi. Bekçinin
-                        kendi önerdiği çare uygulandı — ilişkili iki bilgi
-                        tek hücrede üst üste (`iki-satir.tsx` deseni).
-
-                        Yeri de doğru: adet, ait olduğu ÜRÜNÜN yanında
-                        duruyor. Ayrı sütunda göz ürün ile sayı arasında
-                        gidip geliyordu. */}
-                    <TableCell className="min-w-0 max-w-[22rem]">
-                      <UzunAd
-                        metin={urunOzeti(alim)}
-                        /* Ürün adı → KÂRLILIK KARTI (İlke #9). Satışlarla
-                           AYNI gövdeden; iki ekran ayrışmasın. */
-                        href={kartAdresi(alim.items) ?? undefined}
-                      />
-                      <div className="text-muted-foreground text-xs tabular-nums">
-                        {t("toplamAdet", { sayi: toplamAdet(alim) })}
-                        {" · "}
-                        {t("kalemSayisi", { sayi: alim.items.length })}
-                      </div>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {/* Tutar üstte, ÖDENDİĞİ KART altta. Kart etiketi
-                          serbest metin ("Şaban Akçalı Bonus") ve 27 karaktere
-                          kadar çıkıyor; kesilirse tam hâli ipucunda durur ve
-                          son dört hane yanında kalır (İlke #3). */}
-                      <IkiSatir
-                        enGenis="max-w-[11rem]"
-                        ust={toplamMetni(alim)}
-                        alt={
-                          alim.creditCard
-                            ? `${alim.creditCard.label} ••${alim.creditCard.last4}`
-                            : undefined
-                        }
-                        altIpucu={
-                          alim.creditCard
-                            ? `${alim.creditCard.label} ••${alim.creditCard.last4}`
-                            : undefined
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <DurumRozeti
-                        durum={ALIM_DURUM_RENGI[alim.status]}
-                        isaretsiz
-                      >
-                        {durumEtiketleri[alim.status]}
-                      </DurumRozeti>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      <SatirEylemleri>{eylemler(alim)}</SatirEylemleri>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* ------------------------ TELEFON: KART ---------------------- */}
-          <div className="space-y-3 md:hidden">
+          {/*
+            SATIR KARTI (K235-②, 22.09.2026). Eski hâl 7 sütunluk tablo +
+            telefon kartıydı; tablo sütun tavanına (7) dayandığı için adet,
+            kalem sayısı ve kart ETİKET olarak hücrelere sıkıştırılmıştı.
+            Bağlam satırının sütun bütçesi yok: hepsi kendi adıyla akıyor.
+            ⚠ Hiçbir bilgi düşmedi — alım kodu manşet, sipariş no/tarih/
+            hesap/ürün/adet/kalem/kart bağlam, tutar+durum+eylemler sağda.
+          */}
+          <SatirListesi>
             {alimlar.map((alim) => (
-              <ListeKarti
+              <SatirKarti
                 key={alim.id}
                 baslik={
                   <span className="inline-flex items-center gap-1">
@@ -662,84 +520,52 @@ export default async function AlimlarSayfasi({
                     />
                   </span>
                 }
-                alanlar={[
-                  // İlke #3, mobil öncelik: sipariş no tarihten ÖNCE gelir —
-                  // telefonda kaydı bulmak için bakılan ilk şey odur.
-                  ...(alim.supplierOrderNo
-                    ? [
-                        {
-                          etiket: ortak("siparisNo"),
-                          deger: (
-                            <span className="inline-flex items-center gap-1">
-                              {alim.supplierOrderNo}
-                              <KopyalanabilirKod
-                                deger={alim.supplierOrderNo}
-                                etiket={ortak("siparisNo")}
-                                sadeceIkon
-                              />
-                            </span>
-                          ),
-                        },
-                      ]
-                    : []),
-                  {
-                    etiket: ortak("tarih"),
-                    deger: bicim.tarih(alim.purchasedAt),
-                  },
-                  {
-                    etiket: ortak("durum"),
-                    deger: (
-                      <DurumRozeti
-                        durum={ALIM_DURUM_RENGI[alim.status]}
-                        isaretsiz
-                      >
-                        {durumEtiketleri[alim.status]}
-                      </DurumRozeti>
-                    ),
-                  },
-                  /* ÜRÜN TELEFONDA DA GÖRÜNÜR (İlke #8, #3). Mobilde
-                     öncelik sırası ad > kod olduğu için kalem sayısından
-                     ÖNCE geliyor: "ne alındı" sorusu "kaç kalem"den
-                     önemlidir. */
-                  {
-                    etiket: ortak("urun"),
-                    /*
-                      ⚠ MOBİLDE DE KÂRLILIK KARTINA GİDER (24.08.2026).
-                      Tabloda bağlıydı, mobilde DÜZ METİNDİ — aynı bilgi
-                      iki ekranda iki farklı şey yapıyordu (İlke #10) ve
-                      telefonda karta erişimin başka yolu yoktu.
-                    */
-                    deger: (() => {
-                      const adres = kartAdresi(alim.items);
-                      return adres ? (
-                        <Baglanti href={adres}>{urunOzeti(alim)}</Baglanti>
-                      ) : (
-                        urunOzeti(alim)
-                      );
-                    })(),
-                  },
-                  /* MOBİLDE DE VAR (İlke #8): adet kalem sayısından ÖNCE —
-                     "kaç tane" sorusu "kaç satır"dan sık sorulur. */
-                  { etiket: ortak("adet"), deger: toplamAdet(alim) },
-                  { etiket: ortak("kalem"), deger: alim.items.length },
-                  { etiket: ortak("toplam"), deger: toplamMetni(alim) },
-                  {
-                    etiket: ortak("kanalHesabi"),
-                    deger: alim.channelAccount
-                      ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
-                      : "—",
-                  },
-                  {
-                    etiket: ortak("kart"),
-                    deger: alim.creditCard
-                      ? `${alim.creditCard.label} (••${alim.creditCard.last4})`
-                      : "—",
-                  },
+                baglam={[
+                  /* İlke #3, mobil öncelik: sipariş no tarihten ÖNCE — kaydı
+                     bulmak için bakılan ilk şey odur. */
+                  alim.supplierOrderNo ? (
+                    <span key="siparis" className="inline-flex items-center gap-1">
+                      {alim.supplierOrderNo}
+                      <KopyalanabilirKod
+                        deger={alim.supplierOrderNo}
+                        etiket={ortak("siparisNo")}
+                        sadeceIkon
+                      />
+                    </span>
+                  ) : null,
+                  bicim.tarih(alim.purchasedAt),
+                  alim.channelAccount
+                    ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
+                    : null,
+                  /* ÜRÜN → KÂRLILIK KARTI (İlke #9). Satışlarla AYNI gövdeden;
+                     iki ekran ayrışmasın. */
+                  /* ⚠ UZUN AD KIRPILIR, TAM HÂLİ İPUCUNDA (`UzunAd`):
+                     bağlam satırı tek satırdır, 60 karakterlik bir ürün adı
+                     ötekileri ekrandan iterdi. */
+                  <UzunAd
+                    key="urun"
+                    metin={urunOzeti(alim)}
+                    href={kartAdresi(alim.items) ?? undefined}
+                  />,
+                  `${t("toplamAdet", { sayi: toplamAdet(alim) })} · ${t("kalemSayisi", { sayi: alim.items.length })}`,
+                  alim.creditCard
+                    ? `${alim.creditCard.label} ••${alim.creditCard.last4}`
+                    : null,
                 ]}
-                eylemler={eylemler(alim)}
+                sag={
+                  <>
+                    <span className="font-semibold tabular-nums whitespace-nowrap">
+                      {toplamMetni(alim)}
+                    </span>
+                    <DurumRozeti durum={ALIM_DURUM_RENGI[alim.status]} isaretsiz>
+                      {durumEtiketleri[alim.status]}
+                    </DurumRozeti>
+                    <SatirEylemleri>{eylemler(alim)}</SatirEylemleri>
+                  </>
+                }
               />
             ))}
-          </div>
+          </SatirListesi>
 
           {/* ⚠ SÜZGEÇLER TAŞINIR: taşınmazsa "2. sayfa" tıklaması süzgeci
               sessizce sıfırlar ve kullanıcı başka bir listeye düşer. */}

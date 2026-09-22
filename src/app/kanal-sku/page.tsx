@@ -4,18 +4,10 @@ import Link from "next/link";
 import { Info, TriangleAlert, Upload } from "lucide-react";
 
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
-import { ListeKarti } from "@/components/liste-karti";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { VARYANT_SECIMI, varyantiOzetle } from "@/lib/varyant-ozet";
@@ -355,110 +347,18 @@ export default async function KanalSkuSayfasi({
         </div>
       ) : (
         <>
-          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
-          <div className="hidden overflow-x-auto rounded-lg border md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {/*
-                    ⚠ DÖRT SÜTUN — YEDİDEN İNDİRİLDİ (kullanıcı 23.08.2026:
-                    _"kötü bir seçim; ürün isimlerini gerekiyorsa iki satır
-                    yap ama tüm bilgiyi sağa scroll yapmadan görmek
-                    istiyorum"_).
-
-                    İlk sürümde kanal kodu ve komisyon AYRI sütun olarak
-                    eklenmişti ve tablo yedi sütuna çıkıp yatay kaydırma
-                    gerektiriyordu. Deponun kendi kuralı bunu zaten söylüyor
-                    (`yerlesim-dogrula.ts`): _"Yeni bir sütun gerekiyorsa çare
-                    sütun eklemek değil, ilişkili iki bilgiyi tek hücrede ÜST
-                    ÜSTE koymaktır."_ Kuralı yazmıştık, uygulamamıştık.
-
-                    Eşleştirme ilişkiye göre:
-                      Ürün    = ürün adı + SKU        (hangi mal)
-                      Kanal   = hesap + kanal kodu    (nerede, hangi kodla)
-                      Komisyon= oran + güncelleme     (kaç, ne zamandan beri)
-                  */}
-                  <TableHead>{t("sutunUrun")}</TableHead>
-                  <TableHead>{t("sutunHesap")}</TableHead>
-                  <TableHead className="text-right">{t("sutunOran")}</TableHead>
-                  <TableHead>{ortak("eylemler")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {kayitlar.map((kayit) => (
-                  <TableRow key={kayit.id}>
-                    {/*
-                      ⚠ ÜRÜN ADI SARIYOR, KIRPILMIYOR. `IkiSatir` bileşeni
-                      `truncate` kullanıyor (tek satır + "…" + ipucu); burada
-                      ad UZUN ve kullanıcı onu OKUMAK istiyor. `line-clamp-2`
-                      en fazla iki satıra sarar, `whitespace-normal` hücrenin
-                      varsayılan `whitespace-nowrap`ını ezer.
-                    */}
-                    <TableCell className="max-w-[26rem] whitespace-normal">
-                      <div className="line-clamp-2">{urunAdi(kayit)}</div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                        <KopyalanabilirKod
-                          deger={kayit.variant.sku}
-                          etiket={ortak("sku")}
-                        />
-                        {!kayit.isActive ? (
-                          <Badge variant="secondary">{ortak("pasif")}</Badge>
-                        ) : null}
-                      </div>
-                    </TableCell>
-
-                    {/*
-                      KANAL = hesap + o hesaptaki KOD. İkisi aynı soruyu
-                      cevaplıyor: "bu ürün nerede, hangi kodla satılıyor".
-                      Rol rozeti kalıyor — aynı listede alış ve satış kodları
-                      yan yana duruyor, hangisi olduğu görünmeli.
-                    */}
-                    <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">
-                          {hesapAdi(kayit)}
-                        </span>
-                        <Badge variant="outline" className="text-xs">
-                          {kayit.channelAccount.satisIcin
-                            ? t("rolSatis")
-                            : t("rolAlis")}
-                        </Badge>
-                      </div>
-                      <div className="mt-0.5 font-mono text-xs">
-                        <KopyalanabilirKod
-                          deger={kayit.channelSku}
-                          etiket={t("sutunKanalKodu")}
-                        />
-                      </div>
-                    </TableCell>
-
-                    {/*
-                      ⚠ ORAN SAĞA YASLI VE `tabular-nums`: oranlar alt alta
-                      karşılaştırılıyor ve canlıda 629/2182'si ondalıklı
-                      (%13,5 ↔ %18). Sola yaslı yazılsa virgüller hizalanmaz.
-                      Altındaki tarih "bu oran ne zamandan beri" sorusunun
-                      cevabı — oranla aynı hücrede olması gereken bilgi.
-                    */}
-                    <TableCell className="text-right whitespace-nowrap">
-                      <div className="tabular-nums">{komisyonMetni(kayit)}</div>
-                      <div className="text-muted-foreground mt-0.5 text-xs">
-                        {kayit.commissionUpdatedAt
-                          ? bicim.tarih(kayit.commissionUpdatedAt)
-                          : t("hicGuncellenmedi")}
-                      </div>
-                    </TableCell>
-
-                    <TableCell>{duzenleyici(kayit)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* ------------------------ TELEFON: KART ---------------------- */}
-          <div className="space-y-3 md:hidden">
+          {/*
+            SATIR KARTI (K235-②, 22.09.2026). Eski hâl 4 sütunluk tablo +
+            telefon kartıydı ve İKİSİ AYRIŞMIŞTI: eksik komisyon rozeti
+            YALNIZ telefonda vardı — masaüstünde "oranı olmayan kayıt"
+            görünmüyordu. Tek render bu ayrışmayı yapısal olarak bitirir
+            (İlke #10); rozet artık her ekranda.
+            ⚠ Eşleştirme korundu: ürün = ad + SKU · kanal = hesap + kod ·
+            komisyon = oran + güncelleme tarihi.
+          */}
+          <SatirListesi>
             {kayitlar.map((kayit) => (
-              <ListeKarti
+              <SatirKarti
                 key={kayit.id}
                 baslik={
                   <span className="flex flex-wrap items-center gap-2">
@@ -476,48 +376,38 @@ export default async function KanalSkuSayfasi({
                     ) : null}
                   </span>
                 }
-                altBaslik={hesapAdi(kayit)}
-                alanlar={[
-                  /*
-                    ⚠ TELEFONDA DA AYNI İKİ BİLGİ (İlke #8: mobil eşit
-                    vatandaş). Kanal kodu İLK sırada: ekranın adı bu ve
-                    depoda/telefonda aranan şey o.
-                  */
-                  {
-                    etiket: t("sutunKanalKodu"),
-                    deger: (
-                      <KopyalanabilirKod
-                        deger={kayit.channelSku}
-                        etiket={t("sutunKanalKodu")}
-                      />
-                    ),
-                  },
-                  {
-                    etiket: ortak("sku"),
-                    deger: (
-                      <KopyalanabilirKod
-                        deger={kayit.variant.sku}
-                        etiket={ortak("sku")}
-                      />
-                    ),
-                  },
-                  {
-                    etiket: t("sutunOran"),
-                    deger: (
-                      <span className="tabular-nums">{komisyonMetni(kayit)}</span>
-                    ),
-                  },
-                  {
-                    etiket: t("sutunGuncelleme"),
-                    deger: kayit.commissionUpdatedAt
+                baglam={[
+                  <KopyalanabilirKod key="sku" deger={kayit.variant.sku} etiket={ortak("sku")} />,
+                  <span key="hesap" className="inline-flex items-center gap-1.5">
+                    {hesapAdi(kayit)}
+                    <Badge variant="outline" className="text-xs">
+                      {kayit.channelAccount.satisIcin ? t("rolSatis") : t("rolAlis")}
+                    </Badge>
+                  </span>,
+                  <KopyalanabilirKod
+                    key="kanalKodu"
+                    deger={kayit.channelSku}
+                    etiket={t("sutunKanalKodu")}
+                  />,
+                  `${t("sutunGuncelleme")}: ${
+                    kayit.commissionUpdatedAt
                       ? bicim.tarih(kayit.commissionUpdatedAt)
-                      : t("hicGuncellenmedi"),
-                  },
+                      : t("hicGuncellenmedi")
+                  }`,
                 ]}
-                eylemler={duzenleyici(kayit)}
+                sag={
+                  <>
+                    {/* ⚠ ORAN `tabular-nums`: oranlar alt alta karşılaştırılıyor
+                        ve canlıda çoğu ondalıklı (%13,5 ↔ %18). */}
+                    <span className="font-semibold tabular-nums whitespace-nowrap">
+                      {komisyonMetni(kayit)}
+                    </span>
+                    {duzenleyici(kayit)}
+                  </>
+                }
               />
             ))}
-          </div>
+          </SatirListesi>
 
           <SayfalamaCubugu
             sayfalama={sayfalama}

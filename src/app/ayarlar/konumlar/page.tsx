@@ -5,19 +5,11 @@ import { Merge, Pencil, QrCode, TriangleAlert } from "lucide-react";
 
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
-import { ListeKarti } from "@/components/liste-karti";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { Badge } from "@/components/ui/badge";
 import { rafKoduGecerliMi } from "@/lib/kimlik";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { prisma } from "@/lib/prisma";
 
 import { konumDurumDegistir } from "./actions";
@@ -130,95 +122,45 @@ export default async function KonumlarSayfasi() {
               </p>
             </div>
           ) : (
-            <>
-              {/* -------------------- MASAÜSTÜ: TABLO -------------------- */}
-              <div className="hidden overflow-x-auto rounded-lg border md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{ortak("kod")}</TableHead>
-                      <TableHead>{ortak("ad")}</TableHead>
-                      <TableHead className="text-right">
-                        {t("varyantSutunu")}
-                      </TableHead>
-                      <TableHead>{ortak("durum")}</TableHead>
-                      <TableHead>{ortak("eylemler")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {konumlar.map((konum) => (
-                      <TableRow key={konum.id}>
-                        <TableCell>
-                          <span className="flex flex-wrap items-center gap-2">
-                            <KopyalanabilirKod
-                              deger={konum.code}
-                              etiket={t("rafKodu")}
-                            />
-                            {rafKoduGecerliMi(konum.code) ? null : (
-                              <Badge
-                                variant="outline"
-                                className={`${DURUM_YAZISI.uyari} border-current/40`}
-                              >
-                                {t("bicimsizRozet")}
-                              </Badge>
-                            )}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {konum.name ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {konum._count.variants}
-                        </TableCell>
-                        <TableCell>
-                          {konum.isActive ? (
-                            <Badge variant="secondary">{ortak("aktif")}</Badge>
-                          ) : (
-                            <Badge variant="outline">{ortak("pasif")}</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap items-start gap-2">
-                            {eylemler(konum)}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* --------------------- TELEFON: KART --------------------- */}
-              <div className="space-y-3 md:hidden">
-                {konumlar.map((konum) => (
-                  <ListeKarti
-                    key={konum.id}
-                    baslik={
-                      <KopyalanabilirKod
-                        deger={konum.code}
-                        etiket={t("rafKodu")}
-                      />
-                    }
-                    altBaslik={konum.name ?? undefined}
-                    alanlar={[
-                      {
-                        etiket: ortak("durum"),
-                        deger: konum.isActive ? (
-                          <Badge variant="secondary">{ortak("aktif")}</Badge>
-                        ) : (
-                          <Badge variant="outline">{ortak("pasif")}</Badge>
-                        ),
-                      },
-                      {
-                        etiket: t("varyantSutunu"),
-                        deger: konum._count.variants,
-                      },
-                    ]}
-                    eylemler={eylemler(konum)}
-                  />
-                ))}
-              </div>
-            </>
+            /*
+             * SATIR KARTI (K235-②): raf KODU manşet — depoda aranan şey o.
+             * Ad, varyant sayısı ve biçim uyarısı bağlamda; durum ve
+             * düzenle/pasife al sağda.
+             */
+            <SatirListesi>
+              {konumlar.map((konum) => (
+                <SatirKarti
+                  key={konum.id}
+                  baslik={
+                    <span className="flex flex-wrap items-center gap-2">
+                      <KopyalanabilirKod deger={konum.code} etiket={t("rafKodu")} />
+                      {rafKoduGecerliMi(konum.code) ? null : (
+                        <Badge
+                          variant="outline"
+                          className={`${DURUM_YAZISI.uyari} border-current/40`}
+                        >
+                          {t("bicimsizRozet")}
+                        </Badge>
+                      )}
+                    </span>
+                  }
+                  baglam={[
+                    konum.name,
+                    `${t("varyantSutunu")}: ${konum._count.variants}`,
+                  ]}
+                  sag={
+                    <>
+                      {konum.isActive ? (
+                        <Badge variant="secondary">{ortak("aktif")}</Badge>
+                      ) : (
+                        <Badge variant="outline">{ortak("pasif")}</Badge>
+                      )}
+                      {eylemler(konum)}
+                    </>
+                  }
+                />
+              ))}
+            </SatirListesi>
           )}
 
           <p className="text-muted-foreground mt-3 text-xs">{t("listeNotu")}</p>
