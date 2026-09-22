@@ -140,6 +140,17 @@ export function gercekCakismaGruplari(npmAdlari: string[]): string[][] {
  */
 export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "aylik-marj-mutasyon:kontrol",
+  /**
+   * K236 (22.09.2026) — `kamera` ve `kare-tanisi` İKİSİ DE
+   * `src/components/barkod-okuyucu.tsx`i mutasyona uğratıyor: `kamera`
+   * tarama hâli satırının ÇİZİLDİĞİNİ, `kare-tanisi` kare çözümünün
+   * bağlarını sınıyor. Paralel koşsalardı biri ötekinin MUTANTINI "asıl"
+   * sanıp geri yazardı ve bozulma SESSİZ olurdu.
+   * ⚠ Bekçi bunu push kapısında yakaladı — beyan sonradan yazılmadı,
+   * ölçüm zorladı. Liste elle tutuluyor ama her koşumda gerçek taramayla
+   * karşılaştırılıyor.
+   */
+  "kamera-mutasyon:kontrol",
   "kare-tanisi-mutasyon:kontrol",
   "liste-hafizasi-mutasyon:kontrol",
   "mal-kabul-mutasyon:kontrol",
