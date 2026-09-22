@@ -478,9 +478,13 @@ farkı, biri sözdizimi bozan mutasyon) — "geçti" demedi. İkisi de onarıld�
       **kendiliğinden düzeliyor.** Anayasa: "geçmişi düzeltmek ile mekanizmayı
       kurmak ayrı kararlardır" — mekanizma kurulu.
 - [ ] **Eylül'de 6 TY satışı ne gerçek ne tahmini kargo taşıyor** — NET-2
-      kargosuz hesaplanıyor. Sebebi satış satış ölçüldü (aşağıda); çoğu
-      taşıyıcı/desi girilmemiş ya da henüz onaysız. Küçük, ama sıfır satır
-      gizlenmez.
+      kargosuz hesaplanıyor ve durumu `CALCULATED` (K141'in bilinen açığı:
+      "CALCULATED eksik maliyeti söylemiyor"). **Satış satış ölçüldü:** altısı
+      da 21.09 siparişi, **onaylı, kargolanmamış, taşıyıcı SEÇİLMEMİŞ**, desi 3
+      (`11628817256 · 11629058995 · 11629354592 · 11630018372 · 11630383131 ·
+      11630389840`). Taşıyıcı seçilince tahmin dolar, fatura gelince gerçek —
+      bir zamanlama hâli, kusur değil. Ama o ana kadar 6 satışın kârı kargo
+      kadar ŞİŞİK görünür ve rozet bunu söylemiyor → K141'e bağlı.
 - [x] ~~**API'de kargo tarifesi ucu var mı — ÖLÇÜLMEDİ.**~~ **ÖLÇÜLDÜ 21.09.2026**
       (kendi keşif belgelerimiz: `docs/a3-*-api-kesif.md`): **hiçbir kanal desi
       tarifesini API'den yayımlamıyor.** HB `product/cargo-providers` → yalnız
