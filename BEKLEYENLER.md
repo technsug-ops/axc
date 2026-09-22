@@ -145,25 +145,15 @@ ekranın `PASİF DAHİL:` **beyanı** kayboldu ve bu kez onlar suçlandı —
       NET-1 ₺663,91 · NET-2 ₺549,32). İkize bağlı kalsaydı maliyet
       bulunamaz, `NO_COST` düşerdi — yani arıza yalnız "kaydedemiyorum"
       değil, **kârın sessizce hesaplanamaması** idi.
-- [ ] **Halil testi ②** — `/urunler`de `HBCV00000R0H0K` aratın: **İKİ kayıt**
-      çıkar — biri stoklu (`KUC-BR-BHD50-01`, stok 3), öteki stok 0 ve
-      **"Varyantları pasif"** rozetli.
-      ⛔ **İLK YAZIMI ÇELİŞİKTİ** — _"tek kayıt çıkmalı"_ VE _"ikiz rozetle
-      görünmeli"_ aynı cümledeydi; rozetliyse zaten iki kayıt çıkar. Kullanıcı
-      ekran görüntüsüyle geldi: iki kayıt ve doğru stoklar VAR (o yarı geçti),
-      **rozet YOK.** Ölçüldü: kod `origin/main`'de (satır 142 seçiyor, 329
-      çiziyor), veri rozeti hak ediyor (`every(!isActive) === true`), Vercel
-      `f584ed0` Production/Ready — üçü doğru, ekranda yok. Kalan tek açıklama
-      tarayıcı önbelleği; **sert yenileme sonrası ekran görüntüsü bekleniyor.**
-      Gelmezse bekçilerin göremediği bir çizim kusuru var demektir — ve bu
-      deponun yazılı dersi: _bekçi kaynağı ölçer, kullanıcıya ULAŞTIĞINI
-      ölçmez._
-      ⚠ **PUSH ≠ DEPLOY (ders, 21.09).** Bugün üç kez "canlıda" dedim ve
-      üçünde push'un gittiğini ölçmüştüm, deploy'un indiğini değil. Push ile
-      ekran arasında Vercel var; o katman **yalnız Vercel panelinden ya da
-      giriş yapılmış ekrandan** doğrulanır. HTTP ile doğrulanamaz: olmayan
-      rota da `307` dönüyor (ara katman her isteği girişe yolluyor) — ölçüldü,
-      bir daha denenmesin.
+- [x] ~~**Halil testi ②**~~ — **GEÇTİ 22.09.2026, BULGUYLA.** İki kayıt, doğru
+      stoklar, ikizde _"Varyantları pasif — aramada çıkmaz"_ yazısı VARDI —
+      kullanıcı ekran görüntüsüyle geldi ve _"rozet hâlâ yok"_ dedi. Haklıydı:
+      `variant="secondary"` bu temada **düz metin gibi** çıkıyor; yanındaki
+      çerçeveli "Hepsiburada kodu" etiketinin yanında rozet sanılmıyor.
+      ⭐ Kod doğru, veri doğru, deploy güncel — üçü ölçüldü ve üçü tuttu;
+      **ekran yine de "yok" dedi.** İlke #2'nin rozet hâli: etiket etiket gibi
+      GÖRÜNMELİ. `outline` + kehribar çerçeveye çevrildi. Dün "tarayıcı
+      önbelleği" dedim — yanlıştı; sebep görünürlüktü.
 - [ ] **Halil testi ③** — `/okut`ta `887961643367` okutun: artık **tek** ürün
       açılmalı (Fisher-Price, stok 1).
 ─── ④ **MUSLUK KAPANDI** — üç kalem de bitti (21.09.2026)
@@ -1015,9 +1005,14 @@ Cron `listeleme-cekim` ucuna üçüncü satır olarak girdi. `n11-listeleme:dogr
 aynı uca girdi, ilk yazımı o yapacak. Sıfır eşleşmede tarayıcı yazımı kendisi
 durdurur (anahtar uyuşmazlığı sessizce "YOK" yazmasın).
 
-- [ ] **İlk otomatik koşum (N11)** — `AuditLog action=N11_LISTELEME_YAZIM`:
-      yazılan **51**, hata 0. `/kanal-listeleme`de N11 satırı görünmeli.
-- [ ] **62 listeleme defterde yok — KİMLİĞİ ÖLÇÜLDÜ (22.09.2026), ONAY BEKLİYOR.**
+- [ ] **İlk OTOMATİK koşum (N11)** — cron `listeleme-cekim` gece koşacak;
+      `AuditLog action=N11_LISTELEME_YAZIM` **ikinci** kez düşmeli (ilki elle).
+      ⭐ **İLK YAZIM ELLE KOŞULDU 22.09.2026** (kullanıcı: _"senkron çalışmalı
+      değil mi"_; gecelik mekanizmanın aynısı): 113 listeleme · **109/109
+      eşleşti** · 109 satır güncellendi · hata 0. Deftere bakıldı: N11'de
+      ölçülmüş **109/109** (sabah 0/51'di) — **ACIK 54 · STOKSUZ 55** (defterden; ilk yazımda tersini yazmıştım, düzeltildi).
+      Kanalda var, defterde yok: 4 (katalogda olmayanlar).
+- [x] ~~**62 listeleme defterde yok**~~ — **58'İ AÇILDI 22.09.2026 03:21** (kullanıcı onayı: _"bağla tabi"_). Kuru koşum → `--uygula`: 58 eşleştirme, K231 kapısı 0, iz `N11_ESLEME`, yerel görüntü `veri/ozel/n11-esle-2026-09-22T03-21-28-616Z.json`. **Doğrulandı veriden:** N11 kanal SKU 51 → **109**; tekrar kuru koşum 0 açılacak. Geri alma: `--geri --parti=2026-09-22T03:21:28.616Z` (yeniden hesaplanabilir ölçüt; senkron koştuktan sonra ölçülmüş satırı SİLMEZ). Kalan **4 katalogda yok** — ayrı kalem, ürün açmak gerekir. Ölçüm kaydı aşağıda:
       Barkod + stockCode, dört rol, eşdeğerlerle:
 
           TEK varyanta çözülüyor (bizde VAR, eşlenmemiş)   58

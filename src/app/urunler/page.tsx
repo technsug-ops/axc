@@ -326,9 +326,19 @@ export default async function UrunlerSayfasi({
                                 hâlâ satılabilir; ikisini tek rozete indirmek
                                 çalışan bir ürünü ölü göstermek olurdu.
                               */}
+                              {/*
+                                ⛔ ROZET GİBİ GÖRÜNMEYEN ROZET, ROZET DEĞİLDİR (22.09.2026).
+                                `variant="secondary"` bu temada düz metin gibi çıktı;
+                                kullanıcı canlı ekran görüntüsüyle geldi: rozet ORADAYDI
+                                ("Varyantları pasif — aramada çıkmaz" yazıyordu) ama
+                                yanındaki çerçeveli "Hepsiburada kodu" etiketinin yanında
+                                metin sanıldı. Kod doğru, veri doğru, deploy güncel —
+                                yine de "rozet yok" denildi; İlke #2'nin rozet hâli:
+                                etiket etiket gibi GÖRÜNMELİ. `outline` çerçeve çiziyor.
+                              */}
                               {urun.variants.length > 0 &&
                               urun.variants.every((v) => !v.isActive) ? (
-                                <Badge variant="secondary">
+                                <Badge variant="outline" className="border-amber-600/60 text-amber-800 dark:text-amber-300">
                                   {t("tumVaryantlarPasif")}
                                 </Badge>
                               ) : urun.variants.some((v) => !v.isActive) ? (
