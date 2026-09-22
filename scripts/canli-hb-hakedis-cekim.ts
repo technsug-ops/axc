@@ -18,6 +18,15 @@
  *  (paymentOrderId geri doldurma) YOK — yalnız YENİ SATIR ve tutarsızlık
  *  raporu var.
  *
+ *  ⛔ ÜSTTEKİ GEREKÇE EKSİKTİ, SİLİNMEDİ (K232-②, 22.09.2026). "Yalnız yeni
+ *  satır" demek, `WillBePaid` görülüp yazılan satırın `Paid`e GEÇİŞİNİ hiç
+ *  yazmamak demekti: HB paneli "22 Eylül · 84.680,85 · Ödendi" derken
+ *  defterde aynı 138 satır sonsuza kadar "Gelecek"te kalacak, geçmiş
+ *  ödemeler bir daha BÜYÜMEYECEKTİ (eldekiler 19.09'daki ilk taramada zaten
+ *  Paid görüldüğü için doğruydu — hata ilk günlerde görünmezdi). TY'nin
+ *  ① işi (K220-①) burada da zorunlu: `paidAt` YALNIZ BOŞSA dolar, doluysa
+ *  dokunulmaz; tutarı farklı (tutarsız) satır tazelenmez, raporlanır.
+ *
  *  ⚠ PENCERE: `RecordDateStart/End` aralığı azami 1 AY (ölçüldü, uç kendi
  *  mesajıyla söylüyor) — 29 günlük dilimlere bölünerek taranır.
  *  ⚠ TARİH BİÇİMİ ISO (`YYYY-MM-DD`) — TY'nin epoch ms'inden FARKLI,
@@ -56,6 +65,8 @@ export type HbHakedisCekimOzeti = {
   eslesmeyen: number;
   siparisDisi: number;
   yeni: number;
+  /** K232-②: ödenmemişken yazılıp sonra Paid olan satır — `paidAt` boştan doldu. */
+  tazelenen: number;
   tutarsiz: number;
   netToplam: number;
   hataSayisi: number;
@@ -130,6 +141,61 @@ export async function hbHakedisCekimKos(ayar: {
       if (g.items.length === 0 || offset >= g.count) break;
       await new Promise((r) => setTimeout(r, 150));
     }
+  }
+
+  // ── ①b VADESİ GEÇMİŞ ÖDENMEMİŞLER — VADE PENCERESİYLE YENİDEN SORULUR ──
+  /**
+   * K232-② (22.09.2026). Kayıt-tarihi penceresi (45 gün) ödendi geçişini
+   * görmeye YETMEZ: HB siparişten ~35-40 gün sonra öder, yani satır Paid'e
+   * döndüğünde çoğu zaman pencerenin KIYISINDADIR — ölçüldü: 22.09 vadeli
+   * 104 satırın kayıt yaşı 29-45 gün. HB bir hafta geç işaretlese ya da
+   * cron bir gün kaçırsa satır pencereden çıkar ve geçiş BİR DAHA GÖRÜLMEZ;
+   * satır sonsuza kadar "Gelecek"te kalır.
+   *
+   * Ölçüt YENİDEN HESAPLANABİLİR (saklanan liste değil): defterde `paidAt`
+   * boş ve vadesi bugün ya da önce olan satırların VADE aralığı, uca
+   * `dueDateStart/End` ile sorulur — uç bu süzgeci destekliyor
+   * (`UCLAR.hakedis`). Aynı kayıt iki pencereden de gelebilir; `benzersiz`
+   * (id) haritası zaten tekilleştiriyor.
+   *
+   * ⚠ Vade penceresi de kayıt penceresi gibi 29 günlük dilimlerle sorulur —
+   * "azami 1 ay" sınırının vade süzgecinde de geçerli olup olmadığı
+   * ölçülmedi; dilimlemek iki hâlde de doğru çalışır.
+   */
+  const vadesiGecmis = await prisma.settlementItem.aggregate({
+    where: { channelAccountId: hesapId, paidAt: null, dueDate: { lte: new Date(simdi) } },
+    _min: { dueDate: true },
+    _max: { dueDate: true },
+    _count: { _all: true },
+  });
+  if (vadesiGecmis._count._all > 0 && vadesiGecmis._min.dueDate && vadesiGecmis._max.dueDate) {
+    const vBas = vadesiGecmis._min.dueDate.getTime();
+    const vSon = vadesiGecmis._max.dueDate.getTime();
+    let vadeKaydi = 0;
+    for (let bas = vBas; bas <= vSon; bas += PENCERE_GUN * GUN_MS) {
+      const son = Math.min(bas + PENCERE_GUN * GUN_MS, vSon);
+      let offset = 0;
+      for (let tur = 0; tur < 100; tur++) {
+        const yol = UCLAR.hakedis(kimlik, offset, SAYFA_BOYUTU, {
+          dueDateStart: gunStr(bas),
+          dueDateEnd: gunStr(son),
+        });
+        const s = await apiGet(yol, baslik, 30_000);
+        if (s.tur !== "VERI") {
+          hatalar.push(`vade ${gunStr(bas)}→${gunStr(son)} offset=${offset}: ${JSON.stringify(s).slice(0, 150)}`);
+          break;
+        }
+        const g = s.govde as { count: number; items: HbFinansKaydi[] };
+        tumKayitlar.push(...g.items);
+        vadeKaydi += g.items.length;
+        offset += g.items.length;
+        if (g.items.length === 0 || offset >= g.count) break;
+        await new Promise((r) => setTimeout(r, 150));
+      }
+    }
+    console.log(
+      `①b vadesi geçmiş ödenmemiş ${vadesiGecmis._count._all} satır → vade penceresi ${gunStr(vBas)}→${gunStr(vSon)} soruldu, ${vadeKaydi} kayıt geldi`,
+    );
   }
 
   if (hatalar.length > 0) {
@@ -222,18 +288,19 @@ export async function hbHakedisCekimKos(ayar: {
   // ── ③ DB'DEKİ MEVCUT DURUMLA KARŞILAŞTIR ────────────────────────────────
   const anahtarlar = hepsi.map((h) => satirAnahtari(h.satir));
   const parcaBoyutu = 1000;
-  const mevcutlar: { rowKey: string; amount: unknown }[] = [];
+  const mevcutlar: { id: string; rowKey: string; paidAt: Date | null; amount: unknown }[] = [];
   for (let i = 0; i < anahtarlar.length; i += parcaBoyutu) {
     mevcutlar.push(
       ...(await prisma.settlementItem.findMany({
         where: { channelAccountId: hesapId, rowKey: { in: anahtarlar.slice(i, i + parcaBoyutu) } },
-        select: { rowKey: true, amount: true },
+        select: { id: true, rowKey: true, paidAt: true, amount: true },
       })),
     );
   }
   const mevcutHarita = new Map(mevcutlar.map((m) => [m.rowKey, m]));
 
   const yeniler: typeof hepsi = [];
+  const tazelenecekler: { itemId: string; yeniPaidAt: Date; siparisNo: string | null; tutar: number }[] = [];
   const tutarsizlar: { rowKey: string; dbTutar: number; apiTutar: number; hamTip: string }[] = [];
 
   for (const h of hepsi) {
@@ -246,6 +313,22 @@ export async function hbHakedisCekimKos(ayar: {
     const dbTutar = Number(var_.amount!.toString());
     if (Math.abs(dbTutar - h.satir.tutar) > 0.01) {
       tutarsizlar.push({ rowKey: anahtar, dbTutar, apiTutar: h.satir.tutar, hamTip: h.satir.hamTip });
+      continue;
+    }
+    /**
+     * K232-② — ÖDENDİ GEÇİŞİ: `paidAt` YALNIZ BOŞSA dolar (K220-①'in HB
+     * karşılığı). Dolu bir `paidAt`in üstüne yazılmaz — "gerçekleşen değerin
+     * üzerine asla yazılmaz". `odemeTarihi` yalnız `status === "Paid"` iken
+     * dolu gelir (bkz. `hbApiSatiriniOku`), yani koşul kanalın kendi beyanı.
+     */
+    const paidAtDolduracak = var_.paidAt === null && h.satir.odemeTarihi !== null;
+    if (paidAtDolduracak) {
+      tazelenecekler.push({
+        itemId: var_.id,
+        yeniPaidAt: h.satir.odemeTarihi!,
+        siparisNo: h.satir.siparisNo,
+        tutar: h.satir.tutar,
+      });
     }
   }
 
@@ -253,7 +336,8 @@ export async function hbHakedisCekimKos(ayar: {
   const yeniToplam = yeniler.reduce((t, y) => t + y.satir.tutar, 0);
   console.log("\n" + "-".repeat(100));
   console.log(`YENİ satır (DB'de hiç yok)         : ${yeniler.length}`);
-  console.log(`ZATEN AYNI (dokunulmaz)            : ${hepsi.length - yeniler.length - tutarsizlar.length}`);
+  console.log(`TAZELENECEK (ödendi geçişi — paidAt boştan dolar) : ${tazelenecekler.length}`);
+  console.log(`ZATEN AYNI (dokunulmaz)            : ${hepsi.length - yeniler.length - tazelenecekler.length - tutarsizlar.length}`);
   console.log(`⚠ TUTARSIZ (dokunulmaz, raporlanır) : ${tutarsizlar.length}`);
   if (tutarsizlar.length > 0) {
     for (const t of tutarsizlar.slice(0, 10)) {
@@ -273,6 +357,7 @@ export async function hbHakedisCekimKos(ayar: {
     eslesmeyen: eslesme.eslesmeyenler.length,
     siparisDisi: eslesme.siparisDisi.length,
     yeni: yeniler.length,
+    tazelenen: tazelenecekler.length,
     tutarsiz: tutarsizlar.length,
     netToplam: yeniToplam,
     hataSayisi: hatalar.length,
@@ -327,6 +412,39 @@ export async function hbHakedisCekimKos(ayar: {
       return parti.id;
     });
     console.log(`✓ ${yeniler.length} yeni satır yazıldı (parti ${partiId}).`);
+  }
+
+  /**
+   * K232-② — ÖDENDİ GEÇİŞİ: satır satır, tekrar koşulabilir (ikinci koşumda
+   * `paidAt` dolu olduğu için satır kümeye hiç girmez). Her satır kendi
+   * izini taşır — toplu bir "N satır güncellendi" izi, altı ay sonra "bu
+   * satırın ödeme tarihi nereden geldi" sorusuna cevap veremezdi.
+   */
+  for (const t of tazelenecekler) {
+    await prisma.$transaction(async (tx) => {
+      await tx.settlementItem.update({
+        where: { id: t.itemId },
+        data: { paidAt: t.yeniPaidAt },
+      });
+      await izYaz(
+        {
+          action: "HB_HAKEDIS_ODENDI_TAZELE",
+          targetType: "SettlementItem",
+          targetId: t.itemId,
+          userId: null,
+          detail: JSON.stringify({
+            eskiPaidAt: null,
+            yeniPaidAt: t.yeniPaidAt,
+            siparisNo: t.siparisNo,
+            tutar: t.tutar,
+          }),
+        },
+        tx,
+      );
+    });
+  }
+  if (tazelenecekler.length > 0) {
+    console.log(`✓ ${tazelenecekler.length} satır ödendi olarak işaretlendi (paidAt boştan doldu).`);
   }
 
   /** ⭐ KALP ATIŞI — DEĞİŞİKLİK OLMASA BİLE YAZILIR (K220'deki AYNI ders). */

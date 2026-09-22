@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K232 — HAKEDİŞ "DETAY" PAZARYERİ PANELİ DÜZENİNE ÇEVRİLDİ · 22.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+## 🔴 K232 — HAKEDİŞ "DETAY" PAZARYERİ PANELİ DÜZENİNE ÇEVRİLDİ · 22.09.2026 · [① CANLIDA e5b59ab · ② KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI BİLDİRİMİ (Halil testi #13):** _"Çok karışık, anlamak mümkün
 değil. Müşteri alışık olduğu arayüzde hakedişlerini görsün. Toplam
@@ -101,10 +101,77 @@ basıyordu — doğru ama operasyoncunun aradığı şekil değil.
 10. **Telefon:** satıra dokununca açılır, ok döner; arama kutusundaki
     kamera simgesi çalışır. _(mobil doğrulama kullanıcıda)_
 
+─── **② HB ÖDENDİ GEÇİŞİ HİÇ YAZILMIYORDU · 22.09.2026 · [KOD KOŞTU — ilk gerçek geçiş gece çekiminde]**
+
+**BULGU (HB panel ekranı ile karşılaştırınca):** HB "Ekstreler" **22 Eylül
+2026 · ₺84.680,85 · Ödendi** diyor; bizde aynı rakam hâlâ **"Gelecek"te**.
+Sebep bir gecikme değil, **mekanizma yokluğu**: `canli-hb-hakedis-cekim.ts`
+yalnız YENİ satır yazıyordu; `WillBePaid` görülüp yazılmış bir satır sonradan
+`Paid` olunca `paidAt` **hiçbir zaman** dolmuyordu. Eldeki geçmiş ödemeler
+doğruydu çünkü 19.09'daki ilk taramada **zaten Paid** görülmüşlerdi — hata
+ilk günlerde görünemezdi; bugünden sonra hiçbir HB ödemesi "Geçmiş"e
+geçmeyecekti. _(Anayasa: "yokluk iddiası da iddiadır" — başlıktaki "yalnız
+yeni satır yeter" gerekçesi silinmedi, altına düzeltmesi yazıldı.)_
+
+**ÖLÇÜM (API, 22.09 13:10 İstanbul):** 22.09 vadeli 104+2 satır API'de
+**hâlâ `WillBePaid`** — panel "Ödendi" derken uç henüz dönmemiş. Yani geçiş
+bugün yazılamadı; kod hazır, gece çekimi (04:35/04:45 UTC) uç döndüğünde
+yazar. Kuru koşum: `YENİ 4 · TAZELENECEK 0 · ZATEN AYNI 799 · TUTARSIZ 1`.
+
+⚠ **İKİNCİ BULGU — PENCERE GEÇİŞİ GÖREMEZDİ:** çekim kayıt tarihine göre 45
+gün geriye bakıyor; HB siparişten ~35-40 gün sonra ödüyor → satır Paid'e
+döndüğünde pencerenin **kıyısında** (ölçüldü: 22.09 vadeli 104 satırın kayıt
+yaşı 29-45 gün). Uç bir hafta geç işaretlese ya da cron bir gün kaçırsa satır
+pencereden çıkar, geçiş bir daha görülmezdi. Uç `dueDateStart/End` süzgecini
+destekliyor (`UCLAR.hakedis`, ölçüldü) → **①b:** defterde `paidAt` boş ∧
+vade ≤ bugün olan satırların vade aralığı ayrıca sorulur (yeniden
+hesaplanabilir ölçüt, saklanan liste değil). Kuru koşum: _"138 satır → vade
+penceresi 15.09→21.09 soruldu, 132 kayıt geldi"_.
+
+**YAPILAN:** K220-①'in HB karşılığı — `paidAt` **yalnız boşsa** dolar, doluya
+dokunulmaz, tutarı farklı satır tazelenmez; satır başına iz
+`HB_HAKEDIS_ODENDI_TAZELE`; özet alanı `tazelenen`. **Bekçi:**
+`hakedis-yazici:dogrula` ③b (koşul+küme+update+iz, kullanıma bağlı) + ①b;
+bellek-içi mutasyonlar: koşul öldür · "boşsa" kapısını kaldır · iz sil ·
+vade sorgusunu ödenmişe daralt · uca vade süzgeci gönderme — **beşi de
+kırmızı yandı.**
+
+**HB PANELİ ↔ DEFTER (ödenmiş 4 ekstre + bugünkü):**
+
+    25.08.2026   panel 80.473,32   defter 80.473,32   ✓
+    01.09.2026   panel 37.346,29   defter 37.346,29   ✓
+    08.09.2026   panel 39.868,20   defter 39.868,19   −1 kuruş
+    15.09.2026   panel 88.867,93   defter 88.867,94   +1 kuruş
+    22.09.2026   panel 84.680,85   defter 84.680,85   ✓ (henüz "Gelecek"te)
+
+1 kuruş: bütün kalemler 2 basamaklı (ölçüldü, 4 basamaklı kalem 0); HB'nin
+ekstre toplamı yuvarlanmamış bileşenlerden geliyor olabilir — **AÇIK**,
+kapatma yolu HB "Dışa Aktar" ekstre dosyasını satır satır karşılaştırmak.
+Ayrı not: `TUTARSIZ 1` = Kargo Bedeli DB −325,19 ↔ API −423,58 (dokunulmaz,
+raporlanır — tutar değişikliği ayrı karar).
+
+**N11 (kullanıcı panel ekranı geldi):** düzen aynı mantık — _Transfer
+Tarihi · Ödeme Türü · Transfer Durumu · Transfer Tutarı · Banka_, her
+**Perşembe** (27.08 ₺5.056,56 · 10.09 ₺2.840,42 · 17.09 ₺1.424,58). Ama N11
+hakediş verisi sistemde **HİÇ YOK**: `SettlementItem`da N11 satırı 0, API'de
+hakediş ucu **bulunamadı** (`docs/a3-hb-n11-api-kesif.md`). Yol: panelin
+**"Excel'e Aktar"** dosyası için okuyucu (`HakedisOkumasi.kanal`e N11) —
+**YENİ KALEM, açılış şartı dosya.** Kullanıcıdan istenen: N11 → Arama Sonuç
+Listesi → "Excel'e Aktar" dosyası + bir transferin üstüne tıklayınca açılan
+detay (varsa onun da dışa aktarımı). `Ertelenen Tutar` ve `Kargo Hizmet
+Bedeli` kesintileri panelde açıklanıyor; okuyucu yazılırken kalem kodlarına
+eşlenecek.
+
+**Halil test listesine ek (HB):** Kanal: Hepsiburada → Detay → Gelecek
+ödemeler: ilk satır **22.09.2026 · ₺84.680,85 · Tahmini hesaplanmıştır**
+(panelde "Ödendi" — uç dönünce Geçmiş'e geçer; **23.09 sabahı** yeniden
+bakın: Geçmiş'te ilk satır 22.09 ₺84.680,85 "Ödeme yapıldı" olmalı, Gelecek'in
+ilk satırı 29.09 ₺38.490,82).
+
 ### AÇIK
 
-- **HB ve N11 panel ekranları bekleniyor** — kullanıcı gönderecek; satır
-  düzeni o kanallara göre ayrıca ayarlanacak (`[BEKLİYOR]`).
+- ~~HB ve N11 panel ekranları bekleniyor~~ → **ikisi de geldi (22.09)**; HB ölçüldü
+  ve ②'de, N11 için veri yolu yok → yeni kalem (Excel'e Aktar dosyası bekleniyor).
 - N11 için otomatik hakediş çekimi yok; Detay'da N11 seçilince ekran
   bunu **yazar** ("gruplanamıyor, dosyalar elle yükleniyor").
 - Özet sekmesi kullanıcı kararıyla dokunulmadı; "gerekirse ora ile de

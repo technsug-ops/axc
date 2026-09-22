@@ -66,6 +66,35 @@ function cargoBosGuvenceliMi(metin: string): boolean {
 }
 
 const TY_KARGO = "scripts/canli-ty-kargo-gercek-olcum.ts";
+const HB_CEKIM = "scripts/canli-hb-hakedis-cekim.ts";
+
+/**
+ * HB'ye özel (K232-②, 22.09.2026): `WillBePaid` görülüp yazılan satır sonra
+ * `Paid` olunca `paidAt` BOŞTAN dolmalı — eski hâl bunu hiç yazmıyordu ve HB
+ * paneli "22 Eylül · Ödendi" derken 138 satır "Gelecek"te kalıyordu.
+ * ÜÇ HALKA BİRDEN, KULLANIMA BAĞLI: koşul (yalnız boşsa) + kümeye alma +
+ * update + iz. Biri kopuksa kırmızı.
+ */
+const HB_DOLDURMA_KOSULU = "var_.paidAt === null && h.satir.odemeTarihi !== null";
+/**
+ * ①b (K232-②): kayıt-tarihi penceresi geçişi kaçırabilir; vadesi geçmiş
+ * ödenmemiş satırlar VADE penceresiyle yeniden sorulmalı. Ölçüt kullanıma
+ * bağlı: defter sorgusu (paidAt boş ∧ vade ≤ bugün) VE uca vade süzgeci.
+ */
+const HB_VADE_SORGUSU = "paidAt: null, dueDate: { lte: new Date(simdi) }";
+function hbVadePenceresiSoruyorMu(metin: string): boolean {
+  return metin.includes(HB_VADE_SORGUSU) && /dueDateStart: gunStr\(bas\),\s*dueDateEnd: gunStr\(son\),/.test(metin);
+}
+function hbOdendiGecisiGuvenceliMi(metin: string): boolean {
+  const kosul =
+    /const paidAtDolduracak = var_\.paidAt === null && h\.satir\.odemeTarihi !== null;\s*if \(paidAtDolduracak\) \{\s*tazelenecekler\.push\(/.test(
+      metin,
+    );
+  const yazim =
+    /settlementItem\.update\(\{\s*where: \{ id: t\.itemId \},\s*data: \{ paidAt: t\.yeniPaidAt \}/.test(metin);
+  const iz = /action: "HB_HAKEDIS_ODENDI_TAZELE"/.test(metin);
+  return kosul && yazim && iz;
+}
 
 /**
  * ⛔ KÜME BEYANDAN TÜRETİLİR — ELLE TUTULMAZ (K223-③, 21.09.2026).
@@ -109,6 +138,10 @@ for (const d of DOSYALAR) kontrol(`  ${d}`, izYazVarMi(metinler.get(d)!));
 console.log("\n③ KARGO — cargoAmount BOŞ DENETİMİ, YAZIMDAN ÖNCE GELİYOR MU");
 kontrol(`  ${TY_KARGO}`, cargoBosGuvenceliMi(metinler.get(TY_KARGO)!));
 
+console.log("\n③b HB — WillBePaid→Paid GEÇİŞİ YAZILIYOR MU (paidAt yalnız BOŞSA dolar)");
+kontrol(`  ${HB_CEKIM}`, hbOdendiGecisiGuvenceliMi(metinler.get(HB_CEKIM)!));
+kontrol(`  ${HB_CEKIM} — vadesi geçmiş ödenmemişler VADE penceresiyle yeniden soruluyor (①b)`, hbVadePenceresiSoruyorMu(metinler.get(HB_CEKIM)!));
+
 console.log("\n④ MUTASYON — KENDİ KÖRLÜĞÜNÜ SINAR (yalnız bellekte, dosyaya dokunmaz)");
 
 // (a) --yaz kapısını SİL → ① kırmızı yanmalı.
@@ -134,6 +167,35 @@ for (const d of DOSYALAR) {
     "cargoAmountSAHTE === null",
   );
   kontrol("  ③ denetim adı değişince KIRMIZI yanıyor (kargo)", !cargoBosGuvenceliMi(mutasyonlu));
+}
+
+// (d) HB ödendi geçişi — İKİ YÖN: koşulu öldür (yanlış susma) · "boşsa"
+//     kapısını kaldır (yanlış yanma: dolu paidAt'in üstüne yazar) · izi sil.
+{
+  const asil = metinler.get(HB_CEKIM)!;
+  /** Çapa dosyada VAR mı — bulunamayan çapa "yeşil" değil "ölçülemedi"dir. */
+  kontrol("  ③b mutasyon çapası dosyada VAR", asil.includes(HB_DOLDURMA_KOSULU));
+  kontrol(
+    "  ③b koşul öldürülünce KIRMIZI (ödendi geçişi hiç yazılmaz)",
+    !hbOdendiGecisiGuvenceliMi(asil.replace(HB_DOLDURMA_KOSULU, "false")),
+  );
+  kontrol(
+    "  ③b 'boşsa' kapısı kaldırılınca KIRMIZI (dolu paidAt'in üstüne yazar)",
+    !hbOdendiGecisiGuvenceliMi(asil.replace(HB_DOLDURMA_KOSULU, "h.satir.odemeTarihi !== null")),
+  );
+  kontrol(
+    "  ③b iz kaldırılınca KIRMIZI",
+    !hbOdendiGecisiGuvenceliMi(asil.replace('action: "HB_HAKEDIS_ODENDI_TAZELE"', 'action: "HB_SESSIZ"')),
+  );
+  kontrol("  ①b mutasyon çapası dosyada VAR", asil.includes(HB_VADE_SORGUSU));
+  kontrol(
+    "  ①b vade sorgusu yalnız ödenmişlere daraltılınca KIRMIZI (ödenmemişler bir daha sorulmaz)",
+    !hbVadePenceresiSoruyorMu(asil.replace(HB_VADE_SORGUSU, "paidAt: { not: null }, dueDate: { lte: new Date(simdi) }")),
+  );
+  kontrol(
+    "  ①b uca vade süzgeci gönderilmeyince KIRMIZI (pencere kayıt tarihine düşer)",
+    !hbVadePenceresiSoruyorMu(asil.replace("dueDateStart: gunStr(bas),", "recordDateStart: gunStr(bas),")),
+  );
 }
 
 console.log(`\n${gecen} geçti · ${hata} kaldı\n`);
