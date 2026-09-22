@@ -1,9 +1,10 @@
 import { getTranslations } from "next-intl/server";
-import { ChevronDown, CircleCheck } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { Badge } from "@/components/ui/badge";
@@ -42,8 +43,11 @@ import { suzgecAdresi } from "@/lib/suzgec";
  *  satış bazlı karşılaştırma ve kalem dökümü olarak basıyordu — doğru ama
  *  operasyoncunun aradığı şekil değil. O görünüm "Kontrol" sekmesine taşındı.
  *
- *  ⚠ AÇILIR KUTU `<details>` — tarayıcının kendi öğesi (bkz. `KatlanirBolum`):
- *  JavaScript yok, klavyeyle çalışır, telefonda dokunma hedefi 56 px.
+ *  ⚠ ANATOMİ ARTIK ORTAK GÖVDEDE (K235, 22.09.2026): `SatirKarti`. Kullanıcı
+ *  bu satırı "çok daha okunaklı" bulup bütün listelere istedi; desen üç
+ *  ekrana kopyalanmasın diye bileşene çıkarıldı ve BU ekran da oradan
+ *  besleniyor — kaynağın kendisi ikinci bir kopya olarak kalamaz (İlke #10).
+ *  Açılır kutu yine `<details>`: JavaScript yok, klavyeyle çalışır, 56 px.
  *
  *  ⚠ ARAMA KUTUSU ORTAK BİLEŞEN (İlke #7): sipariş no bir KOD alanıdır,
  *  kargo etiketindeki barkod kamerayla okunup aranabilir.
@@ -130,45 +134,13 @@ export async function OdemeOzeti({
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <SatirListesi>
           {sayfadakiler.map((o) => {
             const turler = kalemTuruDokumu(o.kalemler);
             const siparisler = siparisDokumu(o.kalemler);
-            return (
-              <details key={o.anahtar} className="group rounded-lg border">
-                <summary className="flex min-h-14 cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-lg leading-tight font-semibold tabular-nums">
-                      {bicim.para(o.toplam, o.paraBirimi)}
-                    </div>
-                    <div className="text-muted-foreground text-xs">
-                      {kip === "gecmis" ? t("odemeGunu") : t("tahminiOdemeGunu")}:{" "}
-                      {bicim.tarih(o.tarih)}
-                      {" · "}
-                      {t("kalemSayisi", { sayi: o.sayi })}
-                      {/* Yalnız GERÇEK bir emir numarası varsa (TY). HB'de yok. */}
-                      {o.odemeEmriNo ? (
-                        <>
-                          {" · "}
-                          {t("odemeEmriNo")} {o.odemeEmriNo}
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
-                  <Badge variant="outline">{o.kanalAdi}</Badge>
-                  {kip === "gecmis" ? (
-                    <Badge className={DURUM_KUTUSU.olumlu}>
-                      <CircleCheck className="size-3.5" />
-                      {t("odemeYapildi")}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">{t("tahminiHesaplanmistir")}</Badge>
-                  )}
-                  {/* Ok yönü açık/kapalı durumu SÖYLER (İlke #2). */}
-                  <ChevronDown className="size-5 shrink-0 transition-transform group-open:rotate-180" />
-                </summary>
-
-                <div className="space-y-4 border-t p-3">
+            /** Açılınca görünen döküm — satırın kendisi `SatirKarti`. */
+            const dokum = (
+                <div className="space-y-4">
                   {/* RAKAMIN TABANI: gelecek TY ödemesinde brüt − tahmini kesinti. */}
                   {o.kesinti > 0 ? (
                     <p className="text-muted-foreground text-xs">
@@ -256,10 +228,36 @@ export async function OdemeOzeti({
                     </div>
                   ) : null}
                 </div>
-              </details>
+            );
+            return (
+              <SatirKarti
+                key={o.anahtar}
+                vurgulu
+                baslik={bicim.para(o.toplam, o.paraBirimi)}
+                baglam={[
+                  `${kip === "gecmis" ? t("odemeGunu") : t("tahminiOdemeGunu")}: ${bicim.tarih(o.tarih)}`,
+                  t("kalemSayisi", { sayi: o.sayi }),
+                  /* Yalnız GERÇEK bir emir numarası varsa (TY). HB'de yok. */
+                  o.odemeEmriNo ? `${t("odemeEmriNo")} ${o.odemeEmriNo}` : null,
+                ]}
+                sag={
+                  <>
+                    <Badge variant="outline">{o.kanalAdi}</Badge>
+                    {kip === "gecmis" ? (
+                      <Badge className={DURUM_KUTUSU.olumlu}>
+                        <CircleCheck className="size-3.5" />
+                        {t("odemeYapildi")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">{t("tahminiHesaplanmistir")}</Badge>
+                    )}
+                  </>
+                }
+                acilir={dokum}
+              />
             );
           })}
-        </div>
+        </SatirListesi>
       )}
 
       <SayfalamaCubugu sayfalama={sayfalama} yol="/hakedis" parametreler={sp} />

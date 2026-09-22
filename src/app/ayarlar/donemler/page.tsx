@@ -4,14 +4,7 @@ import { Lock, LockOpen } from "lucide-react";
 
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { DurumRozeti } from "@/components/durum-rozeti";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { bicimlendirici } from "@/lib/bicim";
 import { donemListesi } from "@/lib/muhasebe-donemi";
 import { sayfaIzni } from "@/lib/yetki";
@@ -45,7 +38,6 @@ export default async function DonemlerSayfasi() {
   await sayfaIzni("ayar.yaz");
 
   const t = await getTranslations("Donem");
-  const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
   const donemler = await donemListesi(new Date());
@@ -67,85 +59,65 @@ export default async function DonemlerSayfasi() {
         {t("kapatmaUyarisi")}
       </p>
 
-      <div className="overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("sutunDonem")}</TableHead>
-              <TableHead>{ortak("durum")}</TableHead>
-              <TableHead>{t("sutunKapatan")}</TableHead>
-              <TableHead>{t("sutunIslem")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {donemler.map((d) => (
-              <TableRow key={`${d.yil}-${d.ay}`}>
-                <TableCell className="font-medium">
-                  {bicim.ayYil(new Date(Date.UTC(d.yil, d.ay - 1, 1)))}
-                </TableCell>
-                <TableCell>
-                  {/*
-                    ⚠ RENK TEK BAŞINA KONUŞMAZ: rozetin içinde metin de var.
-                    Renk körü bir kullanıcı için "kapalı" yalnız kırmızıysa
-                    hiçbir şey söylemez.
-                  */}
-                  <DurumRozeti
-                    durum={d.durum === "KAPALI" ? "olumsuz" : "olumlu"}
-                    isaretsiz
-                  >
-                    {d.durum === "KAPALI" ? (
-                      <Lock className="size-3.5" aria-hidden />
-                    ) : (
-                      <LockOpen className="size-3.5" aria-hidden />
-                    )}
-                    {t(`durum${d.durum}`)}
-                  </DurumRozeti>
-                </TableCell>
-                <TableCell className="text-sm">
-                  {/*
-                    ⚠ KAPATAN KİM VE NE ZAMAN — kapanış bir KARARDIR, sahibi
-                    olmalı. "Kapalı" yazıp kimin kapattığını söylememek, üç ay
-                    sonra "bunu kim yaptı" sorusunu cevapsız bırakırdı.
-                  */}
-                  {d.durum === "KAPALI" && d.kapatildiAt ? (
-                    <>
-                      <div>{d.kapatanAdi ?? t("kapatanBilinmiyor")}</div>
-                      <div className="text-muted-foreground text-xs">
-                        {bicim.tarih(d.kapatildiAt)}
-                      </div>
-                      {d.not ? (
-                        <div className="text-muted-foreground text-xs">
-                          {d.not}
-                        </div>
-                      ) : null}
-                    </>
+      {/*
+        ⚠ SATIR KARTI (K235, 22.09.2026): 4 sütunluk tablo yerine ortak satır
+        anatomisi — dönem adı manşet, kapatan/tarih/not bağlam, durum ve
+        işlemler sağda. Kullanıcı hakediş satırını "çok daha okunaklı"
+        bulup bütün listelere istedi; aynı bileşen, aynı görünüm (İlke #10).
+      */}
+      <SatirListesi>
+        {donemler.map((d) => (
+          <SatirKarti
+            key={`${d.yil}-${d.ay}`}
+            baslik={bicim.ayYil(new Date(Date.UTC(d.yil, d.ay - 1, 1)))}
+            baglam={[
+              /*
+                ⚠ KAPATAN KİM VE NE ZAMAN — kapanış bir KARARDIR, sahibi
+                olmalı. "Kapalı" yazıp kimin kapattığını söylememek, üç ay
+                sonra "bunu kim yaptı" sorusunu cevapsız bırakırdı.
+              */
+              d.durum === "KAPALI" && d.kapatildiAt
+                ? `${d.kapatanAdi ?? t("kapatanBilinmiyor")} · ${bicim.tarih(d.kapatildiAt)}`
+                : null,
+              d.durum === "KAPALI" && d.not ? d.not : null,
+            ]}
+            sag={
+              <>
+                {/*
+                  ⚠ RENK TEK BAŞINA KONUŞMAZ: rozetin içinde metin de var.
+                  Renk körü bir kullanıcı için "kapalı" yalnız kırmızıysa
+                  hiçbir şey söylemez.
+                */}
+                <DurumRozeti
+                  durum={d.durum === "KAPALI" ? "olumsuz" : "olumlu"}
+                  isaretsiz
+                >
+                  {d.durum === "KAPALI" ? (
+                    <Lock className="size-3.5" aria-hidden />
                   ) : (
-                    <span className="text-muted-foreground">—</span>
+                    <LockOpen className="size-3.5" aria-hidden />
                   )}
-                </TableCell>
-                <TableCell className="space-y-1">
-                  {/*
-                    ⚠ RAPOR BAĞLANTISI HER SATIRDA — açık dönemin de raporu
-                    okunabilir (şerhiyle). Yalnız kapalılara koysaydık
-                    kullanıcı kapatmadan önce ne kapattığını göremezdi.
-                  */}
-                  <div>
-                    <Baglanti href={`/ayarlar/donemler/${d.yil}-${String(d.ay).padStart(2, "0")}`}>
-                      {t("raporuAc")}
-                    </Baglanti>
-                  </div>
-                  <DonemSatiriEylemi
-                    yil={d.yil}
-                    ay={d.ay}
-                    durum={d.durum}
-                    etiket={bicim.ayYil(new Date(Date.UTC(d.yil, d.ay - 1, 1)))}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                  {t(`durum${d.durum}`)}
+                </DurumRozeti>
+                {/*
+                  ⚠ RAPOR BAĞLANTISI HER SATIRDA — açık dönemin de raporu
+                  okunabilir (şerhiyle). Yalnız kapalılara koysaydık kullanıcı
+                  kapatmadan önce ne kapattığını göremezdi.
+                */}
+                <Baglanti href={`/ayarlar/donemler/${d.yil}-${String(d.ay).padStart(2, "0")}`}>
+                  {t("raporuAc")}
+                </Baglanti>
+                <DonemSatiriEylemi
+                  yil={d.yil}
+                  ay={d.ay}
+                  durum={d.durum}
+                  etiket={bicim.ayYil(new Date(Date.UTC(d.yil, d.ay - 1, 1)))}
+                />
+              </>
+            }
+          />
+        ))}
+      </SatirListesi>
     </div>
   );
 }

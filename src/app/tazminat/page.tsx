@@ -3,18 +3,9 @@ import { sayfaIzni } from "@/lib/yetki";
 import { PackageX, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
-import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
-import { ListeKarti } from "@/components/liste-karti";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { bicimlendirici, tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import {
@@ -40,7 +31,6 @@ export default async function TazminatSayfasi() {
   await sayfaIzni("tazminat.yaz");
 
   const t = await getTranslations("Tazminat");
-  const tDurum = await getTranslations("TazminatDurumu");
   const ortak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
 
@@ -254,30 +244,28 @@ export default async function TazminatSayfasi() {
               </p>
             </div>
           ) : (
-            <div className="divide-y rounded-lg border">
+            <SatirListesi>
               {tumBekleyenler.map((h) => (
-                <div
+                <SatirKarti
                   key={`${h.kaynak}-${h.kalemId}`}
-                  className="flex flex-wrap items-center justify-between gap-3 p-3"
-                >
-                  <div className="min-w-0">
-                    <div className="font-medium">{h.urun}</div>
-                    <div className="text-muted-foreground text-xs">
-                      {h.tedarikci} · {h.baglam} ·{" "}
-                      {h.kaynak === "iade" ? (
-                        <Badge variant="outline" className="mr-1">
-                          {t("kaynakIade")}
-                        </Badge>
-                      ) : null}
-                      {t("hasarliAdet")}:{" "}
-                      <strong>{h.hasarliAdet}</strong> · {t("kalanAdet")}:{" "}
-                      <strong>{h.kalanAdet}</strong>
-                    </div>
-                  </div>
-                  <TalepFormu hasar={h} bugun={bugun} />
-                </div>
+                  baslik={h.urun}
+                  baglam={[
+                    h.tedarikci,
+                    h.baglam,
+                    h.kaynak === "iade" ? (
+                      <Badge variant="outline">{t("kaynakIade")}</Badge>
+                    ) : null,
+                    <>
+                      {t("hasarliAdet")}: <strong>{h.hasarliAdet}</strong>
+                    </>,
+                    <>
+                      {t("kalanAdet")}: <strong>{h.kalanAdet}</strong>
+                    </>,
+                  ]}
+                  sag={<TalepFormu hasar={h} bugun={bugun} />}
+                />
               ))}
-            </div>
+            </SatirListesi>
           )}
           <p className="text-muted-foreground text-xs">
             {t("talepEdilebilirNotu")}
@@ -299,133 +287,56 @@ export default async function TazminatSayfasi() {
               </p>
             </div>
           ) : (
-            <>
-              {/* -------------------- MASAÜSTÜ: TABLO -------------------- */}
-              <div className="hidden overflow-x-auto rounded-lg border md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("sutunTarih")}</TableHead>
-                      <TableHead>{t("sutunTedarikci")}</TableHead>
-                      <TableHead>{t("sutunUrun")}</TableHead>
-                      <TableHead>{t("sutunAlim")}</TableHead>
-                      <TableHead className="text-right">
-                        {t("sutunAdet")}
-                      </TableHead>
-                      <TableHead className="text-right">
-                        {t("sutunTutar")}
-                      </TableHead>
-                      <TableHead>{t("sutunDurum")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {talepler.map((k) => (
-                      <TableRow key={k.id}>
-                        <TableCell className="whitespace-nowrap">
-                          {bicim.tarih(k.occurredAt)}
-                        </TableCell>
-                        <TableCell>{karsiTarafAdi(k) ?? t("karsiTarafYok")}</TableCell>
-                        <TableCell className="max-w-[18rem]">
-                          <span className="block truncate">
-                            {talepUrunu(k)}
-                          </span>
-                        </TableCell>
-                        {/* Kaynak neyse oraya götürür: alım kaydına ya da
-                            hasarın döndüğü satışa. */}
-                        <TableCell className="whitespace-nowrap">
-                          {k.purchaseItem ? (
-                            <Baglanti
-                              href={`/alimlar/${k.purchaseItem.purchase.id}`}
-                            >
-                              {k.purchaseItem.purchase.code}
-                            </Baglanti>
-                          ) : k.returnItem ? (
-                            <span className="flex items-center gap-2">
-                              <Badge variant="outline">
-                                {t("kaynakIade")}
-                              </Badge>
-                              <Baglanti
-                                href={`/satislar/${k.returnItem.return.saleId}`}
-                              >
-                                {k.returnItem.return.sale.code ?? "—"}
-                              </Baglanti>
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {k.quantity}
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <span
-                            className={acikMi(k.status) ? "font-medium" : ""}
-                          >
-                            {bicim.para(k.amount, k.currency)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-2">
-                            <DurumSecici kayitId={k.id} mevcut={k.status} />
-                            <NotAlani kayitId={k.id} not={k.note} />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* ---------------------- TELEFON: KART -------------------- */}
-              <div className="space-y-3 md:hidden">
-                {talepler.map((k) => (
-                  <ListeKarti
-                    key={k.id}
-                    baslik={talepUrunu(k)}
-                    altBaslik={`${karsiTarafAdi(k) ?? t("karsiTarafYok")} · ${bicim.tarih(k.occurredAt)}`}
-                    alanlar={[
-                      {
-                        etiket: t("sutunAlim"),
-                        deger: k.purchaseItem ? (
-                          <KopyalanabilirKod
-                            deger={k.purchaseItem.purchase.code}
-                            etiket={t("sutunAlim")}
-                          />
-                        ) : k.returnItem ? (
-                          <KopyalanabilirKod
-                            deger={k.returnItem.return.sale.code}
-                            etiket={t("kaynakIade")}
-                          />
-                        ) : (
-                          "—"
-                        ),
-                      },
-                      { etiket: ortak("adet"), deger: k.quantity },
-                      {
-                        etiket: t("sutunTutar"),
-                        deger: bicim.para(k.amount, k.currency),
-                      },
-                      {
-                        etiket: t("sutunDurum"),
-                        deger: (
-                          <Badge
-                            variant={acikMi(k.status) ? "secondary" : "outline"}
-                          >
-                            {tDurum(k.status)}
-                          </Badge>
-                        ),
-                      },
-                    ]}
-                    eylemler={
-                      <div className="flex flex-col gap-2">
-                        <DurumSecici kayitId={k.id} mevcut={k.status} />
-                        <NotAlani kayitId={k.id} not={k.note} />
-                      </div>
-                    }
-                  />
-                ))}
-              </div>
-            </>
+            /*
+             * ⚠ TEK RENDER (K235, 22.09.2026): burada aynı liste İKİ KEZ
+             * çiziliyordu — masaüstü `<Table>` (7 sütun) ve telefon
+             * `ListeKarti`. Satır kartı ikisinin yerine geçer: `flex-wrap`
+             * ile telefonda da okunur ve "birini düzeltip ötekini unutma"
+             * riski ortadan kalkar (İlke #10).
+             * ⚠ DURUM KAYBOLMADI: rozet yerine DurumSecici zaten durumu
+             * YAZIYOR ve değiştirilebilir kılıyor — iki yerde iki gösterim
+             * olmasın.
+             */
+            <SatirListesi>
+              {talepler.map((k) => (
+                <SatirKarti
+                  key={k.id}
+                  baslik={talepUrunu(k)}
+                  baglam={[
+                    bicim.tarih(k.occurredAt),
+                    karsiTarafAdi(k) ?? t("karsiTarafYok"),
+                    /* Kaynak neyse oraya götürür: alım kaydına ya da hasarın
+                       döndüğü satışa (İlke #16). */
+                    k.purchaseItem ? (
+                      <Baglanti href={`/alimlar/${k.purchaseItem.purchase.id}`}>
+                        {k.purchaseItem.purchase.code}
+                      </Baglanti>
+                    ) : k.returnItem ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Badge variant="outline">{t("kaynakIade")}</Badge>
+                        <Baglanti href={`/satislar/${k.returnItem.return.saleId}`}>
+                          {k.returnItem.return.sale.code ?? "—"}
+                        </Baglanti>
+                      </span>
+                    ) : null,
+                    `${ortak("adet")}: ${k.quantity}`,
+                  ]}
+                  sag={
+                    <>
+                      <span
+                        className={`tabular-nums whitespace-nowrap ${
+                          acikMi(k.status) ? "font-semibold" : ""
+                        }`}
+                      >
+                        {bicim.para(k.amount, k.currency)}
+                      </span>
+                      <DurumSecici kayitId={k.id} mevcut={k.status} />
+                      <NotAlani kayitId={k.id} not={k.note} />
+                    </>
+                  }
+                />
+              ))}
+            </SatirListesi>
           )}
 
           <p className="text-muted-foreground flex items-start gap-2 text-xs">

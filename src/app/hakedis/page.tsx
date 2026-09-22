@@ -7,6 +7,7 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
 import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { Badge } from "@/components/ui/badge";
@@ -793,43 +794,35 @@ export default async function HakedisSayfasi({
                 {gelecekOdemeler.length > 0 ? (
                   <div className="space-y-2">
                     <p className="text-sm font-medium">{t("gelecekOdemeler")}</p>
-                    <div className="space-y-2">
+                    <SatirListesi>
                       {gelecekOdemeler.slice(0, ODEME_LISTE_SINIRI).map((g) => (
-                        <div
+                        <SatirKarti
                           key={g.anahtar}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
-                        >
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2 font-medium">
-                              {bicim.tarih(g.tarih)}
+                          baslik={bicim.tarih(g.tarih)}
+                          baglam={[
+                            t("kalemSayisi", { sayi: g.sayi }),
+                            /* ⚠ RAKAMIN TABANI YAZILI DURUR: kesinti düşülmüşse
+                               brütü ve kesintiyi de görsün — "bu sayı nereden
+                               çıktı" sorusu ekranda cevaplanır. */
+                            g.kesinti > 0
+                              ? t("kesintiSerhi", {
+                                  brut: bicim.para(g.brut, g.paraBirimi),
+                                  kesinti: bicim.para(g.kesinti, g.paraBirimi),
+                                })
+                              : null,
+                          ]}
+                          sag={
+                            <>
+                              <span className="font-semibold tabular-nums whitespace-nowrap">
+                                {bicim.para(g.toplam, g.paraBirimi)}
+                              </span>
                               <Badge variant="outline">{g.kanalAdi}</Badge>
-                            </div>
-                            <div className="text-muted-foreground text-xs">
-                              {t("kalemSayisi", { sayi: g.sayi })}
-                              {/* ⚠ RAKAMIN TABANI YAZILI DURUR: kesinti
-                                  düşülmüşse brütü ve kesintiyi de görsün —
-                                  "bu sayı nereden çıktı" sorusu ekranda
-                                  cevaplanır (para rakamı tabanıyla taşınır). */}
-                              {g.kesinti > 0 ? (
-                                <>
-                                  {" · "}
-                                  {t("kesintiSerhi", {
-                                    brut: bicim.para(g.brut, g.paraBirimi),
-                                    kesinti: bicim.para(g.kesinti, g.paraBirimi),
-                                  })}
-                                </>
-                              ) : null}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="whitespace-nowrap">
-                              {bicim.para(g.toplam, g.paraBirimi)}
-                            </span>
-                            <Badge variant="outline">{t("tahminiHesaplanmistir")}</Badge>
-                          </div>
-                        </div>
+                              <Badge variant="outline">{t("tahminiHesaplanmistir")}</Badge>
+                            </>
+                          }
+                        />
                       ))}
-                    </div>
+                    </SatirListesi>
                     {gelecekOdemeler.length > ODEME_LISTE_SINIRI ? (
                       <p className="text-sm font-medium">
                         {t("listeKesildi", {
@@ -844,42 +837,32 @@ export default async function HakedisSayfasi({
                 {gecmisOdemeler.length > 0 ? (
                   <div className="space-y-2">
                     <p className="text-sm font-medium">{t("gecmisOdemeler")}</p>
-                    <div className="space-y-2">
+                    <SatirListesi>
                       {gecmisOdemeler.slice(0, ODEME_LISTE_SINIRI).map((g) => (
-                        <div
+                        <SatirKarti
                           key={g.anahtar}
-                          className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3"
-                        >
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2 font-medium">
-                              {bicim.tarih(g.tarih)}
+                          baslik={bicim.tarih(g.tarih)}
+                          baglam={[
+                            t("kalemSayisi", { sayi: g.sayi }),
+                            /* ⚠ YALNIZ GERÇEK BİR EMİR NO'SU VARSA YAZILIR —
+                               HB'de bu alan yok, ödeme günü zaten tarihte. */
+                            g.odemeEmriNo ? `${t("odemeEmriNo")} ${g.odemeEmriNo}` : null,
+                          ]}
+                          sag={
+                            <>
+                              <span className="font-semibold tabular-nums whitespace-nowrap">
+                                {bicim.para(g.toplam, g.paraBirimi)}
+                              </span>
                               <Badge variant="outline">{g.kanalAdi}</Badge>
-                            </div>
-                            <div className="text-muted-foreground text-xs">
-                              {t("kalemSayisi", { sayi: g.sayi })}
-                              {/* ⚠ YALNIZ GERÇEK BİR EMİR NO'SU VARSA
-                                  YAZILIR — HB'de bu alan yok, ödeme günü
-                                  zaten tarihte görünüyor (bkz. yukarısı). */}
-                              {g.odemeEmriNo ? (
-                                <>
-                                  {" "}
-                                  · {t("odemeEmriNo")} {g.odemeEmriNo}
-                                </>
-                              ) : null}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="whitespace-nowrap">
-                              {bicim.para(g.toplam, g.paraBirimi)}
-                            </span>
-                            <Badge className={DURUM_KUTUSU.olumlu}>
-                              <CircleCheck className="size-3.5" />
-                              {t("odemeYapildi")}
-                            </Badge>
-                          </div>
-                        </div>
+                              <Badge className={DURUM_KUTUSU.olumlu}>
+                                <CircleCheck className="size-3.5" />
+                                {t("odemeYapildi")}
+                              </Badge>
+                            </>
+                          }
+                        />
                       ))}
-                    </div>
+                    </SatirListesi>
                     {gecmisOdemeler.length > ODEME_LISTE_SINIRI ? (
                       <p className="text-sm font-medium">
                         {t("listeKesildi", {

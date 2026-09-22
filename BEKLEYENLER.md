@@ -13,6 +13,115 @@
 
 ---
 
+## 🔴 K235 — SATIR KARTI: LİSTE ANATOMİSİ TEK GÖVDEYE ÇIKTI · 22.09.2026 · [① KOŞTU (4 ekran) — HALİL TESTİ BEKLİYOR · ② 19 EKRAN AÇIK]
+
+**KULLANICI KARARI:** _"Bu sayfalar ve diğer sayfalardaki kart yapısını yeni
+yaptığın hakedişler sayfasındaki kart yapısına göre tekrar tasarla. Tüm
+sistemdeki liste biçimlerini gözden geçir ve yeni hale uyarla, çünkü
+hakedişlerdeki kart yapısı çok daha okunaklı ve düzenli."_
+(Ekran görüntüleri: `/tazminat` · `/nakit-takvimi` · `/ayarlar/donemler` · `/hakedis`.)
+
+### ANATOMİ — `src/components/satir-karti.tsx`
+
+    ┌────────────────────────────────────────────────────────────┐
+    │ BAŞLIK (iri/koyu)            SAĞ BLOK (tutar · rozet · eylem) │
+    │ bağlam · bağlam · bağlam                            (⌄ açılır) │
+    └────────────────────────────────────────────────────────────┘
+
+`SatirKarti` + `SatirListesi`. Dört prop: `baslik` (+`vurgulu`) · `baglam[]`
+(null/false girdiler ELENİR — koşullu bağlam için dışarıda dizi kurulmasın) ·
+`sag` · `acilir` (+`acikMi`). Açılır satır `<details>`: JavaScript yok,
+klavyeyle çalışır. Dokunma hedefi 56 px (İlke #8).
+
+⛔ **KAYNAĞIN KENDİSİ DE ORTAK GÖVDEDEN BESLENİYOR:** `/hakedis` ödeme satırı
+(hem Özet hem Detay) artık `SatirKarti` çağırıyor. Anatomi orada bırakılıp
+bileşene KOPYALANSAYDI, "biri düzeltilir öteki unutulur" (İlke #10) — ve üç
+ay sonra hangisinin doğru olduğu sorulamazdı.
+
+⭐ **TEK RENDER — İKİNCİ KOPYA KALKTI.** Depoda yerleşik desen aynı listeyi
+İKİ KEZ çiziyordu: masaüstü `<Table>` + telefon `ListeKarti`. Satır kartı
+`flex-wrap` ile iki ekranda da çalışıyor; `/tazminat`ta 7 sütunluk tablo ve
+onun telefon kopyası TEK listeye indi.
+
+⚠ **TABLO YASAK DEĞİL — KAPSAM AYRIMI YAZILI.** Satır kartı, satırın BİR
+manşet değeri + bağlamı olduğu listeler içindir. Sütunları KARŞILAŞTIRMAK
+işin kendisiyse (stok · ürün analizi · rapor · envanter) tablo doğru
+araçtır; oraya kart uygulamak ekranı uzatır ve karşılaştırmayı zorlaştırır
+_(İlke #12: "ekranda boşluk bilgi taşımaz")_. Bu ayrım bileşenin başlığında
+duruyor — yarın "hepsini karta çevirelim" diyen okusun.
+
+### ÇEVRİLEN (4 ekran)
+
+| ekran | ne değişti |
+|---|---|
+| `/hakedis` Özet | "Kanal ödemeleri" gelecek/geçmiş satırları → `SatirKarti` |
+| `/hakedis` Detay | ödeme özeti satırları (açılır) → `SatirKarti` |
+| `/tazminat` | "Talep bekleyen hasar" satırları + "Talepler" **çift render → tek liste** |
+| `/ayarlar/donemler` | 4 sütunluk tablo → satır kartı (durum + rapor + kapat sağda) |
+| `/nakit-takvimi` | gün kartları → satır kartı, **açık başlayan** açılır döküm |
+
+### BEKÇİ
+
+`satir-karti:dogrula` (22 ölçüt) — **çoğu DEĞER testi**: gövde ÇAĞRILIP dönen
+React ağacı okunuyor (saf bileşen, kanca yok). Açılır/düz ayrımı · boş dize
+açılır içerik hâlâ açılır (`!acilir` yazılsaydı sessizce düz kutuya düşerdi) ·
+bağlam süzgeci · ayıraç yalnız araya · vurgulu/vurgusuz manşet · dokunma
+hedefi. İkinci bölüm **çift render envanteri**: sayı ekranda yazar ve
+çevrilmiş ekranın geri dönmediği ölçülür.
+`satir-karti-mutasyon:kontrol` **6/6** (zararsız yeşil · açılır ölçütü gevşet ·
+bağlam süzgecini kaldır · dokunma hedefini küçült · her manşeti irileştir ·
+çift render'ı geri getir).
+
+⚠ **BEKÇİ KENDİ KURALINI İLK KOŞUMDA YAKALADI:** tarama yorumları da
+sayıyordu; `/tazminat`a yazdığım _"masaüstü `<Table>` ve telefon
+`ListeKarti`"_ açıklaması, çevrilmiş ekranı "çift render" sanıp kırmızı
+yaktı. Yorumsuz metne bağlandı. _(Anayasa: "bir yasağı ANLATAN yorum, o
+yasağı ÇİĞNEMİŞ sayılmaz".)_
+
+⚠ **ÖLÇÜT TAŞINDI, GEVŞETİLMEDİ:** `hakedis:dogrula` ham `<details>` arıyordu;
+anatomi ortak gövdeye çıkınca o desen ekranda kalmadı. Ölçülen şey aynı
+kaldı (bir satır bir ödeme + açılabilir), çapa `SatirKarti`ye taşındı ve
+pencere ÖLÇÜLDÜ (973 → 1400). Aynısı `hakedis-ozeti-mutasyon` çapalarına da
+uygulandı; ikisi de silinmedi.
+
+### AÇIK — ② KALAN 19 EKRAN (çift render envanteri)
+
+    alimlar · alimlar/[id] · ayarlar/konumlar · envanter-degeri(+aralik) ·
+    giderler · hakedis(kontrol sekmesi) · iadeler · kanal-listeleme ·
+    kanal-sku · kartlar · rapor · rapor/urunler · satislar · satislar/[id] ·
+    stok · stok/[variantId] · urunler · urunler/[id]
+
+**Önerilen ayrım (kullanıcı onayı bekliyor):**
+· **KARTA ÇEVRİLECEK** — satırın bir manşet değeri var: `giderler` ·
+  `kartlar` · `iadeler` · `alimlar` · `kanal-sku` · `ayarlar/konumlar` ·
+  `kanal-listeleme` · `satislar/[id]` · `alimlar/[id]`
+· **TABLO KALACAK** — sütun karşılaştırması işin kendisi: `stok` ·
+  `urunler` · `rapor` · `rapor/urunler` · `envanter-degeri` · `satislar`
+  (8 sütun, 50 satır/sayfa)
+Kullanıcı bu ayrımı çevirebilir; envanter sayısı her koşumda ekranda.
+
+### HALİL TEST LİSTESİ
+
+1. `/tazminat` → "Talep bekleyen hasar (3)": her satır **ürün adı** manşet,
+   altında `Hepsi Burada · 11481463029 · [iadeden] · Hasarlı: 1 · Talep
+   edilebilir: 1`, sağda **+ Talep aç**. "Talepler (20)": her satır ürün adı +
+   `14.09.2026 · Hepsi Burada · ALM-HB-260911-16 · Adet: 1`, sağda
+   **₺7.999.100,00** (açık talepte kalın) + durum seçici + not. **Tablo yok.**
+2. Aynı sayfayı **telefonda** aç → aynı satırlar, yatay kaydırma yok,
+   durum seçici ve not tıklanabiliyor. _(mobil doğrulama kullanıcıda)_
+3. `/ayarlar/donemler` → her satır **"Eylül 2026"** manşet, sağda
+   **Açık/Kapalı rozeti · Raporu aç · Kapat**. Kapalı dönemde bağlam satırı
+   "kapatan · tarih (· not)" yazar.
+4. `/nakit-takvimi` → gün satırları: manşet **22.09.2026**, bağlam
+   `Girecek: ₺5.620,60`, sağda **Yürüyen: −₺43.076,63** (eksiyse kırmızı).
+   Satırın sağındaki **oka** bas → gün kapanır, tekrar bas → açılır. Günler
+   **açık başlar**.
+5. `/hakedis` → Özet "Kanal ödemeleri" ve Detay "Ödeme özeti" satırları
+   önceki hâliyle AYNI görünür (anatomi taşındı, görünüm değişmedi):
+   **22.09.2026 · Hepsiburada · 138 kalem · ₺84.680,85 · Tahmini**.
+
+---
+
 ## 🔴 K234 — "FİYATLANDIRMA VE ANALİZ" GRUBU + TARİFE HESAPLAMA EKRANI · 22.09.2026 · [CANLIDA 835a010 — HALİL TESTİ BEKLİYOR · menü kaydını kullanıcı kendisi taşıdı]
 
 **KULLANICI İSTEĞİ:** _"Fiyatlandırma ve Analiz isminde bir sekme açalım;

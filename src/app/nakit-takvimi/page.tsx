@@ -20,6 +20,7 @@ import {
 import { sayfaIzni } from "@/lib/yetki";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
+import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 
 /**
  * ============================================================================
@@ -259,55 +260,50 @@ export default async function NakitTakvimiSayfasi({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <SatirListesi>
           {doluGunler.map((g) => {
             const tarih = gunMetninden(g.gun);
             return (
-              <Card key={g.gun}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
-                    <span>{tarih ? bicim.tarih(tarih) : g.gun}</span>
-                    <span className="text-muted-foreground flex flex-wrap gap-3 text-xs font-normal">
-                      {g.cikacak > 0 ? (
-                        <span>
-                          {t("cikacak")}: {para(g.cikacak)}
-                        </span>
-                      ) : null}
-                      {g.girecek > 0 ? (
-                        <span>
-                          {t("girecek")}: {para(g.girecek)}
-                        </span>
-                      ) : null}
-                      {/*
-                        YÜRÜYEN BAKİYE — o günün SONUNDAKİ birikimli durum.
-                        Günlük çıkacak/girecek "o gün ne oldu" der; yürüyen
-                        bakiye "o güne kadar nereye geldin" der. Kart borcu
-                        ödemesinin sizi çukura sokup sokmadığı ancak
-                        ikincisinden görülür.
-                        ⚠ Eksiyse vurgulanıyor; artıysa nötr — her satırda
-                        yanan bir renk okunmaz olur.
-                      */}
-                      <span
-                        className={`font-medium tabular-nums ${
-                          g.yuruyenBakiye < 0 ? DURUM_YAZISI.olumsuz : ""
-                        }`}
-                      >
-                        {t("yuruyenBakiye")}: {para(g.yuruyenBakiye)}
-                      </span>
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Dokum
-                    satirlar={g.satirlar}
-                    para={para}
-                    obekAdi={obekAdi}
-                  />
-                </CardContent>
-              </Card>
+              /*
+                ⚠ SATIR KARTI + AÇILIR (K235, 22.09.2026): gün başlığı artık
+                ortak anatomide (manşet tarih · bağlam çıkacak/girecek · sağda
+                yürüyen bakiye). AÇIK BAŞLAR — katlama bilgiyi saklamanın
+                kibar yolu değildir; ama yoğun bir günü kapatmak kullanıcının
+                elinde olsun diye açılır.
+              */
+              <SatirKarti
+                key={g.gun}
+                baslik={tarih ? bicim.tarih(tarih) : g.gun}
+                baglam={[
+                  g.cikacak > 0 ? `${t("cikacak")}: ${para(g.cikacak)}` : null,
+                  g.girecek > 0 ? `${t("girecek")}: ${para(g.girecek)}` : null,
+                ]}
+                sag={
+                  /*
+                    YÜRÜYEN BAKİYE — o günün SONUNDAKİ birikimli durum.
+                    Günlük çıkacak/girecek "o gün ne oldu" der; yürüyen
+                    bakiye "o güne kadar nereye geldin" der. Kart borcu
+                    ödemesinin sizi çukura sokup sokmadığı ancak
+                    ikincisinden görülür.
+                    ⚠ Eksiyse vurgulanıyor; artıysa nötr — her satırda yanan
+                    bir renk okunmaz olur.
+                  */
+                  <span
+                    className={`text-sm font-semibold tabular-nums ${
+                      g.yuruyenBakiye < 0 ? DURUM_YAZISI.olumsuz : ""
+                    }`}
+                  >
+                    {t("yuruyenBakiye")}: {para(g.yuruyenBakiye)}
+                  </span>
+                }
+                acikMi
+                acilir={
+                  <Dokum satirlar={g.satirlar} para={para} obekAdi={obekAdi} />
+                }
+              />
             );
           })}
-        </div>
+        </SatirListesi>
       )}
 
       {/* --------------------------- VADESİZLER --------------------------- */}

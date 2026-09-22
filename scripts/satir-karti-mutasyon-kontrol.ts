@@ -5,21 +5,19 @@ import { desenNormalle } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
- *  HAKEDIS ODEME OZETI - MUTASYON HARNESS'I (22.09.2026)
+ *  SATIR KARTI - MUTASYON HARNESS'I (K235, 22.09.2026)
  * ----------------------------------------------------------------------------
- *      npm run hakedis-ozeti-mutasyon:kontrol
+ *      npm run satir-karti-mutasyon:kontrol
  *
- *  `hakedis:dogrula` 9. bolumu uc dosyayi korur: saf govde (model.ts),
- *  ekran (page.tsx) ve bilesen (odeme-ozeti.tsx). Kaynak tarayan olcutlerin
- *  DAVRANISA bagli oldugunu ancak mutasyon gosterir. UC YON: zararsiz -
- *  kaldiran - fazladan.
+ *  `satir-karti:dogrula` cogunlukla DEGER testi (govde cagriliyor) - ama bir
+ *  deger testi de yanlis seyi olcuyor olabilir. UC YON: zararsiz - kaldiran -
+ *  fazladan. Yesil test, sinanmis kontrol demek degildir.
  * ============================================================================
  */
 
-const BEKCI = "scripts/hakedis-dogrula.ts";
-const MODEL = "src/lib/hakedis/model.ts";
-const EKRAN = "src/app/hakedis/page.tsx";
-const BILESEN = "src/app/hakedis/odeme-ozeti.tsx";
+const BEKCI = "scripts/satir-karti-dogrula.ts";
+const GOVDE = "src/components/satir-karti.tsx";
+const EKRAN = "src/app/tazminat/page.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -34,61 +32,54 @@ const MUTASYONLAR: Mutasyon[] = [
   {
     ad: "ZARARSIZ - yalniz yorum degisti (harness saglamasi)",
     yon: "ZARARSIZ",
-    dosya: BILESEN,
-    /* ÇAPA K235'TE TAŞINDI: ok ikonu ortak gövdeye (`satir-karti.tsx`) geçti. */
-    bul: "{/* SÜZGECİN TOPLAMI — sayfanın değil (İlke #15). Sıfır da yazılır. */}",
-    koy: "{/* toplam. */}",
+    dosya: GOVDE,
+    bul: "  /** Satırın kimliği: manşet tutar, ürün adı ya da bağlantı. */",
+    koy: "  /** manşet. */",
     bozdugu: "hicbir sey - bu mutasyon YESIL kalmali",
   },
   {
-    ad: "TOPLAM SAYFADAN - suzgecin degil, gorunen dilimin toplami",
+    ad: "ACILIR OLCUTU GEVSEDI - bos dokum DUZ kutuya duser",
     yon: "KALDIRAN",
-    dosya: EKRAN,
-    bul: "  const odemeToplamlariSuzulmus = odemeToplamlari(odemelerSuzulmus);",
-    koy: "  const odemeToplamlariSuzulmus = odemeToplamlari(odemelerSuzulmus.slice(0, 50));",
-    bozdugu: "ikinci sayfaya gecince toplam degisir; ekran suzgecin degil sayfanin toplamini soyler (Ilke #15)",
+    dosya: GOVDE,
+    bul: "  if (acilir === undefined) {",
+    koy: "  if (!acilir) {",
+    bozdugu:
+      "dokumu bos donen satir acilmaz gorunur; kullanici tiklar, hicbir sey olmaz - sessiz basarisizlik",
   },
   {
-    ad: "ARAMA YANLIS PARAMETREYE YAZIYOR - sayfa hic okumuyor",
+    ad: "BAGLAM SUZGECI DUSTU - null baglam ekranda 'null' yazar",
     yon: "KALDIRAN",
-    dosya: BILESEN,
-    bul: "          parametre={ODEME_ARAMA_PARAMETRESI}",
-    koy: '          parametre="sorgu"',
-    bozdugu: "arama kutusu adrese 'sorgu' yazar, sayfa 'q' okur - arama sessizce calismaz",
+    dosya: GOVDE,
+    bul: "  const temizBaglam = (baglam ?? []).filter((b) => b !== null && b !== undefined && b !== false);",
+    koy: "  const temizBaglam = baglam ?? [];",
+    bozdugu:
+      "kosullu baglam icin her ekranda disarida ayri dizi kurulur; unutulan yerde ekranda 'null' ve bos ayirac cikar",
   },
   {
-    ad: "ROZET YANLIS IDDIA - odenmis satir 'Tahmini' der",
+    ad: "DOKUNMA HEDEFI KUCULDU - telefonda 56 px kalmadi",
     yon: "KALDIRAN",
-    dosya: BILESEN,
-    /* ⚠ ÇAPA GİRİNTİSİZ: refaktör girintiyi değiştirir, deseni değil.
-       `t("odemeYapildi")` bu dosyada bir kez geçiyor. */
-    bul: '{t("odemeYapildi")}',
-    koy: '{t("tahminiHesaplanmistir")}',
-    bozdugu: "gercek para gecmis odeme tahmin gibi gorunur - rozet sahip olmadigi anlami iddia eder",
+    dosya: GOVDE,
+    bul: '      <div className="flex min-h-14 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2">',
+    koy: '      <div className="flex min-h-8 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2">',
+    bozdugu: "Ilke #8: dokunulabilir her oge telefonda en az 44 px olmali",
   },
   {
-    ad: "ARAMA KAPALI - sorgu ne olursa olsun hepsi listelenir",
-    yon: "KALDIRAN",
-    dosya: MODEL,
-    bul: '  const q = sorgu.trim().toLocaleLowerCase("tr");',
-    koy: '  const q = "";',
-    bozdugu: "siparis no ile arayan kullanici hep tam listeyi gorur",
-  },
-  {
-    ad: "ZINCIR KOPTU - grup kendi anahtar formulunu kullaniyor",
-    yon: "KALDIRAN",
-    dosya: MODEL,
-    bul: "    const { anahtar, odemeGunu } = gelecekOdemeAnahtari(k.kanalAdi, k.vade);",
-    koy: '    const odemeGunu = sonrakiOdemeGunu(k.vade, k.kanalAdi); const anahtar = k.kanalAdi + "|" + odemeGunu.toISOString().slice(0, 10) + "|x";',
-    bozdugu: "satirin rakami bir anahtardan, acilan kalem listesi baska anahtardan - sayi ile liste ayrisir",
-  },
-  {
-    ad: "SIPARIS DOKUMU SIPARISSIZ KALEMI DE ALIYOR",
+    ad: "HER MANSET IRI - vurgu anlamini yitirir",
     yon: "FAZLADAN",
-    dosya: MODEL,
-    bul: "    if (!k.siparisNo) continue;",
-    koy: "    if (k.siparisNo === undefined) continue;",
-    bozdugu: "kargo faturasi/platform bedeli 'null' adli bir siparis gibi listelenir",
+    dosya: GOVDE,
+    bul: '              : "leading-tight font-medium"',
+    koy: '              : "text-lg leading-tight font-semibold tabular-nums"',
+    bozdugu:
+      "her satir bagirir; 'bu satirda onemli olan rakam' bilgisi kaybolur - hepsi vurguluysa hicbiri vurgulu degildir",
+  },
+  {
+    ad: "CIFT RENDER GERI GELDI - ayni liste iki kez cizilir",
+    yon: "FAZLADAN",
+    dosya: EKRAN,
+    bul: "                  sag={<TalepFormu hasar={h} bugun={bugun} />}",
+    koy: "                  sag={<Table><ListeKarti /></Table>}",
+    bozdugu:
+      "masaustu tablo + telefon karti ikilisi geri doner; biri duzeltilip oteki unutulur (Ilke #10)",
   },
 ];
 
@@ -106,7 +97,7 @@ function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
 }
 
 console.log("");
-console.log("HAKEDIS ODEME OZETI - MUTASYON TURU");
+console.log("SATIR KARTI - MUTASYON TURU");
 console.log("");
 
 let yakalanan = 0;
@@ -181,5 +172,5 @@ if (kacan.length || bozuk.length) {
   console.log("\n  Kacan ya da olculemeyen mutasyon var - bekci eksik.\n");
   process.exitCode = 1;
 } else {
-  console.log("\n  OK  Odeme ozeti UC YONDEN sinandi, kirmizi yandigi GORULDU.\n");
+  console.log("\n  OK  Satir karti UC YONDEN sinandi, kirmizi yandigi GORULDU.\n");
 }

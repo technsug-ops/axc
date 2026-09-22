@@ -1254,7 +1254,20 @@ console.log("\n9) ÖDEME ÖZETİ — pazaryeri paneli düzeni (22.09.2026)");
     "BİLEŞEN: arama ortak kod kutusundan, sayfanın okuduğu parametreyle (kamera — İlke #7); çıplak input yok",
     /<KodAramaKutusu[\s\S]{0,300}?parametre=\{ODEME_ARAMA_PARAMETRESI\}/.test(bilesen) && !/<input\b/.test(bilesen),
   );
-  kontrol("BİLEŞEN: bir satır bir ödeme — açılır kutu <details>", /<details key=\{o\.anahtar\}/.test(bilesen));
+  /*
+   * ⚠ ÖLÇÜT TAŞINDI, GEVŞETİLMEDİ (K235, 22.09.2026): açılır satırın anatomisi
+   * ortak gövdeye (`components/satir-karti.tsx`) çıktı; ekran artık `<details>`
+   * yazmıyor, `SatirKarti`ye `acilir` veriyor. Ölçülen şey aynı: BİR SATIR BİR
+   * ÖDEME ve satır açılabiliyor. Ham `<details>` aranması, ortak gövdeyi
+   * kullanan doğru kodu kırmızı yakardı.
+   * ⚠ PENCERE ÖLÇÜLDÜ (22.09.2026): çağrı ile acilir arası yorumsuz metinde
+   * 973 karakter; pencere 1400'e kuruldu. Gövde büyürse dar pencere SESSİZCE
+   * körelir — sayı bu yüzden gerekçesiyle burada duruyor.
+   */
+  kontrol(
+    "BİLEŞEN: bir satır bir ödeme — ortak SatirKarti, açılır döküm",
+    /<SatirKarti[\s\S]{0,1400}?acilir=\{dokum\}/.test(bilesen) && !/<details/.test(bilesen),
+  );
   kontrol(
     "BİLEŞEN: ödenmiş satır 'Ödeme yapıldı', gelecek 'Tahmini' rozeti (koşul + sonuç)",
     /kip === "gecmis" \? \(\s*<Badge className=\{DURUM_KUTUSU\.olumlu\}>[\s\S]{0,120}?t\("odemeYapildi"\)/.test(bilesen) &&

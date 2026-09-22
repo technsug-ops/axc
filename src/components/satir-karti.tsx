@@ -1,0 +1,121 @@
+import { ChevronDown } from "lucide-react";
+import type { ReactNode } from "react";
+
+/**
+ * ============================================================================
+ *  SATIR KARTI — LİSTE SATIRININ ORTAK ANATOMİSİ (K235, 22.09.2026)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı kararı: _"Hakedişlerdeki kart yapısı çok daha okunaklı ve
+ *  düzenli; tüm sistemdeki liste biçimlerini gözden geçir ve yeni hale
+ *  uyarla."_ Anatomi hakediş ödeme satırından ÇIKARILDI ve tek gövdeye
+ *  alındı — o ekran da artık buradan besleniyor.
+ *
+ *      ┌──────────────────────────────────────────────────────────────┐
+ *      │ BAŞLIK (iri/koyu)              SAĞ BLOK (tutar · rozet · eylem) │
+ *      │ bağlam · bağlam · bağlam                              (⌄ açılır) │
+ *      └──────────────────────────────────────────────────────────────┘
+ *
+ *  ⚠ NİYE ORTAK GÖVDE, NİYE HER EKRANA AYRI KOD: aynı anatomi üç ekranda
+ *  kopyalansaydı dördüncüsünde yine "etiket solda rakam en sağda" satırı
+ *  doğardı — İlke #12'nin adıyla yasakladığı kalıp — ve biri düzeltilip
+ *  öteki unutulurdu (İlke #10). Yeni bir liste ekranı bu anatomiyi BEDAVA
+ *  alır.
+ *
+ *  ⚠ TEK RENDER, İKİ KOPYA DEĞİL: eski desen aynı listeyi İKİ kez
+ *  çiziyordu (masaüstü `<Table>` + telefon `ListeKarti`). Satır kartı
+ *  `flex-wrap` ile iki ekranda da çalışır; ikinci kopya kalkınca "birini
+ *  düzeltip ötekini unutma" riski de kalkar.
+ *  ⛔ AMA TABLO YASAK DEĞİL: sütunları KARŞILAŞTIRMAK işin kendisiyse
+ *  (stok, ürün analizi, rapor) tablo doğru araçtır — kart oraya
+ *  uygulanırsa ekran uzar ve karşılaştırma zorlaşır. Satır kartı, satırın
+ *  BİR manşet değeri + bağlamı olduğu listeler içindir.
+ *
+ *  ⚠ DOKUNMA HEDEFİ 56 px (İlke #8): satırın kendisi telefonda tıklanabilir
+ *  bir yüzeydir; `min-h-14` hem açılır hem düz satırda aynıdır.
+ * ============================================================================
+ */
+
+export function SatirListesi({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={`space-y-2 ${className}`}>{children}</div>;
+}
+
+export function SatirKarti({
+  baslik,
+  vurgulu = false,
+  baglam,
+  sag,
+  acilir,
+  acikMi = false,
+}: {
+  /** Satırın kimliği: manşet tutar, ürün adı ya da bağlantı. */
+  baslik: ReactNode;
+  /** Manşet bir RAKAMSA iri ve tabular — "şu satır ne kadar" tek bakışta. */
+  vurgulu?: boolean;
+  /**
+   * İkincil bilgi; `·` ile ayrılır. `null`/`false` girdiler atılır, böylece
+   * koşullu bağlam için dışarıda ayrı bir dizi kurmak gerekmez.
+   */
+  baglam?: ReactNode[];
+  /** Sağ blok: tutar, rozet, düğme. */
+  sag?: ReactNode;
+  /** Varsa satır açılır (`<details>` — JavaScript'siz, klavyeyle çalışır). */
+  acilir?: ReactNode;
+  /** Açılır satır başlangıçta açık mı. */
+  acikMi?: boolean;
+}) {
+  const temizBaglam = (baglam ?? []).filter((b) => b !== null && b !== undefined && b !== false);
+
+  const govde = (
+    <>
+      <div className="min-w-0 flex-1">
+        <div
+          className={
+            vurgulu
+              ? "text-lg leading-tight font-semibold tabular-nums"
+              : "leading-tight font-medium"
+          }
+        >
+          {baslik}
+        </div>
+        {temizBaglam.length > 0 ? (
+          <div className="text-muted-foreground mt-0.5 text-xs">
+            {temizBaglam.map((b, i) => (
+              <span key={i}>
+                {i > 0 ? " · " : ""}
+                {b}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+      {sag ? (
+        <div className="flex flex-wrap items-center gap-2">{sag}</div>
+      ) : null}
+    </>
+  );
+
+  if (acilir === undefined) {
+    return (
+      <div className="flex min-h-14 flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2">
+        {govde}
+      </div>
+    );
+  }
+
+  return (
+    <details open={acikMi} className="group rounded-lg border">
+      <summary className="flex min-h-14 cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2">
+        {govde}
+        {/* Ok yönü açık/kapalı durumu SÖYLER — tıklanabilirlik görünür (İlke #2). */}
+        <ChevronDown className="size-5 shrink-0 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="border-t p-3">{acilir}</div>
+    </details>
+  );
+}
