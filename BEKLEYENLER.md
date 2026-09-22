@@ -457,8 +457,30 @@ farkı, biri sözdizimi bozan mutasyon) — "geçti" demedi. İkisi de onarıld�
 ### AÇIK
 - [ ] **Halil testi** — `/ayarlar/kargo-tarifesi` açılsın; TY kartında
       **2026-07-16** ve ~67 gün yazmalı, N11 kartında "tarife yok".
-- [ ] **Trendyol kargo tarifesi 2 aydır tazelenmiyor** — okuyucusu yok.
-      TY'nin tarife dosyası eline geçerse okuyucu yazılır.
+- [x] ~~**Trendyol kargo tarifesi 2 aydır tazelenmiyor — okuyucusu yok.**~~
+      **YANLIŞ ÇERÇEVE — 22.09.2026'da ölçüldü.** Kullanıcı: _"TY'nin fiilen
+      kestiği kargoyu API'den okuyor olmalısın, kontrol et."_ **Okuyor:**
+      `canli-ty-kargo-gercek-olcum.ts` (K220-②) TY'nin "Kargo Fatura"
+      kayıtlarını API'den alıp `Sale.cargoAmount`a yazıyor — yalnız BOŞ olana,
+      dolu olanı ezmez; `ty-hakedis-cekim` cron'undan **her gece** koşuyor
+      (`TY_KARGO_GERCEK_YAZ`, 96 iz, son 21.09 04:21). Kâr motoru
+      (`kargo-kaynagi.ts`) gerçek varsa onu, yoksa tahmini kullanıyor.
+
+          ay        satış   GERÇEK(API)  yalnız TAHMİN   hiçbiri
+          2026-07     290         290              0         0
+          2026-08     230         173             57         0
+          2026-09     223          10            207         6
+
+      Yani tarife "tazelenmiyor" değil — tarife yalnız **fatura gelene kadarki
+      pencerede** (TY faturası ~4 hafta sonra düşüyor; son 14 günün 154
+      satışının 143'ü kargolanmış ama faturası henüz yok) NET-2'yi besliyor.
+      Bu pencerede tahmin iki aylık tarifeden geliyor; fatura gelince
+      **kendiliğinden düzeliyor.** Anayasa: "geçmişi düzeltmek ile mekanizmayı
+      kurmak ayrı kararlardır" — mekanizma kurulu.
+- [ ] **Eylül'de 6 TY satışı ne gerçek ne tahmini kargo taşıyor** — NET-2
+      kargosuz hesaplanıyor. Sebebi satış satış ölçüldü (aşağıda); çoğu
+      taşıyıcı/desi girilmemiş ya da henüz onaysız. Küçük, ama sıfır satır
+      gizlenmez.
 - [x] ~~**API'de kargo tarifesi ucu var mı — ÖLÇÜLMEDİ.**~~ **ÖLÇÜLDÜ 21.09.2026**
       (kendi keşif belgelerimiz: `docs/a3-*-api-kesif.md`): **hiçbir kanal desi
       tarifesini API'den yayımlamıyor.** HB `product/cargo-providers` → yalnız
