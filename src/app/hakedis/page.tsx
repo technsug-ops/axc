@@ -24,13 +24,26 @@ import { bicimlendirici } from "@/lib/bicim";
 import { isTakvimGunu, gunDegeri } from "@/lib/donem";
 import { beklenenHakedis, odemeDurumu } from "@/lib/hakedis/eslestir";
 import {
+  gecmisOdemeAnahtari,
+  gelecekOdemeAnahtari,
   gelecekOdemeBrutMu,
   gelecekOdemeleriGrupla,
   HAKEDIS_ESIKLERI,
+  odemeleriSuz,
+  odemeToplamlari,
+  type OdemeKalemi,
 } from "@/lib/hakedis/model";
 import { prisma } from "@/lib/prisma";
+import { sayfaCoz } from "@/lib/sayfalama";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { KanalDagilimiGrafigi } from "./kanal-dagilimi-grafigi";
+import {
+  ODEME_ARAMA_PARAMETRESI,
+  ODEME_KIPI_PARAMETRESI,
+  OdemeOzeti,
+  type OdemeKipi,
+  type OdemeSatiri,
+} from "./odeme-ozeti";
 import {
   DURUM_KUTUSU,
   DURUM_YAZISI,
@@ -67,7 +80,13 @@ const HAKEDIS_SENKRON_AKSIYONU: Record<string, string> = {
 export default async function HakedisSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ kanal?: string; sekme?: string }>;
+  searchParams: Promise<{
+    kanal?: string;
+    sekme?: string;
+    odeme?: string;
+    q?: string;
+    sayfa?: string;
+  }>;
 }) {
   await sayfaIzni("hakedis.gor");
 
@@ -98,7 +117,19 @@ export default async function HakedisSayfasi({
    */
   const SEKME_OZET = "ozet";
   const SEKME_DETAY = "detay";
-  const sekmeSecili = sp.sekme === SEKME_DETAY ? SEKME_DETAY : SEKME_OZET;
+  /**
+   * KONTROL (22.09.2026, kullanıcı: "çok karışık, anlamak mümkün değil"):
+   * eski "Detay" içeriği — satış bazlı karşılaştırma, eşleşmeyen kalemler,
+   * yüklenen raporlar, bekleyen kalem dökümü — buraya taşındı. Detay artık
+   * pazaryerinin kendi paneli gibi ÖDEME listesidir (`OdemeOzeti`).
+   */
+  const SEKME_KONTROL = "kontrol";
+  const sekmeSecili =
+    sp.sekme === SEKME_DETAY
+      ? SEKME_DETAY
+      : sp.sekme === SEKME_KONTROL
+        ? SEKME_KONTROL
+        : SEKME_OZET;
   const sekmeAdresi = (anahtar: string) =>
     suzgecAdresi("/hakedis", sp, { sekme: anahtar });
 
@@ -386,6 +417,23 @@ export default async function HakedisSayfasi({
     odemeEmriNo: string | null;
   };
 
+  /**
+   * ÖDEME → KALEMLERİ (22.09.2026): "Ödeme özeti" satırı açılınca dökümü
+   * gösterebilmek için her kalem grubuna bağlanır. ⚠ Anahtar, grubu üreten
+   * AYNI gövdeden (`gecmisOdemeAnahtari` / `gelecekOdemeAnahtari`) — iki
+   * formül olsaydı satırın rakamı ile açılan liste sessizce ayrışırdı.
+   */
+  const grupKalemleri = new Map<string, OdemeKalemi[]>();
+  const kalemOzeti = (k: (typeof apiKalemleri)[number]): OdemeKalemi => ({
+    id: k.id,
+    tur: k.rawType ?? k.code,
+    siparisNo: k.orderNo,
+    saleId: k.saleId,
+    kayitNo: k.externalId,
+    tutar: Number(k.amount.toString()),
+    paraBirimi: k.currency,
+  });
+
   const gecmisOdemeGruplari = new Map<string, OdemeGrubu>();
   for (const k of apiKalemleri) {
     if (k.paidAt === null) continue;
@@ -396,12 +444,15 @@ export default async function HakedisSayfasi({
      * İstanbul'unkiyle uyuşmayabilir (`sonrakiOdemeGunu`daki AYNI hata
      * sınıfı). Anahtar VE gösterilen tarih AYNI normalize değerden gelir,
      * yoksa grup adı ile ekrandaki tarih birbirinden ayrışır.
+     * TY: gerçek ödeme emri. HB (ve emri olmayan her kanal): ödeme GÜNÜ.
+     * Gövde artık `lib/hakedis/model.ts`te (22.09) — ekranla paylaşılıyor.
      */
-    const paidGunu = gunDegeri(isTakvimGunu(k.paidAt));
-    /** TY: gerçek ödeme emri. HB (ve emri olmayan her kanal): ödeme GÜNÜ. */
-    const anahtar = k.paymentOrderId
-      ? `EMIR:${k.paymentOrderId}`
-      : `${kanalAdi}|GUN:${paidGunu.toISOString().slice(0, 10)}`;
+    const { anahtar, odemeGunu: paidGunu } = gecmisOdemeAnahtari({
+      kanalAdi,
+      paymentOrderId: k.paymentOrderId,
+      paidAt: k.paidAt,
+    });
+    grupKalemleri.set(anahtar, [...(grupKalemleri.get(anahtar) ?? []), kalemOzeti(k)]);
     const g = gecmisOdemeGruplari.get(anahtar) ?? {
       anahtar,
       kanalAdi,
@@ -430,18 +481,47 @@ export default async function HakedisSayfasi({
    * BİR KEZ sayılması para taşıyan bir kuraldır ve ekran içinde sınanamazdı;
    * gövdeye alınınca değer testiyle ve mutasyonla kilitlendi.
    */
+  const gelecekKalemleri = apiKalemleri.filter(
+    (k) => k.paidAt === null && k.dueDate !== null,
+  );
+  for (const k of gelecekKalemleri) {
+    const { anahtar } = gelecekOdemeAnahtari(k.channelAccount.channel.name, k.dueDate!);
+    grupKalemleri.set(anahtar, [...(grupKalemleri.get(anahtar) ?? []), kalemOzeti(k)]);
+  }
   const gelecekOdemeler: OdemeGrubu[] = gelecekOdemeleriGrupla(
-    apiKalemleri
-      .filter((k) => k.paidAt === null && k.dueDate !== null)
-      .map((k) => ({
-        kanalAdi: k.channelAccount.channel.name,
-        vade: k.dueDate!,
-        tutar: Number(k.amount.toString()),
-        paraBirimi: k.currency,
-        saleId: k.saleId,
-      })),
+    gelecekKalemleri.map((k) => ({
+      kanalAdi: k.channelAccount.channel.name,
+      vade: k.dueDate!,
+      tutar: Number(k.amount.toString()),
+      paraBirimi: k.currency,
+      saleId: k.saleId,
+    })),
     satisKesintisi,
   ).map((g) => ({ ...g, odemeEmriNo: null }));
+
+  /**
+   * ═══════════════════════════════════════════════════════════════════════
+   *  ÖDEME ÖZETİ (Detay sekmesi) — kip · arama · sayfa
+   * -------------------------------------------------------------------------
+   *  Süzgeç ve toplam SIRASI: önce arama süzer, toplam SÜZÜLMÜŞ kümeden
+   *  alınır, sayfa dilimi EN SON (İlke #15: toplam görünen sayfanın değil
+   *  süzgecin tamamının toplamıdır).
+   */
+  const odemeKipi: OdemeKipi = sp[ODEME_KIPI_PARAMETRESI] === "gelecek" ? "gelecek" : "gecmis";
+  const odemeSorgusu = (sp[ODEME_ARAMA_PARAMETRESI] ?? "").trim();
+  const odemeSatirlari: OdemeSatiri[] = (
+    odemeKipi === "gecmis" ? gecmisOdemeler : gelecekOdemeler
+  ).map((g) => ({ ...g, kalemler: grupKalemleri.get(g.anahtar) ?? [] }));
+  const odemelerSuzulmus = odemeleriSuz(odemeSatirlari, odemeSorgusu);
+  const odemeToplamlariSuzulmus = odemeToplamlari(odemelerSuzulmus);
+  const odemeSayfasi = sayfaCoz(sp.sayfa, odemelerSuzulmus.length);
+  const sayfadakiOdemeler = odemelerSuzulmus.slice(
+    odemeSayfasi.atla,
+    odemeSayfasi.atla + odemeSayfasi.boyut,
+  );
+  /** Seçili kanal otomatik çekimde değilse boş liste bir "yok" değil bir "gruplanamıyor"dur. */
+  const odemeKapsamDisiKanal =
+    kanalSecili && !API_KANALLARI.has(kanalSecili) ? kanalSecili : null;
 
   const ODEME_LISTE_SINIRI = 12;
 
@@ -801,6 +881,10 @@ export default async function HakedisSayfasi({
                     ) : null}
                   </div>
                 ) : null}
+                {/* DÖKÜM KENDİ SEKMESİNDE (İlke #13): özet rakam + "aç" bağlantısı. */}
+                <p className="text-sm">
+                  <Baglanti href={sekmeAdresi(SEKME_DETAY)}>{t("tumOdemeler")} →</Baglanti>
+                </p>
               </CardContent>
             </Card>
           ) : null}
@@ -812,6 +896,23 @@ export default async function HakedisSayfasi({
               anahtar: SEKME_DETAY,
               etiket: ortak("detay"),
               adres: sekmeAdresi(SEKME_DETAY),
+              icerik: (
+                <OdemeOzeti
+                  kip={odemeKipi}
+                  sorgu={odemeSorgusu}
+                  sayfadakiler={sayfadakiOdemeler}
+                  suzulmusSayi={odemelerSuzulmus.length}
+                  toplamlar={odemeToplamlariSuzulmus}
+                  sayfalama={odemeSayfasi}
+                  sp={sp}
+                  kapsamDisiKanal={odemeKapsamDisiKanal}
+                />
+              ),
+            },
+            {
+              anahtar: SEKME_KONTROL,
+              etiket: t("kontrolSekmesi"),
+              adres: sekmeAdresi(SEKME_KONTROL),
               icerik: (
                 <div className="space-y-6">
           {/* ---------------- BEKLENEN vs GERÇEKLEŞEN ------------------- */}

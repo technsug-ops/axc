@@ -260,6 +260,126 @@ export function sonrakiOdemeGunu(vade: Date, kanalAdi: string): Date {
   return istanbulGunu;
 }
 
+/**
+ * ============================================================================
+ *  ÖDEME ÖZETİ — GRUP ANAHTARLARI (22.09.2026, kullanıcı kararı)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı: _"müşteri alışık olduğu arayüzde hakedişlerini görsün"_ —
+ *  Trendyol paneli gibi: bir satır = bir ÖDEME (tutar · ödeme günü · durum),
+ *  açılınca kalemleri. Bunun için her kalem bir gruba düşer; grubun anahtarı
+ *  ile kalemin anahtarı AYNI gövdeden gelmek zorunda — iki yerde iki formül
+ *  olsaydı sayı (grup toplamı) ile liste (açılan kalemler) sessizce ayrışırdı
+ *  (anayasa: "sayı = liste").
+ *
+ *  GEÇMİŞ (ödenmiş): Trendyol gerçek `paymentOrderId` verir → `EMIR:<no>`.
+ *  Hepsiburada vermez → kanal + ödeme GÜNÜ (gerçekleşmiş tarih, uydurma değil).
+ *  GELECEK: kanalın gerçek ödeme gününe snap'lenmiş vade (`sonrakiOdemeGunu`).
+ * ============================================================================
+ */
+export function gecmisOdemeAnahtari(k: {
+  kanalAdi: string;
+  paymentOrderId: string | null;
+  paidAt: Date;
+}): { anahtar: string; odemeGunu: Date } {
+  /** İstanbul takvim günü — anahtar VE gösterilen tarih aynı değerden (K222-④). */
+  const odemeGunu = gunDegeri(isTakvimGunu(k.paidAt));
+  const anahtar = k.paymentOrderId
+    ? `EMIR:${k.paymentOrderId}`
+    : `${k.kanalAdi}|GUN:${odemeGunu.toISOString().slice(0, 10)}`;
+  return { anahtar, odemeGunu };
+}
+
+export function gelecekOdemeAnahtari(
+  kanalAdi: string,
+  vade: Date,
+): { anahtar: string; odemeGunu: Date } {
+  const odemeGunu = sonrakiOdemeGunu(vade, kanalAdi);
+  return { anahtar: `${kanalAdi}|${odemeGunu.toISOString().slice(0, 10)}`, odemeGunu };
+}
+
+/** Ödeme özeti satırının altında açılan tek kalem. */
+export type OdemeKalemi = {
+  id: string;
+  /** Pazaryerinin kendi adı (`rawType`), yoksa ortak kod — kullanıcı kanalın dilini görür. */
+  tur: string;
+  siparisNo: string | null;
+  saleId: string | null;
+  /** Fatura/Kayıt No — HB'de fatura numarası (arama bununla da eşleşir). */
+  kayitNo: string;
+  tutar: number;
+  paraBirimi: string;
+};
+
+/**
+ * "Sipariş / Fatura No ile ara" — Trendyol panelindeki kutunun karşılığı.
+ * Bir ödeme, İÇİNDEKİ herhangi bir kalemin sipariş no'su, kayıt no'su ya da
+ * kendi ödeme emri numarası aranan metni içeriyorsa listede kalır.
+ *
+ * ⚠ SAF: sayfa dilimi bilmez. Toplam bu süzülmüş kümeden alınır, sayfadan
+ * DEĞİL (İlke #15 — toplam süzgecin tamamının toplamıdır).
+ */
+export function odemeleriSuz<
+  T extends { odemeEmriNo: string | null; kalemler: OdemeKalemi[] },
+>(odemeler: T[], sorgu: string): T[] {
+  const q = sorgu.trim().toLocaleLowerCase("tr");
+  if (q === "") return odemeler;
+  return odemeler.filter(
+    (o) =>
+      (o.odemeEmriNo ?? "").toLocaleLowerCase("tr").includes(q) ||
+      o.kalemler.some(
+        (k) =>
+          (k.siparisNo ?? "").toLocaleLowerCase("tr").includes(q) ||
+          k.kayitNo.toLocaleLowerCase("tr").includes(q),
+      ),
+  );
+}
+
+/** Para birimi başına toplam — süzgeçteki BÜTÜN ödemelerden. */
+export function odemeToplamlari(
+  odemeler: { toplam: number; paraBirimi: string }[],
+): { paraBirimi: string; tutar: number }[] {
+  const harita = new Map<string, number>();
+  for (const o of odemeler) harita.set(o.paraBirimi, (harita.get(o.paraBirimi) ?? 0) + o.toplam);
+  return [...harita.entries()].map(([paraBirimi, tutar]) => ({ paraBirimi, tutar }));
+}
+
+/**
+ * Bir ödemenin kalemlerini TÜRE göre toplar (Satış · Kupon · Kargo Faturası…)
+ * — panelin açılır kutusundaki döküm. Sıra: tutarın mutlak değerine göre.
+ */
+export function kalemTuruDokumu(
+  kalemler: OdemeKalemi[],
+): { tur: string; adet: number; tutar: number }[] {
+  const harita = new Map<string, { tur: string; adet: number; tutar: number }>();
+  for (const k of kalemler) {
+    const s = harita.get(k.tur) ?? { tur: k.tur, adet: 0, tutar: 0 };
+    s.adet++;
+    s.tutar += k.tutar;
+    harita.set(k.tur, s);
+  }
+  return [...harita.values()].sort((a, b) => Math.abs(b.tutar) - Math.abs(a.tutar));
+}
+
+/**
+ * Bir ödemenin kalemlerini SİPARİŞE göre toplar. Sipariş no'su olmayan kalem
+ * (kargo faturası, platform bedeli, stopaj) burada YOK — o yalnız tür
+ * dökümünde görünür; iki liste farklı soruya cevap verir.
+ */
+export function siparisDokumu(
+  kalemler: OdemeKalemi[],
+): { siparisNo: string; saleId: string | null; adet: number; tutar: number }[] {
+  const harita = new Map<string, { siparisNo: string; saleId: string | null; adet: number; tutar: number }>();
+  for (const k of kalemler) {
+    if (!k.siparisNo) continue;
+    const s = harita.get(k.siparisNo) ?? { siparisNo: k.siparisNo, saleId: k.saleId, adet: 0, tutar: 0 };
+    s.adet++;
+    s.tutar += k.tutar;
+    if (!s.saleId && k.saleId) s.saleId = k.saleId;
+    harita.set(k.siparisNo, s);
+  }
+  return [...harita.values()].sort((a, b) => Math.abs(b.tutar) - Math.abs(a.tutar));
+}
+
 /** Gruplamaya giren ham kalem — Prisma satırının sadeleştirilmiş hâli. */
 export type GelecekOdemeKalemi = {
   kanalAdi: string;
@@ -309,8 +429,8 @@ export function gelecekOdemeleriGrupla(
   >();
 
   for (const k of kalemler) {
-    const odemeGunu = sonrakiOdemeGunu(k.vade, k.kanalAdi);
-    const anahtar = `${k.kanalAdi}|${odemeGunu.toISOString().slice(0, 10)}`;
+    /** ⚠ ANAHTAR ORTAK GÖVDEDEN — ekran kalemleri aynı gövdeyle gruba bağlar. */
+    const { anahtar, odemeGunu } = gelecekOdemeAnahtari(k.kanalAdi, k.vade);
     const g = gruplar.get(anahtar) ?? {
       anahtar,
       kanalAdi: k.kanalAdi,

@@ -66,6 +66,7 @@
     "komisyon-kapi-mutasyon:kontrol": "tsx scripts/komisyon-kapi-mutasyon-kontrol.ts",
     "n11-listeleme-mutasyon:kontrol": "tsx scripts/n11-listeleme-mutasyon-kontrol.ts",
     "n11-esleme-mutasyon:kontrol": "tsx scripts/n11-esleme-mutasyon-kontrol.ts",
+    "hakedis-ozeti-mutasyon:kontrol": "tsx scripts/hakedis-ozeti-mutasyon-kontrol.ts",
     "n11-esleme:dogrula": "tsx scripts/n11-esleme-dogrula.ts",
     "n11-listeleme:dogrula": "tsx scripts/n11-listeleme-dogrula.ts",
     "canli:n11-esle": "tsx scripts/canli-n11-esle.ts",

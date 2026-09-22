@@ -13,6 +13,105 @@
 
 ---
 
+## 🔴 K232 — HAKEDİŞ "DETAY" PAZARYERİ PANELİ DÜZENİNE ÇEVRİLDİ · 22.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+**KULLANICI BİLDİRİMİ (Halil testi #13):** _"Çok karışık, anlamak mümkün
+değil. Müşteri alışık olduğu arayüzde hakedişlerini görsün. Toplam
+hakedişler zaten özet duruyor, gerekirse ora ile de ilgileniriz."_
+Trendyol panelinin **Ödeme Özeti** ekranı örnek verildi; HB ve N11'inki
+**sonra** gelecek.
+
+### ÖLÇÜM — VERİ DOĞRUYDU, SUNUM YANLIŞTI
+
+Defterdeki TY ödeme emirleri (`paymentOrderId` ile gruplanınca) kanalın
+kendi panelindeki satırlarla **kuruşuna** tutuyor:
+
+    emir      ödeme günü   kalem  sipariş   defter          TY paneli
+    77398614  21.09.2026     49     31     90.739,15 ₺     90.739,15 ₺
+    77305532  17.09.2026     28     20     42.233,41 ₺     42.233,41 ₺
+    77191081  14.09.2026     26     18     61.958,33 ₺     61.958,33 ₺
+    77146154  10.09.2026     26     18     46.022,33 ₺     46.022,33 ₺
+    77041243  07.09.2026     49     33     69.800,24 ₺     69.800,24 ₺
+
+    toplam 8747 kalem · TY 92 ödeme emri (4995 ödenmiş, hepsi emirli) ·
+    HB 2710 ödenmiş kalem → 30 ödeme günü (emir no yok) · bekleyen TY 379, HB 663
+
+Eski "Detay" aynı veriyi **satış bazlı karşılaştırma + kalem dökümü** olarak
+basıyordu — doğru ama operasyoncunun aradığı şekil değil.
+
+### YAPILAN
+
+- **`/hakedis` → Detay** artık **"Ödeme özeti"**: Geçmiş / Gelecek ödemeler
+  sekmesi · **"Sipariş / fatura no ile ara"** (ortak kod kutusu, kamera
+  dahil — İlke #7) · **bir satır = bir ödeme** (iri tutar · ödeme günü ·
+  kanal rozeti · "Ödeme yapıldı" / "Tahmini hesaplanmıştır") · sağdaki ok
+  ile açılınca **kalem dökümü** (kanalın kendi tür adlarıyla, toplam satırı
+  satırın rakamına eşit) ve **siparişler** (sistemdeki satışa bağlıysa link,
+  değilse kopyalanabilir no) · sayfalama (50/sayfa) · **süzgecin toplamı**
+  üstte yazar, sayfa değiştikçe DEĞİŞMEZ (İlke #15).
+- Eski Detay içeriği (Beklenen vs gerçekleşen · eşleşmemiş kalemler ·
+  yüklenen raporlar · bekleyen kalem dökümü) **"Kontrol"** sekmesine taşındı —
+  silinmedi.
+- Özet'teki "Kanal ödemeleri" kartına **"Tüm ödemeleri gör →"** bağlantısı
+  (İlke #13: döküm kendi sekmesinde). Özet'in kendisine DOKUNULMADI —
+  kullanıcı kararı.
+- **Grup anahtarı tek gövdeye taşındı** (`lib/hakedis/model.ts` →
+  `gecmisOdemeAnahtari` · `gelecekOdemeAnahtari`): satırın rakamı ile
+  açılan kalem listesi aynı anahtardan gelir; iki formül olsaydı sayı ile
+  liste sessizce ayrışırdı. Arama ve toplam da saf gövdede
+  (`odemeleriSuz` · `odemeToplamlari` · `kalemTuruDokumu` · `siparisDokumu`).
+- **Bekçi:** `hakedis:dogrula` 9. bölüm (20 ölçüt, 166/166) +
+  `hakedis-ozeti-mutasyon:kontrol` **7/7** (zararsız yeşil · toplam sayfadan ·
+  arama yanlış parametreye · rozet yanlış iddia · arama kapalı · zincir
+  koptu · siparişsiz kalem dökümde).
+
+### HALİL TEST LİSTESİ — tıklama düzeyinde
+
+1. `/hakedis` → Kanal: **Trendyol** → **Detay** sekmesi. "Ödeme özeti"
+   kartı açılır, üstte "Geçmiş ödemeler" seçili. İlk beş satır **TY
+   panelinizle birebir**: **₺90.739,15 · Ödeme günü 21.09.2026 · Ödeme
+   emri 77398614 · Ödeme yapıldı** → ₺42.233,41 (17.09) → ₺61.958,33
+   (14.09) → ₺46.022,33 (10.09) → ₺69.800,24 (07.09).
+2. Üst satırda **"92 ödeme · toplam ₺…"** yazar; en altta "92 kayıt ·
+   sayfa 1/2" ve ok düğmeleri. 2. sayfaya geçince üstteki toplam
+   **DEĞİŞMEZ**.
+3. İlk satırın sağındaki **oka** tıkla → "Kalem dökümü": Satış **33** satır
+   ₺97.096,02 · Kupon **13** satır −₺177,63 · stopaj −₺874,90 · platform
+   −₺414,88 · kargo faturası −₺4.889,46; **Toplam 49 · ₺90.739,15**.
+   Altında **"Siparişler (31)"**; sipariş no'ları tıklanınca satışa gider.
+4. **Arama:** açık satırdan bir sipariş no'sunu kopyala, "Sipariş / fatura
+   no ile ara" kutusuna yapıştır, Ara → listede **yalnız o ödeme** kalır,
+   üstte "1 ödeme · toplam ₺90.739,15". Kutuya **77398614** (emir no)
+   yaz → aynı sonuç. "xyz" yaz → _"xyz" ile eşleşen ödeme yok_ ve
+   "0 ödeme · toplam —". **Temizle** → tam liste.
+5. **"Gelecek ödemeler"** sekmesi → satırlar "Tahmini ödeme günü" ve
+   "Tahmini hesaplanmıştır" rozetiyle; ilk satırın **tarihi ve rakamı**
+   Özet'teki **"En yakın ödeme"** kutusuyla aynı (TY'de Pazartesi/Perşembe
+   günleri). Satırı açınca "brüt … − tahmini kesinti …" şerhi görünür.
+6. **Kontrol** sekmesi → eski içerik aynen: "Beklenen vs gerçekleşen
+   (4497)", "eşleşmemiş 10 kalem", "Yüklenen raporlar (42)", "Bekleyen
+   para". Hiçbir rakam kaybolmadı.
+7. **Özet** sekmesi → "Kanal ödemeleri" kartının altında **"Tüm ödemeleri
+   gör →"** → Detay'a götürür.
+8. Kanal: **Hepsiburada** → Detay → geçmiş satırlar **"Ödeme günü"** ile,
+   **emir no yok** (HB API'si vermiyor), rozet "Ödeme yapıldı"; en yeni
+   satır **15.09.2026**; 30 satır.
+9. Kanal süzgeci **temizle** (Tümü) → TY ve HB satırları tarihe göre
+   karışık, her satırda kanal rozeti; alt satırda "122 kayıt · sayfa 1/3".
+10. **Telefon:** satıra dokununca açılır, ok döner; arama kutusundaki
+    kamera simgesi çalışır. _(mobil doğrulama kullanıcıda)_
+
+### AÇIK
+
+- **HB ve N11 panel ekranları bekleniyor** — kullanıcı gönderecek; satır
+  düzeni o kanallara göre ayrıca ayarlanacak (`[BEKLİYOR]`).
+- N11 için otomatik hakediş çekimi yok; Detay'da N11 seçilince ekran
+  bunu **yazar** ("gruplanamıyor, dosyalar elle yükleniyor").
+- Özet sekmesi kullanıcı kararıyla dokunulmadı; "gerekirse ora ile de
+  ilgileniriz".
+
+---
+
 ## 🔴 K231 — BİR KOD İKİ ÜRÜNE UYUYORDU, SİSTEM SESSİZCE BİRİNİ SEÇİYORDU · 21.09.2026 · [KOD KOŞTU + CANLI YAZIM YAPILDI — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI BİLDİRİMİ:** _"Bu üründen 2 tane stok kaydı var, birinde 4 stok
@@ -410,6 +509,11 @@ listede. Kod düzeltilip belge eski hâlinde kalsaydı ikinci bir ayrışma doğ
 
 ---
 
+─── **Halil 22.09 (#6): "çok güzel olmuş ama ürün arama yeri lazım, tek tek
+listeden ürün bulmak çok zor."** Tarife aynası (`/ayarlar/tarife/[id]`)
+sayfalı liste; kod/ad araması yok. **AÇIK:** ortak kod kutusu (kamera dahil)
+eklenecek — K121 desen yasağı gereği `KodAramaKutusu` + ortak çözüm gövdesi.
+
 ## 🔶 K229 — KARGO TARİFESİ KANAL BAĞIMSIZ OLDU · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI TESPİTİ:** _"Bu sadece HB'ye özel değil, diğer pazaryerleri de arada
@@ -520,6 +624,14 @@ farkı, biri sözdizimi bozan mutasyon) — "geçti" demedi. İkisi de onarıld�
       keşif notlarımız ölçüldü.
 
 ---
+
+─── **Halil 22.09 (#8): "Kargo listelemede sadece satın alım yaptığımız
+pazaryerleri de var (Bim, MediaMarkt); ayrıca sadece Hepsiburada kısmına
+yükleme yapılıyor."** Kanal listesi `satisIcin: true` hesabı olan kanallardan
+geliyor — demek ki Bim/MediaMarkt hesapları **satış hesabı olarak
+işaretli**; ölçülmedi. **AÇIK:** ① hesapların `satisIcin` bayrağı ölçülüp
+düzeltilecek (veri mi, kod mu) · ② "yalnız HB'ye yükleme" — hangi ekran,
+hangi düğme netleştirilecek (kullanıcıdan ekran görüntüsü).
 
 ## 🔶 K227 — TEKLİF DOSYASI **TARİFEDİR** — ESKİ KARAR ÇEVRİLDİ · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 

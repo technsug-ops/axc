@@ -24,10 +24,17 @@ import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
 
 import { gunDegeri, isGunuEkle, isGunuFarki, haftaSonuMu } from "../src/lib/donem";
 import {
+  gecmisOdemeAnahtari,
+  gelecekOdemeAnahtari,
   gelecekOdemeBrutMu,
   gelecekOdemeleriGrupla,
   HAKEDIS_ESIKLERI,
+  kalemTuruDokumu,
+  odemeleriSuz,
+  odemeToplamlari,
+  siparisDokumu,
   sonrakiOdemeGunu,
+  type OdemeKalemi,
 } from "../src/lib/hakedis/model";
 import {
   beklenenHakedis,
@@ -55,7 +62,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 8;
+const BOLUM_SAYISI = 9;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1110,6 +1117,106 @@ console.log("\n8) GERÇEK ÖDEME GÜNÜ — K223 (21.09.2026)");
   );
 }
 kosanBolumler.push("gercek-odeme-gunu");
+
+// ===========================================================================
+console.log("\n9) ÖDEME ÖZETİ — pazaryeri paneli düzeni (22.09.2026)");
+// ===========================================================================
+{
+  /**
+   * Kullanıcı: "müşteri alışık olduğu arayüzde hakedişlerini görsün." Bir
+   * satır bir ÖDEME; satırın rakamı ile açılan kalem listesi AYNI anahtar
+   * gövdesinden gelmek zorunda (anayasa: sayı = liste). Ölçüldü 22.09: TY
+   * ödeme emirleri panelle kuruşuna tutuyor (14.09 → 61.958,33). Buradaki
+   * ölçütler o bağı, aramayı ve toplam/sayfa SIRASINI kilitler.
+   *
+   * ⚠ Ekran/bileşen ölçütleri kaynak tarar (sunucu bileşeni, saf gövde
+   * değil) — yorumsuz metinde, KULLANIMA bağlı; mutasyon harness'i
+   * `hakedis-ozeti-mutasyon:kontrol`.
+   */
+  const yorumsuz = (yol: string) =>
+    readFileSync(yol, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
+
+  /* -- GEÇMİŞ ANAHTAR: TY emir · HB gün (İstanbul) ------------------- */
+  const ty = gecmisOdemeAnahtari({
+    kanalAdi: "Trendyol",
+    paymentOrderId: "77398614",
+    paidAt: new Date("2026-09-21T10:00:00.000Z"),
+  });
+  kontrol("TY ödenmiş kalem gerçek ödeme EMRİNE gruplanır (EMIR:)", ty.anahtar === "EMIR:77398614", ty.anahtar);
+  const hb = gecmisOdemeAnahtari({
+    kanalAdi: "Hepsiburada",
+    paymentOrderId: null,
+    paidAt: new Date("2026-09-15T22:00:00.000Z"),
+  });
+  kontrol("emri olmayan kanal ödeme GÜNÜNE gruplanır (kanal|GUN)", hb.anahtar === "Hepsiburada|GUN:2026-09-16", hb.anahtar);
+  kontrol("  ...gün İSTANBUL takvimine göre (UTC 15'i 22:00 → İstanbul 16'sı)", metin(hb.odemeGunu) === "2026-09-16", metin(hb.odemeGunu));
+  kontrol("  ...gösterilen tarih anahtardaki günle AYNI (ayrışamaz)", hb.anahtar.endsWith(metin(hb.odemeGunu)));
+
+  /* -- ZİNCİR: kalemin anahtarı = grubun anahtarı (tek gövde) --------- */
+  const vade = gun("2026-09-18");
+  const grup = gelecekOdemeleriGrupla(
+    [{ kanalAdi: "Trendyol", vade, tutar: 1, paraBirimi: "TRY", saleId: null }],
+    new Map(),
+  )[0];
+  kontrol(
+    "ZİNCİR: kalemin gelecek anahtarı = grubun anahtarı (iki formül yok)",
+    grup?.anahtar === gelecekOdemeAnahtari("Trendyol", vade).anahtar,
+    [grup?.anahtar, gelecekOdemeAnahtari("Trendyol", vade).anahtar],
+  );
+
+  /* -- ARAMA: sipariş · kayıt/fatura · ödeme emri -------------------- */
+  const kalem = (siparisNo: string | null, kayitNo: string, tutar = 1, tur = "Satış"): OdemeKalemi => ({
+    id: `${siparisNo}${kayitNo}`,
+    tur,
+    siparisNo,
+    saleId: null,
+    kayitNo,
+    tutar,
+    paraBirimi: "TRY",
+  });
+  const odemeler = [
+    { anahtar: "a", odemeEmriNo: "77398614", toplam: 100, paraBirimi: "TRY", kalemler: [kalem("11530120067", "14019800732")] },
+    { anahtar: "b", odemeEmriNo: null, toplam: 50, paraBirimi: "TRY", kalemler: [kalem("4748270482", "EFA2026000000101")] },
+  ];
+  const bulunan = (q: string) => odemeleriSuz(odemeler, q).map((o) => o.anahtar).join(",");
+  kontrol("boş arama hepsini bırakır", bulunan("  ") === "a,b", bulunan("  "));
+  kontrol("sipariş no ile bulur", bulunan("4748270482") === "b", bulunan("4748270482"));
+  kontrol("fatura/kayıt no ile bulur (büyük-küçük harf duyarsız)", bulunan("efa2026") === "b", bulunan("efa2026"));
+  kontrol("ödeme emri no ile bulur", bulunan("77398614") === "a", bulunan("77398614"));
+  kontrol("uymayan metin BOŞ döner (uydurma eşleşme yok)", bulunan("yok") === "", bulunan("yok"));
+
+  /* -- TOPLAM: süzgecin tamamı, sayfa değil (İlke #15) ---------------- */
+  const hepsi = odemeToplamlari(odemeleriSuz(odemeler, ""));
+  kontrol("toplam süzülmüş kümenin TAMAMI (100 + 50)", hepsi.length === 1 && hepsi[0]!.tutar === 150, hepsi);
+  kontrol("  ...arama daraltınca toplam da daralır (50)", odemeToplamlari(odemeleriSuz(odemeler, "4748"))[0]?.tutar === 50);
+
+  /* -- DÖKÜMLER: tür · sipariş -------------------------------------- */
+  const k2 = [kalem("S1", "K1", 100), kalem("S1", "K2", -5, "Kupon"), kalem(null, "K3", -20, "Kargo Faturası")];
+  const tur = kalemTuruDokumu(k2);
+  kontrol("tür dökümü kanalın kendi adıyla; toplamı kalemlerin toplamına eşit (75)", tur.length === 3 && tur.reduce((a, b) => a + b.tutar, 0) === 75, tur);
+  const sip = siparisDokumu(k2);
+  kontrol("sipariş dökümü sipariş no'su olmayanı ALMAZ (kargo faturası dışarıda)", sip.length === 1 && sip[0]!.tutar === 95 && sip[0]!.adet === 2, sip);
+
+  /* -- EKRAN / BİLEŞEN (kaynak, kullanıma bağlı) -------------------- */
+  const sayfa = yorumsuz("src/app/hakedis/page.tsx");
+  kontrol("EKRAN: toplam SÜZÜLMÜŞ kümenin tamamından (sayfa diliminden değil)", /odemeToplamlari\(odemelerSuzulmus\)/.test(sayfa));
+  kontrol("EKRAN: sayfa dilimi süzülmüş kümeden kesiliyor", /odemelerSuzulmus\.slice\(/.test(sayfa));
+  kontrol("EKRAN: geçmiş grup anahtarı ortak gövdeden (kendi formülü yok)", /gecmisOdemeAnahtari\(\{/.test(sayfa) && !/EMIR:\$\{/.test(sayfa));
+  const bilesen = yorumsuz("src/app/hakedis/odeme-ozeti.tsx");
+  kontrol(
+    "BİLEŞEN: arama ortak kod kutusundan, sayfanın okuduğu parametreyle (kamera — İlke #7); çıplak input yok",
+    /<KodAramaKutusu[\s\S]{0,300}?parametre=\{ODEME_ARAMA_PARAMETRESI\}/.test(bilesen) && !/<input\b/.test(bilesen),
+  );
+  kontrol("BİLEŞEN: bir satır bir ödeme — açılır kutu <details>", /<details key=\{o\.anahtar\}/.test(bilesen));
+  kontrol(
+    "BİLEŞEN: ödenmiş satır 'Ödeme yapıldı', gelecek 'Tahmini' rozeti (koşul + sonuç)",
+    /kip === "gecmis" \? \(\s*<Badge className=\{DURUM_KUTUSU\.olumlu\}>[\s\S]{0,120}?t\("odemeYapildi"\)/.test(bilesen) &&
+      /t\("tahminiHesaplanmistir"\)/.test(bilesen),
+  );
+}
+kosanBolumler.push("odeme-ozeti");
 
 // ===========================================================================
 console.log("");
