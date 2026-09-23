@@ -20,6 +20,7 @@ const BEKCI = "scripts/hakedis-dogrula.ts";
 const MODEL = "src/lib/hakedis/model.ts";
 const EKRAN = "src/app/hakedis/page.tsx";
 const BILESEN = "src/app/hakedis/odeme-ozeti.tsx";
+const HB_OKU = "src/lib/hakedis/hb-api-oku.ts";
 
 type Mutasyon = {
   ad: string;
@@ -89,6 +90,36 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "    if (!k.siparisNo) continue;",
     koy: "    if (k.siparisNo === undefined) continue;",
     bozdugu: "kargo faturasi/platform bedeli 'null' adli bir siparis gibi listelenir",
+  },
+  /* ═══ K239 — HB İŞ TARİHİ: ORTAMIN SAATİ KULLANILMAZ ════════════════ */
+  {
+    ad: "ORTAMIN SAATI GERI GELDI - new Date(ham) (bir gun kayma)",
+    yon: "KALDIRAN",
+    dosya: HB_OKU,
+    /* ⚠ TS dizesinde ters bölü İKİ KEZ yazılır; tek yazılırsa çalışma anında
+       kaybolur ve çapa HİÇ tutmaz (harness bunu "ölçülemedi" diye söyledi). */
+    bul: "  const m = /^(\\d{4})-(\\d{2})-(\\d{2})/.exec(ham.trim());",
+    koy: "  const m = null as RegExpExecArray | null; const d = new Date(ham); if (!Number.isNaN(d.getTime())) return d;",
+    bozdugu:
+      "HB'nin saat dilimsiz damgasi MAKINENIN saatinde okunur; Berlin'de 2026-09-16 -> 2026-09-15T22:00Z, Vercel'de baska deger - ayni satir iki makineden iki farkli sekilde deftere girer",
+  },
+  {
+    ad: "SAAT KORUNUYOR - is tarihi saat tasimaya basliyor",
+    yon: "FAZLADAN",
+    dosya: HB_OKU,
+    bul: "  return gunDegeri({ yil: Number(m[1]), ay: Number(m[2]), gun: Number(m[3]) });",
+    koy: "  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 21));",
+    bozdugu:
+      "vade/odeme gunu saat tasirsa gun sinirina yakin kayitlar yanlis kovaya duser (donem.ts kurali: is tarihi saat tasimaz)",
+  },
+  {
+    ad: "ODENDI KAPISI DUSTU - WillBePaid satira odeme tarihi yazar",
+    yon: "KALDIRAN",
+    dosya: HB_OKU,
+    bul: '  const odendi = kayit.status === "Paid";',
+    koy: "  const odendi = true;",
+    bozdugu:
+      "kanal 'odenecek' derken defter 'odendi' yazar; bekleyen para sessizce gecmis odemeye kayar",
   },
 ];
 

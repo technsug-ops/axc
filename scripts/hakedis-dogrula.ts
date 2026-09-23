@@ -23,6 +23,7 @@ import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
  */
 
 import { gunDegeri, isGunuEkle, isGunuFarki, haftaSonuMu } from "../src/lib/donem";
+import { hbApiSatiriniOku } from "../src/lib/hakedis/hb-api-oku";
 import {
   gecmisOdemeAnahtari,
   gelecekOdemeAnahtari,
@@ -65,7 +66,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 10;
+const BOLUM_SAYISI = 11;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1275,6 +1276,68 @@ console.log("\n9) ÖDEME ÖZETİ — pazaryeri paneli düzeni (22.09.2026)");
   );
 }
 kosanBolumler.push("odeme-ozeti");
+
+// ===========================================================================
+console.log("\n10) HEPSİBURADA API OKUYUCUSU — İŞ TARİHİ SAAT TAŞIMAZ (K239)");
+// ===========================================================================
+{
+  /**
+   * ⛔ BU GÖVDE HİÇ ÖLÇÜLMÜYORDU — ve hata tam orada yaşadı. HB saat dilimi
+   * TAŞIMAYAN damga gönderiyor (`"2026-09-16T00:00:00"`); eski kod
+   * `new Date(ham)` ile onu MAKİNENİN saatinde okuyordu. Ölçüldü
+   * (Europe/Berlin): saklanan değer `2026-09-15T22:00:00Z` — bir gün erken.
+   * Aynı satır Vercel'de (UTC) başka bir değerle yazılıyordu.
+   * _(Anayasa: "iş saat dilimi Europe/Istanbul SABİT; çalışma ortamının
+   * saat dilimi ASLA kullanılmaz".)_
+   */
+  const ornek = (ek: Record<string, unknown> = {}) =>
+    hbApiSatiriniOku({
+      id: "x",
+      transactionType: "Sipariş tutarı",
+      status: "Paid",
+      orderNumber: "4711041918",
+      packageNumber: "P1",
+      invoiceNumber: null,
+      isInvoice: false,
+      amount: { value: 100, currencyCode: "949" },
+      dueDate: "2026-09-16T00:00:00",
+      paymentDate: "2026-09-22T00:00:00",
+      sku: null,
+      ...ek,
+    } as Parameters<typeof hbApiSatiriniOku>[0]);
+
+  kontrol(
+    "vade UTC gece yarısına damgalanır (makineden bağımsız)",
+    metin(ornek().vadeTarihi) === "2026-09-16" &&
+      ornek().vadeTarihi?.toISOString() === "2026-09-16T00:00:00.000Z",
+    ornek().vadeTarihi?.toISOString(),
+  );
+  /**
+   * ⭐ ASIL DİŞ BU ÖLÇÜTTE: üstteki tek başına UTC makinede ESKİ KODLA DA
+   * geçerdi (`new Date("…T00:00:00")` orada zaten UTC gece yarısıdır).
+   * Saatli bir damga ise her iki makinede de ayrışır — iş tarihi SAAT
+   * TAŞIMAZ kuralını doğrudan ölçer.
+   */
+  kontrol(
+    "SAATLİ damga da güne indirilir (21:00 → aynı gün gece yarısı)",
+    ornek({ dueDate: "2026-09-16T21:00:00" }).vadeTarihi?.toISOString() ===
+      "2026-09-16T00:00:00.000Z",
+    ornek({ dueDate: "2026-09-16T21:00:00" }).vadeTarihi?.toISOString(),
+  );
+  kontrol(
+    "ödeme tarihi de aynı kuralda",
+    ornek({ paymentDate: "2026-09-22T18:30:00" }).odemeTarihi?.toISOString() ===
+      "2026-09-22T00:00:00.000Z",
+  );
+  /** ⛔ ÖDENDİ SİNYALİ KANALIN KENDİ BEYANI: `Paid` değilse tarih YAZILMAZ. */
+  kontrol(
+    "WillBePaid ise ödeme tarihi BOŞ (tarih dolu gelse bile)",
+    ornek({ status: "WillBePaid" }).odemeTarihi === null,
+  );
+  kontrol("bozuk tarih null döner (uydurulmaz)", ornek({ dueDate: "abc" }).vadeTarihi === null);
+  kontrol("boş tarih null döner", ornek({ dueDate: "" }).vadeTarihi === null);
+}
+kosanBolumler.push("hb-api-tarih");
 
 // ===========================================================================
 console.log("");

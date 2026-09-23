@@ -1,4 +1,5 @@
 import type { Currency } from "@/generated/prisma/enums";
+import { gunDegeri } from "@/lib/donem";
 
 import type { HakedisKodu, HakedisSatiri } from "./model";
 
@@ -101,11 +102,33 @@ function paraBirimiCoz(kod: string): Currency {
   return kod === "840" ? "EUR" : "TRY"; // 949=TRY, 840=USD; Currency enum'da USD yok — ölçülene kadar TRY'ye düşülür, DIGER'e değil (para birimi kaybı ayrı bir konu, tutar hiç kaybolmaz).
 }
 
-/** ISO tarih dizesi ("2026-09-15T00:00:00") → Date, boşsa null. */
+/**
+ * ============================================================================
+ *  HB İŞ TARİHİ — ORTAMIN SAAT DİLİMİ KULLANILMAZ (K239, 23.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ ESKİ HÂL `new Date(ham)` İDİ VE SESSİZCE MAKİNENİN SAATİNİ KULLANIYORDU.
+ *  HB saat dilimi TAŞIMAYAN bir damga gönderiyor (`"2026-09-16T00:00:00"`);
+ *  JavaScript bunu YEREL saat sayar. ÖLÇÜLDÜ (23.09.2026, Europe/Berlin):
+ *
+ *      API dueDate  "2026-09-16T00:00:00"
+ *      saklanan     2026-09-15T22:00:00.000Z      ← bir gün ERKEN (UTC'de)
+ *      Vercel'de (UTC) aynı satır 2026-09-16T00:00:00.000Z olurdu
+ *
+ *  Yani AYNI satır, yazıldığı makineye göre İKİ FARKLI değerle deftere
+ *  giriyordu. Ekran İstanbul gününe normalize ettiği için gösterim doğru
+ *  kalıyordu — ama ham `dueDate` ile süzen her sorgu bir gün kayabilir.
+ *  _(Anayasa: "İŞ SAAT DİLİMİ Europe/Istanbul SABİT — çalışma ortamının
+ *  saat dilimi ASLA kullanılmaz".)_
+ *
+ *  ⭐ ÇARE: bunlar İŞ TARİHİDİR, saat taşımaz. Tarih parçası okunur ve
+ *  `gunDegeri` ile UTC gece yarısına damgalanır — makineden bağımsız.
+ * ============================================================================
+ */
 function tarihCoz(ham: string | null): Date | null {
   if (ham === null || ham.trim() === "") return null;
-  const d = new Date(ham);
-  return Number.isNaN(d.getTime()) ? null : d;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(ham.trim());
+  if (!m) return null;
+  return gunDegeri({ yil: Number(m[1]), ay: Number(m[2]), gun: Number(m[3]) });
 }
 
 export function hbApiSatiriniOku(kayit: HbFinansKaydi): HakedisSatiri {

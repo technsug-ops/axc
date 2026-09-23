@@ -13,6 +13,87 @@
 
 ---
 
+## 🔴 K239 — HB ÖDEMESİ "GEÇMİŞ"E GEÇMEDİ: SEBEP KANALIN KENDİ UCUNDA · VE ÖLÇERKEN BİR GÜN KAYMASI BULUNDU · 23.09.2026 · [KOD KOŞTU]
+
+**KULLANICI BİLDİRİMİ (Halil #5):** _"HB ödeme geçmiş sekmesine GEÇMEMİŞ."_
+HB panelinde 22 Eylül ₺84.680,85 **Ödendi** yazıyor; bizde hâlâ "Gelecek".
+
+### ① SEBEP BİZDE DEĞİL — KANALIN UCU HENÜZ ÇEVİRMEMİŞ
+
+K232-②'de yazılan "ödendi geçişi" **çalıştı ve bugün koştu** (23.09 04:35,
+`tazelenen: 0`). Çevirecek satır YOKTU. HB API'sine doğrudan soruldu:
+
+    vade 2026-09-15 · Paid       · pay=2026-09-15 · 100 kayıt   ← mekanizma çalışıyor
+    vade 2026-09-22 · Paid       · pay=2026-09-22 ·   1 kayıt
+    vade 2026-09-22 · WillBePaid · pay=-          · 106 kayıt   ← panelde "ödendi"
+    vade 2026-09-23 · WillBePaid · pay=-          ·   4 kayıt
+
+**Panel ile API aynı şeyi söylemiyor:** panel ödemeyi gösteriyor, uç hâlâ
+`WillBePaid` diyor. Aynısı dün de ölçülmüştü. Uç çevirdiği an satırlar
+kendiliğinden "Geçmiş"e geçer — kodda yapılacak bir şey yok.
+⚠ **VE UYDURULMAZ:** panelde gördüğümüz için `paidAt` yazmak, kanalın
+söylemediği bir şeyi deftere yazmak olurdu _(anayasa: "sistem, kendi
+defterinde takip etmediği şey hakkında iddia kurmaz")_.
+
+### ② ÖLÇERKEN ÇIKAN GERÇEK KUSUR — ORTAMIN SAATİ DEFTERE SIZIYORDU
+
+Defteri API ile yan yana koyunca her kova **tam bir gün** kaymış göründü
+(API 16.09/18 kalem ↔ defter 15.09/18 kalem; 22.09/106 ↔ 21.09/106). Tek
+satır kimliğiyle karşılaştırıldı:
+
+    API     dueDate  "2026-09-16T00:00:00"     ← saat dilimi YOK
+    OKUNAN  vade      2026-09-15T22:00:00.000Z  ← Europe/Berlin (UTC+2)
+    DEFTER  dueDate   2026-09-15T22:00:00.000Z
+
+`new Date(ham)` saat dilimsiz damgayı **makinenin saatinde** okuyordu. Aynı
+satır Vercel'de (UTC) `2026-09-16T00:00:00Z` olarak yazılıyordu — yani **aynı
+kayıt, yazıldığı makineye göre iki farklı değerle** deftere giriyordu.
+Anayasanın adıyla yasakladığı şey: _"çalışma ortamının saat dilimi ASLA
+kullanılmaz."_
+
+📏 **ÖLÇÜLDÜ (3379 HB kalemi):**
+
+    vade  UTC 00:00 → 1180   (doğru, Vercel'den)
+    vade  UTC 22:00 → 2193   (kaymış, yerel koşumlardan)
+    vade  UTC 23:00 →    6
+    ödeme UTC 00:00 → 1048 · 22:00 → 1660 · 23:00 → 2
+
+⚠ **EKRANDA GÖRÜNMÜYORDU** çünkü gösterim İstanbul gününe normalize ediyor
+(`gunDegeri(isTakvimGunu(...))`, K222-④). Kusur ham `dueDate` ile SÜZEN her
+sorguda yaşıyordu — bu ölçümde tam da o oldu ve teşhisi bir gün kaydırdı.
+
+**YAPILAN:** `tarihCoz` artık tarih parçasını okuyup `gunDegeri` ile UTC gece
+yarısına damgalıyor — makineden bağımsız. İş tarihi SAAT TAŞIMAZ (`donem.ts`
+kuralı).
+
+⛔ **GEÇMİŞ DÜZELTİLMEDİ VE BU BİR KARAR:** gösterim zaten doğru, düzeltme
+bugün verilecek hiçbir kararı değiştirmiyor; 3379 satıra dokunmanın riski
+kazancından büyük. _(Anayasa: "geçmişi düzeltmek ile mekanizmayı kurmak ayrı
+kararlardır.")_ Bundan sonra yazılan her satır doğru; sayı yukarıda duruyor
+ki altı ay sonra yeniden keşfedilmesin.
+
+### BEKÇİ — GÖVDE HİÇ ÖLÇÜLMÜYORDU
+
+`hbApiSatiriniOku` için TEK bir ölçüt yoktu; hata tam orada yaşadı.
+`hakedis:dogrula` 10. bölüm (6 değer testi, 190) ·
+`hakedis-ozeti-mutasyon:kontrol` **10/10** — yeni üç yön: `new Date(ham)`
+geri gelsin · iş tarihi saat taşısın · `Paid` kapısı düşsün.
+⭐ **VE BİR ÖLÇÜT BİLEREK İKİ TANE:** "gece yarısına damgalanır" ölçütü TEK
+BAŞINA **UTC makinede eski kodla da geçerdi**. Diş, "SAATLİ damga da güne
+indirilir" ölçütünde: `21:00` her iki makinede de ayrışır.
+
+### HALİL TEST LİSTESİ
+
+1. `/hakedis` → Kanal: **Hepsiburada** → **Detay** → Gelecek: 22.09 grubu hâlâ
+   orada. **Bu doğru** — HB'nin ucu henüz "ödendi" demedi.
+2. HB panelinde ödeme göründükten **1–2 gün sonra** tekrar bakın: satır
+   kendiliğinden **Geçmiş**e geçmiş olmalı (gece çekimi yazar).
+   ⛔ Bir hafta geçip hâlâ geçmediyse söyleyin — o zaman uçta başka bir şey
+   var demektir ve yeniden ölçeriz.
+3. Tarihlerin gün kayması: ekranda zaten doğruydu, değişiklik görünmez.
+
+---
+
 ## 🔴 K238 — TAZMİNAT TUTARLARI ×10.000 YAZILMIŞ: FORM NOKTAYI ONDALIK, SUNUCU BİNLİK SANIYORDU · 23.09.2026 · [KOD + CANLI ONARIM KOŞTU]
 
 **KULLANICI BİLDİRİMİ:** _"Uçuk fiyatlar var tazminatta."_ Ekranda tazminat
