@@ -13,119 +13,6 @@
 
 ---
 
-## 🔴 K240 — ÜRÜN BARKODU `/paketle`DE "BÖYLE SİPARİŞ YOK" DİYORDU: DOĞRU CÜMLE, YANLIŞ İŞ · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
-**KULLANICI BİLDİRİMİ:** _"Bu ürünü Barkot okut sekmesinde buluyor, ama
-paketle sekmesinde okutunca böyle sipariş yok diyor."_ (Fisher-Price kutusu,
-EAN `0 27084 66727 1`.)
-
-### ① CÜMLE DOĞRUYDU — AMA SİSTEM O KODU ZATEN TANIYORDU
-
-`/paketle` bir **sipariş** ekranıdır: kargo etiketi (`shipmentCode`) ve sipariş
-numarası (`code`) arar. Ürün barkodu ikisine de uymaz, yani _"böyle sipariş
-yok"_ teknik olarak yanlış değildi. Ölçüm sorunun başka yerde olduğunu
-gösterdi — sistem hem kodu hem onu bekleyen siparişi BİLİYORDU:
-
-    kodlaVaryantCoz("0027084667271")  → TEK  · OYU-FS-FP-01
-                                              "Fisher Price … Eğlen & Öğren Eğitici"
-    o varyantı bekleyen AÇIK sipariş → 11634062753 · 22.09 22:04 · Trendyol
-                                              onay ✓ · gönderi kodu 7260037388264396
-
-> **"Tanımadım" İLE "TANIDIM AMA BU BAŞKA BİR ŞEY" AYNI CÜMLEYE SIĞMAZ.**
-> İlkini duyan kullanıcı kodu yeniden okutur; yapılacak iş ise kargo etiketini
-> okutmak ya da o siparişi açmaktı. Ekran zaten ÜÇ sebebi ayırıyordu
-> (hiç yok · kargoya verilmiş · iptal); eksik olan **BEŞİNCİ hâldi.**
-> _(İlke #5: sessiz ya da yarım gerİ bildirim yasak · İlke #16: rakam kaynağına
-> götürür · "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
-> değildir".)_
-
-### ② YAPILAN — BEŞİNCİ HÂL `URUN_KODU`
-
-Kod hiçbir satışta bulunamadığında hüküm verilmeden **bir soru daha**
-soruluyor: _bu bir ürün olabilir mi?_ Cevap ortak gövdeden geliyor
-(`kodlaVaryantCoz`) — ekran kendi arama kuralını kurmuyor, yoksa `/okut` ile
-`/paketle` aynı kodu farklı görürdü (İlke #10, dört kod rolü).
-
-Ürünse ekran şunu yazıyor ve o ürünü bekleyen, **kargoya verilmemiş ve
-iptalsiz** siparişleri TIKLANABİLİR düğme olarak veriyor:
-
-> _"Bu bir ÜRÜN kodu (…), sipariş numarası değil. Paketlemek için kargo
-> etiketini ya da sipariş numarasını okutun."_
-
-⚠ **TAVAN SESSİZ KESMİYOR:** en yeni 5 sipariş gösteriliyor, daha varsa
-ekranda YAZIYOR. ⚠ **HİÇBİR ŞEY YAZMIYOR** — bu bir teşhis cümlesi, bir
-işlem değil. ⚠ **PASİF DAHİL:** pasife alınmış mal da raftadır ve elde
-tutulup okutulabilir; "bu bir ürün" demek için aktiflik şart değil.
-`varyant-kod-cozumu.ts`teki _"pasifDahil TEK BİR ÇAĞIRAN İÇİN VAR"_ yorumu
-**zaten bayattı** (K237'de ikinci çağıran doğmuştu); susturulmadı,
-güncellendi ve üç çağıranın her biri gerekçesiyle yazıldı.
-
-### ③b DESEN YASAĞI İŞİNİ YAPTI — PUSH'U DURDURDU
-
-İlk yazımda öneri sorgusu çıplak `shippedAt: null` taşıyordu ve
-`kargo-bekleyen:dogrula` push anında **KIRMIZI** yandı (151/152):
-
-    ✗ ② çıplak `shippedAt: null` yazan BEYANSIZ dosya yok
-         beyansız: src/app/paketle/actions.ts
-
-⛔ Ve bu bir biçim uyarısı DEĞİLDİ: `KARGO_BEKLEYEN` kümesi çıplak
-koşuldan **DAR** — içe aktarılmış, henüz onaylanmamış sipariş kargo
-beklemez (K60/K164). Çıplak koşulla kalsaydı ekran, **kendi aramasının
-BULAMAYACAĞI** bir siparişi önerirdi: kullanıcı düğmeye basar, hiçbir şey
-açılmaz. Küme ortak gövdeye bağlandı (İlke #10) ve hem bekçi ölçütü hem
-mutasyon o yöne çevrildi.
-
-> **Muafiyet YAZILMADI.** `ISTISNALAR`a gerekçe yazmak kolay yoldu ve
-> yanlış kümeyi kayıt altına alıp **meşrulaştırırdı.**
-> _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır" —
-> yasak yarın açılan okuyucuyu da yakalıyor, nitekim beni yakaladı.)_
-
-### ③ ÖLÇÜLDÜ
-
-    paketleme:dogrula              112 ölçüt YEŞİL (10'u yeni)
-    paketleme-mutasyon:kontrol     6/6 — zararsız YEŞİL, beşi de KIRMIZI yandı
-    i18n:kontrol                   tr/en 4242 = 4242 · 0 eksik
-    tsc --noEmit                   çıktı BOŞ
-
-Mutasyonlar (hepsi kırmızı yandığı GÖRÜLDÜ): beşinci hâli düşüren · ekran dalını
-çizdirmeyen · **kargoya verilmiş siparişi de öneren (FAZLADAN yönü)** · ortak
-gövdeyi bırakıp kendi sorgusunu kuran · tavanı sessiz kesen.
-
-### ④ HALİL TEST LİSTESİ (canlıda, gerçek cihazda)
-
-1. `/paketle` → arama kutusuna **`0027084667271`** yaz / okut.
-   Beklenen: sarı kutu, _"Bu bir ÜRÜN kodu (Fisher Price …)"_ ve altında
-   **`11634062753 · Trendyol — …`** yazan bir düğme.
-2. O düğmeye bas. Beklenen: aynı ekranda sipariş AÇILIR (yeni arama koşar),
-   paketleme adımları görünür.
-3. Gerçek bir **kargo etiketi** okut. Beklenen: davranış DEĞİŞMEDİ — sipariş
-   doğrudan açılır (bu paket o yolu hiç değiştirmedi).
-4. Hiçbir yerde olmayan bir sayı yaz (örn. `999999999`). Beklenen: ESKİ cümle
-   — _"Bu kod sistemde HİÇBİR satışta bulunamadı…"_ (beşinci hâl yalnız kod
-   GERÇEKTEN bir ürünse çıkar).
-5. Telefonda aynı akış: düğmeler parmakla rahat basılabiliyor mu
-   (`min-h-11`)?
-
-**mobil doğrulama kullanıcıda** · **i18n: ✓** · **kullanıcı kolaylığı: ✓**
-
-### ⑤ KENDİ HATAM — İKİNCİ KEZ AYNI YERDE
-
-K239 turu koşarken bir **prova** betiği yanlışlıkla gerçek
-`scripts/paketleme-dogrula.ts`e yazdı. Sebep: bu ortamda betik metnindeki
-**çift ters bölü tek ters bölüye iniyor**, dolayısıyla "çıktı yolunu
-değiştir" replace'i **sessizce tutmadı** ve betik kendi varsayılan hedefine
-yazdı. Dosya hemen commit'li hâline döndürüldü, tur etkilenmedi.
-
-> **ÇIKARILAN KİLİT:** prova betikleri artık **çıktı yolunu PARAMETRE olarak
-> alıyor** (varsayılan hedefe yazmak "unutulunca" olan şey değil, açıkça
-> istenmesi gereken şey) ve her `replace` **sayıyla doğrulanıyor**
-> (`assert count == 1`). Ters bölü gereken her yerde `chr(92)` kullanılıyor.
-> _(Anayasa: "kritik yazım, yazıldığı doğrulanmadan yapılmış sayılmaz" · "kod
-> üreten araç, kaçış dizilerini bozuk yazabilir" — ikisi de yazılıydı ve
-> ikisine de düşüldü.)_
-
----
-
 ## 🔴 K239 — HB ÖDEMESİ "GEÇMİŞ"E GEÇMEDİ: SEBEP KANALIN KENDİ UCUNDA · VE ÖLÇERKEN BİR GÜN KAYMASI BULUNDU · 23.09.2026 · [KOD KOŞTU]
 
 **KULLANICI BİLDİRİMİ (Halil #5):** _"HB ödeme geçmiş sekmesine GEÇMEMİŞ."_
@@ -276,90 +163,6 @@ göründü (`xl:grid` → `grid`). Geri alındı, harness 30/30 yeşil.
 4. Aynı formda tutarı **elle** `1.234,56` yaz → kaydet → **₺1.234,56**.
    Tutarı boş bırak → "tutar sayı olmalı" uyarısı çıkmalı, 0 TL talep
    AÇILMAMALI.
-
----
-
-## 🔴 K237 — KAPI KENDİ ÖNLEDİĞİ ARIZAYI KORUDU: PASİF SAHİP ENGEL DEĞİL SORU · 23.09.2026 · [KOD KOŞTU — KULLANICI EŞLEŞTİRMESİ BEKLİYOR]
-
-**KULLANICI BİLDİRİMİ:** _"4711041918 Hepsiburada siparişini çekmedi, mükerrer
-üründen dolayı — `HBCV00000R0H0K`. Stoktan bu EAN ile sorguladığında iki ürün
-geliyor, biri 0 stoklu diğeri 2; sistem 0 stokludan almaya çalıştığı için
-almıyor."_
-
-### ÖLÇÜM — SEBEP TAM OLARAK BU DEĞİLDİ
-
-İçe aktarma kuru koşumu tek satırda söyledi:
-
-    ⛔ YAZILAMAZ (kod kataloğumuzda yok)   1
-         4711041918 · HBCV00000R0H0K/HBCV00000R0H0K
-
-Yani sistem "0 stokludan almaya çalışmıyor" — **hiçbir aktif ürüne
-ulaşamıyor.** Canlı ölçüm:
-
-    KOD 97393839282      → aktif çözüm TEK  (KUC-BR-BHD50-01, stok 2) ✓
-    KOD HBCV00000R0H0K   → aktif çözüm YOK                            ⛔
-      pasif  HBCV00000R0H0K · barkod 97393839282 · stok 0 · 1 satış
-      AKTİF  KUC-BR-BHD50-01 · barkod 8710103948643 · stok 2 · 4 alım
-             kanal: TRENDYOL/AXCALI → 97393839282     (HB eşleşmesi YOK)
-
-K231'de pasife alınan ikiz, HB kodunu kendi `sku`sunda tutuyor; stoklu gerçek
-varyantın yalnız Trendyol eşleşmesi var. Cron her yarım saatte bir aynı
-siparişi "kaçak" diye bırakıyordu (`AuditLog`: `kacakKodlar:["4711041918"]`,
-23.09'da 06:10 · 06:12 · 06:14).
-
-### ⛔ VE KAPI, EKRANDAN DÜZELTMEYİ DE ENGELLİYORDU
-
-Kullanıcı kodu `/kanal-sku`dan gerçek ürüne bağlamak istese K231'de koyduğum
-kapı reddediyordu: _"bu kod başka bir kaydın kimliği"_. Kapı doğru sebeple
-kondu — **bir kodun AKTİF iki kayda birden uyup sessizce birinin seçilmesini**
-önlemek için. Ama sahip PASİFSE aktif tarafta çakışma YOKTUR; orada sert yasak,
-temizlenmiş bir çarpışmanın enkazını **kalıcı engele** çevirdi ve gerçek bir
-siparişi deftere sokamaz hâle getirdi.
-_(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa koruduğu şey doğruluk
-değil hatanın kendisi olur." Kontrol sorusu: bu kapı neyi korumak için kondu —
-elimdeki şey o mu?)_
-
-### YAPILAN — AYRIM, GEVŞETME DEĞİL
-
-    sahip AKTİF  →  SERT YASAK sürer (K231'in çekirdeği, dokunulmadı)
-    sahip PASİF  →  ENGEL DEĞİL SORU: ekran ne olduğunu yazar, onay kutusu
-                    çıkar, kullanıcı ısrar ederse yazılır ve İZ BIRAKIR
-
-· `KodAdayi` artık sahibin `aktifMi` hâlini taşıyor (kapı, sahibin hâlini
-  bilmeden karar veremez).
-· Onay **açıkça** gelir (`pasifSahipOnayi=evet`), varsayılan geçmez; onay bir
-  SONRAKİ kayda **taşınmaz** (başarıda sıfırlanır).
-· İstisna izi: `KANAL_SKU_PASIF_IKIZ_ISRAR` — üç ay sonra "bu kod niye iki
-  yerde" sorusunun cevabı.
-· ⚠ **ÜRÜN FORMU KAPISI DEĞİŞMEDİ:** orada söz konusu olan KİMLİK alanı ve
-  tekillik veritabanı kısıtıyla da korunuyor; gevşetmenin gerekçesi yok.
-
-**BEKÇİ:** `kod-cozumu:dogrula` +7 ölçüt (37) · `kod-cozumu-mutasyon:kontrol`
-**19/19** (yeni dört yön: pasif sahibi yine yasakla · aktif sahibi sessizce
-geçir · onayı varsayılan yap · izi sil).
-
-### HALİL TEST LİSTESİ
-
-1. `/kanal-sku` → **Yeni eşleme** → ürün ara: **`KUC-BR-BHD50-01`** (Philips
-   BHD500/00, stok 2) → hesap: **Hepsiburada — AXCALI** → kanal kodu:
-   **`HBCV00000R0H0K`** → Kaydet.
-2. Beklenen: turuncu kutu — _"`HBCV00000R0H0K` kodu PASİFE ALINMIŞ bir kaydın
-   kimliği (Philips PHILIPS BHD500/00 THERMOSHIELD…)"_ ve altında **onay
-   kutusu**. Kayıt HENÜZ yazılmadı.
-3. Kutuyu işaretle → Kaydet → **"eklendi"**. (Eskiden burada kırmızı hata
-   vardı ve devam etmenin yolu yoktu.)
-4. Bana haber verin: HB içe aktarmasını koşayım → sipariş **4711041918**
-   deftere girsin ve **stoğu 2 olan** varyanttan düşsün.
-5. Kontrol: `/stok`ta `97393839282` araması → gerçek ürünün stoğu **2 → 1**.
-
-### AÇIK
-
-- **İkiz kaydın kendisi duruyor** (pasif, 1 satış geçmişi, stok 0). Birleştirme
-  ayrı bir iş; bugün gereken tek şey kodun gerçek ürüne bağlanmasıydı.
-- ⛔ **KAÇAK SİPARİŞ HİÇBİR EKRANDA YAZMIYOR.** İçe aktarma `kacakKodlar`ı
-  `AuditLog`a yazıyor ve kullanıcı arızayı ancak Hepsiburada panelinden fark
-  etti — üç gün sonra. Panelde "çekilemeyen sipariş" satırı olmalı (İlke #5,
-  #16). **YENİ KALEM, sıradaki turda.**
 
 ---
 
@@ -684,7 +487,6 @@ _Betik (`canli:menu-duzeni-yaz`) koşulmadı; kullanıcı üç kalemi sürükley
 
 ─── **③ Sıkı dikey aralık (kullanıcı 22.09): "sekmeler kapalıyken scroll yapmak istemiyorum"** — grup başlıkları arası dikey dolgu 8→2 px (grup başına 12 px, altıda 72 px); telefonda başlık 44 px dokunma hedefi (İlke #8). Halil: masaüstünde bütün gruplar kapalıyken **Ayarlar** alt bloğun üstünde, kaydırmadan görünür.
 
-
 Menü sırası VERİ (`Company.menuDuzeni`) ve kayıt varsayılanı ezer; kullanıcı
 25.08'de bir düzen kaydetmiş. Kod tek başına dört kalemi taşımaz.
 `npm run canli:menu-duzeni-yaz` kuru koşumu (22.09):
@@ -728,64 +530,6 @@ kullanıcı Ayarlar → Menü düzeni'nden dördünü gruba sürükler.
 - Kanalın **canlı satış fiyatını** çekmek (listeleme senkronuna fiyat
   alanı) — o gün "şu anki fiyat" sorulmaz, ölçülür. Ayrı kalem.
 - N11 penceresi 142 ürün, tarife hesaplama N11 için de çalışır (ölçülmedi).
-
----
-
-## 🔴 K233 — N11 HAKEDİŞİ: TRANSFER DOSYASI OKUYUCUSU · 22.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR: dosyayı yükle]
-
-**NİYE:** K232'de üç kanalın "alışık olunan arayüzü" istendi; N11'in verisi
-sistemde HİÇ yoktu — API'de hakediş ucu bulunamadı
-(`docs/a3-hb-n11-api-kesif.md`). Kullanıcı panelin **"Ödemelerim → Arama
-Sonuç Listesi → Excel'e Aktar"** dosyasını gönderdi
-(`settlementHistories (5).xls`, BIFF, tek sayfa, **3 satır**).
-
-**ÖLÇÜLEN BİÇİM:** `Transfer Tarihi · Ödeme Türü · İşlem Tarihi · Transfer
-Durumu · Transfer Tutarı · Banka · IBAN` — satır = **bankaya giden bir
-transfer** (sipariş değil): `27-Ağu-2026 · Hakediş Ödemesi · -- · Başarılı ·
-5056.56`. Tarih Türkçe üç harfli ay (`Ağu`, `Eyl`), tutar nokta ondalık.
-Sipariş/kesinti ayrıntısı bu dosyada YOK — panelin kendi listesi de yok
-(detay, transferin üstüne tıklayınca ayrı ekranda).
-
-**YAPILAN:**
-- `n11TransferOku` (`lib/hakedis/okuyucu.ts`): satır → `HAKEDIS_TRANSFERI`
-  (yeni kod, **sipariş dışı**), sipariş no yok, `Başarılı` → ödeme tarihi =
-  transfer tarihi; ölçülmeyen durum ödendi SAYILMAZ (tarih boş, bekleyen);
-  tanınmayan ödeme türü → `DIGER` (kalem yazılır, uyarıda görünür).
-  Kimlik `tarih|tutar` (idempotent, tekrar yükleme "zaten yüklü" der).
-- ⛔ **IBAN ve banka adı HİÇBİR ALANA YAZILMAZ** — bekçi sızmadığını sınar.
-- `yukle.ts` → N11 hesabı seçilince bu okuyucu; `HakedisKanali` tipi tek
-  yerde (`"TRENDYOL" | "HEPSIBURADA" | "N11"`).
-- `/hakedis` Detay/Özet gruplaması N11'i de alır (transfer tarihi GERÇEK
-  ödeme günüdür — tahmin değil); senkron rozeti N11 için "hiç çalışmadı"
-  demeye devam eder (doğru: otomatik çekim yok).
-- **Bekçi:** `hakedis:dogrula` 3b (19 ölçüt: ay çözümü · iki tutar biçimi ·
-  durum → ödeme tarihi · DIGER · kimlik · IBAN/banka sızmadı · eksik sütun).
-- Gerçek dosya okuyucudan geçirildi (yerel prova, yazım yok): 3 satır ·
-  27.08 / 10.09 / 17.09 · üçü Başarılı → ödendi.
-
-### HALİL TEST LİSTESİ
-
-1. `/hakedis` → **Rapor yükle** → mağaza: **N11 — AXCALI** → dosya:
-   `settlementHistories (5).xls` → **Denetle**. Önizleme: _Dosyadaki satır
-   3 · Yazılacak 3 · Sipariş dışı 3 · Net toplam ₺9.321,56_
-   (5.056,56 + 2.840,42 + 1.424,58); uyarı yok.
-2. **Onayla ve yaz** → "3 kalem yazıldı."
-3. `/hakedis` → Kanal: **N11** → **Detay**: Geçmiş ödemeler'de üç satır,
-   panelinizle birebir — **17.09.2026 · ₺1.424,58** · 10.09.2026 · ₺2.840,42
-   · 27.08.2026 · ₺5.056,56, hepsi "Ödeme yapıldı"; üstte "3 ödeme · toplam
-   ₺9.321,56". Satırı açınca kalem dökümü: _Hakediş Ödemesi · 1 · tutar_;
-   sipariş listesi yok (dosyada yok).
-4. Aynı dosyayı **ikinci kez** yükle → Denetle: "3 kalem daha önce
-   yüklenmiş, tekrar yazılmayacak" ve yazılacak 0.
-5. Kanal: **Tümü** → Detay: N11 satırları TY/HB arasında tarih sırasında,
-   "N11" rozetiyle.
-
-### AÇIK
-
-- N11 transfer **detayı** (kesintiler: komisyon · kargo hizmet bedeli ·
-  ertelenen tutar) dosyada yok; panelde transferin üstüne tıklayınca açılan
-  ekranın dışa aktarımı varsa okuyucu genişletilir — kullanıcı bakacak.
-- Her hafta (Perşembe) dosyayı indirip yüklemek gerekir; otomasyon yolu yok.
 
 ---
 
@@ -2238,7 +1982,6 @@ yeniden ölçülecek. Bugün yapılacak bir iş yok.
 
 ---
 
-
 ## 🔶 K206 — `/api/yedek/otomatik`: BLOB DEPOSU ASKIYA ALINMIŞ · 10.09.2026 · [ARA ÖNLEM KOŞTU — ASIL SEBEP AÇIK]
 
 K205 sırasında (ARSIV.md) rastlantısal bulundu, KENDİSİYLE İLGİSİZ:
@@ -2350,8 +2093,6 @@ değil **"bakılacak şey yok"**tur.
 
 ---
 
-
-
 ## 💤 K195-② — "KAÇ PAKET YOLDA / TESLİM EDİLDİ" KUTUSU · 09.09.2026 · [AYRI KALEM — TASARIM ONAYI BEKLİYOR]
 
 K195'in ana gövdesi (kanal teslim/kargo damgası — `deliveredAt` ·
@@ -2377,7 +2118,6 @@ boş doğuyor ve yalnız **bundan sonraki** teslimlerle doluyor. "Teslim
 edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
 
 ---
-
 
 ## 🔶 K194-HB — HB'YE STOK/FİYAT GÖNDERİMİ (ÜÇÜNCÜ KANAL) · 09.09.2026 · [UÇ + GÖVDE RESMİ DOKÜMANDAN OKUNDU — SIT DENEMESİ + YAZMA KODU BEKLİYOR]
 
@@ -2520,7 +2260,6 @@ fiyat-stok YOK) — ikisi de kullanıcı tarafından denendi, ikisi de bu iş
 DEĞİL.
 
 ---
-
 
 ## 🔶 K-HB-PAZARLAMA — SATICI İNDİRİMİ · 07.09.2026 · [ÖLÇÜLDÜ · YAZIM BEKLİYOR]
 
@@ -3320,7 +3059,6 @@ düzeltildi. ⭐ Ardından 199 iadenin occurredAt aralığı ölçüldü:
     resmî dönem artık: kargolu satış 5.888 · iade kaydı 218
 
 ### ⏭ SIRADA (V2 baz mandası — kalanlar)
-
 
 - **TAZMİN 13 — HALİL'İN İKİ CEVABINI BEKLİYOR:** ① tahsil edilen tutar
   hangi kolon ([10] liste mi, KALAN mı)? ② tahsilat KDV'li mi?
