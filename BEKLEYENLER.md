@@ -418,6 +418,19 @@ denetim değildir".)_
 **11/11** (yeni üç yön: okundu kilidini düşür · ipucuyu hiç yakma · sayacı
 ekrana çizme).
 
+### ✓ KAPANDI — SATIRIN NE SÖYLEDİĞİ ANLAŞILDI (23.09.2026)
+
+Kullanıcı 22.09'da _"3 anlaşılmadı"_ demişti; satir sade dille yeniden
+anlatıldı ve **_"3 tamam · bu tamam"_** cevabı geldi. Bu madde bir daha
+açılmaz.
+
+⚠ **AMA ÖLÇÜM HENÜZ GELMEDİ — İKİSİ AYRI ŞEY.** Anlaşılan şey satirin NE
+SÖYLEDİĞİ; henüz bilinmeyen şey o satirin GERÇEK CİHAZDA NE YAZDIĞI.
+Teşhisi ikiye bölen tek soru duruyor: **barkod okunmazken sayi ARTIYOR MU?**
+· artıyorsa → çözücü çalışıyor, kırılma canlı karede (bulanıklık · odak ·
+  telefonun verdiği gerçek çözünürlük)
+· artmıyorsa / satir hiç çıkmıyorsa → kırılma ÇÖZÜCÜDEN ÖNCE
+
 ### AÇIK — KIRILMANIN YERİ HÂLÂ BİLİNMİYOR
 
 Ölçüm çözücüyü ve defteri temize çıkardı; geriye **canlı kamera karesi**
