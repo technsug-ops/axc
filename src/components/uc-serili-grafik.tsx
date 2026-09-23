@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { tabloNoktalari } from "@/lib/tablo-sirasi";
@@ -193,6 +194,14 @@ export function UcSeriliGrafik({
   const dDeger = (n: UcSeriNoktasi) => n.d ?? 0;
 
   const sutunMu = sekil === "sutun";
+  /**
+   * YIĞILMIŞ SÜTUN (K260, kullanıcı 24.09.2026: «hangi gün toplam ne yapıldığı
+   * belli olmuyor, birbirinin üstüne eklenen daha iyi»). Yalnız TOPLAMIN
+   * anlamlı olduğu kipte: `toplamVar` (adet görünümü). Ciro kipinde alım ile
+   * satış ZIT akışlardır — üst üste koymak «para hangi yöne aktı» sorusunu
+   * bulandırır; orada gruplu kalır (aynı kural `serileriKur`de).
+   */
+  const yigilmis = sutunMu && toplamVar;
   const G = sutunMu ? G_SUTUN : G_CIZGI;
   const IC_GENISLIK = G.genislik - G.sol - G.sag;
   const IC_YUKSEKLIK = G.yukseklik - G.ust - G.alt;
@@ -281,7 +290,7 @@ export function UcSeriliGrafik({
         ))}
         {/* TOPLAM — kesikli, çünkü ölçülen bir şey değil TÜRETİLMİŞ.
             Göstergedeki çizgi de kesikli ki grafiğe bakmadan anlaşılsın. */}
-        {toplamVar ? (
+        {toplamVar && !yigilmis ? (
           <span className="text-muted-foreground inline-flex items-center gap-1.5">
             <span
               aria-hidden
@@ -357,23 +366,36 @@ export function UcSeriliGrafik({
               const grup = yuva * 0.78;
               const cubuk = grup / seriler.length;
               const sol = x(i) - grup / 2;
+              /* YIĞIN TABANLARI — reduce ile (render içinde değişken mutasyonu yok,
+                 PastaGrafik dersi). Negatif değer yığına girmez; adet kipinde yok. */
+              const tabanlar = seriler.reduce<number[]>(
+                (acc, sr) => [
+                  ...acc,
+                  (acc[acc.length - 1] ?? 0) + Math.max(0, seriDegeri(n, sr.anahtar)),
+                ],
+                [],
+              );
+              const yiginUstu = tabanlar[tabanlar.length - 1] ?? 0;
+              const yiginGen = yuva * 0.62;
               return seriler.map((s, k) => {
                 const deger = seriDegeri(n, s.anahtar);
-                const y0 = y(0);
-                const y1 = y(deger);
+                const alt = yigilmis ? (k === 0 ? 0 : tabanlar[k - 1]!) : 0;
+                const ust = yigilmis ? alt + Math.max(0, deger) : deger;
+                const y0 = y(alt);
+                const y1 = y(ust);
                 const dikd = (
                   <rect
-                    x={sol + k * cubuk}
+                    x={yigilmis ? x(i) - yiginGen / 2 : sol + k * cubuk}
                     y={Math.min(y0, y1)}
-                    width={Math.max(1, cubuk - 1)}
+                    width={yigilmis ? yiginGen : Math.max(1, cubuk - 1)}
                     height={Math.max(0.5, Math.abs(y0 - y1))}
                     fill={s.renk}
-                    rx={1.5}
+                    rx={yigilmis ? 0 : 1.5}
                   />
                 );
                 const adres = n.adres?.[s.anahtar];
                 const baslik = `${n.tamEtiket} · ${s.ad}: ${bicimle(deger)}`;
-                return adres ? (
+                const cizim = adres ? (
                   <a key={`${s.anahtar}-${i}`} href={adres} aria-label={baslik}>
                     <title>{baslik}</title>
                     {dikd}
@@ -382,6 +404,25 @@ export function UcSeriliGrafik({
                   <g key={`${s.anahtar}-${i}`} aria-hidden>
                     {dikd}
                   </g>
+                );
+                return (
+                  <Fragment key={`k-${s.anahtar}-${i}`}>
+                    {cizim}
+                    {/* GÜNÜN TOPLAMI ÇUBUĞUN TEPESİNDE — kullanıcının sorduğu şey.
+                        Yalnız son dilimde bir kez; yuva 28 birimden darsa (11 px
+                        yazı üç haneyi taşıyamaz) yazılmaz, tablo yine söyler. */}
+                    {yigilmis && k === seriler.length - 1 && yuva >= 28 ? (
+                      <text
+                        aria-hidden
+                        x={x(i)}
+                        y={y(yiginUstu) - 4}
+                        textAnchor="middle"
+                        className="fill-muted-foreground text-[11px] tabular-nums"
+                      >
+                        {bicimle(yiginUstu)}
+                      </text>
+                    ) : null}
+                  </Fragment>
                 );
               });
             })
@@ -407,7 +448,7 @@ export function UcSeriliGrafik({
           YOK — tıklanınca alıma mı satışa mı kargoya mı gidileceği belirsiz.
           Tıklanabilir görünüp hiçbir yere gitmemek, İlke #2'nin tersidir.
         */}
-        {toplamVar ? (
+        {toplamVar && !yigilmis ? (
           <path
             aria-hidden
             d={yol(toplamDeger)}

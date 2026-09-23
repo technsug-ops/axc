@@ -23,7 +23,12 @@ import {
   KIYAS_ANAHTARLARI,
   oranDegisimi,
 } from "../src/lib/karsilastirma";
-import { HALKA_DILIM_TAVANI, halkaDilimleriniTopla } from "../src/components/halka-grafik";
+import {
+  HALKA_DILIM_TAVANI,
+  halkaDilimleriniTopla,
+  OK_ETIKET_ARALIGI,
+  okEtiketleriniAyir,
+} from "../src/components/halka-grafik";
 import { SON_GUN_SAYISI, sonGunSerisi } from "../src/lib/panel/son-gun-serisi";
 import { PAY_FARKI_ESIGI, payFarki } from "../src/lib/panel/pay-farki";
 import {
@@ -4929,10 +4934,19 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     "serit basligi CIZILIYOR («Bugun ne yapmaliyim»)",
     /text-muted-foreground text-xs font-medium\">\s*\{t\("baslik"\)\}/.test(kutu),
   );
-  /** * IKI EMEK AYRI KALIR (20.08 gerekcesi): ayrac + grup ikonu, grup basina. */
+  /**
+   * *** OLCUT ESKIDI, SUSTURULMADI (K259). ESKI (K254): gruplar tek satirda ince
+   * ayracla ayriliyordu. NIYE ESKIDI: kullanici «biraz karmasik, turlerine gore» dedi;
+   * her grup KENDI SATIRINDA, GORUNUR basligi + ikonu + bekleyen sayisiyla.
+   */
   kontrol(
-    "gruplar ayrac + ikonla AYRILIYOR (20.08 gerekcesi yasiyor)",
-    /GOREV_GRUPLARI\.map[\s\S]{0,300}?bg-border hidden h-5 w-px[\s\S]{0,200}?GRUP_IKONU\[grup\]|GRUP_IKONU\[grup\][\s\S]{0,300}?bg-border hidden h-5 w-px/.test(kutu),
+    "gruplar KENDI SATIRINDA, baslik + ikonla (20.08 gerekcesi okunur)",
+    /GOREV_GRUPLARI\.map[\s\S]{0,500}?GRUP_IKONU\[grup\][\s\S]{0,900}?<span className="truncate">\s*\{t\(grup === "SEVKIYAT" \? "baslikSevkiyat" : "baslikTedarik"\)\}/.test(kutu) &&
+      !/bg-border hidden h-5 w-px/.test(kutu),
+  );
+  kontrol(
+    "  ...grup basligi bekleyen SAYISINI yaziyor",
+    /const grupBekleyen = bekleyenToplam\(grubunkiler\)[\s\S]{0,900}?\{grupBekleyen\}/.test(kutu),
   );
   kontrol(
     "  ...ve iki grup da gezdiriliyor (GOREV_GRUPLARI, elle liste degil)",
@@ -6733,6 +6747,46 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("iade sekmesi grafiği ÇİZİYOR", panel4.includes("seriler={iadeOraniSerileri}"));
   /** ⚠ Seri anahtarı ADDAN değil KİMLİKTEN — ad değişince grafik bozulmasın. */
   kontrol("seri anahtarı kanal KODUNDAN", panel4.includes("anahtar: `kanal-${k.kod}`"));
+}
+
+/**
+ * === YIGILMIS SUTUN (K260) + OK ETIKETLERI AYRIK (K261) — 24.09.2026 =====
+ */
+{
+  const grafik = readFileSync("src/components/uc-serili-grafik.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  /** * YIGIN yalniz toplamin ANLAMLI oldugu kipte: ciro kipinde alim/satis zit akis. */
+  kontrol("yigilmis = sutun && toplamVar (ciro kipinde gruplu kalir)",
+    /const yigilmis = sutunMu && toplamVar;/.test(grafik));
+  kontrol("yigin tabanlari reduce ile (render icinde mutasyon yok)",
+    /const tabanlar = seriler\.reduce<number\[\]>/.test(grafik));
+  /** * GUNUN TOPLAMI CUBUGUN TEPESINDE — kullanicinin sordugu sey. */
+  kontrol("gun toplami cubugun tepesinde yaziliyor (son dilimde, bir kez)",
+    /yigilmis && k === seriler\.length - 1 && yuva >= 28 \? \([\s\S]{0,400}?bicimle\(yiginUstu\)/.test(grafik));
+  /** * KESIKLI TOPLAM CIZGISI yigilmisken CIZILMEZ ve GOSTERGEDEN DUSER (kisit #1). */
+  kontrol("kesikli toplam yigilmisken yok (gosterge + cizgi)",
+    (grafik.match(/toplamVar && !yigilmis \? \(/g) ?? []).length === 2);
+  kontrol("  ...yigilmis dikdortgen kovanin ortasinda, gruplu olan yuvada",
+    /x=\{yigilmis \? x\(i\) - yiginGen \/ 2 : sol \+ k \* cubuk\}/.test(grafik));
+
+  /* K261 — DEGER TESTLERI */
+  const ayrik = okEtiketleriniAyir([
+    { sagda: true, x: 380, y: 100 },
+    { sagda: true, x: 380, y: 108 },
+    { sagda: false, x: 20, y: 150 },
+    { sagda: true, x: 460, y: 200 },
+  ]);
+  kontrol("ayni taraftaki yakin oklar en az OK_ETIKET_ARALIGI kadar ayriliyor",
+    ayrik[1]!.y - ayrik[0]!.y >= OK_ETIKET_ARALIGI && ayrik[0]!.y === 100,
+    { a: ayrik[0]!.y, b: ayrik[1]!.y });
+  kontrol("  ...uzak olan dokunulmuyor, sira korunuyor",
+    ayrik[3]!.y === 200 && ayrik.length === 4);
+  kontrol("  ...sol uc kadrajin icine kirpiliyor, sag uc da",
+    ayrik[2]!.x >= 96 && ayrik[3]!.x <= 470 - 96, { sol: ayrik[2]!.x, sag: ayrik[3]!.x });
+  const halka = readFileSync("src/components/halka-grafik.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("halka ayrilmis uclari CIZIYOR (govde dogru ama baglanmamis olmasin)",
+    /const uclar = okEtiketleriniAyir\(/.test(halka) && /yerlesimAyrik\.map\(\(y\) => \(/.test(halka));
 }
 
 console.log("\n" + "=".repeat(70));

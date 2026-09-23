@@ -13,6 +13,132 @@
 
 ---
 
+## 🔴 K261 — HALKA OK ETİKETLERİ AYRILIYOR VE KADRAJDA KALIYOR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR · EKRAN GÖRÜNTÜSÜ BEKLENİYOR]
+
+Kullanıcı 24.09: _"Pasta grafiğin yanındaki yazılar problemli."_ Ekran
+görüntüsü henüz gelmedi; **sebep tahmini, teyit Halil testinde**. K256'nın ok
+uçları dilimin açısından türetiliyordu: iki küçük dilim yan yanaysa oklar aynı
+noktaya varır ve yazılar **üst üste biner**; uç kadraj kenarına yakınsa ad
+**kesilir**. İkisi de "yazılar problemli" görüntüsünü üretir.
+
+### YAPILAN
+
+- `halka-grafik.tsx`: saf gövde **`okEtiketleriniAyir`** — aynı taraftaki uçlar
+  y'ye göre sıralanır, aralarında en az **`OK_ETIKET_ARALIGI = 30`** birim
+  (iki satırlık etiket ≈ 28) bırakılır; x, yazı payı (96) kadar kadraj içine
+  kırpılır. Sıra korunur (girdi indeksine göre döner); SVG'den bağımsız,
+  **değer testiyle** sınandı (3 ölçüt: yakınlar itiliyor · uzak dokunulmuyor ·
+  iki kenar kırpılıyor) + gövdenin çizime **bağlı** olduğu ölçülüyor.
+- Ok, dirsekten **ayrılmış** uca gider; halkanın kendisi, dilimler, yüzdeler,
+  merkez toplam ve dipnot değişmedi.
+- Mutasyonla: ayırma çağrısı kaldırıldı · gövde aralığı uygulamıyor.
+
+### ⚠ EĞER SORUN BAŞKAYSA
+
+Görüntü gelince sebep bu değilse (ör. metin uzunluğu, renk, yüzde biçimi) kalem
+**kapanmaz**; `─── ②` olarak aynı satırda devam eder — yeni satır açılmaz.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → "Ciro — kanala göre" halka kartı: her dilimin oku ayrı bir etikete
+   gitmeli; **hiçbir yazı bir başkasının üstüne binmemeli**.
+2. Kanal adları kartın kenarında **kesilmemeli** (soldaki ve sağdaki en uç
+   etiketler tam okunmalı).
+3. Etiketteki tutarların toplamı (Diğer dahil) merkezdeki toplamla birebir.
+4. Kanal süzgeci tek kanal yapıldığında tek dilim + tek etiket; yazı yerinde.
+5. **Ekran görüntüsünü yine de gönderin** — sorun bu değilse ② açılır.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #2 · #12)
+
+---
+
+## 🔴 K260 — GÜNLÜK OPERASYON YIĞILMIŞ SÜTUN, GÜNÜN TOPLAMI TEPEDE · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 24.09: _"Renklendirmesi güzel fakat hangi gün toplam ne yapıldığı
+belli olmuyor; birbirinin üstüne eklenen bir grafik daha iyi."_ K258'in dört
+çubuğu yan yanaydı; günün toplamı hiçbir yerde okunmuyordu.
+
+### YAPILAN
+
+- `UcSeriliGrafik` sütun kipi **adet görünümünde YIĞILMIŞ**: dört seri üst
+  üste, çubuğun boyu günün toplamı, **tepesinde rakam** (`bicimle(yiginUstu)`).
+  Yığın tabanları `reduce` ile (render içinde değişken mutasyonu yok —
+  PastaGrafik dersi). Yuva 28 birimden darsa rakam yazılmaz (11 px yazı üç
+  haneyi taşıyamaz); altta tablo zaten söyler.
+- Kesikli **"Toplam" çizgisi** ve göstergedeki karşılığı yığılmışken **çizilmez**
+  — çubuğun boyu zaten toplam, ikinci kez söylemek gürültü.
+- Tıklama hedefleri (her dilim kendi süzülmüş listesine), gösterge, özet satırı,
+  tablo **aynen**.
+
+### ⛔ CİRO KİPİ GRUPLU KALDI — BİLEREK
+
+Ciro görünümünde alım (para çıkıyor) ile satış (para giriyor) **zıt akışlardır**;
+üst üste koymak _"para hangi yöne aktı"_ sorusunu bulandırır. `toplamVar` o kipte
+zaten `false` (`serileriKur` kararı, 21.08); yığın yalnız `sutunMu && toplamVar`
+ise açılır. Mutasyonla sınandı (3): yığın kalktı · toplam etiketi kalktı ·
+kesikli toplam yığılmışken geri geldi (FAZLADAN). Panel harness'i tek başına:
+**62/62 (K259 1 taşınan · K260 3 · K261 2 — hepsi kırmızı yandı)**.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → "Günlük operasyon" kartı, **Adet** sekmesi: her gün **tek çubuk**,
+   içinde dört renk dilim (mor sipariş · yeşil mal kabul · mavi satış · turuncu
+   kargo) üst üste; çubuğun **tepesinde günün toplamı** yazılı.
+2. Bir günün tepesindeki rakam, aynı gün için açılır tablodaki dört sütunun
+   **toplamına birebir** eşit olmalı.
+3. Göstergede "Toplam" (kesikli) artık **olmamalı**; dört seri adı durmalı.
+4. **Ciro** sekmesine geçin → çubuklar yine **yan yana** (gruplu), tepede rakam
+   yok — bilerek.
+5. Bir dilime tıklayınca o günün ve o serinin süzülmüş listesi açılmalı.
+6. Telefonda çubuklar okunur; günler sıkışınca tepedeki rakamlar kaybolabilir,
+   tablo açılınca değerler orada.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #2 · #10 · #15)
+
+---
+
+## 🔴 K259 — GÖREV ŞERİDİ TÜRLERİNE GÖRE SATIRLAR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 24.09: _"Bugün ne yapalım kartı biraz karmaşık; türlerine göre
+düzenlemek gerek."_ K254 iki grubu (sevkiyat · tedarik) **tek satırda** ince
+bir ayraç ve ikonla ayırıyordu; iki emek göz için karışıyordu.
+
+### YAPILAN
+
+- `gorev-kutusu.tsx`: başlık satırı (ad + bekleyen/temiz rozeti) ayrı; altında
+  **her grup kendi satırında** — başında ikon + **görünür grup adı** + o grubun
+  bekleyen sayısı `(n)`, ardından çipler. Başlık sabit genişlikte (`sm:w-48`)
+  ki iki satırın çipleri aynı hizadan başlasın. Telefonda çipler satır içinde
+  sarar; yatay kaydırma yok.
+- Çiplerin kendisi, ilerleme bağlantısı, sıfır çipin `<span>` kalması, `sinif`
+  renkleri **aynen** (K254).
+
+### ⚠ ÖLÇÜT ESKİDİ, SUSTURULMADI
+
+K254'ün _"gruplar ayraç + ikonla AYRILIYOR"_ ölçütü ayracı arıyordu; ayraç
+bilerek kalktı. Ölçüt _"gruplar KENDİ SATIRINDA, başlık + ikonla"_ oldu ve
+ayracın **geri gelmediğini** de sınıyor (niye eskidiği yorumda). Mutasyon
+_"GRUP AYRACI KALKTI"_ → _"GRUP BAŞLIĞI KALKTI"_ (çapa başlığa taşındı);
+yeni ölçüt: grup başlığı bekleyen sayısını yazıyor.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → hüküm kartlarının altında "Bugün ne yapalım" kutusu: **ilk satır**
+   başlık + "N bekleyen" (amber) ya da "Hepsi temiz" (yeşil).
+2. Altında **iki ayrı satır**: "Sevkiyat" (kamyon ikonu) ve "Tedarik" (onaylı
+   paket ikonu); her satırın başında grup adı ve parantez içinde o grubun bekleyen
+   toplamı — iki parantezin toplamı üstteki "N bekleyen" ile **birebir** aynı.
+3. Sevkiyat satırındaki çipler (paketle · kargo bekleyen …) yalnız o satırda;
+   tedarik çipleri (mal kabul · sayım …) yalnız kendi satırında.
+4. Bir çipe tıklayınca o işin süzülmüş listesi açılmalı (K254 davranışı).
+5. Telefonda grup adı satır başında kalmalı, çipler alta sarmalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok — `baslik`,
+`baslikSevkiyat`, `baslikTedarik`, `bekleyen`, `hepsiTemiz` mevcut) ·
+**kullanıcı kolaylığı: ✓** (İlke #2 · #8 · #12)
+
 ## 🔴 K258 — PARA ve OPERASYON YAN YANA, OPERASYON SÜTUN (DÖRT SERİ) · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Demonun son bloğu: **"Ciro ve NET-2 — son 14 gün"** çizgi (3/5) ile **günlük

@@ -477,11 +477,12 @@ const MUTASYONLAR: Mutasyon[] = [
       "satirdaki cipler neyin cipi oldugunu soylemez - «Onay bekleyen 3» tek basina bir gorev listesi gibi okunmaz",
   },
   {
-    ad: "GRUP AYRACI KALKTI (iki emek karisti)",
+    /* K259: ayrac gitti, grup basligi geldi — capa basliga tasindi. */
+    ad: "GRUP BASLIGI KALKTI (iki emek karisti)",
     yon: "KALDIRAN",
     dosya: KUTU,
     bul:
-      "            <span className=\"bg-border hidden h-5 w-px md:block\" aria-hidden />\n",
+      "              <span className=\"truncate\">\n                {t(grup === \"SEVKIYAT\" ? \"baslikSevkiyat\" : \"baslikTedarik\")}\n              </span>\n",
     koy:
       "",
     bozdugu:
@@ -673,6 +674,61 @@ const MUTASYONLAR: Mutasyon[] = [
       "          <Card className=\"flex min-w-0 flex-col xl:col-span-5\">",
     bozdugu:
       "operasyon karti alt satira duser; iki grafik yine alt alta",
+  },
+  {
+    ad: "YIGIN KALKTI (adet kipinde de gruplu)",
+    yon: "KALDIRAN",
+    dosya: GRAFIK,
+    bul:
+      "  const yigilmis = sutunMu && toplamVar;",
+    koy:
+      "  const yigilmis = false;",
+    bozdugu:
+      "gunun toplami yine gorunmez - kullanicinin sordugu sey cevapsiz kalir",
+  },
+  {
+    ad: "GUN TOPLAMI ETIKETI KALKTI",
+    yon: "KALDIRAN",
+    dosya: GRAFIK,
+    bul:
+      "                    {yigilmis && k === seriler.length - 1 && yuva >= 28 ? (",
+    koy:
+      "                    {false ? (",
+    bozdugu:
+      "yigin var ama rakam yok - toplam gozle tahmin edilir",
+  },
+  {
+    ad: "KESIKLI TOPLAM YIGILMISKEN GERI GELDI",
+    yon: "FAZLADAN",
+    dosya: GRAFIK,
+    bul:
+      "        {toplamVar && !yigilmis ? (\n          <path",
+    koy:
+      "        {toplamVar ? (\n          <path",
+    bozdugu:
+      "cubugun boyu zaten toplam; ustune bir de kesikli cizgi - ayni sey iki kez",
+  },
+  {
+    ad: "OK ETIKETLERI AYRILMIYOR (ust uste biner)",
+    yon: "KALDIRAN",
+    dosya: HALKA,
+    bul:
+      "  const uclar = okEtiketleriniAyir(yerlesim.map((y) => ({ sagda: y.sagda, ...y.uc })));",
+    koy:
+      "  const uclar = yerlesim.map((y) => ({ sagda: y.sagda, ...y.uc }));",
+    bozdugu:
+      "iki kucuk dilimin yazilari ayni noktaya duser - okunmaz",
+  },
+  {
+    ad: "AYIRMA GOVDESI ARALIGI UYGULAMIYOR",
+    yon: "KALDIRAN",
+    dosya: HALKA,
+    bul:
+      "        sonuc[indeksler[k]!] = { ...bu, y: onceki.y + OK_ETIKET_ARALIGI };",
+    koy:
+      "        sonuc[indeksler[k]!] = { ...bu };",
+    bozdugu:
+      "govde cagriliyor ama hicbir seyi itmiyor - deger testi yakalar",
   },
 ];
 

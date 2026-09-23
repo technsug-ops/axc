@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Check, PackageCheck, Truck } from "lucide-react";
@@ -191,33 +190,45 @@ export async function GorevKutusu({
   return (
     <div
       /**
-       * TEK SATIR, SARMALI. Telefonda çipler alt alta akar; hiçbir çip
-       * kaybolmaz, yatay kaydırma yok (İlke #8).
+       * TÜRLERİNE GÖRE SATIRLAR (K259, kullanıcı 24.09.2026: «biraz karmaşık;
+       * türlerine göre düzenlemek gerek»). K254 iki grubu tek satırda ince
+       * ayraçla ayırıyordu; iki emek göz için karışıyordu. Şimdi her grup
+       * KENDİ SATIRINDA, BAŞLIĞI ve bekleyen sayısıyla — 20.08 gerekçesi
+       * (farklı saat, farklı kişi) artık okunur hâlde.
+       * Telefonda çipler satır içinde sarar; yatay kaydırma yok (İlke #8).
        */
-      className="bg-card flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border px-3 py-2"
+      className="bg-card min-w-0 space-y-1.5 rounded-lg border px-3 py-2"
     >
-      <span className="text-muted-foreground text-xs font-medium">
-        {t("baslik")}
-      </span>
-      {/* Bekleyen iş AMBER, hepsi temiz YEŞİL — renk sistemi. */}
-      {toplam > 0 ? (
-        <DurumRozeti durum="uyari">{t("bekleyen", { sayi: toplam })}</DurumRozeti>
-      ) : (
-        <DurumRozeti durum="olumlu">{t("hepsiTemiz")}</DurumRozeti>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-muted-foreground text-xs font-medium">
+          {t("baslik")}
+        </span>
+        {/* Bekleyen iş AMBER, hepsi temiz YEŞİL — renk sistemi. */}
+        {toplam > 0 ? (
+          <DurumRozeti durum="uyari">{t("bekleyen", { sayi: toplam })}</DurumRozeti>
+        ) : (
+          <DurumRozeti durum="olumlu">{t("hepsiTemiz")}</DurumRozeti>
+        )}
+      </div>
       {GOREV_GRUPLARI.map((grup) => {
         const Ikon = GRUP_IKONU[grup];
+        const grubunkiler = grubunGorevleri(gorevler, grup);
+        const grupBekleyen = bekleyenToplam(grubunkiler);
         return (
-          <Fragment key={grup}>
-            {/* İKİ EMEK AYRI KALIR: ince ayraç + ikon, iki kart yerine. */}
-            <span className="bg-border hidden h-5 w-px md:block" aria-hidden />
-            <span className="text-muted-foreground inline-flex items-center" title={t(grup === "SEVKIYAT" ? "baslikSevkiyat" : "baslikTedarik")}>
-              <Ikon className="size-4" aria-hidden />
-              <span className="sr-only">
+          <div key={grup} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
+            {/* GRUP BAŞLIĞI — satırın başında, GÖRÜNÜR (K259). İkon + ad +
+                grubun bekleyen sayısı; sabit genişlik ki iki satırın çipleri
+                aynı hizadan başlasın. */}
+            <span className="inline-flex min-w-0 shrink-0 items-center gap-1.5 text-xs font-medium sm:w-48">
+              <Ikon className="text-muted-foreground size-4 shrink-0" aria-hidden />
+              <span className="truncate">
                 {t(grup === "SEVKIYAT" ? "baslikSevkiyat" : "baslikTedarik")}
               </span>
+              {grupBekleyen > 0 ? (
+                <span className="text-muted-foreground tabular-nums">({grupBekleyen})</span>
+              ) : null}
             </span>
-            {grubunGorevleri(gorevler, grup).map((g) => (
+            {grubunkiler.map((g) => (
               <GorevCipi
                 key={g.anahtar}
                 gorev={g}
@@ -239,7 +250,7 @@ export async function GorevKutusu({
                 }
               />
             ))}
-          </Fragment>
+          </div>
         );
       })}
     </div>

@@ -62,6 +62,43 @@ export function halkaDilimleriniTopla(
   };
 }
 
+/** Bir etiket iki satır (ad + tutar) ≈ 28 birim; oklar bundan yakın olamaz. */
+export const OK_ETIKET_ARALIGI = 30;
+/** Yazı en fazla ~90 birim; uç bu payı kadrajın dışına taşıramaz. */
+const OK_UC_X_SOL = 96;
+const OK_UC_X_SAG = 470 - 96;
+
+export type OkUcu = { sagda: boolean; x: number; y: number };
+
+/**
+ * OK UÇLARINI AYIRIR VE KADRAJDA TUTAR (K261, 24.09.2026).
+ * Kullanıcı: «halkanın yanındaki yazılar problemli». İki dilim yan yana
+ * küçükse okları aynı noktaya varır ve yazılar üst üste biner; uç kadraj
+ * kenarına yakınsa ad kesilir. Aynı taraftaki uçlar y'ye göre sıralanır ve
+ * en az `OK_ETIKET_ARALIGI` kadar itilir; x sınıra kırpılır. SAF — SVG'den
+ * bağımsız, değer testiyle sınanır. Sıra korunur (girdi indeksine göre döner).
+ */
+export function okEtiketleriniAyir(uclar: readonly OkUcu[]): OkUcu[] {
+  const sonuc = uclar.map((u) => ({
+    ...u,
+    x: u.sagda ? Math.min(u.x, OK_UC_X_SAG) : Math.max(u.x, OK_UC_X_SOL),
+  }));
+  for (const taraf of [true, false]) {
+    const indeksler = sonuc
+      .map((u, i) => (u.sagda === taraf ? i : -1))
+      .filter((i) => i >= 0)
+      .sort((a, b) => sonuc[a]!.y - sonuc[b]!.y);
+    for (let k = 1; k < indeksler.length; k++) {
+      const onceki = sonuc[indeksler[k - 1]!]!;
+      const bu = sonuc[indeksler[k]!]!;
+      if (bu.y - onceki.y < OK_ETIKET_ARALIGI) {
+        sonuc[indeksler[k]!] = { ...bu, y: onceki.y + OK_ETIKET_ARALIGI };
+      }
+    }
+  }
+  return sonuc;
+}
+
 export function HalkaGrafik({
   dilimler,
   toplam,
@@ -122,6 +159,10 @@ export function HalkaGrafik({
     };
   });
 
+  /* Uçlar ayrılır; ok, dirsekten AYRILMIŞ uca gider (K261). */
+  const uclar = okEtiketleriniAyir(yerlesim.map((y) => ({ sagda: y.sagda, ...y.uc })));
+  const yerlesimAyrik = yerlesim.map((y, i) => ({ ...y, uc: { x: uclar[i]!.x, y: uclar[i]!.y } }));
+
   return (
     <svg
       viewBox="0 0 470 266"
@@ -169,7 +210,7 @@ export function HalkaGrafik({
       <text x={CX} y={CY + 14} textAnchor="middle" fontSize="11" className="fill-muted-foreground">
         {toplamEtiketi}
       </text>
-      {yerlesim.map((y) => (
+      {yerlesimAyrik.map((y) => (
         <g key={`ok-${y.d.etiket}`}>
           <polyline
             fill="none"
