@@ -321,10 +321,19 @@ export default async function TazminatSayfasi() {
                     ) : null,
                     `${ortak("adet")}: ${k.quantity}`,
                   ]}
+                  /*
+                    ⛔ SÜTUNLAR SABİT (K235-③): tutar ve not satırdan satıra
+                    farklı genişlikte olduğu için sağ blok kayıyordu ve
+                    ARADAKİ açılır kutu her satırda başka yerde duruyordu.
+                    Genişlikler uydurulmadı, en uzun içeriğe göre seçildi:
+                    tutar `₺123.456,78` (11 hane) 8rem'e sığar · seçici
+                    zaten `w-40` · not `w-48`.
+                  */
+                  sagIzgara="sm:grid-cols-[8rem_10rem_12rem]"
                   sag={
                     <>
                       <span
-                        className={`tabular-nums whitespace-nowrap ${
+                        className={`tabular-nums whitespace-nowrap sm:text-right ${
                           acikMi(k.status) ? "font-semibold" : ""
                         }`}
                       >

@@ -66,7 +66,9 @@ export function NotAlani({
         }}
         aria-label={ortak("duzenle") + " — " + t("notEtiketi")}
         /* ⚠ MOBİLDE 44px — İlke #8. */
-        className="text-muted-foreground hover:text-foreground inline-flex min-h-11 max-w-48 items-start gap-1 py-1 text-left text-xs sm:min-h-0"
+        /* ⚠ `sm:w-48` SABİT: `max-w` kısa notta daralıyordu ve sağ blok
+           kayıyordu (K235-③). Telefonda sarma sürüyor. */
+        className="text-muted-foreground hover:text-foreground inline-flex min-h-11 max-w-48 items-start gap-1 py-1 text-left text-xs sm:min-h-0 sm:w-48"
       >
         <Pencil className="mt-0.5 size-3 shrink-0" aria-hidden />
         <span className="line-clamp-2">{not || t("notEkle")}</span>

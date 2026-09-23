@@ -149,6 +149,75 @@ console.log("\n1) ANATOMİ (gövde çağrılır, değer sınanır)");
   kontrol("sağ blok verilirse ağaçta duruyor", metinler(SatirKarti({ baslik: "M", sag: "rozet" })).includes("rozet"));
 
   kontrol("liste kabı tek aralık kararı verir (space-y)", siniflar(SatirListesi({ children: "x" })).some((c) => c.includes("space-y-")));
+  /**
+   * ═══ ③ SAĞ SÜTUNLAR SABİTİ (K235-③, 23.09.2026) ══════════════
+   * ⛔ VAKA: kullanıcı tazminat ekranının ekran görüntüsünü gönderdi —
+   * açılır kutular her satırda başka bir x konumundaydı. Sebep: sağ blok
+   * BÜTÜN olarak sağa yaslanıyor ve genişliği İÇERİĞİNE göre değişiyor;
+   * tutar ve not uzadıkça ARADAKİ kontrol kayıyor.
+   */
+  {
+    const sade = SatirKarti({ baslik: "x", sag: "y" }) as unknown;
+    const izgarali = SatirKarti({
+      baslik: "x",
+      sag: "y",
+      sagIzgara: "sm:grid-cols-[8rem_10rem_12rem]",
+    }) as unknown;
+    const sadeS = siniflar(sade).join(" | ");
+    const izS = siniflar(izgarali).join(" | ");
+    kontrol(
+      "sagIzgara verilince sağ blok IZGARA oluyor",
+      izS.includes("sm:grid") && izS.includes("sm:grid-cols-[8rem_10rem_12rem]"),
+      izS,
+    );
+    /** ⚠ TELEFONDA SARMA KALIR: sabit sütun dar ekranda taşar. */
+    kontrol(
+      "  ...ama telefon sarması KALKMIYOR (flex-wrap duruyor)",
+      izS.includes("flex flex-wrap"),
+      izS,
+    );
+    /** ⚠ VARSAYILAN DEĞİŞMEDİ: izgara İSTEĞE BAĞLI, 12 ekranı birden bozmaz. */
+    kontrol(
+      "sagIzgara verilmezse eski davranış AYNEN duruyor",
+      sadeS.includes("flex flex-wrap") && !sadeS.includes("sm:grid"),
+      sadeS,
+    );
+  }
+
+  /**
+   * ⛔ BEYAN İLE GERÇEK GENİŞLİK AYRIŞMASIN: ızgara "seciciyi 10rem say"
+   * diyorsa seçicinin kendisi de `w-40` olmalı. Biri değişip öteki
+   * kalırsa kayma SESSİZCE geri gelir.
+   * _(Anayasa: "iki yerde iki ölçüt olmaz".)_
+   */
+  {
+    /** ⚠ YORUMSUZ KODDA ARANIR: bir kuralı ANLATAN yorum onu SAĞLAMIS sayilmaz. */
+    const yorumsuzOku = (y: string) =>
+      readFileSync(y, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, " ")
+        .replace(/^\s*\/\/.*$/gm, " ");
+    const sayfa = yorumsuzOku("src/app/tazminat/page.tsx");
+    const secici = yorumsuzOku("src/app/tazminat/durum-secici.tsx");
+    const notAlani = yorumsuzOku("src/app/tazminat/not-alani.tsx");
+    kontrol(
+      "tazminat sağ sütunları SABİT (ızgara beyanı var)",
+      /sagIzgara="sm:grid-cols-\[8rem_10rem_12rem\]"/.test(sayfa),
+    );
+    kontrol(
+      "  ...seçicinin gerçek genişliği beyanla AYNI (w-40 = 10rem)",
+      /SelectTrigger className="h-9 w-40"/.test(secici),
+    );
+    kontrol(
+      "  ...not alanının gerçek genişliği beyanla AYNI (sm:w-48 = 12rem)",
+      /sm:w-48/.test(notAlani),
+    );
+    /** ⚠ `max-w` YETMEZ: kısa notta daralır ve blok yine kayar. */
+    kontrol(
+      "  ...not alanı `max-w` ile BİRAKILMADI (sabit genişlik şart)",
+      notAlani.includes("sm:w-48"),
+    );
+  }
+
   kosanBolumler.push("anatomi");
 }
 

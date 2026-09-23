@@ -166,7 +166,7 @@ göründü (`xl:grid` → `grid`). Geri alındı, harness 30/30 yeşil.
 
 ---
 
-## 🔴 K235 — SATIR KARTI: LİSTE ANATOMİSİ TEK GÖVDEYE ÇIKTI · 22.09.2026 · [① CANLIDA 9079642 · ② KOŞTU (7 ekran daha) — HALİL TESTİ BEKLİYOR]
+## 🔴 K235 — SATIR KARTI: LİSTE ANATOMİSİ TEK GÖVDEYE ÇIKTI · 22.09.2026 · [① CANLIDA 9079642 · ② KOŞTU (7 ekran daha) · ③ SAĞ SÜTUNLAR SABİTLENDİ — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI KARARI:** _"Bu sayfalar ve diğer sayfalardaki kart yapısını yeni
 yaptığın hakedişler sayfasındaki kart yapısına göre tekrar tasarla. Tüm
@@ -338,6 +338,86 @@ derse bu liste küçülür.
 5. `/hakedis` → Özet "Kanal ödemeleri" ve Detay "Ödeme özeti" satırları
    önceki hâliyle AYNI görünür (anatomi taşındı, görünüm değişmedi):
    **22.09.2026 · Hepsiburada · 138 kalem · ₺84.680,85 · Tahmini**.
+
+### ─── ③ SAĞ SÜTUNLAR SABİTLENDİ — KULLANICI BİLDİRİMİ 23.09.2026
+
+**KULLANICI:** tazminat ekranının ekran görüntüsü, sağ taraf kırmızıyla
+çerçevelenmiş — _"burada problem var, kutular sabit olmalı değil mi"_. Evet.
+
+#### SEBEP — SAĞ BLOK İÇERİĞİNE GÖRE GENİŞLİYOR
+
+Satır `flex`; sol blok `flex-1`, sağ blok içeriği kadar yer kaplıyor ve
+sağa yaslanıyor. Dolayısıyla **son öğenin sağ kenarı sabit, öndekilerin
+konumu değişken.** Tazminatta sıra `[tutar][durum seçici][not]`:
+
+    ₺799,91      → dar tutar   ┐
+    ₺15.819,10   → geniş tutar │→ seçici her satırda BAŞKA x konumunda
+    "Not ekle"   → dar not     │
+    iki satırlık hepsijet kodu → geniş not ┘
+
+⚠ **VE EN KÖTÜ ÖĞE ORTADAKİYDİ:** kayan şey bir rakam değil, bir
+**KONTROL**— tıklanacak kutu. Göz her satırda onu yeniden arıyor.
+
+#### ÇARE ORTAK GÖVDEDE, EKRANDA DEĞİL
+
+`SatirKarti` yeni bir seçenek aldı: **`sagIzgara`**. Verilirse sağ blok
+`sm:` ve üstünde SABİT sütunlu ızgaraya dönüşüyor; verilmezse davranış
+**aynen** eskisi gibi kalıyor — 12 ekranı birden bozma riski yok.
+
+⚠ **TELEFONDA SARMA KALDI:** 30rem'lik sabit sütun 360 px ekrana sığmaz;
+dar ekranda `flex-wrap` doğru davranıştır ve zaten sorun orada değildi.
+⚠ **GENİŞLİKLER UYDURULMADI:** tutar `8rem` (`₺123.456,78` 11 hane sığar),
+seçici `10rem` (`w-40`, zaten öyleydi), not `12rem` (`w-48`).
+⚠ **`max-w` YETMEDİ:** not alanı `max-w-48` idi, yani KİSA notta daralıyordu.
+`sm:w-48` yapıldı.
+
+#### ÖLÇÜLDÜ
+
+    satir-karti:dogrula              33 ölçüt (7'si yeni)
+    satir-karti-mutasyon:kontrol     11/11 (5'i yeni, üç yön)
+    tsc --noEmit                     çıktı BOŞ
+
+⭐ **BEYAN İLE GERÇEK GENİŞLİK BİRBİRİNE BAĞLANDI:** ızgara "seçici 10rem"
+diyorsa bekçi seçicinin gerçekten `w-40` olduğunu da ölçüyor. `w-40`ı
+`w-44` yapan mutasyon KIRMIZI yandı — yoksa ikisi ayrışır ve kayma
+sessizce geri gelirdi. _(Anayasa: "iki yerde iki ölçüt olmaz".)_
+
+#### ⚠ AYNI KUSUR BAŞKA EKRANLARDA DA VAR — ÖLÇÜLDÜ, DEĞİŞTİRİLMEDİ
+
+`sag` bloğuna BİRDEN ÇOK öğe veren **12 ekran** var. Tazminat dışında
+kaymaya açık olanlar:
+
+| ekran | sağ blok | kayan |
+|---|---|---|
+| `/alimlar` | tutar · rozet · eylemler | tutar, rozet |
+| `/giderler` | tutar · eylemler | tutar |
+| `/kanal-sku` | komisyon · düzenleyici | komisyon |
+| `/iadeler` | adet · rozetler · (koşullu kâr) | hepsi |
+| `/hakedis` (Özet · 2 yer) | tutar · 2 rozet | tutar, ilk rozet |
+| `/hakedis` ödeme özeti | kanal rozeti · durum rozeti | kanal adı değişken |
+
+Kaymayanlar (tek öğe ya da eşit genişlikte rozet): `/kanal-listeleme` ·
+`/nakit-takvimi` · `/kartlar` · `/ayarlar/konumlar` · `/ayarlar/donemler`.
+
+⛔ **NİYE ŞİMDİ DEĞİŞTİRİLMEDİ:** her ekranın sütun genişliği O EKRANIN en
+uzun içeriğine göre seçilmeli; körlemesine seçilen dar bir sütun **rakamı
+kırpar** ve kırpılmış rakam yanlış okunur — hizasızlıktan kötü. Altı
+ekranı görmeden değiştirmek "sınanmamış ekran, ekran değildir" kuralına da
+aykırı. **Mekanizma hazır**; sıra kullanıcının hangisini istediğine göre.
+
+#### HALİL TEST LİSTESİ (③)
+
+1. `/tazminat` → Talepler listesi. **Bütün açılır kutular alt alta AYNI
+   hizada** başlamalı — tutarı `₺799,91` olan satırla `₺15.819,10` olan
+   satır dahil.
+2. Tutarlar sağa dayalı ve alt alta okunabilir olmalı (`8rem` sütun).
+3. Not sütunu: "Not ekle" yazan satırla iki satırlık not taşıyan satır
+   **aynı genişlikte** olmalı.
+4. Telefonda aynı ekran: yatay kaydırma ÇIKMAMALI; öğeler alt alta sarmalı.
+5. Hiçbir rakam kırpılmamalı — en uzun tutar tam görünmeli.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #10 tutarlılık · #12 alanı verimli kullan)
 
 ---
 

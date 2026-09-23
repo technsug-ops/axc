@@ -52,6 +52,7 @@ export function SatirKarti({
   vurgulu = false,
   baglam,
   sag,
+  sagIzgara,
   zemin,
   acilir,
   acikMi = false,
@@ -67,6 +68,24 @@ export function SatirKarti({
   baglam?: ReactNode[];
   /** Sağ blok: tutar, rozet, düğme. */
   sag?: ReactNode;
+  /**
+   * Sağ bloğun sütun şablonu — verilirse sütunlar **SABİT** genişlikte
+   * hizalanır (`sm:grid-cols-[8rem_10rem_12rem]` gibi).
+   *
+   * ⛔ NİYE VAR (K235-③, 23.09.2026, kullanıcı bildirimi): sağ blok bir
+   * BÜTÜN olarak sağa yaslanıyor ve genişliği İÇERİĞİNE göre değişiyor.
+   * Tazminat ekranında tutar (`₺799,91` ↔ `₺15.819,10`) ve not (`Not ekle`
+   * ↔ iki satırlık hepsijet kodu) satırdan satıra farklı yer kaplayınca
+   * bloğun sol kenarı kayıyor ve ARADAKİ açılır kutu her satırda başka bir
+   * yerde duruyor. Kullanıcı: _"kutular sabit olmalı değil mi"_ — evet.
+   *
+   * ⚠ YALNIZ `sm:` VE ÜSTÜ: telefonda sabit sütun taşar; orada sarma
+   * (`flex-wrap`) doğru davranıştır ve zaten sorun da orada değil.
+   *
+   * ⚠ GENİŞLİK UYDURULMAZ, EN UZUN İÇERİĞE GÖRE SEÇİLİR: dar bir sütun
+   * rakamı kırpar ve kırpılan rakam yanlış okunur.
+   */
+  sagIzgara?: string;
   /**
    * Satırın DİKKAT çeken hâli — tabloda satır zemininin boyanmasının
    * karşılığı (ör. kanalda kapalı duran listeleme). Renk sınıfı `lib/renkler`
@@ -109,7 +128,14 @@ export function SatirKarti({
         ) : null}
       </div>
       {sag ? (
-        <div className="flex flex-wrap items-center gap-2">{sag}</div>
+        <div
+          className={
+            "flex flex-wrap items-center gap-2" +
+            (sagIzgara ? " sm:grid sm:items-center " + sagIzgara : "")
+          }
+        >
+          {sag}
+        </div>
       ) : null}
     </>
   );

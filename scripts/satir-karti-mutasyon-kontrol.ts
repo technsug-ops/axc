@@ -18,6 +18,9 @@ import { desenNormalle } from "./mutasyon-deseni";
 const BEKCI = "scripts/satir-karti-dogrula.ts";
 const GOVDE = "src/components/satir-karti.tsx";
 const EKRAN = "src/app/tazminat/page.tsx";
+/** K235-3: izgara beyani ile GERCEK genislik ayrisirsa kayma geri gelir. */
+const SECICI = "src/app/tazminat/durum-secici.tsx";
+const NOT_ALANI = "src/app/tazminat/not-alani.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -82,6 +85,54 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "                  sag={<Table><ListeKarti /></Table>}",
     bozdugu:
       "masaustu tablo + telefon karti ikilisi geri doner; biri duzeltilip oteki unutulur (Ilke #10)",
+  },
+  {
+    /* K235-3: kullanici ekran goruntusu gonderdi - acilir kutular her
+       satirda baska yerdeydi. Sag blok BUTUN olarak saga yaslaniyor ve
+       genisligi icerigine gore degisiyor. */
+    ad: "IZGARA BEYANI DUSTU - sag sutunlar yine kayar",
+    yon: "KALDIRAN",
+    dosya: EKRAN,
+    bul: '                  sagIzgara="sm:grid-cols-[8rem_10rem_12rem]"',
+    koy: "                  /* izgara beyani kaldirildi */",
+    bozdugu:
+      "tutar ve not uzadikca ARADAKI acilir kutu her satirda baska x konumunda durur - kullanicinin bildirdigi arizanin ta kendisi",
+  },
+  {
+    ad: "GOVDE IZGARAYI UYGULAMIYOR - beyan var, etkisi yok",
+    yon: "KALDIRAN",
+    dosya: GOVDE,
+    bul: '            (sagIzgara ? " sm:grid sm:items-center " + sagIzgara : "")',
+    koy: '            ""',
+    bozdugu:
+      "ekran sutun beyan eder, govde onu hic uygulamaz - beyan sessizce bos soze doner",
+  },
+  {
+    ad: "TELEFON SARMASI KALKTI - dar ekranda sabit sutun tasar",
+    yon: "FAZLADAN",
+    dosya: GOVDE,
+    bul: '            "flex flex-wrap items-center gap-2" +',
+    koy: '            "items-center gap-2" +',
+    bozdugu:
+      "telefonda sarma yok; 30rem'lik sabit sutun 360 px ekrana sigmaz ve yatay kaydirma dogar (Ilke #8)",
+  },
+  {
+    ad: "SECICI GENISLIGI BEYANDAN AYRISTI (w-40 -> w-44)",
+    yon: "KALDIRAN",
+    dosya: SECICI,
+    bul: '<SelectTrigger className="h-9 w-40">',
+    koy: '<SelectTrigger className="h-9 w-44">',
+    bozdugu:
+      "izgara 10rem diyor, kontrol 11rem - kontrol kendi hucresini tasirir ve hizalama sessizce bozulur",
+  },
+  {
+    ad: "NOT ALANI SABIT GENISLIGI KALKTI (max-w'ya geri donus)",
+    yon: "KALDIRAN",
+    dosya: NOT_ALANI,
+    bul: " sm:min-h-0 sm:w-48",
+    koy: " sm:min-h-0",
+    bozdugu:
+      "kisa notta buton daralir, sag blok kucullur ve sutunlar yine satirdan satira kayar",
   },
 ];
 
