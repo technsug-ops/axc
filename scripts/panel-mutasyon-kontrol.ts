@@ -226,6 +226,45 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "govde dogru calisir, kart yine iki cubuk gosterir ve farki okuyucu cikarir - K246'nin varlik sebebi yok olur",
   },
+  {
+    /* K247: kullanici "pazaryeri performansi ile ciroya gore kanal ayni
+       duzlemde olamaz mi" dedi; halka panele kondu. */
+    ad: "CIRO HALKASI PANELDEN KALKTI",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "                      <KanalDagilimiGrafigi",
+    koy: "                      <NoktaliGrafik",
+    bozdugu:
+      "kanal payi panelde hic gorunmez; kullanicinin acikca istedigi gorsel yok olur",
+  },
+  {
+    ad: "HALKA BOS DIZIYLE BESLENIYOR",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "                        dilimler={ustBlok.kanallar.map((k) => ({",
+    koy: "                        dilimler={[].map((k: { kanalAdi: string; gelir: number }) => ({",
+    bozdugu:
+      "halka her zaman bos cizilir; nitelik yerinde durdugu icin kimse fark etmez",
+  },
+  {
+    ad: "TANINMAYAN KANALIN VARSAYILAN RENGI KALKTI",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "                            KANAL_RENKLERI[k.kanalAdi] ?? KANAL_RENGI_VARSAYILAN,",
+    koy: "                            KANAL_RENKLERI[k.kanalAdi],",
+    bozdugu:
+      "palet disi kanalin dilimi undefined renk alir ve SESSIZCE cizilmez - ciro toplamdan dusmez ama dilim kaybolur",
+  },
+  {
+    ad: "KART CUBUKLARINA KANAL RENGI GELDI",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: "            const pay = kanalPaylari.get(kanal.kanalKodu);",
+    koy:
+      "            const pay = kanalPaylari.get(kanal.kanalKodu);\n            const kanalTonu = KANAL_RENKLERI[kanal.kanalAdi];",
+    bozdugu:
+      "11 ton dort durum rengiyle karisir ve 'yesil = iyi' anlami coker - kodun kendi karari cignenir",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

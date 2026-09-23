@@ -13,6 +13,102 @@
 
 ---
 
+## 🔴 K247 — CİRO HALKASI PANELDE, KANAL KARTLARIYLA AYNI DÜZLEMDE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Panel demosunun üçüncü paketi. Kullanıcı kararı: _"pazaryeri performansı ile
+ciroya göre kanal aynı düzlemde olamaz mı"_.
+
+### ① NİYE AYNI DÜZLEM
+
+İkisi **aynı soruyu** cevaplıyor: _hangi kanal ne getiriyor._ Ayrı kartlarda
+dursalardı göz, halkadaki `%57`'yi karttaki NET payı `%57,5` ile birleştirmek
+için ekranı iki kez dolaşırdı — oysa **asıl bilgi o iki sayının FARKINDA**
+(K246 tam bunu cümleye çevirmişti).
+
+Halka `xl` ve üstünde kartların **sağında** 240 px'e sabit duruyor, dar
+ekranda kartların altına iniyor.
+
+### ⛔ DEMODA VAR AMA YAPILMADI — VE SEBEBİ ÖLÇÜLDÜ
+
+Demoda operasyon grafiğini çizgiden **sütuna** çevirmiş ve "iki grafik akışı
+bozmuş" sorununu öyle çözmüştüm. Gerçek panelde o sorun **yok**:
+
+    günlük operasyon   ~2988. satır
+    ürün analizi       ~3178. satır
+    son N ay           ~3657. satır
+
+Üçü arasında yüzlerce satırlık başka blok var; demodaki sıkışıklık demonun
+kendi kurgusundan geliyordu. **Sebebi olmayan bir değişiklik**, çalışan çizgi
+grafiğini ve onun açılır tablosunu bozardı.
+_(Anayasa: "bir sınırın yönü ölçülmeden çevrilmez" — burada ölçüm değişikliği
+eledi.)_
+
+### ⛔ RENK KARARI KAPSAMIYLA BİRLİKTE UYGULANDI
+
+Kanal renkleri **halkada** kullanılıyor, **kartlarda kullanılmıyor**. Kodun
+kendi kararı duruyor:
+
+> _"Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11 ton, dört durum
+> rengiyle karışır ve 'yeşil = iyi' anlamı çökerdi. Bilgiyi taşıyan renk
+> değil UZUNLUK."_
+
+Halka bir **KATEGORİ** grafiği — dilimleri ayırmaktan başka işi yok ve
+`KANAL_RENKLERI` zaten tam bunun için var; hakediş pastası da aynı paleti
+kullanıyor, yani **aynı kanal her ekranda aynı renkte**.
+Bu bir "dokunmuyor" iddiası olduğu için **FAZLADAN yönlü mutasyonla**
+korunuyor: kart çubuklarına kanal rengi sızdıran senaryo kırmızı yanıyor.
+
+⚠ **TANINMAYAN KANAL ÜRETİLMİŞ RENK ALMAZ.** Paletin sırası renk körlüğü
+ayrımı ölçülerek seçilmişti; aradan bir ton uydurmak o ölçümü bozar. Palet
+dışı kanal `KANAL_RENGI_VARSAYILAN`'a düşer. Varsayılan olmasaydı renk
+`undefined` olur ve **dilim hiç çizilmezdi** — ciro toplamdan düşmeden, sessizce.
+
+### ⚠ BEKÇİ YAZILIRKEN YAKALANAN KENDİ HATAM
+
+"Kart çubukları nötr kaldı" ölçütü bloğu şöyle kesiyordu:
+
+    sayfa.indexOf("  return (")
+
+`indexOf` satır başına çapalanmaz: derin girintili bir `      return (` de bu
+diziyi **içerir** ve bloğun ÖNÜNDE bir konum döndürür. Dilim boş kaldı ve
+ölçüt `!"".includes(...)` ile **her zaman yeşil yanacaktı.** Yakalayan şey
+taban doluluk beyanı oldu (`bas >= 0 && son > bas`) — boş küme her koşulu
+sağlar. Çapa `search(/\r?\n {2}return \(/)` ile satır başına bağlandı.
+_(Anayasa: "ölçüt kullanıma bağlanır, ada ya da dizeye değil" + "`every`
+kapısı taban doluluğunu ayrıca kanıtlar".)_
+
+### ÖLÇÜLDÜ
+
+    panel:dogrula                764 ölçüt (7'si yeni)
+    panel-mutasyon:kontrol       22/22 (4'ü yeni — 3 KALDIRAN · 1 FAZLADAN)
+    tsc --noEmit                 çıktı BOŞ
+    taban yeşilliği              mutasyon turundan HEMEN ÖNCE ölçüldü (0)
+
+### HALİL TEST LİSTESİ
+
+1. `/` (Panel) → **"Pazaryeri performansı"** kartı. Geniş ekranda kanal
+   kartlarının **sağında** bir halka (donut) olmalı.
+2. Halkanın dilim renkleri kanal renkleriyle aynı olmalı: Trendyol **mavi**,
+   Hepsiburada **turuncu**, N11 **sarı**, Amazon **yeşil**.
+3. Aynı renkler `/hakedis` sayfasındaki pastada da aynı kanala denk gelmeli —
+   iki ekranda aynı kanal aynı renkte.
+4. Halkanın ortasındaki toplam, kartın üstündeki **brüt ciro** ile birebir
+   aynı olmalı.
+5. Dilim yüzdeleri, aynı kanalın kartındaki **ciro payı** çubuğunun yüzdesiyle
+   birebir tutmalı.
+6. Kanal **kartlarındaki çubuklar renkli OLMAMALI** — nötr kalmalı.
+7. Telefonda halka kartların **altına** inmeli, yan yana sıkışmamalı.
+8. Dönemde hiç satış yoksa halka yerine **"Bu dönemde satış yok"** yazmalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok, `donemBos`
+yeniden kullanıldı) · **kullanıcı kolaylığı: ✓** (İlke #10 — aynı kanal her
+ekranda aynı renk · İlke #12 — boşluk bilgi taşımıyordu, halka o alanı
+dolduruyor)
+
+### KALAN PAKET
+
+    K248  görev kutusu → tek satırlık şerit
+
 ## 🔴 K246 — İKİ PAY ÇUBUĞUNUN FARKI ARTIK CÜMLE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Panel demosunun ikinci paketi. Kullanıcının demoda en çok beğendiği şey
@@ -97,7 +193,7 @@ burada tersi: kapsamı içindeki bir ilkeyi demo uğruna çiğnememek.)_
 
 ### KALAN İKİ PAKET
 
-    K247  ciro halkası panele · operasyon çizgiden SÜTUNA, para ile yan yana
+    K247  ciro halkası panele  ✓ (operasyon sütuna ÇEVRİLMEDİ — ölçüm eledi)
     K248  görev kutusu → tek satırlık şerit
 
 ---

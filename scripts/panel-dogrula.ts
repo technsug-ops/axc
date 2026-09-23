@@ -4590,6 +4590,69 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   }
 }
 
+/**
+ * ═══ CİRO HALKASI PANELDE, KARTLARLA AYNI DÜZLEMDE (K247) ════════
+ * Kullanıcı kararı 23.09.2026. İkisi aynı soruyu cevaplıyor; ayrı dursalardı
+ * göz halkadaki pay ile karttaki payı birleştirmek için ekranı iki kez
+ * dolaşırdı.
+ */
+{
+  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
+  kontrol(
+    "panel ciro halkasını ÇİZİYOR",
+    /<KanalDagilimiGrafigi/.test(sayfa),
+  );
+  /** ⚠ NİTELİĞİN VARLIĞI YETMEZ, DEĞERİ ÖLÇÜLÜR: `dilimler={[]}` ile
+   *  beslenen bir halka hep boş çizilir ve bunu hiçbir şey söylemez. */
+  kontrol(
+    "  ...dilimler GERÇEK kanallardan geliyor",
+    /dilimler=\{ustBlok\.kanallar\.map/.test(sayfa),
+  );
+  kontrol(
+    "  ...toplam BRÜT CİRODAN (paydası dilimlerin toplamı değil)",
+    /toplam=\{ustBlok\.toplamGelir\}/.test(sayfa),
+  );
+  /**
+   * ⛔ RENK JETON PALETİNDEN VE VARSAYILANI VAR.
+   * Paletin sırası renk körlüğü ayrımı ölçülerek seçilmiş; tanınmayan bir
+   * kanala ton uydurmak o ölçümü bozar. Varsayılanı olmayan bir eşleme
+   * `undefined` renk verir ve dilim ÇİZİLMEZ — sessiz kayıp.
+   */
+  kontrol(
+    "  ...renk KANAL_RENKLERI jetonundan",
+    /KANAL_RENKLERI\[k\.kanalAdi\]/.test(sayfa),
+  );
+  kontrol(
+    "  ...ve tanınmayan kanalın VARSAYILANI var (dilim kaybolmaz)",
+    /\?\\? KANAL_RENGI_VARSAYILAN/.test(sayfa),
+  );
+  /**
+   * ⛔ KARTLAR NÖTR KALIR — BU BİR 'DOKUNMUYOR' İDDİASI VE ÖLÇÜLÜYOR.
+   * Kodun kendi kararı: _"11 kanal için 11 ton, dört durum rengiyle karışır
+   * ve 'yeşil = iyi' anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK."_
+   * Halka bir KATEGORİ grafiği olduğu için muaf; kart çubukları değil.
+   */
+  {
+    /**
+     * ⚠ ÇAPA SATIR BAŞINA BAĞLANIR: `indexOf("  return (")` derin
+     * girintili bir `      return (` içinde de eşleşir ve bloğun ÖNÜNDE bir
+     * konum döndürür; dilim boş kalır ve alttaki ölçüt HER ZAMAN yeşil
+     * yanar. İlk yazımda tam bu oldu — yakalayan şey taban doluluk
+     * beyanı oldu (boş küme her koşulu sağlar).
+     */
+    const bas = sayfa.search(/\r?\n {2}const kanalIzgarasi = \(/);
+    const son = sayfa.search(/\r?\n {2}return \(/);
+    kontrol("kanalIzgarasi bloğu bulundu (ölçülebilir)", bas >= 0 && son > bas);
+    const blok = bas < 0 || son < bas ? "" : sayfa.slice(bas, son);
+    kontrol(
+      "  kart çubukları kanal RENGİ kullanmıyor (bilgiyi uzunluk taşır)",
+      !blok.includes("KANAL_RENKLERI"),
+    );
+  }
+}
+
 console.log("=".repeat(70));
 /**
  * ⚠ NİYE VAR: kullanıcı bir tarih seçip "o gün elimde ne vardı" sorusunu

@@ -56,6 +56,8 @@ import { GENEL_KDV_ORANI, kdvHaric } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { kutuOranlari } from "@/lib/panel/kar-orani";
 import { payFarki } from "@/lib/panel/pay-farki";
+import { KanalDagilimiGrafigi } from "@/app/hakedis/kanal-dagilimi-grafigi";
+import { KANAL_RENKLERI, KANAL_RENGI_VARSAYILAN } from "@/lib/renkler";
 import {
   karEksikAyAdresi,
   karEksikKanalAdresi,
@@ -2610,7 +2612,49 @@ export default async function AnaSayfa({
                     {t("donemBos")}
                   </p>
                 ) : (
-                  kanalIzgarasi(ustBlok, ustPaylar, PANEL_KANAL_TAVANI)
+                  /*
+                    ══ KARTLAR SOLDA, CİRO HALKASI SAĞDA (K247) ══
+                    Kullanıcı kararı 23.09.2026: _"pazaryeri performansı ile
+                    ciroya göre kanal aynı düzlemde olamaz mı"_.
+                    ⛔ İKİSİ AYNI SORUYU CEVAPLIYOR — "hangi kanal ne getiriyor"
+                    — ve ayrı dursalardı göz halkadaki %57 ile karttaki NET payı
+                    %57,5'i birleştirmek için ekranı iki kez dolaşırdı. Asıl bilgi
+                    o iki sayının FARKINDA.
+                    ⚠ DAR EKRANDA ALT ALTA: halka 240 px'e sabit, kartlar akar.
+                  */
+                  <div className="flex min-w-0 flex-col gap-4 xl:flex-row">
+                    <div className="min-w-0 flex-1">
+                      {kanalIzgarasi(ustBlok, ustPaylar, PANEL_KANAL_TAVANI)}
+                    </div>
+                    {/*
+                      ⛔ HALKADA KANAL RENGİ KULLANILIR, KARTLARDA KULLANILMAZ.
+                      Kart çubukları nötr kaldı (11 ton dört durum rengiyle
+                      karışır, "yeşil = iyi" çöker). Halka ise bir KATEGORİ
+                      grafiği: dilimleri birbirinden ayırmaktan başka işi yok ve
+                      `KANAL_RENKLERI` zaten tam bunun için var — hakediş
+                      pastasında da aynı palet kullanılıyor, yani AYNI kanal her
+                      ekranda AYNI renkte.
+                    */}
+                    <div className="min-w-0 shrink-0 xl:w-60">
+                      <KanalDagilimiGrafigi
+                        dilimler={ustBlok.kanallar.map((k) => ({
+                          etiket: k.kanalAdi,
+                          tutar: k.gelir,
+                          /*
+                            ⚠ TANINMAYAN KANAL ÜRETİLMİŞ RENK ALMAZ: paletin
+                            sırası renk körlüğü ayrımı ölçülerek seçilmiş;
+                            aradan bir ton uydurmak o ölçümü bozar. Palet dışı
+                            kanal nötr tona düşer ve bu GÖRÜNÜR bir karardır.
+                          */
+                          renk:
+                            KANAL_RENKLERI[k.kanalAdi] ?? KANAL_RENGI_VARSAYILAN,
+                        }))}
+                        toplam={ustBlok.toplamGelir}
+                        paraBirimi={ustBlok.paraBirimi}
+                        bosMesaj={t("donemBos")}
+                      />
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
