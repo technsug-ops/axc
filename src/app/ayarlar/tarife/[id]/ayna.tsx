@@ -145,7 +145,21 @@ export function Ayna({
                     variant={acikMi ? "outline" : "default"}
                     className="min-h-11"
                     onClick={() => {
+                      /*
+                        ⛔ GİRDİLER DE TEMİZLENİR (K242, 23.09.2026 — kullanıcı
+                        bildirimi). Kargo ücreti ve satış fiyatı LİSTE
+                        seviyesinde tek bir durumda tutuluyor; eskiden yalnız
+                        `sonuc` sıfırlanıyordu ve iki girdi ÖNCEKİ ÜRÜNÜN
+                        değerleriyle duruyordu.
+                        ⚠ BU KOZMETİK DEĞİL: A ürününün fiyatıyla B ürününün
+                        NET'i hesaplanır ve ekranda MAKUL görünür — yanlış
+                        rakam, yanlış olduğunu söylemez.
+                        _(Anayasa: "bir okuma, okunan değeri doğrudan taşır" —
+                        burada taşınan şey önceki bağlamın artığıydı.)_
+                      */
                       setAcik(acikMi ? null : satir.kod);
+                      setKargo("");
+                      setGuncelFiyat("");
                       setSonuc(null);
                     }}
                   >

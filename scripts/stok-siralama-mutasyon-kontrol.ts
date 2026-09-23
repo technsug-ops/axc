@@ -51,6 +51,8 @@ const SIRA_GOVDESI = "src/lib/stok-siralama.ts";
 const STOK_SAYFASI = "src/app/stok/page.tsx";
 const CUBUK = "src/app/stok/sirala-suzgec.tsx";
 const KART = "src/app/kart/[variantId]/page.tsx";
+/** K242: /stok kendi arama kutusunu yaziyor - Temizle kutuyu da bosaltmali. */
+const STOK_ARAMA = "src/app/stok/stok-arama.tsx";
 const PANEL = "src/lib/panel-listeler.ts";
 const DENE = "src/app/kart/[variantId]/fiyat-dene.tsx";
 const ARAMA_KUTUSU = "src/app/stok/stok-arama.tsx";
@@ -351,12 +353,15 @@ const MUTASYONLAR: Mutasyon[] = [
       "arama yapmak sirala/yon/stok parametrelerini SESSIZCE siler — kullanicinin bildirdigi kayip",
   },
   {
+    /* ⚠ ÇAPA K242'DE TAŞINDI: Temizle artık `<Link>` değil düğme
+       (kutuyu da boşaltıyor). Mutasyon SİLİNMEDİ — niyeti aynı:
+       "temizle her şeyi süpüren düz /stok'a gitmemeli". */
     ad: "temizle yine duz /stok'a gidiyor (her seyi supurur)",
     yon: "FAZLADAN",
     bekci: SIRALAMA,
     dosya: ARAMA_KUTUSU,
-    bul: '<Link href={adresKur("")}>{ortak("temizle")}</Link>',
-    koy: '<Link href="/stok">{ortak("temizle")}</Link>',
+    bul: '            router.push(adresKur(""));',
+    koy: '            router.push("/stok");',
     bozdugu: "kullanici yalniz kutuyu bosaltmak isterken siralama ve suzgec de gider",
   },
   {
@@ -393,6 +398,28 @@ const MUTASYONLAR: Mutasyon[] = [
    * icinde ve orada kapsam DAHA GENIS: hicbir listeye eklenmemis YENI bir
    * ekran bile sinaniyor.
    */
+  {
+    /* K242, 23.09.2026 - kullanici: "temizleme yaptigimiz halde liste
+       yenileniyor fakat aranan barkod kalmaya devam ediyor". */
+    ad: "TEMIZLE DURUMU SIFIRLAMIYOR - kutu dolu kalir",
+    yon: "KALDIRAN",
+    bekci: ARAMA,
+    dosya: STOK_ARAMA,
+    bul: '            setSorgu("");',
+    koy: "            /* durum sifirlama kaldirildi */",
+    bozdugu:
+      "adres temizlenir ama useState ilk degerinde kalir; liste bosalirken barkod kutuda durur - kullanicinin bildirdigi arizanin ta kendisi",
+  },
+  {
+    ad: "TEMIZLE YINE <Link> OLDU",
+    yon: "KALDIRAN",
+    bekci: ARAMA,
+    dosya: STOK_ARAMA,
+    bul: '          {ortak("temizle")}',
+    koy: '          <Link href={adresKur("")}>{ortak("temizle")}</Link>',
+    bozdugu:
+      "istemci yonlendirmesinde bilesen yeniden kurulmaz - <Link> ile temizlemek 24.08'de ortak govdede duzeltilen hatanin kendisi",
+  },
 ];
 
 function bekciyiKostur(b: Bekci): { kod: number; ciktiVar: boolean } {

@@ -1487,6 +1487,29 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
   );
 
   const ayna = yorumsuzOku("src/app/ayarlar/tarife/[id]/ayna.tsx");
+  /**
+   * ═══ ÜRÜN DEĞİŞİNCE GİRDİLER TEMİZLENİR (K242, 23.09.2026) ═══════
+   * ⛔ VAKA (kullanıcı): _"bir ürün için yazdığımız kargo ve satış fiyatı,
+   * diğer bir ürüne geçtiğimizde de kalmaya devam ediyor."_ Girdiler LİSTE
+   * seviyesinde tek durumda; eskiden yalnız `sonuc` sıfırlanıyordu.
+   * ⚠ KOZMETİK DEĞİL: A ürününün fiyatıyla B ürününün NET'i çıkar ve
+   * ekranda MAKUL görünür — yanlış rakam, yanlış olduğunu söylemez.
+   * ⚠ ÖLÇÜT KULLANIMA BAĞLI: ada değil, AÇMA/KAPAMA bloğuna.
+   */
+  {
+    const i = ayna.indexOf("setAcik(acikMi ? null : satir.kod);");
+    kontrol("ayna açma/kapama bloğu bulundu (ölçülebilir)", i >= 0);
+    const blok = i < 0 ? "" : ayna.slice(i, i + 220);
+    kontrol(
+      "  ürün değişince kargo girdisi TEMİZLENİYOR",
+      /setKargo\(""\)/.test(blok),
+    );
+    kontrol(
+      "  ürün değişince satış fiyatı girdisi TEMİZLENİYOR",
+      /setGuncelFiyat\(""\)/.test(blok),
+    );
+    kontrol("  ...ve önceki sonuç da düşüyor", /setSonuc\(null\)/.test(blok));
+  }
   kontrol(
     "ayna NET'i MEVCUT motordan aliyor (ikinci hesap yok)",
     yorumsuzOku("src/app/ayarlar/tarife/[id]/eylemler.ts").includes(

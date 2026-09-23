@@ -370,6 +370,28 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "ayni tuzagin ikinci yarisi: sonuc kanal ADIYLA aranirsa Hepsiburada bulunamaz ve NET bos doner",
   },
+  {
+    /* K242, 23.09.2026 - kullanici: "bir urun icin yazdigimiz kargo ve
+       satis fiyati, diger bir urune gectigimizde de kalmaya devam
+       ediyor". A urununun fiyatiyla B urununun NET'i cikar ve ekranda
+       MAKUL gorunur - yanlis rakam yanlis oldugunu soylemez. */
+    ad: "URUN DEGISINCE KARGO GIRDISI KALIYOR",
+    yon: "KALDIRAN",
+    dosya: "src/app/ayarlar/tarife/[id]/ayna.tsx",
+    bul: '                      setKargo("");',
+    koy: "                      /* temizleme kaldirildi */",
+    bozdugu:
+      "onceki urunun kargo ucreti yeni urunun NET hesabina girer",
+  },
+  {
+    ad: "URUN DEGISINCE SATIS FIYATI KALIYOR",
+    yon: "KALDIRAN",
+    dosya: "src/app/ayarlar/tarife/[id]/ayna.tsx",
+    bul: '                      setGuncelFiyat("");',
+    koy: "                      /* temizleme kaldirildi */",
+    bozdugu:
+      "onceki urunun satis fiyatiyla yeni urunun NET'i hesaplanir - en sinsi hali",
+  },
 ];
 
 function bekciyiKostur(m: Mutasyon): { kod: number; ciktiVar: boolean } {

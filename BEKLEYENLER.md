@@ -13,6 +13,89 @@
 
 ---
 
+## 🔴 K242 — BİR BAĞLAMIN DEĞERİ ÖTEKİNE SIZIYORDU: İKİ EKRAN, TEK KÖK · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı aynı turda iki ayrı ekran bildirdi; ikisi de **aynı sınıf**:
+bir bağlama ait değer, bağlam değiştikten sonra ekranda kalıyor.
+
+### ① TARİFE HESAPLAMA — ve bu YANLIŞ RAKAM ÜRETİYORDU
+
+**KULLANICI:** _"Bir ürün için yazdığımız kargo ve satış fiyatı, diğer bir
+ürüne geçtiğimizde de kalmaya devam ediyor."_
+
+`kargo` ve `guncelFiyat` **LİSTE seviyesinde tek durumda** tutuluyor, ürün
+başına değil. Açma/kapama yalnız `sonuc`u sıfırlıyordu.
+
+> ⛔ **BU KOZMETİK DEĞİL.** A ürününün fiyatıyla B ürününün NET'i
+> hesaplanır ve ekranda **makul görünür** — yanlış rakam, yanlış olduğunu
+> söylemez. Kullanıcı bu ekrana _"fiyatı 1095 yap, daha fazla kazan"_ demesi
+> için bakıyor; girdisi başka üründen geliyorsa öneri de yanlıştır.
+
+**YAPILAN:** ürün değişince `setKargo("")` · `setGuncelFiyat("")` ·
+`setSonuc(null)` birlikte koşuyor.
+
+### ② `/stok` TEMİZLE — VE BU HATA 24.08'DE BİR KEZ DÜZELTİLMİŞTİ
+
+**KULLANICI:** _"Barkod arattıktan sonra temizleme yaptığımız hâlde liste
+yenileniyor fakat aranan barkod kalmaya devam ediyor."_
+
+Sebep görünmez: Temizle bir `<Link>`ti; istemci tarafı yönlendirmede bileşen
+yeniden **KURULMUYOR**, dolayısıyla `useState(baslangic)` ilk değerinde
+kalıyor. Liste boşalıyor, kutu dolu duruyor.
+
+⛔ **AYNI HATA 24.08.2026'DA ORTAK GÖVDEDE (`KodAramaKutusu`) DÜZELTİLMİŞTİ.**
+`/stok` kendi kutusunu yazdığı için düzeltme oraya **hiç ulaşmadı** — ve bunu
+bir ay boyunca hiçbir şey söylemedi.
+_(Anayasa: "düzeltme yolu, TÜM OKUYUCULARA ulaştığı ölçülmeden 'var' sayılmaz".)_
+
+**ÇARE DOSYA LİSTESİ DEĞİL, DESEN YASAĞI:**
+
+> Sorguyu yerel durumda tutan **her** arama kutusu, temizlemeyi durumu da
+> sıfırlayan bir **düğme** ile yapar. `<Link>` ile temizleyen kutu YASAK.
+
+Bugün kapsamda üç kutu var ve bekçi taban doluluğunu ayrıca kanıtlıyor
+(`kod-arama-kutusu` · `stok-arama` · `analiz-arama-kutusu`). Yarın açılan
+dördüncü kutu da kendiliğinden kapsama girer; kimsenin listeye eklemeyi
+hatırlaması gerekmez.
+
+### ⭐ REFAKTÖR BİR ÇAPAYI SİLDİ — MUTASYON TAŞINDI, SİLİNMEDİ
+
+`<Link>` kaldırılınca `stok-siralama-mutasyon:kontrol` içindeki bir mutasyonun
+çapası yok oldu ve harness **"geçti" demedi, "ÖLÇÜLEMEDİ" dedi**:
+
+    ⛔ temizle yine duz /stok'a gidiyor (her seyi supurur)
+         desen src/app/stok/stok-arama.tsx icinde 0 kez geciyor (1 olmali)
+
+Mutasyonun niyeti aynı kaldı (_"temizle her şeyi süpüren düz `/stok`'a
+gitmemeli"_), çapası yeni koda taşındı: `router.push(adresKur(""))`.
+_(Anayasa: "refaktör, çapalı harness'i de taşır".)_
+
+### ÖLÇÜLDÜ
+
+    arama:dogrula                   122 ölçüt (3'ü yeni · taban 3 kutu)
+    tarife:dogrula                  225 ölçüt (4'ü yeni)
+    stok-siralama-mutasyon:kontrol  32/32 (2'si yeni)
+    teklif-tanima-mutasyon:kontrol  34/34 (2'si yeni)
+    tsc --noEmit                    çıktı BOŞ
+
+### HALİL TEST LİSTESİ
+
+1. `/tarife` → bir üründe **Net hesapla**, kargo `110` ve fiyat `1102` yaz.
+   **Kapat**'a bas, başka bir üründe **Net hesapla**'ya bas.
+   Beklenen: iki alan da **BOŞ**, yer tutucu ("örn. 110") görünüyor.
+2. Aynı üründe hesaplat, sonra aynı ürünü kapatıp yeniden aç.
+   Beklenen: yine boş — yeni bir hesap yeni başlar.
+3. `/stok` → bir barkod arat, sonuç gelsin. **Temizle**'ye bas.
+   Beklenen: liste tamamlanır **VE kutu boşalır**.
+4. `/stok` → sıralamayı "Adet" yap, sonra barkod arat, sonra Temizle.
+   Beklenen: sıralama **"Adet" olarak KALIR** (temizle yalnız aramayı siler).
+5. Telefonda aynı iki akış.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #5 · #10)
+
+---
+
 ## 🔴 K239 — HB ÖDEMESİ "GEÇMİŞ"E GEÇMEDİ: SEBEP KANALIN KENDİ UCUNDA · VE ÖLÇERKEN BİR GÜN KAYMASI BULUNDU · 23.09.2026 · [KOD KOŞTU]
 
 **KULLANICI BİLDİRİMİ (Halil #5):** _"HB ödeme geçmiş sekmesine GEÇMEMİŞ."_

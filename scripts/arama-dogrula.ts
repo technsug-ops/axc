@@ -1135,6 +1135,63 @@ console.log("");
   if (ciplak.length > 0) console.log("        BEYANSIZ: " + ciplak.join(" · "));
 }
 
+/**
+ * ═══ TEMİZLE, KUTUYU DA BOŞALTMAK ZORUNDA (K242, 23.09.2026) ═════════
+ *
+ * ⛔ VAKA: kullanıcı `/stok`ta barkod aradı, Temizle'ye bastı; liste
+ * yenilendi ama **barkod kutuda kaldı**. Sebep görünmez: Temizle bir
+ * `<Link>`ti ve istemci tarafı yönlendirmede bileşen yeniden KURULMUYOR,
+ * dolayısıyla `useState(baslangic)` ilk değerinde kalıyor.
+ *
+ * ⚠ AYNI HATA 24.08.2026'DA ORTAK GÖVDEDE DÜZELTİLMİŞTİ — ve `/stok` kendi
+ * kutusunu yazdığı için düzeltme ORAYA ULAŞMADI. Çare dosya listesi değil
+ * **desen yasağı**: sorguyu yerel durumda tutan HER kutu, temizlemeyi
+ * durumu da sıfırlayan bir DÜGME ile yapar.
+ * _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır".)_
+ */
+{
+  /** ⚠ KENDİ TARAMASI: üstteki bloğun `kaynaklar`ı O bloğa ait. */
+  const tsxKaynaklar = readdirSync("src", { recursive: true, encoding: "utf8" }).filter(
+    (p): p is string => typeof p === "string" && p.endsWith(".tsx"),
+  );
+  const kutular = tsxKaynaklar.filter((y) => {
+    const k = readFileSync(join("src", y), "utf8");
+    return k.includes("useState(baslangic)") && k.includes('ortak("temizle")');
+  });
+  /** ⚠ TABAN DOLULUĞU AYRICA KANITLANIR: boş küme her koşulu sağlar. */
+  kontrol(
+    `sorguyu yerel durumda tutan arama kutusu bulundu (${kutular.length}): ${kutular.join(" · ")}`,
+    kutular.length >= 2,
+  );
+  const linkleTemizleyen: string[] = [];
+  for (const y of kutular) {
+    const k = readFileSync(join("src", y), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
+    const i = k.indexOf('ortak("temizle")');
+    /** Temizle öğesinin KENDİ bloğuna darıltılıyor — dosyanın tamamına değil. */
+    const blok = k.slice(Math.max(0, i - 700), i + 60);
+    if (/<Link[\s>]/.test(blok)) linkleTemizleyen.push(y);
+  }
+  kontrol(
+    "  ...hiçbiri `<Link>` ile temizlemiyor (kutu boşalmadan liste boşalırdı)",
+    linkleTemizleyen.length === 0,
+  );
+  if (linkleTemizleyen.length > 0)
+    console.log("        `<Link>` İLE TEMİZLEYEN: " + linkleTemizleyen.join(" · "));
+  const durumuSifirlamayan: string[] = [];
+  for (const y of kutular) {
+    const k = readFileSync(join("src", y), "utf8");
+    if (!/setSorgu\(""\)/.test(k)) durumuSifirlamayan.push(y);
+  }
+  kontrol(
+    '  ...hepsi temizlerken `setSorgu("")` çağırıyor',
+    durumuSifirlamayan.length === 0,
+  );
+  if (durumuSifirlamayan.length > 0)
+    console.log("        DURUMU SIFIRLAMAYAN: " + durumuSifirlamayan.join(" · "));
+}
+
 console.log("=".repeat(70));
 if (kalan === 0) {
   console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
@@ -65,12 +64,29 @@ export function StokArama({ baslangic }: { baslangic: string }) {
       <Button type="button" variant="secondary" onClick={() => ara(sorgu)}>
         {ortak("ara")}
       </Button>
-      {baslangic ? (
-        <Button type="button" variant="ghost" asChild>
-          {/* ⚠ YALNIZ ARAMAYI TEMIZLER. Duz `/stok` yazsaydi siralamayi ve
-              sifir suzgecini de supururdu — kullanici yalnizca arama
-              kutusunu bosaltmak istemisti. */}
-          <Link href={adresKur("")}>{ortak("temizle")}</Link>
+      {baslangic || sorgu ? (
+        <Button
+          type="button"
+          variant="ghost"
+          /*
+            ⛔ `<Link>` DEĞİL, DÜMEE — VE KUTUYU DA BOŞALTIR (K242).
+            Kullanıcı bildirimi 23.09.2026: _"temizleme yaptığımız hâlde liste
+            yenileniyor fakat aranan barkod kalmaya devam ediyor."_
+            Sebep görünmez: istemci tarafı yönlendirmede bileşen yeniden
+            KURULMUYOR, dolayısıyla `useState(baslangic)` ilk değerinde kalıyor.
+            ⚠ AYNI HATA 24.08.2026'DA ORTAK GÖVDEDE (`KodAramaKutusu`)
+            DÜZELTİLMİŞTİ; bu ekran kendi kutusunu yazdığı için düzeltme ona
+            ULAŞMADI. _(Anayasa: "düzeltme yolu, TÜM OKUYUCULARA ulaştığı
+            ölçülmeden 'var' sayılmaz" — ve çaresi desen yasağıdır.)_
+            ⚠ `adresKur("")` KORUNUYOR: düz `/stok` sıralamayı ve sıfır
+            süzgecini de süpürürdü.
+          */
+          onClick={() => {
+            setSorgu("");
+            router.push(adresKur(""));
+          }}
+        >
+          {ortak("temizle")}
         </Button>
       ) : null}
     </div>
