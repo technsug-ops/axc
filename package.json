@@ -30,6 +30,7 @@
     "iade:dogrula": "tsx scripts/iade-dogrula.ts",
     "rapor:dogrula": "tsx scripts/rapor-dogrula.ts",
     "ice-aktarma:dogrula": "tsx scripts/ice-aktarma-dogrula.ts",
+    "ice-aktarma-mutasyon:kontrol": "tsx scripts/ice-aktarma-mutasyon-kontrol.ts",
     "canli:11518-maliyet": "tsx scripts/canli-11518-maliyet.ts",
     "canli:11467-tutar": "tsx scripts/canli-11467-tutar-duzelt.ts",
     "canli:stok-bagi": "tsx scripts/canli-ice-aktarma-stok-bagi.ts",

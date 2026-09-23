@@ -13,6 +13,134 @@
 
 ---
 
+## 🔴 K243 — DESİ VE KANAL KARGO FİRMASI DEFTERDE VARDI, EKRAN GÖSTERMİYORDU · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+**KULLANICI:** HB siparişi `4328856038` detayının ekran görüntüsü —
+_"burada ürünün desisi ve kargo firması da çıkmalı; bunları API'den alıyor
+olmalısın, kontrol eder misin?"_
+
+### ① İLK ŞÜPHEM YANLIŞTI — VE ÖLÇÜM ÇÜRÜTTÜ
+
+Kodu okuyunca çekim tarafında bir kör nokta göründü ve _"muhtemelen
+çekilmemiş"_ dedim. **Ölçüm tersini söyledi** — defter O SİPARİŞTE DOLUYDU:
+
+    kanalKargoDesi        5
+    kanalKargoFirmasi     hepsiJET
+    cargoDesi (tahmin)    5
+    cargoCarrier (BİZİM)  SEÇİLMEDİ
+
+API da veriyordu: sipariş detayında `cargoCompanyModel.name = hepsiJET`,
+`/shipped` ucunda `Deci = 5` (17/17 kayıtta `Deci` dolu).
+
+> **KUSUR ÇEKİMDE DEĞİL, GÖSTERİMDEYDİ.** İki bilinen değer, TEK bir koşulun
+> (bizim firma seçimimiz) arkasında saklanıyordu. _(Anayasa: "bir ekranın ne
+> gösterdiği, ölçülmeden iddia edilmez" — ve bu kez iddiayı BEN kurmuştum.)_
+
+### ② YAPILAN — EKRAN
+
+· **Desi artık firma seçimine bağlı değil**, ayrı satır.
+· **Kaynağıyla yazılıyor:** `5 — kanal tartımı` ile `5 — tahmini` farklı
+  şeylerdir ve hangisi olduğu yazılmazsa okuyanın kafasında çözülür.
+· **Kanalın kargo firması AYRI satır.** Şema bunu açıkça ayırıyor:
+  `cargoCarrierId` tarife/maliyet/kârın okuduğu BİZİM seçimimiz,
+  `kanalKargoFirmasi` kanalın FİİLEN gönderdiği firma. İkisi ayrıştığında fark
+  tam da tarife hatasının çıktığı yerdir — ve o fark ancak İKİSİ DE ekranda
+  dururken görülür.
+· **Bilinmiyorsa satır HİÇ çıkmıyor** — boş bir "—" kanalın bir şey
+  söylemediğini değil, bizim bakmadığımızı düşündürürdü.
+
+### ③ YAPILAN — ÇEKİM KÖR NOKTASI (gerçekti, ama başka satırlarda)
+
+Geri doldurma döngüsü **İKİ ŞEY** yazıyor (takip kodu VE kargo firması) ama
+seçimi yalnız `shipmentCode: null` diyordu. Kodu bir kez yazılmış sipariş bir
+daha SEÇİLMİYOR ve firması sonsuza kadar boş kalıyordu.
+
+    HB toplam satış                     3376
+    kanalKargoFirmasi DOLU                84
+    kanalKargoDesi DOLU                   76
+    ── kör nokta ──
+    takip kodu DOLU + firma BOŞ           53   ← bir daha hiç seçilmiyordu
+    kargolanmış + desi BOŞ                59
+    (TY kıyası: 4649 satış · firma 651 · desi 641)
+
+Seçim artık iki alanı birden soruyor; **yazma İKİ AYRI sorgu kaldı** (tek
+sorguda yazmak öbür alanı haksız ezerdi — dosyanın kendi yorumu bunu zaten
+yazıyordu, eksik olan SEÇİM tarafıydı).
+
+### ⚠ AÇIK KALAN — KANAL İKİ FARKLI DESİ SÖYLÜYOR
+
+Aynı sipariş için sipariş detayı `deci = 15`, `/shipped` ucu `Deci = 5`
+diyor; biz `/shipped`i alıyoruz (tartılmış, gerçekleşen desi). Hangisinin ne
+olduğu **ölçülmedi** ve bu kalem açık. Kargo maliyeti bu sayıdan hesaplandığı
+için önemsiz değil.
+⛔ **AÇILIŞ ŞARTI:** kanalın kestiği gerçek kargo bedeliyle çapraz bir ölçüm
+(hakediş satırı), yani hangisinin faturaya dönüştüğünü kanalın KENDİ belgesi
+söyleyene kadar hüküm verilmez.
+
+### ⭐ TUR SIRASINDA ÇIKAN ÜÇ BULGU — ÜÇÜ DE YALANCI YEŞİL AİLESİNDEN
+
+**(a) TABAN KIRMIZIYKEN HER MUTASYON "YAKALANDI" GÖRÜNÜR.** K242'de bir çapa
+taşınınca `stok-siralama:dogrula` ölçütü eskidi ve KIRMIZI kaldı; harness yine
+de **"32/32 yakalandı"** dedi. Çünkü harness "bekçi kırmızı yandı → yakalandı"
+diyor ve bekçi ZATEN kırmızıydı.
+→ Harness'e **taban yeşili kapısı** eklendi ve kapı sınandı (kasten kırmızı
+yapılıp "TABAN KIRMIZI — ölçüm GEÇERSİZ" dediği GÖRÜLDÜ).
+⚠ **35 harness'in 34'ünde bu kapı YOK** — açık kalem, aşağıda.
+
+**(b) KENDİ AÇIKLAMA YORUMUM BİR BEKÇİYİ KÖR ETTİ.** Taban yeşile dönünce
+gerçekten korumasız bir mutasyon ortaya çıktı: `useState`i koddan tamamen
+kaldıran senaryo bekçiyi yeşil bıraktı — çünkü K242'de yazdığım yorumda
+`useState(baslangic)` geçiyordu ve desen dosyada AYAKTA kalıyordu.
+→ Bekçi artık **yorumsuz koddan** okuyor. _(Anayasa'da yazılıydı; yine de
+düşüldü — bu kez kuralı çiğneyen şey kuralı ANLATAN cümleydi.)_
+
+**(c) 463 ÖLÇÜTLÜ BİR BEKÇİNİN HİÇ MUTASYONU YOKTU.**
+`ice-aktarma:dogrula` en büyük bekçilerden biri ve hiçbir ölçütü mutasyonla
+sınanmamıştı. Bu turda harness açıldı (3/3, taban kapılı) ama kapsamı
+**yalnız K243 ölçütleri**; kalan 461 ölçüt hâlâ mutasyonsuz ve harness bunu
+başlığında YAZIYOR.
+
+### ÖLÇÜLDÜ
+
+    kargo-kaynagi:dogrula            28 ölçüt (6'sı yeni)
+    kargo-kaynagi-mutasyon:kontrol   10/10 (3'ü yeni)
+    ice-aktarma:dogrula              463 ölçüt (2'si yeni)
+    ice-aktarma-mutasyon:kontrol     3/3 (YENİ harness · taban kapılı)
+    stok-siralama:dogrula            64 ölçüt (1'i güncellendi)
+    stok-siralama-mutasyon:kontrol   32/32 (taban kapısı eklendi)
+    i18n:kontrol                     tr/en eşit · 0 eksik
+    tsc --noEmit                     çıktı BOŞ
+
+### HALİL TEST LİSTESİ
+
+1. `/satislar` → **4328856038**'i aç. Üç satır birden görünmeli:
+   **Kargo firması: Kargo firması seçilmedi** · **Toplam desi: 5 — kanal
+   tartımı** · **Kanalın kargo firması: hepsiJET**.
+2. Kendi kargo firmanızı seçin. Beklenen: desi satırı **DEĞİŞMEZ** (5 — kanal
+   tartımı), üstteki satır firmayı yazar.
+3. Kanalın firmasını BİLMEDİĞİMİZ eski bir satış açın. Beklenen: o satır
+   **HİÇ ÇIKMAZ** (boş "—" yok).
+4. Elle girilmiş (kanalsız) bir satış açın. Beklenen: desi satırı ya
+   **"— tahmini"** der ya hiç çıkmaz; "kanal tartımı" YAZMAZ.
+5. Bir sonraki HB çekiminden sonra `/satislar`da takip kodu dolu ama firması
+   boş bir sipariş açın — firma **dolmaya başlamış** olmalı (53 satırlık kör
+   nokta tur tur kapanır, tavan 100/tur).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (2 yeni anahtar, tr+en) ·
+**kullanıcı kolaylığı: ✓**
+
+### AÇIK KALEM — 34 HARNESS'TE TABAN KAPISI YOK
+
+Ölçüldü: **35 mutasyon harness'inin 1'inde** taban yeşili kapısı var (bu
+turda eklenen). Kalan 34'ünde bekçi zaten kırmızıysa tüm mutasyonlar
+"yakalandı" görünür ve tur kusursuz raporlanır.
+⛔ **TEK TEK YAMANMADI ÇÜNKÜ:** 34 dosyanın yapısı aynı değil (kimi tek
+bekçi, kimi liste); körlemesine yama harness'leri bozabilir ve bozuk bir
+harness, kapısız harness'ten kötüdür. Doğru şekil kapıyı **ortak gövdeye**
+(`mutasyon-deseni.ts`) taşıyıp tek tek bağlamak.
+
+---
+
 ## 🔴 K242 — BİR BAĞLAMIN DEĞERİ ÖTEKİNE SIZIYORDU: İKİ EKRAN, TEK KÖK · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı aynı turda iki ayrı ekran bildirdi; ikisi de **aynı sınıf**:

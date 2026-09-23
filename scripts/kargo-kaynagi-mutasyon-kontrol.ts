@@ -20,6 +20,8 @@ const BEKCI = "scripts/kargo-kaynagi-dogrula.ts";
 const BEKCI_BASLIGI = "KARGO KAYNAK SIRASI BEKÇİSİ";
 const GOVDE = "src/lib/kargo-kaynagi.ts";
 const N11 = "scripts/canli-n11-ice-aktar.ts";
+/** K243: desi ve kanal firmasi EKRANDA gorunmuyordu (veri defterde vardi). */
+const SATIS_DETAY = "src/app/satislar/[id]/page.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -104,6 +106,37 @@ const MUTASYONLAR: Mutasyon[] = [
       "        (veri as { cargoAmount?: number }).cargoAmount = hesap.tutar;",
     bozdugu:
       "ice aktarma GERCEKLESEN kesinti alanini yazmaya baslar; tahmin gercegi ezer",
+  },
+  {
+    /* K243, 23.09.2026 - kullanici ekran goruntusu: HB siparisi
+       4328856038 detayinda 'Kargo firmasi secilmedi' yaziyor ve desi
+       HIC gorunmuyordu. Olcum: kanalKargoDesi=5, kanalKargoFirmasi=hepsiJET.
+       Veri defterde VARDI - kusur gosterimdeydi. */
+    ad: "DESI YINE FIRMA SECIMINE BAGLANDI",
+    yon: "KALDIRAN",
+    dosya: SATIS_DETAY,
+    bul: "    ...(desiGosterim.kaynak === \"KURESEL\"",
+    koy: "    ...(satis.cargoCarrier === null || desiGosterim.kaynak === \"KURESEL\"",
+    bozdugu:
+      "firma secili degilse desi yine kaybolur - kullanicinin bildirdigi arizanin ta kendisi",
+  },
+  {
+    ad: "KANALIN FIRMASI EKRANDAN KALKTI",
+    yon: "KALDIRAN",
+    dosya: SATIS_DETAY,
+    bul: "            etiket: t(\"kanalKargoFirmasiEtiketi\"),",
+    koy: "            etiket: t(\"kargoFirmasi\"),",
+    bozdugu:
+      "bizim secimimiz ile kanalin firmasi ayni etikete duser; ikisi ayristiginda fark GORUNMEZ olur",
+  },
+  {
+    ad: "BOS FIRMA DA SATIR ACIYOR",
+    yon: "FAZLADAN",
+    dosya: SATIS_DETAY,
+    bul: "    ...(satis.kanalKargoFirmasi === null || satis.kanalKargoFirmasi === \"\"",
+    koy: "    ...(false",
+    bozdugu:
+      "kanal bir sey soylemedigi halde bos satir cizilir; okuyan bizim bakmadigimizi saniyor",
   },
 ];
 

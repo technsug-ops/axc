@@ -274,6 +274,54 @@ kontrol("tahmini kargo yazan içe aktarma VAR (bugün 1 — N11)", tahminYazan =
     "  ...TAHMIN kaynağı 'tahmini' etiketiyle taşınıyor (bir sayı etiketiyle taşınır)",
     /desiGosterim\.kaynak === "TAHMIN"[\s\S]{0,60}desiTahmini/.test(sayfa),
   );
+
+  /**
+   * ═══ K243 (23.09.2026) — DESİ FİRMA SEÇİMİNE BAĞLI DEĞİL ═════════
+   * ⛔ VAKA: kullanıcı HB siparişi `4328856038` detayını gönderdi —
+   * _"Kargo firması seçilmedi"_ yazıyor, desi HİÇ görünmüyordu. Ölçüm
+   * defterin DOLU olduğunu gösterdi: `kanalKargoDesi = 5` ·
+   * `kanalKargoFirmasi = hepsiJET`. Kusur çekimde değil GÖSTERİMDEYDİ:
+   * iki bilinen değer, BİZİM firma seçimimizin arkasında saklanıyordu.
+   */
+  kontrol(
+    "desi satırı BİZİM firma seçimimize bağlı DEĞİL",
+    /\.{3}\(desiGosterim\.kaynak === \"KURESEL\"/.test(sayfa) &&
+      !/satis\.cargoCarrier[\s\S]{0,120}desiGosterim/.test(sayfa),
+  );
+  kontrol(
+    "  ...TARTIM kaynağı da adıyla taşınıyor (kanal tartımı)",
+    /desiKanalTartimi/.test(sayfa),
+  );
+  /**
+   * ⛔ KANALIN FİRMASI BİZİMKİ DEĞİL — ŞEMA BUNU AÇIKÇA AYIRIYOR.
+   * İkisi ayrıştığında fark tarife/maliyet hatasının çıktığı yerdir ve o
+   * fark ancak İKİSİ DE ekranda dururken görülür.
+   */
+  kontrol(
+    "kanalın kargo firması AYRI satır olarak çiziliyor",
+    /satis\.kanalKargoFirmasi/.test(sayfa) &&
+      /kanalKargoFirmasiEtiketi/.test(sayfa),
+  );
+  /** ⚠ BİLİNMİYORSA SATIR HİÇ ÇIKMAZ — boş bir — yanlış soru sordururdu. */
+  kontrol(
+    "  ...boşsa satır HİÇ çizilmiyor",
+    /kanalKargoFirmasi === null \|\| satis\.kanalKargoFirmasi === \"\"/.test(
+      sayfa,
+    ),
+  );
+  {
+    const sozluk = (
+      JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+        Satis: Record<string, string>;
+      }
+    ).Satis;
+    for (const a of ["kanalKargoFirmasiEtiketi", "desiKanalTartimi"]) {
+      kontrol(
+        `  ${a} sözlükte ve dolu`,
+        typeof sozluk[a] === "string" && sozluk[a].length > 3,
+      );
+    }
+  }
 }
 
 console.log(

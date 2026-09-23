@@ -654,7 +654,15 @@ console.log("");
 console.log("§7 SÜZGEÇ KALICILIĞI — detaya girip dönünce filtre DURUYOR");
 // ═══════════════════════════════════════════════════════════════════════
 {
-  const arama = readFileSync("src/app/stok/stok-arama.tsx", "utf8");
+  /**
+   * ⛔ YORUMSUZ OKUNUR (K243, 23.09.2026) — VE BU KENDI BAŞIMIZA GELDİ.
+   * K242'de bu dosyaya _"`useState(baslangic)` ilk değerinde kalıyor"_ diye
+   * bir AÇIKLAMA yorumu yazıldı. O yorum, deseni dosyada AYAKTA TUTTU:
+   * `useState`i koddan tamamen kaldıran mutasyon bekçiyi YEŞİL bıraktı.
+   * _(Anayasa: "ölçüt YORUMSUZ KODDA arar — bir davranışı anlatan yorum,
+   * o davranış silinse bile deseni ayakta tutar".)_
+   */
+  const arama = yorumsuz(readFileSync("src/app/stok/stok-arama.tsx", "utf8"));
 
   /**
    * ⛔ KULLANICI BULGUSU (K104): "Anker" arayıp sıralayınca, ikinci aramada
@@ -671,16 +679,25 @@ console.log("§7 SÜZGEÇ KALICILIĞI — detaya girip dönünce filtre DURUYOR"
    */
   kontrol(
     "arama adresi ELLE kurulmuyor (öteki parametreler düşmesin)",
-    !/`\/stok\?q=/.test(yorumsuz(arama)),
+    !/`\/stok\?q=/.test(arama),
   );
   /**
    * ⚠ "TEMİZLE" YALNIZ ARAMAYI DÜŞÜRÜR. Düz `/stok` bağlantısı sıralamayı
    * ve sıfır süzgecini de süpürürdü; kullanıcı yalnız kutuyu boşaltmak
    * istemişti.
    */
+  /**
+   * ⚠ ÖLÇÜT K243'TE GÜNCELLENDİ — SUSTURULMADI, ESKİDİĞİ İÇİN.
+   * Temizle artık `<Link>` değil bir DÜĞME (K242): `<Link>` ile temizlemek
+   * kutuyu boşaltmıyordu — istemci yönlendirmesinde bileşen yeniden
+   * kurulmadığı için `useState` ilk değerinde kalıyordu (K242 vakası).
+   * KURAL AYNI: temizle düz `/stok`'a GİTMEZ, `adresKur()` kullanır.
+   * Değişen şey kural değil, kuralın yazıldığı YER.
+   */
   kontrol(
     "temizle yalnız aramayı düşürüyor (düz /stok değil)",
-    /href=\{adresKur\(""\)\}/.test(arama),
+    /router\.push\(adresKur\(""\)\)/.test(arama) &&
+      !/push\("\/stok"\)/.test(arama),
   );
   /**
    * ⚠ YENİ ARAMA 1. SAYFADAN BAŞLAR — 5. sayfada kalmak kullanıcıyı boş

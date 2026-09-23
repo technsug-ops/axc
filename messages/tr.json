@@ -990,6 +990,8 @@
     "desiNotu": "Kalemlerin desisinden hesaplandı; fiili tartım farklıysa değiştirin. Kargo ücreti bu desiden okunur.",
     "kargoFirmasi": "Kargo firması",
     "desiTahmini": "tahmini",
+    "kanalKargoFirmasiEtiketi": "Kanalın kargo firması",
+    "desiKanalTartimi": "kanal tartımı",
     "kargoSecin": "Kargo firması seçin",
     "kargoOnerilen": "önerilen",
     "kargoTasimiyor": "bu desiyi taşımıyor",

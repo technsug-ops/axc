@@ -404,16 +404,57 @@ export default async function SatisDetaySayfasi({
         gecerliKalemler.reduce((toplam, k) => toplam + k.quantity, 0),
       ),
     },
+    /**
+     * ⛔ K243 (23.09.2026) — DESİ ARTIK FİRMA SEÇİMİNE BAĞLI DEĞİL.
+     *
+     * VAKA (kullanıcı ekran görüntüsü): HB siparişi `4328856038`
+     * detayında _"Kargo firması seçilmedi"_ yazıyordu ve desi HİÇ
+     * görünmüyordu. Ölçüm defterin DOLU olduğunu gösterdi:
+     * `kanalKargoDesi = 5` · `kanalKargoFirmasi = hepsiJET`.
+     * Yani kusur ÇEKİMDE DEĞİL, GÖSTERİMDEYDİ — iki bilinen değer, tek
+     * bir koşulun (bizim firma seçimimiz) arkasında saklanıyordu.
+     */
     {
       etiket: t("kargoFirmasi"),
-      deger: satis.cargoCarrier
-        ? `${satis.cargoCarrier.name}${
-            desiGosterim.kaynak === "KURESEL"
-              ? ""
-              : ` — ${desiGosterim.desi} desi${desiGosterim.kaynak === "TAHMIN" ? ` (${t("desiTahmini")})` : ""}`
-          }`
-        : t("kargoSecilmedi"),
+      deger: satis.cargoCarrier ? satis.cargoCarrier.name : t("kargoSecilmedi"),
     },
+    /**
+     * ⚠ DESİ KAYNAĞIYLA YAZILIR (anayasa: "bir sayı etiketiyle taşınır").
+     * `5 desi` tek başına iki ayrı şey olabilir: kanalın TARTTIĞI desi ya da
+     * bizim TAHMİNİMİZ. Hangisi olduğu yazılmazsa okuyanın kafasında çözülür
+     * — çoğu zaman yanlış tarafa.
+     * ⚠ KÜRESEL basamak GÖSTERİLMEZ: o, hesabın "bilmiyorum" hâlinde bile bir
+     * sayı üretmek zorunda olduğu için var; ekran bilinmeyeni göstermez.
+     */
+    ...(desiGosterim.kaynak === "KURESEL"
+      ? []
+      : [
+          {
+            etiket: t("desiEtiketi"),
+            deger: `${desiGosterim.desi} — ${
+              desiGosterim.kaynak === "TAHMIN"
+                ? t("desiTahmini")
+                : t("desiKanalTartimi")
+            }`,
+          },
+        ]),
+    /**
+     * ⛔ KANALIN FİRMASI BİZİMKİYLE AYNI ŞEY DEĞİL — ŞEMA BUNU AÇIKÇA
+     * SÖYLÜYOR: `cargoCarrierId` tarife/maliyet/kârın okuduğu BİZİM seçimimiz,
+     * `kanalKargoFirmasi` kanalın FİİLEN gönderdiği firma. İkisi ayrıştığında
+     * fark tam da tarife hatasının çıktığı yerdir — ve o fark ancak İKİSİ DE
+     * ekranda durursa görülür.
+     * ⚠ BİLİNMİYORSA SATIR HİÇ ÇIKMAZ: boş bir "—" kanalın bir şey
+     * söylemediğini değil, bizim bakmadığımızı düşündürürdü.
+     */
+    ...(satis.kanalKargoFirmasi === null || satis.kanalKargoFirmasi === ""
+      ? []
+      : [
+          {
+            etiket: t("kanalKargoFirmasiEtiketi"),
+            deger: satis.kanalKargoFirmasi,
+          },
+        ]),
     {
       /**
        * KARGOYA VERİLDİ — elle işaretlenir (kullanıcı kararı 14.08.2026).

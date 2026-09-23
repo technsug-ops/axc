@@ -167,4 +167,20 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    */
   "tablo-oku-mutasyon:kontrol",
   "teklif-tanima-mutasyon:kontrol",
+  /**
+   * K243 (23.09.2026) — `kargo-kaynagi` artık SATIŞ DETAY ekranını da
+   * mutasyona uğratıyor (`satislar/[id]/page.tsx`): desi ve kanal kargo
+   * firması satırlarının ÇİZİLDİĞİNİ sınıyor. O dosyaya yukarıdaki grubun
+   * birçok üyesi de dokunuyor — paralel koşarlarsa biri ötekinin MUTANTINI
+   * "asıl" sanıp geri yazardı.
+   */
+  "kargo-kaynagi-mutasyon:kontrol",
+  /**
+   * K243 — İKİSİ DE `scripts/canli-hb-ice-aktar.ts`i mutasyona uğratıyor:
+   * `ice-aktarma` geri doldurma SEÇİMİNİ, `kargo-damgasi` kargo/teslim
+   * damgalarını sınıyor. Bekçi bunu ilk koşumda yakaladı — beyan sonradan
+   * hatırlanmadı, ölçüm zorladı.
+   */
+  "ice-aktarma-mutasyon:kontrol",
+  "kargo-damgasi-mutasyon:kontrol",
 ];

@@ -437,6 +437,38 @@ console.log("");
 console.log("K100 · K101 · K102 — MUTASYON TURU");
 console.log("");
 
+/**
+ * ═══ TABAN YEŞİL Mİ — MUTASYONDAN ÖNCE (K243, 23.09.2026) ═══════════
+ *
+ * ⛔ TABAN KIRMIZIYKEN HER MUTASYON "YAKALANDI" GÖRÜNÜR. Harness bir
+ * mutasyonu "bekçi kırmızı yandı" diye yakalanmış sayar; bekçi ZATEN
+ * kırmızıysa bu ölçüm hiçbir şey söylemez — ve tur **32/32 YEŞİL** diye
+ * rapor verir.
+ *
+ * VAKA (23.09.2026): K242'de bir çapa taşındı, ilgili bekçi ölçütü eskidi ve
+ * KIRMIZI kaldı. Harness yine de "32/32 yakalandı" dedi. Ölçüt
+ * düzeltilip taban yeşile dönünce **gerçekten korumasız bir mutasyon**
+ * ortaya çıktı (`taslak deger yerel durumdan cikarildi`) — bir AÇIKLAMA
+ * yorumu deseni ayakta tutuyordu.
+ *
+ * _(Anayasa: "mutasyon harness'inin kendisi de kusurlu olabilir — harness
+ * çıkış koduna bakar ve mutasyonun UYGULANDIĞINI doğrular".)_
+ */
+for (const b of [ARAMA, SIRALAMA]) {
+  const t = bekciyiKostur(b);
+  if (t.kod !== 0 || !t.ciktiVar) {
+    console.log(
+      `  ⛔ TABAN KIRMIZI — ${b.yol} mutasyonsuz hâlde geçmiyor` +
+        ` (çıkış ${t.kod}${t.ciktiVar ? "" : ", özet basılmadı"}).`,
+    );
+    console.log(
+      "     Mutasyon ölçümü GEÇERSİZ olurdu: kırmızı bir bekçi her mutasyonu" +
+        " 'yakalandı' gösterir. Önce tabanı yeşile çevirin.",
+    );
+    process.exit(1);
+  }
+}
+
 let yakalanan = 0;
 const kacan: string[] = [];
 const bozuk: string[] = [];

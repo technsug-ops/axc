@@ -710,11 +710,29 @@ export async function hbCekimKos(ayar: {
   const KOD_GERI_DOLDURMA_TAVANI = 100;
   const KOD_GERI_DOLDURMA_PENCERESI_GUN = 30;
   const otuzGunOnce = new Date(okumaAni.getTime() - KOD_GERI_DOLDURMA_PENCERESI_GUN * 86_400_000);
-  const kodBosSiparisler = await prisma.sale.findMany({
+  /**
+   * ⛔ SEÇİM İKİ ALANI DA SORAR (K243, 23.09.2026) — ÖLÇÜLMÜŞ KÖR NOKTA.
+   *
+   * Eski hâl yalnız `shipmentCode: null` diyordu. Ama bu döngü İKİ ŞEY
+   * yazıyor (takip kodu VE kargo firması) ve ikisi ayrı ayrı eksik
+   * olabiliyor. Kodu bir kez yazılmış bir sipariş bir daha SEÇİLMİYOR ve
+   * firması sonsuza kadar boş kalıyordu.
+   *
+   * ÖLÇÜLDÜ (23.09.2026, canlı): HB'de **53 satış**ın takip kodu DOLU,
+   * kargo firması BOŞ. Kullanıcı bir sipariş detayında bunu gördü ve sordu.
+   * ⚠ Dosyanın kendi yorumu bu riski (`:706`) ZATEN yazmıştı — ama yalnız
+   * YAZMA tarafı ayrılmıştı, SEÇİM tek alana bağlı kalmıştı.
+   *
+   * ⚠ `AND` TAŞIYICI: kardeş `OR`ları yan yana koymak birini ötekine
+   * ezdirirdi (anayasa: "koşul AND ile eklenir, spread ile değil").
+   */
+  const eksikAlanliSiparisler = await prisma.sale.findMany({
     where: {
       channelAccountId: hesap.id,
-      shipmentCode: null,
-      OR: [{ shippedAt: { not: null } }, { soldAt: { gte: otuzGunOnce } }],
+      AND: [
+        { OR: [{ shipmentCode: null }, { kanalKargoFirmasi: null }] },
+        { OR: [{ shippedAt: { not: null } }, { soldAt: { gte: otuzGunOnce } }] },
+      ],
     },
     orderBy: { soldAt: "desc" },
     take: KOD_GERI_DOLDURMA_TAVANI,
@@ -725,7 +743,7 @@ export async function hbCekimKos(ayar: {
   const firmaDamgalari = new Map<string, string>();
   let kodBirdenFazlaPaket = 0;
   let kodDetayDusen = 0;
-  for (const satir of kodBosSiparisler) {
+  for (const satir of eksikAlanliSiparisler) {
     const no = satir.code;
     if (no === null) continue;
     const d = await apiGet(UCLAR.siparisDetay(k, no), baslik);
@@ -824,7 +842,7 @@ export async function hbCekimKos(ayar: {
   console.log(`   TAKİP KODU GERİ DOLDURULDU (K195-3)              ${kodYazilan}`);
   console.log(`   KARGO FİRMASI GERİ DOLDURULDU (K195-3)           ${firmaYazilan}`);
   console.log(`   TARTIMLA KARGO TAHMİNİ TAZELENDİ (hâlâ tahmin aşamasındaysa) ${tartimTazelenen}`);
-  console.log(`     ├─ aday (bu tur, tavan ${KOD_GERI_DOLDURMA_TAVANI})            ${kodBosSiparisler.length}`);
+  console.log(`     ├─ aday (bu tur, tavan ${KOD_GERI_DOLDURMA_TAVANI})            ${eksikAlanliSiparisler.length}`);
   console.log(`     ├─ BİRDEN FAZLA PAKET — uydurulmadı, atlandı    ${kodBirdenFazlaPaket}`);
   console.log(`     └─ DETAYI OKUNAMAYAN                            ${kodDetayDusen}`);
   if (capraz.length > 0) {

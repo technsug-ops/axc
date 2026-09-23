@@ -2378,6 +2378,25 @@ kontrol(
   console.log("K213 HB — sipariş sonradan iptal — toplu iptal listesi");
   const hK = yorumsuz(readFileSync("scripts/canli-hb-ice-aktar.ts", "utf8"));
 
+  /**
+   * ═══ GERİ DOLDURMA SEÇİMİ İKİ ALANI DA SORAR (K243, 23.09.2026) ════
+   * ⛔ KÖR NOKTA ÖLÇÜLDÜ: döngü İKİ ŞEY yazıyor (takip kodu VE kargo
+   * firması) ama seçimi yalnız `shipmentCode: null` diyordu. Kodu bir kez
+   * yazılmış sipariş bir daha SEÇİLMİYOR ve firması sonsuza kadar boş
+   * kalıyordu. Canlı ölçüm: **53 HB satışı** kod DOLU · firma BOŞ.
+   * ⚠ Dosyanın kendi yorumu bu riski zaten yazmıştı — ama yalnız YAZMA
+   * tarafı ayrılmıştı; SEÇİM tek alana bağlı kaldı.
+   */
+  kontrol(
+    "HB geri doldurma seçimi takip kodu VE kargo firmasını birlikte soruyor",
+    /OR: \[{ shipmentCode: null }, { kanalKargoFirmasi: null }\]/.test(hK),
+  );
+  /** ⚠ İKİ YAZMA AYRI KALIR: tek sorguda yazmak öbür alanı haksız EZERDİ. */
+  kontrol(
+    "  ...ama yazma İKİ AYRI sorgu (biri ötekini ezmiyor)",
+    /kanalKargoFirmasi: null },\s*data: { kanalKargoFirmasi/.test(hK) &&
+      /shipmentCode: null },\s*data: { shipmentCode/.test(hK),
+  );
   kontrol(
     "betik hbIptalSebebiCoz + otomatikIptalAdayiMi'yi İTHAL EDİYOR",
     /import \{ hbIptalSebebiCoz, otomatikIptalAdayiMi \} from "\.\.\/src\/lib\/satis-iptali";/.test(
