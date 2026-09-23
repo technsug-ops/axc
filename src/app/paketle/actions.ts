@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PAKETLEME_EYLEMLERI, hazirlaniyorMu } from "@/lib/okuma/paketleme";
 import type { PaketSiparisi } from "@/lib/paketleme/yonlendirme";
 import { satisKodKosulu } from "@/lib/varyant-arama-kurali";
+import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 import { yetkiIste } from "@/lib/yetki";
 import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
 
@@ -55,8 +56,34 @@ export type PaketAramasi =
   /** İçe aktarılmış, stok bağı KURULMAMIŞ satış — önce panelden ONAY (K164). */
   | { durum: "ONAY_BEKLIYOR"; siparisKodu: string | null }
   | { durum: "IPTAL"; siparisKodu: string | null }
+  /**
+   * ⭐ BEŞİNCİ HÂL (K240, 23.09.2026) — KOD BİR SATIŞ DEĞİL, BİR ÜRÜN.
+   *
+   * VAKA: kullanıcı Fisher-Price kutusunun barkodunu (`0027084667271`)
+   * `/paketle`de okuttu; ekran _"böyle sipariş yok"_ dedi. Cümle teknik
+   * olarak doğruydu — bu ekran `shipmentCode` ve sipariş numarası arar —
+   * ama SİSTEM O KODU TANIYOR (`/okut` ürünü buluyor) ve dahası o ürünü
+   * bekleyen açık siparişi de BİLİYOR (ölçüldü: `11634062753`).
+   * "Tanımadım" ile "tanıdım ama bu başka bir şey" aynı cümleye sıkışınca
+   * kullanıcı kodu yeniden okutuyor; yapılacak iş ise kargo etiketini
+   * okutmak ya da o siparişi açmak.
+   * _(İlke #5 · anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim,
+   * denetim değildir" · İlke #16: rakam kaynağına götürür.)_
+   */
+  | {
+      durum: "URUN_KODU";
+      /** Tek varyanta çözülemediyse null — ekran yine "ürün kodu" der. */
+      urunAdi: string | null;
+      /** Bu ürünü bekleyen, kargoya VERİLMEMİŞ siparişler (tavanla). */
+      siparisler: { siparisKodu: string | null; kanal: string }[];
+      /** Tavanı aşan var mı — sessiz kesme yok. */
+      dahaVar: boolean;
+    }
   /** Kod hiçbir satışta yok — büyük ihtimalle numara hiç girilmemiş. */
   | { durum: "HIC_YOK" };
+
+/** Ürün kodundan açılan sipariş listesinin tavanı. */
+const URUN_SIPARIS_TAVANI = 5;
 
 const KALEM_SECIMI = {
   id: true,
@@ -112,7 +139,53 @@ export async function paketlemeIcinAra(kod: string): Promise<PaketAramasi> {
       where: { OR: satisKodKosulu(temiz) },
       select: { code: true, shippedAt: true, iptalTarihi: true },
     });
-    if (!disarida) return { durum: "HIC_YOK" };
+    if (!disarida) {
+      /**
+       * ⚠ BURADA HÜKÜM VERMEDEN ÖNCE BİR SORU DAHA: bu kod bir ÜRÜN olabilir.
+       * Çözüm ORTAK gövdeden (`kodlaVaryantCoz`) — bu ekran kendi arama
+       * kuralını kurmaz, yoksa `/okut` ile `/paketle` aynı kodu farklı
+       * görürdü (İlke #10).
+       * ⚠ PASİF DAHİL: pasif mal da raftadır ve elde tutulup okutulabilir
+       * (K121); "bu bir ürün" demek için aktiflik şart değil.
+       */
+      const cozum = await kodlaVaryantCoz(temiz, { pasifDahil: true });
+      if (cozum.durum !== "YOK") {
+        const varyantIdleri =
+          cozum.durum === "TEK" ? [cozum.id] : cozum.adaylar.map((a) => a.id);
+        /**
+         * ⚠ KARGOYA VERİLMEMİŞ VE İPTALSİZ — paketlenecek olan bunlar.
+         * Onay bekleyen sipariş de listeye girer: kullanıcı açtığında ekran
+         * zaten `ONAY_BEKLIYOR` diyecek ve ne yapacağını söyleyecek.
+         */
+        const siparisler = await prisma.sale.findMany({
+          where: {
+            items: { some: { variantId: { in: varyantIdleri } } },
+            iptalTarihi: null,
+            shippedAt: null,
+          },
+          select: {
+            code: true,
+            channelAccount: {
+              select: { name: true, channel: { select: { name: true } } },
+            },
+          },
+          orderBy: { soldAt: "desc" },
+          take: URUN_SIPARIS_TAVANI + 1,
+        });
+        return {
+          durum: "URUN_KODU",
+          urunAdi: cozum.durum === "TEK" ? cozum.aday.ad : null,
+          siparisler: siparisler.slice(0, URUN_SIPARIS_TAVANI).map((x) => ({
+            siparisKodu: x.code,
+            kanal: x.channelAccount
+              ? `${x.channelAccount.channel.name} — ${x.channelAccount.name}`
+              : "—",
+          })),
+          dahaVar: siparisler.length > URUN_SIPARIS_TAVANI,
+        };
+      }
+      return { durum: "HIC_YOK" };
+    }
     /**
      * ⚠ İPTAL ÖNCE SORULUR. Bir satış hem iptal hem kargoya verilmiş
      * damgası taşıyabilir (iptal sonradan yazılmış olabilir); o hâlde

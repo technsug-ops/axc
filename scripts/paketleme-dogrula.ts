@@ -495,6 +495,76 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
     "eski tek cümle sözlükten kalktı",
     !("siparisBulunamadi" in paketSozluk),
   );
+
+  /**
+   * ═══ BEŞİNCİ HÂL — KOD BİR ÜRÜN (K240, 23.09.2026) ═══════════
+   * ⛔ VAKA: kullanıcı ürün barkodunu `/paketle`de okuttu, ekran "böyle
+   * sipariş yok" dedi. Cümle teknik olarak doğruydu ama SİSTEM O KODU
+   * TANIYOR — `/okut` ürünü buluyor — ve defterde o ürünü bekleyen AÇIK
+   * sipariş de var (ölçüldü: `11634062753`). "Tanımadım" ile "tanıdım ama
+   * bu başka bir şey" aynı cümleye sıkışınca kullanıcı kodu yeniden okutuyor;
+   * oysa yapılacak iş kargo etiketini okutmak ya da o siparişi açmaktı.
+   */
+  kontrol(
+    "sunucu ÜRÜN KODU hâlini DÖNDÜRÜYOR (tip tanımı yetmez)",
+    /return \{\s*durum: "URUN_KODU"/.test(yorumsuz),
+  );
+  /**
+   * ⚠ ÇÖZÜM ORTAK GÖVDEDEN: bu ekran kendi arama kuralını kurarsa `/okut`
+   * ile `/paketle` aynı kodu farklı görür (İlke #10 · dört kod rolü).
+   */
+  kontrol(
+    "  ...ürün çözümü ORTAK gövdeden (kendi sorgusunu kurmuyor)",
+    /kodlaVaryantCoz\(temiz, \{ pasifDahil: true \}\)/.test(yorumsuz) &&
+      !/productVariant\.findFirst/.test(yorumsuz),
+  );
+  /**
+   * ⚠ ÖNERİLEN SİPARİŞ PAKETLENEBİLİR OLMALI: kargoya verilmiş ya da
+   * iptal bir siparişi önermek, kullanıcıyı yapamayacağı işe yollardı.
+   * ⚠ `indexOf` − 1 döndürür; VARLIK ayrıca kapılanıyor (anayasa).
+   */
+  kontrol(
+    "  ...önerilen siparişler KARGOYA VERİLMEMİŞ ve İPTALSİZ",
+    (() => {
+      const bas = yorumsuz.indexOf("prisma.sale.findMany");
+      if (bas < 0) return false;
+      const son = yorumsuz.indexOf("take: URUN_SIPARIS_TAVANI", bas);
+      if (son < 0) return false;
+      const blok = yorumsuz.slice(bas, son);
+      return blok.includes("iptalTarihi: null") && blok.includes("shippedAt: null");
+    })(),
+  );
+  /** ⚠ SESSİZ KESME YOK: tavanı aşan varsa ekran bunu SÖYLER. */
+  kontrol(
+    "  ...tavan aşılırsa 'daha var' bildiriliyor",
+    /dahaVar: siparisler\.length > URUN_SIPARIS_TAVANI/.test(yorumsuz),
+  );
+
+  for (const anahtar of ["urunKoduOkundu", "urunKoduSiparisVar", "urunKoduSiparisYok"]) {
+    kontrol(
+      `  ${anahtar} sözlükte ve dolu`,
+      typeof paketSozluk[anahtar] === "string" && paketSozluk[anahtar].length > 20,
+    );
+  }
+  kontrol(
+    "  mesaj NE YAPILACAĞINI söylüyor (kargo etiketi)",
+    (paketSozluk.urunKoduOkundu ?? "").toLowerCase().includes("kargo etiketi"),
+  );
+
+  /** ⛔ GÖVDE ÇALIŞIP EKRAN ÇİZMEZSE HİÇBİR ŞEY DEĞİŞMEZ (K121 dersi). */
+  {
+    const urunEkrani = readFileSync("src/app/paketle/paketleyici.tsx", "utf8")
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+      .replace(/\/\*[\s\S]*?\*\//g, " ");
+    kontrol(
+      "ekran ÜRÜN KODU dalını AYRI çiziyor",
+      /bulunamadi\?\.durum === "URUN_KODU"/.test(urunEkrani),
+    );
+    kontrol(
+      "  ...önerilen sipariş TIKLANABİLİR (aramayı yeniden koşuyor)",
+      /onClick=\{\(\) => siparisAra\(x\.siparisKodu \?\? ""\)\}/.test(urunEkrani),
+    );
+  }
 }
 
 // --- 8) KÖPRÜ: /okut → /paketle, TEK YÖNLÜ ---------------------------------

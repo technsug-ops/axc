@@ -13,6 +13,99 @@
 
 ---
 
+## 🔴 K240 — ÜRÜN BARKODU `/paketle`DE "BÖYLE SİPARİŞ YOK" DİYORDU: DOĞRU CÜMLE, YANLIŞ İŞ · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+**KULLANICI BİLDİRİMİ:** _"Bu ürünü Barkot okut sekmesinde buluyor, ama
+paketle sekmesinde okutunca böyle sipariş yok diyor."_ (Fisher-Price kutusu,
+EAN `0 27084 66727 1`.)
+
+### ① CÜMLE DOĞRUYDU — AMA SİSTEM O KODU ZATEN TANIYORDU
+
+`/paketle` bir **sipariş** ekranıdır: kargo etiketi (`shipmentCode`) ve sipariş
+numarası (`code`) arar. Ürün barkodu ikisine de uymaz, yani _"böyle sipariş
+yok"_ teknik olarak yanlış değildi. Ölçüm sorunun başka yerde olduğunu
+gösterdi — sistem hem kodu hem onu bekleyen siparişi BİLİYORDU:
+
+    kodlaVaryantCoz("0027084667271")  → TEK  · OYU-FS-FP-01
+                                              "Fisher Price … Eğlen & Öğren Eğitici"
+    o varyantı bekleyen AÇIK sipariş → 11634062753 · 22.09 22:04 · Trendyol
+                                              onay ✓ · gönderi kodu 7260037388264396
+
+> **"Tanımadım" İLE "TANIDIM AMA BU BAŞKA BİR ŞEY" AYNI CÜMLEYE SIĞMAZ.**
+> İlkini duyan kullanıcı kodu yeniden okutur; yapılacak iş ise kargo etiketini
+> okutmak ya da o siparişi açmaktı. Ekran zaten ÜÇ sebebi ayırıyordu
+> (hiç yok · kargoya verilmiş · iptal); eksik olan **BEŞİNCİ hâldi.**
+> _(İlke #5: sessiz ya da yarım gerİ bildirim yasak · İlke #16: rakam kaynağına
+> götürür · "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+> değildir".)_
+
+### ② YAPILAN — BEŞİNCİ HÂL `URUN_KODU`
+
+Kod hiçbir satışta bulunamadığında hüküm verilmeden **bir soru daha**
+soruluyor: _bu bir ürün olabilir mi?_ Cevap ortak gövdeden geliyor
+(`kodlaVaryantCoz`) — ekran kendi arama kuralını kurmuyor, yoksa `/okut` ile
+`/paketle` aynı kodu farklı görürdü (İlke #10, dört kod rolü).
+
+Ürünse ekran şunu yazıyor ve o ürünü bekleyen, **kargoya verilmemiş ve
+iptalsiz** siparişleri TIKLANABİLİR düğme olarak veriyor:
+
+> _"Bu bir ÜRÜN kodu (…), sipariş numarası değil. Paketlemek için kargo
+> etiketini ya da sipariş numarasını okutun."_
+
+⚠ **TAVAN SESSİZ KESMİYOR:** en yeni 5 sipariş gösteriliyor, daha varsa
+ekranda YAZIYOR. ⚠ **HİÇBİR ŞEY YAZMIYOR** — bu bir teşhis cümlesi, bir
+işlem değil. ⚠ **PASİF DAHİL:** pasife alınmış mal da raftadır ve elde
+tutulup okutulabilir; "bu bir ürün" demek için aktiflik şart değil.
+`varyant-kod-cozumu.ts`teki _"pasifDahil TEK BİR ÇAĞIRAN İÇİN VAR"_ yorumu
+**zaten bayattı** (K237'de ikinci çağıran doğmuştu); susturulmadı,
+güncellendi ve üç çağıranın her biri gerekçesiyle yazıldı.
+
+### ③ ÖLÇÜLDÜ
+
+    paketleme:dogrula              112 ölçüt YEŞİL (10'u yeni)
+    paketleme-mutasyon:kontrol     6/6 — zararsız YEŞİL, beşi de KIRMIZI yandı
+    i18n:kontrol                   tr/en 4242 = 4242 · 0 eksik
+    tsc --noEmit                   çıktı BOŞ
+
+Mutasyonlar (hepsi kırmızı yandığı GÖRÜLDÜ): beşinci hâli düşüren · ekran dalını
+çizdirmeyen · **kargoya verilmiş siparişi de öneren (FAZLADAN yönü)** · ortak
+gövdeyi bırakıp kendi sorgusunu kuran · tavanı sessiz kesen.
+
+### ④ HALİL TEST LİSTESİ (canlıda, gerçek cihazda)
+
+1. `/paketle` → arama kutusuna **`0027084667271`** yaz / okut.
+   Beklenen: sarı kutu, _"Bu bir ÜRÜN kodu (Fisher Price …)"_ ve altında
+   **`11634062753 · Trendyol — …`** yazan bir düğme.
+2. O düğmeye bas. Beklenen: aynı ekranda sipariş AÇILIR (yeni arama koşar),
+   paketleme adımları görünür.
+3. Gerçek bir **kargo etiketi** okut. Beklenen: davranış DEĞİŞMEDİ — sipariş
+   doğrudan açılır (bu paket o yolu hiç değiştirmedi).
+4. Hiçbir yerde olmayan bir sayı yaz (örn. `999999999`). Beklenen: ESKİ cümle
+   — _"Bu kod sistemde HİÇBİR satışta bulunamadı…"_ (beşinci hâl yalnız kod
+   GERÇEKTEN bir ürünse çıkar).
+5. Telefonda aynı akış: düğmeler parmakla rahat basılabiliyor mu
+   (`min-h-11`)?
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** · **kullanıcı kolaylığı: ✓**
+
+### ⑤ KENDİ HATAM — İKİNCİ KEZ AYNI YERDE
+
+K239 turu koşarken bir **prova** betiği yanlışlıkla gerçek
+`scripts/paketleme-dogrula.ts`e yazdı. Sebep: bu ortamda betik metnindeki
+**çift ters bölü tek ters bölüye iniyor**, dolayısıyla "çıktı yolunu
+değiştir" replace'i **sessizce tutmadı** ve betik kendi varsayılan hedefine
+yazdı. Dosya hemen commit'li hâline döndürüldü, tur etkilenmedi.
+
+> **ÇIKARILAN KİLİT:** prova betikleri artık **çıktı yolunu PARAMETRE olarak
+> alıyor** (varsayılan hedefe yazmak "unutulunca" olan şey değil, açıkça
+> istenmesi gereken şey) ve her `replace` **sayıyla doğrulanıyor**
+> (`assert count == 1`). Ters bölü gereken her yerde `chr(92)` kullanılıyor.
+> _(Anayasa: "kritik yazım, yazıldığı doğrulanmadan yapılmış sayılmaz" · "kod
+> üreten araç, kaçış dizilerini bozuk yazabilir" — ikisi de yazılıydı ve
+> ikisine de düşüldü.)_
+
+---
+
 ## 🔴 K239 — HB ÖDEMESİ "GEÇMİŞ"E GEÇMEDİ: SEBEP KANALIN KENDİ UCUNDA · VE ÖLÇERKEN BİR GÜN KAYMASI BULUNDU · 23.09.2026 · [KOD KOŞTU]
 
 **KULLANICI BİLDİRİMİ (Halil #5):** _"HB ödeme geçmiş sekmesine GEÇMEMİŞ."_

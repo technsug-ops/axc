@@ -293,7 +293,46 @@ export function Paketleyici({
           Tek cümle üç sebebi birden anlatamaz; kullanıcı hangi işi yapacağını
           bilemez. Sunucu sebebi ÖLÇÜP gönderiyor, ekran yalnız çiziyor.
         */}
-        {bulunamadi ? (
+        {/*
+          ⭐ BEŞİNCİ HÂL AYRI ÇİZİLİR (K240): kod bir ÜRÜNSE ekran bunu ADIYLA
+          söyler ve o ürünü bekleyen siparişleri TIKLANABİLİR verir — kullanıcı
+          elinde kutuyla "hangi sipariş" diye aramaz (İlke #9, #16).
+        */}
+        {bulunamadi?.durum === "URUN_KODU" ? (
+          <div className={`space-y-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
+            <p className={DURUM_YAZISI.uyari}>
+              {t("urunKoduOkundu", { urun: bulunamadi.urunAdi ?? t("urunKoduBilinmeyen") })}
+            </p>
+            {bulunamadi.siparisler.length === 0 ? (
+              <p className={DURUM_YAZISI.uyari}>{t("urunKoduSiparisYok")}</p>
+            ) : (
+              <>
+                <p className={DURUM_YAZISI.uyari}>
+                  {t("urunKoduSiparisVar", { sayi: bulunamadi.siparisler.length })}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {bulunamadi.siparisler.map((x) =>
+                    x.siparisKodu ? (
+                      <Button
+                        key={x.siparisKodu}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="min-h-11 md:min-h-9"
+                        onClick={() => siparisAra(x.siparisKodu ?? "")}
+                      >
+                        {x.siparisKodu} · {x.kanal}
+                      </Button>
+                    ) : null,
+                  )}
+                </div>
+                {bulunamadi.dahaVar ? (
+                  <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("urunKoduDahaVar")}</p>
+                ) : null}
+              </>
+            )}
+          </div>
+        ) : bulunamadi ? (
           <p className={`text-sm ${DURUM_YAZISI.notr}`} role="status">
             {bulunamadi.durum === "HIC_YOK"
               ? t("bulunamadiHicYok")

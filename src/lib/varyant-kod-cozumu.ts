@@ -86,7 +86,16 @@ export type KodCozumu =
  * dışındadır — ikiz temizliğinin dayandığı davranış budur ve süzgeci
  * gevşetmek temizlenen çarpışmaları geri getirirdi.
  *
- * ⚠ `pasifDahil` TEK BİR ÇAĞIRAN İÇİN VAR VE GEREKÇESİ ONUN YANINDA:
+ * ⚠ `pasifDahil` ÇAĞIRANI SAYILIDIR VE HER BİRİNİN GEREKÇESİ YANINDA
+ * YAZILI — kip "daha çok sonuç gelsin" diye açılmaz. Bugün üç çağıran var:
+ * `okut/sayim-actions` (fiziksel sayım), `kodBaskaVaryantaAitMi` (yazma
+ * kapısı — pasif ikizi de görmeli), `paketle/actions` (K240: "bu bir ÜRÜN
+ * kodu" teşhisi; hiçbir şey yazmaz, yalnız cümleyi düzeltir).
+ * ⚠ LİSTE ELLE TUTULAN BİR KAYIT DEĞİL, GEREKÇE KAYDIDIR: dördüncü bir
+ * çağıran eklenirken sorulacak soru "zararı var mı" değil, **"bu çağıranın
+ * kararı pasif bir kaydı görmekten NE KAZANIR"**dır.
+ *
+ * İlk gerekçe (fiziksel sayım):
  * fiziksel sayım rafta NE VARSA onu kaydeder; pasife alınmış bir mal da
  * raftadır ve okutulunca çözülmelidir _(K121b · kullanıcı kuralı
  * 29.08.2026: "esas unsur fiziki varlıktır")_. Kip AÇILDIĞINDA çakışma
