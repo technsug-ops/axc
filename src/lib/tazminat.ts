@@ -1,3 +1,4 @@
+import { sayiCoz } from "@/lib/tablo/hucre";
 import type { CompensationStatus, Currency } from "@/generated/prisma/enums";
 
 /**
@@ -90,6 +91,40 @@ export function kalanTalepEdilebilirAdet(
  * _11.08.2026'da doğrulama betiği yakaladı._
  */
 export const TUTAR_BASAMAK = 4;
+
+/**
+ * ============================================================================
+ *  TALEP TUTARINI ÇÖZ — FORMUN YAZDIĞINI SUNUCU AYNI SAYI OLARAK OKUR (K238)
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI HATA 23.09.2026 — DÖRT TALEP TAM ×10.000 YAZILMIŞ:
+ *
+ *      ürün maliyeti    799,91  →  deftere yazılan   7.999.100,00
+ *                      8.811,00 →                   88.110.000,00
+ *                        759,90 →                    7.599.000,00
+ *                      1.111,00 →                   11.110.000,00
+ *
+ *  Sebep, iki YARININ AYNI EKRANDA FARKLI BİÇİM KONUŞMASIYDI:
+ *   · `varsayilanTalepTutari` forma MAKİNE biçimi yazıyor: `"799.9100"`
+ *     (nokta = ONDALIK, dört basamak — `Decimal(18,4)`).
+ *   · Sunucudaki çözücü TÜRKÇE biçim varsayıyordu: `.replace(/\./g, "")`,
+ *     yani noktayı BİNLİK AYIRACI sanıp siliyordu → `7999100`.
+ *
+ *  İki taraf da kendi içinde "doğru"ydu ve ayrı ayrı sınanıyordu; kimse
+ *  ARADAKİ BAĞI ölçmemişti. _(Anayasa: "zincir, halkalarının varlığıyla
+ *  değil BAĞLANTISIYLA sınanır" · "iki halka ayrı ayrı doğru olabilir —
+ *  aradaki bağ yanlış".)_
+ *
+ *  ⭐ ÇARE İKİNCİ BİR ÇÖZÜCÜ YAZMAK DEĞİL, VAR OLANI KULLANMAK: `sayiCoz`
+ *  deponun ortak hücre çözücüsü ve İKİ biçimi de tanıyor — `1.234,56` (TR)
+ *  ve `799.9100` (makine). Excel okuyucuları yıllardır onu kullanıyor;
+ *  tazminat formu kendi kopyasını yazdığı için ayrıştı.
+ * ============================================================================
+ */
+export function talepTutariniCoz(ham: unknown): number {
+  const metin = String(ham ?? "").trim();
+  if (metin === "") return Number.NaN;
+  return sayiCoz(metin) ?? Number.NaN;
+}
 
 export function varsayilanTalepTutari(
   adet: number,

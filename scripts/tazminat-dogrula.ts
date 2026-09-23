@@ -5,7 +5,8 @@ import { readFileSync } from "node:fs";
  *
  * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
  * SESSİZCE 0 değer buldu: `split("
-")` sonrası satırlar `` ile
+")` sonrası satırlar `
+` ile
  * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
  * `^[A-Z_]+$` testi düşüyor.
  *
@@ -37,6 +38,7 @@ import {
   kalanTalepEdilebilirAdet,
   karsiTarafAdi,
   karsiTarafGecerliMi,
+  talepTutariniCoz,
   varsayilanTalepTutari,
   tazminatTahsilTarihi,
   tazminatTahsilTarihleri,
@@ -137,6 +139,54 @@ console.log("\n3) KALAN ADET — aynı hasar iki kez talep edilemez");
     varsayilanTalepTutari(7, 12.3456) === "86.4192",
     varsayilanTalepTutari(7, 12.3456),
   );
+  /**
+   * ═══ ZİNCİR — FORMUN YAZDIĞINI SUNUCU AYNI SAYI OLARAK OKUYOR MU (K238) ══
+   * ⛔ CANLI HATA 23.09.2026: dört talep tam ×10.000 yazıldı (799,91 →
+   * 7.999.100). İki yarı ayrı ayrı DOĞRUYDU ve ayrı ayrı sınanıyordu —
+   * `varsayilanTalepTutari` makine biçimi üretiyor ("799.9100"), sunucudaki
+   * çözücü ise Türkçe biçim varsayıp NOKTAYI SİLİYORDU. Kimse ARADAKİ BAĞI
+   * ölçmemişti. Bu bölüm tam o bağı ölçer: üretilen değer, okunan sayıya
+   * eşit mi?
+   */
+  for (const [adet, birim] of [
+    [1, 799.91],
+    [1, 8811],
+    [1, 759.9],
+    [1, 1111],
+    [2, 759.9],
+    [7, 12.3456],
+    [3, 149.9],
+  ] as const) {
+    const varsayilan = varsayilanTalepTutari(adet, birim);
+    const okunan = talepTutariniCoz(varsayilan);
+    const beklenen = Math.round(adet * birim * 10000) / 10000;
+    kontrol(
+      `ZİNCİR ${adet}×${birim}: form "${varsayilan}" → sunucu ${okunan} (beklenen ${beklenen})`,
+      Math.abs(okunan - beklenen) < 0.00005,
+      { varsayilan, okunan, beklenen },
+    );
+  }
+  /** Kullanıcı ELLE Türkçe biçim yazarsa da aynı sayı okunur. */
+  kontrol("elle TR biçim: 1.234,56 → 1234.56", talepTutariniCoz("1.234,56") === 1234.56);
+  kontrol("elle virgüllü: 799,91 → 799.91", talepTutariniCoz("799,91") === 799.91);
+  kontrol("elle sade: 799.91 → 799.91", talepTutariniCoz("799.91") === 799.91);
+  kontrol("binlik ayıraçlı tam sayı: 7.999.100 → 7999100", talepTutariniCoz("7.999.100") === 7999100);
+  /** Boş alan SAYI DEĞİLDİR — zod "tutar sayı olmalı" desin, 0 yazmasın. */
+  kontrol("boş → NaN (sıfır YAZILMAZ)", Number.isNaN(talepTutariniCoz("")));
+  kontrol("  ...yalnız boşluk da NaN", Number.isNaN(talepTutariniCoz("   ")));
+  kontrol("  ...null da NaN", Number.isNaN(talepTutariniCoz(null)));
+  /**
+   * ⛔ VE ÇÖZÜCÜ ORTAK GÖVDEDEN — ikinci bir kopya yazılırsa aynı ayrışma
+   * geri gelir. Eylem kendi `replace` zincirini KURAMAZ.
+   */
+  {
+    const eylem = readFileSync("src/app/tazminat/actions.ts", "utf8");
+    kontrol("eylem ORTAK çözücüyü çağırıyor", /talepTutariniCoz\(formData\.get\("amount"\)\)/.test(eylem));
+    kontrol("  ...kendi çözücüsü KALMADI", !/function tutaraCevir/.test(eylem));
+    const govde = readFileSync("src/lib/tazminat.ts", "utf8");
+    kontrol("saf gövde deponun ortak sayı çözücüsünü kullanıyor", /sayiCoz\(metin\)/.test(govde));
+  }
+
   kosanBolumler.push("adet");
 }
 

@@ -13,6 +13,78 @@
 
 ---
 
+## 🔴 K238 — TAZMİNAT TUTARLARI ×10.000 YAZILMIŞ: FORM NOKTAYI ONDALIK, SUNUCU BİNLİK SANIYORDU · 23.09.2026 · [KOD + CANLI ONARIM KOŞTU]
+
+**KULLANICI BİLDİRİMİ:** _"Uçuk fiyatlar var tazminatta."_ Ekranda tazminat
+geliri **₺7.999.100** ve GERÇEK NET **₺8.085.623,47**.
+
+### ÖLÇÜM — TAM ×10.000, DÖRT KAYIT
+
+    2026-09-14   7.999.100  ←  799,91     Tefal Delibake Kek Kalıbı 27 cm
+    2026-09-07  88.110.000  ←  8.811,00   Philips i9000 SkinIQ
+    2026-08-20   7.599.000  ←  759,90     DeliBake Kek Kalıbı 24 cm
+    2026-08-11  11.110.000  ←  1.111,00   Tefal Easyblend Blender
+    (aynı gün 2 adetli bir talep ORAN 1,00 — elle virgüllü yazılmış, doğruydu)
+
+### KÖK — İKİ YARI AYNI EKRANDA FARKLI BİÇİM KONUŞUYORDU
+
+    varsayilanTalepTutari  →  "799.9100"   nokta = ONDALIK (Decimal(18,4))
+    tutaraCevir            →  .replace(/\./g, "")   nokta = BİNLİK AYIRACI
+                           →  7999100
+
+İkisi de KENDİ İÇİNDE doğruydu ve **ayrı ayrı sınanıyordu**: bekçi
+`varsayilanTalepTutari(3, 149.9) === "449.7000"` diyordu, çözücünün TR biçimi
+doğru okuduğu da doğruydu. **Kimse ARADAKİ BAĞI ölçmemişti.**
+_(Anayasa: "zincir, halkalarının varlığıyla değil BAĞLANTISIYLA sınanır" ·
+"iki halka ayrı ayrı doğru olabilir — aradaki bağ yanlış".)_
+
+### YAPILAN
+
+- **Çözücü saf gövdeye alındı** (`talepTutariniCoz`, `lib/tazminat.ts`) ve
+  deponun ORTAK sayı çözücüsüne bağlandı (`sayiCoz`). İkinci bir çözücü
+  yazmak yerine var olanı kullanmak: Excel okuyucuları yıllardır onu
+  kullanıyor, tazminat formu kendi kopyasını yazdığı için ayrışmıştı.
+  Artık iki biçim de doğru okunuyor: `799.9100` ve `1.234,56`.
+- **Bekçi — ZİNCİR ÖLÇÜTÜ:** `tazminat:dogrula` (69) artık formun ÜRETTİĞİ
+  değeri sunucunun OKUDUĞU sayıyla karşılaştırıyor (7 vaka + elle yazım
+  biçimleri + boş alan NaN). Eylemin kendi çözücüsünü kurması da yasak.
+- **Yeni harness** `tazminat-mutasyon:kontrol` **5/5** — ilk mutasyon
+  **hatanın tam kendisini** geri getiriyor (`.replace(/\./g,"")`) ve bekçi
+  kırmızı yanıyor. Yani yeni ölçüt bu hatayı yakalardı.
+- **CANLI ONARIM** (kullanıcı onayı "onarım yaz"):
+  `npm run canli:tazminat-katsayi` · ölçüt _"alım kalemine bağlı ∧ oran TAM
+  10.000"_ (yeniden hesaplanabilir, saklanan liste değil) · yerel anlık
+  görüntü + iz + tek komutla geri alma.
+  **4 kayıt onarıldı: ₺114.818.100 → ₺11.481,81.**
+  Doğrulama: beş alım kaynaklı talebin beşi de ORAN **1,00**; tahsil edilmiş
+  tazminat toplamı **₺86.443,86**.
+
+### ⚠ BENİM HATAM — TUR KOŞARKEN KAYNAĞA DOKUNDUM
+
+K237 push'u bekçi turundayken bu paketi yazmaya başladım. `stok-siralama-
+mutasyon:kontrol` çöktü ve mutasyonunu diskte bıraktı:
+`src/app/kart/[variantId]/page.tsx` benim dokunmadığım hâlde "değişmiş"
+göründü (`xl:grid` → `grid`). Geri alındı, harness 30/30 yeşil.
+> **KURAL PEKİŞTİ:** bekçi turu koşarken kaynağa DOKUNULMAZ — harness'ler
+> dosyayı mutasyona uğratıp geri yazıyor; araya giren her düzenleme ya
+> kaybolur ya da mutasyonu diskte bırakır. Tur bitene kadar hazırlık
+> çalışma alanında yapılır.
+
+### HALİL TEST LİSTESİ
+
+1. `/tazminat` → "Talepler" listesi: dört satır artık **₺799,91 · ₺8.811,00 ·
+   ₺759,90 · ₺1.111,00**. Milyonluk rakam KALMADI.
+2. Üstteki **"Açık alacak"** ve `/rapor` → **GERÇEK NET** rakamı 114 milyonluk
+   şişkinlikten kurtulmuş olmalı (tazminat geliri artık ₺86.443,86 üzerinden).
+3. **Yeni talep aç:** "Talep bekleyen hasar" bloğunda **+ Talep aç** → tutar
+   alanı önerilen değerle dolu gelir (ör. `799.9100`) → **hiç dokunmadan**
+   kaydet → listede **₺799,91** yazmalı (eskiden ₺7.999.100 yazardı).
+4. Aynı formda tutarı **elle** `1.234,56` yaz → kaydet → **₺1.234,56**.
+   Tutarı boş bırak → "tutar sayı olmalı" uyarısı çıkmalı, 0 TL talep
+   AÇILMAMALI.
+
+---
+
 ## 🔴 K237 — KAPI KENDİ ÖNLEDİĞİ ARIZAYI KORUDU: PASİF SAHİP ENGEL DEĞİL SORU · 23.09.2026 · [KOD KOŞTU — KULLANICI EŞLEŞTİRMESİ BEKLİYOR]
 
 **KULLANICI BİLDİRİMİ:** _"4711041918 Hepsiburada siparişini çekmedi, mükerrer

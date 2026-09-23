@@ -14,6 +14,7 @@ import {
   karsiTarafGecerliMi,
   TAZMINAT_TAHSIL_EDILDI_EYLEMI,
   TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI,
+  talepTutariniCoz,
 } from "@/lib/tazminat";
 
 export type TazminatDurumu = {
@@ -53,14 +54,6 @@ function semaKur(t: Ceviri) {
 }
 
 /** "1.234,56" / "1234.56" -> sayı. Boşsa NaN (zod yakalar). */
-function tutaraCevir(ham: FormDataEntryValue | null): number {
-  const s = String(ham ?? "")
-    .trim()
-    .replace(/\./g, "")
-    .replace(",", ".");
-  return s === "" ? NaN : Number(s);
-}
-
 function tazele() {
   revalidatePath("/tazminat");
   revalidatePath("/ayarlar/tedarikciler");
@@ -173,7 +166,7 @@ export async function tazminatAc(
     kaynak: String(formData.get("kaynak") ?? "alim"),
     kalemId: String(formData.get("kalemId") ?? ""),
     quantity: Number(String(formData.get("quantity") ?? "")),
-    amount: tutaraCevir(formData.get("amount")),
+    amount: talepTutariniCoz(formData.get("amount")),
     occurredAt: String(formData.get("occurredAt") ?? ""),
     status: String(formData.get("status") ?? "OPEN"),
     note: String(formData.get("note") ?? ""),
