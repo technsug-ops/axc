@@ -26,6 +26,8 @@ import { sayfaCoz } from "@/lib/sayfalama";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { aramaKosulu, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { sayfaIzni } from "@/lib/yetki";
+import { VitrinKutusu } from "@/app/vitrin-kutusu";
+import { vitrinKutusunuTopla } from "@/lib/panel/vitrin-verisi";
 
 /**
  * ============================================================================
@@ -281,6 +283,20 @@ export default async function KanalListelemeSayfasi({
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground max-w-3xl text-sm">{t("aciklama")}</p>
       </div>
+
+      {/* ═══ "RAFTA VAR, VİTRİNDE YOK" DÖKÜMÜ BURAYA TAŞINDI (K244) ═══
+          Kullanıcı kararı 23.09.2026: _"bu bölüm Kanal Listeleme sekmesine
+          alınabilir; panelde sadece küçük bir uyarı olur."_
+
+          ⛔ NİYE BURASI: kutu kanal başına bir kart çiziyor ve satır sayısı
+          VERİYLE BÜYÜYOR (11 kanal hedefi). Panel bir HÜKÜM yeridir,
+          döküm kendi sayfasına gider (İlke #13). Bu sayfa zaten "hangi
+          ürün hangi kanalda ne durumda" sorusunun sayfası — döküm burada
+          bağlamın İÇİNDE duruyor, panelde bağlamsızdı.
+
+          ⚠ İZİN AYRICA İSTENMİYOR: sayfanın kendisi `stok.gor` kapısından
+          geçiyor (`:78`) ve kutu o kapının arkasında. */}
+      <VitrinKutusu veri={await vitrinKutusunuTopla()} />
 
       {/* ── ÖLÇÜMÜN YAŞI — şemanın şartı, bayatsa görünür ───────────────── */}
       <div

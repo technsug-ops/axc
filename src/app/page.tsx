@@ -113,7 +113,7 @@ import { DURUM_SERIDI, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { OzetKutusu } from "./ozet-kutusu";
-import { VitrinKutusu } from "./vitrin-kutusu";
+import { VitrinSerhi } from "./vitrin-serhi";
 import {
   donemAlimi,
   gorevSayilariniTopla,
@@ -2453,11 +2453,31 @@ export default async function AnaSayfa({
             ⚠ TAM GENİŞLİK, AMA İÇERİK SINIRLI: kutunun satırları etiket-sol
             rakam-sağ yazıyor; tam genişlikte bu İlke #12'nin adıyla
             yasakladığı kalıp olurdu. Sınır bileşenin İÇİNDE duruyor. */}
-        {/* GÜNLÜK ÖZET TEASER (K-OZET) — kendi iznini kendi sınar, izinsizse
-            null döner ve hiçbir boşluk bırakmaz. */}
-        <OzetKutusu />
+        {/* ═══ ŞERH SOLDA, GÜNLÜK ÖZET SAĞDA (K244, 23.09.2026) ═══
+            Kullanıcı kararı, iki ayrı bildirim, tek satırda buluştu:
+            ① _"bu bölüm Kanal Listeleme sekmesine alınabilir; panelde
+               sadece küçük bir uyarı olur"_ — döküm taşındı, şerh kaldı.
+            ② _"yapay zeka günlük verisi çok yer kaplıyor, sağ tarafa
+               alınabilir"_ — tam genişlikten 2/5'e indi.
 
-        <VitrinKutusu veri={vitrin} />
+            ⛔ İKİSİ DE TAM GENİŞLİKTİ VE ALT ALTAYDI: panelin ilk ekranı
+            iki kutuyla doluyor, asıl iş kutuları katlanın altına
+            itiliyordu. İlke #12 (alanı verimli kullan) + #13 (özet
+            ekranda döküm olmaz).
+
+            ⚠ IZGARA ALTTAKİYLE AYNI (5 sütun): iki ayrı ızgara
+            kullansaydık kartların kenarları alt alta gelmezdi ve göz
+            her satırda yeni bir hizaya alışmak zorunda kalırdı.
+            ⚠ İZİNSİZ KULLANICIDA SAĞ SÜTUN BOŞ KALIR, KUTU DEĞİL:
+            `OzetKutusu` null döner ve ızgara 3/5'te biter. */}
+        <div className="grid min-w-0 items-stretch gap-4 xl:grid-cols-5">
+          <div className="min-w-0 xl:col-span-3">
+            <VitrinSerhi veri={vitrin} />
+          </div>
+          <div className="min-w-0 xl:col-span-2">
+            <OzetKutusu />
+          </div>
+        </div>
 
         {/* ⚠ 2/5 — 3/5 düzeni KORUNDU: ızgaraya dokunulmadı.
             ⛔ İKİ SÜTUN AYNI YERDE BİTER (K126-C, kullanıcı 01.09.2026:

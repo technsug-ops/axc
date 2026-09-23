@@ -13,6 +13,112 @@
 
 ---
 
+## 🔴 K244 — PANEL BİR HÜKÜM YERİDİR: DÖKÜM KANAL LİSTELEMEYE TAŞINDI · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı aynı turda iki bildirim gönderdi; ikisi de panelin İLK EKRANINI
+yiyen kutulardı ve tek satırda çözüldüler.
+
+**①** _"bu bölüm Kanal Listeleme sekmesine alınabilir: panelde sadece küçük
+bir uyarı olur."_ (Rafta var, vitrinde yok)
+**②** _"yapay zeka günlük verisi çok yer kaplıyor, sağ tarafa alınabilir."_
+
+### NİYE HAKLI — SATIR SAYISI VERİYLE BÜYÜYOR
+
+"Rafta var, vitrinde yok" kutusu **kanal başına BİR kart** çiziyor ve her
+kartta dört kutucuk var. Bugün 3 kanal = 3 kart · 12 kutucuk. Hedef **11
+kanal**: aynı kutu panelin tamamını yerdi.
+
+> **İlke #13 tam bunu yasaklıyor:** _"satır sayısı veriyle birlikte BÜYÜYEN
+> hiçbir şey özet ekranına konmaz — bugün 3 satırla masum görünen liste,
+> hacim artınca ekranı yutar."_ Kural yazılıydı; kutu yine de panelde
+> doğmuştu çünkü doğduğu gün TEK kanal vardı.
+
+Günlük Özet de tam genişlikteydi ve altındaki asıl iş kutularını katlanın
+altına itiyordu (İlke #12: alanı verimli kullan).
+
+### YAPILAN
+
+· Döküm `/kanal-listeleme`ye taşındı — o sayfa zaten _"hangi ürün hangi
+  kanalda ne durumda"_ sayfası; döküm orada **bağlamın içinde** duruyor,
+  panelde bağlamsızdı.
+· Panelde tek satırlık **şerh** kaldı: rakam + gerekçe + bağlantı.
+· Şerh **solda 3/5**, Günlük Özet **sağda 2/5** — ızgara alttakiyle AYNI
+  (5 sütun), yoksa kartların kenarları alt alta gelmezdi.
+
+### ⛔ İKİ ŞEY PANELDEN KAYBOLMADI — İKİSİ DE ÖLÇÜLMÜŞ UYARI
+
+① rafta yatan sermaye (adet + tutar),
+② ölçümün **bayat ya da hiç yapılmamış** olması.
+
+İkincisi gizlenseydi kaçırılan bir gece koşumu panelde hiçbir iz bırakmaz ve
+rakam TAZE sanılırdı. _(Anayasa: "kaçışın kendisi görünür kılınır".)_
+
+⚠ **SIFIRDA BAĞLANTI YOK** (İlke #2): açılacak liste yokken tıklanabilir
+görünmek, kullanıcıyı boş ekrana yollamaktır. Ama ölçüm şüpheliyse bağlantı
+KALIR — orada bakılacak bir şey vardır.
+
+### ⭐ ÖLÇÜT ORTAK GÖVDEYE ÇIKTI — ÇÜNKÜ İKİNCİ OKUYUCU DOĞDU
+
+Eşik (`BAYAT_SAAT = 48`) ve _"bu kanalın ölçümü şüpheli mi"_ ölçütü kutunun
+İÇİNDE yerel bir ifadeydi. Şerh aynı soruyu sormak zorunda kalınca ikisi de
+`lib/panel/vitrin-serhi.ts`e taşındı.
+
+> İki yerde iki ölçüt olsaydı **panel "taze" derken kutu "bayat" derdi** —
+> ve iki ekran aynı kanal için farklı hüküm verirdi.
+
+Bekçi bunu iki parça hâlinde ölçüyor: gövde ölçüyü **kuruyor mu**, ve kutu
+onu **çağırıyor mu**. Biri olup öteki olmayınca ölçüt sessizce düşer.
+
+### ⚠ İKİ MUTASYON KAÇTI — İKİ ÖLÇÜT EKSİKMİŞ
+
+Yeni harness ilk koşumda **6/8** verdi ve kaçanlar şunlardı:
+
+    ✗ ŞERHE VERİ GİTMİYOR     `veri={[]}` ile besleme YEŞİL geçti
+    ✗ SIFIRDA DA BAĞLANTI      Ilke #2 hiç ölçülmüyordu
+
+Birincisi klasik tuzak: ölçüt **niteliğin varlığını** arıyordu (`veri={`),
+değerini değil. Nitelik duruyor, içi boş — panel her zaman "temiz" der ve
+rafta yatan sermaye hiç yazılmaz. Ölçüt `veri={vitrin}`e bağlandı.
+_(Anayasa: "ölçüt kullanıma bağlanır — ada ya da dizeye değil".)_
+
+### ⭐ TABAN KAPISI İŞİNİ YAPTI
+
+Ölçütleri sıkılaştırırken bekçiyi bir tırnak hatasıyla çökerttim. Harness
+mutasyonları koşmadı, **"TABAN KIRMIZI — ölçüm GEÇERSİZ"** deyip durdu.
+K243'te eklenen kapı, eklendiğinin ertesi paketinde gerçek bir vakada
+ısırdı.
+
+### ÖLÇÜLDÜ
+
+    vitrin:dogrula                 129 ölçüt (16'sı yeni · 11'i DEĞER testi)
+    vitrin-mutasyon:kontrol        8/8 (YENİ harness · taban kapılı)
+    panel:dogrula                  yeşil (renk jetonları)
+    i18n:kontrol                   tr/en eşit · 0 eksik
+    tsc --noEmit                   çıktı BOŞ
+
+### HALİL TEST LİSTESİ
+
+1. `/` (Panel) → üstte **tek satırlık** şerh olmalı: mağaza ikonu + "Rafta
+   var, vitrinde yok" + **33 ürün · ₺105.613,16** (3 kanalın toplamı: 19+13+1 · 69.549,88 +
+   25.267,28 + 10.796,00). ⚠ Bu rakam kullanıcının 23.09 ekran görüntüsünden
+   toplanmıştır; defter o günden beri değiştiyse sayı da değişir — önemli
+   olan **şerhin toplamı ile `/kanal-listeleme`deki üç kartın toplamının
+   BİREBİR TUTMASI** +
+   sağda **"Kanal listeleme →"**.
+2. Aynı satırda ölçüm uyarısı: HB ve N11'de koşum izi yok, yani
+   **"2 kanalın ölçümü şüpheli"** yazmalı ve satır turuncu olmalı.
+3. Panelde **üç büyük kart artık OLMAMALI**. Günlük Özet kutusu **sağda**,
+   şerhin yanında ve dar olmalı.
+4. **"Kanal listeleme →"**ye bas. `/kanal-listeleme` açılmalı ve üç kanal
+   kartı **başlığın hemen altında** durmalı — panelde görünenlerin aynısı.
+5. Telefonda: şerh ile Günlük Özet alt alta sarmalı, yatay kaydırma
+   ÇIKMAMALI.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (3 yeni anahtar, tr+en) ·
+**kullanıcı kolaylığı: ✓** (İlke #2 · #12 · #13)
+
+---
+
 ## 🔴 K243 — DESİ VE KANAL KARGO FİRMASI DEFTERDE VARDI, EKRAN GÖSTERMİYORDU · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI:** HB siparişi `4328856038` detayının ekran görüntüsü —

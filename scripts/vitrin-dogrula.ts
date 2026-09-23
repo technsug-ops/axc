@@ -10,6 +10,7 @@ import {
   vitrinSatiriCoz,
 } from "../src/lib/vitrin-kutusu";
 import { listelemeDurumu, kanalAdedi, satisaEngel, engelGrubu } from "../src/lib/kanal-listeleme";
+import { vitrinSerhi, kanalSorunluMu } from "../src/lib/panel/vitrin-serhi";
 
 /**
  * ============================================================================
@@ -257,14 +258,69 @@ console.log("\n6) zincir — kutu panele, süzgeç /stok'a BAĞLI mı");
   const yorumsuz = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
+  /**
+   * ⚠ ÖLÇÜT K244'TE GÜNCELLENDİ — SUSTURULMADI, YERİ DEĞİŞTİ.
+   * Kullanıcı kararı 23.09.2026: döküm panelden `/kanal-listeleme`ye
+   * taşındı, panelde tek satırlık şerh kaldı (İlke #13: özet ekranda döküm
+   * olmaz — kanal başına bir kart, 11 kanal hedefi).
+   * KURAL AYNI: kutu BİR YERDE çiziliyor ve verisi ONA gidiyor.
+   */
   const panel = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
-  dogru("panel kutuyu ÇİZİYOR (<VitrinKutusu)", panel.includes("<VitrinKutusu"));
+  const kanalSayfasi = yorumsuz(
+    readFileSync("src/app/kanal-listeleme/page.tsx", "utf8"),
+  );
   dogru(
-    "panel veriyi ÇAĞIRIYOR (vitrinKutusunuTopla())",
-    panel.includes("vitrinKutusunuTopla()"),
+    "döküm /kanal-listeleme'de ÇİZİLİYOR (<VitrinKutusu)",
+    kanalSayfasi.includes("<VitrinKutusu"),
+  );
+  dogru(
+    "  ...ve veriyi ÇAĞIRIYOR (vitrinKutusunuTopla())",
+    kanalSayfasi.includes("vitrinKutusunuTopla()"),
   );
   /** ⚠ Çizim ile veri AYRI sınanır: biri olup öteki olmayınca kutu boş çizilir. */
-  dogru("çizilen kutuya veri GİDİYOR", /<VitrinKutusu\s+veri=\{/.test(panel));
+  dogru(
+    "  ...çizilen kutuya veri GİDİYOR",
+    /<VitrinKutusu\s+veri=\{/.test(kanalSayfasi),
+  );
+
+  /**
+   * ⛔ PANELDE ŞERH VAR, DÖKÜM YOK — İKİSİ AYRI ÖLÇÜLÜR.
+   * "Dökümü çizmiyor" bir İDDİADIR ve yokluğu göze görünmez; kutuyu
+   * panele geri koyan bir mutasyon bu ölçüt olmadan SESSİZCE geçerdi.
+   * _(Anayasa: "'dokunmuyor' iddiası da bir davranıştır".)_
+   */
+  dogru("panel ŞERHİ çiziyor (<VitrinSerhi)", panel.includes("<VitrinSerhi"));
+  /**
+   * ⛔ ÖLÇÜT DEĞERE BAĞLI, NİTELİĞE DEĞİL — VE BU BİR MUTASYON KAÇTIĞI
+   * İÇİN BÖYLE. Önce yalnız `veri={` aranıyordu; şerhi `veri={[]}` ile
+   * besleyen mutasyon YEŞİL geçti — nitelik duruyordu, içi boştu ve panel
+   * her zaman "temiz" derdi. Rafta yatan sermaye hiç yazılmazdı.
+   */
+  dogru(
+    "  ...şerhe GERÇEK veri gidiyor (veri={vitrin})",
+    /<VitrinSerhi\s+veri=\{vitrin\}/.test(panel),
+  );
+  /**
+   * ⛔ SIFIRDA BAĞLANTI OLMAZ (İlke #2) — VE BU DA KAÇMIŞTI.
+   * Açılacak liste yokken tıklanabilir görünmek, kullanıcıyı boş ekrana
+   * yollamaktır. Görünürlük ile tıklanabilirlik AYRI kararlardır.
+   * ⚠ Ölçüt KOŞULA bağlı: bağlantının varlığı değil, KAPISI ölçülüyor.
+   */
+  {
+    const serhEkrani = yorumsuz(readFileSync("src/app/vitrin-serhi.tsx", "utf8"));
+    dogru(
+      "şerh SİFIRDA bağlantı ÇİZMİYOR (temiz && !dikkat → null)",
+      /\{temiz \&\& !s\.dikkatGerek \? null : \(/.test(serhEkrani),
+    );
+    dogru(
+      "  ...ama ölçüm şüpheliyse bağlantı KALIYOR (orada bakılacak şey var)",
+      serhEkrani.includes('href="/kanal-listeleme"'),
+    );
+  }
+  dogru(
+    "panel DÖKÜMÜ ÇİZMİYOR (İlke #13 — özet ekranda döküm olmaz)",
+    !panel.includes("<VitrinKutusu"),
+  );
 
   const stok = yorumsuz(readFileSync("src/app/stok/page.tsx", "utf8"));
   dogru("/stok vitrin parametresini OKUYOR", /\bvitrin\s*[,}]/.test(stok));
@@ -631,7 +687,86 @@ console.log("\n9) çok kanallı kutu — hesap tekil değil, iz kendi kanalında
    */
   dogru("veri gövdesi iz yokluğunu ÖLÇÜYOR", veri3.includes("kosumIziYok: sonIz === null"));
   dogru("kutu iz yokluğunu SÖYLÜYOR", /k\.kosumIziYok[\s\S]{0,120}t\("izYok"\)/.test(kutu3));
-  dogru("iz yokluğu SORUN sayılıyor", /sorunVar =[\s\S]{0,120}k\.kosumIziYok/.test(kutu3));
+  /**
+   * ⚠ ÖLÇÜT K244'TE GÜNCELLENDİ — KURAL AYNI, YERİ DEĞİŞTİ.
+   * Ölçüt kutunun içinde yerel bir ifadeydi; paneldeki şerh de aynı soruyu
+   * sormak zorunda kalınca ORTAK GÖVDEYE taşındı (`kanalSorunluMu`).
+   * İki yerde iki ölçüt olsaydı panel "taze" derken kutu "bayat" derdi.
+   * ⚠ İKİ PARÇA AYRI SINANIR: gövde ölçüyü kuruyor MU, ve kutu onu
+   * ÇAĞIRIYOR MU. Biri olup öteki olmayınca ölçüt sessizce düşer.
+   */
+  /**
+   * ═══ ŞERHİN HALİ ÇAĞRILARAK SINANIR (K244) ══════════════════
+   * Saf gövde — kaynak taranmaz, ÇAĞRILIR ve DEĞERİ sınanır.
+   * _(Anayasa: "saf hesap katmanı, desen tarayan bekçiye muhtaç olmaz".)_
+   */
+  {
+    const k = (x: Partial<Parameters<typeof vitrinSerhi>[0][number]>) =>
+      ({
+        hesapId: "h",
+        kanalAdi: "K",
+        hesapAdi: "A",
+        satirlar: [],
+        toplamAdet: 0,
+        toplamTutar: 0,
+        kaydiYokAdet: 0,
+        kaydiYokTutar: 0,
+        olculmemisAdet: 0,
+        olculmemisTutar: 0,
+        olcumAt: null,
+        yasSaat: null,
+        sonKosumBasarisiz: false,
+        sonKosumMesaji: null,
+        kosumIziYok: false,
+        ...x,
+      }) as Parameters<typeof vitrinSerhi>[0][number];
+
+    const iki = vitrinSerhi([
+      k({ toplamAdet: 7, toplamTutar: 100, yasSaat: 2 }),
+      k({ toplamAdet: 3, toplamTutar: 50, yasSaat: 5 }),
+    ]);
+    yakin("şerh adetleri TOPLUYOR", iki.adet, 10);
+    yakin("şerh tutarları TOPLUYOR", iki.tutar, 150);
+    yakin("temiz ölçümde dikkat YOK", iki.dikkatGerek, false);
+
+    /** ⛔ İKİ KOVA TOPLAMA GİRMEZ: kusur değil BOŞLUK (kutunun kuralıyla aynı). */
+    const bosluk = vitrinSerhi([
+      k({ toplamAdet: 1, toplamTutar: 10, kaydiYokAdet: 9, kaydiYokTutar: 900,
+         olculmemisAdet: 5, olculmemisTutar: 500, yasSaat: 1 }),
+    ]);
+    yakin("kayıt YOK toplama girmiyor", bosluk.adet, 1);
+    yakin("  ...tutarı da girmiyor", bosluk.tutar, 10);
+
+    /** ⚠ ÜÇ SEBEP AYRI AYRI: biri yeterli, üçü de sayılır. */
+    yakin("bayat damga SORUN", kanalSorunluMu({ yasSaat: 49, sonKosumBasarisiz: false, kosumIziYok: false }), true);
+    yakin("  ...48 saat SINIRDA değil (eşiğin kendisi sorun değil)", kanalSorunluMu({ yasSaat: 48, sonKosumBasarisiz: false, kosumIziYok: false }), false);
+    yakin("başarısız koşum SORUN", kanalSorunluMu({ yasSaat: 1, sonKosumBasarisiz: true, kosumIziYok: false }), true);
+    yakin("iz YOKLUĞU da SORUN", kanalSorunluMu({ yasSaat: null, sonKosumBasarisiz: false, kosumIziYok: true }), true);
+
+    const dikkatli = vitrinSerhi([
+      k({ toplamAdet: 1, yasSaat: 1 }),
+      k({ toplamAdet: 1, kosumIziYok: true }),
+      k({ toplamAdet: 1, sonKosumBasarisiz: true }),
+    ]);
+    yakin("dikkat gereken kanal SAYILIYOR", dikkatli.dikkatKanalSayisi, 2);
+    yakin("boş küme sıfır döndürür", vitrinSerhi([]).adet, 0);
+  }
+
+  const serhGovdesi = readFileSync("src/lib/panel/vitrin-serhi.ts", "utf8");
+  dogru(
+    "iz yokluğu SORUN sayılıyor (ortak gövdede)",
+    /return k\.sonKosumBasarisiz \|\| bayat \|\| k\.kosumIziYok/.test(
+      serhGovdesi,
+    ),
+  );
+  dogru(
+    "  ...ve kutu O ölçütü ÇAĞIRIYOR (kendi ifadesini kurmuyor)",
+    kutu3.includes("kanalSorunluMu(k)"),
+  );
+  dogru(
+    "  ...şerh de AYNI gövdeden besleniyor",
+    readFileSync("src/app/vitrin-serhi.tsx", "utf8").includes("vitrinSerhi(veri)"),
+  );
 
   /**
    * ⛔ SIRA: BAYATLIK "İZ YOK"UN ÖNÜNDE. Üçü de sorun ama keskinlikleri

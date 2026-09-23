@@ -183,4 +183,11 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    */
   "ice-aktarma-mutasyon:kontrol",
   "kargo-damgasi-mutasyon:kontrol",
+  /**
+   * K244 (23.09.2026) — `vitrin` harness'i PANELİ (`src/app/page.tsx`)
+   * mutasyona uğratıyor: dökümün paneli terk ettiğini ve şerhin çizildiğini
+   * sınıyor. Panele dokunan öteki harness'lerle paralel koşarsa biri
+   * ötekinin MUTANTINI "asıl" sanıp geri yazar.
+   */
+  "vitrin-mutasyon:kontrol",
 ];

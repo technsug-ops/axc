@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { vitrinAdresi, type VitrinSatiri } from "@/lib/vitrin-kutusu";
+import { BAYAT_SAAT, kanalSorunluMu } from "@/lib/panel/vitrin-serhi";
 import type { VitrinKutusu as Veri } from "@/lib/panel/vitrin-verisi";
 
 /**
@@ -60,8 +61,8 @@ import type { VitrinKutusu as Veri } from "@/lib/panel/vitrin-verisi";
  * ============================================================================
  */
 
-/** Damganın bayatlama eşiği. Gece koşumu günlük; 48 saat = iki koşum kaçtı. */
-const BAYAT_SAAT = 48;
+/* Eşik ve ölçüt ORTAK GÖVDEDE (K244): paneldeki şerh de aynısını okur.
+   İki dosya iki eşik tutsaydı panel "taze" derken kutu "bayat" derdi. */
 
 export async function VitrinKutusu({ veri }: { veri: Veri[] }) {
   const t = await getTranslations("Vitrin");
@@ -101,7 +102,7 @@ export async function VitrinKutusu({ veri }: { veri: Veri[] }) {
          * DÜŞMESİ. İkisi farklı iş istiyor. _(Kullanıcı şartı 01.09.2026.)_
          */
         const bayat = k.yasSaat !== null && k.yasSaat > BAYAT_SAAT;
-        const sorunVar = k.sonKosumBasarisiz || bayat || k.kosumIziYok;
+        const sorunVar = kanalSorunluMu(k);
 
         /**
          * ⛔ İKİ AÇIKLAMA TEK SATIRDA. Ayrı paragraflarken kutu iki satır daha
