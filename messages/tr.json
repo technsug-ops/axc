@@ -1750,6 +1750,8 @@
     "esleseZatenVar": "Bu ürünün bu kanal hesabında zaten bir eşlemesi var.",
     "kodZatenVar": "«{kod}» kodu bu kanal hesabında başka bir üründe kullanılıyor.",
     "kodBaskaninKimligi": "“{kod}” zaten başka bir ürünün kimlik kodu ({urun}). Bu eşleştirme yapılırsa kod iki ürüne birden uyar.",
+    "kodPasifIkizin": "“{kod}” kodu PASİFE ALINMIŞ bir kaydın kimliği ({urun}). O kayıt kullanımdan kaldırıldığı için aktif tarafta çakışma olmaz — ama sayım gibi pasifi de gören yerlerde iki kayıt birden çıkar ve sistem hangisi olduğunu SORAR.",
+    "pasifSahipOnayMetni": "Anladım, yine de bu koda bağla",
     "kimlikBulunamadi": "Kayıt kimliği bulunamadı.",
     "bulunamadi": "Eşleme bulunamadı.",
     "eklenemedi": "Eşleme eklenemedi.",

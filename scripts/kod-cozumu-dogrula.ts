@@ -315,6 +315,45 @@ console.log("\n4) YAZMA KAPILARI — okuma kapısı kadar GENİŞ mi");
     "  ...ve kaydın KENDİSİ hariç tutuluyor",
     /a\.id !== haric\.variantId && a\.urunId !== haric\.urunId/.test(gv),
   );
+
+  /**
+   * ═══ K237 (23.09.2026) — SAHİBİN HÂLİ KARARIN PARÇASI ═════════════════
+   * ⛔ VAKA: HB siparişi `4711041918` üç gün "kod kataloğumuzda yok" diye
+   * düştü. Kodu K231'de PASİFE ALDIĞIMIZ ikiz tutuyordu; kullanıcı kodu
+   * ekrandan gerçek ürüne bağlamak istedi ve BU KAPI engelledi — kapı,
+   * önlemek için var olduğu arızayı KORUDU.
+   * Ayrım: sahip AKTİFSE sert yasak sürer (K231'in çekirdeği); PASİFSE
+   * ENGEL DEĞİL SORU — ısrar edilirse geçer ve iz bırakır.
+   */
+  kontrol("kapı, adayın AKTİF/PASİF hâlini taşıyor", /aktifMi: v\.isActive/.test(gv));
+  {
+    const eylem = yorumsuzOku("src/app/kanal-sku/actions.ts");
+    kontrol(
+      "AKTİF sahip hâlâ SERT YASAK (K231 çekirdeği)",
+      /if \(kimlikSahibi && kimlikSahibi\.aktifMi\) \{[\s\S]{0,200}?hatalar:/.test(eylem),
+    );
+    kontrol(
+      "  ...PASİF sahip ENGEL DEĞİL, SORU (ısrar kutusu ister)",
+      /if \(kimlikSahibi && !pasifSahipOnayi\) \{[\s\S]{0,200}?israrGerekli: true/.test(eylem),
+    );
+    kontrol(
+      "  ...onay AÇIKÇA gelir (varsayılan geçmez)",
+      /formData\.get\("pasifSahipOnayi"\) === "evet"/.test(eylem),
+    );
+    kontrol(
+      "  ...ısrar İZ BIRAKIR (sessizce geçmez)",
+      /action: "KANAL_SKU_PASIF_IKIZ_ISRAR"/.test(eylem),
+    );
+    const ekran = yorumsuzOku("src/app/kanal-sku/yeni-esleme.tsx");
+    kontrol(
+      "  ...ekran onay kutusunu ÇİZİYOR (gövde çalışıp kimse çağırmazsa boş)",
+      /durum\.israrGerekli \?[\s\S]{0,600}?name="pasifSahipOnayi"/.test(ekran),
+    );
+    kontrol(
+      "  ...onay bir SONRAKİ kayda taşınmıyor (başarıda sıfırlanır)",
+      /setPasifOnay\(false\)/.test(ekran),
+    );
+  }
 }
 
 /* ------------------------------------------------------------------- 5 -- */

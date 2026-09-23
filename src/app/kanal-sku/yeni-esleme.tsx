@@ -83,6 +83,12 @@ export function YeniEsleme({
     Number.isFinite(girilen) &&
     bantDisiMi(girilen, bant);
   const [araniyor, aramayaBasla] = useTransition();
+  /**
+   * K237 — PASİF İKİZ ISRARI. Kod pasife alınmış bir varyantın kimliğiyse
+   * sunucu ENGELLEMEZ, SORAR; kutu işaretlenmeden kayıt ilerlemez ve onay
+   * bir SONRAKİ kayda TAŞINMAZ (başarıda sıfırlanıyor).
+   */
+  const [pasifOnay, setPasifOnay] = useState(false);
 
   // Başarılı kayıttan sonra formu boşalt — arka arkaya eşleme girilir.
   const [sonDurum, setSonDurum] = useState(durum);
@@ -94,6 +100,7 @@ export function YeniEsleme({
       setSonuclar([]);
       setKanalKodu("");
       setOran("");
+      setPasifOnay(false);
     }
   }
 
@@ -246,6 +253,29 @@ export function YeniEsleme({
       <p className="text-muted-foreground text-xs">{t("kanalKoduNotu")}</p>
 
       <HataOzeti hatalar={durum.hatalar} />
+
+      {/*
+        ⚠ SORU, YASAK DEĞİL (K237). Kod PASİF bir ikizin kimliğiyse kayıt
+        engellenmez; ne olduğu yazar ve kullanıcı ısrar ederse geçer. Sert
+        yasak, K231'de temizlenen bir çarpışmanın enkazını kalıcı engele
+        çevirip gerçek siparişi deftere sokamaz hâle getirmişti.
+      */}
+      {durum.israrGerekli ? (
+        <div className={`space-y-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
+          <p className={DURUM_YAZISI.uyari}>{durum.uyari}</p>
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              name="pasifSahipOnayi"
+              value="evet"
+              className="mt-0.5 size-4 shrink-0"
+              checked={pasifOnay}
+              onChange={(e) => setPasifOnay(e.target.checked)}
+            />
+            <span>{t("pasifSahipOnayMetni")}</span>
+          </label>
+        </div>
+      ) : null}
 
       {/* ÇAKIŞMA EYLEME DÖNÜK: hangi kayıt olduğu yazar ve oraya götürür.
           Bağlantı listeyi o hesaba + o SKU'ya süzer, kullanıcı aramaz. */}

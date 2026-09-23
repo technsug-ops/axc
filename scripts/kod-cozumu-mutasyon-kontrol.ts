@@ -187,6 +187,42 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "cakisan kodda 'bu urune baglayalim mi' teklifi cikar; zaten fazla olan baglara bir tane daha eklenir - ekran arizayi BESLER",
   },
+  /* ═══ K237 — SAHİBİN HÂLİ (aktif sert yasak · pasif soru) ═══════════ */
+  {
+    ad: "PASIF SAHIP YINE SERT YASAK - gercek siparis deftere giremez",
+    yon: "KALDIRAN",
+    dosya: "src/app/kanal-sku/actions.ts",
+    bul: "  if (kimlikSahibi && kimlikSahibi.aktifMi) {",
+    koy: "  if (kimlikSahibi) {",
+    bozdugu:
+      "K231'de pasife alinan ikiz, gercek urunun kanal kodunu almasini kalici olarak engeller - HB siparisi 4711041918 vakasinin ta kendisi",
+  },
+  {
+    ad: "AKTIF SAHIP SESSIZCE GECER - K231 cekirdegi duser",
+    yon: "FAZLADAN",
+    dosya: "src/app/kanal-sku/actions.ts",
+    bul: "  if (kimlikSahibi && kimlikSahibi.aktifMi) {",
+    koy: "  if (false) {",
+    bozdugu:
+      "bir kod iki AKTIF kayda birden baglanir; arama sessizce birini secer - ikizleri doguran adim",
+  },
+  {
+    ad: "ONAY VARSAYILAN GECER - israr sorulmadan yazilir",
+    yon: "FAZLADAN",
+    dosya: "src/app/kanal-sku/actions.ts",
+    bul: '  const pasifSahipOnayi = formData.get("pasifSahipOnayi") === "evet";',
+    koy: "  const pasifSahipOnayi = true;",
+    bozdugu:
+      "kullanici sormadan cakisma yazilir; 'uyari sorar, israr edilirse istisna kaydedilir' kurali duser",
+  },
+  {
+    ad: "ISRAR IZ BIRAKMIYOR - uc ay sonra sebep sorulamaz",
+    yon: "KALDIRAN",
+    dosya: "src/app/kanal-sku/actions.ts",
+    bul: '      action: "KANAL_SKU_PASIF_IKIZ_ISRAR",',
+    koy: '      action: "KANAL_SKU_SESSIZ",',
+    bozdugu: "istisna sessizce gecer; 'bu kod niye iki yerde' sorusunun cevabi kalmaz",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

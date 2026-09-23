@@ -46,6 +46,8 @@ const ADAY_SECIMI = {
   sku: true,
   companySku: true,
   barcode: true,
+  /** K237: kapı, sahibin AKTİF mi PASİF mi olduğunu bilmeden karar veremez. */
+  isActive: true,
   name: true,
   product: { select: { id: true, name: true } },
 } as const;
@@ -64,6 +66,12 @@ export type KodAdayi = {
   companySku: string;
   barcode: string | null;
   ad: string;
+  /**
+   * K237 (23.09.2026) — SAHİBİN HÂLİ KARARIN PARÇASIDIR. Pasife alınmış bir
+   * ikizin kodu, AKTİF tarafta çakışma üretmez; orada sert yasak, temizlenmiş
+   * bir çarpışmanın enkazını kalıcı engele çevirir (bkz. `kanal-sku/actions`).
+   */
+  aktifMi: boolean;
 };
 
 export type KodCozumu =
@@ -108,6 +116,7 @@ export async function kodlaVaryantCoz(
     companySku: v.companySku,
     barcode: v.barcode,
     ad: v.name ? `${v.product.name} — ${v.name}` : v.product.name,
+    aktifMi: v.isActive,
   }));
 
   if (adaylar.length === 0) return { durum: "YOK" };

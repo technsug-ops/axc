@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { izYaz } from "@/lib/iz";
 import { kodBaskaVaryantaAitMi } from "@/lib/varyant-kod-cozumu";
 
 /**
@@ -42,6 +43,14 @@ export type KanalSkuDurumu = {
   hatalar?: string[];
   basari?: string;
   cakisma?: EslemeCakismasi;
+  /**
+   * K237 — ISRAR KAPISI. Kod PASİF bir varyantın kimliğiyse kayıt
+   * ENGELLENMEZ, SORULUR: ekran onay kutusu çizer, kullanıcı ısrar ederse
+   * yazılır ve iz bırakılır (anayasa: "uyarı sorar, kullanıcı ısrar ederse
+   * istisna kaydedilir").
+   */
+  israrGerekli?: boolean;
+  uyari?: string;
 };
 
 type Ceviri = (
@@ -142,9 +151,44 @@ export async function kanalSkuEkle(
    * KİMLİK alanı kanaldan bağımsızdır; bu kontrol hesaba göre daralmaz.
    */
   const kimlikSahibi = await kodBaskaVaryantaAitMi(kanalKodu, { variantId });
-  if (kimlikSahibi) {
+  /**
+   * ⛔ K237 (23.09.2026) — KAPI KENDİ KAPSAMININ DIŞINA TAŞMIŞTI.
+   *
+   * VAKA: Hepsiburada siparişi `4711041918` üç gün boyunca her yarım saatte
+   * bir "YAZILAMAZ (kod kataloğumuzda yok)" diye düştü. Sebep ölçüldü:
+   * `HBCV00000R0H0K` kodunu K231'de PASİFE ALDIĞIMIZ ikiz kayıt kendi
+   * `sku`sunda tutuyor; stoklu gerçek varyantın ise yalnız Trendyol
+   * eşleşmesi var. Kullanıcı kodu bu ekrandan bağlamak istedi ve BU KAPI
+   * engelledi — yani kapı, doğmasını engellemek için var olduğu arızanın
+   * ta kendisini KORUDU.
+   *
+   * AYIRT EDİCİ SORU (anayasa: "ilke, kendi kapsamının dışına uygulanırsa
+   * hatayı korur"): bu kapı neyi korumak için kondu? **Bir kodun AKTİF iki
+   * kayda birden uyup sessizce birinin seçilmesini.** Sahip PASİFSE aktif
+   * tarafta çakışma YOKTUR (`kodlaVaryantCoz` pasifi görmez); pasif dahil
+   * bakan tek yol sayımdır ve o zaten ÇOK EŞLEŞME deyip SORUYOR.
+   *
+   * · sahip AKTİF  → sert yasak sürer (K231'in çekirdeği).
+   * · sahip PASİF  → ENGEL DEĞİL SORU: onay kutusu çıkar, ısrar edilirse
+   *   yazılır ve iz bırakılır. Onay bir sonraki kayda TAŞINMAZ.
+   */
+  if (kimlikSahibi && kimlikSahibi.aktifMi) {
     return {
       hatalar: [t("kodBaskaninKimligi", { kod: kanalKodu, urun: kimlikSahibi.ad })],
+      cakisma: {
+        tur: "kod",
+        hesapId: channelAccountId,
+        arama: kimlikSahibi.sku,
+        urun: kimlikSahibi.ad,
+        kanalKodu,
+      },
+    };
+  }
+  const pasifSahipOnayi = formData.get("pasifSahipOnayi") === "evet";
+  if (kimlikSahibi && !pasifSahipOnayi) {
+    return {
+      uyari: t("kodPasifIkizin", { kod: kanalKodu, urun: kimlikSahibi.ad }),
+      israrGerekli: true,
       cakisma: {
         tur: "kod",
         hesapId: channelAccountId,
@@ -168,6 +212,25 @@ export async function kanalSkuEkle(
   } catch (e) {
     console.error("[kanal-sku] eklenemedi:", e);
     return { hatalar: [t("eklenemedi")] };
+  }
+
+  /**
+   * ⚠ İSTİSNA İZ BIRAKIR (K237). "Devam edilsin" demek, kaydın sessizce
+   * geçmesi demek değildir; üç ay sonra "bu kod niye iki yerde" sorusunun
+   * cevabı burada durur.
+   */
+  if (kimlikSahibi) {
+    await izYaz({
+      action: "KANAL_SKU_PASIF_IKIZ_ISRAR",
+      targetType: "ChannelSku",
+      targetId: variantId,
+      userId: null,
+      detail: JSON.stringify({
+        kanalKodu,
+        channelAccountId,
+        pasifSahibi: { id: kimlikSahibi.id, sku: kimlikSahibi.sku, ad: kimlikSahibi.ad },
+      }),
+    });
   }
 
   tazele();

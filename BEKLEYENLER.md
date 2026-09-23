@@ -13,6 +13,90 @@
 
 ---
 
+## 🔴 K237 — KAPI KENDİ ÖNLEDİĞİ ARIZAYI KORUDU: PASİF SAHİP ENGEL DEĞİL SORU · 23.09.2026 · [KOD KOŞTU — KULLANICI EŞLEŞTİRMESİ BEKLİYOR]
+
+**KULLANICI BİLDİRİMİ:** _"4711041918 Hepsiburada siparişini çekmedi, mükerrer
+üründen dolayı — `HBCV00000R0H0K`. Stoktan bu EAN ile sorguladığında iki ürün
+geliyor, biri 0 stoklu diğeri 2; sistem 0 stokludan almaya çalıştığı için
+almıyor."_
+
+### ÖLÇÜM — SEBEP TAM OLARAK BU DEĞİLDİ
+
+İçe aktarma kuru koşumu tek satırda söyledi:
+
+    ⛔ YAZILAMAZ (kod kataloğumuzda yok)   1
+         4711041918 · HBCV00000R0H0K/HBCV00000R0H0K
+
+Yani sistem "0 stokludan almaya çalışmıyor" — **hiçbir aktif ürüne
+ulaşamıyor.** Canlı ölçüm:
+
+    KOD 97393839282      → aktif çözüm TEK  (KUC-BR-BHD50-01, stok 2) ✓
+    KOD HBCV00000R0H0K   → aktif çözüm YOK                            ⛔
+      pasif  HBCV00000R0H0K · barkod 97393839282 · stok 0 · 1 satış
+      AKTİF  KUC-BR-BHD50-01 · barkod 8710103948643 · stok 2 · 4 alım
+             kanal: TRENDYOL/AXCALI → 97393839282     (HB eşleşmesi YOK)
+
+K231'de pasife alınan ikiz, HB kodunu kendi `sku`sunda tutuyor; stoklu gerçek
+varyantın yalnız Trendyol eşleşmesi var. Cron her yarım saatte bir aynı
+siparişi "kaçak" diye bırakıyordu (`AuditLog`: `kacakKodlar:["4711041918"]`,
+23.09'da 06:10 · 06:12 · 06:14).
+
+### ⛔ VE KAPI, EKRANDAN DÜZELTMEYİ DE ENGELLİYORDU
+
+Kullanıcı kodu `/kanal-sku`dan gerçek ürüne bağlamak istese K231'de koyduğum
+kapı reddediyordu: _"bu kod başka bir kaydın kimliği"_. Kapı doğru sebeple
+kondu — **bir kodun AKTİF iki kayda birden uyup sessizce birinin seçilmesini**
+önlemek için. Ama sahip PASİFSE aktif tarafta çakışma YOKTUR; orada sert yasak,
+temizlenmiş bir çarpışmanın enkazını **kalıcı engele** çevirdi ve gerçek bir
+siparişi deftere sokamaz hâle getirdi.
+_(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa koruduğu şey doğruluk
+değil hatanın kendisi olur." Kontrol sorusu: bu kapı neyi korumak için kondu —
+elimdeki şey o mu?)_
+
+### YAPILAN — AYRIM, GEVŞETME DEĞİL
+
+    sahip AKTİF  →  SERT YASAK sürer (K231'in çekirdeği, dokunulmadı)
+    sahip PASİF  →  ENGEL DEĞİL SORU: ekran ne olduğunu yazar, onay kutusu
+                    çıkar, kullanıcı ısrar ederse yazılır ve İZ BIRAKIR
+
+· `KodAdayi` artık sahibin `aktifMi` hâlini taşıyor (kapı, sahibin hâlini
+  bilmeden karar veremez).
+· Onay **açıkça** gelir (`pasifSahipOnayi=evet`), varsayılan geçmez; onay bir
+  SONRAKİ kayda **taşınmaz** (başarıda sıfırlanır).
+· İstisna izi: `KANAL_SKU_PASIF_IKIZ_ISRAR` — üç ay sonra "bu kod niye iki
+  yerde" sorusunun cevabı.
+· ⚠ **ÜRÜN FORMU KAPISI DEĞİŞMEDİ:** orada söz konusu olan KİMLİK alanı ve
+  tekillik veritabanı kısıtıyla da korunuyor; gevşetmenin gerekçesi yok.
+
+**BEKÇİ:** `kod-cozumu:dogrula` +7 ölçüt (37) · `kod-cozumu-mutasyon:kontrol`
+**19/19** (yeni dört yön: pasif sahibi yine yasakla · aktif sahibi sessizce
+geçir · onayı varsayılan yap · izi sil).
+
+### HALİL TEST LİSTESİ
+
+1. `/kanal-sku` → **Yeni eşleme** → ürün ara: **`KUC-BR-BHD50-01`** (Philips
+   BHD500/00, stok 2) → hesap: **Hepsiburada — AXCALI** → kanal kodu:
+   **`HBCV00000R0H0K`** → Kaydet.
+2. Beklenen: turuncu kutu — _"`HBCV00000R0H0K` kodu PASİFE ALINMIŞ bir kaydın
+   kimliği (Philips PHILIPS BHD500/00 THERMOSHIELD…)"_ ve altında **onay
+   kutusu**. Kayıt HENÜZ yazılmadı.
+3. Kutuyu işaretle → Kaydet → **"eklendi"**. (Eskiden burada kırmızı hata
+   vardı ve devam etmenin yolu yoktu.)
+4. Bana haber verin: HB içe aktarmasını koşayım → sipariş **4711041918**
+   deftere girsin ve **stoğu 2 olan** varyanttan düşsün.
+5. Kontrol: `/stok`ta `97393839282` araması → gerçek ürünün stoğu **2 → 1**.
+
+### AÇIK
+
+- **İkiz kaydın kendisi duruyor** (pasif, 1 satış geçmişi, stok 0). Birleştirme
+  ayrı bir iş; bugün gereken tek şey kodun gerçek ürüne bağlanmasıydı.
+- ⛔ **KAÇAK SİPARİŞ HİÇBİR EKRANDA YAZMIYOR.** İçe aktarma `kacakKodlar`ı
+  `AuditLog`a yazıyor ve kullanıcı arızayı ancak Hepsiburada panelinden fark
+  etti — üç gün sonra. Panelde "çekilemeyen sipariş" satırı olmalı (İlke #5,
+  #16). **YENİ KALEM, sıradaki turda.**
+
+---
+
 ## 🔴 K236 — "BU BARKODU OKUMUYOR" ÖLÇÜLDÜ: OKUYOR · EKSİK OLAN TEŞHİSTİ · 22.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 **KULLANICI BİLDİRİMİ:** bir Fisher-Price kutusunun fotoğrafı (UPC-A
