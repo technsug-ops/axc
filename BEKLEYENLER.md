@@ -13,6 +13,189 @@
 
 ---
 
+## 🔴 K254 — GÖREV ŞERİDİ: İKİ KART → TEK SATIR ÇİP · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Demonun ikinci bloğu. Görevler artık tek satır: **"Bugün ne yapmalıyım · 3
+bekleyen · ⛟ Onay bekleyen 3 · Kargoya verilmemiş 2 · 3 paketlendi · … ·
+📦 Mal kabul 31 · …"**, hüküm kartının hemen altında, tam genişlik.
+
+### ⛔ ÇEVRİLEN KARAR — GEREKÇESİ KODDA DURUYOR
+
+> _"İki kart, iki farklı emek"_ — kullanıcı isteği 20.08.2026: sevkiyat ile
+> tedarik günün farklı saatlerinde, çoğu zaman farklı kişilerce yapılıyor.
+
+Karar **çevrildi** (kullanıcı demoyu onayladı) ama gerekçesi **yaşıyor**:
+şerit iki grubu ince ayraç + grup ikonuyla ayırıyor. Kaybolan şey iki kartın
+kapladığı yer; kalan şey iki emeğin ayrımı. Bekçisi var: ayraç kalkarsa
+kırmızı.
+
+⚠ **K248 ÖNCEKİ TESLİMDE «şeridi kartın İÇİNE» almıştı** ve gerekçesi
+K126-C'ydi (iki sütun aynı yerde biter). Demo o iki sütunu (görev | pazaryeri)
+ortadan kaldırdığı için K126-C bu satırda **kapsam dışı** — kural, ait olduğu
+düzenle birlikte gitti; ilke genişletilmedi.
+
+### ⚠ SIFIR ÇİP BAĞLANTI DEĞİL (İlke #2) — ESKİ KUTUCUK BAĞLANTIYDI
+
+Eski kutucuk sıfırda da tıklanıyordu ("listeleri yine de görebilirsiniz").
+Demo ve İlke #2 bunu çevirdi: açılacak liste yoksa tıklanacak şey de yok.
+Ama çip **kaybolmuyor** — «temiz ✓» yazıyor (açık sıfır). İki yön de
+mutasyonla korunuyor.
+
+### ⚠ ESKİYEN ÖLÇÜTLER SUSTURULMADI, GÜNCELLENDİ
+
+| ölçüt | niye eskidi | yeni hâli |
+|---|---|---|
+| `z-10` + `absolute inset-0` (yayılan bağlantı) | çipte yayılan bağlantı yok; ana ↔ ilerleme KARDEŞ `<a>` | «ana bağlantı ilerlemeden ÖNCE kapanıyor» + «hile kalmadı» |
+| `sr-only` etiket kopyası | etiket artık bağlantının İÇİNDE, kopya adı iki kez okuturdu | «etiket görünür ve içeride» + «kopya YOK» (yön FAZLADAN'a döndü) |
+| «600 karakter öncesinde `karGorunur` yok» | şerit hüküm kartının altına gelince pencereye kartın kuyruğu girdi | yapısal: son `karGorunur ? (` şeritten önce `) : null}` ile kapanmış mı |
+
+⚠ **BEKÇİ GERÇEK BİR GERİLEMEYİ YAKALADI:** ilerleme bağlantısı koşulunu
+`!== null && !temizMi` yazmıştım; bekçinin çapası `!== null ?` idi ve kırmızı
+yandı. Davranış doğruydu, çapa kopmuştu — kod çapaya uyduruldu (iç içe
+koşul), ölçüt gevşetilmedi.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → hüküm kartlarının hemen altında **tek satır** görev şeridi olmalı:
+   solda "Bugün ne yapmalıyım" + "N bekleyen" rozeti, sonra çipler.
+2. Şeritte **iki grup** ince bir çizgi ve ikonla (kamyon / paket) ayrılmalı.
+3. Sayısı 0 olan çip **gri, "temiz ✓"** ve **tıklanmamalı**; sayısı olan çip
+   **amber ve bağlantı** — tıklayınca süzülü liste açılmalı.
+4. "Kargoya verilmemiş" çipinin yanında **"N paketlendi"** ayrı bir bağlantı
+   olmalı; tıklayınca hazırlananların listesi açılmalı (ana çipin listesi değil).
+5. Tarife çipi 0 iken **"N gün kaldı" / "Bugün son gün"** yazmalı (rakam değil).
+6. Telefonda çipler alt alta sarmalı, yatay kaydırma olmamalı; her çip rahat
+   dokunulmalı (44 px).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #2 · #8 · #12)
+
+---
+
+## 🔴 K253 — ALTI HÜKÜM KARTI + HUNİ İNCE SATIR · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Demonun birinci bloğu. Hüküm ızgarası **Brüt ciro · NET-1 · NET-2 · NET-2
+marjı · Satış adedi · İade** — altı kart, tek sıra. Üç huni sayısı (satın
+alınan · mal kabul · kargoya verilen · kargo bekleyen) ızgaranın **altında
+ince bir satır** çip.
+
+### ⚠ 01.09 KARARI ÇEVRİLMEDİ — KULLANICI SEÇTİ
+
+01.09.2026: _"7 kart istiyorum — 4 huni + ciro + NET-1 + NET-2."_ Demoda huni
+yoktu. Kullanıcıya üç seçenek sunuldu (yalnız demo · huni altta ince satır ·
+hepsi tek şeritte); **"6 demo kartı + huni altta ince satır"** seçildi. Huni
+sayıları, adresleri ve kıyas rozeti **aynen** taşındı — yalnız yer değişti.
+
+### ⚠ İADE KENDİ KARTI — VE ROZETİ TERS YÖNLÜ
+
+Eskiden satış adedinin altında küçük nottu. Artış **kötüdür**: rozet
+`artisIyiMi = false` — iade artınca yeşil yanan bir rozet yanlış müjde olurdu.
+Mutasyonla korunuyor. Adres iade listesine, aynı dönem + kanal süzgeciyle
+(İlke #16: kartta 2 yazıyorsa liste 2 satır açar).
+
+### ⚠ ROZET BİÇİMİ DEMODAN: «▲ %8 · önceki 29.150»
+
+Eskisi «▲ ₺2.330 · %8». ORAN hükümdür, ÖNCEKİ DEĞER kanıtıdır; mutlak fark
+ikisinden türetilir ve üçüncü sayı olarak gürültüydü. Yüzde kurulamıyorsa
+(önceki 0) mutlak fark yazılır — rozet boş kalmaz. Tek gövde (`kiyasRozeti`),
+bütün kartlar aynı anda değişti (İlke #10).
+
+### ⚠ İKİ TARİH EKSENİ NOTU HUNİYE TAŞINDI
+
+Kargo kutusunun altındaki _"kargoya verme tarihine göre"_ notu ve "tüm
+kanallar" satırı **kaybolmadı** — huni satırının sonunda duruyor. 14.08 kuralı:
+satış SATIŞ tarihine, kargo SEVKİYAT tarihine göre; not olmayınca "satış 2
+kargo 6 neden tutmuyor" sorusu döner. Mutasyonla korunuyor.
+
+⚠ **BEKÇİ İKİ GERİLEMEYİ YAKALADI:** ① kargo çipinin süzgeç açıkken KANAL
+ADINI yazması düşmüştü (eski kutuda vardı) — geri kondu; ② eski sıra ölçütü
+(adet → kargo → ciro → net) kırmızı yandı — niye eskidiği yazılarak yeni
+sıraya güncellendi, susturulmadı. ⚠ **LİNT DE BİR GERİLEME YAKALADI:** mal
+kabul kutusunun kıyas rozeti çipe geçerken düşmüş, `kiyasAlim` ölü kalmıştı
+— rozet çipe geri kondu.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → süzgeçlerin altında **altı kart tek sırada**: Ciro · NET-1 · NET-2 ·
+   NET-2 marjı · Satış adedi · İade.
+2. Karşılaştır açıkken her kartın altında rozet **«▲ %8 · önceki 29.150»**
+   biçiminde olmalı (yüzde önce, önceki değer sonra).
+3. İade kartı: iade **artınca kırmızı**, azalınca yeşil.
+4. İade kartındaki sayıya tıklayınca iade listesi **aynı dönemle** açılmalı ve
+   satır sayısı karttaki sayıya eşit olmalı.
+5. Kartların altında ince satır: **Huni: Satın alınan N · Mal kabul N · Kargoya
+   verilen N · Kargo bekleyen N** + "kargoya verme tarihine göre" notu. Her
+   sayı tıklanınca kendi listesi.
+6. Kanal süzgeci açıkken kargo çipi **"Kargoya verilen (Trendyol)"** yazmalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (4 yeni anahtar, tr+en) ·
+**kullanıcı kolaylığı: ✓** (İlke #12 · #15 · #16)
+
+---
+
+## 🔴 K252 — ÜST KABUK + TEK SATIR SÜZGEÇ (HER EKRANDA) · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı canlı panele bakıp **tek bir lira görmeden yedi satır kabuk** saydı:
+açık dönem · N11 çekimi · başlık+aralık · 11 dönem düğmesi · kanal · 3 kıyas
+düğmesi · afiş. Demo: başlık + tek alt satır, sağda çekim rozeti, altında
+**bir satır** süzgeç. Kullanıcı kararı: süzgeç **her ekranda** böyle (İlke #10).
+
+### YAPILAN
+
+- **Başlık bloğu:** `Panel` + alt satır «aralık · dönem · kanal · (kıyas) ·
+  açık dönem». Sağda çekim rozeti (nokta + metin; rutin kaçmışsa kırmızı —
+  "kaçışın kendisi görünür kılınır"). Üç satır bire indi, hiçbir bilgi
+  kaybolmadı; muhasebe dönemi satırı K108 gereği kutu değil bağlam olarak
+  alt satırın sonunda.
+- **Süzgeç tek satır (`SuzgecCubugu`, 9 ekran):** 5 hızlı dönem (Dün · Bugün ·
+  Bu hafta · Son 30 gün · Bu ay) + **«Özel aralık ▾»** + ayraç + kanal + ayraç
+  + kıyas yuvası. Kalan dört dönem (Son 15 gün · 3 ay · 6 ay · 1 yıl) açılırın
+  içinde, tarih alanlarının yanında.
+- **Kıyas düğmeleri aynı satırda** (`kiyas` yuvası, yalnız panel verir):
+  Önceki dönem · Geçen yıl. «3 ay öncesi» **kalkmadı** — adreste seçiliyse
+  düğmesi çizilir (İlke #5), yalnız varsayılan sırada yok.
+
+### ⛔ `LISTE_PENCERELERI` DEĞİŞMEDİ VE DEĞİŞEMEZ
+
+O liste yalnız düğme sırası değil, **adres doğrulaması** (`liste-suzgeci` ·
+`iadeler` · dışa aktarma). Daraltılsaydı yer imindeki `pencere=SON_3_AY`
+sessizce «tanınmadı»ya düşerdi. Yeni `HIZLI_PENCERELER` o sıranın bir **alt
+kümesi**; `KATLANAN_PENCERELER` **türetiliyor** (elle liste değil) — yarın
+eklenen pencere kendiliğinden açılıra düşer. Değer testleri: alt küme · aynı
+sıra · DÜN önde (21.08) · hızlı + katlanan + OZEL = LISTE.
+
+### ⚠ SEÇİLİ ŞEY GÖRÜNMEZ OLAMAZ (İlke #5)
+
+Seçili pencere açılırın içindekilerden biriyse «Özel aralık» düğmesi **onun
+adını** yazar. Mutasyonla korunuyor.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → başlığın altında **tek satır**: "23.09.2026 – 23.09.2026 · Bugün ·
+   Tüm kanallar · Açık dönem: Eylül 2026 · …"; sağda **"N11 çekimi: N dk önce"**
+   yeşil noktayla.
+2. Süzgeç **tek satır**: Dün · Bugün · Bu hafta · Son 30 gün · Bu ay ·
+   **Özel aralık ▾** · | · Kanal · | · Karşılaştır: Önceki dönem · Geçen yıl.
+3. «Özel aralık ▾» → açılan kutuda **Son 15 gün · Son 3 ay · Son 6 ay · Son 1
+   yıl** düğmeleri + başlangıç/bitiş tarihleri.
+4. "Son 3 ay" seçin → ana satırdaki düğme **"Son 3 ay"** yazmalı, "Özel
+   aralık" değil.
+5. Adrese `?kiyas=ucAy` ekleyin → "3 ay öncesi" düğmesi **görünmeli** ve
+   seçili olmalı.
+6. `/satislar`, `/alimlar`, `/iadeler` → süzgeç orada da **tek satır**.
+7. Telefonda süzgeç düğmesi açılınca aynı satır sarmalı; dokunma 44 px.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (1 yeni anahtar; `altBaslik`
+yetim kaldığı için silindi) · **kullanıcı kolaylığı: ✓** (İlke #5 · #10 · #12)
+
+### ÖLÇÜLDÜ (üç paket birlikte)
+
+    panel:dogrula            801 ölçüt (39'u yeni · 4'ü güncellendi)
+    suzgec:dogrula           136 (3 ölçüt güncellendi, 1 yeni)
+    donem · operasyon · rapor · vitrin · gunluk-ozet   hepsi yeşil
+    panel-mutasyon:kontrol   41/41 (14'ü yeni · 4 K248 mutasyonu çipe taşındı · 1'i yön değiştirdi)
+    i18n · lint (0 hata) · kontrol-karakteri · mutasyon-cakisma · tsc   0
+
 ## 🔴 K251 — TUR, KIRMIZI BEKÇİNİN TAM ÇIKTISINI SAKLIYOR · 23.09.2026 · [KOD KOŞTU]
 
 ### ⛔ VAKA — BİR TUR BOŞA GİTTİ

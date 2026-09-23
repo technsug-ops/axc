@@ -41,6 +41,9 @@ const SAYFA = "src/app/page.tsx";
 /** K248: görev kutucuğu şerit biçimine geçti (etiket önde, rakam yanında). */
 const KUTU = "src/app/gorev-kutusu.tsx";
 const PASTA = "src/components/pasta-grafik.tsx";
+/** K252: tek satir suzgec — cubuk ve donem listesi. */
+const CUBUK = "src/components/suzgec-cubugu.tsx";
+const DONEM = "src/lib/donem.ts";
 /** K246: iki pay çubuğunun farkı cümleye çevriliyor. */
 const PAY = "src/lib/panel/pay-farki.ts";
 
@@ -272,10 +275,11 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "GORUNUR ETIKET SERITTEN DUSTU",
     yon: "KALDIRAN",
     dosya: KUTU,
+    /* K254: cipe tasindi — etiket artik baglantinin icinde, gorunur span. */
     bul:
-      "      <span className=\"text-muted-foreground min-w-0 text-xs leading-tight break-words hyphens-auto\">",
+      "      <span className=\"min-w-0 truncate\">{etiket}</span>",
     koy:
-      "      <span className=\"sr-only\">",
+      "      <span className=\"sr-only\">{etiket}</span>",
     bozdugu:
       "ekranda yalniz rakam kalir; '11' tek basina neyin 11'i oldugunu soylemez",
   },
@@ -283,24 +287,27 @@ const MUTASYONLAR: Mutasyon[] = [
     /* Gorunur etiket eklenince sr-only 'gereksiz' sanilabilir; degil.
        Yayilan baglanti kutunun tamamini kapliyor ve gorunur etiket
        onun ICINDE degil - erisilebilir ad ondan gelmez. */
-    ad: "EKRAN OKUYUCU ETIKETI KALDIRILDI",
-    yon: "KALDIRAN",
+    /* K254: YON DEGISTI. Eskiden sr-only kopyanin KALKMASI hataydi (etiket
+       baglantinin disindaydi). Cipte etiket baglantinin ICINDE; ikinci bir
+       sr-only kopya ekran okuyucuya ayni adi IKI KEZ okutur. */
+    ad: "EKRAN OKUYUCUYA AD IKI KEZ OKUNUYOR (sr-only kopya)",
+    yon: "FAZLADAN",
     dosya: KUTU,
     bul:
-      "        <span className=\"sr-only\">{etiket}</span>",
+      "      <span className=\"min-w-0 truncate\">{etiket}</span>",
     koy:
-      "        ",
+      "      <span className=\"min-w-0 truncate\">{etiket}</span><span className=\"sr-only\">{etiket}</span>",
     bozdugu:
-      "yayilan baglantinin erisilebilir adi kalmaz; ekran okuyucu 'baglanti' der, NEREYE gittigini soylemez",
+      "ekran okuyucu her cipte adi iki kez okur - erisilebilirlik gurultusu",
   },
   {
     ad: "ILERLEME BAGLANTISININ 44 PX ALANI KALKTI",
     yon: "KALDIRAN",
     dosya: KUTU,
     bul:
-      "relative z-10 inline-flex min-h-11 items-center",
+      "inline-flex min-h-11 items-center rounded-md px-1.5",
     koy:
-      "relative z-10 inline-flex items-center",
+      "inline-flex items-center rounded-md px-1.5",
     bozdugu:
       "serit kuculunce ikincil hedef 44 px altina duser; ana baglanti ile arasi daralir ve telefonda YANLIS liste acilir",
   },
@@ -309,9 +316,9 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     dosya: KUTU,
     bul:
-      "      className=\"hover:bg-muted/60 relative flex min-h-11 min-w-0 flex-wrap",
+      "inline-flex min-h-11 items-center gap-1.5 rounded-md",
     koy:
-      "      className=\"hover:bg-muted/60 relative flex min-w-0 flex-wrap",
+      "inline-flex items-center gap-1.5 rounded-md",
     bozdugu:
       "serit kuculunce kutucuk telefonda 44 px altina duser - Ilke #8 ihlali, masaustunde HIC gorunmez",
   },
@@ -325,6 +332,160 @@ const MUTASYONLAR: Mutasyon[] = [
       "    <ul className=\"min-w-0 flex-1 space-y-0.5 text-xs\">",
     bozdugu:
       "dar sutunda efsane kalemleri shrink-0 oldugu icin TASAR ve kart kenari keser - kanal adi yok olur, yuzde yarim kalir",
+  },
+  {
+    ad: "HIZLI PENCERE SIRASI LISTEDEN AYRISTI (BUGUN one gecti)",
+    yon: "FAZLADAN",
+    dosya: DONEM,
+    bul:
+      "  \"DUN\",\n  \"BUGUN\",\n  \"BU_HAFTA\",\n  \"SON_30_GUN\",",
+    koy:
+      "  \"BUGUN\",\n  \"DUN\",\n  \"BU_HAFTA\",\n  \"SON_30_GUN\",",
+    bozdugu:
+      "21.08 karari (DUN onde) sessizce cevrilir; hizli liste kendi sirasini uydurur",
+  },
+  {
+    ad: "KATLANAN PENCERELER ACILIRDA CIZILMIYOR",
+    yon: "KALDIRAN",
+    dosya: CUBUK,
+    bul:
+      "            {KATLANAN_PENCERELER.map((p) => (",
+    koy:
+      "            {([] as readonly PencereTuru[]).map((p) => (",
+    bozdugu:
+      "SON_15_GUN / 3 ay / 6 ay / 1 yil hicbir dugmede yok - yer imi calisir, ekrandan secilemez",
+  },
+  {
+    ad: "KATLANAN SECIM DUGMEDE ADSIZ (hep «Ozel aralik»)",
+    yon: "KALDIRAN",
+    dosya: CUBUK,
+    bul:
+      "                {katlananSecili",
+    koy:
+      "                {false",
+    bozdugu:
+      "Son 3 ay seciliyken dugme «Ozel aralik» yazar - secili sey gorunmez olur (Ilke #5)",
+  },
+  {
+    ad: "KIYAS YUVASI CUBUKTAN DUSTU",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "          kiyas={kiyasSecici}\n",
+    koy:
+      "",
+    bozdugu:
+      "kiyas dugmeleri hicbir yerde cizilmez - karsilastirma ekrandan kaybolur",
+  },
+  {
+    ad: "HIZLIDA OLMAYAN SECILI KIYAS DUGMESIZ",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "        ...(kiyasTuru && !(HIZLI_KIYAS as readonly string[]).includes(kiyasTuru)\n          ? [kiyasTuru]\n          : []),",
+    koy:
+      "        ...([] as string[]),",
+    bozdugu:
+      "kiyas=ucAy adresle acilinca rozetler ucAy'a gore hesaplanir ama secili dugme yoktur",
+  },
+  {
+    ad: "IADE ROZETI ARTISI IYI SAYIYOR",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "                        (n) => String(n),\n                        false,\n",
+    koy:
+      "                        (n) => String(n),\n",
+    bozdugu:
+      "iade artinca rozet YESIL yanar - yanlis mujde",
+  },
+  {
+    ad: "HUNI SATIRI KALKTI",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "                    <span className=\"font-medium\">{t(\"huniEtiketi\")}</span>\n",
+    koy:
+      "",
+    bozdugu:
+      "satin alinan / mal kabul / kargo sayilari panelden sessizce dusmus olur - 01.09 karari cevrilmis olur",
+  },
+  {
+    ad: "HUNIDE IKI TARIH EKSENI NOTU KALKTI",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "                      <span className=\"block\">{t(\"kargoEkseniNotu\")}</span>\n",
+    koy:
+      "",
+    bozdugu:
+      "satis SATIS tarihine, kargo SEVKIYAT tarihine gore - not olmayinca 'satis 2 kargo 6 neden tutmuyor' sorusu doner",
+  },
+  {
+    ad: "ROZETTEN ONCEKI DEGER DUSTU",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "            : ` · ${tRapor(\"kiyasOncekiKisa\")} ${bicimle(onceki)}`}",
+    koy:
+      "            : \"\"}",
+    bozdugu:
+      "rozet yalniz «▲ %8» yazar - neye gore oldugu gorunmez, kanit dusmus olur",
+  },
+  {
+    ad: "SATIS KARTINA IADE NOTU GERI GELDI (cift sayim)",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul:
+      "                      /* K253: iade adedi artık KENDİ KARTINDA — buradaki not\n                         kalktı; aynı sayıyı iki kartta yazmak tekrar olurdu. */\n",
+    koy:
+      "                      altNot={<span>{t(\"iadeAdedi\", { sayi: blok.toplamIadeAdedi })}</span>}\n",
+    bozdugu:
+      "ayni iade sayisi iki kartta yazar; okuyan iki ayri sey sanir",
+  },
+  {
+    ad: "SIFIR CIP BAGLANTI OLDU (Ilke #2)",
+    yon: "FAZLADAN",
+    dosya: KUTU,
+    bul:
+      "        <span className={sinif}>{govde}</span>",
+    koy:
+      "        <Link href={gorev.adres} className={sinif}>{govde}</Link>",
+    bozdugu:
+      "temiz cipe tiklaninca BOS liste acilir - tiklanabilir gorunen sey bir sey yapmaz",
+  },
+  {
+    ad: "SERIT BASLIGI KALKTI",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "        {t(\"baslik\")}\n",
+    koy:
+      "",
+    bozdugu:
+      "satirdaki cipler neyin cipi oldugunu soylemez - «Onay bekleyen 3» tek basina bir gorev listesi gibi okunmaz",
+  },
+  {
+    ad: "GRUP AYRACI KALKTI (iki emek karisti)",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "            <span className=\"bg-border hidden h-5 w-px md:block\" aria-hidden />\n",
+    koy:
+      "",
+    bozdugu:
+      "sevkiyat ile tedarik tek yigin olur - 20.08 gerekcesi (farkli saat, farkli kisi) sessizce dusmus olur",
+  },
+  {
+    ad: "SURE METNI RAKAMIN YANINA GECTI",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "        <span className=\"font-semibold\">{sureMetni}</span>",
+    koy:
+      "        <span className=\"font-semibold tabular-nums\">{gorev.sayi} {sureMetni}</span>",
+    bozdugu:
+      "tarife cipinde «0 · Bugun son gun» yazar - ekran kendiyle celisir",
   },
 ];
 

@@ -1063,25 +1063,33 @@ kosanBolumler.push("geri dönüş");
     /<Link/.test(ilerlemeBloku) && /ilerlemeAdresi/.test(ilerlemeBloku),
   );
   /**
-   * ⚠ `z-10` OLMADAN YANLIŞ LİSTE AÇILIR. Kutunun tamamını kaplayan
-   * yayılan bağlantı bu linkin ÜSTÜNDE kalırsa tıklama ana hedefe gider:
-   * düğme çalışıyormuş gibi görünür ama süzgeçsiz listeyi açar.
+   * ⚠ ÖLÇÜT ESKİDİ, SUSTURULMADI — GÜNCELLENDİ (K254, 23.09.2026).
+   * ESKİ GEREKÇE (silinmiyor): kutucuk yayılan bağlantı + `z-10` hilesi
+   * taşıyordu; z-10 düşseydi ilerleme tıklaması ana hedefe giderdi ve
+   * iç içe <a> geçersiz HTML olurdu. NİYE ESKİDİ: görev kutucuğu ÇİP oldu;
+   * ana bağlantı ile ilerleme bağlantısı artık KARDEŞ (iki ayrı <a>),
+   * yayılan bağlantı ve z-10 yok. Ölçüt aynı riski yeni yapıda sınıyor:
+   * ana bağlantı, ilerleme bağlantısı başlamadan KAPANMIŞ olmalı.
    */
-  kontrol(
-    "  ...yayılan bağlantının ÜSTÜNDE (z-10)",
-    /z-10/.test(ilerlemeBloku),
-  );
+  {
+    const anaBas = kutuKodu.indexOf("<Link href={gorev.adres}");
+    const anaSon = anaBas >= 0 ? kutuKodu.indexOf("</Link>", anaBas) : -1;
+    kontrol(
+      "ana bağlantı ilerleme bağlantısından ÖNCE kapanıyor (iç içe <a> yok)",
+      anaBas >= 0 && anaSon > anaBas && ilerlemeBasi > anaSon,
+    );
+    kontrol(
+      "  ...ve dosyada yayılan bağlantı hilesi KALMADI",
+      !/absolute inset-0/.test(kutuKodu) && !/z-10/.test(kutuKodu),
+    );
+  }
   /**
-   * ⚠ İÇ İÇE <a> GEÇERSİZ HTML. Kap artık <div>; ana bağlantı
-   * `absolute inset-0` ile kutuyu kaplıyor.
+   * ⚠ SIFIR ÇİP BAĞLANTI DEĞİL (İlke #2, K254): açılacak liste yoktur.
+   * Ama KAYBOLMAZ (açık sıfır) — «temiz ✓» yazar. Bekleyen çip ise bağlantı.
    */
   kontrol(
-    "kutu kabı <div> (iç içe bağlantı yok)",
-    /className="hover:bg-muted\/60 relative/.test(kutuKodu),
-  );
-  kontrol(
-    "  ...ana bağlantı kutunun tamamını kaplıyor",
-    /absolute inset-0/.test(kutuKodu),
+    "sıfır çip DÜZ YAZI, bekleyen çip BAĞLANTI (İlke #2)",
+    /gorev\.temizMi \? \([\s\S]{0,120}?<span className=\{sinif\}>\{govde\}<\/span>[\s\S]{0,80}?<Link href=\{gorev\.adres\} className=\{sinif\}>/.test(kutuKodu),
   );
   /** Telefonda dokunma alanı — anayasa #8. */
   kontrol(

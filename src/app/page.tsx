@@ -58,6 +58,8 @@ import { kutuOranlari } from "@/lib/panel/kar-orani";
 import { payFarki } from "@/lib/panel/pay-farki";
 import { KanalDagilimiGrafigi } from "@/app/hakedis/kanal-dagilimi-grafigi";
 import { KANAL_RENKLERI, KANAL_RENGI_VARSAYILAN } from "@/lib/renkler";
+import { HIZLI_KIYAS } from "@/lib/karsilastirma";
+import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
 import {
   karEksikAyAdresi,
   karEksikKanalAdresi,
@@ -87,7 +89,6 @@ import {
   type KalemGirdisi,
 } from "@/lib/panel-listeler";
 import {
-  KIYAS_ANAHTARLARI,
   degisim,
   kiyasCoz,
   kiyasPenceresi,
@@ -113,7 +114,7 @@ import {
 import { MarjSerhi } from "@/components/marj-serhi";
 import { marjBasilabilirMi, marjSerhi } from "@/lib/ice-aktarma-serhi";
 import { prisma } from "@/lib/prisma";
-import { DURUM_SERIDI, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
+import { DURUM_CIPI, DURUM_SERIDI, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { OzetKutusu } from "./ozet-kutusu";
@@ -276,6 +277,7 @@ export default async function AnaSayfa({
   // Karşılaştırma metinleri rapor sözlüğünde; aynı kavramı ikinci bir
   // sözlüğe kopyalamak, birini değiştirip diğerini unutmanın davetiyesidir.
   const tRapor = await getTranslations("Rapor");
+  const tPencere = await getTranslations("Pencere");
   /** KDV mahsubu şerhi ÜÇ ekranda geçiyor — tek sözlükten okunur. */
   const tOrtak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
@@ -1402,6 +1404,16 @@ export default async function AnaSayfa({
       : { pencere: donemTuru };
 
   /**
+   * İADE KARTININ ADRESİ (K253) — aynı dönem + aynı kanal süzgeciyle iade
+   * listesi. Sayı = liste (İlke #16): kartta 2 yazıyorsa liste 2 satır açar.
+   */
+  const iadeListesiAdresi = suzgecAdresi(
+    "/iadeler",
+    donemParametreleri(),
+    seciliKanal ? { kanal: seciliKanal } : {},
+  );
+
+  /**
    * ÜRÜN ANALİZİ TAM LİSTESİNİN TABANI — dönem · kanal · para birebir taşınır.
    *
    * ⛔ ADRESİ BURADA KURMUYORUM, `@/lib/rapor/urun-analizi`den ÜRETİYORUM.
@@ -1467,9 +1479,20 @@ export default async function AnaSayfa({
     const iyi = d.mutlak > 0 === artisIyiMi;
     return (
       <DurumRozeti durum={iyi ? "olumlu" : "olumsuz"} isaretsiz>
+        {/*
+          ⚠ BİÇİM DEMODAN (K253): «▲ %8 · önceki 29.150». Eskisi «▲ ₺2.330 · %8»
+          idi. ORAN hükümdür, ÖNCEKİ DEĞER kanıtıdır; mutlak fark ikisinden
+          türetilir ve rozette üçüncü sayı olarak gürültüydü. Yüzde
+          kurulamıyorsa (önceki 0) mutlak fark yazılır — rozet boş kalmaz.
+        */}
         <span className="tabular-nums">
-          {d.mutlak > 0 ? "▲" : "▼"} {bicimle(Math.abs(d.mutlak))}
-          {d.yuzde === null ? "" : ` · ${bicim.yuzde(Math.abs(d.yuzde))}`}
+          {d.mutlak > 0 ? "▲" : "▼"}{" "}
+          {d.yuzde === null
+            ? bicimle(Math.abs(d.mutlak))
+            : bicim.yuzde(Math.abs(d.yuzde))}
+          {onceki === null
+            ? ""
+            : ` · ${tRapor("kiyasOncekiKisa")} ${bicimle(onceki)}`}
         </span>
       </DurumRozeti>
     );
@@ -1534,6 +1557,10 @@ export default async function AnaSayfa({
   };
 
   const aralikMetni = `${bicim.tarih(donem.baslangic)} – ${bicim.tarih(donem.sonGun)}`;
+  /** Alt satırdaki kanal adı — süzgeç yoksa «Tüm kanallar» (K252). */
+  const seciliKanalAdi =
+    (seciliKanal && kanalSecenekleri.find(([kod]) => kod === seciliKanal)?.[1]) ||
+    t("tumKanallar");
 
   /** Ürün analizi sekmesi — seçim URL'de yaşar, diğer süzgeçler korunur. */
   /**
@@ -2330,53 +2357,60 @@ export default async function AnaSayfa({
     );
   }
 
+  /**
+   * ═══ KARŞILAŞTIRMA SEÇİCİ — SÜZGEÇ SATIRININ İÇİNDE (K252) ═══
+   * Eskiden ayrı bir satırdı (2a). Dönem, kanal ve kıyas AYNI soruyu
+   * ayarlıyor: «neye bakıyorum». Tek satıra indi.
+   * KAPALI GELİR: her panele zorla ikinci bir rakam basmak ekranı kalabalık
+   * ederdi; açıkken sorgu aralığı genişliyor, maliyeti var.
+   * Aynı düğmeye tekrar basmak KAPATIR (İlke #10).
+   * ⚠ «3 AY ÖNCESİ» KALKMADI: adreste seçiliyse düğmesi çizilir — seçili
+   * şey görünmez olamaz (İlke #5). Yalnız varsayılan sırada yok (demo).
+   * KIYASLANAN ARALIK YAZILI DURUR — tanım ekranda olmazsa rozet sessiz bir
+   * varsayıma dönerdi. Boşsa BİR KEZ söylenir; kutularda tekrarlanmaz.
+   */
+  const kiyasSecici = karGorunur ? (
+    <>
+      <span className="text-muted-foreground text-sm">
+        {tRapor("kiyasBaslik")}
+      </span>
+      {[
+        ...HIZLI_KIYAS,
+        ...(kiyasTuru && !(HIZLI_KIYAS as readonly string[]).includes(kiyasTuru)
+          ? [kiyasTuru]
+          : []),
+      ].map((a) => (
+        <Button
+          key={a}
+          asChild
+          size="sm"
+          variant={kiyasTuru === a ? "default" : "outline"}
+          className="h-11 md:h-8"
+        >
+          <Link
+            href={kiyasAdresi(kiyasTuru === a ? null : a)}
+            scroll={false}
+          >
+            {tRapor(`kiyas_${a}`)}
+          </Link>
+        </Button>
+      ))}
+      {kiyasPencere ? (
+        <span className="text-muted-foreground text-xs">
+          {aralikMetni} ↔ {bicim.tarih(kiyasPencere.baslangic)} –{" "}
+          {bicim.tarih(kiyasPencere.sonGun)}
+        </span>
+      ) : null}
+      {kiyasBos ? (
+        <DurumRozeti durum="notr" isaretsiz>
+          {tRapor("kiyaslanamaz")}
+        </DurumRozeti>
+      ) : null}
+    </>
+  ) : null;
+
   return (
     <div className="min-w-0 space-y-4">
-      {/*
-        ⚠ TEK SATIR, KUTU DEĞİL. Dönem durumu bir GÖREV değil bir BAĞLAM:
-        "nerede duruyoruz" bilgisi. Kutu yapılsaydı panelde iş varmış gibi
-        görünür ve kapatılacak bir şey aranırdı (K49: kapatılamayan madde
-        kutunun tamamına olan güveni eritir).
-      */}
-      <p className="text-muted-foreground text-xs">
-        {muhasebeDonemi.sonKapanan
-          ? t("donemDurumu", {
-              bu: bicim.ayYil(
-                new Date(Date.UTC(muhasebeDonemi.buDonem.yil, muhasebeDonemi.buDonem.ay - 1, 1)),
-              ),
-              son: bicim.ayYil(
-                new Date(
-                  Date.UTC(muhasebeDonemi.sonKapanan.yil, muhasebeDonemi.sonKapanan.ay - 1, 1),
-                ),
-              ),
-            })
-          : t("donemHicKapanmadi", {
-              bu: bicim.ayYil(
-                new Date(Date.UTC(muhasebeDonemi.buDonem.yil, muhasebeDonemi.buDonem.ay - 1, 1)),
-              ),
-            })}
-      </p>
-      {/*
-        ⭐ TY ÇEKİM ROZETİ — dönem satırı gibi TEK SATIR bağlam; ama rutin
-        KAÇMIŞSA kırmızı: "kaçışın kendisi görünür kılınır" (Vercel Cron
-        dersi). YOK ile TAZE ayrı söylenir — yokluk tazelik sanılmasın.
-      */}
-      <p
-        className={
-          tyCekim === null || tyCekim.durum.durum === "TAZE"
-            ? "text-muted-foreground text-xs"
-            : `text-xs font-medium ${DURUM_YAZISI.olumsuz}`
-        }
-      >
-        {tyCekim === null
-          ? null
-          : tyCekim.durum.durum === "YOK"
-            ? t("cekimYok", { kanal: tyCekim.kod })
-            : t(tyCekim.durum.durum === "TAZE" ? "cekimTaze" : "cekimEski", {
-                kanal: tyCekim.kod,
-                dk: Math.round(tyCekim.durum.dk),
-              })}
-      </p>
       {/* ⚠ SÜZGEÇLİ ADRESİ HATIRLAR — hiçbir şey ÇİZMEZ (K104-②).
           Bir kayda girip dönen kullanıcı süzgecini geri bulsun diye.
           Kaydedici olmadan "‹ Liste" bağlantısı düz listeye düşer. */}
@@ -2386,11 +2420,73 @@ export default async function AnaSayfa({
           hedefine dönüştüğü için bu açık yönlendirme riskidir. Panelin
           kendi taban-başına hafızası eskisi gibi çalışmaya devam ediyor. */}
       <ListeyiHatirla temel="/" etiket={tBaslik("panel")} />
-      <div>
-        <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
-        <p className="text-muted-foreground text-sm">
-          {t("altBaslik", { aralik: aralikMetni })}
-        </p>
+      {/*
+        ══ ÜST KABUK — BAŞLIK + TEK ALT SATIR + SAĞDA ÇEKİM (K252) ══
+        Üç ayrı satırdı: açık dönem · N11 çekimi · başlık+aralık. Kullanıcı
+        canlı panele bakıp tek bir lira görmeden yedi satır kabuk saydı.
+        Onaylanan demo: başlık, altında «aralık · dönem · kanal · kıyas»,
+        sağda çekim rozeti. Hiçbir bilgi kaybolmadı, yalnız üç satır bire indi.
+        ⚠ MUHASEBE DÖNEMİ SATIRI KUTU DEĞİL, BAĞLAM (K108): alt satırın
+        sonunda duruyor; kutu yapılsaydı kapatılacak bir iş sanılırdı.
+        ⚠ ÇEKİM ROZETİ: rutin KAÇMIŞSA kırmızı — «kaçışın kendisi görünür
+        kılınır». YOK ile TAZE ayrı söylenir; yokluk tazelik sanılmasın.
+      */}
+      <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
+          <p className="text-muted-foreground text-sm">
+            {t("altBaslikOzet", {
+              aralik: aralikMetni,
+              pencere: tPencere(PENCERE_ANAHTARI[donemTuru]),
+              kanal: seciliKanalAdi,
+            })}
+            {kiyasTuru ? (
+              <>
+                {" · "}
+                {tRapor(`kiyas_${kiyasTuru}`)}
+              </>
+            ) : null}
+            {" · "}
+            {muhasebeDonemi.sonKapanan
+              ? t("donemDurumu", {
+                  bu: bicim.ayYil(
+                    new Date(Date.UTC(muhasebeDonemi.buDonem.yil, muhasebeDonemi.buDonem.ay - 1, 1)),
+                  ),
+                  son: bicim.ayYil(
+                    new Date(
+                      Date.UTC(muhasebeDonemi.sonKapanan.yil, muhasebeDonemi.sonKapanan.ay - 1, 1),
+                    ),
+                  ),
+                })
+              : t("donemHicKapanmadi", {
+                  bu: bicim.ayYil(
+                    new Date(Date.UTC(muhasebeDonemi.buDonem.yil, muhasebeDonemi.buDonem.ay - 1, 1)),
+                  ),
+                })}
+          </p>
+        </div>
+        {tyCekim === null ? null : (
+          <span
+            className={`inline-flex shrink-0 items-center gap-2 ${
+              tyCekim.durum.durum === "TAZE"
+                ? "text-muted-foreground text-xs"
+                : `text-xs font-medium ${DURUM_YAZISI.olumsuz}`
+            }`}
+          >
+            <span
+              className={`size-1.5 rounded-full ${
+                tyCekim.durum.durum === "TAZE" ? DURUM_CIPI.olumlu : DURUM_CIPI.olumsuz
+              }`}
+              aria-hidden
+            />
+            {tyCekim.durum.durum === "YOK"
+              ? t("cekimYok", { kanal: tyCekim.kod })
+              : t(tyCekim.durum.durum === "TAZE" ? "cekimTaze" : "cekimEski", {
+                  kanal: tyCekim.kod,
+                  dk: Math.round(tyCekim.durum.dk),
+                })}
+          </span>
+        )}
       </div>
 
       {/* ═══════════ SÜZGEÇ + KARŞILAŞTIRMA — TEK GRUP ═══════════
@@ -2427,6 +2523,8 @@ export default async function AnaSayfa({
           /* ⚠ PANELDE DÖNEM BOŞ OLAMAZ — seçilmemişse "Bu ay"a düşüyor.
            Rozet kaldırılabilir gibi görünmesin diye sabit işaretlendi. */
           zamanSabit
+          /* Kıyas düğmeleri aynı satırda (K252) — yalnız kâr görünürken. */
+          kiyas={kiyasSecici}
           zaman={{
             secili: donemTuru,
             /* ⚠ ARALIK METNİ BOŞ GEÇİLİYOR, kaybolmuyor: aynı aralık iki
@@ -2455,51 +2553,6 @@ export default async function AnaSayfa({
             bitis: parametreler.bitis,
           }}
         />
-
-        {/* ═══════════════ KARŞILAŞTIRMA SEÇİCİ (2a) ═══════════════
-          KAPALI GELİR: her panele zorla ikinci bir rakam basmak ekranı
-          gereksiz kalabalıklaştırırdı; ayrıca açıkken sorgu aralığı
-          genişliyor, yani maliyeti var.
-          Aynı düğmeye tekrar basmak KAPATIR (İlke #10).
-          KIYASLANAN ARALIK YAZILI DURUR — tanım ekranda olmazsa rozet
-          sessiz bir varsayıma dönerdi. */}
-        {karGorunur ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-muted-foreground text-sm">
-              {tRapor("kiyasBaslik")}
-            </span>
-            {KIYAS_ANAHTARLARI.map((a) => (
-              <Button
-                key={a}
-                asChild
-                size="sm"
-                variant={kiyasTuru === a ? "default" : "outline"}
-                className="h-11 md:h-8"
-              >
-                <Link
-                  href={kiyasAdresi(kiyasTuru === a ? null : a)}
-                  scroll={false}
-                >
-                  {tRapor(`kiyas_${a}`)}
-                </Link>
-              </Button>
-            ))}
-            {kiyasPencere ? (
-              <span className="text-muted-foreground text-xs">
-                {aralikMetni} ↔ {bicim.tarih(kiyasPencere.baslangic)} –{" "}
-                {bicim.tarih(kiyasPencere.sonGun)}
-              </span>
-            ) : null}
-            {/* Kıyas dönemi bomboşsa BİR KEZ söylenir; beş kutuda
-              tekrarlanmaz. Sessiz sıfır yasağı korunuyor — durum yine
-              açıkça yazılı, sadece tek yerde. */}
-            {kiyasBos ? (
-              <DurumRozeti durum="notr" isaretsiz>
-                {tRapor("kiyaslanamaz")}
-              </DurumRozeti>
-            ) : null}
-          </div>
-        ) : null}
 
         {/*
           ══════════ PARA EN ÜSTTE — 14.08 KARARI ÇEVRİLDİ (K250) ══════════
@@ -2606,214 +2659,20 @@ export default async function AnaSayfa({
                        saydığım grafikteki kartlardan oluşmalı, sonra Ciro,
                        Net kâr 1 ve Net kâr 2 gelmeli — yani 7 kart istiyorum."_
                        ⚠ `lg:grid-cols-7` yalnız kâr görünürken: izin yoksa
-                       dört kutu kalır ve yedi sütun boş yer bırakırdı. */
-                    className={`grid gap-2 sm:grid-cols-2 md:grid-cols-4 ${karGorunur ? "lg:grid-cols-8" : ""}`}
+                       dört kutu kalır ve yedi sütun boş yer bırakırdı.
+
+                       ══ K253 (kullanıcı kararı 23.09.2026) — ALTI HÜKÜM KARTI ══
+                       Onaylanan demo: Brüt ciro · NET-1 · NET-2 · NET-2 marjı ·
+                       Satış adedi · İade — altı kart, tek sıra. Üç HUNİ sayısı
+                       (satın alınan · mal kabul · kargoya verilen) kalkmadı,
+                       ızgaranın ALTINDA ince bir satıra indi. 01.09 kararı
+                       («7 kart istiyorum») ÇEVRİLMEDİ — kullanıcıya üç seçenek
+                       sunuldu, «6 demo kartı + huni altta ince satır» seçildi.
+                       ⚠ `xl:grid-cols-6` yalnız kâr görünürken: izin yoksa
+                       üç kart kalır (ciro · satış · iade) ve `md:grid-cols-3` yeter. */
+                    className={`grid gap-2 sm:grid-cols-2 md:grid-cols-3 ${karGorunur ? "xl:grid-cols-6" : ""}`}
                   >
-                    {/* ---------------- SATIN ALINAN — HUNİNİN GERÇEK BAŞI -------
-                      K126: iş sipariş vermekle başlar, mal kabulle değil.
-                      `purchasedAt` ekseninde sayılıyor ve bağlantı o ekseni
-                      ADRESTE taşıyor (K114) — sayı ile liste ayrışmasın.
 
-                      ⛔ MAL KABUL KUTUSUNUN KOPYASI DEĞİL: K114'te ölçüldü,
-                      iki eksen ortanca 3 gün arayla düşüyor ve yalnız %1,4
-                      örtüşüyor. Son 30 günde sipariş 168 ↔ kabul 152. */}
-                    <IstatistikKutusu
-                      etiket={t("siparisAdedi")}
-                      cocuk={
-                        <Baglanti
-                          href={suzgecAdresi(
-                            "/alimlar",
-                            {},
-                            { ...donemParametreleri(), eksen: "siparis" },
-                          )}
-                        >
-                          {alim.siparisGunluk.length}
-                        </Baglanti>
-                      }
-                      altNot={
-                        karGorunur ? (
-                          <span className="text-muted-foreground text-xs">
-                            {t("siparisToplamAlim", {
-                              tutar: bicim.para(
-                                alim.siparisGunluk.reduce((a, x) => a + x.tutar, 0),
-                                seciliPara,
-                              ),
-                            })}
-                          </span>
-                        ) : undefined
-                      }
-                    />
-
-                    {/* ---------------- ALIM ADEDİ — HUNİNİN BAŞI ----------------
-                      Kullanıcı sırası 21.08.2026: alım → satış → kargo →
-                      ciro → NET-1 → NET-2.
-
-                      Huninin başına geçmesi mantıklı: mal ÖNCE alınır, sonra
-                      satılır. Ve "günlük emek" olarak istendi — kaç alım
-                      girildiği, kaç satış girildiği kadar günün işidir.
-
-                      ⚠ DÖNEM SÜZGECİNE BAĞLI, kardeşleriyle aynı pencereyi
-                      paylaşıyor; kıyas rozetini de onlarla aynı motordan
-                      alıyor. */}
-                    <IstatistikKutusu
-                      etiket={t("malKabulAdedi")}
-                      cocuk={
-                        <Baglanti
-                          href={suzgecAdresi(
-                            /**
-                             * ⚠ HEDEF DEĞİŞTİ (K112a): `/alimlar` SİPARİŞ
-                             * tarihiyle süzüyor, bu rakam ise KABUL tarihiyle
-                             * sayılıyor. Eski hedefte kalsaydı sayı ile liste
-                             * sessizce ayrışırdı (İlke #16).
-                             */
-                            "/mal-kabul",
-                            {},
-                            donemParametreleri(),
-                          )}
-                        >
-                          {alim.adet}
-                        </Baglanti>
-                      }
-                      rozet={kiyasRozeti(
-                        alim.adet,
-                        kiyasAlim?.adet ?? null,
-                        (n) => String(n),
-                      )}
-                      /* ---------------- ALT NOT: ÜRÜN ADEDİ + DÖNEMİN ALIM TUTARI
-                       İlke #15 — tek tek gösterilen yerde toplam da olur.
-                       Kullanıcı KDV dengesi için aylık alım tutarını takip
-                       ediyor ve alım listesinde bu toplam ZATEN var; panelde
-                       yokken aynı rakam için ikinci ekrana gitmek gerekiyordu.
-
-                       ⚠ ÜRÜN ADEDİ EKLENDİ (K220, 16.09.2026) — kullanıcı
-                       bulgusu: büyük rakam (`alim.adet`) kaç mal kabul KAYDI
-                       girildiğini sayıyor, `/mal-kabul` günün girişleri ekranı
-                       ise aynı gün için ÜRÜN ADEDİNİ gösteriyor; ikisi de
-                       doğru ama etiket ("Mal kabul") hangisi olduğunu
-                       söylemiyordu. Çare rakamı değiştirmek değil, öteki
-                       rakamı da GÖRÜNÜR kılmaktı.
-
-                       ⚠ ÜRÜN ADEDİ OPERASYONELDİR, PARA DEĞİL — büyük rakamla
-                       aynı izinsiz görünür. Yalnız TUTAR `satis.kar.gor`
-                       iznine bağlı kalır — eski davranış korundu.
-
-                       ⚠ Bu bloğun para birimi süzgeci var; yalnız o para
-                       biriminin toplamı yazılır, karışık toplam üretilmez. */
-                      altNot={
-                        <span>
-                          {t("malKabulUrunAdedi", { adet: alim.urunAdedi })}
-                          {karGorunur
-                            ? " · " +
-                              t("alimToplami", {
-                                tutar: bicim.para(
-                                  alim.toplam.find(
-                                    (x) => x.paraBirimi === blok.paraBirimi,
-                                  )?.tutar ?? 0,
-                                  blok.paraBirimi,
-                                ),
-                              })
-                            : ""}
-                        </span>
-                      }
-                    />
-                    <IstatistikKutusu
-                      etiket={t("satisAdedi")}
-                      cocuk={
-                        <Baglanti
-                          href={satisAdresi(
-                            seciliKanal ? { kanal: seciliKanal } : {},
-                          )}
-                        >
-                          {blok.toplamAdet}
-                        </Baglanti>
-                      }
-                      rozet={kiyasRozeti(
-                        blok.toplamAdet,
-                        kb?.toplamAdet ?? null,
-                        (n) => String(n),
-                      )}
-                      /* ADET KUTUSUNDA ADET, PARA KUTUSUNDA PARA.
-                       Ciro kutusu iadenin TUTARINI yazıyor; buraya ADEDİ
-                       geliyor. Aynı bilgi iki kez değil, aynı olayın iki
-                       ölçüsü — "3 iade" ile "−₺2.980" farklı sorulara cevap.
-
-                       AÇIK SIFIR: iade yoksa da satır yazılır. Yokluğundan
-                       "iade olmadı" sonucunu çıkarmak imkânsızdır. */
-                      altNot={
-                        <span>
-                          {t("iadeAdedi", { sayi: blok.toplamIadeAdedi })}
-                        </span>
-                      }
-                    />
-                    {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
-                      "Bekleyen" bugün ne yapılacağını söylediği için verilenle
-                      birlikte duruyor (kullanıcı kararı 14.08.2026) ve ikisi de
-                      o satışlara süzülmüş listeye götürüyor (İlke #2, #9).
-
-                      İKİ TARİH EKSENİ AYNI EKRANDA — alttaki not ZORUNLU.
-                      Ciro ve satış adedi SATIŞ tarihine, kargo SEVKİYAT
-                      tarihine göre süzülür. Not olmazsa kullanıcı "satış 2 ama
-                      kargo 6, neden tutmuyor" der ve panele güveni gider. */}
-                    <IstatistikKutusu
-                      /* SÜZGEÇ AÇIKKEN KANAL ADI BAŞLIKTA: kart hangi soruya
-                       cevap verdiğini kendisi söyler. */
-                      etiket={
-                        seciliKanal
-                          ? t("kargoDurumuKanal", {
-                              kanal:
-                                kanalSecenekleri.find(
-                                  ([k]) => k === seciliKanal,
-                                )?.[1] ?? seciliKanal,
-                            })
-                          : t("kargoDurumu")
-                      }
-                      cocuk={
-                        <Baglanti href={kargoAdresi("verildi")}>
-                          {blok.kargoyaVerilenAdet}
-                        </Baglanti>
-                      }
-                      kiyas={kiyasRozeti(
-                        blok.kargoyaVerilenAdet,
-                        kb?.kargoyaVerilenAdet ?? null,
-                        (n) => String(n),
-                      )}
-                      /* BEKLEYEN KARGO YAPILACAK İŞTİR — rozet amber yanar.
-                       Bekleyen yoksa rozet YOK: "iş yok" bir başarı değil,
-                       sıradan hâldir; yeşile boyamak her gün kutlama olurdu. */
-                      rozet={
-                        blok.kargoBekleyenAdet > 0 ? (
-                          <DurumRozeti durum="uyari">
-                            <Baglanti href={kargoAdresi("bekleyen")}>
-                              {t("kargoBekleyen", {
-                                sayi: blok.kargoBekleyenAdet,
-                              })}
-                            </Baglanti>
-                          </DurumRozeti>
-                        ) : null
-                      }
-                      altNot={
-                        <span className="text-muted-foreground">
-                          {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
-                          <span className="block">{t("kargoEkseniNotu")}</span>
-                          <span className="block">
-                            {blok.kargoBekleyenAdet > 0
-                              ? t("kargoBekleyenNotu")
-                              : t("kargoBekleyenYok")}
-                          </span>
-                          {/* GENEL RESİM KAYBOLMASIN: süzgeç açıkken tüm kanal
-                            toplamı küçük satırda durur. Süzgeç yokken bu satır
-                            gereksiz tekrar olurdu. */}
-                          {tumKanalKargo ? (
-                            <span className="block">
-                              {t("kargoTumKanallar", {
-                                verilen: tumKanalKargo.verilen,
-                                bekleyen: tumKanalKargo.bekleyen,
-                              })}
-                            </span>
-                          ) : null}
-                        </span>
-                      }
-                    />
                     {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
                       satır (brüt · iade düşümü · net). Kendi bileşeni var ve
                       panelin ciro gösterdiği dört yüzeyin hepsinde aynı
@@ -2924,6 +2783,143 @@ export default async function AnaSayfa({
                         />
                       </>
                     ) : null}
+                    <IstatistikKutusu
+                      etiket={t("satisAdedi")}
+                      cocuk={
+                        <Baglanti
+                          href={satisAdresi(
+                            seciliKanal ? { kanal: seciliKanal } : {},
+                          )}
+                        >
+                          {blok.toplamAdet}
+                        </Baglanti>
+                      }
+                      rozet={kiyasRozeti(
+                        blok.toplamAdet,
+                        kb?.toplamAdet ?? null,
+                        (n) => String(n),
+                      )}
+                      /* ADET KUTUSUNDA ADET, PARA KUTUSUNDA PARA.
+                       Ciro kutusu iadenin TUTARINI yazıyor; buraya ADEDİ
+                       geliyor. Aynı bilgi iki kez değil, aynı olayın iki
+                       ölçüsü — "3 iade" ile "−₺2.980" farklı sorulara cevap.
+
+                       AÇIK SIFIR: iade yoksa da satır yazılır. Yokluğundan
+                       "iade olmadı" sonucunu çıkarmak imkânsızdır. */
+                      /* K253: iade adedi artık KENDİ KARTINDA — buradaki not
+                         kalktı; aynı sayıyı iki kartta yazmak tekrar olurdu. */
+                    />
+                    {/*
+                      İADE — KENDİ KARTI (K253, demo). Eskiden satış adedinin altında
+                      küçük nottu; demo altı hükümden birini iadeye ayırıyor.
+                      ⚠ ARTIŞ KÖTÜDÜR: rozet yönü ters (`artisIyiMi = false`) — iade
+                      artınca yeşil yanan bir rozet, yanlış bir müjde olurdu.
+                      Adres iade listesine, aynı dönem + kanal süzgeciyle (İlke #16).
+                    */}
+                    <IstatistikKutusu
+                      etiket={t("iadeKisa")}
+                      cocuk={
+                        <Baglanti href={iadeListesiAdresi}>{blok.toplamIadeAdedi}</Baglanti>
+                      }
+                      rozet={kiyasRozeti(
+                        blok.toplamIadeAdedi,
+                        kb?.toplamIadeAdedi ?? null,
+                        (n) => String(n),
+                        false,
+                      )}
+                    />
+                  </div>
+                  {/*
+                    ══ HUNİ — İNCE SATIR (K253) ══
+                    01.09.2026 kararıyla gelen üç huni sayısı (satın alınan ·
+                    mal kabul · kargoya verilen) ızgaradan çıktı, KAYBOLMADI:
+                    aynı adresler, aynı sayılar, tek satır çip. Panelin ilk
+                    ekranı hükümle açılıyor, günün emeği hemen altında.
+                    ⚠ İKİ TARİH EKSENİ AYNI SATIRDA — not zorunlu (14.08.2026):
+                    satış SATIŞ tarihine, kargo SEVKİYAT tarihine göre süzülür.
+                    ⚠ Çipler telefonda 44 px (İlke #8), masaüstünde ince.
+                  */}
+                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                    <span className="font-medium">{t("huniEtiketi")}</span>
+                    <Baglanti
+                      href={suzgecAdresi(
+                            "/alimlar",
+                            {},
+                            { ...donemParametreleri(), eksen: "siparis" },
+                          )}
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7"
+                    >
+                      {t("siparisAdedi")}
+                      <span className="text-foreground font-semibold tabular-nums">
+                        {alim.siparisGunluk.length}
+                      </span>
+                    </Baglanti>
+                    <Baglanti
+                      href={suzgecAdresi(
+                            /**
+                             * ⚠ HEDEF DEĞİŞTİ (K112a): `/alimlar` SİPARİŞ
+                             * tarihiyle süzüyor, bu rakam ise KABUL tarihiyle
+                             * sayılıyor. Eski hedefte kalsaydı sayı ile liste
+                             * sessizce ayrışırdı (İlke #16).
+                             */
+                            "/mal-kabul",
+                            {},
+                            donemParametreleri(),
+                          )}
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7"
+                    >
+                      {t("malKabulAdedi")}
+                      <span className="text-foreground font-semibold tabular-nums">
+                        {alim.adet}
+                      </span>
+                      {/* Kıyas rozeti eski kutudan taşındı — çipe geçerken
+                          düşmüştü, `kiyasAlim` ölü kalmıştı (lint yakaladı). */}
+                      {kiyasRozeti(alim.adet, kiyasAlim?.adet ?? null, (n) => String(n))}
+                    </Baglanti>
+                    <Baglanti
+                      href={kargoAdresi("verildi")}
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7"
+                    >
+                      {/* SÜZGEÇ AÇIKKEN KANAL ADI ETİKETTE: çip hangi soruya cevap
+                          verdiğini kendisi söyler (K253'te düşmüştü, bekçi yakaladı). */}
+                      {seciliKanal
+                        ? t("kargoDurumuKanal", { kanal: seciliKanalAdi })
+                        : t("kargoDurumu")}
+                      <span className="text-foreground font-semibold tabular-nums">
+                        {blok.kargoyaVerilenAdet}
+                      </span>
+                    </Baglanti>
+                    <Baglanti
+                      href={kargoAdresi("bekleyen")}
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7"
+                    >
+                      {t("kargoBekleyenKisa")}
+                      <span className="text-foreground font-semibold tabular-nums">
+                        {t("kargoBekleyen", {
+                                sayi: blok.kargoBekleyenAdet,
+                              })}
+                      </span>
+                    </Baglanti>
+                    <span className="text-muted-foreground">
+                      {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
+                      <span className="block">{t("kargoEkseniNotu")}</span>
+                      <span className="block">
+                    {blok.kargoBekleyenAdet > 0
+                      ? t("kargoBekleyenNotu")
+                      : t("kargoBekleyenYok")}
+                      </span>
+                      {/* GENEL RESİM KAYBOLMASIN: süzgeç açıkken tüm kanal
+                    toplamı küçük satırda durur. Süzgeç yokken bu satır
+                    gereksiz tekrar olurdu. */}
+                      {tumKanalKargo ? (
+                    <span className="block">
+                      {t("kargoTumKanallar", {
+                        verilen: tumKanalKargo.verilen,
+                        bekleyen: tumKanalKargo.bekleyen,
+                      })}
+                    </span>
+                      ) : null}
+                    </span>
                   </div>
 
                   {/* --- kârı hesaplanamayanlar: SIFIR SAYILMAZ, söylenir ---
@@ -2975,6 +2971,39 @@ export default async function AnaSayfa({
             );
           })
         )}
+
+        {/*
+          ══ GÖREV ŞERİDİ — HÜKÜM KARTININ HEMEN ALTINDA (K254) ══
+          Demo sırası: hüküm → görev şeridi → pazaryeri. Şerit tam genişlik,
+          tek satır; iki görev kartı ve 2/5 sütunu kalktı. İzinsiz kullanıcı
+          da görür (operasyonel sayılar) — `karGorunur` kapısının DIŞINDA.
+        */}
+        <GorevKutusu
+          sayilar={gorevSayilari}
+          ilerlemeler={{ kargoBekleyen: paketlenen }}
+          /*
+            ⚠ ADRES KUTUNUN KENDİ HEDEFİNİ DARALTIYOR, DEĞİŞTİRMİYOR:
+            `kargo=bekleyen` korunuyor, üstüne `paket=hazirlanan`
+            ekleniyor. Yalnız `paket=hazirlanan` yazsaydık kargoya
+            VERİLMİŞ eski siparişler de listeye girer, liste rakamdan
+            büyük çıkardı — sayının tıklanınca kendini doğrulamaması
+            en sinsi hata olurdu.
+          */
+          ilerlemeAdresleri={{
+            kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
+          }}
+          /*
+            ⚠ "ACELE" KARARI SAF KURALDAN GELİYOR, BURADA
+            TÜRETİLMİYOR. Eşiği (`UYARI_GUNU`) ekranda yazsaydık
+            panel ile uyarı merkezi bir gün ayrışabilirdi.
+          */
+          sureler={{
+            tarifePenceresi: {
+              kalanGun: tarifeKapsam.kalanGun,
+              aceleMi: tarifeUyarisiVarMi(tarifeKapsam),
+            },
+          }}
+        />
 
         {/* ═══════════════ ÜST SIRA: EYLEM + ÖNGÖRÜ YAN YANA ═══════════════
           14.08.2026 — PANEL DİKEY YIĞINDI, IZGARA OLDU.
@@ -3035,42 +3064,17 @@ export default async function AnaSayfa({
             nedenini aramaz. */}
         <div className="grid min-w-0 items-stretch gap-4 xl:grid-cols-5">
           {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
-          <div className="min-w-0 xl:col-span-2">
-            <GorevKutusu
-              sayilar={gorevSayilari}
-              ilerlemeler={{ kargoBekleyen: paketlenen }}
-              /*
-                ⚠ ADRES KUTUNUN KENDİ HEDEFİNİ DARALTIYOR, DEĞİŞTİRMİYOR:
-                `kargo=bekleyen` korunuyor, üstüne `paket=hazirlanan`
-                ekleniyor. Yalnız `paket=hazirlanan` yazsaydık kargoya
-                VERİLMİŞ eski siparişler de listeye girer, liste rakamdan
-                büyük çıkardı — sayının tıklanınca kendini doğrulamaması
-                en sinsi hata olurdu.
-              */
-              ilerlemeAdresleri={{
-                kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
-              }}
-              /*
-                ⚠ "ACELE" KARARI SAF KURALDAN GELİYOR, BURADA
-                TÜRETİLMİYOR. Eşiği (`UYARI_GUNU`) ekranda yazsaydık
-                panel ile uyarı merkezi bir gün ayrışabilirdi.
-              */
-              sureler={{
-                tarifePenceresi: {
-                  kalanGun: tarifeKapsam.kalanGun,
-                  aceleMi: tarifeUyarisiVarMi(tarifeKapsam),
-                },
-              }}
-            />
-          </div>
 
           {/* PAZARYERİ PERFORMANSI — para bloğu, izne bağlı.
-            İzin yoksa görev kartları tek başına tam genişliğe yayılır. */}
+            ⚠ K254: görev kartları şeride çıktı; bu ızgarada şimdilik tek
+            çocuk var ve tam genişlik. K126-C'nin «iki sütun aynı yerde
+            biter» kuralı bu satırda artık kapsam dışı — halka K256'da
+            sağ 2/5'e alınınca iki sütun yeniden doğar ve kural geri gelir. */}
           {karGorunur && ustBlok && ustPaylar ? (
             /* ⛔ `h-full` — sol sütunun boyunu İZLER. Kart kendi içeriği
                kadar yüksek kalsaydı (K126'dan sonra üç kanal kartı kaldığı
                için içerik kısaldı) sağ sütun havada biterdi. */
-            <Card className="flex h-full min-w-0 flex-col xl:col-span-3">
+            <Card className="flex h-full min-w-0 flex-col xl:col-span-5">
               <CardHeader className="pb-3">
                 <CardTitle className="flex flex-wrap items-center gap-2 text-base">
                   <Store className="size-5" />

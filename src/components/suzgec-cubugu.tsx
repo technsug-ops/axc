@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CalendarRange, SlidersHorizontal, X } from "lucide-react";
+import { CalendarRange, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 
 import { AranabilirSecim } from "@/components/aranabilir-secim";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LISTE_PENCERELERI, type PencereTuru } from "@/lib/donem";
+import {
+  HIZLI_PENCERELER,
+  KATLANAN_PENCERELER,
+  type PencereTuru,
+} from "@/lib/donem";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
 import {
   donemRozetiCizilirMi,
@@ -74,6 +78,7 @@ export function SuzgecCubugu({
   zaman,
   yapiskan = false,
   zamanSabit = false,
+  kiyas,
 }: {
   temelAdres: string;
   /** Sayfanın tüm searchParams'ı — dokunulmayanlar korunur. */
@@ -113,6 +118,14 @@ export function SuzgecCubugu({
    * tekrarıydı. Kaldırınca bilgi kaybolmuyor, satır kazanılıyor (#12).
    */
   zamanSabit?: boolean;
+  /**
+   * KARŞILAŞTIRMA SEÇİCİSİ — AYNI SATIRA GİRER (K252).
+   * Panel kıyas düğmelerini ayrı bir satırda çiziyordu; oysa dönem, kanal ve
+   * kıyas AYNI soruyu ayarlıyor («neye bakıyorum»). Çubuk kıyasın ne olduğunu
+   * bilmez, yalnız yer verir: içerik ekrandan gelir ve yalnız veren ekranda
+   * çizilir (listelerde kıyas yok, boş bir yuva da yok).
+   */
+  kiyas?: React.ReactNode;
 }) {
   const t = useTranslations("Suzgec");
   const tPencere = useTranslations("Pencere");
@@ -124,6 +137,11 @@ export function SuzgecCubugu({
     baslangic: zaman?.baslangic ?? "",
     bitis: zaman?.bitis ?? "",
   });
+  /** Seçili pencere açılırın içindekilerden biriyse düğme onun adını yazar. */
+  const katlananSecili =
+    zaman !== undefined && zaman.secili !== "" && zaman.secili !== "OZEL"
+      ? (KATLANAN_PENCERELER as readonly string[]).includes(zaman.secili)
+      : false;
 
   const git = (degisiklikler: Record<string, string | undefined>) => {
     router.push(suzgecAdresi(temelAdres, mevcut, degisiklikler));
@@ -190,11 +208,22 @@ export function SuzgecCubugu({
       </Button>
 
       <div className={`${acik ? "block" : "hidden"} space-y-3 md:block`}>
-        {/* --- ZAMAN --- */}
-        {zaman ? (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {LISTE_PENCERELERI.filter((p) => p !== "OZEL").map((p) => (
+        {/*
+          ══ TEK SATIR: DÖNEM · KANAL · KARŞILAŞTIR (K252, 23.09.2026) ══
+          Üç ayrı satırdı (11 dönem düğmesi / seçimler / kıyas) ve panelin ilk
+          ekranında tek bir lira görünmeden yedi satır kabuk vardı. Onaylanan
+          demoda hepsi BİR satır: beş hızlı dönem + «Özel aralık ▾» + kanal +
+          kıyas. Kullanıcı kararı: HER ekranda (İlke #10).
+
+          ⚠ KALAN DÖNEMLER KAYBOLMADI: «Özel aralık» açılırının içinde,
+          tarih alanlarının yanında duruyorlar. Seçili olan hızlıda değilse
+          düğme onun ADINI yazar — seçili şey görünmez olamaz (İlke #5).
+          ⚠ `h-11 md:h-8`: telefonda 44 px (İlke #8), masaüstünde ince.
+        */}
+        <div className="flex flex-wrap items-center gap-2">
+          {zaman ? (
+            <>
+              {HIZLI_PENCERELER.map((p) => (
                 <Button
                   key={p}
                   size="sm"
@@ -211,67 +240,32 @@ export function SuzgecCubugu({
               <Button
                 size="sm"
                 className="h-11 md:h-8"
-                variant={zaman.secili === "OZEL" ? "default" : "outline"}
+                variant={
+                  zaman.secili === "OZEL" || katlananSecili ? "default" : "outline"
+                }
                 onClick={() => setOzelAcik((o) => !o)}
+                aria-expanded={ozelAcik}
               >
                 <CalendarRange />
-                {tPencere("ozel")}
+                {katlananSecili
+                  ? tPencere(PENCERE_ANAHTARI[zaman.secili as PencereTuru])
+                  : tPencere("ozel")}
+                <ChevronDown className="size-3.5" aria-hidden />
               </Button>
-            </div>
+              {/* Seçilen aralığın GERÇEK karşılığı — tanım tahmin edilmesin.
+                  Panel bunu başlıkta yazdığı için boş geçer, listeler verir. */}
+              {zaman.aralikMetni ? (
+                <span className="text-muted-foreground text-xs">
+                  {zaman.aralikMetni}
+                </span>
+              ) : null}
+            </>
+          ) : null}
 
-            {/* Seçilen aralığın GERÇEK karşılığı — tanım tahmin edilmesin. */}
-            {zaman.aralikMetni ? (
-              <p className="text-muted-foreground text-xs">
-                {zaman.aralikMetni}
-              </p>
-            ) : null}
+          {zaman && suzgecler.length > 0 ? (
+            <span className="bg-border hidden h-6 w-px md:block" aria-hidden />
+          ) : null}
 
-            {ozelAcik ? (
-              <div className="flex flex-wrap items-end gap-2 rounded-lg border p-3">
-                <div className="space-y-1">
-                  <Label htmlFor="suzgec-bas">{t("baslangic")}</Label>
-                  <Input
-                    id="suzgec-bas"
-                    type="date"
-                    className="h-11 md:h-9"
-                    value={ozel.baslangic}
-                    onChange={(e) =>
-                      setOzel((o) => ({ ...o, baslangic: e.target.value }))
-                    }
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="suzgec-bit">{t("bitis")}</Label>
-                  <Input
-                    id="suzgec-bit"
-                    type="date"
-                    className="h-11 md:h-9"
-                    value={ozel.bitis}
-                    onChange={(e) =>
-                      setOzel((o) => ({ ...o, bitis: e.target.value }))
-                    }
-                  />
-                </div>
-                <Button
-                  className="h-11 md:h-9"
-                  disabled={!ozel.baslangic || !ozel.bitis}
-                  onClick={() =>
-                    git({
-                      pencere: "OZEL",
-                      baslangic: ozel.baslangic,
-                      bitis: ozel.bitis,
-                    })
-                  }
-                >
-                  {t("uygula")}
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {/* --- SEÇİM SÜZGEÇLERİ --- */}
-        <div className="flex flex-wrap gap-2">
           {suzgecler.map((s) =>
             s.aranabilir || s.secenekler.length > ARAMA_ESIGI ? (
               /**
@@ -319,7 +313,72 @@ export function SuzgecCubugu({
               </Select>
             ),
           )}
+
+          {kiyas ? (
+            <>
+              <span className="bg-border hidden h-6 w-px md:block" aria-hidden />
+              {kiyas}
+            </>
+          ) : null}
         </div>
+
+        {/* «ÖZEL ARALIK» AÇILIRI — katlanan dönemler + tarih alanları. */}
+        {zaman && ozelAcik ? (
+          <div className="flex flex-wrap items-end gap-2 rounded-lg border p-3">
+            {KATLANAN_PENCERELER.map((p) => (
+              <Button
+                key={p}
+                size="sm"
+                className="h-11 md:h-9"
+                variant={zaman.secili === p ? "default" : "outline"}
+                onClick={() => {
+                  setOzelAcik(false);
+                  git({ pencere: p, baslangic: "", bitis: "" });
+                }}
+              >
+                {tPencere(PENCERE_ANAHTARI[p])}
+              </Button>
+            ))}
+            <span className="bg-border hidden h-9 w-px md:block" aria-hidden />
+            <div className="space-y-1">
+              <Label htmlFor="suzgec-bas">{t("baslangic")}</Label>
+              <Input
+                id="suzgec-bas"
+                type="date"
+                className="h-11 md:h-9"
+                value={ozel.baslangic}
+                onChange={(e) =>
+                  setOzel((o) => ({ ...o, baslangic: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="suzgec-bit">{t("bitis")}</Label>
+              <Input
+                id="suzgec-bit"
+                type="date"
+                className="h-11 md:h-9"
+                value={ozel.bitis}
+                onChange={(e) =>
+                  setOzel((o) => ({ ...o, bitis: e.target.value }))
+                }
+              />
+            </div>
+            <Button
+              className="h-11 md:h-9"
+              disabled={!ozel.baslangic || !ozel.bitis}
+              onClick={() =>
+                git({
+                  pencere: "OZEL",
+                  baslangic: ozel.baslangic,
+                  bitis: ozel.bitis,
+                })
+              }
+            >
+              {t("uygula")}
+            </Button>
+          </div>
+        ) : null}
 
         {/* --- AKTİF SÜZGEÇ ROZETLERİ --- */}
         {acikSayi > 0 ? (

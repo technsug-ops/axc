@@ -1574,7 +1574,8 @@
     "iadeKiyasNotu": "",
     "giderKiyasNotu": "",
     "devredenBaslik": "",
-    "devredenNot": ""
+    "devredenNot": "",
+    "kiyasOncekiKisa": ""
   },
   "KarSorunu": {
     "baslik": "",
@@ -2191,7 +2192,6 @@
   },
   "Panel": {
     "baslik": "",
-    "altBaslik": "",
     "buAyBaslik": "",
     "buAyBos": "",
     "satisAdedi": "",
@@ -2373,7 +2373,11 @@
     "birimAdet": "",
     "birimYuzde": "",
     "iadeOraniGrafik": "",
-    "iadeOraniGrafikNotu": ""
+    "iadeOraniGrafikNotu": "",
+    "altBaslikOzet": "",
+    "iadeKisa": "",
+    "huniEtiketi": "",
+    "kargoBekleyenKisa": ""
   },
   "Envanter": {
     "baslik": "",

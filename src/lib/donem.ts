@@ -97,6 +97,44 @@ export const LISTE_PENCERELERI = [
 
 /**
  * ============================================================================
+ *  HIZLI PENCERELER — TEK SATIRLIK SÜZGEÇ (K252, kullanıcı kararı 23.09.2026)
+ * ----------------------------------------------------------------------------
+ *  Süzgeç çubuğu 11 düğmeyle üç satır tutuyordu; kullanıcı canlı panele bakıp
+ *  tek bir lira görmeden yedi satır kabuk saydı. Onaylanan demoda süzgeç TEK
+ *  satır: beş hızlı dönem + «Özel aralık ▾». Kararı: **her ekranda** böyle
+ *  (İlke #10 — aynı işlem her ekranda aynı görünür).
+ *
+ *  ⛔ `LISTE_PENCERELERI` DEĞİŞMEDİ VE DEĞİŞEMEZ: o liste yalnız düğme sırası
+ *  değil, adres DOĞRULAMASI (`liste-suzgeci` · `iadeler` · dışa aktarma).
+ *  Onu daraltmak, yer imindeki `pencere=SON_3_AY` adresini sessizce
+ *  «tanınmadı»ya düşürürdü. Burada yalnız NE GÖRÜNDÜĞÜ değişiyor:
+ *  kalan dört pencere «Özel aralık» açılırının içinde, bir tık ötede.
+ *
+ *  ⚠ SIRA `LISTE_PENCERELERI`NİN SIRASIDIR (DÜN önde — kullanıcı kararı
+ *  21.08.2026): buradaki dizi o sıranın bir ALT KÜMESİ; ayrı bir sıra
+ *  uydurmuyor. Bekçi ikisinin tutarlı olduğunu ölçer.
+ * ============================================================================
+ */
+export const HIZLI_PENCERELER = [
+  "DUN",
+  "BUGUN",
+  "BU_HAFTA",
+  "SON_30_GUN",
+  "BU_AY",
+] as const satisfies readonly PencereTuru[];
+
+/**
+ * «Özel aralık» açılırının içinde duran pencereler — hızlıda olmayan ve OZEL
+ * olmayan her liste penceresi. TÜRETİLİR, elle tutulmaz: yarın listeye
+ * eklenen bir pencere kendiliğinden açılıra düşer, kaybolmaz.
+ */
+export const KATLANAN_PENCERELER: readonly PencereTuru[] =
+  LISTE_PENCERELERI.filter(
+    (p) => p !== "OZEL" && !(HIZLI_PENCERELER as readonly string[]).includes(p),
+  );
+
+/**
+ * ============================================================================
  *  PANEL VARSAYILAN DÖNEMİ
  * ----------------------------------------------------------------------------
  *  ⚠ 21.08.2026'DA "BU_AY"DAN "BUGUN"A ÇEVRİLDİ — kullanıcı kararı.

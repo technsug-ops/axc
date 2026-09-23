@@ -1574,7 +1574,8 @@
     "iadeKiyasNotu": "geçmiş dönem iadeleri de buraya yazılır; karşılaştırma yapılmaz",
     "giderKiyasNotu": "aylık sabit giderler belirli güne düşer, eşit gün kıyası bunu tam yakalamayabilir",
     "devredenBaslik": "Devreden KDV",
-    "devredenNot": "iade nedeniyle ödenecek KDV negatife düştü — gelecek döneme mahsup, kâra karışmaz"
+    "devredenNot": "iade nedeniyle ödenecek KDV negatife düştü — gelecek döneme mahsup, kâra karışmaz",
+    "kiyasOncekiKisa": "önceki"
   },
   "KarSorunu": {
     "baslik": "Nasıl düzeltilir?",
@@ -2191,7 +2192,6 @@
   },
   "Panel": {
     "baslik": "Panel",
-    "altBaslik": "{aralik} · dönemi değiştirmek için aşağıdaki süzgeci kullanın",
     "buAyBaslik": "Bu ay",
     "buAyBos": "Bu ay henüz satış kaydı yok.",
     "satisAdedi": "Satış adedi",
@@ -2373,7 +2373,11 @@
     "birimAdet": "adet",
     "birimYuzde": "%",
     "iadeOraniGrafik": "İade oranı — kanal kanal, aylık seyir",
-    "iadeOraniGrafikNotu": "Adet bazlı iade oranının aylık seyri. İstediğin kanalı seçip gizleyebilirsin; Toplam satırı, oranları ortalamaz — payları ve paydaları toplayıp yeniden böler. O ay o kanalda hiç satış yoksa çizgi KESİLİR: oran sıfır değil, hesaplanamaz."
+    "iadeOraniGrafikNotu": "Adet bazlı iade oranının aylık seyri. İstediğin kanalı seçip gizleyebilirsin; Toplam satırı, oranları ortalamaz — payları ve paydaları toplayıp yeniden böler. O ay o kanalda hiç satış yoksa çizgi KESİLİR: oran sıfır değil, hesaplanamaz.",
+    "altBaslikOzet": "{aralik} · {pencere} · {kanal}",
+    "iadeKisa": "İade",
+    "huniEtiketi": "Huni:",
+    "kargoBekleyenKisa": "Kargo bekleyen"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

@@ -43,6 +43,14 @@ export type KiyasTuru = keyof typeof KIYAS_TURLERI;
 
 export const KIYAS_ANAHTARLARI = Object.keys(KIYAS_TURLERI) as KiyasTuru[];
 
+/**
+ * Süzgeç satırında DÜĞME olarak duran kıyas tabanları (K252). Demo iki
+ * düğme gösteriyor; «3 ay öncesi» KALKMADI — adreste (`kiyas=ucAy`) hâlâ
+ * geçerli ve seçiliyse düğmesi de çizilir (seçili şey görünmez olamaz,
+ * İlke #5). Yalnız varsayılan sırada gösterilmiyor.
+ */
+export const HIZLI_KIYAS = ["onceki", "gecenYil"] as const satisfies readonly KiyasTuru[];
+
 /** Adres parametresini tanır; tanımadığını sessizce varsayılana düşürmez. */
 export function kiyasCoz(deger: string | undefined): KiyasTuru | null {
   if (!deger) return null;

@@ -18,7 +18,11 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { oranDegisimi } from "../src/lib/karsilastirma";
+import {
+  HIZLI_KIYAS,
+  KIYAS_ANAHTARLARI,
+  oranDegisimi,
+} from "../src/lib/karsilastirma";
 import { PAY_FARKI_ESIGI, payFarki } from "../src/lib/panel/pay-farki";
 import {
   CEKIM_ESIK_DK,
@@ -139,7 +143,11 @@ import {
   yaslanmaListesi,
   type YaslanmaGirdisi,
 } from "../src/lib/yaslanma";
-import { LISTE_PENCERELERI } from "../src/lib/donem";
+import {
+  HIZLI_PENCERELER,
+  KATLANAN_PENCERELER,
+  LISTE_PENCERELERI,
+} from "../src/lib/donem";
 import {
   kanallariSirala,
   kanalSiraKipi,
@@ -2591,11 +2599,23 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    */
   const gorevKutusuYeri = panelSayfasi.indexOf("<GorevKutusu");
   kontrol("görev kutusu panelde ÇİZİLİYOR", gorevKutusuYeri > 0);
-  kontrol(
-    "görev kutusu izinsiz de görünüyor (operasyonel sayılar)",
-    gorevKutusuYeri > 0 &&
-      !/karGorunur/.test(panelSayfasi.slice(gorevKutusuYeri - 600, gorevKutusuYeri)),
-  );
+  /**
+   * ⚠ ÖLÇÜT YAPISAL OLDU (K254). ESKİ: «600 karakter öncesinde `karGorunur`
+   * geçmiyor» — bir PENCERE vekiliydi. Şerit hüküm kartının hemen altına
+   * gelince pencereye kartın kendi `{karGorunur ? … : null}` kuyruğu girdi
+   * ve vekil yanlış yanacaktı; davranış doğruydu. Şimdi ölçülen şey:
+   * şeritten önceki SON `karGorunur ? (` koşulu, şerit gelmeden `) : null}`
+   * ile KAPANMIŞ mı — yani şerit o kapının DIŞINDA mı.
+   */
+  {
+    const onceki = panelSayfasi.slice(0, gorevKutusuYeri);
+    const sonKapi = onceki.lastIndexOf("karGorunur ? (");
+    const sonKapanis = onceki.lastIndexOf(") : null}");
+    kontrol(
+      "görev şeridi izinsiz de görünüyor (karGorunur kapısının DIŞINDA)",
+      gorevKutusuYeri > 0 && (sonKapi < 0 || sonKapanis > sonKapi),
+    );
+  }
 
   // ------------------------- RENK SİSTEMİ (15.08.2026) -------------------------
   /**
@@ -4175,24 +4195,29 @@ console.log("\nKART SIRASI VE YAPIŞKAN ÇUBUK");
   const ekran = readFileSync("src/app/page.tsx", "utf8");
 
   /**
-   * SIRA: ADET → KARGO → CİRO → NET-1 → NET-2 (operasyon hunisi).
-   * Kutuların kaynak metindeki sırası ekrandaki sırasıdır (ızgara).
+   * ⚠ SIRA ÖLÇÜTÜ ESKİDİ, SUSTURULMADI — GÜNCELLENDİ (K253, 23.09.2026).
+   * ESKİ (Halil 18.08.2026, silinmiyor): ADET → KARGO → CİRO → NET-1 → NET-2
+   * (operasyon hunisi). NİYE ESKİDİ: kullanıcı demoyu onayladı — hüküm
+   * kartları CİRO → NET-1 → NET-2 → MARJ → SATIŞ ADEDİ → İADE, huni sayıları
+   * (satın alınan · mal kabul · kargo) ızgaranın ALTINDA ince satır. Yani
+   * para önce, adet sonra, huni en sonda. Kaynak sırası ekran sırasıdır.
    */
   const yerler = {
-    adet: ekran.indexOf('etiket={t("satisAdedi")}'),
-    kargo: ekran.indexOf("{/* KARGO DURUMU — elle işaretlenen"),
     ciro: ekran.indexOf("{/* CİRO — kutu düzenine girmiyor"),
     net: ekran.indexOf("{/* NET-1 VE NET-2 YAN YANA"),
+    adet: ekran.indexOf('etiket={t("satisAdedi")}'),
+    iade: ekran.indexOf('etiket={t("iadeKisa")}'),
+    huni: ekran.indexOf('{t("huniEtiketi")}'),
   };
   kontrol(
-    "beş kutunun hepsi bulundu",
+    "altı kart + huni satırının hepsi bulundu",
     Object.values(yerler).every((d) => d > 0),
     yerler,
   );
-  kontrol("1. ADET", yerler.adet < yerler.kargo);
-  kontrol("2. KARGOYA VERİLEN — ciroDAN ÖNCE", yerler.kargo < yerler.ciro);
-  kontrol("3. CİRO", yerler.ciro < yerler.net);
-  kontrol("4-5. NET-1 ve NET-2 sonda", yerler.net > yerler.ciro);
+  kontrol("1. CİRO önde", yerler.ciro < yerler.net);
+  kontrol("2. NET-1/NET-2 cirodan sonra, adetten önce", yerler.net < yerler.adet);
+  kontrol("3. SATIŞ ADEDİ, sonra İADE", yerler.adet < yerler.iade);
+  kontrol("4. HUNİ satırı ızgaranın ALTINDA", yerler.iade < yerler.huni);
 
   /** YAPIŞKAN ÇUBUK — panelde açık. */
   kontrol(
@@ -4670,13 +4695,20 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
    * adı ondan gelmez. `sr-only` düşseydi ekran okuyucu "bağlantı" deyip
    * NEREYE gittiğini söyleyemezdi — ve bunu hiçbir göz testi göstermez.
    */
+  /**
+   * ⚠ K248 ÖLÇÜTLERİ ÇİPE TAŞINDI (K254). ESKİ GEREKÇE (silinmiyor): görünür
+   * etiket yayılan bağlantının İÇİNDE değildi, bu yüzden `sr-only` etiketi
+   * ayrıca gerekiyordu. NİYE ESKİDİ: çipte etiket bağlantının İÇİNDE —
+   * erişilebilir ad içerikten geliyor, ikinci bir sr-only kopya artık
+   * TEKRAR olurdu (ekran okuyucu aynı adı iki kez okur).
+   */
   kontrol(
-    "kutucuk EKRAN OKUYUCU etiketini taşıyor (sr-only)",
-    /<span className="sr-only">\{etiket\}<\/span>/.test(kutu),
+    "çip etiketi GÖRÜNÜR ve bağlantının İÇİNDE",
+    /<span className=\"min-w-0 truncate\">\{etiket\}<\/span>/.test(kutu),
   );
   kontrol(
-    "  ...ve GÖRÜNÜR etiketi ayrıca çiziyor",
-    /text-muted-foreground min-w-0 text-xs[^"]*">\s*\{etiket\}/.test(kutu),
+    "  ...ve sr-only KOPYA yok (ad iki kez okunmaz)",
+    !/sr-only[^<]*<\/span>\s*\{etiket\}/.test(kutu) && !/<span className=\"sr-only\">\{etiket\}/.test(kutu),
   );
   /**
    * ⛔ DOKUNMA ALANI ŞERİDE GEÇİNCE KAYBOLMAZ (İlke #8, 44 px). Küçülen
@@ -4684,12 +4716,12 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
    * yapar; iki hedef de ayrı ayrı ölçülüyor (kutu · ilerleme bağlantısı).
    */
   kontrol(
-    "kutucuğun kendisi 44 px (min-h-11)",
-    /hover:bg-muted\/60 relative flex min-h-11/.test(kutu),
+    "çipin kendisi 44 px (min-h-11)",
+    /inline-flex min-h-11 items-center gap-1\.5 rounded-md/.test(kutu),
   );
   kontrol(
     "  ...ilerleme bağlantısı da 44 px",
-    /relative z-10 inline-flex min-h-11/.test(kutu),
+    /inline-flex min-h-11 items-center rounded-md px-1\.5/.test(kutu),
   );
 }
 
@@ -4710,6 +4742,202 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   kontrol(
     "  ...ve kap SARABILIYOR (flex-wrap)",
     /flex flex-wrap items-center/.test(pasta),
+  );
+}
+
+/**
+ * === UST KABUK + TEK SATIR SUZGEC (K252, 23.09.2026) ===================
+ * Kullanici canli panele bakip tek bir lira gormeden yedi satir kabuk
+ * saydi. Suzgec 11 dugmeyle uc satirdi; simdi bes hizli donem + «Ozel
+ * aralik» acilir, kanal ve kiyas AYNI satirda. Kullanici karari: HER
+ * ekranda (Ilke #10).
+ * *** DEGER TESTLERI: liste matematigi govdeden okunuyor, kaynak taranmiyor.
+ */
+{
+  const liste = LISTE_PENCERELERI as readonly string[];
+  const hizli = HIZLI_PENCERELER as readonly string[];
+  const katlanan = KATLANAN_PENCERELER as readonly string[];
+  /** * TABAN DOLULUGU: bos hizli liste her kosulu saglar. */
+  kontrol("hizli pencereler DOLU (>= 3)", hizli.length >= 3);
+  /**
+   * *** SIRA `LISTE_PENCERELERI`NIN SIRASIDIR (DUN onde, 21.08.2026): hizli
+   * liste ayri bir sira uyduramaz. Indisler listede KESIN ARTAN olmali.
+   */
+  kontrol(
+    "hizli pencereler LISTE sirasini koruyor (alt kume, ayni sira)",
+    hizli.every((p, k) => liste.indexOf(p) >= 0 && (k === 0 || liste.indexOf(p) > liste.indexOf(hizli[k - 1]!))),
+  );
+  kontrol("  ...DUN onde, BUGUN ikinci", hizli[0] === "DUN" && hizli[1] === "BUGUN");
+  /**
+   * *** HICBIR PENCERE KAYBOLMADI: hizli + katlanan + OZEL == liste. Yer
+   * imindeki `pencere=SON_3_AY` hala bir dugmeye sahip - bir tik otede.
+   */
+  kontrol(
+    "hizli + katlanan + OZEL = LISTE (pencere kaybolmadi)",
+    [...hizli, ...katlanan, "OZEL"].sort().join() === [...liste].sort().join(),
+  );
+  kontrol(
+    "  ...ve hizli ile katlanan KESISMIYOR",
+    hizli.every((p) => !katlanan.includes(p)),
+  );
+  const hizliKiyas = HIZLI_KIYAS as readonly string[];
+  kontrol(
+    "hizli kiyas tabanlari DOLU ve KIYAS_ANAHTARLARI icinde",
+    hizliKiyas.length >= 1 && hizliKiyas.every((k) => (KIYAS_ANAHTARLARI as readonly string[]).includes(k)),
+  );
+
+  const cubuk = readFileSync("src/components/suzgec-cubugu.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  /** * OLCUT KULLANIMA BAGLI: `.map(` cagrisi, ad degil. */
+  kontrol("cubuk HIZLI pencereleri CIZIYOR", /HIZLI_PENCERELER\.map\(/.test(cubuk));
+  kontrol(
+    "  ...KATLANAN pencereler «Ozel aralik» acilirinda CIZILIYOR",
+    /ozelAcik \?[\s\S]{0,400}?KATLANAN_PENCERELER\.map\(/.test(cubuk),
+  );
+  /**
+   * *** SECILI SEY GORUNMEZ OLAMAZ (Ilke #5): secili pencere acilirin
+   * icindekilerden biriyse dugme onun ADINI yazar, «Ozel aralik» degil.
+   */
+  kontrol(
+    "  ...katlanan secim dugmede ADIYLA yaziyor",
+    /katlananSecili\s*\?\s*tPencere\(PENCERE_ANAHTARI\[/.test(cubuk),
+  );
+  kontrol(
+    "  ...eski 11 dugmelik LISTE dolasimi KALKTI",
+    !/LISTE_PENCERELERI\.filter/.test(cubuk),
+  );
+
+  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol(
+    "panel alt satiri aralik + pencere + kanal yaziyor",
+    /t\("altBaslikOzet",[\s\S]{0,200}?pencere:[\s\S]{0,120}?kanal:/.test(sayfa),
+  );
+  /** * KIYAS AYNI SATIRDA: cubuga yuva olarak VERILIYOR (nitelik degil, deger). */
+  kontrol(
+    "kiyas secicisi suzgec cubugunun ICINDE",
+    /<SuzgecCubugu[\s\S]{0,900}?kiyas=\{kiyasSecici\}/.test(sayfa),
+  );
+  /** * «3 AY ONCESI» KALKMADI: adreste seciliyse dugmesi cizilir. */
+  kontrol(
+    "  ...hizlida olmayan SECILI kiyas da dugme aliyor",
+    /!\(HIZLI_KIYAS as readonly string\[\]\)\.includes\(kiyasTuru\)[\s\S]{0,80}?\[kiyasTuru\]/.test(sayfa),
+  );
+  kontrol(
+    "  ...eski ayri kiyas satiri KALKTI",
+    !/KIYAS_ANAHTARLARI\.map/.test(sayfa),
+  );
+}
+
+/**
+ * === ALTI HUKUM KARTI + HUNI INCE SATIR (K253, 23.09.2026) =============
+ * Demo: Brut ciro · NET-1 · NET-2 · marj · Satis adedi · Iade tek sirada;
+ * uc huni sayisi (satin alinan · mal kabul · kargoya verilen) altta ince
+ * satir. 01.09 karari CEVRILMEDI: huni yasiyor, yalniz yer degistirdi.
+ */
+{
+  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("hukum izgarasi ALTI sutun (kar gorunurken)", /xl:grid-cols-6/.test(sayfa));
+  kontrol("  ...eski sekiz sutun KALKTI", !/lg:grid-cols-8/.test(sayfa));
+  /**
+   * *** IADE KARTI VE YONU: iade ARTISI kotudur. `artisIyiMi = false` dusseydi
+   * iade artinca rozet YESIL yanardi - yanlis bir mujde.
+   */
+  kontrol(
+    "iade kendi karti ve rozeti TERS yonlu (artis kotu)",
+    /etiket=\{t\("iadeKisa"\)\}[\s\S]{0,700}?kiyasRozeti\([\s\S]{0,220}?\(n\) => String\(n\),\s*false,/.test(sayfa),
+  );
+  /** * AYNI SAYI IKI KARTTA YAZILMAZ: satis kartindaki eski iade notu KALKTI. */
+  kontrol(
+    "  ...satis kartinda iade notu TEKRAR ETMIYOR",
+    !/t\("iadeAdedi", \{ sayi: blok\.toplamIadeAdedi \}\)/.test(sayfa),
+  );
+  /**
+   * *** HUNI KAYBOLMADI: dort cip, ayni adres kuruculari, ayni sayilar.
+   * Olcut cip BLOGUNA daraltilir; `t("siparisAdedi")` dosyada baska yerde de
+   * gecebilir (eski kutu). Blok = huniEtiketi'nden sonraki 3500 karakter.
+   */
+  const huniBas = sayfa.indexOf("t(\"huniEtiketi\")");
+  kontrol("huni satiri CIZILIYOR", huniBas >= 0);
+  const huni = huniBas >= 0 ? sayfa.slice(huniBas, huniBas + 3500) : "";
+  for (const [ad, desen] of [
+    ["satin alinan", /t\("siparisAdedi"\)/],
+    ["mal kabul", /t\("malKabulAdedi"\)/],
+    ["kargoya verilen", /kargoAdresi\("verildi"\)/],
+    ["kargo bekleyen", /kargoAdresi\("bekleyen"\)/],
+    ["iki tarih ekseni notu", /t\("kargoEkseniNotu"\)/],
+  ] as const) {
+    kontrol(`  ...huni: ${ad}`, desen.test(huni));
+  }
+  /**
+   * *** ROZET BICIMI DEMODAN: «▲ %8 · onceki 29.150». Onceki DEGER kanittir;
+   * dusseydi rozet yalniz yuzde yazar ve okuyan neye gore oldugunu bilemezdi.
+   */
+  const rBas = sayfa.indexOf("function kiyasRozeti(");
+  const rSon = sayfa.indexOf("function oranKiyasRozeti(");
+  kontrol("kiyasRozeti govdesi bulundu", rBas >= 0 && rSon > rBas);
+  const rozet = rBas >= 0 && rSon > rBas ? sayfa.slice(rBas, rSon) : "";
+  kontrol(
+    "kiyas rozeti ONCEKI DEGERI yaziyor",
+    /tRapor\("kiyasOncekiKisa"\)[\s\S]{0,40}?bicimle\(onceki\)/.test(rozet),
+  );
+  kontrol(
+    "  ...ve yuzde varsa yuzdeyi, yoksa mutlak farki",
+    /d\.yuzde === null[\s\S]{0,80}?bicimle\(Math\.abs\(d\.mutlak\)\)[\s\S]{0,80}?bicim\.yuzde\(Math\.abs\(d\.yuzde\)\)/.test(rozet),
+  );
+}
+
+/**
+ * === GOREV SERIDI — TEK SATIR, IKI GRUP (K254, 23.09.2026) ==============
+ * Iki kart karari (20.08) cevrildi, gerekcesi kodda duruyor: iki emek ayri
+ * kalir — kartla degil, ince ayrac + grup ikonuyla.
+ */
+{
+  const kutu = readFileSync("src/app/gorev-kutusu.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol(
+    "serit basligi CIZILIYOR («Bugun ne yapmaliyim»)",
+    /text-muted-foreground text-xs font-medium\">\s*\{t\("baslik"\)\}/.test(kutu),
+  );
+  /** * IKI EMEK AYRI KALIR (20.08 gerekcesi): ayrac + grup ikonu, grup basina. */
+  kontrol(
+    "gruplar ayrac + ikonla AYRILIYOR (20.08 gerekcesi yasiyor)",
+    /GOREV_GRUPLARI\.map[\s\S]{0,300}?bg-border hidden h-5 w-px[\s\S]{0,200}?GRUP_IKONU\[grup\]|GRUP_IKONU\[grup\][\s\S]{0,300}?bg-border hidden h-5 w-px/.test(kutu),
+  );
+  kontrol(
+    "  ...ve iki grup da gezdiriliyor (GOREV_GRUPLARI, elle liste degil)",
+    /GOREV_GRUPLARI\.map\(/.test(kutu) && !/<TekKart/.test(kutu),
+  );
+  /**
+   * *** SURE METNI SAYININ YERINE GECER, yanina degil (tarife cipi).
+   * Ilk yazim `{sureMetni}` VARLIGINA bakiyordu ve «{gorev.sayi} {sureMetni}»
+   * mutanti da o deseni tasidigi icin YESIL kaldi (harness yakaladi). Olcut
+   * sure DALINA daraltildi: dalda `gorev.sayi` gecemez.
+   */
+  {
+    const sb = kutu.indexOf("sureMetni !== undefined ? (");
+    const se = sb >= 0 ? kutu.indexOf(") : (", sb) : -1;
+    const sureDali = sb >= 0 && se > sb ? kutu.slice(sb, se) : "";
+    kontrol("sure dali kesilebildi", sureDali.length > 20);
+    kontrol(
+      "sure metni rakamin YERINE yaziliyor (dalda gorev.sayi YOK)",
+      /\{sureMetni\}/.test(sureDali) && !/gorev\.sayi/.test(sureDali),
+    );
+  }
+  /**
+   * *** SIFIR CIP BAGLANTI DEGIL (Ilke #2) — PANEL KOPYASI. Ayni olcut suzgec
+   * bekcisinde de var; ama mutasyon harness'i PANEL bekcisini kosturuyor ve
+   * «sifir cip baglanti oldu» mutanti oradan kacti. Olcut korumanin kostugu
+   * yerde durur.
+   */
+  kontrol(
+    "sifir cip DUZ YAZI, bekleyen cip BAGLANTI (Ilke #2)",
+    /gorev\.temizMi \? \([\s\S]{0,120}?<span className=\{sinif\}>\{govde\}<\/span>[\s\S]{0,80}?<Link href=\{gorev\.adres\} className=\{sinif\}>/.test(kutu),
   );
 }
 
