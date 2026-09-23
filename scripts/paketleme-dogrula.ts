@@ -531,7 +531,16 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
       const son = yorumsuz.indexOf("take: URUN_SIPARIS_TAVANI", bas);
       if (son < 0) return false;
       const blok = yorumsuz.slice(bas, son);
-      return blok.includes("iptalTarihi: null") && blok.includes("shippedAt: null");
+      /**
+       * ⛔ ÇIPLAK `shippedAt: null` YASAK — küme ORTAK gövdeden gelir
+       * (K60). Bunu `kargo-bekleyen:dogrula` push anında yakaladı; ölçüt
+       * burada da açıkça duruyor ki aynı hata bir daha yazılmasın.
+       */
+      return (
+        blok.includes("iptalTarihi: null") &&
+        blok.includes("...KARGO_BEKLEYEN") &&
+        !/shippedAt:\s*null/.test(blok)
+      );
     })(),
   );
   /** ⚠ SESSİZ KESME YOK: tavanı aşan varsa ekran bunu SÖYLER. */

@@ -157,11 +157,20 @@ export async function paketlemeIcinAra(kod: string): Promise<PaketAramasi> {
          * Onay bekleyen sipariş de listeye girer: kullanıcı açtığında ekran
          * zaten `ONAY_BEKLIYOR` diyecek ve ne yapacağını söyleyecek.
          */
+        /**
+         * ⛔ KÜME EKRANIN KENDİ ARAMASIYLA AYNI OLMAK ZORUNDA (İlke #10):
+         * çıplak `shippedAt: null` burada YASAK ve `kargo-bekleyen:dogrula`
+         * bunu yakaladı — içe aktarılmış, henüz onaylanmamış sipariş
+         * "kargo bekliyor" DEĞİLDİR (K60/K164). Önerdiğim sipariş, üstüne
+         * basıldığında ekranın AÇABİLECEĞİ sipariş olmalı; başka bir kümeden
+         * önerirsem kullanıcıyı kendi ekranının bulamadığı bir kayda yollarım.
+         * ⚠ `AND` ÇAKIŞMASI YOK: bu sorguda kardeş `AND`/`OR` bulunmuyor.
+         */
         const siparisler = await prisma.sale.findMany({
           where: {
             items: { some: { variantId: { in: varyantIdleri } } },
+            ...KARGO_BEKLEYEN,
             iptalTarihi: null,
-            shippedAt: null,
           },
           select: {
             code: true,

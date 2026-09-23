@@ -60,6 +60,26 @@ tutulup okutulabilir; "bu bir ürün" demek için aktiflik şart değil.
 **zaten bayattı** (K237'de ikinci çağıran doğmuştu); susturulmadı,
 güncellendi ve üç çağıranın her biri gerekçesiyle yazıldı.
 
+### ③b DESEN YASAĞI İŞİNİ YAPTI — PUSH'U DURDURDU
+
+İlk yazımda öneri sorgusu çıplak `shippedAt: null` taşıyordu ve
+`kargo-bekleyen:dogrula` push anında **KIRMIZI** yandı (151/152):
+
+    ✗ ② çıplak `shippedAt: null` yazan BEYANSIZ dosya yok
+         beyansız: src/app/paketle/actions.ts
+
+⛔ Ve bu bir biçim uyarısı DEĞİLDİ: `KARGO_BEKLEYEN` kümesi çıplak
+koşuldan **DAR** — içe aktarılmış, henüz onaylanmamış sipariş kargo
+beklemez (K60/K164). Çıplak koşulla kalsaydı ekran, **kendi aramasının
+BULAMAYACAĞI** bir siparişi önerirdi: kullanıcı düğmeye basar, hiçbir şey
+açılmaz. Küme ortak gövdeye bağlandı (İlke #10) ve hem bekçi ölçütü hem
+mutasyon o yöne çevrildi.
+
+> **Muafiyet YAZILMADI.** `ISTISNALAR`a gerekçe yazmak kolay yoldu ve
+> yanlış kümeyi kayıt altına alıp **meşrulaştırırdı.**
+> _(Anayasa: "düzeltmenin çaresi dosya listesi değil, desen yasağıdır" —
+> yasak yarın açılan okuyucuyu da yakalıyor, nitekim beni yakaladı.)_
+
 ### ③ ÖLÇÜLDÜ
 
     paketleme:dogrula              112 ölçüt YEŞİL (10'u yeni)

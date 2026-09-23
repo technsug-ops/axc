@@ -61,13 +61,13 @@ const MUTASYONLAR: Mutasyon[] = [
       "K121 dersi: sunucu dogru cevabi uretir, ekranda karsiligi yoktur ve tur yesil yanar",
   },
   {
-    ad: "KARGOYA VERILMIS SIPARIS DE ONERILIYOR",
+    ad: "ORTAK KUME BIRAKILDI - ciplak shippedAt kosuluna donuldu",
     yon: "FAZLADAN",
     dosya: EYLEM,
-    bul: "            shippedAt: null,\n          },\n          select: {\n            code: true,",
-    koy: "          },\n          select: {\n            code: true,",
+    bul: "            ...KARGO_BEKLEYEN,",
+    koy: "            shippedAt: null,",
     bozdugu:
-      "kullanici zaten kargoya verilmis bir siparisi acar ve 'kargoya verilmis' duvarina toslar - yapamayacagi ise yollanir",
+      "ice aktarilmis/onaysiz siparis de onerilir; kullanici ustune basar, ekranin kendi aramasi onu BULAMAZ (K60 kumesi disinda)",
   },
   {
     ad: "ORTAK GOVDE BIRAKILDI - ekran kendi arama kuralini kurdu",
