@@ -2501,6 +2501,481 @@ export default async function AnaSayfa({
           </div>
         ) : null}
 
+        {/*
+          ══════════ PARA EN ÜSTTE — 14.08 KARARI ÇEVRİLDİ (K250) ══════════
+          Kullanıcı kararı 23.09.2026. Panele bakıp «dağ fare doğurdu» dedi:
+          ekranda tek bir lira görmeden önce yedi satır kabuk vardı (dönem
+          satırı · başlık · 11 dönem düğmesi · kanal süzgeci · karşılaştır ·
+          afiş), para KATLANIN ALTINDA kalıyordu.
+
+          ⛔ ESKİ GEREKÇE SİLİNMİYOR (mimar kararı 14.08.2026):
+          _«Panel açılışında EYLEM üstte, rapor altta.»_ O gün doğruydu —
+          panel bir İŞ LİSTESİ gibi kurulmuştu ve soru «şimdi ne yapacağım»dı.
+          NİYE ÇEVRİLDİ: o tarihten sonra panel hüküm yeri oldu (İlke #13),
+          döküm kendi sayfalarına taşındı (K244) ve buraya NET-2 marjı ile
+          kanal hükmü geldi (K245 · K246). Artık ilk soru «bugün ne kazandım».
+          Eylem kutuları KAYBOLMUYOR, bir satır aşağı iniyor.
+
+          ⚠ «HÜKÜM → GRAFİK» SIRASI BOZULMADI (21.08.2026): kural grafiğin
+          hükümden ÖNCE gelmemesiydi. Hüküm yukarı çıktı, grafik hâlâ onun
+          ALTINDA — araya afiş ve eylem kutuları girdi, sıra değişmedi.
+        */}
+        {/* Para birimi süzgeci: yalnız birden fazla varsa görünür. Süzgeç
+            çubuğuna girmiyor çünkü "tümü" seçeneği YOK — iki para birimi tek
+            toplamda buluşmaz, her zaman biri seçili olmalıdır. */}
+        {paraSecenekleri.length > 1 ? (
+          <div className="flex flex-wrap gap-2">
+            {paraSecenekleri.map((para) =>
+              suzgecDugmesi(para, paraAdresi(para), para === seciliPara),
+            )}
+          </div>
+        ) : null}
+
+        {/* ==================== DÖNEM — KANAL BAZINDA ==================== */}
+        {bloklar.length === 0 ? (
+          <Card>
+            <CardContent className="text-muted-foreground py-8 text-center text-sm">
+              {t("donemBos")}
+            </CardContent>
+          </Card>
+        ) : (
+          bloklar.map((blok) => {
+            /**
+             * ⚠ KANAL PAYLARI ARTIK BURADA HESAPLANMIYOR — pazaryeri kartları
+             * üst sıraya taşındı ve payları `ustPaylar` olarak orada bir kez
+             * hesaplanıyor. İki yerde hesaplansaydı yuvarlama artığı farklı
+             * dağıtılıp aynı kanal iki farklı yüzde gösterebilirdi.
+             */
+            /** Bu para biriminin kıyas dönemi bloğu; yoksa null. */
+            const kb = kiyasBlogu(blok.paraBirimi);
+            /**
+             * NET-2 MARJI VE DEĞİŞİMİ — saf gövdeden (K245).
+             * ⚠ Payda BRÜT CİRO: paneldeki "satış fiyatına göre" oranıyla AYNI
+             * tanım. İki ekran aynı kavramı farklı hesaplasaydı hangisinin doğru
+             * olduğu sorulurdu.
+             */
+            const marjD = oranDegisimi(
+              blok.toplamNet2,
+              blok.toplamGelir,
+              kb?.toplamNet2 ?? null,
+              kb?.toplamGelir ?? null,
+            );
+            return (
+              <Card key={blok.paraBirimi} className="min-w-0">
+                <CardHeader>
+                  <CardTitle>
+                    {t("donemBaslik")} · {blok.paraBirimi}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* ---------------- KIYAS YOKSA SÖYLE ----------------
+                    ⚠ 18.08.2026 — Halil: "kıyas rozeti sessiz kaldı, veri
+                    yok mu değişim yok mu anlaşılmıyor."
+
+                    Sessizlik BİLİNÇLİYDİ (15.08.2026): kıyas dönemi bomboşken
+                    her kutuya "karşılaştırılamaz" basmak beş kez aynı cümle
+                    demekti ve rakamların önüne geçiyordu. O karar DURUYOR.
+
+                    Eksik olan yerdi: ibare dönem seçicisinin altında, yani
+                    telefonda rakamlardan EKRANLAR ötede kalıyordu. Bilgi
+                    vardı, KARAR ANINDA görünmüyordu — Ders 3'ün aynısı.
+
+                    Çözüm ikisini de korur: kutu başına DEĞİL, kart başına BİR
+                    satır, rakamların hemen üstünde. */}
+                  {kiyasBos ? (
+                    <p className="text-muted-foreground text-xs">
+                      {t("kiyasVeriYok")}
+                    </p>
+                  ) : null}
+
+                  {/* ---------------- BÜYÜK RAKAMLAR ----------------
+                    SIRA: ADET → KARGOYA VERİLEN → CİRO → NET-1 → NET-2.
+                    _Halil kararı 18.08.2026; ciro ile kargo yer değiştirdi._
+
+                    Sıra OPERASYON HUNİSİDİR: göz önce "kaç iş var", sonra
+                    "kaçı çıktı", ancak ondan sonra paraya bakar. Ciro
+                    kargodan önce durunca sayfa para ile başlıyor ve günün
+                    işi arada kalıyordu.
+
+                    ⚠ SIRA RASTGELE DEĞİL — yeni kutu eklenirken hunideki
+                    yerine konur, sona eklenmez. */}
+                  <div
+                    /* ⛔ YEDİ KUTU (K126, kullanıcı 01.09.2026): grafiğin DÖRT
+                       kalemi + Ciro + NET-1 + NET-2. Kullanıcının cümlesi:
+                       _"seçili dönem kartının başındaki 4 kart yukarıda
+                       saydığım grafikteki kartlardan oluşmalı, sonra Ciro,
+                       Net kâr 1 ve Net kâr 2 gelmeli — yani 7 kart istiyorum."_
+                       ⚠ `lg:grid-cols-7` yalnız kâr görünürken: izin yoksa
+                       dört kutu kalır ve yedi sütun boş yer bırakırdı. */
+                    className={`grid gap-2 sm:grid-cols-2 md:grid-cols-4 ${karGorunur ? "lg:grid-cols-8" : ""}`}
+                  >
+                    {/* ---------------- SATIN ALINAN — HUNİNİN GERÇEK BAŞI -------
+                      K126: iş sipariş vermekle başlar, mal kabulle değil.
+                      `purchasedAt` ekseninde sayılıyor ve bağlantı o ekseni
+                      ADRESTE taşıyor (K114) — sayı ile liste ayrışmasın.
+
+                      ⛔ MAL KABUL KUTUSUNUN KOPYASI DEĞİL: K114'te ölçüldü,
+                      iki eksen ortanca 3 gün arayla düşüyor ve yalnız %1,4
+                      örtüşüyor. Son 30 günde sipariş 168 ↔ kabul 152. */}
+                    <IstatistikKutusu
+                      etiket={t("siparisAdedi")}
+                      cocuk={
+                        <Baglanti
+                          href={suzgecAdresi(
+                            "/alimlar",
+                            {},
+                            { ...donemParametreleri(), eksen: "siparis" },
+                          )}
+                        >
+                          {alim.siparisGunluk.length}
+                        </Baglanti>
+                      }
+                      altNot={
+                        karGorunur ? (
+                          <span className="text-muted-foreground text-xs">
+                            {t("siparisToplamAlim", {
+                              tutar: bicim.para(
+                                alim.siparisGunluk.reduce((a, x) => a + x.tutar, 0),
+                                seciliPara,
+                              ),
+                            })}
+                          </span>
+                        ) : undefined
+                      }
+                    />
+
+                    {/* ---------------- ALIM ADEDİ — HUNİNİN BAŞI ----------------
+                      Kullanıcı sırası 21.08.2026: alım → satış → kargo →
+                      ciro → NET-1 → NET-2.
+
+                      Huninin başına geçmesi mantıklı: mal ÖNCE alınır, sonra
+                      satılır. Ve "günlük emek" olarak istendi — kaç alım
+                      girildiği, kaç satış girildiği kadar günün işidir.
+
+                      ⚠ DÖNEM SÜZGECİNE BAĞLI, kardeşleriyle aynı pencereyi
+                      paylaşıyor; kıyas rozetini de onlarla aynı motordan
+                      alıyor. */}
+                    <IstatistikKutusu
+                      etiket={t("malKabulAdedi")}
+                      cocuk={
+                        <Baglanti
+                          href={suzgecAdresi(
+                            /**
+                             * ⚠ HEDEF DEĞİŞTİ (K112a): `/alimlar` SİPARİŞ
+                             * tarihiyle süzüyor, bu rakam ise KABUL tarihiyle
+                             * sayılıyor. Eski hedefte kalsaydı sayı ile liste
+                             * sessizce ayrışırdı (İlke #16).
+                             */
+                            "/mal-kabul",
+                            {},
+                            donemParametreleri(),
+                          )}
+                        >
+                          {alim.adet}
+                        </Baglanti>
+                      }
+                      rozet={kiyasRozeti(
+                        alim.adet,
+                        kiyasAlim?.adet ?? null,
+                        (n) => String(n),
+                      )}
+                      /* ---------------- ALT NOT: ÜRÜN ADEDİ + DÖNEMİN ALIM TUTARI
+                       İlke #15 — tek tek gösterilen yerde toplam da olur.
+                       Kullanıcı KDV dengesi için aylık alım tutarını takip
+                       ediyor ve alım listesinde bu toplam ZATEN var; panelde
+                       yokken aynı rakam için ikinci ekrana gitmek gerekiyordu.
+
+                       ⚠ ÜRÜN ADEDİ EKLENDİ (K220, 16.09.2026) — kullanıcı
+                       bulgusu: büyük rakam (`alim.adet`) kaç mal kabul KAYDI
+                       girildiğini sayıyor, `/mal-kabul` günün girişleri ekranı
+                       ise aynı gün için ÜRÜN ADEDİNİ gösteriyor; ikisi de
+                       doğru ama etiket ("Mal kabul") hangisi olduğunu
+                       söylemiyordu. Çare rakamı değiştirmek değil, öteki
+                       rakamı da GÖRÜNÜR kılmaktı.
+
+                       ⚠ ÜRÜN ADEDİ OPERASYONELDİR, PARA DEĞİL — büyük rakamla
+                       aynı izinsiz görünür. Yalnız TUTAR `satis.kar.gor`
+                       iznine bağlı kalır — eski davranış korundu.
+
+                       ⚠ Bu bloğun para birimi süzgeci var; yalnız o para
+                       biriminin toplamı yazılır, karışık toplam üretilmez. */
+                      altNot={
+                        <span>
+                          {t("malKabulUrunAdedi", { adet: alim.urunAdedi })}
+                          {karGorunur
+                            ? " · " +
+                              t("alimToplami", {
+                                tutar: bicim.para(
+                                  alim.toplam.find(
+                                    (x) => x.paraBirimi === blok.paraBirimi,
+                                  )?.tutar ?? 0,
+                                  blok.paraBirimi,
+                                ),
+                              })
+                            : ""}
+                        </span>
+                      }
+                    />
+                    <IstatistikKutusu
+                      etiket={t("satisAdedi")}
+                      cocuk={
+                        <Baglanti
+                          href={satisAdresi(
+                            seciliKanal ? { kanal: seciliKanal } : {},
+                          )}
+                        >
+                          {blok.toplamAdet}
+                        </Baglanti>
+                      }
+                      rozet={kiyasRozeti(
+                        blok.toplamAdet,
+                        kb?.toplamAdet ?? null,
+                        (n) => String(n),
+                      )}
+                      /* ADET KUTUSUNDA ADET, PARA KUTUSUNDA PARA.
+                       Ciro kutusu iadenin TUTARINI yazıyor; buraya ADEDİ
+                       geliyor. Aynı bilgi iki kez değil, aynı olayın iki
+                       ölçüsü — "3 iade" ile "−₺2.980" farklı sorulara cevap.
+
+                       AÇIK SIFIR: iade yoksa da satır yazılır. Yokluğundan
+                       "iade olmadı" sonucunu çıkarmak imkânsızdır. */
+                      altNot={
+                        <span>
+                          {t("iadeAdedi", { sayi: blok.toplamIadeAdedi })}
+                        </span>
+                      }
+                    />
+                    {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
+                      "Bekleyen" bugün ne yapılacağını söylediği için verilenle
+                      birlikte duruyor (kullanıcı kararı 14.08.2026) ve ikisi de
+                      o satışlara süzülmüş listeye götürüyor (İlke #2, #9).
+
+                      İKİ TARİH EKSENİ AYNI EKRANDA — alttaki not ZORUNLU.
+                      Ciro ve satış adedi SATIŞ tarihine, kargo SEVKİYAT
+                      tarihine göre süzülür. Not olmazsa kullanıcı "satış 2 ama
+                      kargo 6, neden tutmuyor" der ve panele güveni gider. */}
+                    <IstatistikKutusu
+                      /* SÜZGEÇ AÇIKKEN KANAL ADI BAŞLIKTA: kart hangi soruya
+                       cevap verdiğini kendisi söyler. */
+                      etiket={
+                        seciliKanal
+                          ? t("kargoDurumuKanal", {
+                              kanal:
+                                kanalSecenekleri.find(
+                                  ([k]) => k === seciliKanal,
+                                )?.[1] ?? seciliKanal,
+                            })
+                          : t("kargoDurumu")
+                      }
+                      cocuk={
+                        <Baglanti href={kargoAdresi("verildi")}>
+                          {blok.kargoyaVerilenAdet}
+                        </Baglanti>
+                      }
+                      kiyas={kiyasRozeti(
+                        blok.kargoyaVerilenAdet,
+                        kb?.kargoyaVerilenAdet ?? null,
+                        (n) => String(n),
+                      )}
+                      /* BEKLEYEN KARGO YAPILACAK İŞTİR — rozet amber yanar.
+                       Bekleyen yoksa rozet YOK: "iş yok" bir başarı değil,
+                       sıradan hâldir; yeşile boyamak her gün kutlama olurdu. */
+                      rozet={
+                        blok.kargoBekleyenAdet > 0 ? (
+                          <DurumRozeti durum="uyari">
+                            <Baglanti href={kargoAdresi("bekleyen")}>
+                              {t("kargoBekleyen", {
+                                sayi: blok.kargoBekleyenAdet,
+                              })}
+                            </Baglanti>
+                          </DurumRozeti>
+                        ) : null
+                      }
+                      altNot={
+                        <span className="text-muted-foreground">
+                          {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
+                          <span className="block">{t("kargoEkseniNotu")}</span>
+                          <span className="block">
+                            {blok.kargoBekleyenAdet > 0
+                              ? t("kargoBekleyenNotu")
+                              : t("kargoBekleyenYok")}
+                          </span>
+                          {/* GENEL RESİM KAYBOLMASIN: süzgeç açıkken tüm kanal
+                            toplamı küçük satırda durur. Süzgeç yokken bu satır
+                            gereksiz tekrar olurdu. */}
+                          {tumKanalKargo ? (
+                            <span className="block">
+                              {t("kargoTumKanallar", {
+                                verilen: tumKanalKargo.verilen,
+                                bekleyen: tumKanalKargo.bekleyen,
+                              })}
+                            </span>
+                          ) : null}
+                        </span>
+                      }
+                    />
+                    {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
+                      satır (brüt · iade düşümü · net). Kendi bileşeni var ve
+                      panelin ciro gösterdiği dört yüzeyin hepsinde aynı
+                      (mimar kararı 13.08.2026). */}
+                    <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
+                      <span className="text-muted-foreground min-w-0 text-xs break-words">
+                        {t("ciro")}
+                      </span>
+                      <CiroSunumu
+                        boyut="kutu"
+                        brut={bicim.para(blok.toplamGelir, blok.paraBirimi)}
+                        iade={
+                          blok.toplamIadeTutari > 0
+                            ? bicim.para(blok.toplamIadeTutari, blok.paraBirimi)
+                            : null
+                        }
+                        net={bicim.para(
+                          blok.toplamGelir - blok.toplamIadeTutari,
+                          blok.paraBirimi,
+                        )}
+                      />
+                      {/* Kıyas BRÜT ciro üzerinden: iade etkisi ayrı bir
+                        kavram ve raporda da karşılaştırma dışında tutuluyor. */}
+                      {kiyasRozeti(
+                        blok.toplamGelir,
+                        kb?.toplamGelir ?? null,
+                        (n) => bicim.para(n, blok.paraBirimi),
+                      )}
+                    </div>
+                    {/* NET-1 VE NET-2 YAN YANA (kullanıcı isteği 14.08.2026:
+                      "net kâr 1, 2"). İkisi arasındaki fark ÖDENECEK KDV'dir;
+                      açıklama satırları bunu yazıyor ki hangisine bakılacağı
+                      tahmin edilmesin. */}
+                    {karGorunur ? (
+                      <>
+                        <IstatistikKutusu
+                          etiket={t("net1")}
+                          cocuk={bicim.para(blok.toplamNet1, blok.paraBirimi)}
+                          rozet={karRozeti(blok.toplamNet1)}
+                          kiyas={kiyasRozeti(
+                            blok.toplamNet1,
+                            kb?.toplamNet1 ?? null,
+                            (n) => bicim.para(n, blok.paraBirimi),
+                          )}
+                          altNot={
+                            <>
+                              {oranSatirlari(blok.toplamNet1, blok)}
+                              <span className="text-muted-foreground block">
+                                {t("net1Aciklama")}
+                              </span>
+                            </>
+                          }
+                        />
+                        {/* NET-2 BAŞROL. Beş kutu da aynı boydayken hiçbiri
+                          önemli görünmüyordu; oysa günün sonunda cebe giren
+                          rakam budur. Tek "bas" kutusu o yüzden burada. */}
+                        <IstatistikKutusu
+                          etiket={t("net2")}
+                          bas
+                          cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
+                          rozet={karRozeti(blok.toplamNet2)}
+                          kiyas={kiyasRozeti(
+                            blok.toplamNet2,
+                            kb?.toplamNet2 ?? null,
+                            (n) => bicim.para(n, blok.paraBirimi),
+                          )}
+                          altNot={
+                            <>
+                              {oranSatirlari(blok.toplamNet2, blok, true)}
+                              <span className="text-muted-foreground block">
+                                {t("net2Aciklama")}
+                              </span>
+                              {/* K170: devreden KDV — yalnız > 0 iken (İlke #49:
+                                  sıfır satır gizlenir, boş bir şey söylemesin). */}
+                              {blok.toplamDevreden > 0 ? (
+                                <span className="text-muted-foreground block">
+                                  {t("devredenKdv", {
+                                    tutar: bicim.para(
+                                      blok.toplamDevreden,
+                                      blok.paraBirimi,
+                                    ),
+                                  })}
+                                </span>
+                              ) : null}
+                            </>
+                          }
+                        />
+                        {/*
+                          NET-2 MARJI (K245) — KULLANICI TASARIM KARARI.
+                          ⛔ TÜM KUTULAR YEŞİLKEN HİÇBİRİ BİR ŞEY SÖYLEMEZ: ciro
+                          artıp marj gerilerse panelin söylemesi gereken şey
+                          tam budur ve tutar kutularının hiçbiri onu söylemiyor.
+                          ⚠ DEĞİŞİM PUAN CİNSİNDEN — `oranKiyasRozeti`.
+                        */}
+                        <IstatistikKutusu
+                          etiket={t("net2Marji")}
+                          cocuk={
+                            marjD.simdi === null
+                              ? t("marjHesaplanamaz")
+                              : bicim.yuzde(marjD.simdi)
+                          }
+                          kiyas={oranKiyasRozeti(marjD)}
+                          altNot={
+                            <span className="text-muted-foreground block">
+                              {t("net2MarjiAciklama")}
+                            </span>
+                          }
+                        />
+                      </>
+                    ) : null}
+                  </div>
+
+                  {/* --- kârı hesaplanamayanlar: SIFIR SAYILMAZ, söylenir ---
+                    Kâr göremeyen kullanıcıya gösterilmez: uyarı kâr hakkında ve
+                    "sorunluları gör" düğmesi kâr süzgecine gider — elinden
+                    gelecek bir iş yok, yalnız kafa karıştırır. */}
+                  {karGorunur &&
+                  (blok.hesaplanamayanAdet > 0 ||
+                    blok.hesaplanamayanIadeAdedi > 0) ? (
+                    /* UYARI KARTI — referanstaki bildirim kartının ta kendisi:
+                     sol şerit + doygun çip + metin + eylem. Önceden burada
+                     `amber-500/10` gibi ham Tailwind sınıfları vardı, yani
+                     palet dışından bir sarı; tek kapı kuralı deliniyordu. */
+                    <UyariKarti
+                      durum="uyari"
+                      ikon={TriangleAlert}
+                      baslik={
+                        blok.hesaplanamayanAdet > 0
+                          ? t("hesaplanamayan", { sayi: blok.hesaplanamayanAdet })
+                          : t("hesaplanamayanIade", {
+                              sayi: blok.hesaplanamayanIadeAdedi,
+                            })
+                      }
+                      altSatir={
+                        blok.hesaplanamayanAdet > 0 &&
+                        blok.hesaplanamayanIadeAdedi > 0
+                          ? t("hesaplanamayanIade", {
+                              sayi: blok.hesaplanamayanIadeAdedi,
+                            })
+                          : null
+                      }
+                      eylem={
+                        <Button
+                          asChild
+                          size="sm"
+                          variant="outline"
+                          className="h-11 md:h-8"
+                        >
+                          <Link href="/satislar?kar=eksik">
+                            {t("sorunlulariGor")}
+                            <ArrowRight />
+                          </Link>
+                        </Button>
+                      }
+                    />
+                  ) : null}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+
         {/* ═══════════════ ÜST SIRA: EYLEM + ÖNGÖRÜ YAN YANA ═══════════════
           14.08.2026 — PANEL DİKEY YIĞINDI, IZGARA OLDU.
           Her blok tam genişlikte alt alta duruyordu; 1400 px ekranda alanın
@@ -2662,461 +3137,6 @@ export default async function AnaSayfa({
         </div>
       </div>
 
-      {/* Para birimi süzgeci: yalnız birden fazla varsa görünür. Süzgeç
-          çubuğuna girmiyor çünkü "tümü" seçeneği YOK — iki para birimi tek
-          toplamda buluşmaz, her zaman biri seçili olmalıdır. */}
-      {paraSecenekleri.length > 1 ? (
-        <div className="flex flex-wrap gap-2">
-          {paraSecenekleri.map((para) =>
-            suzgecDugmesi(para, paraAdresi(para), para === seciliPara),
-          )}
-        </div>
-      ) : null}
-
-      {/* ==================== DÖNEM — KANAL BAZINDA ==================== */}
-      {bloklar.length === 0 ? (
-        <Card>
-          <CardContent className="text-muted-foreground py-8 text-center text-sm">
-            {t("donemBos")}
-          </CardContent>
-        </Card>
-      ) : (
-        bloklar.map((blok) => {
-          /**
-           * ⚠ KANAL PAYLARI ARTIK BURADA HESAPLANMIYOR — pazaryeri kartları
-           * üst sıraya taşındı ve payları `ustPaylar` olarak orada bir kez
-           * hesaplanıyor. İki yerde hesaplansaydı yuvarlama artığı farklı
-           * dağıtılıp aynı kanal iki farklı yüzde gösterebilirdi.
-           */
-          /** Bu para biriminin kıyas dönemi bloğu; yoksa null. */
-          const kb = kiyasBlogu(blok.paraBirimi);
-          /**
-           * NET-2 MARJI VE DEĞİŞİMİ — saf gövdeden (K245).
-           * ⚠ Payda BRÜT CİRO: paneldeki "satış fiyatına göre" oranıyla AYNI
-           * tanım. İki ekran aynı kavramı farklı hesaplasaydı hangisinin doğru
-           * olduğu sorulurdu.
-           */
-          const marjD = oranDegisimi(
-            blok.toplamNet2,
-            blok.toplamGelir,
-            kb?.toplamNet2 ?? null,
-            kb?.toplamGelir ?? null,
-          );
-          return (
-            <Card key={blok.paraBirimi} className="min-w-0">
-              <CardHeader>
-                <CardTitle>
-                  {t("donemBaslik")} · {blok.paraBirimi}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* ---------------- KIYAS YOKSA SÖYLE ----------------
-                  ⚠ 18.08.2026 — Halil: "kıyas rozeti sessiz kaldı, veri
-                  yok mu değişim yok mu anlaşılmıyor."
-
-                  Sessizlik BİLİNÇLİYDİ (15.08.2026): kıyas dönemi bomboşken
-                  her kutuya "karşılaştırılamaz" basmak beş kez aynı cümle
-                  demekti ve rakamların önüne geçiyordu. O karar DURUYOR.
-
-                  Eksik olan yerdi: ibare dönem seçicisinin altında, yani
-                  telefonda rakamlardan EKRANLAR ötede kalıyordu. Bilgi
-                  vardı, KARAR ANINDA görünmüyordu — Ders 3'ün aynısı.
-
-                  Çözüm ikisini de korur: kutu başına DEĞİL, kart başına BİR
-                  satır, rakamların hemen üstünde. */}
-                {kiyasBos ? (
-                  <p className="text-muted-foreground text-xs">
-                    {t("kiyasVeriYok")}
-                  </p>
-                ) : null}
-
-                {/* ---------------- BÜYÜK RAKAMLAR ----------------
-                  SIRA: ADET → KARGOYA VERİLEN → CİRO → NET-1 → NET-2.
-                  _Halil kararı 18.08.2026; ciro ile kargo yer değiştirdi._
-
-                  Sıra OPERASYON HUNİSİDİR: göz önce "kaç iş var", sonra
-                  "kaçı çıktı", ancak ondan sonra paraya bakar. Ciro
-                  kargodan önce durunca sayfa para ile başlıyor ve günün
-                  işi arada kalıyordu.
-
-                  ⚠ SIRA RASTGELE DEĞİL — yeni kutu eklenirken hunideki
-                  yerine konur, sona eklenmez. */}
-                <div
-                  /* ⛔ YEDİ KUTU (K126, kullanıcı 01.09.2026): grafiğin DÖRT
-                     kalemi + Ciro + NET-1 + NET-2. Kullanıcının cümlesi:
-                     _"seçili dönem kartının başındaki 4 kart yukarıda
-                     saydığım grafikteki kartlardan oluşmalı, sonra Ciro,
-                     Net kâr 1 ve Net kâr 2 gelmeli — yani 7 kart istiyorum."_
-                     ⚠ `lg:grid-cols-7` yalnız kâr görünürken: izin yoksa
-                     dört kutu kalır ve yedi sütun boş yer bırakırdı. */
-                  className={`grid gap-2 sm:grid-cols-2 md:grid-cols-4 ${karGorunur ? "lg:grid-cols-8" : ""}`}
-                >
-                  {/* ---------------- SATIN ALINAN — HUNİNİN GERÇEK BAŞI -------
-                    K126: iş sipariş vermekle başlar, mal kabulle değil.
-                    `purchasedAt` ekseninde sayılıyor ve bağlantı o ekseni
-                    ADRESTE taşıyor (K114) — sayı ile liste ayrışmasın.
-
-                    ⛔ MAL KABUL KUTUSUNUN KOPYASI DEĞİL: K114'te ölçüldü,
-                    iki eksen ortanca 3 gün arayla düşüyor ve yalnız %1,4
-                    örtüşüyor. Son 30 günde sipariş 168 ↔ kabul 152. */}
-                  <IstatistikKutusu
-                    etiket={t("siparisAdedi")}
-                    cocuk={
-                      <Baglanti
-                        href={suzgecAdresi(
-                          "/alimlar",
-                          {},
-                          { ...donemParametreleri(), eksen: "siparis" },
-                        )}
-                      >
-                        {alim.siparisGunluk.length}
-                      </Baglanti>
-                    }
-                    altNot={
-                      karGorunur ? (
-                        <span className="text-muted-foreground text-xs">
-                          {t("siparisToplamAlim", {
-                            tutar: bicim.para(
-                              alim.siparisGunluk.reduce((a, x) => a + x.tutar, 0),
-                              seciliPara,
-                            ),
-                          })}
-                        </span>
-                      ) : undefined
-                    }
-                  />
-
-                  {/* ---------------- ALIM ADEDİ — HUNİNİN BAŞI ----------------
-                    Kullanıcı sırası 21.08.2026: alım → satış → kargo →
-                    ciro → NET-1 → NET-2.
-
-                    Huninin başına geçmesi mantıklı: mal ÖNCE alınır, sonra
-                    satılır. Ve "günlük emek" olarak istendi — kaç alım
-                    girildiği, kaç satış girildiği kadar günün işidir.
-
-                    ⚠ DÖNEM SÜZGECİNE BAĞLI, kardeşleriyle aynı pencereyi
-                    paylaşıyor; kıyas rozetini de onlarla aynı motordan
-                    alıyor. */}
-                  <IstatistikKutusu
-                    etiket={t("malKabulAdedi")}
-                    cocuk={
-                      <Baglanti
-                        href={suzgecAdresi(
-                          /**
-                           * ⚠ HEDEF DEĞİŞTİ (K112a): `/alimlar` SİPARİŞ
-                           * tarihiyle süzüyor, bu rakam ise KABUL tarihiyle
-                           * sayılıyor. Eski hedefte kalsaydı sayı ile liste
-                           * sessizce ayrışırdı (İlke #16).
-                           */
-                          "/mal-kabul",
-                          {},
-                          donemParametreleri(),
-                        )}
-                      >
-                        {alim.adet}
-                      </Baglanti>
-                    }
-                    rozet={kiyasRozeti(
-                      alim.adet,
-                      kiyasAlim?.adet ?? null,
-                      (n) => String(n),
-                    )}
-                    /* ---------------- ALT NOT: ÜRÜN ADEDİ + DÖNEMİN ALIM TUTARI
-                     İlke #15 — tek tek gösterilen yerde toplam da olur.
-                     Kullanıcı KDV dengesi için aylık alım tutarını takip
-                     ediyor ve alım listesinde bu toplam ZATEN var; panelde
-                     yokken aynı rakam için ikinci ekrana gitmek gerekiyordu.
-
-                     ⚠ ÜRÜN ADEDİ EKLENDİ (K220, 16.09.2026) — kullanıcı
-                     bulgusu: büyük rakam (`alim.adet`) kaç mal kabul KAYDI
-                     girildiğini sayıyor, `/mal-kabul` günün girişleri ekranı
-                     ise aynı gün için ÜRÜN ADEDİNİ gösteriyor; ikisi de
-                     doğru ama etiket ("Mal kabul") hangisi olduğunu
-                     söylemiyordu. Çare rakamı değiştirmek değil, öteki
-                     rakamı da GÖRÜNÜR kılmaktı.
-
-                     ⚠ ÜRÜN ADEDİ OPERASYONELDİR, PARA DEĞİL — büyük rakamla
-                     aynı izinsiz görünür. Yalnız TUTAR `satis.kar.gor`
-                     iznine bağlı kalır — eski davranış korundu.
-
-                     ⚠ Bu bloğun para birimi süzgeci var; yalnız o para
-                     biriminin toplamı yazılır, karışık toplam üretilmez. */
-                    altNot={
-                      <span>
-                        {t("malKabulUrunAdedi", { adet: alim.urunAdedi })}
-                        {karGorunur
-                          ? " · " +
-                            t("alimToplami", {
-                              tutar: bicim.para(
-                                alim.toplam.find(
-                                  (x) => x.paraBirimi === blok.paraBirimi,
-                                )?.tutar ?? 0,
-                                blok.paraBirimi,
-                              ),
-                            })
-                          : ""}
-                      </span>
-                    }
-                  />
-                  <IstatistikKutusu
-                    etiket={t("satisAdedi")}
-                    cocuk={
-                      <Baglanti
-                        href={satisAdresi(
-                          seciliKanal ? { kanal: seciliKanal } : {},
-                        )}
-                      >
-                        {blok.toplamAdet}
-                      </Baglanti>
-                    }
-                    rozet={kiyasRozeti(
-                      blok.toplamAdet,
-                      kb?.toplamAdet ?? null,
-                      (n) => String(n),
-                    )}
-                    /* ADET KUTUSUNDA ADET, PARA KUTUSUNDA PARA.
-                     Ciro kutusu iadenin TUTARINI yazıyor; buraya ADEDİ
-                     geliyor. Aynı bilgi iki kez değil, aynı olayın iki
-                     ölçüsü — "3 iade" ile "−₺2.980" farklı sorulara cevap.
-
-                     AÇIK SIFIR: iade yoksa da satır yazılır. Yokluğundan
-                     "iade olmadı" sonucunu çıkarmak imkânsızdır. */
-                    altNot={
-                      <span>
-                        {t("iadeAdedi", { sayi: blok.toplamIadeAdedi })}
-                      </span>
-                    }
-                  />
-                  {/* KARGO DURUMU — elle işaretlenen operasyonel rakam.
-                    "Bekleyen" bugün ne yapılacağını söylediği için verilenle
-                    birlikte duruyor (kullanıcı kararı 14.08.2026) ve ikisi de
-                    o satışlara süzülmüş listeye götürüyor (İlke #2, #9).
-
-                    İKİ TARİH EKSENİ AYNI EKRANDA — alttaki not ZORUNLU.
-                    Ciro ve satış adedi SATIŞ tarihine, kargo SEVKİYAT
-                    tarihine göre süzülür. Not olmazsa kullanıcı "satış 2 ama
-                    kargo 6, neden tutmuyor" der ve panele güveni gider. */}
-                  <IstatistikKutusu
-                    /* SÜZGEÇ AÇIKKEN KANAL ADI BAŞLIKTA: kart hangi soruya
-                     cevap verdiğini kendisi söyler. */
-                    etiket={
-                      seciliKanal
-                        ? t("kargoDurumuKanal", {
-                            kanal:
-                              kanalSecenekleri.find(
-                                ([k]) => k === seciliKanal,
-                              )?.[1] ?? seciliKanal,
-                          })
-                        : t("kargoDurumu")
-                    }
-                    cocuk={
-                      <Baglanti href={kargoAdresi("verildi")}>
-                        {blok.kargoyaVerilenAdet}
-                      </Baglanti>
-                    }
-                    kiyas={kiyasRozeti(
-                      blok.kargoyaVerilenAdet,
-                      kb?.kargoyaVerilenAdet ?? null,
-                      (n) => String(n),
-                    )}
-                    /* BEKLEYEN KARGO YAPILACAK İŞTİR — rozet amber yanar.
-                     Bekleyen yoksa rozet YOK: "iş yok" bir başarı değil,
-                     sıradan hâldir; yeşile boyamak her gün kutlama olurdu. */
-                    rozet={
-                      blok.kargoBekleyenAdet > 0 ? (
-                        <DurumRozeti durum="uyari">
-                          <Baglanti href={kargoAdresi("bekleyen")}>
-                            {t("kargoBekleyen", {
-                              sayi: blok.kargoBekleyenAdet,
-                            })}
-                          </Baglanti>
-                        </DurumRozeti>
-                      ) : null
-                    }
-                    altNot={
-                      <span className="text-muted-foreground">
-                        {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
-                        <span className="block">{t("kargoEkseniNotu")}</span>
-                        <span className="block">
-                          {blok.kargoBekleyenAdet > 0
-                            ? t("kargoBekleyenNotu")
-                            : t("kargoBekleyenYok")}
-                        </span>
-                        {/* GENEL RESİM KAYBOLMASIN: süzgeç açıkken tüm kanal
-                          toplamı küçük satırda durur. Süzgeç yokken bu satır
-                          gereksiz tekrar olurdu. */}
-                        {tumKanalKargo ? (
-                          <span className="block">
-                            {t("kargoTumKanallar", {
-                              verilen: tumKanalKargo.verilen,
-                              bekleyen: tumKanalKargo.bekleyen,
-                            })}
-                          </span>
-                        ) : null}
-                      </span>
-                    }
-                  />
-                  {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
-                    satır (brüt · iade düşümü · net). Kendi bileşeni var ve
-                    panelin ciro gösterdiği dört yüzeyin hepsinde aynı
-                    (mimar kararı 13.08.2026). */}
-                  <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
-                    <span className="text-muted-foreground min-w-0 text-xs break-words">
-                      {t("ciro")}
-                    </span>
-                    <CiroSunumu
-                      boyut="kutu"
-                      brut={bicim.para(blok.toplamGelir, blok.paraBirimi)}
-                      iade={
-                        blok.toplamIadeTutari > 0
-                          ? bicim.para(blok.toplamIadeTutari, blok.paraBirimi)
-                          : null
-                      }
-                      net={bicim.para(
-                        blok.toplamGelir - blok.toplamIadeTutari,
-                        blok.paraBirimi,
-                      )}
-                    />
-                    {/* Kıyas BRÜT ciro üzerinden: iade etkisi ayrı bir
-                      kavram ve raporda da karşılaştırma dışında tutuluyor. */}
-                    {kiyasRozeti(
-                      blok.toplamGelir,
-                      kb?.toplamGelir ?? null,
-                      (n) => bicim.para(n, blok.paraBirimi),
-                    )}
-                  </div>
-                  {/* NET-1 VE NET-2 YAN YANA (kullanıcı isteği 14.08.2026:
-                    "net kâr 1, 2"). İkisi arasındaki fark ÖDENECEK KDV'dir;
-                    açıklama satırları bunu yazıyor ki hangisine bakılacağı
-                    tahmin edilmesin. */}
-                  {karGorunur ? (
-                    <>
-                      <IstatistikKutusu
-                        etiket={t("net1")}
-                        cocuk={bicim.para(blok.toplamNet1, blok.paraBirimi)}
-                        rozet={karRozeti(blok.toplamNet1)}
-                        kiyas={kiyasRozeti(
-                          blok.toplamNet1,
-                          kb?.toplamNet1 ?? null,
-                          (n) => bicim.para(n, blok.paraBirimi),
-                        )}
-                        altNot={
-                          <>
-                            {oranSatirlari(blok.toplamNet1, blok)}
-                            <span className="text-muted-foreground block">
-                              {t("net1Aciklama")}
-                            </span>
-                          </>
-                        }
-                      />
-                      {/* NET-2 BAŞROL. Beş kutu da aynı boydayken hiçbiri
-                        önemli görünmüyordu; oysa günün sonunda cebe giren
-                        rakam budur. Tek "bas" kutusu o yüzden burada. */}
-                      <IstatistikKutusu
-                        etiket={t("net2")}
-                        bas
-                        cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
-                        rozet={karRozeti(blok.toplamNet2)}
-                        kiyas={kiyasRozeti(
-                          blok.toplamNet2,
-                          kb?.toplamNet2 ?? null,
-                          (n) => bicim.para(n, blok.paraBirimi),
-                        )}
-                        altNot={
-                          <>
-                            {oranSatirlari(blok.toplamNet2, blok, true)}
-                            <span className="text-muted-foreground block">
-                              {t("net2Aciklama")}
-                            </span>
-                            {/* K170: devreden KDV — yalnız > 0 iken (İlke #49:
-                                sıfır satır gizlenir, boş bir şey söylemesin). */}
-                            {blok.toplamDevreden > 0 ? (
-                              <span className="text-muted-foreground block">
-                                {t("devredenKdv", {
-                                  tutar: bicim.para(
-                                    blok.toplamDevreden,
-                                    blok.paraBirimi,
-                                  ),
-                                })}
-                              </span>
-                            ) : null}
-                          </>
-                        }
-                      />
-                      {/*
-                        NET-2 MARJI (K245) — KULLANICI TASARIM KARARI.
-                        ⛔ TÜM KUTULAR YEŞİLKEN HİÇBİRİ BİR ŞEY SÖYLEMEZ: ciro
-                        artıp marj gerilerse panelin söylemesi gereken şey
-                        tam budur ve tutar kutularının hiçbiri onu söylemiyor.
-                        ⚠ DEĞİŞİM PUAN CİNSİNDEN — `oranKiyasRozeti`.
-                      */}
-                      <IstatistikKutusu
-                        etiket={t("net2Marji")}
-                        cocuk={
-                          marjD.simdi === null
-                            ? t("marjHesaplanamaz")
-                            : bicim.yuzde(marjD.simdi)
-                        }
-                        kiyas={oranKiyasRozeti(marjD)}
-                        altNot={
-                          <span className="text-muted-foreground block">
-                            {t("net2MarjiAciklama")}
-                          </span>
-                        }
-                      />
-                    </>
-                  ) : null}
-                </div>
-
-                {/* --- kârı hesaplanamayanlar: SIFIR SAYILMAZ, söylenir ---
-                  Kâr göremeyen kullanıcıya gösterilmez: uyarı kâr hakkında ve
-                  "sorunluları gör" düğmesi kâr süzgecine gider — elinden
-                  gelecek bir iş yok, yalnız kafa karıştırır. */}
-                {karGorunur &&
-                (blok.hesaplanamayanAdet > 0 ||
-                  blok.hesaplanamayanIadeAdedi > 0) ? (
-                  /* UYARI KARTI — referanstaki bildirim kartının ta kendisi:
-                   sol şerit + doygun çip + metin + eylem. Önceden burada
-                   `amber-500/10` gibi ham Tailwind sınıfları vardı, yani
-                   palet dışından bir sarı; tek kapı kuralı deliniyordu. */
-                  <UyariKarti
-                    durum="uyari"
-                    ikon={TriangleAlert}
-                    baslik={
-                      blok.hesaplanamayanAdet > 0
-                        ? t("hesaplanamayan", { sayi: blok.hesaplanamayanAdet })
-                        : t("hesaplanamayanIade", {
-                            sayi: blok.hesaplanamayanIadeAdedi,
-                          })
-                    }
-                    altSatir={
-                      blok.hesaplanamayanAdet > 0 &&
-                      blok.hesaplanamayanIadeAdedi > 0
-                        ? t("hesaplanamayanIade", {
-                            sayi: blok.hesaplanamayanIadeAdedi,
-                          })
-                        : null
-                    }
-                    eylem={
-                      <Button
-                        asChild
-                        size="sm"
-                        variant="outline"
-                        className="h-11 md:h-8"
-                      >
-                        <Link href="/satislar?kar=eksik">
-                          {t("sorunlulariGor")}
-                          <ArrowRight />
-                        </Link>
-                      </Button>
-                    }
-                  />
-                ) : null}
-              </CardContent>
-            </Card>
-          );
-        })
-      )}
 
       {/* ══════════════ GÜNLÜK OPERASYON GRAFİĞİ ══════════════
           ⚠ YERİ "SEÇİLİ DÖNEM"İN ALTINDA (kullanıcı kararı 21.08.2026).

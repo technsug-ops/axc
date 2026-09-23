@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { izinVarMi } from "@/lib/yetki";
 import { ozetTazeligi } from "@/lib/ozet/tazelik";
+import { ozetTeaseri } from "@/lib/ozet/teaser";
 import { DURUM_KUTUSU, DURUM_YAZISI, type DurumRengi } from "@/lib/renkler";
 
 /**
@@ -36,10 +37,16 @@ export async function OzetKutusu() {
 
   /** ⚠ HİÇ ÜRETİM YOKSA DA KUTU GÖRÜNÜR — sessizce kaybolmak yerine
    *  "henüz üretilmedi" der (açık sıfır ilkesi). */
+  /**
+   * ⛔ SATIR SEÇİMİ SAF GÖVDEDE (K249). Eskiden burada «ilk boş olmayan
+   * satır» alınıyordu ve canlıda ekrana `**Kırmızı**` düştü: metin
+   * MARKDOWN, kutu DÜZ YAZI — yıldızlar karakter olarak çizildi, üstelik
+   * seçilen satır bir BAŞLIKTI, yani kutu doluydu ama hiçbir şey
+   * söylemiyordu. Kural gövdeye taşındı ki DEĞERLE sınanabilsin.
+   */
   const teaserMetni =
-    son?.durum === "YAYINDA" && son.anlatiMetni
-      ? son.anlatiMetni.split("\n").find((s) => s.trim() !== "") ?? t("henuzYok")
-      : t("henuzYok");
+    (son?.durum === "YAYINDA" ? ozetTeaseri(son.anlatiMetni) : null) ??
+    t("henuzYok");
 
   const durum: DurumRengi = tazelik.durum === "ESKI" ? "uyari" : "bilgi";
 

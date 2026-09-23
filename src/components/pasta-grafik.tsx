@@ -134,7 +134,17 @@ export function PastaGrafik({
 
       {/* ── LİSTE: ASIL VERİ BURADA ────────────────────────────────────────
           Renk yalnız pastayla eşleştirmeye yarar; etiket ve tutar yazılı. */}
-      <ul className="min-w-0 flex-1 space-y-0.5 text-xs">
+        {/*
+        ⛔ EFSANENİN TABAN GENİŞLİĞİ VAR (K249). `min-w-0 flex-1` ile
+        yazılmıştı: dar bir kapta efsane 0'a kadar ezilebiliyor ama
+        İÇİNDEKİ kalemler `shrink-0` — yani ezilmiyor, TAŞIYOR ve kart
+        kenarı kesiyordu. Panelde 240 px'lik sütunda tam bu oldu: kanal
+        adı tamamen yok oldu, yüzde yarım kaldı (`%3`, `%`).
+        ⚠ ÇARE GENİŞLETMEK DEĞİL, SARMAK: taban genişlik sığmazsa kapın
+        `flex-wrap`ı devreye girer ve efsane halkanın ALTINA iner. Geniş
+        kapta (hakediş) hiçbir şey değişmez — orada zaten sığıyor.
+      */}
+    <ul className="min-w-[11rem] flex-1 space-y-0.5 text-xs">
         {gecerli.map((d) => (
           <li key={d.etiket} className="flex items-center gap-1.5">
             <span

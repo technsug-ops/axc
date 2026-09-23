@@ -4653,6 +4653,66 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   }
 }
 
+/**
+ * ═══ GÖREV KUTUCUĞU ŞERİT BİÇİMİNDE (K248, 23.09.2026) ═══════════
+ * Eski hâl: büyük rakam ÜSTTE, 11 px etiket ALTTA — ve dar hücrede etiket
+ * harf harf sarıyordu ("Kargo | ya verilm | emiş"). Şimdi etiket ÖNDE,
+ * rakam yanında, tek satırda.
+ */
+{
+  const kutu = readFileSync("src/app/gorev-kutusu.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  /**
+   * ⛔ GÖRÜNÜR ETİKET **VE** EKRAN OKUYUCU ETİKETİ — İKİSİ AYRI.
+   * Yayılan bağlantı (`absolute inset-0`) kutunun tamamını kaplıyor ve
+   * görünür etiket onun İÇİNDE DEĞİL; dolayısıyla bağlantının erişilebilir
+   * adı ondan gelmez. `sr-only` düşseydi ekran okuyucu "bağlantı" deyip
+   * NEREYE gittiğini söyleyemezdi — ve bunu hiçbir göz testi göstermez.
+   */
+  kontrol(
+    "kutucuk EKRAN OKUYUCU etiketini taşıyor (sr-only)",
+    /<span className="sr-only">\{etiket\}<\/span>/.test(kutu),
+  );
+  kontrol(
+    "  ...ve GÖRÜNÜR etiketi ayrıca çiziyor",
+    /text-muted-foreground min-w-0 text-xs[^"]*">\s*\{etiket\}/.test(kutu),
+  );
+  /**
+   * ⛔ DOKUNMA ALANI ŞERİDE GEÇİNCE KAYBOLMAZ (İlke #8, 44 px). Küçülen
+   * bir kutucuğun `min-h-11`ini düşürmek telefonda kutuyu dokunulamaz
+   * yapar; iki hedef de ayrı ayrı ölçülüyor (kutu · ilerleme bağlantısı).
+   */
+  kontrol(
+    "kutucuğun kendisi 44 px (min-h-11)",
+    /hover:bg-muted\/60 relative flex min-h-11/.test(kutu),
+  );
+  kontrol(
+    "  ...ilerleme bağlantısı da 44 px",
+    /relative z-10 inline-flex min-h-11/.test(kutu),
+  );
+}
+
+/**
+ * === HALKA EFSANESI KIRPILMAZ (K249) ===============================
+ * Panelde 240 px'lik sutunda efsane `min-w-0 flex-1` idi: kap 0'a kadar
+ * ezilebiliyor ama ICINDEKI kalemler `shrink-0` - yani ezilmiyor,
+ * TASIYOR ve kart kenari kesiyordu. Canlida kanal adi tamamen yok oldu,
+ * yuzde yarim kaldi. Taban genislik sigmazsa `flex-wrap` devreye girer.
+ */
+{
+  const pasta = readFileSync("src/components/pasta-grafik.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
+  kontrol(
+    "halka efsanesinin TABAN GENISLIGI var (kirpilmaz)",
+    /<ul className="min-w-\[[^\]]+\] flex-1/.test(pasta),
+  );
+  kontrol(
+    "  ...ve kap SARABILIYOR (flex-wrap)",
+    /flex flex-wrap items-center/.test(pasta),
+  );
+}
+
 console.log("=".repeat(70));
 /**
  * ⚠ NİYE VAR: kullanıcı bir tarih seçip "o gün elimde ne vardı" sorusunu

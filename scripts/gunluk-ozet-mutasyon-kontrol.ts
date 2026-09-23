@@ -30,6 +30,9 @@ type Mutasyon = {
   bozdugu: string;
 };
 
+/** K249: teaser baslik degil CUMLE secer; isaretler sokulur. */
+const TEASER = "src/lib/ozet/teaser.ts";
+const OZET_KUTUSU = "src/app/ozet-kutusu.tsx";
 const MUTASYONLAR: Mutasyon[] = [
   {
     ad: "ÇÖZÜLEMEYEN ANAHTAR KAPISI KALDIRILDI",
@@ -75,6 +78,39 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "  const metin = ham.replace(\n    YER_TUTUCU_DESENI,\n    (_, anahtar: string) => String(sayilar.find((s) => s.anahtar === anahtar)?.ham ?? sozluk.get(anahtar)!),\n  );",
     bozdugu:
       "bicimlenmis goruntu yerine HAM sayi (ondalik/kurus ayraci olmadan, TL/tarih bicimlenmeden) ekrana basilir — 'bir sayi tabaniyla birlikte yazilir' ilkesini cigner",
+  },
+  {
+    ad: "BASLIK ATLAMA KALKTI",
+    yon: "KALDIRAN",
+    dosya: TEASER,
+    bul:
+      "  const cumle = temizler.find((x) => !baslikMi(x.ham));",
+    koy:
+      "  const cumle = temizler[0];",
+    bozdugu:
+      "kutu yine '**Kirmizi**' gibi bir BASLIK basar - dolu gorunur, hicbir sey soylemez",
+  },
+  {
+    ad: "MARKDOWN ISARETLERI SOKULMUYOR",
+    yon: "KALDIRAN",
+    dosya: TEASER,
+    bul:
+      "    .replace(/\\*\\*(.+?)\\*\\*/g, \"$1\")",
+    koy:
+      "",
+    bozdugu:
+      "yildizlar ekranda KARAKTER olarak cizilir; kullanici bunu veri hatasi sanar",
+  },
+  {
+    ad: "KUTU YINE HAM ILK SATIRI ALIYOR",
+    yon: "KALDIRAN",
+    dosya: OZET_KUTUSU,
+    bul:
+      "    (son?.durum === \"YAYINDA\" ? ozetTeaseri(son.anlatiMetni) : null) ??",
+    koy:
+      "    (son?.durum === \"YAYINDA\" ? (son.anlatiMetni ?? null) : null) ??",
+    bozdugu:
+      "govde dogru calisir ama EKRANA baglanmaz - dogru davranisin gorunmezligi",
   },
 ];
 

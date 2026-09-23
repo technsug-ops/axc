@@ -38,6 +38,9 @@ const PANEL = "src/lib/panel.ts";
 /** K245: oran değişimi PUAN cinsinden — yüzdenin yüzdesi yanlış rakam üretir. */
 const KIYAS = "src/lib/karsilastirma.ts";
 const SAYFA = "src/app/page.tsx";
+/** K248: görev kutucuğu şerit biçimine geçti (etiket önde, rakam yanında). */
+const KUTU = "src/app/gorev-kutusu.tsx";
+const PASTA = "src/components/pasta-grafik.tsx";
 /** K246: iki pay çubuğunun farkı cümleye çevriliyor. */
 const PAY = "src/lib/panel/pay-farki.ts";
 
@@ -264,6 +267,64 @@ const MUTASYONLAR: Mutasyon[] = [
       "            const pay = kanalPaylari.get(kanal.kanalKodu);\n            const kanalTonu = KANAL_RENKLERI[kanal.kanalAdi];",
     bozdugu:
       "11 ton dort durum rengiyle karisir ve 'yesil = iyi' anlami coker - kodun kendi karari cignenir",
+  },
+  {
+    ad: "GORUNUR ETIKET SERITTEN DUSTU",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "      <span className=\"text-muted-foreground min-w-0 text-xs leading-tight break-words hyphens-auto\">",
+    koy:
+      "      <span className=\"sr-only\">",
+    bozdugu:
+      "ekranda yalniz rakam kalir; '11' tek basina neyin 11'i oldugunu soylemez",
+  },
+  {
+    /* Gorunur etiket eklenince sr-only 'gereksiz' sanilabilir; degil.
+       Yayilan baglanti kutunun tamamini kapliyor ve gorunur etiket
+       onun ICINDE degil - erisilebilir ad ondan gelmez. */
+    ad: "EKRAN OKUYUCU ETIKETI KALDIRILDI",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "        <span className=\"sr-only\">{etiket}</span>",
+    koy:
+      "        ",
+    bozdugu:
+      "yayilan baglantinin erisilebilir adi kalmaz; ekran okuyucu 'baglanti' der, NEREYE gittigini soylemez",
+  },
+  {
+    ad: "ILERLEME BAGLANTISININ 44 PX ALANI KALKTI",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "relative z-10 inline-flex min-h-11 items-center",
+    koy:
+      "relative z-10 inline-flex items-center",
+    bozdugu:
+      "serit kuculunce ikincil hedef 44 px altina duser; ana baglanti ile arasi daralir ve telefonda YANLIS liste acilir",
+  },
+  {
+    ad: "KUTUCUGUN 44 PX DOKUNMA ALANI KALKTI",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "      className=\"hover:bg-muted/60 relative flex min-h-11 min-w-0 flex-wrap",
+    koy:
+      "      className=\"hover:bg-muted/60 relative flex min-w-0 flex-wrap",
+    bozdugu:
+      "serit kuculunce kutucuk telefonda 44 px altina duser - Ilke #8 ihlali, masaustunde HIC gorunmez",
+  },
+  {
+    ad: "EFSANENIN TABAN GENISLIGI KALKTI",
+    yon: "KALDIRAN",
+    dosya: PASTA,
+    bul:
+      "    <ul className=\"min-w-[11rem] flex-1 space-y-0.5 text-xs\">",
+    koy:
+      "    <ul className=\"min-w-0 flex-1 space-y-0.5 text-xs\">",
+    bozdugu:
+      "dar sutunda efsane kalemleri shrink-0 oldugu icin TASAR ve kart kenari keser - kanal adi yok olur, yuzde yarim kalir",
   },
 ];
 

@@ -18,7 +18,15 @@ import {
  * ============================================================================
  *  GÜNLÜK İŞ KUTULARI — İKİ KART, İKİ FARKLI EMEK
  * ----------------------------------------------------------------------------
- *  Panel açılışında EYLEM üstte, rapor altta (mimar kararı 14.08.2026).
+ *  ⛔ ESKİ SIRA ÇEVRİLDİ — GEREKÇESİ SİLİNMİYOR (K250, 23.09.2026).
+ *  Mimar kararı 14.08.2026 şöyleydi: _"Panel açılışında EYLEM üstte,
+ *  rapor altta."_ O gün doğruydu — panel bir İŞ LİSTESİ gibi kurulmuştu.
+ *  NİYE ÇEVRİLDİ (kullanıcı kararı 23.09.2026): panel o tarihten sonra
+ *  HÜKÜM yeri oldu (İlke #13), döküm kendi sayfalarına taşındı (K244) ve
+ *  NET-2 marjı + kanal hükmü eklendi (K245 · K246). Kullanıcı canlı
+ *  panele bakıp tek bir lira görmeden yedi satır kabuk saydı. Para en
+ *  üste çıktı; bu kutular KAYBOLMADI, bir satır aşağı indi.
+ *
  *  Bu kutular "ne oldu" değil "şimdi ne yapacağım" sorusunu cevaplar.
  *
  *  ── NİYE İKİ KART (kullanıcı isteği 20.08.2026) ─────────────────────────
@@ -91,17 +99,37 @@ function GorevKutucugu({
        * oranı boş kanal SKU") hücreyi kendi genişliğine zorluyor ve yazı
        * kutunun dışına taşıyordu.
        */
-      className="hover:bg-muted/60 relative flex min-h-11 min-w-0 flex-col justify-center gap-1 rounded-lg border p-3"
+      /*
+        ══ ŞERİT BİÇİMİ — DİKEY YIĞIN DEĞİL, TEK SATIR (K248) ══
+        Eski hâl: büyük rakam ÜSTTE, 11 px etiket ALTTA. İki satır,
+        ve dar hücrede etiket harf harf sarıyordu ("Kargo | ya verilm |
+        emiş") — bu zaten belgelenmiş bir sorundu.
+        ⚠ ETİKET ÖNDE: rakam tek başına ne olduğunu söylemez; göz
+        önce "ne" sonra "kaç" okur. Etiket akar, rakam yanına oturur.
+        ⛔ İLKE #12'YE GİRMEZ: bu tam genişlikte bir satır DEĞİL,
+        2–3 sütunlu kompakt ızgaranın hücresi — ilkenin önerdiği şey.
+        ⚠ `min-h-11` KALDI (İlke #8, 44 px dokunma alanı).
+      */
+      className="hover:bg-muted/60 relative flex min-h-11 min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg border px-2.5 py-1.5"
     >
       <Link href={gorev.adres} className="absolute inset-0 rounded-lg">
         <span className="sr-only">{etiket}</span>
       </Link>
+      {/*
+        ⚠ GÖRÜNÜR ETİKET, EKRAN OKUYUCU ETİKETİNİN YERİNE GEÇMEZ: üstteki
+        yayılan bağlantının `sr-only` metni DURUYOR. Görünür metin
+        bağlantının İÇİNDE olmadığı için bağlantının erişilebilir adı
+        ondan gelmez — ikisi ayrı ayrı gerekli.
+      */}
+      <span className="text-muted-foreground min-w-0 text-xs leading-tight break-words hyphens-auto">
+        {etiket}
+      </span>
       {gorev.temizMi ? (
         /* İŞARET + RENK BİRLİKTE: temizde ✓ ikonu, bekleyende rakam. */
         <span
-          className={`inline-flex items-center gap-1 text-sm ${DURUM_YAZISI.olumlu}`}
+          className={`inline-flex items-center gap-1 text-xs font-semibold ${DURUM_YAZISI.olumlu}`}
         >
-          <Check className="size-4" />
+          <Check className="size-3.5" />
           {temizMetni}
         </span>
       ) : sureMetni !== undefined ? (
@@ -112,14 +140,14 @@ function GorevKutucugu({
           diye yazmak, geçmiş bir kaybı gelecekteki bir iş gibi gösterirdi.
         */
         <span
-          className={`inline-flex w-fit items-center rounded-md px-1.5 py-0.5 text-sm font-semibold ${DURUM_ZEMINI.uyari}`}
+          className={`inline-flex w-fit items-center rounded-md px-1.5 py-0.5 text-xs font-semibold ${DURUM_ZEMINI.uyari}`}
         >
           {sureMetni}
         </span>
       ) : (
         <span className="inline-flex flex-wrap items-baseline gap-2">
           <span
-            className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-2xl leading-none font-semibold tabular-nums ${DURUM_ZEMINI.uyari}`}
+            className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-base leading-none font-semibold tabular-nums ${DURUM_ZEMINI.uyari}`}
           >
             {gorev.sayi}
           </span>
@@ -147,7 +175,7 @@ function GorevKutucugu({
             */
             <Link
               href={ilerlemeAdresi ?? gorev.adres}
-              className={`relative z-10 inline-flex min-h-11 items-center rounded-md px-1 text-sm font-medium tabular-nums underline-offset-2 hover:underline ${
+              className={`relative z-10 inline-flex min-h-11 items-center rounded-md px-1 text-xs font-medium tabular-nums underline-offset-2 hover:underline ${
                 gorev.ilerleme >= gorev.sayi
                   ? DURUM_YAZISI.olumlu
                   : "text-muted-foreground"
@@ -158,9 +186,6 @@ function GorevKutucugu({
           ) : null}
         </span>
       )}
-      <span className="text-muted-foreground text-[11px] leading-tight break-words hyphens-auto">
-        {etiket}
-      </span>
     </div>
   );
 }

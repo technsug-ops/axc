@@ -13,6 +13,174 @@
 
 ---
 
+## 🔴 K250 — PARA EN ÜSTTE: 14.08 KARARI ÇEVRİLDİ · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı canlı panele bakıp **"dağ fare doğurdu mu demek lazım"** dedi. Haklıydı
+ve sebebi K245–K249'un küçüklüğü değildi: **ekranda tek bir lira görmeden önce
+yedi satır kabuk vardı** — dönem satırı · N11 çekimi · başlık · 11 dönem
+düğmesi · kanal süzgeci · karşılaştır satırı · afiş. Para katlanın altındaydı.
+
+### ⛔ ÇEVRİLEN KARAR VE ESKİ GEREKÇESİ (SİLİNMEDİ)
+
+> _"Panel açılışında **EYLEM üstte, rapor altta**"_ — mimar kararı 14.08.2026
+
+O gün doğruydu: panel bir **iş listesi** gibi kurulmuştu ve sorduğu soru
+"şimdi ne yapacağım"dı. **Niye çevrildi:** o tarihten sonra panel bir HÜKÜM
+yeri oldu (İlke #13), döküm kendi sayfalarına taşındı (K244), NET-2 marjı
+(K245) ve kanal hükmü (K246) buraya geldi. Artık ilk soru **"bugün ne
+kazandım"**. Eylem kutuları kaybolmadı, bir satır aşağı indi.
+
+⚠ **KARAR KULLANICININ, BENİM DEĞİL.** Sıra çevrilmeden önce üç seçenek
+sunuldu (para üstte · şimdiki sıra · ikisi yan yana) ve kullanıcı **"para en
+üste"** dedi. Kayıtlı bir mimar kararını sessizce çevirmek yasak.
+
+⚠ **"HÜKÜM → GRAFİK" SIRASI BOZULMADI (21.08.2026).** O kuralın koruduğu şey
+grafiğin hükümden ÖNCE gelmemesiydi. Hüküm yukarı çıktı, grafik hâlâ ALTINDA —
+araya afiş ve eylem kutuları girdi, sıra değişmedi. _(Anayasa: "ilke, kendi
+kapsamının dışına uygulanırsa hatayı korur" — kapsam sorgulandı, genişletilmedi.)_
+
+### ⛔ BU SIRANIN BEKÇİSİ YOK — VE NİYE YOK
+
+Sıra ölçütü **yazılmadı**, çünkü tek bir `replace` ile bir BLOĞU taşıyan
+mutasyon kurulamıyor; mutasyonu olmayan ölçüt de teslim edilmez (anayasa).
+`indexOf` ile yazılan naif bir sıra ölçütü ayrıca **"yok" ile "önce"yi
+ayırt edemez** (`-1 < n` doğrudur). Sıra bugün **kod yorumu + bu pano kaydı**
+ile korunuyor.
+⛔ **AÇILIŞ ŞARTI:** blok taşımasını tek adımda ifade edebilen bir mutasyon
+biçimi (ör. çapa-arası kesip yapıştıran harness yeteneği) eklendiği gün ölçüt
+yazılır.
+
+### HALİL TEST LİSTESİ
+
+1. `/` (Panel) → süzgeçlerin hemen altında **"Seçili dönem · TRY"** kartı
+   olmalı; içinde Ciro · NET-1 · NET-2 · **NET-2 marjı** kutuları.
+2. Onun ALTINDA "Rafta var, vitrinde yok" afişi + Günlük Özet.
+3. Onun altında "Bugün ne göndermeliyim" / "Mal ve kayıt" ile
+   "Pazaryeri performansı" yan yana.
+4. Daha aşağıda günlük operasyon grafiği — **hükümden sonra** olmalı.
+5. Telefonda aynı sıra korunmalı, yatay kaydırma olmamalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #12 · #13)
+
+---
+
+## 🔴 K249 — EKRANDAKİ İKİ GÖRÜNÜR KUSUR · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcının canlı ekran görüntüsünden çıktı; ikisi de **ölçüldü**, tahmin değil.
+
+### ① HALKA EFSANESİ KIRPILIYORDU
+
+Sütun 240 px · halka 128 + boşluk 16 → efsaneye **96 px** kalıyor, satır
+(renk + ad + tutar + yüzde) ~130 px istiyor. Kap `min-w-0 flex-1` ile 0'a
+kadar eziliyor ama **içindeki kalemler `shrink-0`** — yani ezilmiyor,
+TAŞIYOR ve kart kenarı kesiyor. Canlıda kanal adı tamamen yok olmuştu, yüzde
+yarım kalmıştı (`%3`, `%`).
+
+⚠ **ÇARE GENİŞLETMEK DEĞİL, SARMAK:** efsaneye taban genişlik (`min-w-[11rem]`)
+kondu; sığmazsa kabın `flex-wrap`ı devreye girer ve efsane halkanın ALTINA
+iner. Geniş kapta (hakediş) hiçbir şey değişmez.
+
+### ② "GÜNLÜK ÖZET" HAM MARKDOWN BASIYORDU
+
+Ekranda **`**Kırmızı**`** yazıyordu. İki kusur tek satırda:
+· metin MARKDOWN ama kutu DÜZ YAZI — yıldızlar **karakter** olarak çizildi;
+· seçilen satır bir **BAŞLIKTI** — kutu doluydu ama hiçbir şey söylemiyordu.
+
+Kural saf gövdeye taşındı (`lib/ozet/teaser.ts`) ki **değerle** sınanabilsin.
+
+⛔ **ÖLÇÜT UZUNLUK DEĞİL, YAPI.** _"4 kelimeden kısa satırı atla"_ gibi bir eşik
+uydurma olurdu. Markdown'ın kendi yapısı kullanıldı: `#` ile başlayan **ya da
+TAMAMI kalın** olan satır BAŞLIKTIR. Cümle İÇİNDEKİ kalın parça başlık yapmaz —
+yoksa gerçek cümleler de atlanır ve kutu hep boş kalırdı.
+⚠ **HEPSİ BAŞLIKSA KUTU BOŞ KALMAZ:** temizlenmiş ilk satır basılır. Sessizce
+boşalan bir kutu "bugün özet üretilmedi" ile karışırdı (açık sıfır).
+
+### ÖLÇÜLDÜ
+
+    gunluk-ozet:dogrula          33/33 (8'i yeni · 7'si DEĞER testi)
+    gunluk-ozet-mutasyon         8/8 (3'ü yeni)
+    panel:dogrula                770 ölçüt (2'si yeni)
+    panel-mutasyon:kontrol       27/27 (1'i yeni)
+
+⚠ **HARNESS "GEÇTİ" DEMEDİ, "ÖLÇÜLEMEDİ" DEDİ.** Markdown söken mutasyonun
+deseni çift kaçırılmıştı ve hedefle eşleşmiyordu; harness bunu yeşil saymadı,
+`desen 0 kez geçiyor (1 olmalı)` diye durdurdu. Yeşil sayılsaydı o davranış
+**korumasız kalır ve kimse göremezdi.**
+
+### HALİL TEST LİSTESİ
+
+1. `/` → "Pazaryeri performansı" kartındaki halkanın sağındaki liste
+   **kırpılmamış** olmalı: kanal adı + tutar + yüzde üçü de tam görünmeli.
+2. Dar ekranda (telefon) efsane halkanın **altına** inmeli, yanında ezilmemeli.
+3. `/hakedis` sayfasındaki pasta grafiği **değişmemiş** olmalı.
+4. Sağ üstteki **"Günlük Özet"** kutusunda `**` yıldızları GÖRÜNMEMELİ.
+5. Aynı kutuda yazan satır bir **cümle** olmalı ("Kırmızı" gibi tek kelimelik
+   başlık değil).
+6. Hiç özet üretilmemişse kutu **"henüz yok"** demeli, boş kalmamalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #5 — sessiz/anlamsız çıktı yok)
+
+---
+
+## 🔴 K248 — GÖREV KUTUCUĞU ŞERİT BİÇİMİNDE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Panel demosunun dördüncü paketi. Eski hâl: **büyük rakam ÜSTTE, 11 px etiket
+ALTTA** — iki satır, ve dar hücrede etiket harf harf sarıyordu
+("Kargo | ya verilm | emiş"). Bu zaten belgelenmiş bir sorundu. Şimdi
+**etiket önde, rakam yanında, tek satır.**
+
+### ⛔ DEMODAKİ "TAM GENİŞLİK ŞERİT" BİREBİR ALINMADI — VE SEBEBİ ÖLÇÜLDÜ
+
+Demonun tek satırlık tam genişlik şeridi **iki kayıtlı kullanıcı kararını
+sessizce geri alırdı**:
+· **20.08.2026** — iki ayrı kart, çünkü sevkiyat ile tedarik _"günün farklı
+  saatlerinde, çoğu zaman farklı kişilerce"_ yapılıyor;
+· **K126-C, 01.09.2026** — _"Mal ve kayıt kartının bitişi ile pazaryeri
+  performansı kartının bitişi aynı yerde olmalı."_ Sol sütunu inceltmek o
+  hizayı bozardı — üstelik K247 sağ sütunu daha da uzattı.
+
+Bu yüzden şerit **kartların İÇİNE** alındı: gruplama ve sütun hizası duruyor,
+kazanılan şey okunabilirlik.
+
+### ⚠ ÖLÇÜT YAZARKEN YAKALANAN İKİ KUSUR
+
+**① "Görünür etiket var" ölçütü `{etiket}` SAYIYORDU.** Sınıfı `sr-only`
+yapan mutasyon sayıyı değiştirmiyor — **yeşil geçerdi.** Ölçüt görünür span'in
+kendisine bağlandı (desen VARLIĞI değil KULLANIMI).
+
+**② Sıra ölçütü YAZILMADI.** Tek `replace` ile gerçek bir yer değiştirme
+mutasyonu kurulamıyor; mutasyonsuz ölçüt teslim edilmez.
+
+### ⛔ GÖRÜNÜR ETİKET, `sr-only`NİN YERİNE GEÇMEZ
+
+Yayılan bağlantı (`absolute inset-0`) kutunun tamamını kaplıyor ve görünür
+etiket onun **İÇİNDE DEĞİL** — dolayısıyla bağlantının erişilebilir adı ondan
+gelmez. `sr-only` düşseydi ekran okuyucu "bağlantı" deyip NEREYE gittiğini
+söyleyemezdi; hiçbir göz testi bunu göstermez. Ayrı mutasyonla korunuyor.
+
+### ÖLÇÜLDÜ
+
+    panel:dogrula                768 → 770 ölçüt (4'ü K248)
+    panel-mutasyon:kontrol       26/26 (4'ü K248)
+    taban yeşilliği              mutasyon turundan HEMEN ÖNCE ölçüldü
+
+### HALİL TEST LİSTESİ
+
+1. `/` → "Bugün ne göndermeliyim" ve "Mal ve kayıt" kartları. Her kutucukta
+   **etiket ÖNDE, rakam YANINDA** tek satırda olmalı.
+2. Hiçbir etiket harf harf sarmamalı ("Kargo | ya verilm | emiş" olmamalı).
+3. "Kargoya verilmemiş sipariş" kutucuğundaki **"N paketlendi"** bağlantısı
+   çalışmalı ve süzülü listeyi açmalı.
+4. Sıfır olan kutucuk **kaybolmamalı**, yeşil ✓ "temiz" demeli.
+5. Tarife kutucuğu 0 iken **"N gün kaldı"** yazmalı (rakam değil).
+6. **Telefonda** her kutucuk rahat dokunulabilmeli (44 px) ve "N paketlendi"
+   bağlantısına basınca ana kutunun hedefi DEĞİL, kendi listesi açılmalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #2 · #8 · #12)
+
 ## 🔴 K247 — CİRO HALKASI PANELDE, KANAL KARTLARIYLA AYNI DÜZLEMDE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Panel demosunun üçüncü paketi. Kullanıcı kararı: _"pazaryeri performansı ile
@@ -107,7 +275,8 @@ dolduruyor)
 
 ### KALAN PAKET
 
-    K248  görev kutusu → tek satırlık şerit
+    K248  görev kutusu şeridi  ✓ (kart İÇİNDE — tam genişlik şerit
+          iki kayıtlı kullanıcı kararını çevirirdi, ölçüldü)
 
 ## 🔴 K246 — İKİ PAY ÇUBUĞUNUN FARKI ARTIK CÜMLE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 

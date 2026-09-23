@@ -3,6 +3,8 @@ import { ozetPaketiKur, type OzetSayisi } from "../src/lib/ozet/veri-toplama";
 import { kartlarinAcikToplami } from "../src/lib/kart-borcu";
 import { desiFarkliMi } from "../src/lib/desi-karsilastirma";
 import { ozetTazeligi, OZET_ESIK_SAAT } from "../src/lib/ozet/tazelik";
+import { readFileSync } from "node:fs";
+import { baslikMi, ozetTeaseri } from "../src/lib/ozet/teaser";
 
 /**
  * ============================================================================
@@ -376,6 +378,68 @@ kontrol(
     return ozetTazeligi(sonUretim, an).durum === "ESKI";
   })(),
 );
+
+/**
+ * === GUNLUK OZET TEASER: BASLIK DEGIL CUMLE (K249, 23.09.2026) ===
+ * CANLI VAKA: panel kutusu ekrana `**Kirmizi**` basiyordu. Iki kusur:
+ * metin MARKDOWN ama kutu DUZ YAZI (yildizlar karakter olarak cizildi),
+ * ve secilen satir bir BASLIKTI - kutu doluydu ama hicbir sey soylemiyordu.
+ * *** DEGER TESTI: govde CAGRILIYOR, kaynak TARANMIYOR.
+ */
+{
+  const anlati = "## Kirmizi\n\n**Bugun**\n\nCiro dustu ve NET-2 eksi.";
+  kontrol(
+    "teaser BASLIGI atlayip CUMLEYI aliyor",
+    ozetTeaseri(anlati) === "Ciro dustu ve NET-2 eksi.",
+  );
+  /** * IKI BASLIK BICIMI DE SAYILIR - ikisi de canlida gorulda. */
+  kontrol(
+    "  ...'## X' basliktir",
+    baslikMi("## Kirmizi") === true,
+  );
+  kontrol(
+    "  ...tamami kalin satir da basliktir",
+    baslikMi("**Kirmizi**") === true,
+  );
+  /** * AMA CUMLE ICINDEKI KALIN PARCA BASLIK YAPMAZ - yoksa gercek
+   *  cumleler de atlanir ve kutu hep bos kalirdi. */
+  kontrol(
+    "  ...cumle icindeki kalin parca BASLIK DEGIL",
+    baslikMi("Bugun **Trendyol** onde.") === false,
+  );
+  kontrol(
+    "teaser markdown isaretlerini SOKUYOR",
+    ozetTeaseri("- Ciro **9.254** TL oldu") ===
+      "Ciro 9.254 TL oldu",
+  );
+  /** * HEPSI BASLIKSA KUTU BOS KALMAZ: temizlenmis ilk satir gider.
+   *  Sessizce bosalan bir kutu, 'bugun ozet uretilmedi' ile karisirdi. */
+  kontrol(
+    "hepsi baslik ise TEMIZLENMIS ilk satir doner",
+    ozetTeaseri("**Kirmizi**") === "Kirmizi",
+  );
+  /** * BOS ANLATI null DONER - cagiran 'henuz yok' der, uydurma yok. */
+  kontrol(
+    "bos anlati null doner",
+    ozetTeaseri("   ") === null && ozetTeaseri(null) === null,
+  );
+  /**
+   * *** GOVDE DOGRU CALISIP EKRANA BAGLANMAZSA 'dogru davranisin
+   * GORUNMEZLIGI' dogar - o da yalanci yesildir. Olcut KULLANIMA bagli.
+   */
+  {
+    const kutu = readFileSync("src/app/ozet-kutusu.tsx", "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, " ");
+    kontrol(
+      "panel kutusu SAF GOVDEYI cagiriyor",
+      /ozetTeaseri\(son\.anlatiMetni\)/.test(kutu),
+    );
+    kontrol(
+      "  ...ve eski ham satir secimi GERI GELMEDI",
+      !/anlatiMetni\.split/.test(kutu),
+    );
+  }
+}
 
 console.log(
   "\n" +
