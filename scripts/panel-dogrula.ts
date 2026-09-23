@@ -17,7 +17,22 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync as hamOku } from "node:fs";
+
+/**
+ * ⛔ OKUMA KAPISI (K258-②, 24.09.2026): kaynak, METNİN GELİŞ BİÇİMİNDEN
+ * BAĞIMSIZ okunur (24.08 kuralı). VAKA: `"sutunMu" + "\n          ? "` çapası
+ * dosya LF iken yeşil; `git stash/pop` (autocrlf) dosyayı CRLF'e çevirince
+ * 3 ölçüt turda düştü ve push reddedildi. Ölçüt doğruydu, OKUMA biçime
+ * bağlıydı. Tek tek yamamak yerine kapı: bu bekçinin 90 okumasının hepsi
+ * buradan geçer, CRLF→LF. Ayırt edici: `\n` ÇAPANIN ORTASINDA ise kırılır
+ * (`sutunMu\n`), BAŞINDA ise değil (`\nexport` CRLF'de de bulunur).
+ * Öteki 86 bekçideki 613 çıplak okuma → K262 (pano).
+ * İki yönde sınandı: dosya CRLF ✓ · LF ✓ · kapı kaldırılınca 3 ölçüt KIRMIZI.
+ */
+function readFileSync(yol: string, kodlama: "utf8"): string {
+  return hamOku(yol, kodlama).replace(/\r\n/g, "\n");
+}
 import {
   HIZLI_KIYAS,
   KIYAS_ANAHTARLARI,
@@ -28,6 +43,9 @@ import {
   halkaDilimleriniTopla,
   OK_ETIKET_ARALIGI,
   okEtiketleriniAyir,
+  DELIK_CAPI,
+  MERKEZ_YAZI_TAVANI,
+  merkezYaziBoyu,
 } from "../src/components/halka-grafik";
 import { SON_GUN_SAYISI, sonGunSerisi } from "../src/lib/panel/son-gun-serisi";
 import { PAY_FARKI_ESIGI, payFarki } from "../src/lib/panel/pay-farki";
@@ -6787,6 +6805,18 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("halka ayrilmis uclari CIZIYOR (govde dogru ama baglanmamis olmasin)",
     /const uclar = okEtiketleriniAyir\(/.test(halka) && /yerlesimAyrik\.map\(\(y\) => \(/.test(halka));
+
+  /* K261-② — MERKEZ TOPLAM DELIGE SIGAR (kullanici 24.09: «daireye sigmiyor»). */
+  const uzun = "₺622.904,97";
+  const boy = merkezYaziBoyu(uzun);
+  kontrol("11 karakterlik toplam delige SIGIYOR (0,6 em × karakter × boy ≤ delik)",
+    boy < MERKEZ_YAZI_TAVANI && 0.6 * uzun.length * boy <= DELIK_CAPI, { boy, delik: DELIK_CAPI });
+  kontrol("  ...kisa toplam tavanda kalir (kucultme yalniz gerekince)",
+    merkezYaziBoyu("₺9") === MERKEZ_YAZI_TAVANI);
+  kontrol("  ...cok uzun metin tabanin altina inmez",
+    merkezYaziBoyu("₺" + "9".repeat(40)) >= 10);
+  kontrol("  ...merkez yazi boyu GOVDEDEN okunuyor (sabit 20 degil)",
+    /fontSize=\{merkezYaziBoyu\(toplamMetni\)\}/.test(halka) && !/fontSize="20"/.test(halka));
 }
 
 console.log("\n" + "=".repeat(70));

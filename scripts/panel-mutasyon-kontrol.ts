@@ -730,6 +730,28 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "govde cagriliyor ama hicbir seyi itmiyor - deger testi yakalar",
   },
+  {
+    ad: "MERKEZ YAZI YINE SABIT 20 (delige sigmaz)",
+    yon: "KALDIRAN",
+    dosya: HALKA,
+    bul:
+      "        fontSize={merkezYaziBoyu(toplamMetni)}",
+    koy:
+      "        fontSize=\"20\"",
+    bozdugu:
+      "₺622.904,97 halkaya tasar, %42 bandinin ustune biner - kullanicinin gosterdigi sey",
+  },
+  {
+    ad: "BOY UZUNLUGA BAKMIYOR (her metin ayni boy)",
+    yon: "KALDIRAN",
+    dosya: HALKA,
+    bul:
+      "  const sigan = alan / (KARAKTER_EM * Math.max(1, metin.length));",
+    koy:
+      "  const sigan = alan / KARAKTER_EM;",
+    bozdugu:
+      "govde cagriliyor ama uzun toplam yine tavana cikar - deger testi yakalar",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

@@ -13,7 +13,29 @@
 
 ---
 
-## 🔴 K261 — HALKA OK ETİKETLERİ AYRILIYOR VE KADRAJDA KALIYOR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR · EKRAN GÖRÜNTÜSÜ BEKLENİYOR]
+## 🟡 K262 — BEKÇİLERE ORTAK OKUMA KAPISI: KAYNAK SATIR SONUNDAN BAĞIMSIZ OKUNUR · 24.09.2026 · [AÇIK — KOMUT VERİLMEDİ]
+
+K258-②'nin genel hâli. Ölçüldü (24.09): **87 bekçide 613** çıplak
+`readFileSync` çağrısı; **12 bekçide** `\n` taşıyan dize çapası (api ·
+cron-yollari · depo ×2 · gecmis · kanal-yazma ×2 · kart-odeme · rma · talep ·
+tazminat · urun-analizi ×2 · yedek). Bugün hepsi yeşil — dosyaların **şu anki**
+satır sonuyla. Bir dosyanın satır sonu değişirse (betikle yazım LF, git
+dokunuşu CRLF) çapası ortada `\n` olan ölçüt **sessizce kırılır**: kırmızı
+yanarsa şans, `indexOf → -1` ile boş dilime bakıp **yeşil kalırsa** felaket.
+
+**YAPILACAK:** `scripts/kaynak-oku.ts` → `kaynakOku(yol)` (CRLF→LF, tek gövde);
+bekçiler ona bağlanır; **desen yasağı** bekçisi: `scripts/*-dogrula.ts` içinde
+`readFileSync` doğrudan içeri alınamaz (`hamOku` istisnası yalnız kapının
+kendisinde). Mutasyon: kapıyı atlayan yeni bekçi kırmızı. Dosya listesi
+tutulmaz — desen yasağı yarın eklenen bekçiyi de kapsar.
+
+**AÇILIŞ ŞARTI:** bir sonraki bekçi paketi ya da ikinci bir satır sonu
+kırılması — hangisi önce gelirse. Panel bekçisi bugün kendi kapısıyla korunuyor
+(K258-②); bu kalem o kapıyı ORTAK yapar.
+
+---
+
+## 🔴 K261 — HALKA YAZILARI: OK ETİKETLERİ AYRIK, MERKEZ TOPLAM DELİĞE SIĞAR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı 24.09: _"Pasta grafiğin yanındaki yazılar problemli."_ Ekran
 görüntüsü henüz gelmedi; **sebep tahmini, teyit Halil testinde**. K256'nın ok
@@ -33,20 +55,35 @@ noktaya varır ve yazılar **üst üste biner**; uç kadraj kenarına yakınsa a
   merkez toplam ve dipnot değişmedi.
 - Mutasyonla: ayırma çağrısı kaldırıldı · gövde aralığı uygulamıyor.
 
-### ⚠ EĞER SORUN BAŞKAYSA
+### ─── ② GÖRÜNTÜ GELDİ — SEBEP BAŞKAYDI: MERKEZ TOPLAM DELİĞE SIĞMIYORDU
 
-Görüntü gelince sebep bu değilse (ör. metin uzunluğu, renk, yüzde biçimi) kalem
-**kapanmaz**; `─── ②` olarak aynı satırda devam eder — yeni satır açılmaz.
+Ekran görüntüsü (24.09, `?pencere=SON_15_GUN`): ok etiketleri **düzgündü**;
+sorun **merkezdeki toplam**. `₺622.904,97` sabit 20 birimle **133 birim**
+genişliğe yayılıyor, delik **98** — yazı halkaya taşıp soldaki **%42**
+bandının üstüne biniyordu. ① tahmini yanlış hedefti; gövde zararsız, kalıyor
+(iki küçük dilim yan yana gelince yine gerekecek), ama sorunu o çözmedi.
+
+- `merkezYaziBoyu(metin)` — saf gövde: boy = (delik − pay) / (0,6 em ×
+  karakter), tavan 20, taban 10, yarım birime yuvarlı. 0,6 em **ekran
+  görüntüsünden ölçüldü** (11 × 20 → 133), uydurulmadı. Kısa toplam (`₺9`)
+  tavanda kalır — küçültme yalnız gerekince.
+- Bugünkü toplam için boy **13** (11 karakter × 0,6 × 13 = 86 ≤ 98): bant
+  yüzdesiyle aynı boy, deliğin içinde. Değer testi 3 + kullanım ölçütü 1;
+  mutasyon 2 (sabit 20'ye dönüş · boy uzunluğa bakmıyor).
 
 ### HALİL TEST LİSTESİ
 
-1. `/` → "Ciro — kanala göre" halka kartı: her dilimin oku ayrı bir etikete
-   gitmeli; **hiçbir yazı bir başkasının üstüne binmemeli**.
+1. `/` → "Ciro — kanala göre" halka kartı: **merkezdeki toplam deliğin içinde**
+   kalmalı, halkaya taşmamalı; "%42" / "%58" bant yazıları tam okunmalı.
+   Toplam, hüküm kartındaki **Brüt ciro** ile birebir.
+1b. Her dilimin oku ayrı bir etikete gitmeli; hiçbir yazı bir başkasının
+   üstüne binmemeli.
 2. Kanal adları kartın kenarında **kesilmemeli** (soldaki ve sağdaki en uç
    etiketler tam okunmalı).
 3. Etiketteki tutarların toplamı (Diğer dahil) merkezdeki toplamla birebir.
 4. Kanal süzgeci tek kanal yapıldığında tek dilim + tek etiket; yazı yerinde.
-5. **Ekran görüntüsünü yine de gönderin** — sorun bu değilse ② açılır.
+5. Dönem süzgecini "Bugün" yapın (kısa toplam) → merkez yazı **büyük** (20),
+   yine deliğin içinde.
 
 **mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) ·
 **kullanıcı kolaylığı: ✓** (İlke #2 · #12)
@@ -170,6 +207,26 @@ Para **sürekli** bir değer (çizgi), operasyon **sayılabilir** bir olay (süt
 sanıyordu ("iki grafik akışı bozmuş"). Çare birini saklamak değil: sipariş
 artarken cironun yerinde sayması ancak ikisi **birlikte** görülünce fark
 edilir. Çare şekli ayırmak.
+
+### ─── ② ÖLÇÜT GELİŞ BİÇİMİNE BAĞLIYDI — PUSH REDDEDİLDİ (24.09.2026)
+
+K259–261 push'unda tur `panel:dogrula`yı **kırmızı** yaktı (3/857) — oysa aynı
+bekçi commit'ten önce tek başına **yeşildi**. Ağaçta mutant yoktu; dosya
+içeriği aynıydı. Değişen tek şey **satır sonuydu**: `uc-serili-grafik.tsx`
+betikle LF yazılmıştı, lint kıyası için yapılan `git stash/pop` (autocrlf)
+onu CRLF'e çevirdi. K258'in _"sutun dali bulundu"_ çapası
+`"sutunMu" + "\n          ? "` — `\n` çapanın **ortasında**, CRLF'de tutmadı;
+iki alt ölçüt de boş dilime bakıp düştü.
+
+> Bu, 24.08 kuralının aynısı: _"metni okuyan kontrol, metnin geliş
+> biçiminden bağımsız okur; düzeltme deseni yamamak değil OKUMA KAPISI
+> kurmaktır."_ Kapı kuruldu: `panel-dogrula.ts`te `readFileSync` tek gövdeden
+> geçiyor (CRLF→LF), 90 okumanın hepsi. Ayırt edici: `\n` çapanın **başında**
+> ise (`\nexport`) CRLF'de de bulunur, **ortasında** ise kırılır.
+
+İki yönde sınandı: dosya CRLF → 857 yeşil · dosya LF → 857 yeşil · kapıdaki
+`.replace` kaldırılınca → **3 kırmızı** (kapı yük taşıyor). Öteki bekçiler
+→ **K262**.
 
 ### HALİL TEST LİSTESİ
 

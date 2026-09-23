@@ -41,6 +41,29 @@ const CY = 136;
 const R = 62;
 const KALINLIK = 26;
 const CEVRE = 2 * Math.PI * R;
+/** Halkanın DELİĞİ — merkez yazının sığması gereken çap (R − kalınlık/2)·2. */
+export const DELIK_CAPI = 2 * (R - KALINLIK / 2);
+export const MERKEZ_YAZI_TAVANI = 20;
+const MERKEZ_YAZI_TABANI = 10;
+const MERKEZ_PAY = 6;
+/**
+ * Kalın, tabular rakamda karakter başına ≈0,6 em — canlı ekran görüntüsünden
+ * ÖLÇÜLDÜ (24.09.2026): «₺622.904,97» 11 karakter × 20 → 133 birim.
+ */
+const KARAKTER_EM = 0.6;
+
+/**
+ * MERKEZ YAZI BOYU DELİKTEN TÜRETİLİR (K261-②, kullanıcı 24.09.2026: «sayıyı
+ * biraz küçült, daireye sığmıyor»). Sabit 20 birim, 11 karakterlik toplamı
+ * 133 birime yayıyor; delik 98. Yazı halkaya taşıp bant yüzdesinin (%42)
+ * üstüne biniyordu. Boy = (delik − pay) / (0,6 × karakter), tavan 20 taban
+ * 10, yarım birime yuvarlı. SAF — değer testiyle sınanır.
+ */
+export function merkezYaziBoyu(metin: string): number {
+  const alan = DELIK_CAPI - 2 * MERKEZ_PAY;
+  const sigan = alan / (KARAKTER_EM * Math.max(1, metin.length));
+  return Math.max(MERKEZ_YAZI_TABANI, Math.min(MERKEZ_YAZI_TAVANI, Math.floor(sigan * 2) / 2));
+}
 
 /** Dilimleri tavana indirir: en büyükleri bırakır, kalanı «Diğer»de toplar. */
 export function halkaDilimleriniTopla(
@@ -204,7 +227,14 @@ export function HalkaGrafik({
             {yuzdeMetni(y.yuzde)}
           </text>
         ))}
-      <text x={CX} y={CY - 4} textAnchor="middle" fontSize="20" fontWeight="700" className="fill-foreground">
+      <text
+        x={CX}
+        y={CY - 4}
+        textAnchor="middle"
+        fontSize={merkezYaziBoyu(toplamMetni)}
+        fontWeight="700"
+        className="fill-foreground tabular-nums"
+      >
         {toplamMetni}
       </text>
       <text x={CX} y={CY + 14} textAnchor="middle" fontSize="11" className="fill-muted-foreground">
