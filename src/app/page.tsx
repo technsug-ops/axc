@@ -55,6 +55,7 @@ import {
 import { GENEL_KDV_ORANI, kdvHaric } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { kutuOranlari } from "@/lib/panel/kar-orani";
+import { payFarki } from "@/lib/panel/pay-farki";
 import {
   karEksikAyAdresi,
   karEksikKanalAdresi,
@@ -2106,6 +2107,39 @@ export default async function AnaSayfa({
                     />
                   </div>
                 ) : null}
+                {/*
+                  ══ İKİ ÇUBUĞUN FARKI CÜMLEYE ÇEVRİLİYOR (K246) ══
+                  ⛔ FARK ZATEN ÖNEMLİ DİYE İKİ ÇUBUK ÇİZİLİYORDU — ama
+                  fark ÇUBUKLARDAN OKUNUYORDU: iki uzunluğu gözle
+                  kıyaslayıp aradaki birkaç pikseli yorumlamak gerekiyordu.
+                  Cironun %31,6'sını taşıyan kanal NET'in %31,1'ini
+                  getiriyorsa LİRA BAŞINA DAHA AZ KAZANDIRIYOR demektir;
+                  panel hükmü SÖYLER, çıkarmayı okuyucuya bırakmaz.
+                  ⚠ HÜKÜM SAF GÖVDEDEN (`payFarki`) — eşik ve yön orada.
+                */}
+                {(() => {
+                  if (!karGorunur) return null;
+                  const pf = payFarki(pay.ciroPayi, pay.net2Payi);
+                  if (pf === null) return null;
+                  return (
+                    <p
+                      className={`text-xs ${
+                        pf.yon === "USTUNDE"
+                          ? DURUM_YAZISI.olumlu
+                          : pf.yon === "ALTINDA"
+                            ? DURUM_YAZISI.olumsuz
+                            : DURUM_YAZISI.notr
+                      }`}
+                    >
+                      {pf.yon === "AYNI"
+                        ? t("payAyni")
+                        : t(
+                            pf.yon === "USTUNDE" ? "payUstunde" : "payAltinda",
+                            { puan: bicim.sayi(pf.puan, 1) },
+                          )}
+                    </p>
+                  );
+                })()}
               </div>
             );
           })()}

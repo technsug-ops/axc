@@ -13,6 +13,95 @@
 
 ---
 
+## 🔴 K246 — İKİ PAY ÇUBUĞUNUN FARKI ARTIK CÜMLE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Panel demosunun ikinci paketi. Kullanıcının demoda en çok beğendiği şey
+kanal kartındaki hüküm satırıydı.
+
+### ① FARK ZATEN ÖNEMLİYDİ — AMA OKUNMUYORDU
+
+Kanal kartı iki pay çubuğu çiziyor (cironun yüzde kaçı · NET-2'nin yüzde
+kaçı) ve kodun kendi yorumu niye çizdiğini yazıyor:
+
+> _"Biri hacmi, diğeri gerçek kazancı gösterir ve FARKLI OLABİLİRLER — o
+> fark önemlidir: cironun %60'ını taşıyan kanal kârın %40'ını getiriyor."_
+
+Gerekçe doğruydu, **teslim eksikti**: fark ÇUBUKLARDAN okunuyordu. İki
+uzunluğu gözle kıyaslayıp aradaki birkaç pikseli yorumlamak gerekiyordu.
+
+> **PANEL BİR HÜKÜM YERİDİR.** Cironun %31,6'sını taşıyan kanal NET'in
+> %31,1'ini getiriyorsa **lira başına daha az kazandırıyor** demektir.
+> Bunu okuyucunun çıkarmasına bırakmak, çoğu zaman çıkarılmaması demek.
+
+### ② YAPILAN
+
+`lib/panel/pay-farki.ts` — saf gövde, kartın altına tek cümle:
+
+    NET payı ciro payının 0,7 puan ÜSTÜNDE      (olumlu tonu)
+    NET payı ciro payının 0,5 puan ALTINDA      (olumsuz tonu)
+    NET payı ciro payıyla aynı hizada           (nötr)
+
+### ⚠ ÜÇ KURAL — ÜÇÜ DE MUTASYONLA KORUNUYOR
+
+**KÂR HESAPLANAMADIYSA HÜKÜM YOK.** `net2Payi === null` ise cümle hiç
+çizilmez. "Aynı hizada" demek, defterin bilmediği bir kanal hakkında
+olmayan bir bilgiyi varmış gibi sunmak olurdu.
+_(Anayasa: "sistem, kendi defterinde takip etmediği şey hakkında iddia
+kurmaz".)_
+
+**YUVARLAMA ARTIĞI HÜKÜM DEĞİLDİR.** İki pay yuvarlama yüzünden neredeyse
+hiç kuruşuna eşit olmaz; eşik olmasaydı HER kartta "0,01 puan üstünde"
+yazar ve cümle gürültüye dönerdi.
+
+**EŞİK K245'İN ROZET EŞİĞİYLE AYNI (0,05 puan).** İki yerde iki eşik
+olsaydı aynı kanal için kutu "değişim yok" derken kart "0,03 puan üstünde"
+diyebilirdi.
+
+### ⛔ DEMODAN ALINMAYAN ŞEY — VE NİYE
+
+Demoda kanal kartlarında **kanal renkleri** kullanmıştım. Kodda bunun
+aksine bilinçli bir karar var ve gerekçesi yazılı:
+
+> _"Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11 ton, dört durum
+> rengiyle karışır ve 'yeşil = iyi' anlamı çökerdi. Bilgiyi taşıyan renk
+> değil UZUNLUK."_
+
+Gerekçe sağlam; çubuklar nötr kaldı. Kanal renkleri **halkada**
+kullanılacak — orası bir KATEGORİ grafiği ve `KANAL_RENKLERI` zaten tam
+bunun için var, hakediş pastasında da öyle kullanılıyor.
+_(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı korur" —
+burada tersi: kapsamı içindeki bir ilkeyi demo uğruna çiğnememek.)_
+
+### ÖLÇÜLDÜ
+
+    panel:dogrula                757 ölçüt (13'ü yeni · 7'si DEĞER testi)
+    panel-mutasyon:kontrol       18/18 (3'ü yeni, üç yön)
+    i18n:kontrol                 tr/en eşit · 0 eksik
+    tsc --noEmit                 çıktı BOŞ
+
+### HALİL TEST LİSTESİ
+
+1. `/` (Panel) → "Pazaryeri performansı" kartı. Her kanal kartının
+   ALTINDA tek satırlık cümle olmalı: **"NET payı ciro payının X puan
+   ÜSTÜNDE/ALTINDA"**.
+2. Cümlenin rengi yönle uyumlu olmalı: üstünde yeşil, altında kırmızı,
+   aynı hizada gri.
+3. Cümledeki puan, üstteki iki çubuğun yüzdelerinin FARKINA eşit olmalı.
+   Örnek: ciro %31,6 · NET %31,1 → **0,5 puan ALTINDA**.
+4. Kârı hesaplanamamış bir kanal varsa (NET çubuğu hiç çizilmiyorsa)
+   cümle de **HİÇ ÇIKMAMALI** — "aynı hizada" yazmamalı.
+5. Satışı olmayan kanalın kesik çizgili kartında cümle olmamalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (3 yeni anahtar, tr+en) ·
+**kullanıcı kolaylığı: ✓** (İlke #16)
+
+### KALAN İKİ PAKET
+
+    K247  ciro halkası panele · operasyon çizgiden SÜTUNA, para ile yan yana
+    K248  görev kutusu → tek satırlık şerit
+
+---
+
 ## 🔴 K245 — NET-2 MARJI KUTUSU: BİR ORANIN DEĞİŞİMİ PUAN, YÜZDE DEĞİL · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı panel tasarımı için bir demo istedi, demoyu onayladı ve

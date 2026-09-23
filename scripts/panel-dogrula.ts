@@ -19,6 +19,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { oranDegisimi } from "../src/lib/karsilastirma";
+import { PAY_FARKI_ESIGI, payFarki } from "../src/lib/panel/pay-farki";
 import {
   CEKIM_ESIK_DK,
   CEKIM_KANALLARI,
@@ -4526,6 +4527,66 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
       "  net2Marji sözlükte ve dolu",
       typeof sozluk.net2Marji === "string" && sozluk.net2Marji.length > 3,
     );
+  }
+}
+
+/**
+ * ═══ İKİ ÇUBUĞUN FARKI CÜMLEYE ÇEVRİLİYOR (K246, 23.09.2026) ═════
+ * ⛔ Fark ZATEN önemli diye iki çubuk çiziliyordu, ama fark ÇUBUKLARDAN
+ * okunuyordu. Şimdi hüküm yazılıyor. ⭐ DEĞER TESTİ — gövde ÇAĞRILIYOR.
+ */
+{
+  const ust = payFarki(31.6, 32.4);
+  kontrol("NET payı yüksekse ÜSTÜNDE", ust?.yon === "USTUNDE");
+  kontrol(
+    "  ...ve fark PUAN, işaretsiz (0,8)",
+    ust !== null && Math.abs(ust.puan - 0.8) < 0.001,
+  );
+  const alt = payFarki(31.6, 31.1);
+  kontrol("NET payı düşükse ALTINDA", alt?.yon === "ALTINDA");
+  kontrol(
+    "  ...fark yine işaretsiz (0,5)",
+    alt !== null && Math.abs(alt.puan - 0.5) < 0.001,
+  );
+  /** ⚠ YUVARLAMA ARTIĞI HÜKÜM DEĞİLDİR: eşik altı AYNI sayılır. */
+  kontrol("0,01 puan fark AYNI sayılıyor", payFarki(31.6, 31.61)?.yon === "AYNI");
+  kontrol("  ...ve puan sıfır yazılıyor", payFarki(31.6, 31.61)?.puan === 0);
+  /** ⛔ KÂR HESAPLANAMADIYSA HÜKÜM YOK — 'aynı hizada' demek uydurma olurdu. */
+  kontrol("NET payı null ise hüküm YOK", payFarki(31.6, null) === null);
+  /** ⚠ EŞİK K245'İN ROZET EŞİĞİYLE AYNI — iki yerde iki eşik olmaz. */
+  kontrol("eşik 0,05 puan", PAY_FARKI_ESIGI === 0.05);
+}
+
+{
+  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
+  kontrol(
+    "kanal kartı hüküm cümlesini ÇİZİYOR",
+    /const pf = payFarki\(pay\.ciroPayi, pay\.net2Payi\)/.test(sayfa),
+  );
+  kontrol(
+    "  ...ve üç yönün üçü de sözlükten geliyor",
+    /payAyni/.test(sayfa) && /payUstunde/.test(sayfa) && /payAltinda/.test(sayfa),
+  );
+  /** ⚠ RENK JETONDAN: ham Tailwind rengi panelde yasak. */
+  kontrol(
+    "  ...rengi DURUM_YAZISI jetonundan alıyor",
+    /pf\.yon === "USTUNDE"\s*\?\s*DURUM_YAZISI\.olumlu/.test(sayfa),
+  );
+  {
+    const sozluk = (
+      JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+        Panel: Record<string, string>;
+      }
+    ).Panel;
+    for (const a of ["payUstunde", "payAltinda"]) {
+      kontrol(
+        `  ${a} 'puan' diyor ve {puan} taşıyor`,
+        (sozluk[a] ?? "").includes("puan") &&
+          (sozluk[a] ?? "").includes("{puan}"),
+      );
+    }
   }
 }
 

@@ -38,6 +38,8 @@ const PANEL = "src/lib/panel.ts";
 /** K245: oran değişimi PUAN cinsinden — yüzdenin yüzdesi yanlış rakam üretir. */
 const KIYAS = "src/lib/karsilastirma.ts";
 const SAYFA = "src/app/page.tsx";
+/** K246: iki pay çubuğunun farkı cümleye çevriliyor. */
+const PAY = "src/lib/panel/pay-farki.ts";
 
 type Mutasyon = {
   ad: string;
@@ -194,6 +196,35 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "    if (false) {",
     bozdugu:
       "0,02 puanlik kipirti 'degisim' diye yazilir; rozet her gun yanar ve okunmaz olur",
+  },
+  {
+    /* K246: NET payi null iken 'ayni hizada' demek, kar hesaplanamamis
+       bir kanal hakkinda olmayan bir bilgi uydurmaktir. */
+    ad: "KAR HESAPLANAMAYAN KANALA DA HUKUM YAZILIYOR",
+    yon: "FAZLADAN",
+    dosya: PAY,
+    bul: "  if (net2Payi === null) return null;",
+    koy: "  if (net2Payi === null) return { puan: 0, yon: \"AYNI\" };",
+    bozdugu:
+      "defterin bilmedigi bir kanal icin 'ayni hizada' yazilir - sistem takip etmedigi sey hakkinda iddia kurar",
+  },
+  {
+    ad: "YUVARLAMA ARTIGI DA HUKUM SAYILIYOR",
+    yon: "FAZLADAN",
+    dosya: PAY,
+    bul: "  if (Math.abs(fark) < PAY_FARKI_ESIGI) return { puan: 0, yon: \"AYNI\" };",
+    koy: "  if (false) return { puan: 0, yon: \"AYNI\" };",
+    bozdugu:
+      "her kartta '0,01 puan ustunde' yazar; cumle gurultuye doner ve okunmaz olur",
+  },
+  {
+    ad: "HUKUM CUMLESI EKRANDAN KALKTI",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "                  const pf = payFarki(pay.ciroPayi, pay.net2Payi);",
+    koy: "                  const pf = null as ReturnType<typeof payFarki>;",
+    bozdugu:
+      "govde dogru calisir, kart yine iki cubuk gosterir ve farki okuyucu cikarir - K246'nin varlik sebebi yok olur",
   },
 ];
 
