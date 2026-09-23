@@ -13,6 +13,214 @@
 
 ---
 
+## 🔴 K258 — PARA ve OPERASYON YAN YANA, OPERASYON SÜTUN (DÖRT SERİ) · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Demonun son bloğu: **"Ciro ve NET-2 — son 14 gün"** çizgi (3/5) ile **günlük
+operasyon sütunları** (2/5) aynı satırda. K257'de ikisini de "bilerek
+yapmıyorum" demiştim; kullanıcı _"demoyu sen çizdin, neden yapamıyorsun"_ dedi
+ve haklıydı — engel bir karar değil, bir bileşen geometrisiydi. Çözüldü.
+
+### YAPILAN
+
+- `UcSeriliGrafik` **`sekil="sutun"`** kipi aldı: her kova için **gruplanmış
+  dört çubuk** (sipariş · mal kabul · satış · kargo). Seriler, tıklama hedefleri
+  (`<a>` çubuğu sarıyor), gösterge, özet ve tablo **aynen** — yalnız şekil ve
+  geometri değişti. 2/5 sütun için ayrı geometri (640 px); çizgi kipi 1240'ta
+  kaldı, öteki kullanımlar değişmedi.
+- Panelde 14 gün kartı `xl:col-span-3`, operasyon `xl:col-span-2`, tek ızgara.
+
+### ⛔ DÖRT SERİ KORUNDU — DEMO İKİ SERİYDİ
+
+Kullanıcı isteği 21.08.2026: _"günlük kaç mal aldığımı, kaç mal sattığımı ve
+kaç kargo verdiğimi AYNI grafikte görmek istiyorum."_ Demonun sütunu iki
+seriliydi (kargoya verilen · bekleyen); birebir alınsaydı kayıtlı istek
+yarıya inerdi. Sütun **dört seriyle** çizildi — demonun şekli, kullanıcının
+içeriği. Mutasyonla: sütun kipini iki seriye indiren senaryo kırmızı.
+
+### ⚠ NİYE ŞEKİL AYRI
+
+Para **sürekli** bir değer (çizgi), operasyon **sayılabilir** bir olay (sütun).
+İki tam genişlik çizgi alt alta durunca göz aynı şeyi iki kez çizilmiş
+sanıyordu ("iki grafik akışı bozmuş"). Çare birini saklamak değil: sipariş
+artarken cironun yerinde sayması ancak ikisi **birlikte** görülünce fark
+edilir. Çare şekli ayırmak.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → afiş/özetin altında **tek satırda iki kart**: solda "Ciro ve NET-2 —
+   son 14 gün" (çizgi), sağda "Günlük operasyon" (**sütun**).
+2. Operasyon kartında her gün için **dört çubuk** (mor sipariş · yeşil mal
+   kabul · mavi satış · turuncu kargo); göstergede dört ad.
+3. Bir çubuğa tıklayınca o günün **süzülmüş listesi** açılmalı (çizgideki
+   noktayla aynı davranış).
+4. "Adet / Ciro / KDV" sekmeleri çalışmaya devam etmeli; altta özet satırı ve
+   açılır tablo aynen durmalı.
+5. Telefonda iki kart alt alta; sütunlar okunur (yazılar küçülmemeli).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #2 · #10)
+
+---
+
+## 🔴 K257 — AFİŞ/ÖZET AŞAĞI, CİRO VE NET-2 SON 14 GÜN · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Demonun kalan sırası: hüküm → görev → pazaryeri + halka → **afiş + özet** →
+**grafikler**. Afiş ("Rafta var, vitrinde yok") ve Günlük özet pazaryeri
+satırının **altına** indi; yeni kart **"Ciro ve NET-2 — son 14 gün"** günlük
+operasyon grafiğinin **üstüne** geldi.
+
+### YAPILAN
+
+- `lib/panel/son-gun-serisi.ts` — saf gövde: bugüne kilitli 14 gün, gün
+  kovalama **İstanbul günü** (`isTakvimGunu` + `gunDegeri`, `operasyonSerisi`
+  ile aynı). Dönem süzgecinden bağımsız; kanal + para birimi süzgeci uygulanır
+  (hüküm kartlarıyla aynı küme). Kaynak, aylık grafiğin zaten çektiği 12 aylık
+  `satislar` — ikinci sorgu yok.
+- **NET-2 `null` sıfır sayılmaz**: kârı hesaplanamayan satış toplama girmez,
+  `net2Var` günün hesaplı satışı olup olmadığını söyler. Değer testi: 00:30
+  İstanbul'daki satış BUGÜNE yazılıyor (UTC'ye göre düne düşerdi); null NET-2
+  dışarıda; pencere dışı satış eleniyor. Mutasyonla: 13 gün · null=0 · kart
+  kalktı · kanal süzgeci düştü.
+
+### ⚠ İLK TESLİMDE İKİ ŞEY ERTELENMİŞTİ — AYNI TURDA K258 KAPATTI
+
+İlk yazımda «operasyon sütuna çevrilmesin, yan yana konmasın» demiştim;
+gerekçe bir bileşen geometrisiydi (1240 px viewBox 2/5'te okunmaz) ve
+21.08 dört seri isteğiydi. Kullanıcı _"demoyu sen çizdin, neden
+yapamıyorsun"_ dedi; haklıydı — engel karar değil geometriydi. **K258**
+sütun kipini ayrı geometriyle ve **dört seriyle** kurdu; bu kart onunla
+yan yana (3/5 + 2/5). Aşağıdaki test listesinin 2. ve 6. maddeleri K258'e
+göre okunur (kart tam genişlik değil, satırın sol yarısı).
+
+### HALİL TEST LİSTESİ
+
+1. `/` → pazaryeri + halka satırının **altında** "Rafta var, vitrinde yok" afişi
+   ve Günlük özet yan yana olmalı (artık üstte değil).
+2. Onların altında, satırın SOLUNDA **"Ciro ve NET-2 — son 14 gün"** kartı;
+   x ekseninde gün numaraları (10 … 23), iki çizgi (ciro · NET-2).
+3. Dönem süzgecini "Dün" yapın → 14 gün grafiği **değişmemeli** (bugüne kilitli).
+4. Kanal süzgecini Trendyol yapın → 14 gün grafiği **yalnız Trendyol**u çizmeli.
+5. Son noktanın (bugün) cirosu, "Bugün" süzgeciyle hüküm kartındaki **Brüt
+   ciro** ile birebir aynı olmalı.
+6. Aynı satırın SAĞINDA günlük operasyon grafiği — sütun, dört seri, sekmeler (K258).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (1 yeni anahtar, tr+en) ·
+**kullanıcı kolaylığı: ✓** (İlke #13 — sıra: hüküm → grafik)
+
+---
+
+## 🔴 K256 — CİRO KANALA GÖRE: OK ÇİZGİLİ HALKA, KENDİ KARTINDA · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı demo turunda açıkça istemişti: _"yuvarlak olmaz mı, her renkten
+ok'la pazaryeri ismi çıkacak şekilde."_ K247 bunu **mevcut pasta + yan
+liste** ile geçiştirmişti — ok yoktu, isim dilimin yanında değildi; bu kalem
+o borcu kapatıyor.
+
+### YAPILAN
+
+- Yeni bileşen `components/halka-grafik.tsx`: her dilimden bir ok çizgisi,
+  ucunda kanal adı + tutar; bantta yüzde; ortada toplam ciro. **Sunucuda
+  çizilir** — fonksiyon prop yok, RSC sınırı yok (K247'deki "ekran çizilemedi"
+  tuzağının tam tersi kurgu). Karanlık tema `currentColor` sınıflarıyla.
+- Halka **kendi kartında** (2/5), pazaryeri kartı 3/5 — demo düzeni. K247'nin
+  "aynı düzlem" kararı korunuyor (yan yana, `h-full` ile aynı boy) ve
+  **K126-C geri geldi**: iki sütun aynı yerde biter.
+- **Dördü aşan dilimler «Diğer»de toplanır ve dipnot bunu yazar**: 11 kanalda
+  11 ok birbirine girerdi. Toplanan şey sessizce kaybolmaz (değer testi +
+  dipnot mutasyonu).
+
+### ⚠ ESKİ PASTA KALKMADI — HAKEDİŞ ONU KULLANIYOR
+
+`PastaGrafik` / `KanalDagilimiGrafigi` `/hakedis`te duruyor; panelden yalnız
+o sarmalayıcının ithali kalktı. K249'un efsane düzeltmesi orada yaşıyor.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → "Pazaryeri performansı" kartının **sağında** ayrı bir kart: **"Ciro
+   kanala göre"**, içinde halka. İki kart aynı yerde bitmeli.
+2. Her dilimden bir **ok** çıkmalı, ucunda **kanal adı + tutar**; bantta yüzde.
+3. Ortadaki toplam, hüküm kartlarındaki **Brüt ciro** ile birebir aynı olmalı.
+4. Dilim renkleri, soldaki kanal kartlarının **kenar çizgisi ve çubuk
+   renkleriyle** aynı olmalı (Trendyol mavi, HB turuncu, N11 sarı).
+5. Beşten fazla kanalda satış varsa 4. dilim **"N kanal daha"** olmalı ve
+   altta **"En küçük N kanal tek dilimde toplandı"** yazmalı.
+6. Telefonda halka pazaryeri kartının **altına** inmeli, oklar okunur kalmalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (5 yeni anahtar, tr+en) ·
+**kullanıcı kolaylığı: ✓** (İlke #10 — aynı kanal her yerde aynı renk)
+
+---
+
+## 🔴 K255 — KANAL KARTI DEMO ANATOMİSİ + NET-2'YE GÖRE SIRALAMA · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Eski kart aynı bilgiyi beş ayrı rakam satırında dağıtıyordu; hiçbir şey öne
+çıkmıyordu. Demo anatomisi: **renk noktası + ad · marj çipi · NET-2 büyük ·
+gri satırda ciro/satış/iade · iki renkli çubuk · hüküm cümlesi.** Göz sırayla
+okuyor: kim · ne kadar kârlı · kaç lira · hacim · pay · hüküm.
+
+### ⛔ ÇEVRİLEN KARAR — GEREKÇESİ `PayCubugu`DE DURUYOR
+
+> _"Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11 ton, dört durum
+> rengiyle karışır ve 'yeşil = iyi' anlamı çökerdi."_ (K247'de mutasyonla
+> korunuyordu.)
+
+Kullanıcı demoyu onayladı: çubuklar kanalın **kimlik** rengini taşıyor (halka
+ile aynı palet — aynı kanal her yerde aynı renk, İlke #10). «Yeşil = iyi»
+çökmüyor, çünkü kartta iyi/kötüyü söyleyen şey renk değil **marj çipi (durum
+paleti) ve hüküm cümlesi**. Kategori paleti ile durum paleti karışmıyor.
+K247'nin FAZLADAN mutasyonu **yön değiştirdi** (KALDIRAN): rengin düşmesi
+artık hatadır. `renk` verilmezse `PayCubugu` eski nötr tonda — öteki
+kullanımlar değişmedi.
+
+### ⚠ 13.08 KURALI KAZANDI: GRİ SATIRDA `CiroSunumu`
+
+Demonun gri satırı tek satırdı («₺17.890 ciro · 16 satış · 1 iade»). Mimar
+kuralı: _panelin ciro gösterdiği her yerde aynı sunum (brüt · iade · net)._
+Kural kazandı; gri satır `CiroSunumu` + «N satış · N iade». Mutasyonla
+korunuyor (`<CiroSunumu\b`).
+
+### ⚠ MARJ ÇİPİ — BÖLME KAPISI VE DURUM RENGİ
+
+Oran `NET-2 ÷ ciro`; ciro sıfırsa çip **çizilmez** (NaN/∞ uydurulmaz). Renk
+`marjDurumu(marj, ortalamaMarj)`'dan: zarar kırmızı, ortalamanın altı amber,
+üstü yeşil — sabit yeşil değil. İkisi de mutasyonla korunuyor.
+
+### ⚠ SIRALAMA: SABİT DÜZEN KALKMADI, NET-2 EKLENDİ
+
+Demo iki düğme (NET-2'ye göre · Ciroya göre); K106 kararı («Trendyol'u nerede
+bulacağım», yer sabit) yaşıyor → üç kip: **Sabit düzen · NET-2'ye göre ·
+Ciroya göre.** Değer testi: NET-2 kipi kâra göre sıralar, eşitlikte sabit
+düzen; ciro kipinden **ayrışan** örnekle sınandı.
+
+### ⚠ ALT SATIR: SATIŞI OLMAYAN KANALLARIN ADI
+
+Tavanlı panelde açık sıfır kartları çizilmiyordu (K124) ve «N11 neden yok?»
+sorusu cevapsızdı. Alt satır adları yazıyor + «Tümünü gör». Mutasyonla.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → her kanal kartının **sol kenarında** kanal renginde çizgi, adın
+   yanında renk noktası, sağda **"%16,7 marj"** çipi.
+2. Çip rengi: zararda kırmızı, dönem ortalamasının altında amber, üstünde
+   yeşil. Satışı olmayan kanalda çip **olmamalı**.
+3. Kartta **NET-2 büyük** rakam; altında gri kutuda ciro (brüt · iade · net) +
+   "N satış · N iade".
+4. İki çubuk **kanal renginde**: ciro payı soluk, NET payı tam. Hüküm cümlesi
+   altta.
+5. "Kanal sırası" düğmeleri: **Sabit düzen · NET-2'ye göre · Ciroya göre**;
+   NET-2'ye göre seçince kartlar kâra göre dizilmeli.
+6. Kartların altında **"Bu dönemde satışı olmayan N kanal · Amazon · …"** ve
+   sağda "N kanal daha" bağlantısı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (6 yeni anahtar + 1 metin
+değişti, tr+en) · **kullanıcı kolaylığı: ✓** (İlke #2 · #5 · #10 · #12)
+
+### ÖLÇÜLDÜ (iki paket birlikte)
+
+    panel:dogrula            837 ölçüt (K255 12 · K256 9 · K257 12 yeni; K247'nin 1 ölçütü çevrildi, 2'si taşındı)
+    panel-mutasyon:kontrol   57/57 (K255 5 · K256 3 · K257 4 · K258 4 yeni; K247'nin 4'ü taşındı, 1'i yön değiştirdi)
+    i18n · lint · kontrol-karakteri · mutasyon-cakisma · tsc   0
+
 ## 🔴 K254 — GÖREV ŞERİDİ: İKİ KART → TEK SATIR ÇİP · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Demonun ikinci bloğu. Görevler artık tek satır: **"Bugün ne yapmalıyım · 3

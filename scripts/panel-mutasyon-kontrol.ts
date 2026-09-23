@@ -34,6 +34,12 @@ const BEKCI = "scripts/panel-dogrula.ts";
 const BEKCI_BASLIGI = "PANEL";
 
 const SIRA = "src/lib/kanal-sirasi.ts";
+/** K256: ok cizgili halka. */
+const HALKA = "src/components/halka-grafik.tsx";
+/** K257: son 14 gun serisi. */
+const SERI = "src/lib/panel/son-gun-serisi.ts";
+/** K258: sutun kipi. */
+const GRAFIK = "src/components/uc-serili-grafik.tsx";
 const PANEL = "src/lib/panel.ts";
 /** K245: oran değişimi PUAN cinsinden — yüzdenin yüzdesi yanlış rakam üretir. */
 const KIYAS = "src/lib/karsilastirma.ts";
@@ -238,8 +244,9 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "CIRO HALKASI PANELDEN KALKTI",
     yon: "KALDIRAN",
     dosya: SAYFA,
-    bul: "                      <KanalDagilimiGrafigi",
-    koy: "                      <NoktaliGrafik",
+    /* K256: HalkaGrafik'e tasindi. */
+    bul: "                    <HalkaGrafik",
+    koy: "                    <HalkaGrafikYok",
     bozdugu:
       "kanal payi panelde hic gorunmez; kullanicinin acikca istedigi gorsel yok olur",
   },
@@ -247,8 +254,8 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "HALKA BOS DIZIYLE BESLENIYOR",
     yon: "KALDIRAN",
     dosya: SAYFA,
-    bul: "                        dilimler={ustBlok.kanallar.map((k) => ({",
-    koy: "                        dilimler={[].map((k: { kanalAdi: string; gelir: number }) => ({",
+    bul: "                    ustBlok.kanallar.map((k) => ({",
+    koy: "                    ([] as typeof ustBlok.kanallar).map((k) => ({",
     bozdugu:
       "halka her zaman bos cizilir; nitelik yerinde durdugu icin kimse fark etmez",
   },
@@ -256,20 +263,24 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "TANINMAYAN KANALIN VARSAYILAN RENGI KALKTI",
     yon: "KALDIRAN",
     dosya: SAYFA,
-    bul: "                            KANAL_RENKLERI[k.kanalAdi] ?? KANAL_RENGI_VARSAYILAN,",
-    koy: "                            KANAL_RENKLERI[k.kanalAdi],",
+    bul: "                      renk: KANAL_RENKLERI[k.kanalAdi] ?? KANAL_RENGI_VARSAYILAN,",
+    koy: "                      renk: KANAL_RENKLERI[k.kanalAdi],",
     bozdugu:
       "palet disi kanalin dilimi undefined renk alir ve SESSIZCE cizilmez - ciro toplamdan dusmez ama dilim kaybolur",
   },
   {
-    ad: "KART CUBUKLARINA KANAL RENGI GELDI",
-    yon: "FAZLADAN",
+    /* K255: YON CEVRILDI. K247'de kanal rengi kartlara girmesin diye FAZLADAN
+       mutasyondu; kullanici demoyu onayladi, cubuklar kanal renginde.
+       Simdi rengin DUSMESI hatadir (KALDIRAN). Eski gerekce panel-dogrula'da. */
+    ad: "NET CUBUGU YINE NOTR (kanal rengi dustu)",
+    yon: "KALDIRAN",
     dosya: SAYFA,
-    bul: "            const pay = kanalPaylari.get(kanal.kanalKodu);",
+    bul:
+      "                    etiket={bicim.yuzde(pay.net2Payi)}\n                    renk={kanalRengi}\n",
     koy:
-      "            const pay = kanalPaylari.get(kanal.kanalKodu);\n            const kanalTonu = KANAL_RENKLERI[kanal.kanalAdi];",
+      "                    etiket={bicim.yuzde(pay.net2Payi)}\n",
     bozdugu:
-      "11 ton dort durum rengiyle karisir ve 'yesil = iyi' anlami coker - kodun kendi karari cignenir",
+      "halka ile kart ayni kanali farkli renkte gosterir; goz ikisini eslestiremez",
   },
   {
     ad: "GORUNUR ETIKET SERITTEN DUSTU",
@@ -486,6 +497,182 @@ const MUTASYONLAR: Mutasyon[] = [
       "        <span className=\"font-semibold tabular-nums\">{gorev.sayi} {sureMetni}</span>",
     bozdugu:
       "tarife cipinde «0 · Bugun son gun» yazar - ekran kendiyle celisir",
+  },
+  {
+    ad: "MARJ CIPI CIRO SIFIRKEN DE HESAPLANIYOR (sifira bolme)",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul:
+      "karGorunur && kanal.gelir > 0 ? (kanal.net2 / kanal.gelir) * 100 : null",
+    koy:
+      "karGorunur ? (kanal.net2 / kanal.gelir) * 100 : null",
+    bozdugu:
+      "satissiz kanalda cip «NaN marj» ya da «Infinity marj» yazar",
+  },
+  {
+    ad: "MARJ CIPI RENGI SABIT YESIL (durumdan degil)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "          const marjD = marjDurumu(marj, ortalamaMarj);",
+    koy:
+      "          const marjD = \"guclu\" as ReturnType<typeof marjDurumu>;",
+    bozdugu:
+      "zarardaki kanal da yesil cip tasir - hukum rengi yalan soyler",
+  },
+  {
+    ad: "NET-2 KIPI ASLINDA CIROYA GORE SIRALIYOR",
+    yon: "KALDIRAN",
+    dosya: SIRA,
+    bul:
+      "      const netFarki = (b.net2 ?? 0) - (a.net2 ?? 0);",
+    koy:
+      "      const netFarki = b.gelir - a.gelir;",
+    bozdugu:
+      "«NET-2'ye gore» dugmesi ciro sirasini verir - secim ise yaramaz, kullanici fark etmez",
+  },
+  {
+    ad: "ALT SATIRDA SATISI OLMAYAN KANAL ADLARI YOK",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "              <span>{bosKanallar.map(([, ad]) => ad).join(\" · \")}</span>\n",
+    koy:
+      "",
+    bozdugu:
+      "«2 kanal» yazar ama hangileri oldugu gorunmez - 'N11 neden yok' sorusu doner",
+  },
+  {
+    ad: "GRI SATIR CIRO SUNUMUNU BIRAKTI (13.08 kurali)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "              <CiroSunumu\n                brut={bicim.para(kanal.gelir, blok.paraBirimi)}",
+    koy:
+      "              <CiroSunumuYok\n                brut={bicim.para(kanal.gelir, blok.paraBirimi)}",
+    bozdugu:
+      "kanal kartinda ciro baska bicimde yazar - panelde iki farkli ciro sunumu, 'hangisi dogru' sorusu",
+  },
+  {
+    ad: "DIGER TOPLAMASI KALKTI (11 ok birbirine girer)",
+    yon: "KALDIRAN",
+    dosya: HALKA,
+    bul:
+      "export const HALKA_DILIM_TAVANI = 4;",
+    koy:
+      "export const HALKA_DILIM_TAVANI = 99;",
+    bozdugu:
+      "11 kanal 11 ok - kucuk dilimlerin oklari ust uste biner, okunmaz",
+  },
+  {
+    ad: "DIPNOT KALKTI (toplanan sey sessizce kayboldu)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "                        toplananSayi > 0 ? t(\"halkaDipnot\", { sayi: toplananSayi }) : undefined",
+    koy:
+      "                        undefined",
+    bozdugu:
+      "«Diger» dilimi vardir ama kac kanalin toplandigi hicbir yerde yazmaz",
+  },
+  {
+    ad: "HALKA ISTEMCIDE CIZILIYOR (gereksiz use client)",
+    yon: "FAZLADAN",
+    dosya: HALKA,
+    bul:
+      "export type HalkaDilimi = {",
+    koy:
+      "\"use client\";\nexport type HalkaDilimi = {",
+    bozdugu:
+      "fonksiyon prop'lar RSC sinirinda kirilir - ekran uretimde COKER (K247'de yasandi)",
+  },
+  {
+    ad: "PENCERE 13 GUN (14 degil)",
+    yon: "KALDIRAN",
+    dosya: SERI,
+    bul:
+      "export const SON_GUN_SAYISI = 14;",
+    koy:
+      "export const SON_GUN_SAYISI = 13;",
+    bozdugu:
+      "baslik «son 14 gun» der, grafik 13 gun cizer - baslik yalan soyler",
+  },
+  {
+    ad: "NULL NET-2 SIFIR SAYILIYOR",
+    yon: "KALDIRAN",
+    dosya: SERI,
+    bul:
+      "    if (s.net2 !== null) {\n      g.net2 += s.net2;",
+    koy:
+      "    {\n      g.net2 += s.net2 ?? 0;",
+    bozdugu:
+      "kari hesaplanamayan gun «sifir kar» gibi cizilir - bilinmeyen sifir sanilir",
+  },
+  {
+    ad: "14 GUN KARTI KALKTI",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "              <CizgiGrafik\n                noktalar={son14Noktalari}",
+    koy:
+      "              <CizgiGrafikYok\n                noktalar={son14Noktalari}",
+    bozdugu:
+      "demonun para egilimi grafigi panelden duser",
+  },
+  {
+    ad: "SERI KANAL SUZGECINI UYGULAMIYOR",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "      (s) => s.paraBirimi === seciliPara && (!seciliKanal || s.kanalKodu === seciliKanal),",
+    koy:
+      "      (s) => s.paraBirimi === seciliPara,",
+    bozdugu:
+      "Trendyol suzgeci acikken 14 gun grafigi tum kanallari cizer - hukum kartlariyla ayrisir",
+  },
+  {
+    ad: "OPERASYON YINE CIZGI (sekil dustu)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "              <UcSeriliGrafik\n                sekil=\"sutun\"\n",
+    koy:
+      "              <UcSeriliGrafik\n",
+    bozdugu:
+      "2/5 sutunda 1240'lik cizgi grafigi ~2,6x kucuk cizilir - yazilar okunmaz",
+  },
+  {
+    ad: "SUTUNLAR TIKLANMIYOR (<a> kalkti)",
+    yon: "KALDIRAN",
+    dosya: GRAFIK,
+    bul:
+      "                  <a key={`${s.anahtar}-${i}`} href={adres} aria-label={baslik}>\n                    <title>{baslik}</title>\n                    {dikd}\n                  </a>",
+    koy:
+      "                  <g key={`${s.anahtar}-${i}`}>\n                    <title>{baslik}</title>\n                    {dikd}\n                  </g>",
+    bozdugu:
+      "cizgideki noktaya tiklaninca liste aciliyordu; sutunda hicbir sey olmaz (Ilke #2)",
+  },
+  {
+    ad: "SUTUN KIPI YALNIZ IKI SERI CIZIYOR (demonun iki serisi)",
+    yon: "KALDIRAN",
+    dosya: GRAFIK,
+    bul:
+      "              return seriler.map((s, k) => {",
+    koy:
+      "              return seriler.slice(0, 2).map((s, k) => {",
+    bozdugu:
+      "siparis ve mal kabul sutundan duser - 21.08 «ayni grafikte» istegi yariya iner",
+  },
+  {
+    ad: "14 GUN KARTI YINE TAM GENISLIK",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "          <Card className=\"flex min-w-0 flex-col xl:col-span-3\">",
+    koy:
+      "          <Card className=\"flex min-w-0 flex-col xl:col-span-5\">",
+    bozdugu:
+      "operasyon karti alt satira duser; iki grafik yine alt alta",
   },
 ];
 

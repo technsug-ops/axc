@@ -56,7 +56,8 @@ import { GENEL_KDV_ORANI, kdvHaric } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { kutuOranlari } from "@/lib/panel/kar-orani";
 import { payFarki } from "@/lib/panel/pay-farki";
-import { KanalDagilimiGrafigi } from "@/app/hakedis/kanal-dagilimi-grafigi";
+import { HalkaGrafik, halkaDilimleriniTopla } from "@/components/halka-grafik";
+import { sonGunSerisi } from "@/lib/panel/son-gun-serisi";
 import { KANAL_RENKLERI, KANAL_RENGI_VARSAYILAN } from "@/lib/renkler";
 import { HIZLI_KIYAS } from "@/lib/karsilastirma";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
@@ -114,7 +115,13 @@ import {
 import { MarjSerhi } from "@/components/marj-serhi";
 import { marjBasilabilirMi, marjSerhi } from "@/lib/ice-aktarma-serhi";
 import { prisma } from "@/lib/prisma";
-import { DURUM_CIPI, DURUM_SERIDI, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
+import {
+  DURUM_CIPI,
+  DURUM_SERIDI,
+  DURUM_YAZISI,
+  karDurumu,
+  type DurumRengi,
+} from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
 import { OzetKutusu } from "./ozet-kutusu";
@@ -2080,118 +2087,60 @@ export default async function AnaSayfa({
             <div className="text-lg font-semibold tabular-nums">0</div>
           </div>
         ) : (
+        /*
+          ══ KANAL KARTI — DEMO ANATOMİSİ (K255, 23.09.2026) ══
+          Kullanıcı demoyu onayladı: renk noktası + ad · MARJ ÇİPİ · NET-2 büyük
+          · gri satırda ciro/satış/iade · iki renkli çubuk · hüküm cümlesi.
+          Eski kart aynı bilgiyi beş ayrı rakam satırında dağıtıyordu ve hiçbir
+          şey öne çıkmıyordu. Şimdi göz sırayla okuyor: kim · ne kadar kârlı ·
+          kaç lira · hacim · pay · hüküm.
+          ⛔ RENK KARARI ÇEVRİLDİ, GEREKÇESİ `PayCubugu`DE DURUYOR: çubuk kanalın
+          KİMLİK rengini taşıyor (halka ile aynı palet). İyi/kötü hükmü renkten
+          değil marj çipinden (durum paleti) ve cümleden geliyor.
+          ⚠ CİRO SUNUMU 13.08 KURALINA BAĞLI KALDI: demonun tek satırı yerine
+          `CiroSunumu` (brüt · iade · net) — panelin ciro gösterdiği her yerde
+          aynı sunum. Demo bir satırdı, kural üç; kural kazandı.
+        */
+        (() => {
+          const kanalRengi = KANAL_RENKLERI[kanal.kanalAdi] ?? KANAL_RENGI_VARSAYILAN;
+          const pay = kanalPaylari.get(kanal.kanalKodu);
+          /* MARJ ÇİPİ — hüküm rengi durum paletinden (`marjDurumu`, ortalamaya
+             göre). Ciro yoksa oran kurulamaz, çip çizilmez; uydurulmaz. */
+          const marj = karGorunur && kanal.gelir > 0 ? (kanal.net2 / kanal.gelir) * 100 : null;
+          const marjD = marjDurumu(marj, ortalamaMarj);
+          const marjRengi: DurumRengi =
+            marjD === "zarar" ? "olumsuz" : marjD === "zayif" ? "uyari" : "olumlu";
+          return (
         <div
           key={kanal.kanalKodu}
-          className="bg-card min-w-0 space-y-3 rounded-lg border p-3"
+          className="bg-card min-w-0 space-y-2.5 rounded-lg border border-l-[3px] p-3"
+          style={{ borderLeftColor: kanalRengi }}
         >
-          {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş
-                      gider. Link stili görünür (İlke #2). */}
-          <div className="font-medium">
-            <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)}>
+          <div className="flex min-w-0 items-center gap-2">
+            <span
+              className="size-2.5 shrink-0 rounded-[3px]"
+              style={{ backgroundColor: kanalRengi }}
+              aria-hidden
+            />
+            {/* TIKLANABİLİR KANAL: o kanalın satışlarına süzülmüş gider (İlke #2). */}
+            <Baglanti href={kanalSatislariAdresi(kanal.kanalKodu)} className="min-w-0 truncate">
               {kanal.kanalAdi}
             </Baglanti>
+            {marj !== null ? (
+              <span className="ml-auto shrink-0">
+                <DurumRozeti durum={marjRengi} isaretsiz>
+                  {t("marjCipi", { oran: bicim.yuzde(marj) })}
+                </DurumRozeti>
+              </span>
+            ) : null}
           </div>
 
-          {/* PAY ÇUBUĞU — kanalın ciro içindeki ağırlığı.
-                      Kartlar bir ızgara dolusu birbirinin aynıydı; hangi
-                      kanalın yükü taşıdığı ancak rakamlar tek tek okunup
-                      kafada karşılaştırılınca anlaşılıyordu. Çubuk bunu
-                      BAKINCA söylüyor.
-                      Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
-                      ton, dört durum rengiyle karışır ve "yeşil = iyi"
-                      anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
-          {/* İKİ ÇUBUK: CİRO PAYI VE NET-2 PAYI (2c).
-                      Biri hacmi, diğeri gerçek kazancı gösterir ve
-                      FARKLI OLABİLİRLER — o fark önemlidir: cironun
-                      %60'ını taşıyan kanal kârın %40'ını getiriyor
-                      olabilir. Paylar `kanalDagilimi` ile denkleştirilir,
-                      toplam %100'dür ve yuvarlama artığı kaybolmaz.
-                      Kanala ayrı KİMLİK RENGİ verilmedi: 11 kanal için 11
-                      ton, dört durum rengiyle karışır ve "yeşil = iyi"
-                      anlamı çökerdi. Bilgiyi taşıyan renk değil UZUNLUK. */}
-          {(() => {
-            const pay = kanalPaylari.get(kanal.kanalKodu);
-            if (!pay) return null;
-            return (
-              <div className="space-y-1">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="text-muted-foreground w-10 shrink-0 text-xs">
-                    {t("ciro")}
-                  </span>
-                  <PayCubugu
-                    oran={pay.ciroPayi / 100}
-                    etiket={bicim.yuzde(pay.ciroPayi)}
-                  />
-                </div>
-                {/* NET-2 payı: toplam kâr eksiyse pay ANLAMSIZ —
-                            işaretler birbirini yer. O hâlde çubuk yok. */}
-                {karGorunur && pay.net2Payi !== null ? (
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-muted-foreground w-10 shrink-0 text-xs">
-                      {t("net2")}
-                    </span>
-                    <PayCubugu
-                      oran={pay.net2Payi / 100}
-                      etiket={bicim.yuzde(pay.net2Payi)}
-                    />
-                  </div>
-                ) : null}
-                {/*
-                  ══ İKİ ÇUBUĞUN FARKI CÜMLEYE ÇEVRİLİYOR (K246) ══
-                  ⛔ FARK ZATEN ÖNEMLİ DİYE İKİ ÇUBUK ÇİZİLİYORDU — ama
-                  fark ÇUBUKLARDAN OKUNUYORDU: iki uzunluğu gözle
-                  kıyaslayıp aradaki birkaç pikseli yorumlamak gerekiyordu.
-                  Cironun %31,6'sını taşıyan kanal NET'in %31,1'ini
-                  getiriyorsa LİRA BAŞINA DAHA AZ KAZANDIRIYOR demektir;
-                  panel hükmü SÖYLER, çıkarmayı okuyucuya bırakmaz.
-                  ⚠ HÜKÜM SAF GÖVDEDEN (`payFarki`) — eşik ve yön orada.
-                */}
-                {(() => {
-                  if (!karGorunur) return null;
-                  const pf = payFarki(pay.ciroPayi, pay.net2Payi);
-                  if (pf === null) return null;
-                  return (
-                    <p
-                      className={`text-xs ${
-                        pf.yon === "USTUNDE"
-                          ? DURUM_YAZISI.olumlu
-                          : pf.yon === "ALTINDA"
-                            ? DURUM_YAZISI.olumsuz
-                            : DURUM_YAZISI.notr
-                      }`}
-                    >
-                      {pf.yon === "AYNI"
-                        ? t("payAyni")
-                        : t(
-                            pf.yon === "USTUNDE" ? "payUstunde" : "payAltinda",
-                            { puan: bicim.sayi(pf.puan, 1) },
-                          )}
-                    </p>
-                  );
-                })()}
+          {karGorunur ? (
+            <div>
+              <div className="text-muted-foreground text-xs">{t("net2")}</div>
+              <div className="text-xl font-bold tabular-nums">
+                {bicim.para(kanal.net2, blok.paraBirimi)}
               </div>
-            );
-          })()}
-
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-            <div className="min-w-0">
-              <div className="text-muted-foreground text-xs">
-                {t("satisAdedi")}
-              </div>
-              <div className="text-lg font-semibold tabular-nums">
-                {kanal.adet}
-              </div>
-            </div>
-
-            {/* İade/eksik notları NET-2'nin yanında: ciro iadeden
-                        etkilenmez, düşen rakam NET-2'dir. Sütun izne
-                        kapalıysa notlar da gider — dayanağı kalmaz. */}
-            {karGorunur ? (
-              <div className="min-w-0">
-                <div className="text-muted-foreground text-xs">{t("net2")}</div>
-                <div className="text-lg font-semibold">
-                  {bicim.para(kanal.net2, blok.paraBirimi)}
-                </div>
                 {kanal.iadeAdedi > 0 ? (
                   <div className="text-muted-foreground text-xs">
                     {t("kanalIade", { sayi: kanal.iadeAdedi })}
@@ -2219,11 +2168,13 @@ export default async function AnaSayfa({
                     })}
                   </Link>
                 ) : null}
-              </div>
-            ) : null}
+            </div>
+          ) : null}
 
-            <div className="col-span-2 min-w-0">
-              <div className="text-muted-foreground text-xs">{t("ciro")}</div>
+          {/* GRİ SATIR: ciro (13.08 sunumu) + satış adedi + iade adedi. AÇIK SIFIR:
+              iade 0 ise de yazılır (İlke #5). */}
+          <div className="bg-muted text-muted-foreground flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-md px-2 py-1 text-xs">
+            <span className="min-w-0">
               <CiroSunumu
                 brut={bicim.para(kanal.gelir, blok.paraBirimi)}
                 iade={
@@ -2231,13 +2182,67 @@ export default async function AnaSayfa({
                     ? bicim.para(kanal.iadeTutari, blok.paraBirimi)
                     : null
                 }
-                net={bicim.para(
-                  kanal.gelir - kanal.iadeTutari,
-                  blok.paraBirimi,
-                )}
+                net={bicim.para(kanal.gelir - kanal.iadeTutari, blok.paraBirimi)}
               />
-            </div>
+            </span>
+            <span className="tabular-nums">
+              {t("kanalOzetSatiri", { satis: kanal.adet, iade: kanal.iadeAdedi })}
+            </span>
           </div>
+
+          {/* İKİ ÇUBUK: CİRO PAYI (soluk) VE NET-2 PAYI (tam) — kanal renginde.
+              Paylar `kanalDagilimi` ile denkleştirilir, toplam %100. NET-2 payı:
+              toplam kâr eksiyse ANLAMSIZ — çubuk yok. */}
+          {pay ? (
+            <div className="space-y-1">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="text-muted-foreground w-12 shrink-0 text-[11px]">
+                  {t("ciroPayi")}
+                </span>
+                <PayCubugu
+                  oran={pay.ciroPayi / 100}
+                  etiket={bicim.yuzde(pay.ciroPayi)}
+                  renk={kanalRengi}
+                  soluk
+                />
+              </div>
+              {karGorunur && pay.net2Payi !== null ? (
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="text-muted-foreground w-12 shrink-0 text-[11px]">
+                    {t("netPayi")}
+                  </span>
+                  <PayCubugu
+                    oran={pay.net2Payi / 100}
+                    etiket={bicim.yuzde(pay.net2Payi)}
+                    renk={kanalRengi}
+                  />
+                </div>
+              ) : null}
+                {(() => {
+                  if (!karGorunur) return null;
+                  const pf = payFarki(pay.ciroPayi, pay.net2Payi);
+                  if (pf === null) return null;
+                  return (
+                    <p
+                      className={`text-xs ${
+                        pf.yon === "USTUNDE"
+                          ? DURUM_YAZISI.olumlu
+                          : pf.yon === "ALTINDA"
+                            ? DURUM_YAZISI.olumsuz
+                            : DURUM_YAZISI.notr
+                      }`}
+                    >
+                      {pf.yon === "AYNI"
+                        ? t("payAyni")
+                        : t(
+                            pf.yon === "USTUNDE" ? "payUstunde" : "payAltinda",
+                            { puan: bicim.sayi(pf.puan, 1) },
+                          )}
+                    </p>
+                  );
+                })()}
+            </div>
+          ) : null}
 
           {/**
            * HESAP KIRILIMI — kanal kartının içinde.
@@ -2271,6 +2276,8 @@ export default async function AnaSayfa({
             </ul>
           ) : null}
         </div>
+          );
+        })()
         ),
       )}
 
@@ -2300,15 +2307,30 @@ export default async function AnaSayfa({
        * ⚠ SAYI GİZLENENİ SAYAR, TOPLAMI DEĞİL: "12 kanal" yazsaydı ekranda
        * duran üçü de içerir ve okuyan ne bulacağını bilemezdi.
        */}
-      {gizlenen > 0 ? (
-        <Link
-          href={tumKanallarAdresi(
-            parametreler as Record<string, string | undefined>,
-          )}
-          className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center text-sm underline underline-offset-2"
-        >
-          {t("kanalTumu", { sayi: gizlenen })}
-        </Link>
+      {/* ALT SATIR (K255, demo): satışı olmayan kanalların ADI + «tümünü gör».
+          Tavanlı panelde açık sıfır kartları çizilmiyor (K124); adları burada
+          yazmazsa «N11 neden yok?» sorusu cevapsız kalırdı (İlke #5). */}
+      {gizlenen > 0 || (tavan !== null && bosKanallar.length > 0) ? (
+        <div className="bg-muted text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-3 py-2 text-xs">
+          {tavan !== null && bosKanallar.length > 0 ? (
+            <>
+              <span className="text-foreground font-medium">
+                {t("satisiOlmayanKanallar", { sayi: bosKanallar.length })}
+              </span>
+              <span>{bosKanallar.map(([, ad]) => ad).join(" · ")}</span>
+            </>
+          ) : null}
+          {gizlenen > 0 ? (
+            <Link
+              href={tumKanallarAdresi(
+                parametreler as Record<string, string | undefined>,
+              )}
+              className="hover:text-foreground ml-auto inline-flex min-h-11 items-center font-medium underline underline-offset-2 md:min-h-7"
+            >
+              {t("kanalTumu", { sayi: gizlenen })}
+            </Link>
+          ) : null}
+        </div>
       ) : null}
     </div>
     );
@@ -2369,6 +2391,28 @@ export default async function AnaSayfa({
    * KIYASLANAN ARALIK YAZILI DURUR — tanım ekranda olmazsa rozet sessiz bir
    * varsayıma dönerdi. Boşsa BİR KEZ söylenir; kutularda tekrarlanmaz.
    */
+  /**
+   * SON 14 GÜN — DÖNEM SÜZGECİNDEN BAĞIMSIZ, BUGÜNE KİLİTLİ (K257, demo).
+   * Kullanıcı «Bugün»ü seçse de son iki haftanın günlük ciro/NET-2 eğilimi
+   * görünsün. Kaynak, aylık grafiğin ZATEN çektiği 12 aylık `satislar`
+   * dizisi — ikinci sorgu yok. Kanal ve para birimi süzgeci uygulanır ki
+   * hüküm kartlarıyla aynı kümeye baksın.
+   * ⚠ NET-2 `null` SIFIR SAYILMAZ (gövdede): bilinmeyen, sıfır değildir.
+   */
+  const son14 = sonGunSerisi(
+    satislar.filter(
+      (s) => s.paraBirimi === seciliPara && (!seciliKanal || s.kanalKodu === seciliKanal),
+    ),
+    new Date(),
+  );
+  const son14Noktalari: GrafikNoktasi[] = son14.map((n) => ({
+    /* Eksende gün numarası (14 nokta için ay adı gereksiz); tam tarih tabloda. */
+    etiket: String(isTakvimGunu(n.tarih).gun),
+    tamEtiket: bicim.tarih(n.tarih),
+    gelir: n.gelir,
+    net2: n.net2,
+  }));
+
   const kiyasSecici = karGorunur ? (
     <>
       <span className="text-muted-foreground text-sm">
@@ -3005,6 +3049,107 @@ export default async function AnaSayfa({
           }}
         />
 
+
+        {/* ⚠ 2/5 — 3/5 düzeni KORUNDU: ızgaraya dokunulmadı.
+            ⛔ İKİ SÜTUN AYNI YERDE BİTER (K126-C, kullanıcı 01.09.2026:
+            _"Mal ve kayıt kartının bitişi ile pazaryeri performansı kartının
+            bitişleri aynı yerde olmalı ki düzen olsun"_). `items-stretch`
+            ızgara varsayılanıdır ama AÇIKÇA yazılıyor: bir gün biri
+            `items-start` eklerse kartlar sessizce ayrışır ve kimse
+            nedenini aramaz. */}
+        <div className="grid min-w-0 items-stretch gap-4 xl:grid-cols-5">
+          {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
+
+          {/* PAZARYERİ PERFORMANSI — para bloğu, izne bağlı.
+            ⚠ K254: görev kartları şeride çıktı. K256: halka sağ 2/5 kartta —
+            iki sütun yeniden doğdu, K126-C («iki sütun aynı yerde biter»)
+            geri geldi: iki kart da `h-full`. */}
+          {karGorunur && ustBlok && ustPaylar ? (
+            /* ⛔ `h-full` — sol sütunun boyunu İZLER. Kart kendi içeriği
+               kadar yüksek kalsaydı (K126'dan sonra üç kanal kartı kaldığı
+               için içerik kısaldı) sağ sütun havada biterdi. */
+            <>
+            <Card className="flex h-full min-w-0 flex-col xl:col-span-3">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+                  <Store className="size-5" />
+                  {t("kanalKirilimi")}
+                  <span className="text-muted-foreground text-xs font-normal">
+                    {ustBlok.paraBirimi}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1">
+                {ustBlok.kanallar.length === 0 ? (
+                  /* AÇIK SIFIR: kanal yoksa kart boş kalmaz, sebebi yazar. */
+                  <p className="text-muted-foreground text-sm">
+                    {t("donemBos")}
+                  </p>
+                ) : (
+                  /* ⚠ K256: halka artık bu kartın DIŞINDA, sağdaki 2/5 kartta.
+                     K247 «aynı düzlem» kararı korunuyor — iki kart yan yana
+                     ve aynı boyda (h-full), K126-C geri geldi. */
+                  kanalIzgarasi(ustBlok, ustPaylar, PANEL_KANAL_TAVANI)
+                )}
+              </CardContent>
+            </Card>
+            {/*
+              ══ CİRO KANALA GÖRE — OK ÇİZGİLİ HALKA (K256, 23.09.2026) ══
+              Kullanıcı isteği (demo turu): «yuvarlak olmaz mı, her renkten ok'la
+              pazaryeri ismi çıkacak şekilde». K247 bunu mevcut pasta + yan
+              listeyle geçiştirmişti; ok çizgili halka bu kartta. Kanal kartıyla
+              AYNI palet (`KANAL_RENKLERI`): aynı kanal, aynı renk, iki yerde.
+              ⚠ DÖRDÜ AŞAN DİLİMLER «Diğer»de toplanır ve dipnot bunu YAZAR —
+              toplanan şey sessizce kaybolmaz (açık sıfır ilkesinin kardeşi).
+              ⚠ `h-full`: sol karta boy eşitler (K126-C: iki kart aynı yerde biter).
+            */}
+            <Card className="flex h-full min-w-0 flex-col xl:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">{t("ciroKanalaGore")}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-1 items-center">
+                {(() => {
+                  const { dilimler, toplananSayi } = halkaDilimleriniTopla(
+                    ustBlok.kanallar.map((k) => ({
+                      etiket: k.kanalAdi,
+                      tutar: k.gelir,
+                      tutarMetni: bicim.para(k.gelir, ustBlok.paraBirimi),
+                      /* Tanınmayan kanal üretilmiş renk almaz (K247 kararı). */
+                      renk: KANAL_RENKLERI[k.kanalAdi] ?? KANAL_RENGI_VARSAYILAN,
+                    })),
+                    (sayi) => t("halkaDiger", { sayi }),
+                    KANAL_RENGI_VARSAYILAN,
+                    (tutar) => bicim.para(tutar, ustBlok.paraBirimi),
+                  );
+                  return (
+                    <HalkaGrafik
+                      dilimler={dilimler}
+                      toplam={ustBlok.toplamGelir}
+                      toplamMetni={bicim.para(ustBlok.toplamGelir, ustBlok.paraBirimi)}
+                      toplamEtiketi={t("halkaToplam")}
+                      yuzdeMetni={(oran) => bicim.yuzde(oran, 0)}
+                      dipnot={
+                        toplananSayi > 0 ? t("halkaDipnot", { sayi: toplananSayi }) : undefined
+                      }
+                      bosMesaj={t("donemBos")}
+                      aciklama={t("halkaAciklama", {
+                        liste: dilimler.map((d) => `${d.etiket} ${d.tutarMetni}`).join(", "),
+                      })}
+                    />
+                  );
+                })()}
+              </CardContent>
+            </Card>
+            </>
+          ) : null}
+        </div>
+
+        {/*
+          ══ AFİŞ + GÜNLÜK ÖZET — PAZARYERİNİN ALTINDA (K257, demo) ══
+          Demo sırası: hüküm → görev → pazaryeri + halka → afiş + özet →
+          grafikler. Afiş bir UYARI, özet bir ANLATI; ikisi de hükümden
+          sonra okunur. K250 «para en üstte» kararının devamı.
+        */}
         {/* ═══════════════ ÜST SIRA: EYLEM + ÖNGÖRÜ YAN YANA ═══════════════
           14.08.2026 — PANEL DİKEY YIĞINDI, IZGARA OLDU.
           Her blok tam genişlikte alt alta duruyordu; 1400 px ekranda alanın
@@ -3054,93 +3199,223 @@ export default async function AnaSayfa({
             <OzetKutusu />
           </div>
         </div>
-
-        {/* ⚠ 2/5 — 3/5 düzeni KORUNDU: ızgaraya dokunulmadı.
-            ⛔ İKİ SÜTUN AYNI YERDE BİTER (K126-C, kullanıcı 01.09.2026:
-            _"Mal ve kayıt kartının bitişi ile pazaryeri performansı kartının
-            bitişleri aynı yerde olmalı ki düzen olsun"_). `items-stretch`
-            ızgara varsayılanıdır ama AÇIKÇA yazılıyor: bir gün biri
-            `items-start` eklerse kartlar sessizce ayrışır ve kimse
-            nedenini aramaz. */}
-        <div className="grid min-w-0 items-stretch gap-4 xl:grid-cols-5">
-          {/* Operasyonel sayılar — `satis.kar.gor` İSTEMEZ, depocu da görür. */}
-
-          {/* PAZARYERİ PERFORMANSI — para bloğu, izne bağlı.
-            ⚠ K254: görev kartları şeride çıktı; bu ızgarada şimdilik tek
-            çocuk var ve tam genişlik. K126-C'nin «iki sütun aynı yerde
-            biter» kuralı bu satırda artık kapsam dışı — halka K256'da
-            sağ 2/5'e alınınca iki sütun yeniden doğar ve kural geri gelir. */}
-          {karGorunur && ustBlok && ustPaylar ? (
-            /* ⛔ `h-full` — sol sütunun boyunu İZLER. Kart kendi içeriği
-               kadar yüksek kalsaydı (K126'dan sonra üç kanal kartı kaldığı
-               için içerik kısaldı) sağ sütun havada biterdi. */
-            <Card className="flex h-full min-w-0 flex-col xl:col-span-5">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-                  <Store className="size-5" />
-                  {t("kanalKirilimi")}
-                  <span className="text-muted-foreground text-xs font-normal">
-                    {ustBlok.paraBirimi}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1">
-                {ustBlok.kanallar.length === 0 ? (
-                  /* AÇIK SIFIR: kanal yoksa kart boş kalmaz, sebebi yazar. */
-                  <p className="text-muted-foreground text-sm">
-                    {t("donemBos")}
-                  </p>
-                ) : (
-                  /*
-                    ══ KARTLAR SOLDA, CİRO HALKASI SAĞDA (K247) ══
-                    Kullanıcı kararı 23.09.2026: _"pazaryeri performansı ile
-                    ciroya göre kanal aynı düzlemde olamaz mı"_.
-                    ⛔ İKİSİ AYNI SORUYU CEVAPLIYOR — "hangi kanal ne getiriyor"
-                    — ve ayrı dursalardı göz halkadaki %57 ile karttaki NET payı
-                    %57,5'i birleştirmek için ekranı iki kez dolaşırdı. Asıl bilgi
-                    o iki sayının FARKINDA.
-                    ⚠ DAR EKRANDA ALT ALTA: halka 240 px'e sabit, kartlar akar.
-                  */
-                  <div className="flex min-w-0 flex-col gap-4 xl:flex-row">
-                    <div className="min-w-0 flex-1">
-                      {kanalIzgarasi(ustBlok, ustPaylar, PANEL_KANAL_TAVANI)}
-                    </div>
-                    {/*
-                      ⛔ HALKADA KANAL RENGİ KULLANILIR, KARTLARDA KULLANILMAZ.
-                      Kart çubukları nötr kaldı (11 ton dört durum rengiyle
-                      karışır, "yeşil = iyi" çöker). Halka ise bir KATEGORİ
-                      grafiği: dilimleri birbirinden ayırmaktan başka işi yok ve
-                      `KANAL_RENKLERI` zaten tam bunun için var — hakediş
-                      pastasında da aynı palet kullanılıyor, yani AYNI kanal her
-                      ekranda AYNI renkte.
-                    */}
-                    <div className="min-w-0 shrink-0 xl:w-60">
-                      <KanalDagilimiGrafigi
-                        dilimler={ustBlok.kanallar.map((k) => ({
-                          etiket: k.kanalAdi,
-                          tutar: k.gelir,
-                          /*
-                            ⚠ TANINMAYAN KANAL ÜRETİLMİŞ RENK ALMAZ: paletin
-                            sırası renk körlüğü ayrımı ölçülerek seçilmiş;
-                            aradan bir ton uydurmak o ölçümü bozar. Palet dışı
-                            kanal nötr tona düşer ve bu GÖRÜNÜR bir karardır.
-                          */
-                          renk:
-                            KANAL_RENKLERI[k.kanalAdi] ?? KANAL_RENGI_VARSAYILAN,
-                        }))}
-                        toplam={ustBlok.toplamGelir}
-                        paraBirimi={ustBlok.paraBirimi}
-                        bosMesaj={t("donemBos")}
-                      />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
       </div>
 
+
+
+      {/*
+        ══ PARA ve OPERASYON — YAN YANA, FARKLI ŞEKİL (K258, demo) ══
+        Sol: «Ciro ve NET-2 — son 14 gün» çizgi (para SÜREKLİ değer). Sağ:
+        günlük operasyon SÜTUN (sayılabilir olay). İki tam genişlik çizgi alt
+        alta durunca göz aynı şeyi iki kez çizilmiş sanıyordu (kullanıcı: «iki
+        grafik akışı bozmuş»). Çare birini saklamak DEĞİL — sipariş artarken
+        cironun yerinde sayması gerçek bir sinyaldir ve ancak ikisi birlikte
+        görülünce fark edilir. Çare ŞEKLİ ayırmak.
+        ⚠ DÖRT SERİ KORUNDU (kullanıcı 21.08.2026: «aynı grafikte»): sütun kipi
+        sipariş · mal kabul · satış · kargoyu gruplanmış çubuk çiziyor; demonun
+        iki serili sütunu o isteği yarıya indirirdi. Tıklama, özet ve tablo
+        aynen duruyor — yalnız şekil ve geometri değişti (2/5 için 640 px).
+        ⚠ HÜKÜM → GRAFİK sırası (21.08) korunuyor: bu satır hüküm kartlarının
+        ve pazaryerinin altında. ⚠ İZNE BAĞLI: iki kart da `satis.kar.gor`.
+      */}
+      {karGorunur ? (
+        <div className="grid min-w-0 items-stretch gap-4 xl:grid-cols-5">
+          <Card className="flex min-w-0 flex-col xl:col-span-3">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ChartLine className="size-5" />
+                {t("son14Baslik")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CizgiGrafik
+                noktalar={son14Noktalari}
+                gelirAdi={t("ciro")}
+                net2Adi={t("net2")}
+                bicimle={(deger) => bicim.para(deger, seciliPara)}
+                bicimleKisa={(deger) => bicim.paraKisa(deger, seciliPara)}
+                bosMesaj={t("grafikBos")}
+                net2Goster={karGorunur}
+              />
+            </CardContent>
+          </Card>
+          <Card className="flex min-w-0 flex-col xl:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+                <span className="flex items-center gap-2">
+                  <ChartLine className="size-5" />
+                  {t("operasyonBaslik")}
+                </span>
+                {/* SEKME ADRESE YAZILIR (İlke #13): yenilenince seçim kalır. */}
+                <span className="flex flex-wrap gap-2">
+                  {OPERASYON_GORUNUMLERI.map((gor) => (
+                    <Button
+                      key={gor}
+                      asChild
+                      size="sm"
+                      variant={operasyonGorunumu === gor ? "default" : "outline"}
+                      className="h-11 md:h-8"
+                    >
+                      <Link
+                        href={suzgecAdresi("/", parametreler, { operasyon: gor })}
+                        scroll={false}
+                      >
+                        {t(`operasyon_${gor}`)}
+                      </Link>
+                    </Button>
+                  ))}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <UcSeriliGrafik
+                sekil="sutun"
+                noktalar={operasyonGunleri.map((n, i) => ({
+                  etiket: bicim.tarih(n.baslangic),
+                  /* Kova bir günden genişse ARALIK yazılır: "17–23.08".
+                     Tek gün yazılsaydı haftalık noktada sayı ile etiket
+                     ayrışır, kullanıcı "o gün 12 satış mı olmuş" derdi. */
+                  tamEtiket:
+                    n.baslangic.getTime() === n.sonGun.getTime()
+                      ? bicim.tarih(n.baslangic)
+                      : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
+                  /* ⛔ SİPARİŞ SERİSİ (K126) — YALNIZ VARSA. `serileriKur`
+                     KDV kipinde `null` döndürüyor (vergi mal kabulde doğar);
+                     alan hiç konmazsa grafik dördüncü çizgiyi hiç çizmez. */
+                  ...(operasyonSeri.siparis
+                    ? { d: operasyonSeri.siparis[i] ?? 0 }
+                    : {}),
+                  a: operasyonSeri.alim[i] ?? 0,
+                  b: operasyonSeri.satis[i] ?? 0,
+                  c: operasyonSeri.ucuncu[i] ?? 0,
+                  /* ⚠ YALNIZ ADET KİPİNDE DOLU — `serileriKur` öteki kiplerde
+                     `null` döner ve grafik toplam çizgisini hiç çizmez. Ciroda
+                     alım ile satış zıt yönlerdir; toplamak "para hangi yöne
+                     aktı" sorusunu bulandırırdı. */
+                  ...(operasyonSeri.toplam
+                    ? { toplam: operasyonSeri.toplam[i] ?? 0 }
+                    : {}),
+                  /* ⚠ FARK ÇİZGİSİ TIKLANMAZ: tek bir listeye karşılığı yok
+                     (iki kümenin farkı). Sessiz kalmasın diye adres hiç
+                     verilmiyor — nokta çizilir ama link olmaz. */
+                  adres:
+                    operasyonGorunumu !== "adet"
+                      ? {
+                          /* ⭐ SİPARİŞ NOKTASI `/alimlar`a GİDİYOR VE EKSENİ
+                             TAŞIYOR (K114). Eksen taşınmasaydı liste sipariş
+                             tarihine göre süzmeye devam ederdi ama bunu
+                             SÖYLEMEZDİ; şimdi ekranda hangi eksende olduğu
+                             yazılı. */
+                          d: siparisAdresi(n),
+                          a: noktaAdresi("/mal-kabul", n),
+                          b: noktaAdresi("/satislar", n),
+                          c: "",
+                        }
+                      : {
+                          d: siparisAdresi(n),
+                          a: noktaAdresi("/mal-kabul", n),
+                          b: noktaAdresi("/satislar", n),
+                          c: suzgecAdresi(
+                            "/satislar",
+                            {},
+                            {
+                              pencere: "OZEL",
+                              baslangic: gunMetni(n.baslangic),
+                              bitis: gunMetni(n.sonGun),
+                              kargo: "verildi",
+                              ...(seciliKanal ? { kanal: seciliKanal } : {}),
+                            },
+                          ),
+                        },
+                }))}
+                /* Ad verilmezse grafik toplamı hiç çizmez — iki şart birlikte. */
+                toplamAdi={
+                  operasyonSeri.toplam ? t("operasyonToplamSeri") : undefined
+                }
+                tabloAcik={tabloAcikMi(operasyonGunleri.length)}
+                /* AKORDİYON BAŞLIĞI — kaç satır olduğunu söylüyor ki
+                   açmadan önce beklenti kurulsun (İlke #5). */
+                tabloAcMetni={t("operasyonTabloAc", {
+                  sayi: operasyonGunleri.length,
+                })}
+                /* ⚠ ÖZET GRAFİK İLE TABLO ARASINDA (kullanıcı 21.08.2026):
+                   önce eğilim, sonra hüküm, en sonra istersen döküm. */
+                ozet={
+                  <p className="text-muted-foreground text-xs">
+                    {operasyonGorunumu === "ciro"
+                      ? /* ⚠ KARGO CİROSU YAZILMIYOR (kullanıcı: "ihtiyaç yok").
+                           Yerine FARK: satış − alım. */
+                        t("operasyonToplamCiro", {
+                          siparis: bicim.para(
+                            operasyonToplam.siparisTutar,
+                            seciliPara,
+                          ),
+                          alim: bicim.para(operasyonToplam.alimTutar, seciliPara),
+                          satis: bicim.para(
+                            operasyonToplam.satisCiro,
+                            seciliPara,
+                          ),
+                          fark: bicim.para(operasyonToplam.fark, seciliPara),
+                        })
+                      : /* Adet tarafında üç kalem + TOPLAM İŞLEM sayısı. */
+                        t("operasyonToplamAdet", {
+                          siparis: operasyonToplam.siparisAdet,
+                          alim: operasyonToplam.alimAdet,
+                          satis: operasyonToplam.satisAdet,
+                          kargo: operasyonToplam.kargoAdet,
+                          islem: operasyonToplam.islemAdedi,
+                        })}
+                  </p>
+                }
+                adlar={{
+                  /* ⛔ KDV KİPİNDE AD VERİLMEZ — seri de yok. İkisi birlikte
+                     aranıyor; yalnız ad verilseydi grafik bozuk çizilirdi. */
+                  d:
+                    operasyonGorunumu === "kdv"
+                      ? undefined
+                      : t("operasyonSiparis"),
+                  a:
+                    operasyonGorunumu === "kdv"
+                      ? t("operasyonIndirilecek")
+                      : t("operasyonAlim"),
+                  b:
+                    operasyonGorunumu === "kdv"
+                      ? t("operasyonHesaplanan")
+                      : t("operasyonSatis"),
+                  c:
+                    operasyonGorunumu === "ciro"
+                      ? t("operasyonFark")
+                      : operasyonGorunumu === "kdv"
+                        ? t("operasyonOdenecek")
+                        : t("operasyonKargo"),
+                }}
+                bicimle={(d) =>
+                  operasyonGorunumu === "adet"
+                    ? String(Math.round(d))
+                    : bicim.para(d, seciliPara)
+                }
+                bosMesaj={t("donemBos")}
+              />
+
+              {/* ⚠ ESKİ UYARI KALDIRILDI, GEREKÇESİYLE (21.08.2026).
+                  Kartta _"bu grafik ciro gösterir, KDV değil; iki cironun
+                  farkı vergiyi vermez"_ yazıyordu. Kullanıcı itiraz etti:
+                  "her ürünün KDV bilgisi girildiği için net bilgi sende var".
+                  HAKLIYDI — ölçüldü: satış 60/60 kalemde snapshot'lı, alım
+                  193/193 kalem kategoriden çözülebiliyor. Uyarı yerine KDV
+                  SEKMESİ kondu.
+
+                  Kalan tek sınır beyan ediliyor: satış oranı DONDURULMUŞ,
+                  alım oranı BUGÜNDEN okunuyor. */}
+              {operasyonGorunumu === "kdv" ? (
+                <p className="text-muted-foreground border-t pt-2 text-xs">
+                  {t("operasyonKdvKaynak")}
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       {/* ══════════════ GÜNLÜK OPERASYON GRAFİĞİ ══════════════
           ⚠ YERİ "SEÇİLİ DÖNEM"İN ALTINDA (kullanıcı kararı 21.08.2026).
@@ -3155,182 +3430,6 @@ export default async function AnaSayfa({
           operasyoneldir ama sekme aynı kartta olduğu için kart bütün
           olarak `satis.kar.gor` istiyor — yarısı görünen bir kart,
           görünmeyen yarısını merak ettirir. */}
-      {karGorunur ? (
-        <Card className="min-w-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
-              <span className="flex items-center gap-2">
-                <ChartLine className="size-5" />
-                {t("operasyonBaslik")}
-              </span>
-              {/* SEKME ADRESE YAZILIR (İlke #13): yenilenince seçim kalır. */}
-              <span className="flex flex-wrap gap-2">
-                {OPERASYON_GORUNUMLERI.map((gor) => (
-                  <Button
-                    key={gor}
-                    asChild
-                    size="sm"
-                    variant={operasyonGorunumu === gor ? "default" : "outline"}
-                    className="h-11 md:h-8"
-                  >
-                    <Link
-                      href={suzgecAdresi("/", parametreler, { operasyon: gor })}
-                      scroll={false}
-                    >
-                      {t(`operasyon_${gor}`)}
-                    </Link>
-                  </Button>
-                ))}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <UcSeriliGrafik
-              noktalar={operasyonGunleri.map((n, i) => ({
-                etiket: bicim.tarih(n.baslangic),
-                /* Kova bir günden genişse ARALIK yazılır: "17–23.08".
-                   Tek gün yazılsaydı haftalık noktada sayı ile etiket
-                   ayrışır, kullanıcı "o gün 12 satış mı olmuş" derdi. */
-                tamEtiket:
-                  n.baslangic.getTime() === n.sonGun.getTime()
-                    ? bicim.tarih(n.baslangic)
-                    : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
-                /* ⛔ SİPARİŞ SERİSİ (K126) — YALNIZ VARSA. `serileriKur`
-                   KDV kipinde `null` döndürüyor (vergi mal kabulde doğar);
-                   alan hiç konmazsa grafik dördüncü çizgiyi hiç çizmez. */
-                ...(operasyonSeri.siparis
-                  ? { d: operasyonSeri.siparis[i] ?? 0 }
-                  : {}),
-                a: operasyonSeri.alim[i] ?? 0,
-                b: operasyonSeri.satis[i] ?? 0,
-                c: operasyonSeri.ucuncu[i] ?? 0,
-                /* ⚠ YALNIZ ADET KİPİNDE DOLU — `serileriKur` öteki kiplerde
-                   `null` döner ve grafik toplam çizgisini hiç çizmez. Ciroda
-                   alım ile satış zıt yönlerdir; toplamak "para hangi yöne
-                   aktı" sorusunu bulandırırdı. */
-                ...(operasyonSeri.toplam
-                  ? { toplam: operasyonSeri.toplam[i] ?? 0 }
-                  : {}),
-                /* ⚠ FARK ÇİZGİSİ TIKLANMAZ: tek bir listeye karşılığı yok
-                   (iki kümenin farkı). Sessiz kalmasın diye adres hiç
-                   verilmiyor — nokta çizilir ama link olmaz. */
-                adres:
-                  operasyonGorunumu !== "adet"
-                    ? {
-                        /* ⭐ SİPARİŞ NOKTASI `/alimlar`a GİDİYOR VE EKSENİ
-                           TAŞIYOR (K114). Eksen taşınmasaydı liste sipariş
-                           tarihine göre süzmeye devam ederdi ama bunu
-                           SÖYLEMEZDİ; şimdi ekranda hangi eksende olduğu
-                           yazılı. */
-                        d: siparisAdresi(n),
-                        a: noktaAdresi("/mal-kabul", n),
-                        b: noktaAdresi("/satislar", n),
-                        c: "",
-                      }
-                    : {
-                        d: siparisAdresi(n),
-                        a: noktaAdresi("/mal-kabul", n),
-                        b: noktaAdresi("/satislar", n),
-                        c: suzgecAdresi(
-                          "/satislar",
-                          {},
-                          {
-                            pencere: "OZEL",
-                            baslangic: gunMetni(n.baslangic),
-                            bitis: gunMetni(n.sonGun),
-                            kargo: "verildi",
-                            ...(seciliKanal ? { kanal: seciliKanal } : {}),
-                          },
-                        ),
-                      },
-              }))}
-              /* Ad verilmezse grafik toplamı hiç çizmez — iki şart birlikte. */
-              toplamAdi={
-                operasyonSeri.toplam ? t("operasyonToplamSeri") : undefined
-              }
-              tabloAcik={tabloAcikMi(operasyonGunleri.length)}
-              /* AKORDİYON BAŞLIĞI — kaç satır olduğunu söylüyor ki
-                 açmadan önce beklenti kurulsun (İlke #5). */
-              tabloAcMetni={t("operasyonTabloAc", {
-                sayi: operasyonGunleri.length,
-              })}
-              /* ⚠ ÖZET GRAFİK İLE TABLO ARASINDA (kullanıcı 21.08.2026):
-                 önce eğilim, sonra hüküm, en sonra istersen döküm. */
-              ozet={
-                <p className="text-muted-foreground text-xs">
-                  {operasyonGorunumu === "ciro"
-                    ? /* ⚠ KARGO CİROSU YAZILMIYOR (kullanıcı: "ihtiyaç yok").
-                         Yerine FARK: satış − alım. */
-                      t("operasyonToplamCiro", {
-                        siparis: bicim.para(
-                          operasyonToplam.siparisTutar,
-                          seciliPara,
-                        ),
-                        alim: bicim.para(operasyonToplam.alimTutar, seciliPara),
-                        satis: bicim.para(
-                          operasyonToplam.satisCiro,
-                          seciliPara,
-                        ),
-                        fark: bicim.para(operasyonToplam.fark, seciliPara),
-                      })
-                    : /* Adet tarafında üç kalem + TOPLAM İŞLEM sayısı. */
-                      t("operasyonToplamAdet", {
-                        siparis: operasyonToplam.siparisAdet,
-                        alim: operasyonToplam.alimAdet,
-                        satis: operasyonToplam.satisAdet,
-                        kargo: operasyonToplam.kargoAdet,
-                        islem: operasyonToplam.islemAdedi,
-                      })}
-                </p>
-              }
-              adlar={{
-                /* ⛔ KDV KİPİNDE AD VERİLMEZ — seri de yok. İkisi birlikte
-                   aranıyor; yalnız ad verilseydi grafik bozuk çizilirdi. */
-                d:
-                  operasyonGorunumu === "kdv"
-                    ? undefined
-                    : t("operasyonSiparis"),
-                a:
-                  operasyonGorunumu === "kdv"
-                    ? t("operasyonIndirilecek")
-                    : t("operasyonAlim"),
-                b:
-                  operasyonGorunumu === "kdv"
-                    ? t("operasyonHesaplanan")
-                    : t("operasyonSatis"),
-                c:
-                  operasyonGorunumu === "ciro"
-                    ? t("operasyonFark")
-                    : operasyonGorunumu === "kdv"
-                      ? t("operasyonOdenecek")
-                      : t("operasyonKargo"),
-              }}
-              bicimle={(d) =>
-                operasyonGorunumu === "adet"
-                  ? String(Math.round(d))
-                  : bicim.para(d, seciliPara)
-              }
-              bosMesaj={t("donemBos")}
-            />
-
-            {/* ⚠ ESKİ UYARI KALDIRILDI, GEREKÇESİYLE (21.08.2026).
-                Kartta _"bu grafik ciro gösterir, KDV değil; iki cironun
-                farkı vergiyi vermez"_ yazıyordu. Kullanıcı itiraz etti:
-                "her ürünün KDV bilgisi girildiği için net bilgi sende var".
-                HAKLIYDI — ölçüldü: satış 60/60 kalemde snapshot'lı, alım
-                193/193 kalem kategoriden çözülebiliyor. Uyarı yerine KDV
-                SEKMESİ kondu.
-
-                Kalan tek sınır beyan ediliyor: satış oranı DONDURULMUŞ,
-                alım oranı BUGÜNDEN okunuyor. */}
-            {operasyonGorunumu === "kdv" ? (
-              <p className="text-muted-foreground border-t pt-2 text-xs">
-                {t("operasyonKdvKaynak")}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
 
       {/* ═══════════════════════ ÜRÜN ANALİZİ ═══════════════════════
           İKİ KART YAN YANA (14.08.2026, kullanıcı isteği). Tek liste tam

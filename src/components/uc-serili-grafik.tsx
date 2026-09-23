@@ -70,7 +70,12 @@ export type UcSeriNoktasi = {
   adres?: { a: string; b: string; c: string; d?: string };
 };
 
-const G = {
+/**
+ * ⚠ İKİ GEOMETRİ (K258): çizgi kipi tam genişlik için (1240), sütun kipi
+ * 2/5 sütun için (640) kurulu. Tek geometriyle iki kip olmaz: 1240'lık
+ * viewBox 2/5'te ~2,6× küçülür ve yazılar okunmaz (ölçüldü).
+ */
+const G_CIZGI = {
   genislik: 1240,
   yukseklik: 280,
   sol: 110,
@@ -78,9 +83,14 @@ const G = {
   ust: 16,
   alt: 34,
 } as const;
-
-const IC_GENISLIK = G.genislik - G.sol - G.sag;
-const IC_YUKSEKLIK = G.yukseklik - G.ust - G.alt;
+const G_SUTUN = {
+  genislik: 640,
+  yukseklik: 300,
+  sol: 64,
+  sag: 12,
+  ust: 16,
+  alt: 34,
+} as const;
 const ARALIK = 4;
 
 /**
@@ -119,6 +129,7 @@ export function UcSeriliGrafik({
   ozet,
   toplamAdi,
   tabloAcik = false,
+  sekil = "cizgi",
 }: {
   noktalar: UcSeriNoktasi[];
   adlar: { a: string; b: string; c: string; d?: string };
@@ -150,6 +161,15 @@ export function UcSeriliGrafik({
    * (`tabloAcikMi`) — eşik değişirse test kırmızı yansın diye.
    */
   tabloAcik?: boolean;
+  /**
+   * ÇİZGİ mi SÜTUN mu (K258, demo). SÜTUN: her kova için gruplanmış dört
+   * çubuk — seriler, tıklama hedefleri, özet ve tablo AYNEN kalır; yalnız
+   * şekil değişir. Kullanıcı 21.08.2026'da dört seriyi «aynı grafikte»
+   * istedi; demonun iki serili sütunu o isteği yarıya indirirdi — burada
+   * dört seri sütun olarak duruyor. Operasyon SAYILABİLİR olaydır; sütun
+   * ona, çizgi paraya (sürekli değer) yakışır.
+   */
+  sekil?: "cizgi" | "sutun";
 }) {
   if (noktalar.length === 0) {
     return <p className="text-muted-foreground text-sm">{bosMesaj}</p>;
@@ -171,6 +191,11 @@ export function UcSeriliGrafik({
   const dVar =
     adlar.d !== undefined && noktalar.every((n) => typeof n.d === "number");
   const dDeger = (n: UcSeriNoktasi) => n.d ?? 0;
+
+  const sutunMu = sekil === "sutun";
+  const G = sutunMu ? G_SUTUN : G_CIZGI;
+  const IC_GENISLIK = G.genislik - G.sol - G.sag;
+  const IC_YUKSEKLIK = G.yukseklik - G.ust - G.alt;
 
   /**
    * ⚠ TOPLAM EKSENE DAHİL. Dahil edilmezse toplam çizgisi tavanı aşar ve
@@ -200,14 +225,19 @@ export function UcSeriliGrafik({
   const taban = Math.min(tabanHam, 0);
   const tavan = tavanHam === taban ? taban + 1 : tavanHam;
 
+  /** Sütunda her kova bir YUVA (eşit genişlik); çizgide uçlar kenara yaslı. */
+  const yuva = IC_GENISLIK / Math.max(1, noktalar.length);
   const x = (i: number) =>
-    noktalar.length === 1
-      ? G.sol + IC_GENISLIK / 2
-      : G.sol + (i / (noktalar.length - 1)) * IC_GENISLIK;
+    sutunMu
+      ? G.sol + (i + 0.5) * yuva
+      : noktalar.length === 1
+        ? G.sol + IC_GENISLIK / 2
+        : G.sol + (i / (noktalar.length - 1)) * IC_GENISLIK;
   const y = (d: number) =>
     G.ust + IC_YUKSEKLIK - ((d - taban) / (tavan - taban)) * IC_YUKSEKLIK;
 
-  const adim = Math.max(1, Math.ceil(noktalar.length / 10));
+  /* Dar kipte daha seyrek etiket: 2/5 sütunda 10 etiket üst üste binerdi. */
+  const adim = Math.max(1, Math.ceil(noktalar.length / (sutunMu ? 6 : 10)));
 
   /**
    * ⛔ SIRA OPERASYON HUNİSİDİR, ALFABE DEĞİL: dördüncü seri (`d`) EN BAŞTA
@@ -243,7 +273,7 @@ export function UcSeriliGrafik({
           <span key={s.anahtar} className="inline-flex items-center gap-1.5">
             <span
               aria-hidden
-              className="inline-block h-1 w-4 rounded"
+              className={sutunMu ? "inline-block size-3 rounded-sm" : "inline-block h-1 w-4 rounded"}
               style={{ backgroundColor: s.renk }}
             />
             {s.ad}
@@ -320,16 +350,51 @@ export function UcSeriliGrafik({
           ) : null,
         )}
 
-        {seriler.map((s) => (
-          <path
-            key={s.anahtar}
-            aria-hidden
-            d={yol((n) => seriDegeri(n, s.anahtar))}
-            fill="none"
-            stroke={s.renk}
-            strokeWidth={2.5}
-          />
-        ))}
+        {sutunMu
+          ? /* GRUPLANMIŞ SÜTUNLAR — her kovada seri başına bir çubuk. Çubuk
+               tıklanabilir (<a>), çizgi kipindeki noktayla aynı hedef. */
+            noktalar.map((n, i) => {
+              const grup = yuva * 0.78;
+              const cubuk = grup / seriler.length;
+              const sol = x(i) - grup / 2;
+              return seriler.map((s, k) => {
+                const deger = seriDegeri(n, s.anahtar);
+                const y0 = y(0);
+                const y1 = y(deger);
+                const dikd = (
+                  <rect
+                    x={sol + k * cubuk}
+                    y={Math.min(y0, y1)}
+                    width={Math.max(1, cubuk - 1)}
+                    height={Math.max(0.5, Math.abs(y0 - y1))}
+                    fill={s.renk}
+                    rx={1.5}
+                  />
+                );
+                const adres = n.adres?.[s.anahtar];
+                const baslik = `${n.tamEtiket} · ${s.ad}: ${bicimle(deger)}`;
+                return adres ? (
+                  <a key={`${s.anahtar}-${i}`} href={adres} aria-label={baslik}>
+                    <title>{baslik}</title>
+                    {dikd}
+                  </a>
+                ) : (
+                  <g key={`${s.anahtar}-${i}`} aria-hidden>
+                    {dikd}
+                  </g>
+                );
+              });
+            })
+          : seriler.map((s) => (
+              <path
+                key={s.anahtar}
+                aria-hidden
+                d={yol((n) => seriDegeri(n, s.anahtar))}
+                fill="none"
+                stroke={s.renk}
+                strokeWidth={2.5}
+              />
+            ))}
 
         {/*
           TOPLAM ÇİZGİSİ — KESİKLİ VE NÖTR RENKTE.
@@ -354,8 +419,9 @@ export function UcSeriliGrafik({
           />
         ) : null}
 
-        {/* TIKLANABİLİR NOKTALAR — her seri için ayrı hedef. */}
-        {seriler.map((s) =>
+        {/* TIKLANABİLİR NOKTALAR — her seri için ayrı hedef (çizgi kipi;
+            sütunda çubuğun kendisi hedef). */}
+        {sutunMu ? null : seriler.map((s) =>
           noktalar.map((n, i) => {
             const cx = x(i);
             const cy = y(seriDegeri(n, s.anahtar));

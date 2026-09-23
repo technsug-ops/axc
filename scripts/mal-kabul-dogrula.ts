@@ -218,8 +218,17 @@ console.log("\n3) toplam ile seri AYNI kayıtlardan");
    * bulur"; bu deponun en sık tekrarlayan körlüğü.)_
    */
   const panel = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ, SUSTURULMADI — PENCERE İKİ YÖNE AÇILDI (K253, 23.09.2026).
+   * Eski kutuda `etiket` önce, `href` sonra geliyordu; pencere etiketten
+   * İLERİ bakıyordu. Huni çipinde `<Baglanti href=…>` etiketi SARIYOR, yani
+   * href etiketten ÖNCE — ileri bakan pencere onu göremedi ve kapı doğru
+   * davranışa kırmızı yandı (K251 teşhisi bunu ilk turda gösterdi). Blok
+   * artık etiketin 400 önce–400 sonrası; iki yön de aynı çipin içinde.
+   */
   const kartBasi = panel.indexOf('t("malKabulAdedi")');
-  const kartBloku = kartBasi < 0 ? "" : panel.slice(kartBasi, kartBasi + 400);
+  const kartBloku =
+    kartBasi < 0 ? "" : panel.slice(Math.max(0, kartBasi - 400), kartBasi + 400);
   kontrol("mal kabul kartı bulundu", kartBasi >= 0);
   kontrol(
     "panel KARTI /mal-kabul'e bağlanıyor",

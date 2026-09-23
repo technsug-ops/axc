@@ -2377,7 +2377,19 @@
     "altBaslikOzet": "",
     "iadeKisa": "",
     "huniEtiketi": "",
-    "kargoBekleyenKisa": ""
+    "kargoBekleyenKisa": "",
+    "kanalSiraNet2": "",
+    "marjCipi": "",
+    "kanalOzetSatiri": "",
+    "satisiOlmayanKanallar": "",
+    "ciroPayi": "",
+    "netPayi": "",
+    "ciroKanalaGore": "",
+    "halkaToplam": "",
+    "halkaDiger": "",
+    "halkaDipnot": "",
+    "halkaAciklama": "",
+    "son14Baslik": ""
   },
   "Envanter": {
     "baslik": "",

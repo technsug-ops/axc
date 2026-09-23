@@ -55,6 +55,7 @@ export async function KanalSiraCubugu({
 
   const etiketler: Record<KanalSiraKipi, string> = {
     duzen: t("kanalSiraDuzen"),
+    net2: t("kanalSiraNet2"),
     ciro: t("kanalSiraCiro"),
   };
 

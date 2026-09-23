@@ -23,6 +23,8 @@ import {
   KIYAS_ANAHTARLARI,
   oranDegisimi,
 } from "../src/lib/karsilastirma";
+import { HALKA_DILIM_TAVANI, halkaDilimleriniTopla } from "../src/components/halka-grafik";
+import { SON_GUN_SAYISI, sonGunSerisi } from "../src/lib/panel/son-gun-serisi";
 import { PAY_FARKI_ESIGI, payFarki } from "../src/lib/panel/pay-farki";
 import {
   CEKIM_ESIK_DK,
@@ -49,7 +51,12 @@ import {
   MENUDEN_DUSURULEMEZ,
 } from "../src/lib/menu/katalog";
 
-import { gunDegeri, pencereOlustur } from "../src/lib/donem";
+import {
+  gunDegeri,
+  pencereOlustur,
+  gunEkle,
+  isTakvimGunu,
+} from "../src/lib/donem";
 import {
   ayinGunSayisi,
   karEksikAyAdresi,
@@ -64,6 +71,7 @@ import {
   panelKanallari,
   panelYuvalari,
   tumKanallarAdresi,
+  KANAL_SIRA_KIPLERI,
 } from "../src/lib/kanal-sirasi";
 import { karOrani, kutuOranlari } from "../src/lib/panel/kar-orani";
 import { serileriKur } from "../src/lib/panel/operasyon-serisi";
@@ -4625,15 +4633,16 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   const sayfa = readFileSync("src/app/page.tsx", "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
+  /** K256: pasta + yan liste → OK ÇİZGİLİ HALKA (`HalkaGrafik`), kendi kartında. */
   kontrol(
-    "panel ciro halkasını ÇİZİYOR",
-    /<KanalDagilimiGrafigi/.test(sayfa),
+    "panel ciro halkasını ÇİZİYOR (HalkaGrafik)",
+    /<HalkaGrafik\b/.test(sayfa),
   );
   /** ⚠ NİTELİĞİN VARLIĞI YETMEZ, DEĞERİ ÖLÇÜLÜR: `dilimler={[]}` ile
    *  beslenen bir halka hep boş çizilir ve bunu hiçbir şey söylemez. */
   kontrol(
     "  ...dilimler GERÇEK kanallardan geliyor",
-    /dilimler=\{ustBlok\.kanallar\.map/.test(sayfa),
+    /halkaDilimleriniTopla\(\s*ustBlok\.kanallar\.map/.test(sayfa),
   );
   kontrol(
     "  ...toplam BRÜT CİRODAN (paydası dilimlerin toplamı değil)",
@@ -4651,7 +4660,14 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   );
   kontrol(
     "  ...ve tanınmayan kanalın VARSAYILANI var (dilim kaybolmaz)",
-    /\?\\? KANAL_RENGI_VARSAYILAN/.test(sayfa),
+    (() => {
+      /* K247 deseni `\?\\?` idi (kacis kaymis) ve dosya geneliydi; K255 kanal
+         karti da ayni varsayilani tasiyinca halkadaki kayip gorunmez oldu
+         (harness yakaladi). Desen duzeltildi ve HALKA bloguna daraltildi. */
+      const hb = sayfa.indexOf("halkaDilimleriniTopla(");
+      const he = hb >= 0 ? sayfa.indexOf("<HalkaGrafik", hb) : -1;
+      return hb >= 0 && he > hb && /\?\? KANAL_RENGI_VARSAYILAN/.test(sayfa.slice(hb, he));
+    })(),
   );
   /**
    * ⛔ KARTLAR NÖTR KALIR — BU BİR 'DOKUNMUYOR' İDDİASI VE ÖLÇÜLÜYOR.
@@ -4671,9 +4687,18 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     const son = sayfa.search(/\r?\n {2}return \(/);
     kontrol("kanalIzgarasi bloğu bulundu (ölçülebilir)", bas >= 0 && son > bas);
     const blok = bas < 0 || son < bas ? "" : sayfa.slice(bas, son);
+    /**
+     * ⛔ ÖLÇÜT ÇEVRİLDİ (K255, 23.09.2026) — ESKİ GEREKÇE SİLİNMEDİ: «kart
+     * çubukları kanal rengi kullanmaz; 11 ton dört durum rengiyle karışır».
+     * NİYE ÇEVRİLDİ: kullanıcı demoyu onayladı — çubuk kanalın KİMLİK rengini
+     * taşıyor (halka ile aynı palet). İyi/kötü hükmü renkten değil marj
+     * çipinden (durum paleti) ve hüküm cümlesinden geliyor; kategori paleti
+     * ile durum paleti karışmıyor. Ölçüt artık TERSİNİ sınıyor.
+     */
     kontrol(
-      "  kart çubukları kanal RENGİ kullanmıyor (bilgiyi uzunluk taşır)",
-      !blok.includes("KANAL_RENKLERI"),
+      "  kart çubukları KANAL rengini taşıyor (ciro soluk, NET tam) — K255",
+      (blok.match(/renk=\{kanalRengi\}/g) ?? []).length >= 2 &&
+        /etiket=\{bicim\.yuzde\(pay\.ciroPayi\)\}[\s\S]{0,60}?renk=\{kanalRengi\}[\s\S]{0,20}?soluk/.test(blok),
     );
   }
 }
@@ -4939,6 +4964,198 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     "sifir cip DUZ YAZI, bekleyen cip BAGLANTI (Ilke #2)",
     /gorev\.temizMi \? \([\s\S]{0,120}?<span className=\{sinif\}>\{govde\}<\/span>[\s\S]{0,80}?<Link href=\{gorev\.adres\} className=\{sinif\}>/.test(kutu),
   );
+}
+
+/**
+ * === KANAL KARTI DEMO ANATOMISI (K255, 23.09.2026) =====================
+ * Renk noktasi + ad · MARJ CIPI · NET-2 buyuk · gri satir · iki renkli
+ * cubuk · hukum; NET-2'ye gore siralama kipi; alt satirda satisi olmayan
+ * kanallarin adi. *** Siralama DEGER testi; kart olcutleri kullanima bagli.
+ */
+{
+  kontrol("kanal sira kipleri: duzen · net2 · ciro (sabit duzen KALKMADI)",
+    (KANAL_SIRA_KIPLERI as readonly string[]).join() === "duzen,net2,ciro");
+  const ornek = [
+    { kanalKodu: "N11", kanalAdi: "N11", gelir: 900, net2: 300 },
+    { kanalKodu: "TRENDYOL", kanalAdi: "Trendyol", gelir: 500, net2: 100 },
+    { kanalKodu: "HEPSIBURADA", kanalAdi: "Hepsiburada", gelir: 700, net2: 300 },
+  ];
+  /** * ORNEK AYRIMI GOSTERIYOR: ciroya gore N11 > HB > TY, NET-2'ye gore
+   *  HB = N11 > TY — esitlikte sabit duzen (HB once) kazanmali. */
+  const net2Sira = kanallariSirala(ornek, "net2").map((k) => k.kanalKodu).join();
+  kontrol("net2 kipi NET-2'ye gore siraliyor, esitlikte sabit duzen",
+    net2Sira === "HEPSIBURADA,N11,TRENDYOL", net2Sira);
+  const ciroSira = kanallariSirala(ornek, "ciro").map((k) => k.kanalKodu).join();
+  kontrol("  ...ciro kipi hala ciroya gore (ayrisiyor)",
+    ciroSira === "N11,HEPSIBURADA,TRENDYOL", ciroSira);
+
+  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  const kb = sayfa.search(/\r?\n {2}const kanalIzgarasi = \(/);
+  const ke = sayfa.search(/\r?\n {2}return \(/);
+  kontrol("kanalIzgarasi blogu bulundu", kb >= 0 && ke > kb);
+  const kart = kb >= 0 && ke > kb ? sayfa.slice(kb, ke) : "";
+  kontrol("marj cipi CIZILIYOR (oran sozlukten, yuzde bicimden)",
+    /t\("marjCipi", \{ oran: bicim\.yuzde\(marj\) \}\)/.test(kart));
+  kontrol("  ...rengi DURUM paletinden, ortalamaya gore (marjDurumu)",
+    /const marjD = marjDurumu\(marj, ortalamaMarj\)/.test(kart));
+  /** * CIRO SIFIRKEN ORAN KURULMAZ — sifira bolme cipe «NaN» yazdirirdi. */
+  kontrol("  ...ciro sifirken cip YOK (bolme kapisi)",
+    /kanal\.gelir > 0 \? \(kanal\.net2 \/ kanal\.gelir\) \* 100 : null/.test(kart));
+  kontrol("NET-2 kartta BUYUK rakam",
+    /text-xl font-bold tabular-nums[\s\S]{0,80}?bicim\.para\(kanal\.net2/.test(kart));
+  /** * 13.08 KURALI: panelin ciro gosterdigi her yerde AYNI sunum. */
+  kontrol("gri satir CiroSunumu kullaniyor (13.08 kurali duruyor)",
+    /<CiroSunumu\b[\s\S]{0,120}?brut=\{bicim\.para\(kanal\.gelir/.test(kart) && /t\("kanalOzetSatiri"/.test(kart));
+  kontrol("alt satir satisi olmayan kanallarin ADINI yaziyor",
+    /t\("satisiOlmayanKanallar"/.test(kart) && /bosKanallar\.map\(\(\[, ad\]\) => ad\)\.join/.test(kart));
+
+  const cubuk = readFileSync("src/app/kanal-sira-cubugu.tsx", "utf8");
+  kontrol("sira cubugu NET-2 kipini etiketliyor", /net2: t\("kanalSiraNet2"\)/.test(cubuk));
+  const pay = readFileSync("src/components/istatistik-kutusu.tsx", "utf8");
+  kontrol("PayCubugu renk + soluk prop'unu UYGULUYOR",
+    /backgroundColor: renk, opacity: soluk \? 0\.45 : 1/.test(pay));
+  kontrol("  ...renk verilmezse eski notr ton (oteki kullanimlar degismedi)",
+    /bg-\[#2F7FD1\]/.test(pay));
+}
+
+/**
+ * === OK CIZGILI HALKA (K256, 23.09.2026) ================================
+ * Kullanici istegi: «her renkten ok'la pazaryeri ismi ciksin». Dordu asan
+ * dilimler «Diger»de toplanir ve dipnot bunu YAZAR. *** DEGER TESTLERI.
+ */
+{
+  const d = (etiket: string, tutar: number) => ({ etiket, tutar, tutarMetni: String(tutar), renk: "#000" });
+  const az = halkaDilimleriniTopla([d("A", 5), d("B", 3), d("C", 0)], (n) => `Diger (${n})`, "#999", (t) => String(t));
+  kontrol("tavan altinda toplama YOK, sifir dilim elenir, buyukten kucuge",
+    az.toplananSayi === 0 && az.dilimler.map((x) => x.etiket).join() === "A,B");
+  const cok = halkaDilimleriniTopla(
+    [d("A", 50), d("B", 20), d("C", 15), d("D", 10), d("E", 4), d("F", 1)],
+    (n) => `Diger (${n})`, "#999", (t) => String(t));
+  /** * TABAN: 6 dilim → 3 buyuk + Diger(3); toplam KAYBOLMAZ (10+4+1=15). */
+  kontrol("dordu asan dilimler «Diger»de toplaniyor (3 + Diger)",
+    cok.toplananSayi === 3 && cok.dilimler.length === HALKA_DILIM_TAVANI &&
+      cok.dilimler[3]!.etiket === "Diger (3)" && cok.dilimler[3]!.tutar === 15,
+    cok.dilimler.map((x) => x.etiket + ":" + x.tutar).join(" "));
+  kontrol("  ...ve tavan 4 (ok cizgileri birbirine girmesin)", HALKA_DILIM_TAVANI === 4);
+
+  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  /** * TOPLANAN SEY SESSIZCE KAYBOLMAZ: dipnot yalniz toplama VARKEN yazar. */
+  kontrol("dipnot toplama varken YAZILIYOR (yokken yok)",
+    /toplananSayi > 0 \? t\("halkaDipnot", \{ sayi: toplananSayi \}\) : undefined/.test(sayfa));
+  kontrol("halka kendi kartinda, pazaryeri karti 3/5 + halka 2/5",
+    /flex-col xl:col-span-3\">/.test(sayfa) && /flex-col xl:col-span-2\">[\s\S]{0,400}?\{t\("ciroKanalaGore"\)\}/.test(sayfa));
+  kontrol("  ...eski pasta sarmalayicisi panelden KALKTI", !/KanalDagilimiGrafigi/.test(sayfa));
+  /** * ERISILEBILIR AD: ekran okuyucu grafigi atlamaz, cumleyi okur. */
+  kontrol("halkanin aria-label cumlesi dilimlerden kuruluyor",
+    /aciklama=\{t\("halkaAciklama", \{[\s\S]{0,200}?dilimler\.map/.test(sayfa));
+  const halka = readFileSync("src/components/halka-grafik.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("halka bileseni SUNUCUDA ciziliyor (use client yok)", !/"use client"/.test(halka) && !/'use client'/.test(halka));
+  kontrol("  ...ok cizgisi + ad + tutar her dilimde", /<polyline[\s\S]{0,900}?\{y\.d\.etiket\}[\s\S]{0,500}?\{y\.d\.tutarMetni\}/.test(halka));
+}
+
+/**
+ * === SON 14 GUN CIRO/NET-2 + AFIS ASAGIDA (K257, 23.09.2026) ============
+ * *** DEGER TESTLERI: gun kovalama Istanbul gunu, null NET-2 sifir degil.
+ */
+{
+  /* 23.09.2026 12:00 Istanbul = 09:00Z */
+  const simdi = new Date("2026-09-23T09:00:00.000Z");
+  const bugun = gunDegeri(isTakvimGunu(simdi));
+  const seri = sonGunSerisi(
+    [
+      /* 22.09 23:30 Istanbul = 22.09 20:30Z -> 22.09 kovasi (UTC gunu 22, Istanbul 22) */
+      { tarih: new Date("2026-09-22T20:30:00.000Z"), gelir: 100, net2: 10 },
+      /* 23.09 00:30 Istanbul = 22.09 21:30Z -> Istanbul 23.09 kovasi; UTC'ye gore 22'ye duserdi */
+      { tarih: new Date("2026-09-22T21:30:00.000Z"), gelir: 200, net2: null },
+      { tarih: new Date("2026-09-23T05:00:00.000Z"), gelir: 50, net2: 5 },
+      /* iki gun once: TEK satis, NET-2'si yok -> gun net2Var FALSE olmali (null=0 mutanti TRUE yapar) */
+      { tarih: gunEkle(bugun, -2), gelir: 30, net2: null },
+      /* pencere disi: 15 gun once */
+      { tarih: gunEkle(bugun, -15), gelir: 999, net2: 999 },
+    ],
+    simdi,
+  );
+  kontrol("14 nokta, sonuncusu BUGUN", seri.length === SON_GUN_SAYISI && seri[13]!.tarih.getTime() === bugun.getTime());
+  kontrol("  ...ve tavan 14", SON_GUN_SAYISI === 14);
+  const dun = seri[12]!;
+  const bugunN = seri[13]!;
+  /** * ISTANBUL GUNU: 00:30 Istanbul'daki satis BUGUNE yazilir, dune degil. */
+  kontrol("gun kovalama ISTANBUL gunu (UTC'ye gore kaymiyor)",
+    dun.gelir === 100 && dun.adet === 1 && bugunN.gelir === 250 && bugunN.adet === 2,
+    { dun: dun.gelir, bugun: bugunN.gelir });
+  /** * NULL NET-2 SIFIR SAYILMAZ: bugunun NET-2'si 5 (200'luk satisin net2'si yok). */
+  kontrol("null NET-2 toplama girmiyor, gun yine net2Var",
+    bugunN.net2 === 5 && bugunN.net2Var === true);
+  const ikiGunOnce = seri[11]!;
+  kontrol("HEPSI null olan gun: net2Var FALSE, net2 0 (bilinmeyen sifir degil)",
+    ikiGunOnce.gelir === 30 && ikiGunOnce.net2 === 0 && ikiGunOnce.net2Var === false,
+    { net2: ikiGunOnce.net2, var: ikiGunOnce.net2Var });
+  const bos = seri[0]!;
+  kontrol("satissiz gun: sifir gelir, net2Var FALSE (bilinmeyen sifir degil)",
+    bos.gelir === 0 && bos.net2Var === false && bos.adet === 0);
+  kontrol("pencere disi satis ELENIYOR", seri.every((g) => g.gelir < 999));
+
+  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("14 gun karti CIZILIYOR (CizgiGrafik + son14Noktalari)",
+    /<CizgiGrafik\b[\s\S]{0,80}?noktalar=\{son14Noktalari\}/.test(sayfa));
+  kontrol("  ...seri kanal + para birimi suzgeciyle (hukum kartlariyla ayni kume)",
+    /sonGunSerisi\([\s\S]{0,200}?paraBirimi === seciliPara[\s\S]{0,120}?kanalKodu === seciliKanal/.test(sayfa));
+  /** * SIRA: 14 gun karti operasyonun USTUNDE (hukum -> grafik, 21.08). */
+  const i14 = sayfa.indexOf("t(\"son14Baslik\")");
+  const iOp = sayfa.indexOf("t(\"operasyonBaslik\")");
+  kontrol("14 gun karti bulundu", i14 >= 0);
+  kontrol("  ...ve operasyon grafiginin USTUNDE", i14 >= 0 && iOp >= 0 && i14 < iOp);
+  /** * AFIS + OZET pazaryeri/halkanin ALTINDA (demo sirasi). */
+  const iHalka = sayfa.indexOf("t(\"ciroKanalaGore\")");
+  const iAfis = sayfa.indexOf("<VitrinSerhi veri={vitrin} />");
+  kontrol("afis bulundu", iAfis >= 0);
+  kontrol("  ...ve halka kartinin ALTINDA", iHalka >= 0 && iAfis >= 0 && iHalka < iAfis);
+}
+
+/**
+ * === PARA ve OPERASYON YAN YANA, OPERASYON SUTUN (K258, 23.09.2026) ======
+ * Demo: 14 gun cizgisi 3/5 + operasyon sutunlari 2/5. DORT SERI KORUNDU
+ * (kullanici 21.08: «ayni grafikte»). Bilesen JSX dondurur, deger testi
+ * kurulamaz — olcutler kullanim bloklarina daraltildi.
+ */
+{
+  const yorumsuz = (m: string) =>
+    m.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const sayfa = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
+  const grafik = yorumsuz(readFileSync("src/components/uc-serili-grafik.tsx", "utf8"));
+  kontrol("operasyon grafigi SUTUN kipinde cagriliyor",
+    /<UcSeriliGrafik[\s\S]{0,60}?sekil="sutun"/.test(sayfa));
+  /** * TEK SATIR: 14 gun (3/5) + operasyon (2/5), ayni izgarada, bu sirayla. */
+  const i14 = sayfa.indexOf("flex min-w-0 flex-col xl:col-span-3\"");
+  const iOp = sayfa.indexOf("flex min-w-0 flex-col xl:col-span-2\"");
+  kontrol("14 gun karti 3/5 ve operasyon 2/5 bulundu", i14 >= 0 && iOp >= 0);
+  kontrol("  ...ayni satirda, para solda operasyon sagda",
+    i14 >= 0 && iOp >= 0 && i14 < iOp && iOp - i14 < 3000 &&
+      /xl:grid-cols-5[\s\S]{0,600}?son14Baslik/.test(sayfa.slice(Math.max(0, i14 - 400), i14 + 900)));
+  kontrol("bilesen `sekil` prop'unu taniyor", /sekil\?: "cizgi" \| "sutun"/.test(grafik));
+  /**
+   * *** SUTUNLAR TIKLANABILIR ve DORT SERI: cubuk `<a>` ile sarili, seri
+   * listesi `seriler` (tamami) uzerinden geziliyor — alt kume degil.
+   */
+  const sb = grafik.indexOf("sutunMu" + "\n          ? ");
+  const sutunDali = sb >= 0 ? grafik.slice(sb, sb + 2200) : "";
+  kontrol("sutun dali bulundu", sb >= 0);
+  kontrol("  ...her kovada TUM seriler cubuk (alt kume degil)",
+    /return seriler\.map\(\(s, k\) => \{/.test(sutunDali));
+  kontrol("  ...cubuk <rect> ve adresi varsa <a> ile sarili",
+    /<rect[\s\S]{0,700}?<a key=\{`\$\{s\.anahtar\}-\$\{i\}`\} href=\{adres\}/.test(sutunDali));
+  kontrol("  ...sutun kipinde nokta cizilmiyor (cubuk hedef)",
+    /\{sutunMu \? null : seriler\.map/.test(grafik));
+  kontrol("  ...dar geometri 640 px (2/5 icin), cizgi 1240 kaldi",
+    /G_SUTUN = \{[\s\S]{0,40}?genislik: 640/.test(grafik) && /G_CIZGI = \{[\s\S]{0,40}?genislik: 1240/.test(grafik));
 }
 
 console.log("=".repeat(70));

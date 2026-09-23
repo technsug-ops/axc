@@ -46,7 +46,12 @@
  * ============================================================================
  */
 
-export const KANAL_SIRA_KIPLERI = ["duzen", "ciro"] as const;
+/**
+ * ⚠ ÜÇÜNCÜ KİP: NET-2 (K255, demo). Demo iki düğme gösteriyordu (NET-2'ye
+ * göre · Ciroya göre); SABİT DÜZEN KALKMADI — K106 kararı («Trendyol'u
+ * nerede bulacağım», yer sabit) yaşıyor. Üç kip, üç ayrı soru.
+ */
+export const KANAL_SIRA_KIPLERI = ["duzen", "net2", "ciro"] as const;
 export type KanalSiraKipi = (typeof KANAL_SIRA_KIPLERI)[number];
 
 /**
@@ -91,10 +96,19 @@ export function kanalSirasi(kod: string): number {
  * değişebilirdi (`sort` kararlılığı motora bağlı bırakılmaz).
  */
 export function kanallariSirala<
-  T extends { kanalKodu: string; kanalAdi: string; gelir: number },
+  /* `net2` İSTEĞE BAĞLI: net2 kipini kullanmayan çağıranlar (ve eski
+     testler) yalnız gelir taşır; yoksa 0 sayılır — sıralama yine sabit. */
+  T extends { kanalKodu: string; kanalAdi: string; gelir: number; net2?: number },
 >(kanallar: readonly T[], kip: KanalSiraKipi = VARSAYILAN_KANAL_SIRASI): T[] {
   return [...kanallar].sort((a, b) => {
-    if (kip === "ciro") {
+    if (kip === "net2") {
+      /* NET-2 kipi: «bu dönem hangisi KAZANDIRDI» — ciro değil kâr. Eşitlik
+         bozucu ciro kipiyle aynı: sabit düzen, sonra ad. */
+      const netFarki = (b.net2 ?? 0) - (a.net2 ?? 0);
+      if (netFarki !== 0) return netFarki;
+      const netDuzenFarki = kanalSirasi(a.kanalKodu) - kanalSirasi(b.kanalKodu);
+      if (netDuzenFarki !== 0) return netDuzenFarki;
+    } else if (kip === "ciro") {
       const ciroFarki = b.gelir - a.gelir;
       if (ciroFarki !== 0) return ciroFarki;
       /**

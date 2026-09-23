@@ -135,24 +135,41 @@ export function UyariKarti({
  * renk verilseydi 11 ton dört durum rengiyle karışır ve "yeşil = iyi" anlamı
  * çökerdi.
  *
+ * ⛔ BU KARAR KANAL KARTLARI İÇİN ÇEVRİLDİ (K255, 23.09.2026) — GEREKÇE
+ * SİLİNMEDİ. Kullanıcı demoyu onayladı: kanal kartında çubuklar o kanalın
+ * KİMLİK rengini taşıyor (halka ile aynı palet, `KANAL_RENKLERI`). «Yeşil =
+ * iyi» çökmüyor, çünkü kartta iyi/kötüyü söyleyen şey renk değil HÜKÜM
+ * cümlesi ve marj çipi (durum paleti). Kanal rengi yalnız «bu çubuk bu
+ * kanalın» der — kategori paleti, durum paleti değil. `renk` verilmezse
+ * eski nötr ton: öteki kullanımlar değişmedi.
+ *
  * Yüzde metni de yazılıyor: çubuk tek başına okunmaz (kısıt #1).
  */
 export function PayCubugu({
   oran,
   etiket,
+  renk,
+  soluk = false,
 }: {
   /** 0–1 arası. Sınır dışı değer kırpılır: bozuk veri ekranı taşırmaz. */
   oran: number;
   /** Ekran okuyucu ve gören kullanıcı için yazılı karşılık ("%38"). */
   etiket: string;
+  /** Ham renk (SVG/inline) — yalnız KATEGORİ paleti (`KANAL_RENKLERI`). */
+  renk?: string;
+  /** Aynı rengin soluk tonu — kartta ciro payı soluk, NET payı tam (demo). */
+  soluk?: boolean;
 }) {
   const guvenli = Math.max(0, Math.min(1, Number.isFinite(oran) ? oran : 0));
   return (
     <span className="flex min-w-0 flex-1 items-center gap-2">
       <span className="bg-muted h-2 min-w-0 flex-1 overflow-hidden rounded-full">
         <span
-          className="block h-full rounded-full bg-[#2F7FD1]"
-          style={{ width: `${(guvenli * 100).toFixed(1)}%` }}
+          className={renk ? "block h-full rounded-full" : "block h-full rounded-full bg-[#2F7FD1]"}
+          style={{
+            width: `${(guvenli * 100).toFixed(1)}%`,
+            ...(renk ? { backgroundColor: renk, opacity: soluk ? 0.45 : 1 } : {}),
+          }}
         />
       </span>
       <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
