@@ -58,7 +58,13 @@
  * ============================================================================
  */
 
-import { readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  readFileSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 
 import { KILIT, kilitDurumu, sonTurPenceresiniYaz } from "./bekci-kilit";
 import { mutasyonAdiMi, SIRALI_MUTASYON_GRUP } from "./mutasyon-hedefleri";
@@ -154,6 +160,22 @@ type Sonuc = {
   kod: number;
   saniye: number;
   ozet: string;
+  /**
+   * Bekçinin TAM çıktısı.
+   *
+   * ⛔ ÖZET TEŞHİS DEĞİLDİR (K251, 23.09.2026). `ozetle()` çıktıyı 64
+   * karaktere indiriyor ve ÇÖKEN bir bekçide bilinen kalıpların hiçbiri
+   * bulunmadığı için SON satırı alıyor — bir Node döküm sonunda o satır
+   * `Node.js v24.18.1` oluyor. Yani tur, kırmızı yandığını söylüyor ama
+   * NİYE yandığını söylemiyor.
+   *
+   * ⚠ VE "ayrıntı: npm run <ad>" HER ZAMAN YETMEZ: tur içinde çöküp tek
+   * başına GEÇEN bir bekçi var (23.09.2026 vakası) — o çıktı yalnız tur
+   * sırasında oluşuyor ve atıldığında bir daha ele geçmiyor.
+   * _(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır" —
+   * kısaltma yalnız GÖSTERİMDE yapılır, kayıtta asla.)_
+   */
+  cikti: string;
 };
 
 /** package.json'daki bekçi komutları — elle liste YOK. */
@@ -203,7 +225,7 @@ function senkronKostur(ad: string): Sonuc {
   const cikti = (r.stdout ?? "") + (r.stderr ?? "");
   const ozet = ozetle(cikti);
   console.log(`${kod === 0 ? "OK  " : "KIRMIZI"} ${saniye.toFixed(1)}s  ${ozet}`);
-  return { ad, kod, saniye, ozet };
+  return { ad, kod, saniye, ozet, cikti };
 }
 
 /**
@@ -225,7 +247,7 @@ function asenkronKostur(ad: string): Promise<Sonuc> {
       console.log(
         `  ${ad.padEnd(24)} ... ${kod === 0 ? "OK  " : "KIRMIZI"} ${saniye.toFixed(1)}s  ${ozet}  [paralel]`,
       );
-      resolve({ ad, kod, saniye, ozet });
+      resolve({ ad, kod, saniye, ozet, cikti });
     });
   });
 }
@@ -318,7 +340,25 @@ async function main() {
     console.log("KIRMIZI YANANLAR:");
     for (const k of kirmizilar) {
       console.log(`  ${k.ad.padEnd(24)} ${k.ozet}`);
-      console.log(`     ayrıntı: npm run ${k.ad}`);
+      /**
+       * ⛔ SON SATIRLAR EKRANA, TAMAMI DOSYAYA (K251).
+       * Ekranda 25 satır: çöken bir bekçide yığın izinin kuyruğu tam
+       * buraya düşer. Tamamı `scripts/tmp/` altına yazılır çünkü tur
+       * içinde oluşan bir çıktı, tur bitince BİR DAHA ELE GEÇMEZ.
+       */
+      const satirlar = k.cikti.split("\n").filter((r) => r.trim() !== "");
+      for (const r of satirlar.slice(-25)) console.log(`       | ${r}`);
+      try {
+        const dosya = `scripts/tmp/bekci-${k.ad.replace(/[^a-z0-9]+/gi, "-")}.log`;
+        mkdirSync("scripts/tmp", { recursive: true });
+        writeFileSync(dosya, k.cikti, "utf8");
+        console.log(`     tam çıktı: ${dosya}`);
+      } catch (e) {
+        /** ⚠ YAZAMAMAK SESSİZ GEÇMEZ: ekrandaki 25 satır elde kalan tek
+         *  şeyse bunun bilinmesi gerekir. */
+        console.log(`     ⚠ tam çıktı yazılamadı: ${(e as Error).message}`);
+      }
+      console.log(`     tekrar: npm run ${k.ad}`);
     }
     /**
      * ⚠ ÇIKIŞ KODU ŞART. Bu betik bir push zincirine bağlanacak; çıkış kodu

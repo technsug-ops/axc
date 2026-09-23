@@ -13,6 +13,53 @@
 
 ---
 
+## 🔴 K251 — TUR, KIRMIZI BEKÇİNİN TAM ÇIKTISINI SAKLIYOR · 23.09.2026 · [KOD KOŞTU]
+
+### ⛔ VAKA — BİR TUR BOŞA GİTTİ
+
+`panel-mutasyon:kontrol` turun içinde **27,9 saniyede çöktü** ve push düştü.
+Tur özetinde tek satır vardı:
+
+    panel-mutasyon:kontrol   ... KIRMIZI 27.9s  Node.js v24.18.1
+
+`ozetle()` çıktıyı 64 karaktere indiriyor ve bilinen kalıp bulamayınca SON
+satırı alıyor — bir Node dökümünde o satır sürüm numarasıdır. **Tur, kırmızı
+yandığını söyledi ama NİYE yandığını söylemedi.** Aynı bekçi tek başına üç
+kez 27/27 geçti; yani "ayrıntı: `npm run panel-mutasyon:kontrol`" tavsiyesi
+de işe yaramadı — çıktı yalnız TUR SIRASINDA oluşmuştu ve atıldığı anda bir
+daha ele geçmedi.
+_(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır — kısaltma
+yalnız gösterimde yapılır, kayıtta asla.")_
+
+### YAPILAN
+
+`scripts/bekci.ts`: her koşucu tam çıktıyı `Sonuc.cikti`de taşıyor; kırmızı
+yanan bekçinin **son 25 satırı ekrana**, **tamamı `scripts/tmp/bekci-<ad>.log`**
+dosyasına yazılıyor. Yazamazsa bunu da söylüyor (sessiz geçmez).
+
+⚠ **KIRMIZI DAL HENÜZ TETİKLENMEDİ.** K251'den sonraki tam tur 154/154 yeşil
+geçti; yeni kod yalnız `tsc` ile sınandı, kırmızı bekçi yolu bir kez bile
+koşmadı. Tam turu bilerek kırmızıya boyamak 34 dakika; ilk gerçek kırmızıda
+görülecek ve o gün buraya yazılacak. _(Anayasa: "sınanmayan dal sınanmamış
+koddur" — beyan ediliyor, geçmiş sayılmıyor.)_
+
+### ⚠ ÇÖKÜŞÜN KENDİSİ AÇIKLANAMADI — VE KAPATILMADI
+
+Eşzamanlılık hipotezi **ölçüldü ve çürüdü**: panel + 4 paralel harness aynı
+anda koştu, beşi de 0 döndü. K251'den sonraki tam tur `panel-mutasyon`'ı
+**yeşil** geçti (103,6 sn). Elde kalan: bir kez, tur içinde, 27,9 sn'de,
+çıktısı yok.
+
+> **"Bir kez tesadüf, iki kez örüntü."** Kalem açık kalıyor; ikinci kez
+> olursa artık çıktısı var ve o zaman teşhis edilir. Tahmin yazılmadı.
+
+⚠ **BU TURDA KENDİ HATAM:** teşhis için tur koşarken ikinci bir mutasyon turu
+başlattım — depoda yasak (iki tur aynı dosyaları bozup geri yazar). Fark
+edip durdurdum; panelin dosyalarında mutant kalmadı, `git status` ile
+doğrulandı.
+
+**Halil testi:** yok — tur aracı, ekran değil.
+
 ## 🔴 K250 — PARA EN ÜSTTE: 14.08 KARARI ÇEVRİLDİ · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı canlı panele bakıp **"dağ fare doğurdu mu demek lazım"** dedi. Haklıydı
