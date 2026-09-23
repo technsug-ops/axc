@@ -170,3 +170,45 @@ export function ciroyaOran(net: number, ciro: number): number | null {
   if (ciro <= 0) return null;
   return (net / ciro) * 100;
 }
+
+/**
+ * BİR ORANIN DEĞİŞİMİ PUAN CİNSİNDENDİR — YÜZDE DEĞİL (K245, 23.09.2026).
+ *
+ * ⛔ NİYE AYRI GÖVDE: marj %17,1'den %16,5'e düştüğünde `degisim()` bunu
+ * _"%3,5 azaldı"_ diye okur (0,6 / 17,1). Rakam MATEMATİKSEL OLARAK doğru
+ * ama ekranda YANLIŞ ŞEY söyler: kullanıcı marjın 3,5 puan düştüğünü sanır.
+ * Bir oranın hareketi **puan** ile anlatılır; yüzdenin yüzdesi ayrı bir
+ * büyüklüktür ve panelde işi yoktur.
+ * _(Anayasa: "bir sayı etiketiyle taşınır" · "metin, sahip olmadığı anlamı
+ * iddia etmez".)_
+ *
+ * ⚠ PAYDA ≤ 0 İSE ORAN YOK, SIFIR DEĞİL: ciro yokken marj "%0" değil
+ * "hesaplanamıyor"dur (`ciroyaOran` ile aynı kural).
+ */
+export type OranDegisimi = {
+  /** Bugünkü oran, yüzde olarak (16,5). Hesaplanamıyorsa `null`. */
+  simdi: number | null;
+  /** Kıyas döneminin oranı. Yoksa `null`. */
+  onceki: number | null;
+  /** Fark — PUAN. İkisinden biri yoksa `null`. */
+  puan: number | null;
+  /** İki oran da hesaplanabildi mi. */
+  karsilastirilabilir: boolean;
+};
+
+export function oranDegisimi(
+  simdiPay: number,
+  simdiPayda: number,
+  oncekiPay: number | null,
+  oncekiPayda: number | null,
+): OranDegisimi {
+  const simdi = ciroyaOran(simdiPay, simdiPayda);
+  const onceki =
+    oncekiPay === null || oncekiPayda === null
+      ? null
+      : ciroyaOran(oncekiPay, oncekiPayda);
+  if (simdi === null || onceki === null) {
+    return { simdi, onceki, puan: null, karsilastirilabilir: false };
+  }
+  return { simdi, onceki, puan: simdi - onceki, karsilastirilabilir: true };
+}

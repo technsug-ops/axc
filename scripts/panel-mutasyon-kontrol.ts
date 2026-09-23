@@ -35,6 +35,9 @@ const BEKCI_BASLIGI = "PANEL";
 
 const SIRA = "src/lib/kanal-sirasi.ts";
 const PANEL = "src/lib/panel.ts";
+/** K245: oran değişimi PUAN cinsinden — yüzdenin yüzdesi yanlış rakam üretir. */
+const KIYAS = "src/lib/karsilastirma.ts";
+const SAYFA = "src/app/page.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -143,6 +146,54 @@ const MUTASYONLAR: Mutasyon[] = [
       "      )" + String.fromCharCode(10) + "    : null;",
     bozdugu:
       "ust blok sabit duzende, kiyas blogu ciroda cizilir — kartlar goz goze karsilastirilamaz",
+  },
+  {
+    /* K245: marj %17,1 -> %16,5 hareketi 0,6 PUAN'dir. Yuzde olarak
+       anlatilirsa ekranda %3,5 yazar ve kullanici marjin 3,5 puan
+       dustugunu sanir. Rakam dogru, cumle yanlis. */
+    ad: "ORAN DEGISIMI YUZDEYE DONDU (puan yerine)",
+    yon: "KALDIRAN",
+    dosya: KIYAS,
+    bul: "  return { simdi, onceki, puan: simdi - onceki, karsilastirilabilir: true };",
+    koy: "  return { simdi, onceki, puan: ((simdi - onceki) / onceki) * 100, karsilastirilabilir: true };",
+    bozdugu:
+      "ekranda yuzdenin yuzdesi yazar; rakam MAKUL gorunur ve yanlis oldugunu soylemez",
+  },
+  {
+    ad: "CIRO YOKKEN MARJ SIFIR SAYILIYOR",
+    yon: "FAZLADAN",
+    dosya: KIYAS,
+    bul: "  if (ciro <= 0) return null;",
+    koy: "  if (ciro <= 0) return 0;",
+    bozdugu:
+      "ciro yokken ekran '%0 marj' yazar; oysa dogru cevap 'hesaplanamiyor'",
+  },
+  {
+    ad: "MARJ KUTUSU YUZDE ROZETINE BAGLANDI",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "                        kiyas={oranKiyasRozeti(marjD)}",
+    koy: "                        kiyas={null}",
+    bozdugu:
+      "marjin degisimi ekrandan kalkar; ciro artarken marjin gerilemesi gorunmez olur",
+  },
+  {
+    ad: "MARJ KUTUSU EKRANDAN KALKTI",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "                        etiket={t(\"net2Marji\")}",
+    koy: "                        etiket={t(\"net2\")}",
+    bozdugu:
+      "govde dogru calisir, ekranda karsiligi olmaz (K121 dersi)",
+  },
+  {
+    ad: "KUCUK KIPIRTI DA ROZET YAKIYOR",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: "    if (Math.abs(d.puan) < 0.05) {",
+    koy: "    if (false) {",
+    bozdugu:
+      "0,02 puanlik kipirti 'degisim' diye yazilir; rozet her gun yanar ve okunmaz olur",
   },
 ];
 

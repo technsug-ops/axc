@@ -88,6 +88,7 @@ import {
   degisim,
   kiyasCoz,
   kiyasPenceresi,
+  oranDegisimi,
 } from "@/lib/karsilastirma";
 import {
   gorunumCoz,
@@ -1471,6 +1472,41 @@ export default async function AnaSayfa({
     );
   }
 
+  /**
+   * ORAN ROZETİ — PUAN YAZAR, YÜZDE DEĞİL (K245).
+   * `kiyasRozeti` bir TUTARIN değişimini yüzdeyle anlatır ve orada doğrudur.
+   * Bir ORANIN değişiminde aynı biçim yanlış rakam üretir: %17,1 → %16,5
+   * hareketi 0,6 PUAN'dır, "%3,5" değil. İki rozet ayrı durur çünkü iki
+   * AYRI soruyu cevaplıyorlar.
+   */
+  function oranKiyasRozeti(d: ReturnType<typeof oranDegisimi>) {
+    if (!kiyasPencere || kiyasBos) return null;
+    if (!d.karsilastirilabilir || d.puan === null) {
+      return (
+        <DurumRozeti durum="notr" isaretsiz>
+          {tRapor("kiyaslanamaz")}
+        </DurumRozeti>
+      );
+    }
+    /** ⚠ KURUŞA DEĞİL, 0,05 PUANA YUVARLANIR: 0,02 puanlık bir kıpırtı
+     *  "değişim" diye yazılırsa rozet her gün yanar ve okunmaz olur. */
+    if (Math.abs(d.puan) < 0.05) {
+      return (
+        <DurumRozeti durum="notr" isaretsiz>
+          {tRapor("degisimYok")}
+        </DurumRozeti>
+      );
+    }
+    return (
+      <DurumRozeti durum={d.puan > 0 ? "olumlu" : "olumsuz"} isaretsiz>
+        <span className="tabular-nums">
+          {d.puan > 0 ? "▲" : "▼"}{" "}
+          {t("puanFarki", { puan: bicim.sayi(Math.abs(d.puan), 1) })}
+        </span>
+      </DurumRozeti>
+    );
+  }
+
   const satisAdresi = (ek: Record<string, string>) =>
     suzgecAdresi("/satislar", {}, { ...donemParametreleri(), ...ek });
 
@@ -2576,6 +2612,18 @@ export default async function AnaSayfa({
            */
           /** Bu para biriminin kıyas dönemi bloğu; yoksa null. */
           const kb = kiyasBlogu(blok.paraBirimi);
+          /**
+           * NET-2 MARJI VE DEĞİŞİMİ — saf gövdeden (K245).
+           * ⚠ Payda BRÜT CİRO: paneldeki "satış fiyatına göre" oranıyla AYNI
+           * tanım. İki ekran aynı kavramı farklı hesaplasaydı hangisinin doğru
+           * olduğu sorulurdu.
+           */
+          const marjD = oranDegisimi(
+            blok.toplamNet2,
+            blok.toplamGelir,
+            kb?.toplamNet2 ?? null,
+            kb?.toplamGelir ?? null,
+          );
           return (
             <Card key={blok.paraBirimi} className="min-w-0">
               <CardHeader>
@@ -2623,7 +2671,7 @@ export default async function AnaSayfa({
                      Net kâr 1 ve Net kâr 2 gelmeli — yani 7 kart istiyorum."_
                      ⚠ `lg:grid-cols-7` yalnız kâr görünürken: izin yoksa
                      dört kutu kalır ve yedi sütun boş yer bırakırdı. */
-                  className={`grid gap-2 sm:grid-cols-2 md:grid-cols-4 ${karGorunur ? "lg:grid-cols-7" : ""}`}
+                  className={`grid gap-2 sm:grid-cols-2 md:grid-cols-4 ${karGorunur ? "lg:grid-cols-8" : ""}`}
                 >
                   {/* ---------------- SATIN ALINAN — HUNİNİN GERÇEK BAŞI -------
                     K126: iş sipariş vermekle başlar, mal kabulle değil.
@@ -2915,6 +2963,27 @@ export default async function AnaSayfa({
                               </span>
                             ) : null}
                           </>
+                        }
+                      />
+                      {/*
+                        NET-2 MARJI (K245) — KULLANICI TASARIM KARARI.
+                        ⛔ TÜM KUTULAR YEŞİLKEN HİÇBİRİ BİR ŞEY SÖYLEMEZ: ciro
+                        artıp marj gerilerse panelin söylemesi gereken şey
+                        tam budur ve tutar kutularının hiçbiri onu söylemiyor.
+                        ⚠ DEĞİŞİM PUAN CİNSİNDEN — `oranKiyasRozeti`.
+                      */}
+                      <IstatistikKutusu
+                        etiket={t("net2Marji")}
+                        cocuk={
+                          marjD.simdi === null
+                            ? t("marjHesaplanamaz")
+                            : bicim.yuzde(marjD.simdi)
+                        }
+                        kiyas={oranKiyasRozeti(marjD)}
+                        altNot={
+                          <span className="text-muted-foreground block">
+                            {t("net2MarjiAciklama")}
+                          </span>
                         }
                       />
                     </>

@@ -13,6 +13,100 @@
 
 ---
 
+## 🔴 K245 — NET-2 MARJI KUTUSU: BİR ORANIN DEĞİŞİMİ PUAN, YÜZDE DEĞİL · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı panel tasarımı için bir demo istedi, demoyu onayladı ve
+_"birebir yapabilir misin"_ dedi. Demo dört pakete bölündü; bu birincisi.
+
+### ① DEMODAKİ KIRMIZI KUTU — VE NİYE KIRMIZI
+
+Demoda altı hüküm kutusundan biri bilerek kırmızıydı: ciro %8 artarken
+NET-2 marjı 0,6 puan geriliyordu. **Panelin söylemesi gereken şey tam
+buydu ve hiçbir kutu onu söylemiyordu.** Tutar kutularının altısı da
+yeşilken hiçbiri bir şey söylemez.
+
+### ② ÖLÇÜM ÖNCE — MEKANİZMANIN YARISI ZATEN VARDI
+
+Yazmaya başlamadan ölçtüm ve varsayımım yanlış çıktı:
+
+    IstatistikKutusu       `kiyas` yuvası ZATEN var
+    kiyasRozeti()          ZATEN yazılmış
+    kullanan kutu          3 (ciro · NET-1 · NET-2)
+    kıyas bloğu            `kiyasBlogu(paraBirimi)` ZATEN hesaplanıyor
+    eksik olan             marj kutusunun KENDİSİ
+
+Yani "en büyük değişiklik" diye sunduğum şeyin çoğu üründe duruyordu.
+_(Anayasa: "yokluk iddiası da iddiadır" — üç kez bakılmadan kurulup üçü de
+yanlış çıkmıştı; bu kez bakıldı.)_
+
+### ⛔ ASIL TUZAK: HAZIR ROZETE BAĞLAMAK YANLIŞ RAKAM ÜRETİRDİ
+
+Mevcut `kiyasRozeti` bir **TUTARIN** değişimini yüzdeyle anlatır ve orada
+doğrudur. Marj ise zaten bir **ORAN**. Aynı rozete bağlansaydı:
+
+    marj  %17,1 → %16,5
+    kiyasRozeti  →  "▼ 0,6 · %3,7"      ← 0,6 / 17,1
+    doğrusu      →  "▼ 0,6 puan"
+
+Rakam matematiksel olarak doğru, **cümle yanlış**: okuyan marjın 3,5 puan
+düştüğünü sanır. Ve yanlışlığı kendini belli etmez — sayı makul görünür.
+_(Anayasa: "metin, sahip olmadığı anlamı iddia etmez" · "bir sayı
+etiketiyle taşınır".)_
+
+### ③ YAPILAN
+
+· **`oranDegisimi()`** — saf gövde, `lib/karsilastirma.ts`. İki oranı
+  hesaplar ve farkı **PUAN** olarak verir.
+· **`oranKiyasRozeti()`** — panelde ayrı rozet. `kiyasRozeti` YERİNDE
+  KALDI: iki ayrı soruya iki ayrı cevap, biri ötekini bozmaz.
+· **NET-2 marjı kutusu** — NET-2'nin hemen ardında, huninin sonunda.
+· **`bicim.sayi(deger, basamak = 0)`** — puan bir haneyle yazılır.
+  Varsayılan değişmedi, çağıranların hiçbiri etkilenmedi.
+
+### ⚠ İKİ KURAL DAHA — İKİSİ DE ÖLÇÜLDÜ
+
+**CİRO YOKKEN MARJ "%0" DEĞİL.** `ciroyaOran` zaten payda ≤ 0 iken `null`
+dönüyordu ve o kural aynen kullanıldı. "%0 marj" demek "hiç kâr yok"
+demektir; doğru cevap **"hesaplanamıyor"**.
+
+**0,05 PUAN ALTI DEĞİŞİM SAYILMAZ.** Eşik uydurma değil, rozetin işlevinden
+geliyor: 0,02 puanlık bir kıpırtı "değişim" diye yazılırsa rozet HER GÜN
+yanar ve okunmaz olur. _(Anayasa: "yanlış uyarı, uyarısızlıktan kötüdür".)_
+
+### ÖLÇÜLDÜ
+
+    panel:dogrula                744 ölçüt (16'sı yeni · 9'u DEĞER testi)
+    panel-mutasyon:kontrol       15/15 (5'i yeni, üç yön)
+    i18n:kontrol                 tr/en eşit · 0 eksik
+    tsc --noEmit                 çıktı BOŞ
+
+Mutasyonların ikisi doğrudan bu paketin varlık sebebini koruyor:
+`oranDegisimi`yi yüzdeye çeviren ve marj kutusunu yüzde rozetine bağlayan
+senaryolar — ikisi de KIRMIZI yandı.
+
+### HALİL TEST LİSTESİ
+
+1. `/` (Panel) → "Seçili dönem" kartında **sekiz** kutu olmalı; sonuncusu
+   **NET-2 marjı**, altında `NET-2 ÷ brüt ciro` yazar.
+2. Üstteki **Karşılaştır → Önceki dönem**e bas. Marj kutusunun altında
+   rozet çıkmalı ve **"puan"** kelimesi geçmeli — "%" ile biten bir
+   değişim yazmamalı.
+3. Ciroyu sıfırlayan bir süzgeç seç (satışı olmayan bir gün). Kutu
+   **"hesaplanamıyor"** yazmalı, **%0 YAZMAMALI**.
+4. Karşılaştırmayı kapat. Rozet hiç çıkmamalı, rakam kalmalı.
+5. Telefonda: sekiz kutu ikişerli sarmalı, yatay kaydırma çıkmamalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (4 yeni anahtar, tr+en) ·
+**kullanıcı kolaylığı: ✓**
+
+### SIRADAKİ ÜÇ PAKET
+
+    K246  pazaryeri kartları + ciro halkası AYNI DÜZLEMDE
+    K247  operasyon çizgiden SÜTUNA; para ile yan yana
+    K248  görev kutusu → tek satırlık şerit
+
+---
+
 ## 🔴 K244 — PANEL BİR HÜKÜM YERİDİR: DÖKÜM KANAL LİSTELEMEYE TAŞINDI · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı aynı turda iki bildirim gönderdi; ikisi de panelin İLK EKRANINI

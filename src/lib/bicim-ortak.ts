@@ -121,8 +121,13 @@ export function bicimOlustur(format: Formatter) {
      *
      * ONDALIK YOK: adet tam sayıdır, "2,5 ürün" diye bir şey satılmaz.
      */
-    sayi(deger: number): string {
-      return format.number(deger, { maximumFractionDigits: 0 });
+    /**
+     * ⚠ BASAMAK İSTEĞE BAĞLI (K245): puan farkı bir haneyle yazılır
+     * (0,6 puan). Sıfır haneye yuvarlansaydı '0 puan' yazardı ve
+     * değişim GÖRÜNMEZ olurdu. Varsayılan değişmedi.
+     */
+    sayi(deger: number, basamak = 0): string {
+      return format.number(deger, { maximumFractionDigits: basamak });
     },
   };
 }

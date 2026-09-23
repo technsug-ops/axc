@@ -18,6 +18,7 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { oranDegisimi } from "../src/lib/karsilastirma";
 import {
   CEKIM_ESIK_DK,
   CEKIM_KANALLARI,
@@ -4437,6 +4438,97 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
 console.log("");
 console.log("=".repeat(70));
 console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
+/**
+ * ═══ BİR ORANIN DEĞİŞİMİ PUAN, YÜZDE DEĞİL (K245, 23.09.2026) ══════
+ *
+ * ⛔ ÖNLENEN HATA: marj %17,1 → %16,5 hareketini `degisim()` ile anlatmak
+ * ekranda **"%3,5"** yazar (0,6 / 17,1). Rakam matematiksel olarak doğru,
+ * cümle yanlış: kullanıcı marjın 3,5 puan düştüğünü sanır.
+ * _(Anayasa: "metin, sahip olmadığı anlamı iddia etmez".)_
+ *
+ * ⭐ DEĞER TESTİ — saf gövde ÇAĞRILIYOR, kaynak taranmıyor.
+ */
+{
+  const a = oranDegisimi(5180, 31480, 4980, 29150);
+  kontrol(
+    "marj şimdi doğru (5180 / 31480)",
+    a.simdi !== null && Math.abs(a.simdi - 16.4549) < 0.01,
+  );
+  kontrol(
+    "  ...önceki de doğru (4980 / 29150)",
+    a.onceki !== null && Math.abs(a.onceki - 17.0840) < 0.01,
+  );
+  /** ⛔ FARK PUAN: 16,45 − 17,08 = −0,63. Yüzde olsaydı −3,7 çıkardı. */
+  kontrol(
+    "fark PUAN cinsinden (−0,63) — yüzde (−3,7) DEĞİL",
+    a.puan !== null && Math.abs(a.puan - -0.6291) < 0.01,
+  );
+  kontrol("  ...ve karşılaştırılabilir", a.karsilastirilabilir === true);
+
+  /** ⚠ PAYDA ≤ 0 İSE ORAN YOK, SIFIR DEĞİL (ciroyaOran ile aynı kural). */
+  const b = oranDegisimi(100, 0, 50, 1000);
+  kontrol("ciro yokken oran null (₺0 değil)", b.simdi === null);
+  kontrol("  ...ve karşılaştırılamaz", b.karsilastirilabilir === false);
+  kontrol("  ...fark da null", b.puan === null);
+
+  /** ⚠ KIYAS DÖNEMİ YOKSA: bugünkü oran YAZILIR, fark yazılmaz. */
+  const c = oranDegisimi(5180, 31480, null, null);
+  kontrol("kıyas yokken bugünkü oran YAZILIR", c.simdi !== null);
+  kontrol("  ...ama fark yazılmaz", c.puan === null && !c.karsilastirilabilir);
+}
+
+/**
+ * ⛔ KUTU ÇİZİLİYOR MU — GÖVDE DOĞRU OLUP EKRANDA KARŞILIĞI OLMAYABİLİR.
+ * _(Anayasa: "sınanmamış ekran, ekran değildir" · K121: 98/98 yeşildi ve
+ * panelde kutu YOKTU.)_
+ */
+{
+  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
+  kontrol(
+    "panel NET-2 MARJI kutusunu çiziyor",
+    /etiket=\{t\("net2Marji"\)\}/.test(sayfa),
+  );
+  kontrol(
+    "  ...ve oranı SAF GÖVDEDEN alıyor (kendi bölmesini yapmıyor)",
+    /const marjD = oranDegisimi\(/.test(sayfa),
+  );
+  /**
+   * ⛔ EN ÖNEMLİ ÖLÇÜT: marj kutusu PUAN rozetini kullanır.
+   * `kiyasRozeti`ye bağlanan bir mutasyon ekranda yüzdenin yüzdesini yazar
+   * ve rakam MAKUL görünür — yanlış olduğunu söylemez.
+   */
+  kontrol(
+    "marj kutusu PUAN rozetini kullanıyor (yüzde rozetini DEĞİL)",
+    /kiyas=\{oranKiyasRozeti\(marjD\)\}/.test(sayfa),
+  );
+  kontrol(
+    "  ...rozet metni 'puan' diyor",
+    /t\("puanFarki",/.test(sayfa),
+  );
+  /** ⚠ KÜÇÜK KIPIRTI ROZET YAKMAZ: 0,02 puan her gün yanan bir rozet demek. */
+  kontrol(
+    "  ...0,05 puan altı 'değişim yok' sayılıyor",
+    /Math\.abs\(d\.puan\) < 0\.05/.test(sayfa),
+  );
+  {
+    const sozluk = (
+      JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+        Panel: Record<string, string>;
+      }
+    ).Panel;
+    kontrol(
+      "  puanFarki sözlükte ve 'puan' kelimesini taşıyor",
+      (sozluk.puanFarki ?? "").includes("puan"),
+    );
+    kontrol(
+      "  net2Marji sözlükte ve dolu",
+      typeof sozluk.net2Marji === "string" && sozluk.net2Marji.length > 3,
+    );
+  }
+}
+
 console.log("=".repeat(70));
 /**
  * ⚠ NİYE VAR: kullanıcı bir tarih seçip "o gün elimde ne vardı" sorusunu
