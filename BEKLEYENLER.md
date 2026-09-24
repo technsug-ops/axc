@@ -136,7 +136,7 @@ kesikli toplam yığılmışken geri geldi (FAZLADAN). Panel harness'i tek baş�
 
 ---
 
-## 🔴 K259 — GÖREV ŞERİDİ TÜRLERİNE GÖRE SATIRLAR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+## 🔴 K259 — GÖREV ŞERİDİ: ① TÜRLERE GÖRE SATIRLAR → ② DEMO BİREBİR TEK SATIR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı 24.09: _"Bugün ne yapalım kartı biraz karmaşık; türlerine göre
 düzenlemek gerek."_ K254 iki grubu (sevkiyat · tedarik) **tek satırda** ince
@@ -152,29 +152,58 @@ bir ayraç ve ikonla ayırıyordu; iki emek göz için karışıyordu.
 - Çiplerin kendisi, ilerleme bağlantısı, sıfır çipin `<span>` kalması, `sinif`
   renkleri **aynen** (K254).
 
-### ⚠ ÖLÇÜT ESKİDİ, SUSTURULMADI
+### ⚠ ÖLÇÜT ESKİDİ, SUSTURULMADI (①)
 
-K254'ün _"gruplar ayraç + ikonla AYRILIYOR"_ ölçütü ayracı arıyordu; ayraç
-bilerek kalktı. Ölçüt _"gruplar KENDİ SATIRINDA, başlık + ikonla"_ oldu ve
-ayracın **geri gelmediğini** de sınıyor (niye eskidiği yorumda). Mutasyon
-_"GRUP AYRACI KALKTI"_ → _"GRUP BAŞLIĞI KALKTI"_ (çapa başlığa taşındı);
-yeni ölçüt: grup başlığı bekleyen sayısını yazıyor.
+K254'ün _"gruplar ayraç + ikonla AYRILIYOR"_ ölçütü ayracı arıyordu; ① onu
+başlığa taşıdı, ② ayraca geri getirdi — her seferinde gerekçesiyle.
 
-### HALİL TEST LİSTESİ
+### ─── ② «ÇOK KARIŞIK OLDU, ANLAMLANDIRAMIYORUM» — ① ÇEVRİLDİ, DEMO BİREBİR
 
-1. `/` → hüküm kartlarının altında "Bugün ne yapalım" kutusu: **ilk satır**
-   başlık + "N bekleyen" (amber) ya da "Hepsi temiz" (yeşil).
-2. Altında **iki ayrı satır**: "Sevkiyat" (kamyon ikonu) ve "Tedarik" (onaylı
-   paket ikonu); her satırın başında grup adı ve parantez içinde o grubun bekleyen
-   toplamı — iki parantezin toplamı üstteki "N bekleyen" ile **birebir** aynı.
-3. Sevkiyat satırındaki çipler (paketle · kargo bekleyen …) yalnız o satırda;
-   tedarik çipleri (mal kabul · sayım …) yalnız kendi satırında.
-4. Bir çipe tıklayınca o işin süzülmüş listesi açılmalı (K254 davranışı).
-5. Telefonda grup adı satır başında kalmalı, çipler alta sarmalı.
+①'in bedeli aynı gün çıktı. «Türlerine göre düzenlemek gerek» isteğini **iki
+satır + görünür grup başlığı** diye yorumlamıştım; sonuç: üst başlığın altında
+ikinci bir «Bugün ne göndermeliyim» cümlesi, «Mal ve kayıt» gibi belirsiz bir
+başlık, yedi **uzun** çip («Onay bekleyen sipariş (API)», «Kargoya verilmemiş
+sipariş 3 · 0 paketlendi», «Komisyon oranı boş kanal SKU 38») ve elma+armut
+toplayan bir «75 bekleyen» rozeti. Demoyla yan yana konunca fark netti: demo
+**tek satır, dört kısa çip** — «Onay bekleyen 3 · Paketlenecek 11 · Mal kabul 2
+· Kârı hesaplanamayan 0 · temiz». Kullanıcıya üç şekil sunuldu, **demo birebir**
+seçildi; toplam rozeti için de **kaldır**.
 
-**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok — `baslik`,
-`baslikSevkiyat`, `baslikTedarik`, `bekleyen`, `hepsiTemiz` mevcut) ·
-**kullanıcı kolaylığı: ✓** (İlke #2 · #8 · #12)
+- Tek satır; **kısa etiketler** `Gorevler.kisa.*` (Onay bekleyen · Paketlenecek
+  · İade bildirimi · Mal kabul · Kârı hesaplanamayan · Oransız kanal SKU ·
+  Komisyon tarifesi); uzun ad `title`da (üstüne gelince).
+- Gönderim işleri önce, tedarik sonra, **arada ince ayraç** — 20.08 «iki emek»
+  gerekçesi sırada ve ayraçta yaşıyor; grup adı ekran okuyucuya `sr-only`
+  (`baslikSevkiyat` → «Gönderim», `baslikTedarik` → «Tedarik»).
+- **Toplam rozeti yok**; hepsi sıfırsa yalnız «Hepsi temiz». `Gorevler.bekleyen`
+  anahtarı silindi (başka kullanıcısı yoktu).
+- «0 paketlendi» **sıfırda çizilmez** — çipin dediğini tekrar ediyordu; ilk
+  paket çıkınca rakam belirir.
+- Bekçi: 5 ölçüt değişti/eklendi (tek satır+ayraç · sr-only grup adı · rozet
+  yok · kısa etiket sözlükten, taban doluluğu ile · sıfır ilerleme yok);
+  mutasyon 1 taşındı + 4 yeni (rozet geri · uzun etiket · 0 ilerleme · sr-only).
+
+> **DERS:** kullanıcının isteğini demonun DIŞINA çıkacak biçimde yorumlama.
+> Demo onaylı iskelet; «türlerine göre» demonun içinde de karşılanabiliyordu
+> (sıra + ayraç). Önce demoya bak, sonra yorumla. _(Bellek: demo-iskelet-birebir.)_
+
+### HALİL TEST LİSTESİ (② için)
+
+1. `/` → hüküm kartlarının altında **tek satır**: solda «Bugün ne yapmalıyım»,
+   yanında çipler; «N bekleyen» rozeti **yok**.
+2. Çip metinleri kısa: «Onay bekleyen 1», «Paketlenecek 3», «İade bildirimi 1» │
+   «Mal kabul 31», «Kârı hesaplanamayan 1», «Oransız kanal SKU 38», «Komisyon
+   tarifesi ✓ temiz» — sayı çipin sağında, aynı satırda.
+3. Bir çipin üstünde bekleyin → uzun ad ipucu olarak çıkmalı («Onay bekleyen
+   sipariş (API)»).
+4. Gönderim çipleri ile tedarik çipleri arasında **ince dikey çizgi** (masaüstü).
+5. «Paketlenecek» yanında «0 paketlendi» **görünmemeli**; bir sipariş
+   paketlenince «1 paketlendi» belirmeli ve tıklanınca listesi açılmalı.
+6. Bir çipe tıklayınca o işin süzülmüş listesi açılmalı; temiz çip tıklanmaz.
+7. Telefonda çipler alt alta sarar, yatay kaydırma yok.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`Gorevler.kisa.*` 7 anahtar tr+en;
+`bekleyen` silindi; 2 değer değişti) · **kullanıcı kolaylığı: ✓** (İlke #2 · #8 · #12)
 
 ## 🔴 K258 — PARA ve OPERASYON YAN YANA, OPERASYON SÜTUN (DÖRT SERİ) · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 

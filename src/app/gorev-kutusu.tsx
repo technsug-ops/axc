@@ -1,6 +1,7 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Check, PackageCheck, Truck } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { DurumRozeti } from "@/components/durum-rozeti";
 import { DURUM_YAZISI, DURUM_ZEMINI } from "@/lib/renkler";
@@ -11,7 +12,6 @@ import {
   grubunGorevleri,
   type Gorev,
   type GorevAnahtari,
-  type GorevGrubu,
 } from "@/lib/panel/bugun-ne-yapmaliyim";
 
 /**
@@ -75,13 +75,17 @@ import {
 function GorevCipi({
   gorev,
   etiket,
+  uzunEtiket,
   temizMetni,
   ilerlemeMetni,
   ilerlemeAdresi,
   sureMetni,
 }: {
   gorev: Gorev;
+  /** KISA etiket — çipte görünen (`kisa.*`, K259-②). */
   etiket: string;
+  /** Uzun ad — yalnız `title` (üstüne gelince), ekranda değil. */
+  uzunEtiket: string;
   temizMetni: string;
   /** "3 paketlendi" — ilerlemesi olmayan görevde kullanılmaz. */
   ilerlemeMetni: string;
@@ -125,7 +129,8 @@ function GorevCipi({
   }`;
 
   return (
-    <span className="inline-flex max-w-full flex-wrap items-center gap-1">
+    /* Uzun ad SARMALAYICIDA (`title`): çip + ilerleme birlikte, İlke #2 çapaları yerinde. */
+    <span className="inline-flex max-w-full flex-wrap items-center gap-1" title={uzunEtiket}>
       {gorev.temizMi ? (
         /* SIFIR SATIR BAĞLANTI OLMAZ (İlke #2) — ama kaybolmaz (açık sıfır). */
         <span className={sinif}>{govde}</span>
@@ -143,8 +148,10 @@ function GorevCipi({
         paketlenen tıklayınca liste çıksa"). Kendi süzülü listesine gider.
       */}
       {gorev.ilerleme !== null ? (
-        /* Temiz çipte ilerleme yazılmaz: «0 / 0 paketlendi» gürültü olurdu. */
-        gorev.temizMi ? null : (
+        /* Temiz çipte ilerleme yazılmaz: «0 / 0 paketlendi» gürültü olurdu.
+           K259-②: SIFIR ilerleme de yazılmaz — «3 · 0 paketlendi» çipin
+           söylediğini tekrar ediyordu; ilk paket çıkınca rakam belirir. */
+        gorev.temizMi || gorev.ilerleme === 0 ? null : (
         <Link
           href={ilerlemeAdresi ?? gorev.adres}
           className={`inline-flex min-h-11 items-center rounded-md px-1.5 text-xs font-medium tabular-nums underline-offset-2 hover:underline md:min-h-8 ${
@@ -160,12 +167,6 @@ function GorevCipi({
     </span>
   );
 }
-
-/** Grup ikonu — iki emek görünür kalsın (20.08 kararının şeritteki izi). */
-const GRUP_IKONU: Record<GorevGrubu, typeof Truck> = {
-  SEVKIYAT: Truck,
-  TEDARIK: PackageCheck,
-};
 
 export async function GorevKutusu({
   sayilar,
@@ -190,69 +191,63 @@ export async function GorevKutusu({
   return (
     <div
       /**
-       * TÜRLERİNE GÖRE SATIRLAR (K259, kullanıcı 24.09.2026: «biraz karmaşık;
-       * türlerine göre düzenlemek gerek»). K254 iki grubu tek satırda ince
-       * ayraçla ayırıyordu; iki emek göz için karışıyordu. Şimdi her grup
-       * KENDİ SATIRINDA, BAŞLIĞI ve bekleyen sayısıyla — 20.08 gerekçesi
-       * (farklı saat, farklı kişi) artık okunur hâlde.
-       * Telefonda çipler satır içinde sarar; yatay kaydırma yok (İlke #8).
+       * DEMO BİREBİR — TEK SATIR (K259-②, kullanıcı 24.09.2026: «çok karışık
+       * oldu, anlamlandıramıyorum»).
+       * ⛔ ① ÇEVRİLDİ, GEREKÇESİ DURUYOR: «türlerine göre düzenlemek gerek»
+       * isteğini İKİ SATIR + görünür grup başlığı diye yorumlamıştım («Bugün ne
+       * göndermeliyim» / «Mal ve kayıt»). Üst başlığın altında ikinci bir
+       * «bugün ne…» cümlesi, yedi uzun çip ve bir toplam rozeti — okunmaz oldu.
+       * Onaylı demo tek satır ve KISA çipti: «Onay bekleyen 3 · Paketlenecek
+       * 11 · Mal kabul 2 · Kârı hesaplanamayan 0 · temiz». Şimdi o.
+       * · Kısa etiket `kisa.*`, uzun ad `title`da.
+       * · Gönderim işleri önce, tedarik sonra, arada ince ayraç — 20.08 «iki
+       *   emek» gerekçesi SIRADA ve AYRAÇTA yaşıyor; ekran okuyucuya grup adı
+       *   `sr-only`.
+       * · TOPLAM ROZETİ YOK (kullanıcı kararı): 31 mal kabul + 38 oransız SKU
+       *   toplamı elma+armut; her çip kendi sayısını taşıyor. Hepsi sıfırsa
+       *   yalnız «Hepsi temiz».
+       * Telefonda çipler sarar; yatay kaydırma yok (İlke #8).
        */
-      className="bg-card min-w-0 space-y-1.5 rounded-lg border px-3 py-2"
+      className="bg-card flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border px-3 py-2"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-muted-foreground text-xs font-medium">
-          {t("baslik")}
-        </span>
-        {/* Bekleyen iş AMBER, hepsi temiz YEŞİL — renk sistemi. */}
-        {toplam > 0 ? (
-          <DurumRozeti durum="uyari">{t("bekleyen", { sayi: toplam })}</DurumRozeti>
-        ) : (
-          <DurumRozeti durum="olumlu">{t("hepsiTemiz")}</DurumRozeti>
-        )}
-      </div>
-      {GOREV_GRUPLARI.map((grup) => {
-        const Ikon = GRUP_IKONU[grup];
-        const grubunkiler = grubunGorevleri(gorevler, grup);
-        const grupBekleyen = bekleyenToplam(grubunkiler);
-        return (
-          <div key={grup} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
-            {/* GRUP BAŞLIĞI — satırın başında, GÖRÜNÜR (K259). İkon + ad +
-                grubun bekleyen sayısı; sabit genişlik ki iki satırın çipleri
-                aynı hizadan başlasın. */}
-            <span className="inline-flex min-w-0 shrink-0 items-center gap-1.5 text-xs font-medium sm:w-48">
-              <Ikon className="text-muted-foreground size-4 shrink-0" aria-hidden />
-              <span className="truncate">
-                {t(grup === "SEVKIYAT" ? "baslikSevkiyat" : "baslikTedarik")}
-              </span>
-              {grupBekleyen > 0 ? (
-                <span className="text-muted-foreground tabular-nums">({grupBekleyen})</span>
-              ) : null}
-            </span>
-            {grubunkiler.map((g) => (
-              <GorevCipi
-                key={g.anahtar}
-                gorev={g}
-                etiket={t(g.anahtar)}
-                temizMetni={t("temiz")}
-                ilerlemeMetni={t("ilerleme", { sayi: g.ilerleme ?? 0 })}
-                ilerlemeAdresi={ilerlemeAdresleri?.[g.anahtar]}
-                /*
-                  ⚠ SÜRE YALNIZ "ACELE AMA SAYISI 0" HÂLİNDE. Kapsamsız kanal
-                  varsa (`sayi > 0`) o rakam basılır — pencere çoktan bitmiş
-                  demektir ve kalan gün diye bir şey yoktur.
-                */
-                sureMetni={
-                  g.kalanGun !== null && g.aceleMi && g.sayi === 0
-                    ? g.kalanGun === 0
-                      ? t("sonGun")
-                      : t("kalanGun", { gun: g.kalanGun })
-                    : undefined
-                }
-              />
-            ))}
-          </div>
-        );
-      })}
+      <span className="text-muted-foreground text-xs font-medium">
+        {t("baslik")}
+      </span>
+      {toplam === 0 ? (
+        <DurumRozeti durum="olumlu">{t("hepsiTemiz")}</DurumRozeti>
+      ) : null}
+      {GOREV_GRUPLARI.map((grup, i) => (
+        <Fragment key={grup}>
+          {/* İKİ EMEK AYRI KALIR: gruplar ARASINDA ince ayraç (20.08). */}
+          {i > 0 ? <span className="bg-border hidden h-5 w-px md:block" aria-hidden /> : null}
+          <span className="sr-only">
+            {t(grup === "SEVKIYAT" ? "baslikSevkiyat" : "baslikTedarik")}
+          </span>
+          {grubunGorevleri(gorevler, grup).map((g) => (
+            <GorevCipi
+              key={g.anahtar}
+              gorev={g}
+              etiket={t(`kisa.${g.anahtar}`)}
+              uzunEtiket={t(g.anahtar)}
+              temizMetni={t("temiz")}
+              ilerlemeMetni={t("ilerleme", { sayi: g.ilerleme ?? 0 })}
+              ilerlemeAdresi={ilerlemeAdresleri?.[g.anahtar]}
+              /*
+                ⚠ SÜRE YALNIZ "ACELE AMA SAYISI 0" HÂLİNDE. Kapsamsız kanal
+                varsa (`sayi > 0`) o rakam basılır — pencere çoktan bitmiş
+                demektir ve kalan gün diye bir şey yoktur.
+              */
+              sureMetni={
+                g.kalanGun !== null && g.aceleMi && g.sayi === 0
+                  ? g.kalanGun === 0
+                    ? t("sonGun")
+                    : t("kalanGun", { gun: g.kalanGun })
+                  : undefined
+              }
+            />
+          ))}
+        </Fragment>
+      ))}
     </div>
   );
 }

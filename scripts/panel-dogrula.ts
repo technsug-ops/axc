@@ -4472,6 +4472,11 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
     );
     kontrol("ilerleme bloku kesilebildi", ilerlemeBasi > 0 && ilerlemeBloku.length > 60);
     kontrol("  ...ve sayı ekrana BASILIYOR", /\{ilerlemeMetni\}/.test(ilerlemeBloku));
+    /** K259-②: «3 · 0 paketlendi» çipin dediğini tekrar ediyordu — sıfırda çizilmez. */
+    kontrol(
+      "  ...ama SIFIR ilerleme çizilmiyor (K259-②, gürültü)",
+      /gorev\.temizMi \|\| gorev\.ilerleme === 0 \? null/.test(ilerlemeBloku),
+    );
     /**
      * ⚠ EŞİTLENİNCE YEŞİL. "15 / 15" ile "15 / 3" aynı renkte dursaydı
      * bitmiş iş bitmemiş gibi okunurdu; kullanıcının istediği tam olarak
@@ -4953,19 +4958,48 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     /text-muted-foreground text-xs font-medium\">\s*\{t\("baslik"\)\}/.test(kutu),
   );
   /**
-   * *** OLCUT ESKIDI, SUSTURULMADI (K259). ESKI (K254): gruplar tek satirda ince
-   * ayracla ayriliyordu. NIYE ESKIDI: kullanici «biraz karmasik, turlerine gore» dedi;
-   * her grup KENDI SATIRINDA, GORUNUR basligi + ikonu + bekleyen sayisiyla.
+   * *** OLCUT IKINCI KEZ ESKIDI, SUSTURULMADI (K259-②, 24.09.2026).
+   * K254: tek satir, ince ayrac + ikon. K259-①: kullanici «turlerine gore» dedi,
+   * iki satir + gorunur grup basligi yapildi. NIYE ESKIDI: «cok karisik oldu,
+   * anlamlandiramiyorum» — ust basligin altinda ikinci bir «bugun ne…» cumlesi.
+   * DEMO BIREBIR: tek satir, KISA cip, gruplar ARASINDA ince ayrac, grup adi
+   * yalniz sr-only, toplam rozeti YOK.
    */
   kontrol(
-    "gruplar KENDI SATIRINDA, baslik + ikonla (20.08 gerekcesi okunur)",
-    /GOREV_GRUPLARI\.map[\s\S]{0,500}?GRUP_IKONU\[grup\][\s\S]{0,900}?<span className="truncate">\s*\{t\(grup === "SEVKIYAT" \? "baslikSevkiyat" : "baslikTedarik"\)\}/.test(kutu) &&
-      !/bg-border hidden h-5 w-px/.test(kutu),
+    "TEK SATIR: gruplar arasinda ince ayrac, gorunur grup basligi/ikonu YOK (demo)",
+    /GOREV_GRUPLARI\.map\(\(grup, i\) =>[\s\S]{0,400}?\{i > 0 \? <span className="bg-border hidden h-5 w-px md:block" aria-hidden \/> : null\}/.test(kutu) &&
+      !/GRUP_IKONU/.test(kutu) && !/<span className="truncate">\s*\{t\(grup ===/.test(kutu),
   );
   kontrol(
-    "  ...grup basligi bekleyen SAYISINI yaziyor",
-    /const grupBekleyen = bekleyenToplam\(grubunkiler\)[\s\S]{0,900}?\{grupBekleyen\}/.test(kutu),
+    "  ...ekran okuyucuya grup adi sr-only (gorunmez ama okunur)",
+    /<span className="sr-only">\s*\{t\(grup === "SEVKIYAT" \? "baslikSevkiyat" : "baslikTedarik"\)\}/.test(kutu),
   );
+  /** * TOPLAM ROZETI YOK: 31 mal kabul + 38 oransiz SKU toplami elma+armut. */
+  kontrol(
+    "toplam rozeti YOK, hepsi temiz rozeti VAR (yalniz sifirda)",
+    !/t\("bekleyen"/.test(kutu) &&
+      /\{toplam === 0 \? \(\s*<DurumRozeti durum="olumlu">\{t\("hepsiTemiz"\)\}/.test(kutu),
+  );
+  /** * KISA ETIKET cipte, uzun ad title'da (hover) — demo «Onay bekleyen 3». */
+  kontrol(
+    "cip etiketi KISA sozlukten (kisa.*), uzun ad title'da",
+    /etiket=\{t\(`kisa\.\$\{g\.anahtar\}`\)\}/.test(kutu) &&
+      /uzunEtiket=\{t\(g\.anahtar\)\}/.test(kutu) &&
+      /<span className="inline-flex max-w-full flex-wrap items-center gap-1" title=\{uzunEtiket\}>/.test(kutu),
+  );
+  {
+    const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+      Gorevler: { kisa?: Record<string, string> };
+    };
+    const kisa = sozluk.Gorevler.kisa ?? {};
+    /** Taban dolulugu: `every` bos listede true doner — anahtar sayisi ayrica. */
+    kontrol("gorev anahtari tabani DOLU (>= 7)", GOREV_ANAHTARLARI.length >= 7);
+    kontrol(
+      "  ...her gorevin KISA etiketi var ve kisa (<= 22 karakter)",
+      GOREV_ANAHTARLARI.every((a) => (kisa[a] ?? "").length > 0 && (kisa[a] ?? "").length <= 22),
+      Object.fromEntries(GOREV_ANAHTARLARI.map((a) => [a, kisa[a]])),
+    );
+  }
   kontrol(
     "  ...ve iki grup da gezdiriliyor (GOREV_GRUPLARI, elle liste degil)",
     /GOREV_GRUPLARI\.map\(/.test(kutu) && !/<TekKart/.test(kutu),

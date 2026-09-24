@@ -477,12 +477,12 @@ const MUTASYONLAR: Mutasyon[] = [
       "satirdaki cipler neyin cipi oldugunu soylemez - «Onay bekleyen 3» tek basina bir gorev listesi gibi okunmaz",
   },
   {
-    /* K259: ayrac gitti, grup basligi geldi — capa basliga tasindi. */
-    ad: "GRUP BASLIGI KALKTI (iki emek karisti)",
+    /* K259-②: baslik gitti, ayrac geri geldi (gruplar ARASINDA) — capa ayraca. */
+    ad: "GRUP AYRACI KALKTI (iki emek karisti)",
     yon: "KALDIRAN",
     dosya: KUTU,
     bul:
-      "              <span className=\"truncate\">\n                {t(grup === \"SEVKIYAT\" ? \"baslikSevkiyat\" : \"baslikTedarik\")}\n              </span>\n",
+      "          {i > 0 ? <span className=\"bg-border hidden h-5 w-px md:block\" aria-hidden /> : null}\n",
     koy:
       "",
     bozdugu:
@@ -751,6 +751,50 @@ const MUTASYONLAR: Mutasyon[] = [
       "  const sigan = alan / KARAKTER_EM;",
     bozdugu:
       "govde cagriliyor ama uzun toplam yine tavana cikar - deger testi yakalar",
+  },
+  {
+    ad: "TOPLAM ROZETI GERI GELDI (elma+armut)",
+    yon: "FAZLADAN",
+    dosya: KUTU,
+    bul:
+      "      {toplam === 0 ? (\n        <DurumRozeti durum=\"olumlu\">{t(\"hepsiTemiz\")}</DurumRozeti>\n      ) : null}",
+    koy:
+      "      {toplam === 0 ? (\n        <DurumRozeti durum=\"olumlu\">{t(\"hepsiTemiz\")}</DurumRozeti>\n      ) : (\n        <DurumRozeti durum=\"uyari\">{t(\"bekleyen\", { sayi: toplam })}</DurumRozeti>\n      )}",
+    bozdugu:
+      "31 mal kabul + 38 oransiz SKU = 69 'bekleyen' — farkli turlerin toplami, kullanici kaldirdi",
+  },
+  {
+    ad: "CIP ETIKETI YINE UZUN CUMLE",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "              etiket={t(`kisa.${g.anahtar}`)}",
+    koy:
+      "              etiket={t(g.anahtar)}",
+    bozdugu:
+      "'Onay bekleyen siparis (API)' geri gelir — seridin karisikliginin ana sebebi",
+  },
+  {
+    ad: "ILERLEME 0 IKEN DE CIZILIYOR (0 paketlendi gurultusu)",
+    yon: "FAZLADAN",
+    dosya: KUTU,
+    bul:
+      "        gorev.temizMi || gorev.ilerleme === 0 ? null : (",
+    koy:
+      "        gorev.temizMi ? null : (",
+    bozdugu:
+      "'3 · 0 paketlendi' — cipin dedigini tekrar eden ikinci parca",
+  },
+  {
+    ad: "EKRAN OKUYUCU GRUP ADI KALKTI",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "          <span className=\"sr-only\">\n            {t(grup === \"SEVKIYAT\" ? \"baslikSevkiyat\" : \"baslikTedarik\")}\n          </span>\n",
+    koy:
+      "",
+    bozdugu:
+      "gorme engelli kullanici icin iki grup tek yigin olur — ayrac aria-hidden",
   },
 ];
 

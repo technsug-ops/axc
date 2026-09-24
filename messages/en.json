@@ -3046,7 +3046,6 @@
   "Gorevler": {
     "baslik": "",
     "aciklama": "",
-    "bekleyen": "",
     "hepsiTemiz": "",
     "temiz": "",
     "temizNotu": "",
@@ -3062,7 +3061,16 @@
     "sonGun": "",
     "baslikSevkiyat": "",
     "baslikTedarik": "",
-    "bugunAlim": ""
+    "bugunAlim": "",
+    "kisa": {
+      "onayBekleyen": "",
+      "kargoBekleyen": "",
+      "iadeBildirimi": "",
+      "malKabulBekleyen": "",
+      "karHesaplanamayan": "",
+      "oransizKanalSku": "",
+      "tarifePenceresi": ""
+    }
   },
   "NakitTakvimi": {
     "baslik": "",

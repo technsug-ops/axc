@@ -3046,7 +3046,6 @@
   "Gorevler": {
     "baslik": "Bugün ne yapmalıyım",
     "aciklama": "Bekleyen işler. Her satır tıklanınca kendi süzülü listesine gider. Dönem süzgecinden etkilenmez.",
-    "bekleyen": "{sayi} bekleyen",
     "hepsiTemiz": "Hepsi temiz",
     "temiz": "temiz",
     "temizNotu": "Bekleyen iş yok. Satırlara yine de tıklayıp listeleri görebilirsiniz.",
@@ -3060,9 +3059,18 @@
     "tarifePenceresi": "Komisyon tarifesi",
     "kalanGun": "{gun} gün kaldı",
     "sonGun": "Bugün son gün",
-    "baslikSevkiyat": "Bugün ne göndermeliyim",
-    "baslikTedarik": "Mal ve kayıt",
-    "bugunAlim": "Bugün girilen alım"
+    "baslikSevkiyat": "Gönderim",
+    "baslikTedarik": "Tedarik",
+    "bugunAlim": "Bugün girilen alım",
+    "kisa": {
+      "onayBekleyen": "Onay bekleyen",
+      "kargoBekleyen": "Paketlenecek",
+      "iadeBildirimi": "İade bildirimi",
+      "malKabulBekleyen": "Mal kabul",
+      "karHesaplanamayan": "Kârı hesaplanamayan",
+      "oransizKanalSku": "Oransız kanal SKU",
+      "tarifePenceresi": "Komisyon tarifesi"
+    }
   },
   "NakitTakvimi": {
     "baslik": "Nakit takvimi · {gun} gün",
