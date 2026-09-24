@@ -14,7 +14,7 @@
  * ============================================================================
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import {
   canSayisi,
@@ -1309,6 +1309,58 @@ console.log("=".repeat(70));
     /SÜZGECE BAĞLANMAZ — VE BU BİLİNÇLİ/.test(ekranKaynak),
   );
 }
+/**
+ * K266 (24.09.2026) — ŞERİTTEN ÇANA: «Komisyon oranı boş kanal SKU» ve
+ * «Komisyon tarifesi» görev şeridinden çıktı, uyarı merkezine girdi.
+ */
+console.log("K266) ŞERİTTEN ÇANA — iki bakım uyarısı");
+{
+  const oransiz = uyarilariKur({ ...bos, oransizKanalSku: { sayi: 38 } });
+  kontrol(
+    "oransız kanal SKU çanda: tek amber uyarı, kendi adresi, izinsiz",
+    oransiz.length === 1 &&
+      oransiz[0]!.anahtar === "oransizKanalSku" &&
+      oransiz[0]!.seviye === "amber" &&
+      oransiz[0]!.sayi === 38 &&
+      oransiz[0]!.adres === "/kanal-sku?eksik=1" &&
+      oransiz[0]!.izin === null,
+    oransiz,
+  );
+  const tarife = uyarilariKur({ ...bos, tarifePenceresi: { sayi: 1 } });
+  kontrol(
+    "tarife penceresi çanda: amber, /ayarlar/komisyon, izinsiz",
+    tarife.length === 1 && tarife[0]!.seviye === "amber" && tarife[0]!.adres === "/ayarlar/komisyon" && tarife[0]!.izin === null,
+  );
+  /** ⚠ Ölçüm VERİLMEZSE susarlar — eski ölçüm kümeleri bozulmasın diye isteğe bağlı. */
+  kontrol("  ...ölçüm yoksa ikisi de SUSAR", uyarilariKur(bos).length === 0);
+  kontrol(
+    "  ...taban: iki anahtar da UYARI_ANAHTARLARI'nda",
+    (UYARI_ANAHTARLARI as readonly string[]).includes("oransizKanalSku") &&
+      (UYARI_ANAHTARLARI as readonly string[]).includes("tarifePenceresi"),
+  );
+  /** İlke #16 + «kural teslim edilebilir mi»: adresin EKRANI var mı. */
+  for (const a of ["oransizKanalSku", "tarifePenceresi"] as const) {
+    const sayfaYolu = `src/app${UYARI_ADRESLERI[a].split("?")[0]}/page.tsx`;
+    kontrol(`${a} adresi VAR OLAN ekrana gidiyor (${sayfaYolu})`, existsSync(sayfaYolu));
+  }
+  const toplaK = readFileSync("src/lib/uyari/topla.ts", "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol(
+    "toplayıcı iki ölçümü de BESLİYOR (gövde var ama bağlanmamış değil)",
+    /oransizKanalSku: \{ sayi: gorevSayilari\.oransizKanalSku \}/.test(toplaK) &&
+      /tarifePenceresi: \{ sayi: tarifeUyarisiVarMi\(tarifeKapsam\) \? 1 : 0 \}/.test(toplaK),
+  );
+  /** ⚠ İKİ YERDE İKİ TANIM OLMAZ: şeritte artık yoklar. */
+  const seritK = readFileSync("src/lib/panel/bugun-ne-yapmaliyim.ts", "utf8");
+  const anahtarBlok = seritK.slice(
+    seritK.indexOf("GOREV_ANAHTARLARI = ["),
+    seritK.indexOf("] as const;"),
+  );
+  kontrol(
+    "  ...ve GÖREV ŞERİDİNDE yoklar (tek tanım)",
+    anahtarBlok.length > 100 && !/"oransizKanalSku"|"tarifePenceresi"/.test(anahtarBlok),
+  );
+}
+
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 else {
   console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);

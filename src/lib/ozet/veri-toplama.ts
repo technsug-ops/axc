@@ -73,6 +73,8 @@ const UYARI_BAGLAMI: Record<UyariAnahtari, string> = {
   hakedisBaglanmamis:
     "Satışa bağlanamadığı için gecikme sayımı dışında tutulan hakediş kalemi (bilgi amaçlı)",
   zararinaSatis: "Zararına kapanmış satış kalemi sayısı",
+  oransizKanalSku: "Komisyon oranı tanımsız kanal SKU",
+  tarifePenceresi: "Tarife penceresi bitmek üzere ya da bitmiş (bayrak)",
 };
 
 /**
@@ -87,6 +89,8 @@ const UYARI_SAYISI_ANLAMSIZ = new Set<UyariAnahtari>([
   "nakitAcigi",
   "yedekYok",
   "yedekIzden",
+  /* K266: `tarifePenceresi` de bayrak — `topla.ts` koşullu olarak 1 döner. */
+  "tarifePenceresi",
 ]);
 
 const GOREV_BAGLAMI: Record<GorevAnahtari, string> = {
@@ -95,8 +99,6 @@ const GOREV_BAGLAMI: Record<GorevAnahtari, string> = {
   iadeBildirimi: "Karar bekleyen iade bildirimi",
   malKabulBekleyen: "Mal kabulü bekleyen alım",
   karHesaplanamayan: "Kârı hesaplanamayan satış (görev kutusu sayacı)",
-  oransizKanalSku: "Komisyon oranı tanımsız kanal SKU",
-  tarifePenceresi: "Tarife penceresi bitmek üzere olan kanal",
 };
 
 /** `bicimlendirici()`in kullandığı iki fonksiyonun ARAYÜZÜ — testte gerçek next-intl gerekmesin diye. */

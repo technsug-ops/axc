@@ -79,7 +79,6 @@ function GorevCipi({
   temizMetni,
   ilerlemeMetni,
   ilerlemeAdresi,
-  sureMetni,
 }: {
   gorev: Gorev;
   /** KISA etiket — çipte görünen (`kisa.*`, K259-②). */
@@ -91,13 +90,7 @@ function GorevCipi({
   ilerlemeMetni: string;
   /** İlerleme rakamının kendi listesi; yoksa ana adrese düşer. */
   ilerlemeAdresi?: string;
-  /**
-   * SÜRE METNİ — "2 gün kaldı" / "Bugün son gün".
-   * ⚠ SAYI YERİNE GEÇER, YANINA DEĞİL: tarife çipinde bekleyen kanal sayısı
-   * 0 olsa bile iş bekliyor olabilir (pencere bugün bitiyor). Büyük bir
-   * "0" basıp yanına "bugün son gün" yazmak ekranı kendiyle çeliştirirdi.
-   */
-  sureMetni?: string;
+  /* `sureMetni` K266'da kalktı: tarife çana taşındı, şeritte süreli görev yok. */
 }) {
   /**
    * ⚠ İÇ İÇE <a> YOK — bilerek. Eski kutucuk yayılan bağlantı + z-10 hilesi
@@ -116,8 +109,6 @@ function GorevCipi({
           <Check className="size-3.5" aria-hidden />
           {temizMetni}
         </span>
-      ) : sureMetni !== undefined ? (
-        <span className="font-semibold">{sureMetni}</span>
       ) : (
         <span className="font-semibold tabular-nums">{gorev.sayi}</span>
       )}
@@ -172,20 +163,15 @@ export async function GorevKutusu({
   sayilar,
   ilerlemeler,
   ilerlemeAdresleri,
-  sureler,
 }: {
   sayilar: Record<GorevAnahtari, number>;
   /** Görev başına ilerleme — bugün yalnız `kargoBekleyen`. */
   ilerlemeler?: Partial<Record<GorevAnahtari, number>>;
   /** İlerleme rakamının kendi süzülü listesi. */
   ilerlemeAdresleri?: Partial<Record<GorevAnahtari, string>>;
-  /** Süreli görevlerin kalan günü ve acele hâli — bugün yalnız tarife. */
-  sureler?: Partial<
-    Record<GorevAnahtari, { kalanGun: number | null; aceleMi: boolean }>
-  >;
 }) {
   const t = await getTranslations("Gorevler");
-  const gorevler = gorevleriKur(sayilar, ilerlemeler, sureler);
+  const gorevler = gorevleriKur(sayilar, ilerlemeler);
   const toplam = bekleyenToplam(gorevler);
 
   return (
@@ -232,18 +218,6 @@ export async function GorevKutusu({
               temizMetni={t("temiz")}
               ilerlemeMetni={t("ilerleme", { sayi: g.ilerleme ?? 0 })}
               ilerlemeAdresi={ilerlemeAdresleri?.[g.anahtar]}
-              /*
-                ⚠ SÜRE YALNIZ "ACELE AMA SAYISI 0" HÂLİNDE. Kapsamsız kanal
-                varsa (`sayi > 0`) o rakam basılır — pencere çoktan bitmiş
-                demektir ve kalan gün diye bir şey yoktur.
-              */
-              sureMetni={
-                g.kalanGun !== null && g.aceleMi && g.sayi === 0
-                  ? g.kalanGun === 0
-                    ? t("sonGun")
-                    : t("kalanGun", { gun: g.kalanGun })
-                  : undefined
-              }
             />
           ))}
         </Fragment>

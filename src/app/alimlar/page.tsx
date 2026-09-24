@@ -505,6 +505,14 @@ export default async function AlimlarSayfasi({
             Bağlam satırının sütun bütçesi yok: hepsi kendi adıyla akıyor.
             ⚠ Hiçbir bilgi düşmedi — alım kodu manşet, sipariş no/tarih/
             hesap/ürün/adet/kalem/kart bağlam, tutar+durum+eylemler sağda.
+
+            ─── K268 (kullanıcı 24.09.2026): «alımlardaki ara boşluğa
+            dikdörtgendeki bilgiler geçsin; satışlardaki düzen korunsun.»
+            Ürün + adet/kalem + kart bağlamdan ÇIKTI, sağ ızgaranın İLK
+            (esnek) sütununa girdi: satışlar tablosundaki sütun sırası
+            (tarih/kod · hesap · ürün · tutar · durum · eylemler) korunur,
+            gövde yine SatirKarti (K235). Telefonda ızgara çözülür, hepsi
+            akar; hiçbir bilgi düşmedi.
           */}
           <SatirListesi>
             {alimlar.map((alim) => (
@@ -537,23 +545,26 @@ export default async function AlimlarSayfasi({
                   alim.channelAccount
                     ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
                     : null,
-                  /* ÜRÜN → KÂRLILIK KARTI (İlke #9). Satışlarla AYNI gövdeden;
-                     iki ekran ayrışmasın. */
-                  /* ⚠ UZUN AD KIRPILIR, TAM HÂLİ İPUCUNDA (`UzunAd`):
-                     bağlam satırı tek satırdır, 60 karakterlik bir ürün adı
-                     ötekileri ekrandan iterdi. */
-                  <UzunAd
-                    key="urun"
-                    metin={urunOzeti(alim)}
-                    href={kartAdresi(alim.items) ?? undefined}
-                  />,
-                  `${t("toplamAdet", { sayi: toplamAdet(alim) })} · ${t("kalemSayisi", { sayi: alim.items.length })}`,
-                  alim.creditCard
-                    ? `${alim.creditCard.label} ••${alim.creditCard.last4}`
-                    : null,
                 ]}
+                /* K268: sağ blok satırın kalanını alır; ilk sütun esnek (ürün). */
+                sagGenis
+                sagIzgara="sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
                 sag={
                   <>
+                    {/* ORTA SÜTUN (K268): ürün → kârlılık kartı (İlke #9, satışlarla
+                        AYNI gövde); altında adet · kalem · kart. Uzun ad kırpılır,
+                        tam hâli ipucunda (`UzunAd`); hücre `min-w-0` ki kırpma işlesin. */}
+                    <div className="min-w-0">
+                      <UzunAd
+                        metin={urunOzeti(alim)}
+                        href={kartAdresi(alim.items) ?? undefined}
+                        className="max-w-full"
+                      />
+                      <div className="text-muted-foreground text-xs">
+                        {t("toplamAdet", { sayi: toplamAdet(alim) })} · {t("kalemSayisi", { sayi: alim.items.length })}
+                        {alim.creditCard ? ` · ${alim.creditCard.label} ••${alim.creditCard.last4}` : ""}
+                      </div>
+                    </div>
                     <span className="font-semibold tabular-nums whitespace-nowrap">
                       {toplamMetni(alim)}
                     </span>

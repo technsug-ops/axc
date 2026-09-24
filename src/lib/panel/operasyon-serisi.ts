@@ -169,7 +169,8 @@ export type OperasyonGirdisi = {
 };
 
 /** Bir tarihin hangi kovaya düştüğü — kova anahtarı ve sınırları. */
-function kova(
+/** K265: Ciro/NET-2 serisi de AYNI kovayı kullanır — iki grafik aynı günleri çizer. */
+export function kova(
   tarih: Date,
   kirilim: Kirilim,
 ): { anahtar: string; baslangic: Date } {
@@ -197,7 +198,7 @@ function kova(
 }
 
 /** Kovanın bir sonrakine geçişi — kova genişliği kırılıma bağlı. */
-function sonrakiKova(baslangic: Date, kirilim: Kirilim): Date {
+export function sonrakiKova(baslangic: Date, kirilim: Kirilim): Date {
   if (kirilim === "GUN") return gunEkle(baslangic, 1);
   if (kirilim === "HAFTA") return gunEkle(baslangic, 7);
   const t = isTakvimGunu(baslangic);

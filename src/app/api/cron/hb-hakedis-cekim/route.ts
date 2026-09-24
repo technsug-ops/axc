@@ -31,5 +31,6 @@ export async function GET(istek: NextRequest) {
     return NextResponse.json({ hata: "VERITABANI_TANIMSIZ" }, { status: 500 });
   }
   const ozet = await hbHakedisCekimKos({ yaz: true, dbAdresi });
-  return NextResponse.json(ozet);
+  /* K264: «atlandı» 200 DEĞİL 503 — zamanlayıcının yeşili «koştu» demek olsun. */
+  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });
 }

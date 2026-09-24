@@ -2389,7 +2389,7 @@
     "halkaDiger": "{sayi} kanal daha",
     "halkaDipnot": "En küçük {sayi} kanal tek dilimde toplandı",
     "halkaAciklama": "Ciro dağılımı: {liste}",
-    "son14Baslik": "Ciro ve NET-2 — son 14 gün"
+    "ciroNetBaslik": "Ciro ve NET-2 — {pencere}"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
@@ -3055,10 +3055,6 @@
     "iadeBildirimi": "Bekleyen iade bildirimi",
     "malKabulBekleyen": "Mal kabul bekleyen alım",
     "karHesaplanamayan": "Kârı hesaplanamayan satış",
-    "oransizKanalSku": "Komisyon oranı boş kanal SKU",
-    "tarifePenceresi": "Komisyon tarifesi",
-    "kalanGun": "{gun} gün kaldı",
-    "sonGun": "Bugün son gün",
     "baslikSevkiyat": "Gönderim",
     "baslikTedarik": "Tedarik",
     "bugunAlim": "Bugün girilen alım",
@@ -3067,9 +3063,7 @@
       "kargoBekleyen": "Paketlenecek",
       "iadeBildirimi": "İade bildirimi",
       "malKabulBekleyen": "Mal kabul",
-      "karHesaplanamayan": "Kârı hesaplanamayan",
-      "oransizKanalSku": "Oransız kanal SKU",
-      "tarifePenceresi": "Komisyon tarifesi"
+      "karHesaplanamayan": "Kârı hesaplanamayan"
     }
   },
   "NakitTakvimi": {
@@ -3205,7 +3199,11 @@
     "eylem_zararinaSatis": "NET-2 eksi — fiyat, maliyet ya da komisyon oranını kontrol et",
     "izDogumu": "Doğrulama izi {tarih} tarihinde açıldı — ondan öncesi için “doğrulanmadı” hüküm değildir.",
     "baslik_iadeSayaciDoluyor": "{sayi} iade bildiriminde süre doluyor",
-    "eylem_iadeSayaciDoluyor": "Süre dolarsa pazaryeri OTOMATİK ONAYLAR — iade ciroya işler, itiraz hakkı biter"
+    "eylem_iadeSayaciDoluyor": "Süre dolarsa pazaryeri OTOMATİK ONAYLAR — iade ciroya işler, itiraz hakkı biter",
+    "baslik_oransizKanalSku": "{sayi} kanal SKU'sunun komisyon oranı boş",
+    "eylem_oransizKanalSku": "Oranı gir — o kalemlerde NET-2 hesaplanamaz",
+    "baslik_tarifePenceresi": "Komisyon tarifesi yenilenmeli",
+    "eylem_tarifePenceresi": "Haftalık tarife dosyasını indirip yükle — pencere bitiyor ya da bitti"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",

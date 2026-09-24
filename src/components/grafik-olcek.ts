@@ -97,8 +97,13 @@ export function eksenIsaretleri(y: Eksen): number[] {
  * noktalarda rakam olur ay adı olmazdı; okuyan hangi aya ait olduğunu
  * bilemezdi.
  */
-export function etiketAtlamasi(noktaSayisi: number): number {
-  return Math.ceil(noktaSayisi / 12);
+/**
+ * K265: `tavan` — eksende en çok kaç etiket. Varsayılan 12 (eski davranış,
+ * aylık/karşılaştırma grafikleri değişmez); Ciro/NET-2 kartı 31 verir ki
+ * günlük kırılımda HER GÜN yazılsın («grafiğin altında günler belirlensin»).
+ */
+export function etiketAtlamasi(noktaSayisi: number, tavan = 12): number {
+  return Math.ceil(noktaSayisi / Math.max(1, tavan));
 }
 
 /**

@@ -1,9 +1,10 @@
 import { acikPartilerToplu } from "@/lib/stok";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
-import { gorevSayilariniTopla } from "@/lib/panel/gorev-verisi";
+import { gorevSayilariniTopla, tarifeKapsaminiOlc } from "@/lib/panel/gorev-verisi";
 import { nakitTakvimiKur } from "@/lib/panel/nakit-takvimi";
 import { takvimSatirlariniTopla } from "@/lib/panel/takvim-verisi";
 import { prisma } from "@/lib/prisma";
+import { tarifeUyarisiVarMi } from "@/lib/panel/tarife-penceresi";
 import { izinVarMi } from "@/lib/yetki";
 
 
@@ -171,6 +172,8 @@ export async function uyarilariTopla(
     supheBulgusu,
     kanalKodsuzlar,
     zararinaSatisSayisi,
+    /* K266: tarife kapsamı çana taşındı — «acele» kararı SAF KURALDAN. */
+    tarifeKapsam,
   ] = await Promise.all([
       takvimSatirlariniTopla(bugun),
       gorevSayilariniTopla(),
@@ -241,6 +244,7 @@ export async function uyarilariTopla(
           net2Amount: { lt: 0 },
         },
       }),
+      tarifeKapsaminiOlc(),
     ]);
 
   const takvim = nakitTakvimiKur({
@@ -294,6 +298,14 @@ export async function uyarilariTopla(
     kanalKodsuzStok: { sayi: kanalKodsuzlar.length },
     hakedisBaglanmamis: { sayi: baglanmamisHakedis },
     zararinaSatis: { sayi: zararinaSatisSayisi },
+    oransizKanalSku: { sayi: gorevSayilari.oransizKanalSku },
+    /**
+     * ⚠ SAYI DEĞİL BAYRAK: 1 = «tarife yenilenmeli». Kapsamsız kanal adedini
+     * yazsaydık, pencere HENÜZ BİTMEMİŞKEN (yaklaşan) o sayı 0 olurdu ve aynı
+     * alan iki farklı şey söylerdi. Kaç kanal olduğu tarife ekranında.
+     * `UYARI_SAYISI_ANLAMSIZ` bu yüzden bu anahtarı da taşır.
+     */
+    tarifePenceresi: { sayi: tarifeUyarisiVarMi(tarifeKapsam) ? 1 : 0 },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:

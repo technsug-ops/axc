@@ -10,6 +10,7 @@
  * ============================================================================
  */
 
+import type { CanaTasinanGorev } from "@/lib/panel/bugun-ne-yapmaliyim";
 import {
   UYARI_SEVIYESI,
   UYARI_ADRESLERI,
@@ -21,10 +22,17 @@ import {
 } from "./turler";
 
 /** Toplayıcının ürettiği ham ölçümler. */
+/**
+ * K266: ÇANA TAŞINAN iki ölçüm İSTEĞE BAĞLI. Ölçümü verilmeyen uyarı zaten
+ * listeye girmez (`uyarilariKur` → `if (!olcum …) continue`); böylece eski
+ * ölçüm kümeleri (bekçi fixture'ları dahil) değişmeden derlenir. Taban
+ * doluluğu bekçide AYRICA ölçülür — boş küme her koşulu sağlar.
+ */
 export type UyariOlcumleri = Record<
-  UyariAnahtari,
+  Exclude<UyariAnahtari, CanaTasinanGorev>,
   { sayi: number; tutar?: number | null }
->;
+> &
+  Partial<Record<CanaTasinanGorev, { sayi: number; tutar?: number | null }>>;
 
 /**
  * NAKİT AÇIĞI — YALNIZ EKSİ POZİSYON UYARIR.

@@ -230,6 +230,79 @@ export async function n11CekimKos(ayar: {
   }
   const paketler = cekim.kayitlar as HamPaket[];
 
+  /**
+   * ⛔ BOŞ ÇEKİM BAŞARILI KOŞUMDUR — HESAP HATASI DEĞİL (K264, 24.09.2026).
+   * 24.09 gecesi kanal 0 paket döndürdü (gece yarısı tek açık paket de kapandı);
+   * sellerId PAKETTEN okunduğu için akış «sellerId TEKİL DEĞİL (boş)» deyip
+   * HESAP diye erken dönüyor, damga YAZMIYOR ve rota 200 döndürüyordu. Panel
+   * 667 dakika «çekim koşmadı — zamanlayıcıyı kontrol edin» dedi; cron-job.org
+   * her 2 dakikada yeşildi. Ölçüldü: 23.09'da 748 damga (her 2 dk), sonuncusu
+   * 23:58:13 «paket 1»; sonra sıfır. Boş ≠ hata (anayasa: «boş sonuç ile temiz
+   * sonucu ayırt edemeyen denetim, denetim değildir»). Damga «koştu, 0 paket»
+   * diye yazılır; hesap paket olmadığından DEFTERDEN çözülür — N11'de
+   * externalId'si dolu TEK hesap (ölçüldü: AXCALI · 4534966). Tekil değilse
+   * HESAP dalı meşru olarak kalır.
+   */
+  if (paketler.length === 0) {
+    const n11Hesaplari = await prisma.channelAccount.findMany({
+      where: { channel: { code: "N11" }, externalId: { not: null } },
+      select: { id: true, name: true },
+    });
+    if (n11Hesaplari.length !== 1) {
+      console.log(`\n⛔ BOŞ ÇEKİM ama externalId'li N11 hesabı TEKİL DEĞİL (${n11Hesaplari.length}) — damga yazılamadı.\n`);
+      await prisma.$disconnect();
+      process.exitCode = 1;
+      return { atlandi: "HESAP" };
+    }
+    const hesapBos = n11Hesaplari[0]!;
+    const bosOzet = {
+      apiPaket: 0,
+      iptalPaket: 0,
+      tamamiIptal: 0,
+      saatCozulemeyen: 0,
+      cokAdetOlculemedi: 0,
+      cakisanAtlandi: 0,
+      belirsiz: 0,
+      yazilamazKod: 0,
+      saleOnce: onceToplam,
+    };
+    let otoOnaylanan = 0;
+    if (YAZIM) {
+      await prisma.auditLog.create({
+        data: {
+          action: "N11_SIPARIS_ICE_AKTARMA",
+          targetType: "ChannelAccount",
+          targetId: hesapBos.id,
+          detail: JSON.stringify({
+            partiKimligi,
+            okumaAni: okumaAni.toISOString(),
+            ...bosOzet,
+            yazilan: 0,
+            hata: 0,
+            saleSonra: onceToplam,
+            not: "BOS CEKIM - kanal 0 paket dondurdu; basarili kosum (K264).",
+          }),
+        },
+      });
+      console.log(`\n② ÇEKİM BOŞ — kanal 0 paket döndürdü; damga yazıldı (${hesapBos.name}).`);
+      /* K168 kuyruğu boş çekimde de işler: dünkü tek partili sipariş bugün onaylanır. */
+      const oto = await otomatikOnaylaKuyruk(prisma);
+      otoOnaylanan = oto.onaylanan;
+      console.log(`   otomatik onay: aday ${oto.aday} · onaylanan ${oto.onaylanan}\n`);
+    } else {
+      console.log(`\n② ÇEKİM BOŞ — kanal 0 paket döndürdü (önizleme; damga yazılmadı).\n`);
+    }
+    await prisma.$disconnect();
+    return {
+      kip: YAZIM ? "YAZIM" : "ONIZLEME",
+      ...bosOzet,
+      yazilan: 0,
+      hata: 0,
+      saleSonra: YAZIM ? onceToplam : null,
+      otoOnaylanan,
+    };
+  }
+
   // ═══ HESAP — sellerId paketten okunur, elle bağlanmış olmalı ════════════
   const sellerIdler = [...new Set(paketler.map((p) => String(p.sellerId ?? "")))].filter(
     (s) => s !== "" && s !== "undefined",

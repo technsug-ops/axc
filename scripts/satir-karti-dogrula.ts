@@ -278,6 +278,23 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   );
   kosanBolumler.push("kapsam");
 }
+/** K268 — sağ blok GENİŞ: alımlarda ürün/kalem/kart ortaya (satışlar düzeni). */
+{
+  const bilesenK = readFileSync("src/components/satir-karti.tsx", "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol(
+    "sagGenis verilince sağ blok satırın kalanını alıyor (sm:flex-[2] sm:min-w-0)",
+    /sagGenis \? " sm:min-w-0 sm:flex-\[2\]" : ""/.test(bilesenK),
+  );
+  const alimlarK = readFileSync("src/app/alimlar/page.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const sagBasi = alimlarK.indexOf("sag={");
+  const sagBloku = sagBasi >= 0 ? alimlarK.slice(sagBasi, sagBasi + 1600) : "";
+  kontrol("alımlar sağ bloğu geniş ve ilk sütunu esnek (minmax(0,1fr))",
+    /sagGenis\s+sagIzgara="sm:grid-cols-\[minmax\(0,1fr\)_auto_auto_auto\]"/.test(alimlarK));
+  kontrol("  ...ürün (UzunAd) ve adet·kalem·kart ORTA sütunda, bağlamda değil",
+    /<UzunAd/.test(sagBloku) && /toplamAdet/.test(sagBloku) && /creditCard/.test(sagBloku) &&
+      !/baglam=\{\[[\s\S]{0,900}?<UzunAd/.test(alimlarK));
+}
+
 
 console.log("\n" + "=".repeat(70));
 if (kosanBolumler.length !== BOLUM_SAYISI) {

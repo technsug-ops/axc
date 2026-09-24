@@ -141,6 +141,9 @@ export const UYARI_ANAHTARLARI = [
    * Aynı koşul iki zamanda konuşuyor: orada önleyici, burada muhasebeci.
    */
   "zararinaSatis",
+  // ── K266 (24.09.2026): ŞERİTTEN ÇANA — günün işi değil, bakım uyarısı ──
+  "oransizKanalSku",
+  "tarifePenceresi",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -183,6 +186,20 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
   hakedisBaglanmamis: "/hakedis",
   /** Süzgeç ZATEN VAR (`KAR_SUZGECLERI` → "zarar"); yenisi açılmadı. */
   zararinaSatis: "/satislar?kar=zarar",
+  oransizKanalSku: "/kanal-sku?eksik=1",
+  /**
+   * ⛔ ADRES ŞERİTTEN TAŞINDI (K266) — GEREKÇESİ AYNEN GELDİ:
+   * ⚠ BU ADRES K47 İLE BİRLİKTE DOĞDU. Satır önce yazılıp ekran sonraya
+   * bırakılsaydı, uyarı kullanıcının YAPAMAYACAĞI bir işi hatırlatırdı —
+   * anayasadaki kart faizi kategori linki vakası. Ölçüldü (25.08.2026):
+   * o gün `src/app` altında tek bir tarife yükleme ekranı yoktu.
+   * ⚠ K230-③ (21.09.2026): ekran `/ayarlar/komisyon` içine alındı. Eski
+   * adres yönlendirme olarak duruyor, yani bu satır güncellenmese de
+   * kullanıcı doğru yere varırdı — ama görev adresi bir YÖNLENDİRMEYE
+   * bel bağlayamaz: yönlendirme kalktığı gün uyarı sessizce 404'e
+   * götürürdü. Adres hedefin KENDİSİNİ gösterir.
+   */
+  tarifePenceresi: "/ayarlar/komisyon",
 };
 
 /**
@@ -220,6 +237,9 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   hakedisBaglanmamis: "notr",
   /** Para kaybı — Faz 1 ölçütüyle aynı sınıf. */
   zararinaSatis: "kirmizi",
+  /* Bakım işi: para kaybettirmez ama bırakılırsa NET-2 hesaplanamaz — amber. */
+  oransizKanalSku: "amber",
+  tarifePenceresi: "amber",
 };
 
 /**
@@ -248,6 +268,9 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   kanalKodsuzStok: null,
   hakedisBaglanmamis: "satis.kar.gor",
   zararinaSatis: "satis.kar.gor",
+  /* Operasyonel: depocu da görür — tutar/kâr taşımıyorlar. */
+  oransizKanalSku: null,
+  tarifePenceresi: null,
 };
 
 export type Uyari = {

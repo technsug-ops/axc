@@ -39,19 +39,28 @@ export const GOREV_ANAHTARLARI = [
   "malKabulBekleyen",
   /** `NO_COST` / `RULE_MISSING` satışlar — kârı hesaplanamadı. */
   "karHesaplanamayan",
-  /** Komisyon oranı boş kanal SKU'lar. */
-  "oransizKanalSku",
-  /**
-   * Tarife penceresi bitmek üzere ya da bitmiş — haftalık dosya indirilecek.
-   *
-   * ⚠ BU SATIR YENİ ANAHTAR HAK ETTİ, `kargoBekleyen`in ilerlemesi gibi
-   * var olan bir görevin parçası DEĞİL: kendi adresi, kendi ekranı ve
-   * kendi "temiz" ölçütü var. Anahtar açmamak için onu başka bir satırın
-   * altına sıkıştırmak, dört exhaustive haritadan kaçmak uğruna yanlış
-   * yere bilgi koymak olurdu.
-   */
-  "tarifePenceresi",
 ] as const;
+
+/**
+ * ⛔ ÇANA TAŞINANLAR (K266, kullanıcı 24.09.2026): «Komisyon oranı boş kanal SKU»
+ * ve «Komisyon tarifesi» şeritten ÇIKTI — _«bunları bildirimde gösterebilirsin,
+ * bugün yapacaklarımda olmasına gerek yok»_. İkisi de GÜNÜN işi değil, bakım
+ * uyarısı; artık uyarı merkezinde (`lib/uyari/turler.ts`) yaşıyorlar ve
+ * adresleri oraya TAŞINDI (silinmedi).
+ * Şeridin «acele / kalan gün» mekanizması YALNIZ tarife için vardı; onunla
+ * birlikte kalktı — yazıcısı kalmayan alan bırakılmaz.
+ *
+ * ── ESKİ GEREKÇE (K47 · K164 dönemi, AYNEN) ───────────────────────────
+ * Tarife penceresi bitmek üzere ya da bitmiş — haftalık dosya indirilecek.
+ *
+ * ⚠ BU SATIR YENİ ANAHTAR HAK ETTİ, `kargoBekleyen`in ilerlemesi gibi
+ * var olan bir görevin parçası DEĞİL: kendi adresi, kendi ekranı ve
+ * kendi "temiz" ölçütü var. Anahtar açmamak için onu başka bir satırın
+ * altına sıkıştırmak, dört exhaustive haritadan kaçmak uğruna yanlış
+ * yere bilgi koymak olurdu.
+ */
+export const CANA_TASINAN_GOREVLER = ["oransizKanalSku", "tarifePenceresi"] as const;
+export type CanaTasinanGorev = (typeof CANA_TASINAN_GOREVLER)[number];
 
 export type GorevAnahtari = (typeof GOREV_ANAHTARLARI)[number];
 
@@ -74,8 +83,6 @@ export const GOREV_GRUBU: Record<GorevAnahtari, GorevGrubu> = {
   iadeBildirimi: "SEVKIYAT",
   malKabulBekleyen: "TEDARIK",
   karHesaplanamayan: "TEDARIK",
-  oransizKanalSku: "TEDARIK",
-  tarifePenceresi: "TEDARIK",
 };
 
 
@@ -97,21 +104,6 @@ export const GOREV_ADRESLERI: Record<GorevAnahtari, string> = {
   iadeBildirimi: "/iadeler?bekleyen=1",
   malKabulBekleyen: "/alimlar?durum=BEKLEYEN",
   karHesaplanamayan: "/satislar?kar=eksik",
-  oransizKanalSku: "/kanal-sku?eksik=1",
-  /**
-   * ⚠ BU ADRES K47 İLE BİRLİKTE DOĞDU. Satır önce yazılıp ekran sonraya
-   * bırakılsaydı, uyarı kullanıcının YAPAMAYACAĞI bir işi hatırlatırdı —
-   * anayasadaki kart faizi kategori linki vakası. Ölçüldü (25.08.2026):
-   * o gün `src/app` altında tek bir tarife yükleme ekranı yoktu.
-   */
-  /**
-   * ⚠ K230-③ (21.09.2026): ekran `/ayarlar/komisyon` içine alındı. Eski
-   * adres yönlendirme olarak duruyor, yani bu satır güncellenmese de
-   * kullanıcı doğru yere varırdı — ama görev adresi bir YÖNLENDİRMEYE
-   * bel bağlayamaz: yönlendirme kalktığı gün uyarı sessizce 404'e
-   * götürürdü. Adres hedefin KENDİSİNİ gösterir.
-   */
-  tarifePenceresi: "/ayarlar/komisyon",
 };
 
 export type Gorev = {
@@ -135,48 +127,24 @@ export type Gorev = {
    * İLERLEMESİ.
    */
   ilerleme: number | null;
-  /**
-   * ACELE — sayı 0 olsa bile iş bekliyor.
-   *
-   * ⚠ `temizMi = sayi === 0` TEK BAŞINA YANLIŞ CEVAP VERİYORDU. Tarife
-   * penceresi bugün bitiyorsa kapsamsız kanal sayısı hâlâ 0'dır (bugün
-   * kapsanıyor) ama dosya bugün indirilmezse yarın geri getirilemez.
-   * "Temiz ✓" yazan bir satır, tam da kaçırılmaması gereken günde
-   * susardı.
-   */
-  aceleMi: boolean;
-  /** Kalan gün — `null` = o görevde süre kavramı yok. */
-  kalanGun: number | null;
+  /* `aceleMi` / `kalanGun` K266'da çana taşındı (yalnız tarife kullanıyordu). */
 };
 
 export function gorevleriKur(
   sayilar: Record<GorevAnahtari, number>,
   /** Görev başına ilerleme — bugün yalnız `kargoBekleyen` için var. */
   ilerlemeler?: Partial<Record<GorevAnahtari, number>>,
-  /**
-   * Süre bilgisi — bugün yalnız `tarifePenceresi` için var.
-   *
-   * ⚠ KARARI ÇAĞIRAN VERİYOR, BU FONKSİYON TÜRETMİYOR. Eşiği buraya
-   * gömseydik ("kalanGun <= 3 ise acele") tarife kuralı genel görev
-   * makinesinin içine sızardı ve ikinci bir süreli görev doğduğunda
-   * onun eşiği de buraya yazılmak zorunda kalırdı.
-   */
-  sureler?: Partial<Record<GorevAnahtari, { kalanGun: number | null; aceleMi: boolean }>>,
 ): Gorev[] {
   return GOREV_ANAHTARLARI.map((anahtar) => {
     const sayi = sayilar[anahtar] ?? 0;
-    const sure = sureler?.[anahtar];
-    const aceleMi = sure?.aceleMi ?? false;
     return {
       anahtar,
       sayi,
       adres: GOREV_ADRESLERI[anahtar],
       grup: GOREV_GRUBU[anahtar],
       /** ⚠ ACELE OLAN SATIR TEMİZ SAYILMAZ — sayısı 0 olsa bile. */
-      temizMi: sayi === 0 && !aceleMi,
+      temizMi: sayi === 0,
       ilerleme: ilerlemeler?.[anahtar] ?? null,
-      aceleMi,
-      kalanGun: sure?.kalanGun ?? null,
     };
   });
 }

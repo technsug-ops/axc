@@ -2933,5 +2933,34 @@ console.log("\nONAY DURUMU ETİKETİ");
   );
 }
 
+/**
+ * K264 (24.09.2026) — N11 BOŞ ÇEKİM: damga yazar, HESAP hatası saymaz.
+ * Kanal 0 paket dönünce sellerId paketten okunamıyordu → «HESAP» → damga yok →
+ * rota 200 → panel 11 saat «zamanlayıcıyı kontrol edin». Boş ≠ hata.
+ */
+{
+  console.log("K264 N11 boş çekim — damga yazar, HESAP hatası saymaz");
+  const n11 = yorumsuz(readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"));
+  const iBos = n11.indexOf("if (paketler.length === 0) {");
+  const iSeller = n11.indexOf("if (sellerIdler.length !== 1) {");
+  kontrol("boş paket dalı VAR ve sellerId kapısından ÖNCE", iBos >= 0 && iSeller >= 0 && iBos < iSeller);
+  const bosDali = iBos >= 0 && iSeller > iBos ? n11.slice(iBos, iSeller) : "";
+  kontrol(
+    "  ...boş dal damga YAZIYOR (N11_SIPARIS_ICE_AKTARMA, apiPaket 0)",
+    /action: "N11_SIPARIS_ICE_AKTARMA",/.test(bosDali) && /apiPaket: 0,/.test(bosDali),
+  );
+  kontrol(
+    "  ...boş dal YAZIM özeti döndürüyor (atlandı değil), önizlemede yazmıyor",
+    /kip: YAZIM \? "YAZIM" : "ONIZLEME"/.test(bosDali) && /if \(YAZIM\) \{/.test(bosDali),
+  );
+  kontrol(
+    "  ...hesap DEFTERDEN çözülüyor (externalId dolu N11 hesabı, tekil)",
+    /channel: \{ code: "N11" \}, externalId: \{ not: null \}/.test(bosDali) && /n11Hesaplari\.length !== 1/.test(bosDali),
+  );
+  /* Rotalar: atlandı → 503 (ayrıntı cron-yollari:dogrula'da; burada N11 rotası). */
+  const rota = readFileSync("src/app/api/cron/n11-cekim/route.ts", "utf8");
+  kontrol("n11 rotası atlandı ise 503 dönüyor", /status: "atlandi" in ozet \? 503 : 200/.test(rota));
+}
+
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
 process.exit(hata === 0 ? 0 : 1);

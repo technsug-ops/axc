@@ -57,6 +57,7 @@ export function CizgiGrafik({
   bicimleKisa,
   bosMesaj,
   net2Goster = true,
+  etiketTavani = 12,
 }: {
   noktalar: GrafikNoktasi[];
   gelirAdi: string;
@@ -73,6 +74,8 @@ export function CizgiGrafik({
    */
   bicimleKisa?: (deger: number) => string;
   bosMesaj: string;
+  /** Eksende en çok kaç etiket (K265: günlük kırılımda 31 → her gün). */
+  etiketTavani?: number;
   /**
    * NET-2 çizilsin mi. `satis.kar.gor` izni olmayan kullanıcıda KAPALI olur.
    *
@@ -113,7 +116,7 @@ export function CizgiGrafik({
   const alan = `${x(0)},${sifirY} ${cizgi(anaSeri)} ${x(noktalar.length - 1)},${sifirY}`;
 
   const isaretler = eksenIsaretleri(y);
-  const etiketAtla = etiketAtlamasi(noktalar.length);
+  const etiketAtla = etiketAtlamasi(noktalar.length, etiketTavani);
 
   return (
     <div className="overflow-x-auto">

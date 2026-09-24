@@ -57,7 +57,7 @@ import { kdvOraniniCoz } from "@/lib/kdv";
 import { kutuOranlari } from "@/lib/panel/kar-orani";
 import { payFarki } from "@/lib/panel/pay-farki";
 import { HalkaGrafik, halkaDilimleriniTopla } from "@/components/halka-grafik";
-import { sonGunSerisi } from "@/lib/panel/son-gun-serisi";
+import { donemCiroNetSerisi } from "@/lib/panel/son-gun-serisi";
 import { KANAL_RENKLERI, KANAL_RENGI_VARSAYILAN } from "@/lib/renkler";
 import { HIZLI_KIYAS } from "@/lib/karsilastirma";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
@@ -129,11 +129,9 @@ import { VitrinSerhi } from "./vitrin-serhi";
 import {
   donemAlimi,
   gorevSayilariniTopla,
-  tarifeKapsaminiOlc,
   paketlenenSiparisSayisi,
 } from "@/lib/panel/gorev-verisi";
 import { vitrinKutusunuTopla } from "@/lib/panel/vitrin-verisi";
-import { tarifeUyarisiVarMi } from "@/lib/panel/tarife-penceresi";
 import { enKotuCekim, sonCekimler } from "@/lib/panel/ty-cekim-yasi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import {
@@ -1590,18 +1588,11 @@ export default async function AnaSayfa({
    *  - Takvim İLERİYE bakar; dönem süzgeci geçmişi süzer. Aynı düğmeye
    *    bağlansalardı "bugün" seçilince takvim boşalırdı. Ekranda da yazıyor.
    */
-  const [gorevSayilari, tarifeKapsam, paketlenen, alim, kiyasAlim, vitrin] =
+  const [gorevSayilari, paketlenen, alim, kiyasAlim, vitrin] =
     await Promise.all([
     gorevSayilariniTopla(),
 
-    /**
-     * TARİFE PENCERESİ — görev satırının SÜRE tarafı (K47).
-     *
-     * ⚠ SAYI `gorevSayilariniTopla` İÇİNDE ZATEN VAR; burada gereken
-     * KALAN GÜN. Aynı türetme iki yerde yapılmıyor — ikisi de
-     * `tarifeKapsaminiOlc()` çağırıyor.
-     */
-    tarifeKapsaminiOlc(),
+    /* K47 tarife kapsamı K266 ile çana taşındı (`lib/uyari/topla.ts`). */
 
     /**
      * PAKETLEME İLERLEMESİ — "kargoya verilecek 15 · paketlenen 1".
@@ -2392,23 +2383,34 @@ export default async function AnaSayfa({
    * varsayıma dönerdi. Boşsa BİR KEZ söylenir; kutularda tekrarlanmaz.
    */
   /**
-   * SON 14 GÜN — DÖNEM SÜZGECİNDEN BAĞIMSIZ, BUGÜNE KİLİTLİ (K257, demo).
-   * Kullanıcı «Bugün»ü seçse de son iki haftanın günlük ciro/NET-2 eğilimi
-   * görünsün. Kaynak, aylık grafiğin ZATEN çektiği 12 aylık `satislar`
-   * dizisi — ikinci sorgu yok. Kanal ve para birimi süzgeci uygulanır ki
-   * hüküm kartlarıyla aynı kümeye baksın.
+   * CİRO ve NET-2 — SEÇİLİ DÖNEM (K265, kullanıcı 24.09.2026: «bu kart filtrelere
+   * bağlansın, operasyon ve diğer kartlar gibi seçilen tarihe göre güncellensin;
+   * grafiğin altında günler belirlensin»).
+   * ⛔ K257 ÇEVRİLDİ, GEREKÇESİ `son-gun-serisi.ts` BAŞLIĞINDA: bugüne kilitli
+   * 14 gün demonun şekliydi; kullanıcı kartın öteki kartlarla AYNI evrende
+   * olmasını istedi (İlke #10). Kovalar operasyon grafiğiyle AYNI gövdeden ve
+   * AYNI kırılımdan (`operasyonKirilimi`): iki kart aynı günleri çizer.
+   * Kanal + para birimi süzgeci: `donemSatislari` (hüküm kartlarıyla aynı küme).
    * ⚠ NET-2 `null` SIFIR SAYILMAZ (gövdede): bilinmeyen, sıfır değildir.
    */
-  const son14 = sonGunSerisi(
-    satislar.filter(
-      (s) => s.paraBirimi === seciliPara && (!seciliKanal || s.kanalKodu === seciliKanal),
-    ),
-    new Date(),
+  const ciroNet = donemCiroNetSerisi(
+    donemSatislari
+      .filter((s) => s.paraBirimi === seciliPara)
+      .map((s) => ({ tarih: s.tarih, gelir: s.gelir, net2: s.net2 })),
+    donem,
+    operasyonKirilimi,
   );
-  const son14Noktalari: GrafikNoktasi[] = son14.map((n) => ({
-    /* Eksende gün numarası (14 nokta için ay adı gereksiz); tam tarih tabloda. */
-    etiket: String(isTakvimGunu(n.tarih).gun),
-    tamEtiket: bicim.tarih(n.tarih),
+  const ciroNetNoktalari: GrafikNoktasi[] = ciroNet.map((n) => ({
+    /* Eksen: gün kırılımında gün numarası (her gün yazılır, `etiketTavani`);
+       hafta/ay kırılımında kova başı. Tam aralık tabloda/ipucunda. */
+    etiket:
+      operasyonKirilimi === "GUN"
+        ? String(isTakvimGunu(n.baslangic).gun)
+        : bicim.tarih(n.baslangic),
+    tamEtiket:
+      n.baslangic.getTime() === n.sonGun.getTime()
+        ? bicim.tarih(n.baslangic)
+        : `${bicim.tarih(n.baslangic)} – ${bicim.tarih(n.sonGun)}`,
     gelir: n.gelir,
     net2: n.net2,
   }));
@@ -3036,17 +3038,6 @@ export default async function AnaSayfa({
           ilerlemeAdresleri={{
             kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
           }}
-          /*
-            ⚠ "ACELE" KARARI SAF KURALDAN GELİYOR, BURADA
-            TÜRETİLMİYOR. Eşiği (`UYARI_GUNU`) ekranda yazsaydık
-            panel ile uyarı merkezi bir gün ayrışabilirdi.
-          */
-          sureler={{
-            tarifePenceresi: {
-              kalanGun: tarifeKapsam.kalanGun,
-              aceleMi: tarifeUyarisiVarMi(tarifeKapsam),
-            },
-          }}
         />
 
 
@@ -3224,12 +3215,13 @@ export default async function AnaSayfa({
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <ChartLine className="size-5" />
-                {t("son14Baslik")}
+                {t("ciroNetBaslik", { pencere: tPencere(PENCERE_ANAHTARI[donemTuru]) })}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <CizgiGrafik
-                noktalar={son14Noktalari}
+                noktalar={ciroNetNoktalari}
+                etiketTavani={31}
                 gelirAdi={t("ciro")}
                 net2Adi={t("net2")}
                 bicimle={(deger) => bicim.para(deger, seciliPara)}

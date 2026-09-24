@@ -24,6 +24,7 @@ import { desenNormalle } from "./mutasyon-deseni";
 const BEKCI = "scripts/ice-aktarma-dogrula.ts";
 const BEKCI_BASLIGI = "TÜM KONTROLLER GEÇTİ";
 const HB = "scripts/canli-hb-ice-aktar.ts";
+const N11 = "scripts/canli-n11-ice-aktar.ts";
 
 type Mutasyon = {
   ad: string;
@@ -62,6 +63,28 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "      where: { code: no, channelAccountId: hesap.id },",
     bozdugu:
       "zaten dolu bir kargo firmasi haksiz yere ezilir - kanal bir tur sonra baska bir firma soylerse defterdeki dogru deger gider",
+  },
+  {
+    ad: "BOS CEKIM YINE HESAP HATASI (K264 dali kapali)",
+    yon: "KALDIRAN",
+    dosya: N11,
+    bul:
+      "  if (paketler.length === 0) {",
+    koy:
+      "  if (paketler.length === -1) {",
+    bozdugu:
+      "kanal 0 paket dondurunce damga yazilmaz, panel 'zamanlayiciyi kontrol edin' der - 24.09 vakasi geri gelir",
+  },
+  {
+    ad: "BOS CEKIM DAMGA YAZMIYOR",
+    yon: "KALDIRAN",
+    dosya: N11,
+    bul:
+      "      await prisma.auditLog.create({\n        data: {\n          action: \"N11_SIPARIS_ICE_AKTARMA\",\n          targetType: \"ChannelAccount\",\n          targetId: hesapBos.id,",
+    koy:
+      "      await Promise.resolve({\n        data: {\n          action: \"N11_SIPARIS_ICE_AKTARMA_YOK\",\n          targetType: \"ChannelAccount\",\n          targetId: hesapBos.id,",
+    bozdugu:
+      "dal var ama iz yok - panel yine 'kosmadi' der",
   },
 ];
 

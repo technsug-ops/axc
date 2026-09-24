@@ -95,6 +95,29 @@ for (const dosya of cronSecretKullananlar) {
   kontrol(`${yol} → ACIK_YOLLAR'da`, acikYollarBlok.includes(`"${yol}"`));
 }
 
+/**
+ * K264 (24.09.2026): «atlandı» dönen çekim 200 DEĞİL 503. cron-job.org'un
+ * yeşili «çekim koştu» demek olsun; N11 11 saat atlandı ve zamanlayıcı yeşildi.
+ * Küme DESENDEN: çekirdek çağıran (`CekimKos(`) her rota — liste tutulmaz.
+ */
+console.log("\n3) «ATLANDI» 503 DÖNER (K264)");
+const cekimRotalari = routeDosyalari.filter((yol) => /CekimKos\(/.test(readFileSync(yol, "utf8")));
+kontrol("çekim çekirdeği çağıran rota bulundu (taban DOLU, >= 3)", cekimRotalari.length >= 3, cekimRotalari.map(urlYolu));
+/**
+ * ⚠ ÖLÇÜT SON CEVABA BAĞLI, tek kalıba değil: tek çekirdekli rota `ozet`,
+ * iki işli rota `dusen > 0` ile karar verir; listeleme rotası 500 kullanıyor
+ * (K-liste kararı, çevrilmedi). Ortak olan şey: SON `NextResponse.json`
+ * çağrısı `status:` taşır ve atlandı dalı 200 DEĞİLDİR.
+ */
+for (const dosya of cekimRotalari) {
+  const metin = readFileSync(dosya, "utf8");
+  const sonCevap = metin.slice(metin.lastIndexOf("NextResponse.json("));
+  kontrol(
+    `${urlYolu(dosya)} → atlandı ise 503/500, koştuysa 200 (son cevapta status var)`,
+    /status: [^}]*\? 50[03] : 200/.test(sonCevap),
+  );
+}
+
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
 else {

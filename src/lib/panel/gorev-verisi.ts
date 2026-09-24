@@ -13,7 +13,7 @@ import {
 import { kabulKosulu } from "@/lib/panel/kabul-sayimi";
 import { prisma } from "@/lib/prisma";
 
-import type { GorevAnahtari } from "./bugun-ne-yapmaliyim";
+import type { CanaTasinanGorev, GorevAnahtari } from "./bugun-ne-yapmaliyim";
 import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
 import { onayBekleyenIdleri } from "@/lib/onay-kuyrugu";
 
@@ -313,8 +313,12 @@ export async function tarifeKapsaminiOlc(): Promise<TarifeKapsami> {
   );
 }
 
+/**
+ * K266: çana taşınan iki sayı da BURADAN çıkar — uyarı merkezi aynı gövdeyi
+ * okur, iki yerde iki sayım doğmaz.
+ */
 export async function gorevSayilariniTopla(): Promise<
-  Record<GorevAnahtari, number>
+  Record<GorevAnahtari | CanaTasinanGorev, number>
 > {
   const [
     onayBekleyen,

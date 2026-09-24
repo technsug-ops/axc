@@ -37,9 +37,15 @@ export type HalkaDilimi = {
 export const HALKA_DILIM_TAVANI = 4;
 
 const CX = 235;
-const CY = 136;
-const R = 62;
-const KALINLIK = 26;
+/**
+ * K267 (kullanıcı 24.09.2026: «pasta grafik biraz büyüyebilir»): R 62→76,
+ * kalınlık 26→30, kadraj 266→300 yüksek, merkez 136→150. Kartta boş alan
+ * vardı; delik 98→122 birime çıktı, merkez rakam (`merkezYaziBoyu`) delikten
+ * türediği için kendiliğinden büyüdü (11 karakter: 13 → 16,5).
+ */
+const CY = 150;
+const R = 76;
+const KALINLIK = 30;
 const CEVRE = 2 * Math.PI * R;
 /** Halkanın DELİĞİ — merkez yazının sığması gereken çap (R − kalınlık/2)·2. */
 export const DELIK_CAPI = 2 * (R - KALINLIK / 2);
@@ -90,6 +96,9 @@ export const OK_ETIKET_ARALIGI = 30;
 /** Yazı en fazla ~90 birim; uç bu payı kadrajın dışına taşıramaz. */
 const OK_UC_X_SOL = 96;
 const OK_UC_X_SAG = 470 - 96;
+/** Halka büyüyünce (K267) tepe/dip uçları kadrajın dışına taşabilir — y de kırpılır. */
+const OK_UC_Y_UST = 20;
+const OK_UC_Y_ALT = 300 - 30;
 
 export type OkUcu = { sagda: boolean; x: number; y: number };
 
@@ -105,6 +114,7 @@ export function okEtiketleriniAyir(uclar: readonly OkUcu[]): OkUcu[] {
   const sonuc = uclar.map((u) => ({
     ...u,
     x: u.sagda ? Math.min(u.x, OK_UC_X_SAG) : Math.max(u.x, OK_UC_X_SOL),
+    y: Math.min(Math.max(u.y, OK_UC_Y_UST), OK_UC_Y_ALT),
   }));
   for (const taraf of [true, false]) {
     const indeksler = sonuc
@@ -188,7 +198,7 @@ export function HalkaGrafik({
 
   return (
     <svg
-      viewBox="0 0 470 266"
+      viewBox="0 0 470 300"
       className="block h-auto w-full"
       role="img"
       aria-label={aciklama}
@@ -271,7 +281,7 @@ export function HalkaGrafik({
         </g>
       ))}
       {dipnot ? (
-        <text x={CX} y={258} textAnchor="middle" fontSize="11" className="fill-muted-foreground">
+        <text x={CX} y={290} textAnchor="middle" fontSize="11" className="fill-muted-foreground">
           {dipnot}
         </text>
       ) : null}

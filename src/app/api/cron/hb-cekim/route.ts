@@ -91,5 +91,7 @@ export async function GET(istek: NextRequest) {
       { status: 503 },
     );
   }
-  return NextResponse.json(ozet);
+  /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek
+     olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü. */
+  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });
 }

@@ -42,5 +42,7 @@ export async function GET(istek: NextRequest) {
   }
   const hakedis = await tyHakedisCekimKos({ yaz: true, dbAdresi });
   const kargo = await tyKargoGercekYazKos({ yaz: true, dbAdresi });
-  return NextResponse.json({ hakedis, kargo });
+  /* K264: iki işten biri «atlandı» ise 503 — zamanlayıcının yeşili «koştu» demek olsun. */
+  const dusen = [hakedis, kargo].filter((o) => "atlandi" in o).length;
+  return NextResponse.json({ hakedis, kargo, dusen }, { status: dusen > 0 ? 503 : 200 });
 }

@@ -489,13 +489,14 @@ const MUTASYONLAR: Mutasyon[] = [
       "sevkiyat ile tedarik tek yigin olur - 20.08 gerekcesi (farkli saat, farkli kisi) sessizce dusmus olur",
   },
   {
-    ad: "SURE METNI RAKAMIN YANINA GECTI",
-    yon: "KALDIRAN",
+    /* K266: sure dali kalkti (tarife cana tasindi). Capa «dal GERI GELDI»ye cevrildi. */
+    ad: "SURE DALI GERI GELDI (seritte sureli gorev yok)",
+    yon: "FAZLADAN",
     dosya: KUTU,
     bul:
-      "        <span className=\"font-semibold\">{sureMetni}</span>",
+      "      ) : (\n        <span className=\"font-semibold tabular-nums\">{gorev.sayi}</span>",
     koy:
-      "        <span className=\"font-semibold tabular-nums\">{gorev.sayi} {sureMetni}</span>",
+      "      ) : sureMetni !== undefined ? (\n        <span className=\"font-semibold\">{sureMetni}</span>\n      ) : (\n        <span className=\"font-semibold tabular-nums\">{gorev.sayi}</span>",
     bozdugu:
       "tarife cipinde «0 · Bugun son gun» yazar - ekran kendiyle celisir",
   },
@@ -588,24 +589,25 @@ const MUTASYONLAR: Mutasyon[] = [
       "fonksiyon prop'lar RSC sinirinda kirilir - ekran uretimde COKER (K247'de yasandi)",
   },
   {
-    ad: "PENCERE 13 GUN (14 degil)",
+    /* K265: 14 gun sabiti kalkti; seri secili pencereden. Mutasyon: KART YINE BUGUNE KILITLI. */
+    ad: "KART YINE BUGUNE KILITLI (donem yerine sabit pencere)",
     yon: "KALDIRAN",
-    dosya: SERI,
+    dosya: SAYFA,
     bul:
-      "export const SON_GUN_SAYISI = 14;",
+      "    donem,\n    operasyonKirilimi,\n  );\n  const ciroNetNoktalari",
     koy:
-      "export const SON_GUN_SAYISI = 13;",
+      "    { ...donem, ilkGun: gunEkle(donem.sonGun, -13) },\n    operasyonKirilimi,\n  );\n  const ciroNetNoktalari",
     bozdugu:
-      "baslik «son 14 gun» der, grafik 13 gun cizer - baslik yalan soyler",
+      "«Son 30 gun» secilince kart yine 14 gun cizer - baslik pencereyi soyler, grafik baska sey",
   },
   {
     ad: "NULL NET-2 SIFIR SAYILIYOR",
     yon: "KALDIRAN",
     dosya: SERI,
     bul:
-      "    if (s.net2 !== null) {\n      g.net2 += s.net2;",
+      "    if (s.net2 !== null) {\n      n.net2 += s.net2;",
     koy:
-      "    {\n      g.net2 += s.net2 ?? 0;",
+      "    {\n      n.net2 += s.net2 ?? 0;",
     bozdugu:
       "kari hesaplanamayan gun «sifir kar» gibi cizilir - bilinmeyen sifir sanilir",
   },
@@ -614,20 +616,21 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     dosya: SAYFA,
     bul:
-      "              <CizgiGrafik\n                noktalar={son14Noktalari}",
+      "              <CizgiGrafik\n                noktalar={ciroNetNoktalari}",
     koy:
-      "              <CizgiGrafikYok\n                noktalar={son14Noktalari}",
+      "              <CizgiGrafikYok\n                noktalar={ciroNetNoktalari}",
     bozdugu:
       "demonun para egilimi grafigi panelden duser",
   },
   {
-    ad: "SERI KANAL SUZGECINI UYGULAMIYOR",
+    /* K265: kanal suzgeci artik `donemSatislari` ile geliyor; mutasyon ham kumeye doner. */
+    ad: "SERI KANAL SUZGECINI UYGULAMIYOR (ham satislar)",
     yon: "KALDIRAN",
     dosya: SAYFA,
     bul:
-      "      (s) => s.paraBirimi === seciliPara && (!seciliKanal || s.kanalKodu === seciliKanal),",
+      "  const ciroNet = donemCiroNetSerisi(\n    donemSatislari",
     koy:
-      "      (s) => s.paraBirimi === seciliPara,",
+      "  const ciroNet = donemCiroNetSerisi(\n    satislar",
     bozdugu:
       "Trendyol suzgeci acikken 14 gun grafigi tum kanallari cizer - hukum kartlariyla ayrisir",
   },
@@ -795,6 +798,28 @@ const MUTASYONLAR: Mutasyon[] = [
       "",
     bozdugu:
       "gorme engelli kullanici icin iki grup tek yigin olur — ayrac aria-hidden",
+  },
+  {
+    ad: "UC Y KIRPMASI KALKTI (tepe etiketi kadraj disina tasar)",
+    yon: "KALDIRAN",
+    dosya: HALKA,
+    bul:
+      "    y: Math.min(Math.max(u.y, OK_UC_Y_UST), OK_UC_Y_ALT),",
+    koy:
+      "    y: u.y,",
+    bozdugu:
+      "12 saat yonundeki dilimin yazisi kadrajin ustunden kesilir - K267 buyutmesinin bedeli",
+  },
+  {
+    ad: "HER GUN ETIKETI KALKTI (eski 12 tavani)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "                noktalar={ciroNetNoktalari}\n                etiketTavani={31}\n",
+    koy:
+      "                noktalar={ciroNetNoktalari}\n",
+    bozdugu:
+      "30 gunluk pencerede eksen yine 3 gunde bir yazar - «gunler belirlensin» istegi duser",
   },
 ];
 

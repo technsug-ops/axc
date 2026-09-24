@@ -2389,7 +2389,7 @@
     "halkaDiger": "",
     "halkaDipnot": "",
     "halkaAciklama": "",
-    "son14Baslik": ""
+    "ciroNetBaslik": ""
   },
   "Envanter": {
     "baslik": "",
@@ -3055,10 +3055,6 @@
     "iadeBildirimi": "",
     "malKabulBekleyen": "",
     "karHesaplanamayan": "",
-    "oransizKanalSku": "",
-    "tarifePenceresi": "",
-    "kalanGun": "",
-    "sonGun": "",
     "baslikSevkiyat": "",
     "baslikTedarik": "",
     "bugunAlim": "",
@@ -3067,9 +3063,7 @@
       "kargoBekleyen": "",
       "iadeBildirimi": "",
       "malKabulBekleyen": "",
-      "karHesaplanamayan": "",
-      "oransizKanalSku": "",
-      "tarifePenceresi": ""
+      "karHesaplanamayan": ""
     }
   },
   "NakitTakvimi": {
@@ -3205,7 +3199,11 @@
     "eylem_zararinaSatis": "",
     "izDogumu": "",
     "baslik_iadeSayaciDoluyor": "",
-    "eylem_iadeSayaciDoluyor": ""
+    "eylem_iadeSayaciDoluyor": "",
+    "baslik_oransizKanalSku": "",
+    "eylem_oransizKanalSku": "",
+    "baslik_tarifePenceresi": "",
+    "eylem_tarifePenceresi": ""
   },
   "Talep": {
     "bildirEtiketi": "",

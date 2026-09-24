@@ -13,6 +13,214 @@
 
 ---
 
+## 🔴 K265 — CİRO ve NET-2 KARTI SEÇİLİ DÖNEME BAĞLI, GÜNLER EKSENDE · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 24.09: _«Paneldeki bu kart filtrelere bağlansın; operasyon ve diğer
+kartlar gibi seçilen tarihe göre grafik güncellensin. Grafiğin altında günler
+belirlensin.»_
+
+### ⛔ K257 ÇEVRİLDİ — GEREKÇESİ DURUYOR
+
+K257 kartı **bugüne kilitli 14 güne** bağlamıştı («dönem süzgecinden bağımsız»)
+— demo öyleydi. Kullanıcı kartın öteki kartlarla **aynı evrende** olmasını
+istedi (İlke #10). Ölçüldü ve bir kusur da çıktı: 14 günlük seri zaten **dönem
+sorgusundan** besleniyordu (`satislar` dönem kapsamlı) — «Bugün» seçilince 14
+günlük eksende tek gün doluydu, kart kendi başlığını tutamıyordu.
+
+### YAPILAN
+
+- `donemCiroNetSerisi(satislar, pencere, kırılım)` — saf gövde; kovalar operasyon
+  grafiğiyle **aynı gövdeden** (`kova` · `sonrakiKova` dışa açıldı) ve **aynı
+  kırılımdan** (`operasyonKirilimi`: ≤31 gün GÜN, ≤92 HAFTA, sonrası AY). Pencere
+  dışı satış iki uçta da elenir; ilk/son kova pencereye kırpılır. NET-2 `null`
+  sıfır sayılmaz. Değer testi 8 (İstanbul günü · null · boş gün · dışı · HAFTA
+  kırpma) — K257'nin testleri aynı senaryolarla pencereye taşındı.
+- Kart: başlık **«Ciro ve NET-2 — {pencere}»** (Son 30 gün / Bu ay / …), seri
+  `donemSatislari` (kanal + para süzgeci, hüküm kartlarıyla aynı küme).
+- **Günler eksende:** `CizgiGrafik` `etiketTavani` prop'u (varsayılan 12 = eski
+  davranış, öteki grafikler değişmedi); bu kart 31 → günlük kırılımda **her gün**
+  yazılır. Hafta/ay kırılımında kova başı tarih; tam aralık ipucunda.
+- Bekçi: K257 bloğu K265'e taşındı (8 değer + 6 kaynak ölçütü); harness 4
+  mutasyon taşındı + 1 yeni (her gün etiketi kalktı).
+
+⚠ **Yazı boyu:** kart 3/5 sütunda 1240 px'lik kadrajı küçültüyor; eksen yazısı
+telefonda küçük kalabilir. Bu turda geometri değişmedi (K258 sütun kipinde
+yapıldığı gibi 3/5 için ayrı kadraj sonraki adım) — Halil testinde bakılacak.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → «Son 30 gün» seçin → kart başlığı **«Ciro ve NET-2 — Son 30 gün»**,
+   x ekseninde **30 gün numarası** (her gün), iki çizgi.
+2. «Bu hafta» seçin → başlık değişmeli, eksen o haftanın günleri; «Bugün» → tek
+   nokta (o günün cirosu = hüküm kartındaki Brüt ciro).
+3. Kanal süzgeci Trendyol → çizgi yalnız Trendyol; hüküm kartlarıyla aynı toplam.
+4. «Son 3 ay» → hafta kovaları (başlangıç tarihleri eksende); operasyon
+   grafiğiyle **aynı kova sayısı ve aynı tarihler**.
+5. Bir noktanın üstüne gelin → tam tarih (ya da hafta aralığı) ipucunda.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`Panel.ciroNetBaslik` tr+en;
+`son14Baslik` silindi) · **kullanıcı kolaylığı: ✓** (İlke #10 · #12)
+
+---
+
+## 🔴 K266 — «KOMİSYON ORANI BOŞ» ve «KOMİSYON TARİFESİ» ŞERİTTEN ÇANA · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 24.09: _«Bunları bildirimde gösterebilirsin, bugün yapacaklarımda
+olmasına gerek yok: Komisyon oranı boş kanal SKU · Komisyon tarifesi.»_
+
+### YAPILAN
+
+- Şerit (`bugun-ne-yapmaliyim.ts`): iki anahtar çıktı (**7 → 5**); **süre/acele
+  mekanizması** (yalnız tarife kullanıyordu) onlarla birlikte kalktı — yazıcısı
+  kalmayan alan bırakılmadı. `CANA_TASINAN_GOREVLER` beyanı + **eski gerekçe
+  aynen** kodda; K47/K230 adres gerekçeleri `UYARI_ADRESLERI`ne **taşındı**.
+- Çan (`lib/uyari`): `oransizKanalSku` (amber · `/kanal-sku?eksik=1` · sayı
+  gerçek: 38) ve `tarifePenceresi` (amber · `/ayarlar/komisyon` · **sayı bayrak:
+  1**, kapsamsız kanal adedi değil — pencere yaklaşırken o sayı 0 olurdu ve aynı
+  alan iki şey söylerdi; `UYARI_SAYISI_ANLAMSIZ`a girdi). İkisi de izinsiz görünür.
+  «Acele» kararı yine saf kuraldan (`tarifeUyarisiVarMi`).
+- Sayım **tek gövdeden**: `gorevSayilariniTopla` (tip genişledi) — iki yerde iki
+  sayım yok. `tarifeKapsaminiOlc()` toplayıcının `Promise.all`ına girdi.
+- Günlük özet: iki kalem «görev» bölümünden **uyarı** bölümüne geçti (aynı
+  gövdeden besleniyor); `UYARI_BAGLAMI` +2, `GOREV_BAGLAMI` −2.
+- `UyariOlcumleri`: taşınan iki ölçüm **isteğe bağlı** — eski ölçüm kümeleri
+  (fixture'lar dahil) değişmeden derleniyor; taban doluluğu bekçide ayrı ölçülüyor.
+- Sözlük: `Uyari.baslik_/eylem_` ×2 (tr+en); `Gorevler`den 4 anahtar + 2 kısa silindi.
+- Bekçi: `uyari:dogrula` **7 ölçüt** (çanda · susma · taban · adres ekranı VAR ·
+  toplayıcı besliyor · şeritte yok); `panel:dogrula` 6 ölçüt eskidi/çevrildi
+  (gerekçeleri yorumda); harness süre mutasyonu «dal geri geldi»ye taşındı.
+
+### HALİL TEST LİSTESİ
+
+1. `/` → «Bugün ne yapmalıyım» şeridinde **5 çip**: Onay bekleyen · Paketlenecek
+   · İade bildirimi │ Mal kabul · Kârı hesaplanamayan. «Komisyon oranı boş kanal
+   SKU» ve «Komisyon tarifesi» **yok**.
+2. Sağ üstteki **çan** → «38 kanal SKU'sunun komisyon oranı boş» (amber) satırı
+   görünmeli; tıklayınca `/kanal-sku?eksik=1` açılmalı ve **38 satır** listelemeli.
+3. Tarife penceresi bugün **temiz** olduğu için çanda «Komisyon tarifesi
+   yenilenmeli» **görünmemeli**; pencere bitmeye 3 gün kalınca görünecek.
+4. Çandaki toplam bir arttıysa artan o olmalı (oransız SKU).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`Uyari` ×4 tr+en; `Gorevler` −6) ·
+**kullanıcı kolaylığı: ✓** (İlke #2 · #16)
+
+---
+
+## 🔴 K268 — ALIMLAR SATIRI: ÜRÜN/KALEM/KART ORTA SÜTUNA, SATIŞLAR DÜZENİ KORUNDU · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 24.09: _«alımlardaki ara boşluğa dikdörtgendeki bilgiler geçsin»_ ve
+satışlar tablosunu göstererek _«buradaki düzeni koruyamaz mıyız»_. K235 alımları
+satır kartına almıştı; ürün/adet/kalem/kart manşetin altındaki bağlam satırında,
+tutar+durum+eylemler sağda — arada koca bir boşluk.
+
+### YAPILAN
+
+- `SatirKarti` **`sagGenis`** prop'u: sağ blok satırın kalanını alır
+  (`sm:flex-[2] sm:min-w-0`); verilmezse eski davranış AYNEN — öteki 7 ekran
+  değişmedi. Satışlar tablosuna dokunulmadı.
+- Alımlar: ürün (kârlılık kartına bağlantı, uzun ad kırpılır) + altında
+  «adet · kalem · kart» sağ ızgaranın **ilk, esnek** sütununda; sonra tutar ·
+  durum · eylemler. Sütun sırası satışlar tablosuyla aynı okunur (tarih/kod ·
+  hesap · ürün · tutar · durum · eylemler). Telefonda ızgara çözülür, akar.
+- Bekçi (`satir-karti:dogrula`): `sagGenis` sınıfı · alımlar geniş+esnek ızgara ·
+  ürün/kalem/kart bağlamda DEĞİL ortada.
+
+### HALİL TEST LİSTESİ
+
+1. `/alimlar` (masaüstü): her satırda solda **kod + sipariş no · tarih · hesap**,
+   ortada **ürün adı** ve altında «N adet sipariş · N kalem · Kart ••1234», sağda
+   tutar · durum rozeti · eylem düğmeleri — ortadaki boşluk kalmamalı.
+2. Ürün adına tıklayınca kârlılık kartı açılmalı (K235 davranışı).
+3. Uzun ürün adı kırpılmalı, üstüne gelince tam ad ipucu olarak çıkmalı.
+4. `/satislar` tablosu **aynen** (değişiklik yok).
+5. Telefonda alımlar satırı: bilgiler alt alta sarar, yatay kaydırma yok.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) ·
+**kullanıcı kolaylığı: ✓** (İlke #3 · #9 · #12)
+
+---
+
+## 🔴 K264 — N11 «ÇEKİM KOŞMADI» YANLIŞ ALARMDI: BOŞ ÇEKİM DAMGA YAZAR, ROTA 503 · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 24.09 09:58: panel _«N11 çekimi 660 DAKİKADIR koşmadı — zamanlayıcıyı
+kontrol edin»_ diyor, cron-job.org her 2 dk **200 OK** — _«N11 normal çalışıyor
+görünüyor, problem nedir?»_
+
+### ÖLÇÜM (canlı iz, `scripts/tmp/n11-iz-olcum.ts`, salt okuma)
+
+    N11_SIPARIS_ICE_AKTARMA  son damga 23.09.2026 23:58:13  (paket 1 · yazılan 0)
+    damga/gün: 20.09 387 · 21.09 741 · 22.09 751 · 23.09 748  (= her 2 dk)
+    24.09 00:00'dan sonra: 0 damga
+    canli:n11-saglik → AÇIK/BOŞ  «paketler (200, kayıt yok)»
+
+Zamanlayıcı ve N11 API sağlam. Çekirdek `sellerId`yi **paketlerden** okuyor;
+paket yoksa `sellerIdler.length !== 1` → **`atlandi: "HESAP"`** → damga yok →
+rota **200** → cron-job.org yeşil → panel damgaya bakıp _«koşmadı»_ dedi ve
+kullanıcıyı zamanlayıcıya yolladı. Boş ile başarısız ayırt edilmiyordu
+(anayasa: «boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim değildir»).
+
+### YAPILAN
+
+- `canli-n11-ice-aktar.ts`: **0 paket = başarılı koşum.** Hesap defterden çözülür
+  (`channel N11` + `externalId` dolu, **tekil** — ölçüldü: AXCALI · 4534966; SEDA
+  externalId'siz, kümeye girmez); damga `apiPaket: 0` ile yazılır; K168 onay
+  kuyruğu boş çekimde de işler; özet `kip: YAZIM`. Tekil değilse HESAP dalı meşru.
+- Üç cron rotası (`ty` · `hb` · `n11`): **`atlandi` → HTTP 503**, koştuysa 200.
+  cron-job.org'un yeşili artık «koştu» demek; kimlik/hesap arızası kırmızı görünür.
+- Bekçi: `ice-aktarma:dogrula` 5 ölçüt (dal sellerId kapısından ÖNCE · damga ·
+  YAZIM özeti · hesap defterden · rota 503); `cron-yollari:dogrula` bölüm 3, küme
+  desenden (`CekimKos(` çağıran her rota, taban ≥ 3). Mutasyon 2 (dal kapalı ·
+  damga yok) `ice-aktarma-mutasyon`da; rota 503 elle mutasyonla sınandı.
+- Panel cümlesi değişmedi: damga artık gerçekten «koştu» demek.
+
+⚠ **TY ve HB aynı desende mi?** İkisi de `atlandi: HESAP` taşıyor; TY hesabı
+hangi yoldan çözüyor ölçülmedi (siparişi hiç boş dönmedi). Açılış şartı: TY/HB'de
+ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
+
+### HALİL TEST LİSTESİ
+
+1. Deploy'dan 2–4 dk sonra `/` → sağ üstteki kırmızı **«N11 çekimi … DAKİKADIR
+   koşmadı»** satırı **kaybolmalı** (N11 hâlâ 0 paket dönse bile).
+2. cron-job.org → N11 işi geçmişi: koşumlar **200 OK** kalmalı; süre 1–3 sn.
+3. Kontrol (isteğe bağlı): cron-job.org'da işi 1 kez elle tetikleyin → yine 200;
+   panelde N11 damgası «1 dk önce» olmalı.
+4. N11'de gerçek bir sipariş düşünce: paket sayısı > 0 → normal içe aktarma
+   yolu; sipariş `/satislar`da onay kuyruğunda görünmeli (davranış değişmedi).
+
+**mobil doğrulama:** ekran değişikliği yok · **i18n: ✓** (metin yok)
+
+---
+
+## 🟡 K269 — `uyari:dogrula` ve `cron-yollari:dogrula` MUTASYON HARNESS'İ YOK · 24.09.2026 · [ELLE TUR KOŞTU — KALICISI AÇIK]
+
+K264 ve K266 bu iki bekçiye **11 yeni ölçüt** ekledi; ikisinin de mutasyon
+harness'i yok (ölçüldü: `scripts/*mutasyon*.ts` içinde ikisine de çapa yok).
+Anayasa «yeni ölçüt mutasyonsuz teslim edilmez» diyor, bu yüzden bu turda
+**elle mutasyon turu** koşuldu ve sonuç GÖRÜLDÜ:
+
+    10/10 beklendigi gibi  ·  2 ZARARSIZ YESIL (harness saglamasi) + 8 ISIRDI
+      - oransiz SKU candan dustu            - can adresi olmayan ekrana gidiyor
+      - toplayici olcumu beslemiyor         - TY rotasi atlandi'da yine 200
+      - tarife sayisi bayrak degil          - TY hakedis rotasi dusen saymiyor
+      - anahtarlar serite geri geldi        - N11 rotasi 503 dalini kaybetti
+
+Tur, harness disiplininin üç şartını taşıdı: deseni SAYAR (1 değilse
+«UYGULANAMADI», yeşil saymaz) · mutasyonun diske YAZILDIĞINI doğrular ·
+geri almayı **kopyadan** yapar (`git checkout` DEĞİL — commit edilmemiş işi
+silerdi) ve geri yazıldığını doğrular. Bekçinin ÇÖKMESİ «ısırdı» sayılmaz.
+
+⚠ **AMA ELLE TUR BİR SEFERLİKTİR — REGRESYONDA KIRMIZI YANMAZ.** Bugün
+ölçüldü, yarın bu ölçütlerden biri körelirse kimse görmez.
+
+**YAPILACAK:** `scripts/uyari-cron-mutasyon-kontrol.ts` (bu turun betiği
+TS'e çevrilir), `package.json`a bekçi olarak eklenir — böylece
+`npm run bekci` turuna girer ve `bekci-yetim:dogrula` onu yetim saymaz.
+
+**AÇILIŞ ŞARTI:** bu iki bekçiye bir sonraki ölçüt eklendiğinde (ya da
+K262/K263 paketi açıldığında — üçü de «bekçi altyapısı» ailesi).
+
+---
+
 ## 🟡 K263 — HARNESS YAZIMLARI ORTAK DAYANIKLI KAPIDAN · 24.09.2026 · [AÇIK — KOMUT VERİLMEDİ]
 
 K251-②'nin genel hâli. Ölçüldü (24.09): **36 mutasyon harness'i** kaynağa

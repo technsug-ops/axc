@@ -47,7 +47,7 @@ import {
   MERKEZ_YAZI_TAVANI,
   merkezYaziBoyu,
 } from "../src/components/halka-grafik";
-import { SON_GUN_SAYISI, sonGunSerisi } from "../src/lib/panel/son-gun-serisi";
+import { donemCiroNetSerisi } from "../src/lib/panel/son-gun-serisi";
 import { PAY_FARKI_ESIGI, payFarki } from "../src/lib/panel/pay-farki";
 import {
   CEKIM_ESIK_DK,
@@ -78,7 +78,6 @@ import {
   gunDegeri,
   pencereOlustur,
   gunEkle,
-  isTakvimGunu,
 } from "../src/lib/donem";
 import {
   ayinGunSayisi,
@@ -1930,12 +1929,11 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     iadeBildirimi: 0,
     malKabulBekleyen: 2,
     karHesaplanamayan: 0,
-    oransizKanalSku: 1,
-    tarifePenceresi: 0,
   });
   kontrol(
-    "yedi görev de üretiliyor (K164: +onayBekleyen)",
-    gorevler.length === 7,
+    /* K266: iki bakım görevi çana taşındı — 7 → 5. */
+    "beş görev üretiliyor (K164: +onayBekleyen · K266: −2 çana)",
+    gorevler.length === 5,
     gorevler.length,
   );
   /** AÇIK SIFIR: sıfır olan satır GİZLENMEZ, temiz işaretlenir. */
@@ -1955,8 +1953,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     gorevler.every((g) => g.adres.startsWith("/")),
   );
 
-  /** K164: 3+0+2+0+1+0 + onay 2 = 8. */
-  yakin("bekleyen toplamı", bekleyenToplam(gorevler), 8);
+  /** K164: kargo 3 + onay 2 + malKabul 2 = 7. (K266: oransiz SKU 1 cana tasindi.) */
+  yakin("bekleyen toplamı", bekleyenToplam(gorevler), 7);
 
   // ── İKİ KART: her görev BİR gruba ait, hiçbiri boşta kalmıyor ──────────
   const sevkiyat = grubunGorevleri(gorevler, "SEVKIYAT");
@@ -1993,7 +1991,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   /** Kart rozeti kendi kartının bekleyenini sayar — ötekininkini değil. */
   /** K164: kargo 3 + iade 0 + onay 2 = 5. */
   yakin("SEVKİYAT kartının rozeti", bekleyenToplam(sevkiyat), 5);
-  yakin("TEDARİK kartının rozeti", bekleyenToplam(tedarik), 3);
+  /** K266: TEDARİK artık malKabul 2 + karHesaplanamayan 0 = 2 (oransiz SKU çanda). */
+  yakin("TEDARİK kartının rozeti", bekleyenToplam(tedarik), 2);
 
   /**
    * ── ADRES İDDİASI SINANIYOR ────────────────────────────────────────────
@@ -2024,8 +2023,6 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
         iadeBildirimi: 0,
         malKabulBekleyen: 0,
         karHesaplanamayan: 0,
-        oransizKanalSku: 0,
-        tarifePenceresi: 0,
       }),
     ),
   );
@@ -2118,91 +2115,26 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * ⚠ BU MADDE OLMADAN uyarı, tam kaçırılmaması gereken gün "temiz ✓"
      * yazardı — anayasa: "yanlış cevap veren ekran".
      */
-    const aceleGorev = gorevleriKur(
-      {
-        onayBekleyen: 0,
-        kargoBekleyen: 0,
-        iadeBildirimi: 0,
-        malKabulBekleyen: 0,
-        karHesaplanamayan: 0,
-        oransizKanalSku: 0,
-        tarifePenceresi: 0,
-      },
-      undefined,
-      { tarifePenceresi: { kalanGun: 0, aceleMi: true } },
-    ).find((x) => x.anahtar === "tarifePenceresi")!;
-    kontrol(
-      "sayı 0 + acele → satır TEMİZ SAYILMAZ",
-      aceleGorev.temizMi === false && aceleGorev.kalanGun === 0,
-      aceleGorev,
-    );
-    /** Ayrımın öteki yakası: acele değilse 0 gerçekten temizdir. */
-    const sakinGorev = gorevleriKur(
-      {
-        onayBekleyen: 0,
-        kargoBekleyen: 0,
-        iadeBildirimi: 0,
-        malKabulBekleyen: 0,
-        karHesaplanamayan: 0,
-        oransizKanalSku: 0,
-        tarifePenceresi: 0,
-      },
-      undefined,
-      { tarifePenceresi: { kalanGun: 9, aceleMi: false } },
-    ).find((x) => x.anahtar === "tarifePenceresi")!;
-    kontrol(
-      "acele değilse sayı 0 TEMİZ sayılır",
-      sakinGorev.temizMi === true,
-      sakinGorev,
-    );
-
     /**
-     * ⑦ EKRAN-VERİ BAĞI — K47'nin ASIL dersi. Görev satırının adresi
-     * VAR OLAN bir ekrana gitmeli; gitmezse uyarı kullanıcıyı çıkmaza
-     * götürür.
-     *
-     * ⚠ DOSYANIN VARLIĞI ARANIYOR, KAYNAKTA DESEN DEĞİL: adres bir
-     * rotadır ve rotanın karşılığı bir `page.tsx` dosyasıdır.
-     */
-    const tarifeAdresi = GOREV_ADRESLERI.tarifePenceresi;
-    const sayfaYolu = `src/app${tarifeAdresi.split("?")[0]}/page.tsx`;
-    kontrol(
-      `görev adresi VAR OLAN ekrana gidiyor (${sayfaYolu})`,
-      existsSync(sayfaYolu),
-      sayfaYolu,
-    );
-
-    /**
-     * ⑧ PANEL SATIRI GERÇEKTEN BAĞLI MI — "acele" kararı ekrana ULAŞIYOR mu.
-     *
-     * ⚠ DESEN KULLANIM BLOĞUNDA ARANIYOR, DOSYANIN TAMAMINDA DEĞİL.
-     * `tarifePenceresi` kelimesi `page.tsx`te import satırında da geçebilir;
-     * ölçüt `sureler={{` bloğunun İÇİNDE `tarifeUyarisiVarMi` çağrısıdır.
+     * *** ÖLÇÜTLER ESKİDİ, SUSTURULMADI (K266, 24.09.2026). ESKİ: «sayı 0 +
+     * acele → satır temiz sayılmaz», «panel acele kararını saf kuraldan alıyor»,
+     * «kutucuk süre metnini çiziyor», «görev adresi var olan ekrana gidiyor».
+     * NİYE ESKİDİ: kullanıcı «bildirimde gösterebilirsin, bugün yapacaklarımda
+     * olmasına gerek yok» dedi; tarife ve oransız SKU ÇANA taşındı, şeridin süre
+     * mekanizması onlarla birlikte kalktı. SAF KURAL (`tarifeKapsami` ·
+     * `tarifeUyarisiVarMi`) YAŞIYOR ve yukarıda sınanmaya devam ediyor —
+     * tüketicisi artık `lib/uyari/topla.ts`. Adres ölçütü `uyari:dogrula`ya
+     * taşındı (adres orada yaşıyor).
      */
     const panelKaynagi = readFileSync("src/app/page.tsx", "utf8");
-    const sureBasi = panelKaynagi.indexOf("sureler={{");
-    const sureBloku =
-      sureBasi < 0 ? "" : panelKaynagi.slice(sureBasi, sureBasi + 400);
     kontrol(
-      "panel satırı acele kararını SAF KURALDAN alıyor",
-      sureBasi >= 0 &&
-        sureBloku.includes("tarifeUyarisiVarMi(") &&
-        sureBloku.includes("tarifePenceresi:"),
-      { sureBasi, uzunluk: sureBloku.length },
+      "panel şeride SÜRE geçirmiyor (K266: tarife çanda)",
+      !panelKaynagi.includes("sureler={{") && !panelKaynagi.includes("tarifeUyarisiVarMi("),
     );
-
-    /**
-     * ⑨ KUTUCUK SÜRE METNİNİ ÇİZİYOR MU. Kural doğru çalışıp ekrana
-     * bağlanmazsa "doğru davranışın GÖRÜNMEZLİĞİ" doğar — o da yalancı
-     * yeşildir.
-     */
     const kutuKaynagi = readFileSync("src/app/gorev-kutusu.tsx", "utf8");
-    const dalBasi = kutuKaynagi.indexOf("sureMetni !== undefined ? (");
     kontrol(
-      "görev kutucuğu süre metnini ÇİZİYOR",
-      dalBasi >= 0 &&
-        kutuKaynagi.slice(dalBasi, dalBasi + 700).includes("{sureMetni}"),
-      { dalBasi },
+      "görev kutucuğu SÜRE metni çizmiyor (mekanizma çanla gitti)",
+      !kutuKaynagi.includes("sureMetni !== undefined"),
     );
   }
 
@@ -4993,7 +4925,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     };
     const kisa = sozluk.Gorevler.kisa ?? {};
     /** Taban dolulugu: `every` bos listede true doner — anahtar sayisi ayrica. */
-    kontrol("gorev anahtari tabani DOLU (>= 7)", GOREV_ANAHTARLARI.length >= 7);
+    kontrol("gorev anahtari tabani DOLU (>= 5)", GOREV_ANAHTARLARI.length >= 5);
     kontrol(
       "  ...her gorevin KISA etiketi var ve kisa (<= 22 karakter)",
       GOREV_ANAHTARLARI.every((a) => (kisa[a] ?? "").length > 0 && (kisa[a] ?? "").length <= 22),
@@ -5005,21 +4937,14 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     /GOREV_GRUPLARI\.map\(/.test(kutu) && !/<TekKart/.test(kutu),
   );
   /**
+   * *** K266: SÜRE DALI KALKTI — tarife çana taşındı. Ölçüt «dal YOK»a çevrildi;
+   * ESKİ GEREKÇE (mutasyon vakası) siliniyor değil, aşağıda duruyor:
    * *** SURE METNI SAYININ YERINE GECER, yanina degil (tarife cipi).
    * Ilk yazim `{sureMetni}` VARLIGINA bakiyordu ve «{gorev.sayi} {sureMetni}»
    * mutanti da o deseni tasidigi icin YESIL kaldi (harness yakaladi). Olcut
    * sure DALINA daraltildi: dalda `gorev.sayi` gecemez.
    */
-  {
-    const sb = kutu.indexOf("sureMetni !== undefined ? (");
-    const se = sb >= 0 ? kutu.indexOf(") : (", sb) : -1;
-    const sureDali = sb >= 0 && se > sb ? kutu.slice(sb, se) : "";
-    kontrol("sure dali kesilebildi", sureDali.length > 20);
-    kontrol(
-      "sure metni rakamin YERINE yaziliyor (dalda gorev.sayi YOK)",
-      /\{sureMetni\}/.test(sureDali) && !/gorev\.sayi/.test(sureDali),
-    );
-  }
+  kontrol("sure dali KALKTI (K266: seritte sureli gorev yok)", !/sureMetni !== undefined/.test(kutu));
   /**
    * *** SIFIR CIP BAGLANTI DEGIL (Ilke #2) — PANEL KOPYASI. Ayni olcut suzgec
    * bekcisinde de var; ama mutasyon harness'i PANEL bekcisini kosturuyor ve
@@ -5126,60 +5051,75 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
 }
 
 /**
- * === SON 14 GUN CIRO/NET-2 + AFIS ASAGIDA (K257, 23.09.2026) ============
- * *** DEGER TESTLERI: gun kovalama Istanbul gunu, null NET-2 sifir degil.
+ * === CIRO/NET-2 SECILI DONEM + AFIS ASAGIDA (K265, 24.09.2026) ============
+ * *** K257 CEVRILDI, GEREKCESI `son-gun-serisi.ts` BASLIGINDA: bugune kilitli 14
+ * gun (demo) → kullanici «filtrelere baglansin, gunler eksende». Kovalar
+ * operasyonla AYNI govdeden (`kova`/`sonrakiKova`), AYNI kirilim.
  */
 {
-  /* 23.09.2026 12:00 Istanbul = 09:00Z */
-  const simdi = new Date("2026-09-23T09:00:00.000Z");
-  const bugun = gunDegeri(isTakvimGunu(simdi));
-  const seri = sonGunSerisi(
+  /* 10.09–23.09.2026 (14 gun), GUN kirilimi. Pencere anlari Istanbul gece yarisi. */
+  const ilkGun = gunDegeri({ yil: 2026, ay: 9, gun: 10 });
+  const sonGun = gunDegeri({ yil: 2026, ay: 9, gun: 23 });
+  const pencere = {
+    tur: "SON_15_GUN" as const,
+    baslangic: new Date("2026-09-09T21:00:00.000Z"),
+    bitisHaric: new Date("2026-09-23T21:00:00.000Z"),
+    ilkGun,
+    sonGun,
+  };
+  const seri = donemCiroNetSerisi(
     [
-      /* 22.09 23:30 Istanbul = 22.09 20:30Z -> 22.09 kovasi (UTC gunu 22, Istanbul 22) */
+      /* 22.09 23:30 Istanbul = 22.09 20:30Z -> 22.09 kovasi */
       { tarih: new Date("2026-09-22T20:30:00.000Z"), gelir: 100, net2: 10 },
       /* 23.09 00:30 Istanbul = 22.09 21:30Z -> Istanbul 23.09 kovasi; UTC'ye gore 22'ye duserdi */
       { tarih: new Date("2026-09-22T21:30:00.000Z"), gelir: 200, net2: null },
       { tarih: new Date("2026-09-23T05:00:00.000Z"), gelir: 50, net2: 5 },
-      /* iki gun once: TEK satis, NET-2'si yok -> gun net2Var FALSE olmali (null=0 mutanti TRUE yapar) */
-      { tarih: gunEkle(bugun, -2), gelir: 30, net2: null },
-      /* pencere disi: 15 gun once */
-      { tarih: gunEkle(bugun, -15), gelir: 999, net2: 999 },
+      /* 21.09: TEK satis, NET-2'si yok -> net2Var FALSE olmali (null=0 mutanti TRUE yapar) */
+      { tarih: gunEkle(sonGun, -2), gelir: 30, net2: null },
+      /* pencere disi: 09.09 (bir gun once) ve 24.09 (bir gun sonra) */
+      { tarih: gunEkle(ilkGun, -1), gelir: 999, net2: 999 },
+      { tarih: gunEkle(sonGun, 1), gelir: 999, net2: 999 },
     ],
-    simdi,
+    pencere,
+    "GUN",
   );
-  kontrol("14 nokta, sonuncusu BUGUN", seri.length === SON_GUN_SAYISI && seri[13]!.tarih.getTime() === bugun.getTime());
-  kontrol("  ...ve tavan 14", SON_GUN_SAYISI === 14);
+  kontrol("14 gunluk pencere -> 14 nokta, ilki ilkGun sonuncusu sonGun",
+    seri.length === 14 && seri[0]!.baslangic.getTime() === ilkGun.getTime() && seri[13]!.sonGun.getTime() === sonGun.getTime());
   const dun = seri[12]!;
   const bugunN = seri[13]!;
-  /** * ISTANBUL GUNU: 00:30 Istanbul'daki satis BUGUNE yazilir, dune degil. */
   kontrol("gun kovalama ISTANBUL gunu (UTC'ye gore kaymiyor)",
     dun.gelir === 100 && dun.adet === 1 && bugunN.gelir === 250 && bugunN.adet === 2,
     { dun: dun.gelir, bugun: bugunN.gelir });
-  /** * NULL NET-2 SIFIR SAYILMAZ: bugunun NET-2'si 5 (200'luk satisin net2'si yok). */
   kontrol("null NET-2 toplama girmiyor, gun yine net2Var",
     bugunN.net2 === 5 && bugunN.net2Var === true);
   const ikiGunOnce = seri[11]!;
   kontrol("HEPSI null olan gun: net2Var FALSE, net2 0 (bilinmeyen sifir degil)",
-    ikiGunOnce.gelir === 30 && ikiGunOnce.net2 === 0 && ikiGunOnce.net2Var === false,
-    { net2: ikiGunOnce.net2, var: ikiGunOnce.net2Var });
+    ikiGunOnce.gelir === 30 && ikiGunOnce.net2 === 0 && ikiGunOnce.net2Var === false);
   const bos = seri[0]!;
-  kontrol("satissiz gun: sifir gelir, net2Var FALSE (bilinmeyen sifir degil)",
-    bos.gelir === 0 && bos.net2Var === false && bos.adet === 0);
-  kontrol("pencere disi satis ELENIYOR", seri.every((g) => g.gelir < 999));
+  kontrol("satissiz gun: sifir gelir, net2Var FALSE", bos.gelir === 0 && bos.net2Var === false && bos.adet === 0);
+  kontrol("pencere disi satis ELENIYOR (iki ucta da)", seri.every((g) => g.gelir < 999));
+  /* HAFTA kirilimi: 14 gun, pazartesi 07.09'dan basladigi icin ilk kova KIRPILIR (10-13.09). */
+  const hafta = donemCiroNetSerisi([{ tarih: new Date("2026-09-23T05:00:00.000Z"), gelir: 50, net2: 5 }], pencere, "HAFTA");
+  kontrol("HAFTA kirilimi: 3 kova, ilki pencereye kirpilmis, sonuncusu 21-23.09",
+    hafta.length === 3 && hafta[0]!.baslangic.getTime() === ilkGun.getTime() && hafta[2]!.sonGun.getTime() === sonGun.getTime() && hafta[2]!.gelir === 50,
+    hafta.map((h) => [h.baslangic.toISOString().slice(0, 10), h.sonGun.toISOString().slice(0, 10)]));
 
   const sayfa = readFileSync("src/app/page.tsx", "utf8")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
-  kontrol("14 gun karti CIZILIYOR (CizgiGrafik + son14Noktalari)",
-    /<CizgiGrafik\b[\s\S]{0,80}?noktalar=\{son14Noktalari\}/.test(sayfa));
-  kontrol("  ...seri kanal + para birimi suzgeciyle (hukum kartlariyla ayni kume)",
-    /sonGunSerisi\([\s\S]{0,200}?paraBirimi === seciliPara[\s\S]{0,120}?kanalKodu === seciliKanal/.test(sayfa));
-  /** * SIRA: 14 gun karti operasyonun USTUNDE (hukum -> grafik, 21.08). */
-  const i14 = sayfa.indexOf("t(\"son14Baslik\")");
+  kontrol("Ciro/NET-2 karti CIZILIYOR (CizgiGrafik + ciroNetNoktalari, her gun etiketli)",
+    /<CizgiGrafik\b[\s\S]{0,80}?noktalar=\{ciroNetNoktalari\}\s*etiketTavani=\{31\}/.test(sayfa));
+  kontrol("  ...seri SECILI DONEMDEN, operasyonla AYNI kirilim (donemSatislari · donem · operasyonKirilimi)",
+    /donemCiroNetSerisi\(\s*donemSatislari[\s\S]{0,200}?paraBirimi === seciliPara[\s\S]{0,160}?donem,\s*operasyonKirilimi,\s*\)/.test(sayfa));
+  kontrol("  ...baslik secili pencerenin ADINI tasiyor (son 14 gun degil)",
+    /t\("ciroNetBaslik", \{ pencere: tPencere\(PENCERE_ANAHTARI\[donemTuru\]\)/.test(sayfa) && !/son14/.test(sayfa));
+  const grafikK = readFileSync("src/components/cizgi-grafik.tsx", "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("  ...etiket tavani govdeye BAGLI (etiketAtlamasi(n, etiketTavani))",
+    /etiketAtlamasi\(noktalar\.length, etiketTavani\)/.test(grafikK));
+  const i14 = sayfa.indexOf("t(\"ciroNetBaslik\"");
   const iOp = sayfa.indexOf("t(\"operasyonBaslik\")");
-  kontrol("14 gun karti bulundu", i14 >= 0);
+  kontrol("Ciro/NET-2 karti bulundu", i14 >= 0);
   kontrol("  ...ve operasyon grafiginin USTUNDE", i14 >= 0 && iOp >= 0 && i14 < iOp);
-  /** * AFIS + OZET pazaryeri/halkanin ALTINDA (demo sirasi). */
   const iHalka = sayfa.indexOf("t(\"ciroKanalaGore\")");
   const iAfis = sayfa.indexOf("<VitrinSerhi veri={vitrin} />");
   kontrol("afis bulundu", iAfis >= 0);
@@ -5205,7 +5145,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   kontrol("14 gun karti 3/5 ve operasyon 2/5 bulundu", i14 >= 0 && iOp >= 0);
   kontrol("  ...ayni satirda, para solda operasyon sagda",
     i14 >= 0 && iOp >= 0 && i14 < iOp && iOp - i14 < 3000 &&
-      /xl:grid-cols-5[\s\S]{0,600}?son14Baslik/.test(sayfa.slice(Math.max(0, i14 - 400), i14 + 900)));
+      /xl:grid-cols-5[\s\S]{0,600}?ciroNetBaslik/.test(sayfa.slice(Math.max(0, i14 - 400), i14 + 900)));
   kontrol("bilesen `sekil` prop'unu taniyor", /sekil\?: "cizgi" \| "sutun"/.test(grafik));
   /**
    * *** SUTUNLAR TIKLANABILIR ve DORT SERI: cubuk `<a>` ile sarili, seri
@@ -6835,6 +6775,12 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     ayrik[3]!.y === 200 && ayrik.length === 4);
   kontrol("  ...sol uc kadrajin icine kirpiliyor, sag uc da",
     ayrik[2]!.x >= 96 && ayrik[3]!.x <= 470 - 96, { sol: ayrik[2]!.x, sag: ayrik[3]!.x });
+  /* K267: halka buyudu (R 76, kadraj 300); tepe/dip uclari kadrajda kalir. */
+  const dikey = okEtiketleriniAyir([{ sagda: true, x: 300, y: -40 }, { sagda: false, x: 100, y: 340 }]);
+  kontrol("  ...tepe ve dip uclari da kadrajin icine kirpiliyor (K267)",
+    dikey[0]!.y >= 20 && dikey[1]!.y <= 270, { ust: dikey[0]!.y, alt: dikey[1]!.y });
+  kontrol("  ...delik merkez rakami 16+ birimle tasiyor (K267: 98 -> 122)",
+    DELIK_CAPI >= 120 && merkezYaziBoyu("₺622.904,97") >= 16, { delik: DELIK_CAPI });
   const halka = readFileSync("src/components/halka-grafik.tsx", "utf8")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("halka ayrilmis uclari CIZIYOR (govde dogru ama baglanmamis olmasin)",
