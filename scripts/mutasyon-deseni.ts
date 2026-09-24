@@ -1,3 +1,5 @@
+import { writeFileSync } from "node:fs";
+
 /**
  * ============================================================================
  *  MUTASYON DESENİ — SATIR SONU NORMALLEŞTİRME · TEK GÖVDE
@@ -30,4 +32,41 @@ export function desenNormalle(kaynak: string, desen: string): string {
  */
 export function desenAdedi(kaynak: string, desen: string): number {
   return kaynak.split(desenNormalle(kaynak, desen)).length - 1;
+}
+
+/**
+ * ============================================================================
+ *  DAYANIKLI YAZMA — WINDOWS GEÇİCİ KİLİDİ (K251-②, 24.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ VAKA (İKİNCİ KEZ): `panel-mutasyon:kontrol` 4. mutasyonda çöktü —
+ *      Error: UNKNOWN: unknown error, open 'src/app/page.tsx'  (errno -4094)
+ *      at writeFileSync  ← mutasyonu UYGULAYAN yazım
+ *  Harness aynı dosyayı saniyeler içinde onlarca kez yazıp geri alıyor;
+ *  Windows'ta tarayıcı/izleyici dosyayı bir an tutunca `open` düşüyor. İlk
+ *  vaka 23.09 turunda «Node.js v24.18.1» kuyruğuyla kalmıştı (K251 bunun
+ *  için yazıldı); tam çıktı gelince sebep okundu. Dosya sağlam kaldı
+ *  (`finally` geri yazdı, `cmp` HEAD ile bit-bit eşit).
+ *  _(Anayasa: «yönetilemeyen bağımlılık — üçüncü şans verilmez»: iki tekrar,
+ *  bizim taraf ölçüldü, teşhis var → mekanizma.)_
+ *
+ *  Yalnız GEÇİCİ kodlarda yeniden dener; başka her hata anında fırlar.
+ *  Öteki 36 harness hâlâ çıplak `writeFileSync` → K263 (pano).
+ * ============================================================================
+ */
+export const YAZMA_DENEME = 10;
+export const YAZMA_ARALIGI_MS = 200;
+const GECICI_KODLAR = new Set(["UNKNOWN", "EBUSY", "EPERM", "EACCES"]);
+
+/** Geçici kilitte bekleyip yeniden dener; kaçıncı denemede yazdığını döner. */
+export function dayanikliYaz(yol: string, icerik: string): number {
+  for (let deneme = 1; ; deneme++) {
+    try {
+      writeFileSync(yol, icerik, "utf8");
+      return deneme;
+    } catch (e) {
+      const kod = (e as NodeJS.ErrnoException).code ?? "";
+      if (!GECICI_KODLAR.has(kod) || deneme >= YAZMA_DENEME) throw e;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, YAZMA_ARALIGI_MS);
+    }
+  }
 }

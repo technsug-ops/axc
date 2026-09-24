@@ -13,6 +13,24 @@
 
 ---
 
+## 🟡 K263 — HARNESS YAZIMLARI ORTAK DAYANIKLI KAPIDAN · 24.09.2026 · [AÇIK — KOMUT VERİLMEDİ]
+
+K251-②'nin genel hâli. Ölçüldü (24.09): **36 mutasyon harness'i** kaynağa
+çıplak `writeFileSync` ile yazıyor; Windows geçici kilidi (`UNKNOWN`, errno
+-4094) herhangi birini turun ortasında düşürebilir — ve **geri alma yazımı**
+düşerse mutant diskte kalır. Panel harness'i bugün `dayanikliYaz` ile korunuyor.
+
+**YAPILACAK:** bütün harness'ler `dayanikliYaz`a bağlanır; **desen yasağı**
+bekçisi: `scripts/*mutasyon*.ts` içinde `writeFileSync` doğrudan içeri
+alınamaz (istisna yalnız kapının kendisi, `mutasyon-deseni.ts`). Mutasyon:
+kapıyı atlayan yeni harness kırmızı. Dosya listesi tutulmaz.
+
+**AÇILIŞ ŞARTI:** bir sonraki harness paketi ya da bir başka harness'in aynı
+imzayla çökmesi — hangisi önce gelirse. K262 (okuma kapısı) ile aynı pakette
+gidebilir: ikisi de «bekçi altyapısı tek kapıdan» ailesi.
+
+---
+
 ## 🟡 K262 — BEKÇİLERE ORTAK OKUMA KAPISI: KAYNAK SATIR SONUNDAN BAĞIMSIZ OKUNUR · 24.09.2026 · [AÇIK — KOMUT VERİLMEDİ]
 
 K258-②'nin genel hâli. Ölçüldü (24.09): **87 bekçide 613** çıplak
@@ -660,6 +678,30 @@ anda koştu, beşi de 0 döndü. K251'den sonraki tam tur `panel-mutasyon`'ı
 başlattım — depoda yasak (iki tur aynı dosyaları bozup geri yazar). Fark
 edip durdurdum; panelin dosyalarında mutant kalmadı, `git status` ile
 doğrulandı.
+
+### ─── ② İLK ÇÖKÜŞÜN SEBEBİ OKUNDU: WINDOWS GEÇİCİ KİLİDİ (24.09.2026)
+
+K251 işini yaptı: harness tek başına koşarken **ikinci kez** çöktü ve bu kez
+tam çıktı vardı —
+
+    Error: UNKNOWN: unknown error, open 'src/app/page.tsx'   (errno -4094)
+        at writeFileSync   ← 4. mutasyonu UYGULAYAN yazım
+
+Harness aynı dosyayı saniyeler içinde onlarca kez yazıp geri alıyor;
+Windows'ta bir tarayıcı/izleyici dosyayı bir an tutunca `open` düşüyor. Dosya
+sağlam (`finally` geri yazdı; `cmp` HEAD ile bit-bit eşit). 23.09 turundaki
+«Node.js v24.18.1» çöküşü aynı imza — o gün «açıklanamayan tek seferlik»
+yazılmıştı; artık açıklandı. **Mekanizma:** `mutasyon-deseni.ts` →
+`dayanikliYaz` (yalnız UNKNOWN/EBUSY/EPERM/EACCES'te 10 × 200 ms yeniden
+dener; başka hatada anında fırlar); panel harness'i uygulama VE geri alma
+yazımında onu kullanıyor. _(«Yönetilemeyen bağımlılık — üçüncü şans
+verilmez»: iki tekrar, bizim taraf ölçüldü, teşhis var.)_ Öteki 36 harness
+→ **K263**.
+
+⚠ **VE BENİM HATAM:** çöken harness'in ardından zincir `;` ile bağlıydı, commit
+**çöküşe rağmen** atıldı (`2b3d2bd`, yerel). Çıktıyı commit'ten SONRA okudum.
+Push'a gitmedi; düzeltme sonraki commit'te, harness yeniden koştu. _(Anayasa:
+«ölçüm ile karar arasındaki boru da ölçümün parçasıdır» — `&&` yerine `;`.)_
 
 **Halil testi:** yok — tur aracı, ekran değil.
 

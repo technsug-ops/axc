@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
-import { desenNormalle } from "./mutasyon-deseni";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 import { spawnSync } from "node:child_process";
 
 /**
@@ -833,7 +833,8 @@ for (const m of MUTASYONLAR) {
   const mutant = asil.replace(bul, koy);
   let sonuc: { kod: number; ciktiVar: boolean };
   try {
-    writeFileSync(m.dosya, mutant, "utf8");
+    /* K251-②: Windows geçici kilidi (UNKNOWN/EBUSY) — dayanıklı yazım. */
+    dayanikliYaz(m.dosya, mutant);
     const diskten = readFileSync(m.dosya, "utf8");
     if (diskten !== mutant || mutant === asil) {
       bozuk.push(m.ad + "\n       mutasyon diske UYGULANMADI");
@@ -841,7 +842,8 @@ for (const m of MUTASYONLAR) {
     }
     sonuc = bekciyiKostur();
   } finally {
-    writeFileSync(m.dosya, asil, "utf8");
+    /* GERİ ALMA da dayanıklı: burada düşerse mutant diskte kalır — en kötü hâl. */
+    dayanikliYaz(m.dosya, asil);
   }
 
   const isaret = m.yon === "KALDIRAN" ? "−" : "+";
