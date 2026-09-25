@@ -140,7 +140,9 @@ export function SatirKarti({
       {sag ? (
         <div
           className={
-            "flex flex-wrap items-center gap-2" +
+            /* Telefonda sağ blok TAM genişlik: uzun ad taşmaz, eylemler kendi
+               satırında ızgara olur (K272). */
+            "flex flex-wrap items-center gap-2 max-sm:w-full" +
             (sagIzgara ? " sm:grid sm:items-center " + sagIzgara : "") +
             (sagGenis ? " sm:min-w-0 sm:flex-[2]" : "")
           }

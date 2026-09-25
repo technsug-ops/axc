@@ -33,11 +33,18 @@ import { cn } from "@/lib/utils";
  * Kendi düğmesini yazan bileşenler (ör. silme diyaloğu) de bunu kullanır ki
  * aynı satırdaki düğmeler aynı boyda dursun.
  */
-export const EYLEM_SINIFI = "h-11 px-3 md:h-8 md:w-8 md:px-0";
+/**
+ * TELEFON: eşit genişlik KUTU — ikon üstte, kısa ad altta, 52 px; hiçbir düğme
+ * alt satıra tek başına düşmez (ızgara `SatirEylemleri`de). MASAÜSTÜ AYNEN:
+ * 32 px ikon düğme. K272 (kullanıcı 25.09.2026: «iç sayfalar çok dağınık, farklı boylarda, farklı
+ * genişlikte, yazılar taşıyor»; onaylanan demo Telefon ④–⑥).
+ */
+export const EYLEM_SINIFI =
+  "h-[52px] w-full min-w-0 flex-col gap-0.5 px-1 text-[11px] md:h-8 md:w-8 md:flex-row md:gap-2 md:px-0 md:text-sm";
 
 /** Metin masaüstünde gizlenir; ikon her iki görünümde de durur. */
 export function EylemEtiketi({ children }: { children: React.ReactNode }) {
-  return <span className="md:hidden">{children}</span>;
+  return <span className="max-w-full truncate md:hidden">{children}</span>;
 }
 
 /**
@@ -51,7 +58,8 @@ export function EylemEtiketi({ children }: { children: React.ReactNode }) {
  */
 export function SatirEylemleri({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
+    /* Telefonda EŞİT sütun ızgara — kaç eylem varsa o kadar sütun, tek satır (K272). */
+    <div className="grid w-full auto-cols-[minmax(0,1fr)] grid-flow-col gap-1.5 md:flex md:w-auto md:flex-nowrap md:items-center md:gap-2">
       {children}
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
@@ -70,9 +71,11 @@ export function KodAramaKutusu({
   };
 
   return (
-    <div className="flex flex-wrap items-start gap-2">
+    /* TELEFON (K272): kutu tam genişlik, «Ara» ve «Temizle» İKON — yazı kesilmez.
+       Masaüstü aynen. */
+    <div className="flex items-start gap-2 md:flex-wrap">
       <BarkodGirisi
-        className="max-w-xs min-w-44 flex-1"
+        className="min-w-0 flex-1 md:max-w-xs md:min-w-44"
         value={sorgu}
         onChange={setSorgu}
         /* Enter (USB okuyucu) ve kamera aynı yola çıkar. */
@@ -80,8 +83,15 @@ export function KodAramaKutusu({
         placeholder={ipucu}
         kameraBasligi={kameraBasligi ?? ortak("barkodKamera")}
       />
-      <Button type="button" variant="secondary" onClick={() => ara(sorgu)}>
-        {ortak("ara")}
+      <Button
+        type="button"
+        variant="secondary"
+        className="max-md:size-11 max-md:px-0"
+        aria-label={ortak("ara")}
+        onClick={() => ara(sorgu)}
+      >
+        <Search className="md:hidden" aria-hidden />
+        <span className="max-md:sr-only">{ortak("ara")}</span>
       </Button>
       {/*
         ⚠ TEMİZLE ARTIK KUTUYU DA BOŞALTIYOR (24.08.2026).
@@ -105,8 +115,11 @@ export function KodAramaKutusu({
             setSorgu("");
             ara("");
           }}
+          className="max-md:size-11 max-md:px-0"
+          aria-label={ortak("temizle")}
         >
-          {ortak("temizle")}
+          <X className="md:hidden" aria-hidden />
+          <span className="max-md:sr-only">{ortak("temizle")}</span>
         </Button>
       ) : null}
     </div>

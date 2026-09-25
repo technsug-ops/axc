@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { SatirKarti, SatirListesi } from "../src/components/satir-karti";
+import { EYLEM_SINIFI } from "../src/components/satir-eylemi";
 import { DURUM_ZEMINI } from "../src/lib/renkler";
 
 /**
@@ -25,7 +26,7 @@ import { DURUM_ZEMINI } from "../src/lib/renkler";
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 2;
+const BOLUM_SAYISI = 3; /* K272: +1 (telefon düzeni) */
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -295,6 +296,41 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
       !/baglam=\{\[[\s\S]{0,900}?<UzunAd/.test(alimlarK));
 }
 
+
+/**
+ * === K272 — İÇ SAYFALAR TELEFON DÜZENİ (25.09.2026) =====================
+ * Kullanıcı: «çok dağınık, farklı boylarda, farklı genişlikte, yazılar taşıyor».
+ * Beş ortak bileşen: eylemler EŞİT ızgara · liste kartı eşit kutular · satır
+ * kartı sağ blok tam genişlik · arama/Excel telefonda ikon. Masaüstü aynen.
+ */
+{
+  /* DEĞER: eylem kutusu telefonda 52 px, tam genişlik, dikey; masaüstünde 32 px ikon. */
+  kontrol("eylem kutusu telefonda 52 px · tam genişlik · ikon üstte (>= 44, İlke #8)",
+    /\bh-\[52px\]/.test(EYLEM_SINIFI) && /\bw-full\b/.test(EYLEM_SINIFI) && /(^| )flex-col( |$)/.test(EYLEM_SINIFI), EYLEM_SINIFI);
+  kontrol("  ...masaüstü AYNEN (md:h-8 md:w-8 ikon düğme)", /md:h-8 md:w-8/.test(EYLEM_SINIFI) && /md:flex-row/.test(EYLEM_SINIFI));
+  const eylemK = readFileSync("src/components/satir-eylemi.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("eylemler telefonda TEK SATIR eşit sütun ızgara (sarmalanmaz)",
+    /className="grid w-full auto-cols-\[minmax\(0,1fr\)\] grid-flow-col[^"]*md:flex/.test(eylemK) && !/flex-wrap items-center gap-2 md:flex-nowrap/.test(eylemK));
+  kontrol("  ...eylem adı taşmaz (truncate)", /max-w-full truncate md:hidden/.test(eylemK));
+  const listeK = readFileSync("src/components/liste-karti.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("liste kartı: alanlar EŞİT kutu, 3'ün katıysa 3 sütun",
+    /const ucSutun = alanlar\.length % 3 === 0;/.test(listeK) && /bg-muted\/60 min-w-0 rounded-lg/.test(listeK));
+  kontrol("  ...tek kalan kutu satırı doldurur (boş hücre yok)",
+    /!ucSutun && alanlar\.length % 2 === 1 && i === alanlar\.length - 1 \? "col-span-2"/.test(listeK));
+  kontrol("  ...eylemler tek satır eşit sütun, değer ve başlık taşmaz",
+    /grid auto-cols-\[minmax\(0,1fr\)\] grid-flow-col gap-1\.5/.test(listeK) && /dd className="truncate/.test(listeK) && /line-clamp-2/.test(listeK));
+  const kartK = readFileSync("src/components/satir-karti.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("satır kartı: sağ blok telefonda TAM genişlik", /"flex flex-wrap items-center gap-2 max-sm:w-full"/.test(kartK));
+  const aramaK = readFileSync("src/components/kod-arama-kutusu.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("arama kutusu telefonda tam genişlik (min-w-0 flex-1)", /className="min-w-0 flex-1 md:max-w-xs md:min-w-44"/.test(aramaK));
+  kontrol("  ...«Ara» ve «Temizle» telefonda İKON, ad ekran okuyucuda",
+    (aramaK.match(/className="max-md:size-11 max-md:px-0"/g) ?? []).length === 2 &&
+      (aramaK.match(/<span className="max-md:sr-only">/g) ?? []).length === 2);
+  const excelK = readFileSync("src/components/excel-indir.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("Excel düğmesi telefonda İKON (44 px), ad ekran okuyucuda",
+    /max-md:size-11 max-md:px-0/.test(excelK) && /<span className="max-md:sr-only">/.test(excelK));
+  kosanBolumler.push("K272 telefon");
+}
 
 console.log("\n" + "=".repeat(70));
 if (kosanBolumler.length !== BOLUM_SAYISI) {

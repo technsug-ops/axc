@@ -21,6 +21,11 @@ const EKRAN = "src/app/tazminat/page.tsx";
 /** K235-3: izgara beyani ile GERCEK genislik ayrisirsa kayma geri gelir. */
 const SECICI = "src/app/tazminat/durum-secici.tsx";
 const NOT_ALANI = "src/app/tazminat/not-alani.tsx";
+/** K272: telefon düzeni. */
+const EYLEM = "src/components/satir-eylemi.tsx";
+const LISTE = "src/components/liste-karti.tsx";
+const ARAMA = "src/components/kod-arama-kutusu.tsx";
+const EXCEL = "src/components/excel-indir.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -111,8 +116,9 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "TELEFON SARMASI KALKTI - dar ekranda sabit sutun tasar",
     yon: "FAZLADAN",
     dosya: GOVDE,
-    bul: '            "flex flex-wrap items-center gap-2" +',
-    koy: '            "items-center gap-2" +',
+    /* K272: sag bloga max-sm:w-full eklendi - capa tasindi. */
+    bul: '            "flex flex-wrap items-center gap-2 max-sm:w-full" +',
+    koy: '            "items-center gap-2 max-sm:w-full" +',
     bozdugu:
       "telefonda sarma yok; 30rem'lik sabit sutun 360 px ekrana sigmaz ve yatay kaydirma dogar (Ilke #8)",
   },
@@ -133,6 +139,62 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: " sm:min-h-0",
     bozdugu:
       "kisa notta buton daralir, sag blok kucullur ve sutunlar yine satirdan satira kayar",
+  },
+  {
+    ad: "EYLEM TELEFONDA YINE YATAY VE DAR (eski h-11 px-3)",
+    yon: "KALDIRAN",
+    dosya: EYLEM,
+    bul: "  \"h-[52px] w-full min-w-0 flex-col gap-0.5 px-1 text-[11px] md:h-8 md:w-8 md:flex-row md:gap-2 md:px-0 md:text-sm\";",
+    koy: "  \"h-11 px-3 md:h-8 md:w-8 md:px-0\";",
+    bozdugu: "dugmeler farkli genislikte, son dugme alt satira tek basina duser",
+  },
+  {
+    ad: "EYLEM IZGARASI YINE SARMALIYOR",
+    yon: "KALDIRAN",
+    dosya: EYLEM,
+    bul: "className=\"grid w-full auto-cols-[minmax(0,1fr)] grid-flow-col gap-1.5 md:flex md:w-auto md:flex-nowrap md:items-center md:gap-2\"",
+    koy: "className=\"flex flex-wrap items-center gap-2 md:flex-nowrap\"",
+    bozdugu: "«Mal Kabul» ikinci satira tek basina iner - kullanicinin gosterdigi sey",
+  },
+  {
+    ad: "LISTE KARTI EYLEMLERI SARMALIYOR",
+    yon: "KALDIRAN",
+    dosya: LISTE,
+    bul: "<div className=\"grid auto-cols-[minmax(0,1fr)] grid-flow-col gap-1.5 [&>*]:min-w-0\">{eylemler}</div>",
+    koy: "<div className=\"flex flex-wrap gap-2 pt-1\">{eylemler}</div>",
+    bozdugu: "13 sayfanin telefon kartinda «Sil» alt satira tek basina duser",
+  },
+  {
+    ad: "TEK KALAN KUTU YARIM KALIR",
+    yon: "KALDIRAN",
+    dosya: LISTE,
+    bul: "? \"col-span-2\" : \"\"",
+    koy: "? \"\" : \"\"",
+    bozdugu: "bes alanli kartta son satirda bos hucre - kart boyutlari duzensiz",
+  },
+  {
+    ad: "SAG BLOK TELEFONDA DAR (ad tasar)",
+    yon: "KALDIRAN",
+    dosya: GOVDE,
+    bul: "\"flex flex-wrap items-center gap-2 max-sm:w-full\" +",
+    koy: "\"flex flex-wrap items-center gap-2\" +",
+    bozdugu: "alimlarda urun adi kartin disina tasar",
+  },
+  {
+    ad: "ARA DUGMESI TELEFONDA YAZILI",
+    yon: "KALDIRAN",
+    dosya: ARAMA,
+    bul: "        <span className=\"max-md:sr-only\">{ortak(\"ara\")}</span>",
+    koy: "        <span>{ortak(\"ara\")}</span>",
+    bozdugu: "arama kutusu kisalir, ipucu yazisi kesilir",
+  },
+  {
+    ad: "EXCEL TELEFONDA YAZILI",
+    yon: "KALDIRAN",
+    dosya: EXCEL,
+    bul: "className=\"max-md:size-11 max-md:px-0\"",
+    koy: "className=\"\"",
+    bozdugu: "baslik satiri iki satira bolunur",
   },
 ];
 

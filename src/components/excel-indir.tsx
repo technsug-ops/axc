@@ -26,10 +26,11 @@ export async function ExcelIndir({
   const ek = sorgu.toString();
 
   return (
-    <Button variant="outline" asChild>
+    /* Telefonda İKON (K272): başlık satırı tek satırda kalsın; ad ekran okuyucuda. */
+    <Button variant="outline" asChild className="max-md:size-11 max-md:px-0">
       <a href={`/api/disa-aktarma/${liste}${ek ? `?${ek}` : ""}`}>
         <Download />
-        {t("excelIndir")}
+        <span className="max-md:sr-only">{t("excelIndir")}</span>
       </a>
     </Button>
   );

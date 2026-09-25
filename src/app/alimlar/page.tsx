@@ -554,7 +554,7 @@ export default async function AlimlarSayfasi({
                     {/* ORTA SÜTUN (K268): ürün → kârlılık kartı (İlke #9, satışlarla
                         AYNI gövde); altında adet · kalem · kart. Uzun ad kırpılır,
                         tam hâli ipucunda (`UzunAd`); hücre `min-w-0` ki kırpma işlesin. */}
-                    <div className="min-w-0">
+                    <div className="min-w-0 max-sm:basis-full">
                       <UzunAd
                         metin={urunOzeti(alim)}
                         href={kartAdresi(alim.items) ?? undefined}

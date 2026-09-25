@@ -21,26 +21,35 @@ export function ListeKarti({
   alanlar: { etiket: string; deger: ReactNode }[];
   eylemler?: ReactNode;
 }) {
+  /* EŞİT KUTU (K272): 3'ün katıysa 3 sütun, değilse 2; tek kalan kutu satırı
+     doldurur — boş hücre yok (demo Telefon ⑤). */
+  const ucSutun = alanlar.length % 3 === 0;
   return (
-    <div className="space-y-3 rounded-lg border p-4">
+    <div className="bg-card min-w-0 space-y-2.5 rounded-xl border p-3">
       <div className="space-y-1">
-        <div className="leading-tight font-medium">{baslik}</div>
+        <div className="line-clamp-2 min-w-0 leading-tight font-medium break-words">{baslik}</div>
         {altBaslik ? (
-          <div className="text-muted-foreground text-xs">{altBaslik}</div>
+          <div className="text-muted-foreground min-w-0 truncate text-xs">{altBaslik}</div>
         ) : null}
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        {alanlar.map((alan) => (
-          <div key={alan.etiket} className="min-w-0">
-            <dt className="text-muted-foreground text-xs">{alan.etiket}</dt>
-            <dd className="truncate">{alan.deger}</dd>
+      <dl className={`grid gap-1.5 text-sm ${ucSutun ? "grid-cols-3" : "grid-cols-2"}`}>
+        {alanlar.map((alan, i) => (
+          <div
+            key={alan.etiket}
+            className={`bg-muted/60 min-w-0 rounded-lg px-2.5 py-1.5 ${
+              !ucSutun && alanlar.length % 2 === 1 && i === alanlar.length - 1 ? "col-span-2" : ""
+            }`}
+          >
+            <dt className="text-muted-foreground truncate text-[11px]">{alan.etiket}</dt>
+            <dd className="truncate font-semibold tabular-nums">{alan.deger}</dd>
           </div>
         ))}
       </dl>
 
       {eylemler ? (
-        <div className="flex flex-wrap gap-2 pt-1">{eylemler}</div>
+        /* Eylemler TEK SATIR, eşit sütun (K272) — `SatirEylemleri` ile aynı kural. */
+        <div className="grid auto-cols-[minmax(0,1fr)] grid-flow-col gap-1.5 [&>*]:min-w-0">{eylemler}</div>
       ) : null}
     </div>
   );

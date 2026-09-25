@@ -191,6 +191,45 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K272 — İÇ SAYFALAR TELEFON ①: BEŞ ORTAK BİLEŞEN · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 25.09 (alımlar · ürünler · stok · iade ekran görüntüleri): _«panel kartlarındaki
+yapıyı iç sayfalarda da yapabilir miyiz? Çok dağınık, farklı boylarda, farklı genişlikte,
+yazılar taşıyor»_. Demo (tuval Telefon ④–⑥) onaylandı. Kök ortak bileşenlerdeydi;
+önce onlar — masaüstü AYNEN, hepsi `max-sm` / `max-md` / `md:`.
+
+| bileşen | telefonda | kapsadığı |
+|---|---|---|
+| `SatirEylemleri` + `EYLEM_SINIFI` | tek satır EŞİT ızgara, ikon üstte ad altta, 52 px | 7 sayfa (alımlar · giderler · iadeler · kartlar · satışlar · stok · ürünler) |
+| `ListeKarti` | alanlar eşit kutu (3'ün katıysa 3 sütun, tek kalan satırı doldurur), eylemler tek satır, başlık 2 satırda kırpılır | 13 sayfa |
+| `SatirKarti` | sağ blok tam genişlik — alımlardaki taşan ürün adı (K268 artığı) | 11 sayfa |
+| `KodAramaKutusu` | tam genişlik, «Ara» / «Temizle» ikon | 13 sayfa |
+| `ExcelIndir` | ikon, 44 px | 7 sayfa |
+
+Bekçi: `satir-karti:dogrula` yeni bölüm (sayaçlı, 36 → 47): eylem sınıfı DEĞERLE (52 px ·
+tam genişlik · masaüstü md:h-8 md:w-8) + bileşen kullanım blokları. Harness +7 mutasyon,
+18/18; kayan bir eski çapa (sağ blok) taşındı.
+
+### SIRADAKİ (aynı iş, ayrı paketler)
+② stok süzgeçleri tek satır kayan gruplar · ③ iade kartı eylemleri («İtiraz sonucu» 3 eşit
+kutu) · ④ sayfa başlıkları ve kalan formlar (tek tek bakılır, düzgünse dokunulmaz).
+
+### HALİL TEST LİSTESİ (telefon, canlı)
+
+1. `/alimlar`: her kartta eylemler **tek satır, 4 eşit kutu** (Detay · Düzenle · İptal · Mal
+   kabul); «Mal kabul» alt satıra düşmüyor. Ürün adı kartın içinde, taşmıyor.
+2. `/urunler`: Detay · Alım gir · Düzenle · Sil **tek satır**; «Sil» dokununca onay soruyor.
+3. `/satislar`, `/stok`: kartın bilgileri **eşit kutularda**; boş kutu yok; eylemler tek satır.
+4. Arama kutusu tam genişlik, ipucu yazısı kesilmiyor; sağında kamera ve **büyüteç ikonu**.
+   Bir şey arayınca **X** çıkıyor, dokununca temizliyor.
+5. Başlıkta «Excel indir» **ikon** (dokununca dosya iniyor).
+6. Masaüstünde hiçbir şey değişmemiş olmalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok) · **kullanıcı kolaylığı: ✓**
+(İlke #1 · #8 · #10 · #12)
+
+---
+
 ## 🔴 K271 — HALKA KADRAJIN %39'U → %47'Sİ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı 25.09: _«pazaryeri arttıkça yuvarlak ufalıyor»_. Sebep: halka kadrajın
