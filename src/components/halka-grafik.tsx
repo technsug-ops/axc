@@ -196,7 +196,7 @@ export function HalkaGrafik({
       d,
       uzunluk,
       kayma: kaymalar[i]!,
-      yuzde: (d.tutar / payda) * 100,
+      yuzde: dilimYuzdesi(d.tutar, payda),
       bant: { x: CX + R * cos, y: CY + R * sin + 4 },
       bas,
       dirsek,
@@ -317,6 +317,19 @@ const KOMPAKT_KALINLIK = 16;
 const KOMPAKT_CEVRE = 2 * Math.PI * KOMPAKT_R;
 const KOMPAKT_DELIK = 2 * (KOMPAKT_R - KOMPAKT_KALINLIK / 2);
 
+/**
+ * DİLİMİN YÜZDESİ — 0–100 aralığında (K280, 25.09.2026). İKİ halka da BUNU çağırır.
+ *
+ * ⛔ VAKA: telefon halkası (K270) `yuzdeMetni(d.tutar / toplam)` yazıyordu — 0–1
+ * aralığında ORAN; biçimlendirici (`bicim.yuzde`) 0–100 bekliyor ve masaüstü
+ * halkası öyle veriyordu. Telefonda %51 · %39 · %10 yerine **%1 · %0 · %0**
+ * çıktı (kullanıcı ekran görüntüsü). Bekçi halkanın ÇİZİLDİĞİNİ ölçüyordu,
+ * yüzdesinin DEĞERİNİ değil. Birim artık tek gövdede; değerle sınanıyor.
+ */
+export function dilimYuzdesi(tutar: number, toplam: number): number {
+  return toplam > 0 ? (tutar / toplam) * 100 : 0;
+}
+
 export function HalkaKompakt({
   dilimler,
   toplam,
@@ -384,7 +397,7 @@ export function HalkaKompakt({
               <span className="truncate text-xs font-semibold">{d.etiket}</span>
               <span className="text-muted-foreground text-[11px] tabular-nums">{d.tutarMetni}</span>
             </span>
-            <span className="text-[13px] font-bold tabular-nums">{yuzdeMetni(d.tutar / toplam)}</span>
+            <span className="text-[13px] font-bold tabular-nums">{yuzdeMetni(dilimYuzdesi(d.tutar, toplam))}</span>
           </li>
         ))}
       </ul>

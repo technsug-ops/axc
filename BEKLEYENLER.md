@@ -191,6 +191,29 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K280 — TELEFON HALKASINDA YÜZDELER %1 · %0 · %0 · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (telefon ekran görüntüsü, «Bugün»): _«pasta grafikte hâlâ oranlar yanlış»_ —
+Hepsiburada ₺16.010 **%1**, Trendyol ₺12.440 **%0**, Elden ₺3.100 **%0** (doğrusu %51 · %39 · %10).
+Kök K270'teydi: kompakt halka `yuzdeMetni(d.tutar / toplam)` ile 0–1 ORAN veriyordu;
+biçimlendirici (`bicim.yuzde`) 0–100 bekliyor, masaüstü halkası öyle veriyordu.
+
+⚠ **Bekçi neden görmedi:** ölçütler kompakt halkanın ÇİZİLDİĞİNİ ölçüyordu, yüzdesinin DEĞERİNİ
+değil. Çare: birim tek gövdede (`dilimYuzdesi`, iki halka da çağırıyor) ve 25.09 canlı rakamıyla
+DEĞER testi (16.010 / 31.550 = %50,7). ⚠ İlk yazılan kaynak ölçütü kendi YORUMUNDA geçen eski
+ifadeyi buldu ve kırmızı yandı — ölçüt yorumsuz kaynağa bağlandı (anayasa: "yasağı anlatan yorum").
+
+Bekçi `panel:dogrula` +4 (899). Harness **89/89** (+2: telefon yine oran · gövde 100'le çarpmıyor).
+
+### HALİL TEST LİSTESİ (telefon, canlı)
+1. Panel → «Bugün» → «Ciro kanala göre»: yüzdeler toplamı ~%100 (ör. %51 · %39 · %10), %0/%1 yok.
+2. «Bu ay»ı seçin: yüzdeler yine anlamlı ve halkadaki dilim büyüklükleriyle uyumlu.
+3. Bilgisayarda aynı kart: yüzdeler telefondakilerle AYNI.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (metin yok)
+
+---
+
 ## 🔴 K279 — GÖREV KUTUSU «MAL KABUL» → «MAL KABUL BEKLEYEN» · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 K277'nin yan bulgusu, kullanıcı kararı («yap»): panelde İKİ «Mal kabul» vardı — huni kutusu

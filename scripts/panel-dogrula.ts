@@ -41,6 +41,7 @@ import {
 import {
   HALKA_DILIM_TAVANI,
   halkaDilimleriniTopla,
+  dilimYuzdesi,
   OK_ETIKET_ARALIGI,
   okEtiketleriniAyir,
   OK_UC_SINIRI,
@@ -6892,6 +6893,17 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     { ciroS, net1S, net2S, marjS, satisS, iadeS });
   /* K276: ölçüt SÜTUN sayısını ölçüyordu, BOYU değil — "eşit" iddiası yarımdı; tek satırlık
    etiketli kutu kısa kaldı ve bekçi yeşildi. Boy eşitliği `items-stretch` ile aynı kapta. */
+  /* K280: telefon halkasi yuzdeyi 0-1 ORAN olarak veriyordu, bicimlendirici 0-100
+     bekliyor -> %51 yerine %1. Olcut halkanin CIZILDIGINI olcuyordu, yuzdenin DEGERINI
+     degil. Deger 25.09 canli rakamlariyla; iki halka da AYNI govdeyi cagirmali. */
+  kontrol("halka yuzdesi 0-100 araliginda (16.010 / 31.550 = %50,7)", Math.abs(dilimYuzdesi(16010, 31550) - 50.745) < 0.01, dilimYuzdesi(16010, 31550));
+  kontrol("  ...toplam 0 iken 0 (sifira bolunmez)", dilimYuzdesi(5, 0) === 0);
+  {
+    const halkaK = readFileSync("src/components/halka-grafik.tsx", "utf8").replace(/\r\n/g, "\n")
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+    kontrol("  ...TELEFON halkasi ortak govdeyi cagiriyor", halkaK.includes("{yuzdeMetni(dilimYuzdesi(d.tutar, toplam))}") && !/yuzdeMetni\(d\.tutar \/ toplam\)/.test(halkaK));
+    kontrol("  ...MASAUSTU halkasi da", halkaK.includes("yuzde: dilimYuzdesi(d.tutar, payda),"));
+  }
   kontrol("huni telefonda 4 ESIT kutu (sutun VE boy)", /max-sm:grid max-sm:grid-cols-4 max-sm:items-stretch max-sm:gap-2/.test(sayfaT));
   kontrol("pazaryeri telefonda YATAY kayar (tasma sayfada degil kapta)",
     /grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 [^"]*max-sm:flex[^"]*max-sm:overflow-x-auto/.test(sayfaT));

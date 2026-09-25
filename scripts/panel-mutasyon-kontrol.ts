@@ -415,6 +415,22 @@ const MUTASYONLAR: Mutasyon[] = [
       "iade artinca rozet YESIL yanar - yanlis mujde",
   },
   {
+    ad: "TELEFON HALKASI YINE ORAN VERIYOR (K280)",
+    yon: "KALDIRAN",
+    dosya: HALKA,
+    bul: "{yuzdeMetni(dilimYuzdesi(d.tutar, toplam))}",
+    koy: "{yuzdeMetni(d.tutar / toplam)}",
+    bozdugu: "telefonda %51 yerine %1 yazar - kullanicinin 25.09 ekran goruntusu",
+  },
+  {
+    ad: "YUZDE GOVDESI 100 ILE CARPMIYOR",
+    yon: "KALDIRAN",
+    dosya: HALKA,
+    bul: "return toplam > 0 ? (tutar / toplam) * 100 : 0;",
+    koy: "return toplam > 0 ? tutar / toplam : 0;",
+    bozdugu: "iki halka birden %1 yazar",
+  },
+  {
     ad: "HUNI KUTULARI ESIT BOYDA DEGIL (K276)",
     yon: "KALDIRAN",
     dosya: SAYFA,
