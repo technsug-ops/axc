@@ -247,6 +247,22 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "className={`${DURUM_EYLEMI_SINIFI}`}",
     bozdugu: "masaustunde tarih iki kez gorunur (kutu + eski satir)",
   },
+  {
+    ad: "PAKET ETIKETI DURUMA DONDU (Paketlenmedi)",
+    yon: "KALDIRAN",
+    dosya: PAKET,
+    bul: '<span className="max-w-full truncate">{t("paketSuzgeciHazirlanan")}</span>',
+    koy: '<span className="max-w-full truncate">{paketliMi ? t("paketSuzgeciHazirlanan") : t("paketSuzgeciBekleyen")}</span>',
+    bozdugu: "kullanici 'Paketlenmedi' dugmesini basinca paketlenmedi olacak sanir (25.09)",
+  },
+  {
+    ad: "PAKET DURUMU RENKLE AYRISMIYOR",
+    yon: "KALDIRAN",
+    dosya: PAKET,
+    bul: 'variant={paketliMi ? "default" : "outline"}',
+    koy: 'variant="outline"',
+    bozdugu: "etiket iki halde ayni; renk de ayni olursa paketli mi degil mi gorunmez",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

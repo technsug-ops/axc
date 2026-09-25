@@ -415,6 +415,14 @@ const MUTASYONLAR: Mutasyon[] = [
       "iade artinca rozet YESIL yanar - yanlis mujde",
   },
   {
+    ad: "HUNI KUTULARI ESIT BOYDA DEGIL (K276)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "max-sm:grid max-sm:grid-cols-4 max-sm:items-stretch max-sm:gap-2",
+    koy: "max-sm:grid max-sm:grid-cols-4 max-sm:gap-2",
+    bozdugu: "tek satirlik Mal kabul kutusu komsularindan kisa kalir - kullanicinin 25.09 ekran goruntusu",
+  },
+  {
     ad: "HUNI SATIRI KALKTI",
     yon: "KALDIRAN",
     dosya: SAYFA,

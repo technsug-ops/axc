@@ -346,7 +346,10 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   const paket = temiz("src/app/satislar/paketlendi-durumu.tsx");
   kontrol("Paketlendi: kap ve düğme durum sınıfını kullanıyor",
     paket.includes("className={`inline-flex flex-col gap-1 ${DURUM_EYLEMI_KABI}`}") && paket.includes("className={`md:h-8 ${DURUM_EYLEMI_SINIFI}`}"));
-  kontrol("  ...etiket kesilir, kutudan taşmaz", /<span className="max-w-full truncate">\s*\{paketliMi \?/.test(paket));
+  /* K276: etiket EYLEMİN adı — iki hâlde de «Paketlendi»; durumu renk + ikon söyler. */
+  kontrol("  ...etiket kesilir ve iki hâlde de EYLEM adı («Paketlendi»)",
+    paket.includes('<span className="max-w-full truncate">{t("paketSuzgeciHazirlanan")}</span>') && !paket.includes('t("paketSuzgeciBekleyen")'));
+  kontrol("  ...durum renk + ikonla ayrışıyor (dolu / çerçeveli)", paket.includes('variant={paketliMi ? "default" : "outline"}') && paket.includes("<PackageCheck"));
   const kargo = temiz("src/app/satislar/kargo-durumu.tsx");
   kontrol("Kargo: satır kipinde kap durum sınıfını kullanıyor",
     kargo.includes('const telefonKutusu = kip === "satir";') && kargo.includes("${telefonKutusu ? DURUM_EYLEMI_KABI : \"\"}"));

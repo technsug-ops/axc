@@ -2894,8 +2894,11 @@ export default async function AnaSayfa({
                     ⚠ İKİ TARİH EKSENİ AYNI SATIRDA — not zorunlu (14.08.2026):
                     satış SATIŞ tarihine, kargo SEVKİYAT tarihine göre süzülür.
                     ⚠ Çipler telefonda 44 px (İlke #8), masaüstünde ince.
+                    ⚠ K276: `max-sm:items-stretch` — kap masaüstü için `items-center`
+                    taşıyor; ızgarada o, kutuları içeriği kadar bıraktı ve tek satırlık
+                    «Mal kabul» iki satırlık komşularından KISA kaldı (kullanıcı 25.09).
                   */}
-                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs max-sm:grid max-sm:grid-cols-4 max-sm:gap-2">
+                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs max-sm:grid max-sm:grid-cols-4 max-sm:items-stretch max-sm:gap-2">
                     <span className="font-medium max-sm:hidden">{t("huniEtiketi")}</span>
                     <Baglanti
                       href={suzgecAdresi(

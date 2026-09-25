@@ -191,6 +191,38 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K276 — PAKET DÜĞMESİ EYLEM ADI · PANEL HUNİ KUTULARI EŞİT BOY · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (telefon ekran görüntüleri): _«Paketlenmedi değil Paketlendi olmalıydı buton»_ ·
+_«kare diğerlerinden farklı boyutta»_.
+
+① **Paket düğmesi** iki hâlde de «Paketlendi» (eylemin adı); durum renk + ikonla: işaretliyken
+DOLU + onay ikonu, değilken çerçeveli. İpucu ne yapacağını söylemeye devam ediyor.
+② **Huni kutuları** (Satın alınan · Mal kabul · Kargoya verilen · Kargo bekleyen): kap masaüstü
+için `items-center` taşıyordu, telefon ızgarasında kutular içerik boyunda kaldı → tek satırlık
+«Mal kabul» kısa. `max-sm:items-stretch`. ⚠ Ölçüt "4 EŞİT kutu" diyordu ama yalnız SÜTUN
+sayısını ölçüyordu — BOY eşitliği ölçülmüyordu; bekçi yeşildi. Ölçüt genişletildi.
+
+Bekçi: `satir-karti:dogrula` +1 ölçüt · `panel:dogrula` huni ölçütü. Harness: satır kartı
+**26/26** (+2), panel **87/87** (+1).
+
+⚠ **AYNI EKRANDA AÇIK SORU — «Mal kabul 17»** (kullanıcıya soruldu, karar bekliyor): panel
+teslim alınan ALIM sayısını (17) yazıyor, açılan `/mal-kabul` listesi ürün (9) ve adet (27)
+gösteriyor — 17 listede hiçbir yerde yazmıyor → İlke #16 ("sayı = liste") çiğneniyor.
+Ölçüldü 25.09 canlı: 17 alım · hepsi RECEIVED · stok girişi olmayan 0 · sipariş adedi 29,
+giren 27. Seçenek: panel adet göstersin ya da liste «kabul edilen alım» kutusu alsın.
+
+### HALİL TEST LİSTESİ (telefon, canlı)
+1. `/satislar`: paketlenmemiş satışta düğme «Paketlendi» (çerçeveli); dokunun → dolu renk +
+   onay ikonu, yazı yine «Paketlendi». Tekrar dokunun → çerçeveliye döner.
+2. Panel `/` → dört huni kutusu (Satın alınan · Mal kabul · Kargoya verilen · Kargo bekleyen)
+   **aynı boyda**.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) · **kullanıcı kolaylığı: ✓**
+(İlke #10 · #12)
+
+---
+
 ## 🔴 K275 — SATIŞ KARTI: KARGO DÜĞMESİ PAKETLENDİ'NİN ÜSTÜNE BİNİYORDU · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı (telefon ekran görüntüsü): _«Kargoya verildi butonu diğer butonun üzerine gelmiş;

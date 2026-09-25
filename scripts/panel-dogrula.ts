@@ -6890,7 +6890,9 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("  ...satirlar TAM ve ESIT: 6 · 3+3 · 2+2+2 (bos hucre yok)",
     ciroS === 6 && net1S === 3 && net2S === 3 && marjS === 2 && satisS === 2 && iadeS === 2,
     { ciroS, net1S, net2S, marjS, satisS, iadeS });
-  kontrol("huni telefonda 4 ESIT kutu", /max-sm:grid max-sm:grid-cols-4 max-sm:gap-2/.test(sayfaT));
+  /* K276: ölçüt SÜTUN sayısını ölçüyordu, BOYU değil — "eşit" iddiası yarımdı; tek satırlık
+   etiketli kutu kısa kaldı ve bekçi yeşildi. Boy eşitliği `items-stretch` ile aynı kapta. */
+  kontrol("huni telefonda 4 ESIT kutu (sutun VE boy)", /max-sm:grid max-sm:grid-cols-4 max-sm:items-stretch max-sm:gap-2/.test(sayfaT));
   kontrol("pazaryeri telefonda YATAY kayar (tasma sayfada degil kapta)",
     /grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 [^"]*max-sm:flex[^"]*max-sm:overflow-x-auto/.test(sayfaT));
   kontrol("halka: telefonda KOMPAKT, masaustunde ok cizgili (ikisi de, kendi kirilmasinda)",

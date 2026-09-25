@@ -58,9 +58,11 @@ export function PaketlendiDurumu({
         ) : (
           <Package className="size-4" />
         )}
-        <span className="max-w-full truncate">
-          {paketliMi ? t("paketSuzgeciHazirlanan") : t("paketSuzgeciBekleyen")}
-        </span>
+        {/* K276 (kullanıcı 25.09): etiket EYLEMİN adıdır — her iki hâlde «Paketlendi».
+            Durumu renk + ikon söyler: işaretliyken DOLU düğme ve onay ikonu. Eskiden
+            işaretsizken «Paketlenmedi» yazıyordu; düğmeye bakan "basınca paketlenmedi mi
+            olacak" diye okuyordu. Ne yapacağını ipucu (title) söylemeye devam eder. */}
+        <span className="max-w-full truncate">{t("paketSuzgeciHazirlanan")}</span>
       </Button>
       {hata ? (
         <span role="alert" className="text-destructive text-xs">
