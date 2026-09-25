@@ -128,6 +128,8 @@ export type TyListelemeOzeti =
       kanalKaydiYok: number;
       /** ⚠ Kuru koşumda hepsi 0'dır — HATA DEĞİL, kip. */
       yazdiMi: boolean;
+      /** K273: ürün görseli yazımı (yoksa: yazılmadı ya da düştü — sebep günlükte). */
+      gorsel?: import("../src/lib/urun-gorseli-yaz").GorselYazimOzeti | { hata: string };
     };
 
 export async function tyListelemeCekimKos(ayar: {
@@ -249,6 +251,23 @@ export async function tyListelemeCekimKos(ayar: {
    *   · "hiç koşmadı" ile "koştu ve düzeldi" ayırt edilemezdi.
    * _(Anayasa: "şemadaki alan da bir iddiadır — yazıcısı yoksa vaat boştur".)_
    */
+  /**
+   * K273 — ÜRÜN GÖRSELİ. Aynı taramadan, ek istek yok. Görsel yazımı düşerse
+   * listeleme sonucu BOZULMAZ (ayrı iş) ama hata TAM günlüğe ve özete yazılır.
+   */
+  let gorsel: import("../src/lib/urun-gorseli-yaz").GorselYazimOzeti | { hata: string };
+  try {
+    const { gorselleriYaz } = await import("../src/lib/urun-gorseli-yaz");
+    gorsel = await gorselleriYaz(
+      /* Tarama tipi ham kayıt (`Record<string, unknown>`); alanlar String ile okunur. */
+      t.urunler.map((u) => ({ barkod: String(u.barcode ?? ""), url: String(u.gorselUrl ?? ""), kaynak: "TRENDYOL" as const })),
+    );
+    console.log(`   görsel: aday ${gorsel.aday} · eşleşen ${gorsel.eslesen} · yazılan ${gorsel.yazilan} · sırada ${gorsel.tavandaKalan}`);
+  } catch (e) {
+    console.error("   ⛔ görsel yazımı düştü:", e);
+    gorsel = { hata: e instanceof Error ? e.message : String(e) };
+  }
+
   const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
   await kosumIziniYaz({
     basarili: true,
@@ -264,6 +283,7 @@ export async function tyListelemeCekimKos(ayar: {
     barkodsuzAtlanan: s.barkodsuzAtlanan,
     kanalKaydiYok: s.kanalKaydiYok,
     yazdiMi: true,
+    gorsel,
   };
 }
 

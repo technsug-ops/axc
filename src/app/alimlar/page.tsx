@@ -16,6 +16,7 @@ import { AlimIptalButonu } from "./iptal-butonu";
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { UzunAd } from "@/components/uzun-ad";
+import { UrunGorseli } from "@/components/urun-gorseli";
 import { kartAdresi } from "@/lib/kart-adresi";
 import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
@@ -136,6 +137,9 @@ export default async function AlimlarSayfasi({
             select: {
               name: true,
               sku: true,
+              /* K273: ilk kalemin küçük resmi. */
+              gorselUrl: true,
+              gorselKaynak: true,
               product: { select: { name: true } },
             },
           },
@@ -554,7 +558,9 @@ export default async function AlimlarSayfasi({
                     {/* ORTA SÜTUN (K268): ürün → kârlılık kartı (İlke #9, satışlarla
                         AYNI gövde); altında adet · kalem · kart. Uzun ad kırpılır,
                         tam hâli ipucunda (`UzunAd`); hücre `min-w-0` ki kırpma işlesin. */}
-                    <div className="min-w-0 max-sm:basis-full">
+                    <div className="flex min-w-0 items-center gap-2.5 max-sm:basis-full">
+                    <UrunGorseli variantId={alim.items[0]?.variantId ?? null} url={alim.items[0]?.variant.gorselUrl ?? null} kaynak={alim.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(alim)} />
+                    <div className="min-w-0">
                       <UzunAd
                         metin={urunOzeti(alim)}
                         href={kartAdresi(alim.items) ?? undefined}
@@ -564,6 +570,7 @@ export default async function AlimlarSayfasi({
                         {t("toplamAdet", { sayi: toplamAdet(alim) })} · {t("kalemSayisi", { sayi: alim.items.length })}
                         {alim.creditCard ? ` · ${alim.creditCard.label} ••${alim.creditCard.last4}` : ""}
                       </div>
+                    </div>
                     </div>
                     <span className="font-semibold tabular-nums whitespace-nowrap">
                       {toplamMetni(alim)}

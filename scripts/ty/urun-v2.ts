@@ -43,6 +43,8 @@ import type { KanalUrunu } from "../../src/lib/kanal-listeleme";
 /** Normalleştirilmiş satır — karar alanları + eşleştirme kimlikleri. */
 export type NormalUrun = KanalUrunu & {
   barcode: string;
+  /** K273: ürünün ANA görseli (`images[0].url`); yoksa boş. İçerik düzeyinde — varyantlar paylaşır. */
+  gorselUrl: string;
   stockCode: string;
   productMainId: string;
   /**
@@ -88,8 +90,15 @@ function sayiVeyaYok(v: unknown): number | undefined {
  * ⚠ VARYANTI OLMAYAN ÜRÜN SESSİZCE DÜŞMEZ: dizi boşsa ürün seviyesinden tek
  * satır üretilir ve barkodu boş kalır — "okuyamadım" ile "yok" ayrı kalsın.
  */
+/** K273: `images[0].url` — ölçüldü 25.09.2026, onaylı uçta 20/20 dolu. */
+function anaGorsel(ham: Record<string, unknown>): string {
+  const g = Array.isArray(ham.images) ? (ham.images[0] as Record<string, unknown> | undefined) : undefined;
+  return g ? dize(g.url) : "";
+}
+
 export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUrun[] {
   const productMainId = dize(ham.productMainId);
+  const gorselUrl = anaGorsel(ham);
   const varyantlar = Array.isArray(ham.variants) ? ham.variants : [];
 
   if (varyantlar.length === 0) {
@@ -103,6 +112,7 @@ export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUru
         onSale: undefined,
         quantity: undefined,
         barcode: "",
+        gorselUrl,
         stockCode: "",
         productMainId,
         redSebepleri: [],
@@ -128,6 +138,7 @@ export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUru
       /** ⚠ ADET `variants[].stock.quantity` — ürün seviyesinde YOK. */
       quantity: sayiVeyaYok(stok.quantity),
       barcode: dize(v.barcode),
+      gorselUrl,
       stockCode: dize(v.stockCode),
       productMainId,
       redSebepleri: [],
@@ -164,6 +175,7 @@ export function onaysizUrunuNormallestir(ham: Record<string, unknown>): NormalUr
     /** ⚠ ADET BURADA ÜRÜN SEVİYESİNDE — onaylı uçtan FARKLI yer. */
     quantity: sayiVeyaYok(ham.quantity),
     barcode: dize(ham.barcode),
+    gorselUrl: anaGorsel(ham),
     stockCode: dize(ham.stockCode),
     productMainId: dize(ham.productMainId),
     redSebepleri: sebepler

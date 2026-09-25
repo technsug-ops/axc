@@ -44,6 +44,8 @@ export type N11ListelemeOzeti =
       yazilan: number;
       hata: number;
       yazdiMi: boolean;
+      /** K273: ürün görseli yazımı. */
+      gorsel?: import("../src/lib/urun-gorseli-yaz").GorselYazimOzeti | { hata: string };
     };
 
 const KOSUM_KANALI = "N11";
@@ -235,6 +237,24 @@ export async function n11ListelemeCekimKos(ayar: {
     KOSUM_IZI,
   );
   console.log(`\n⑤ YAZIM — ${y2.yazilan} satır güncellendi · hata ${y2.hata}`);
+
+  /* K273 — ÜRÜN GÖRSELİ: aynı taramadan (`imageUrls[0]`, barkodla). Trendyol
+     öncelikli; N11 yalnız boş/kırık ya da daha düşük öncelikte yazar (kural saf). */
+  let gorsel: import("../src/lib/urun-gorseli-yaz").GorselYazimOzeti | { hata: string };
+  try {
+    const { gorselleriYaz } = await import("../src/lib/urun-gorseli-yaz");
+    gorsel = await gorselleriYaz(
+      listingler.map((l) => {
+        const r = l as Record<string, unknown>;
+        const g = Array.isArray(r.imageUrls) ? r.imageUrls[0] : undefined;
+        return { barkod: String(r.barcode ?? ""), url: typeof g === "string" ? g : "", kaynak: "N11" as const };
+      }),
+    );
+    console.log(`   görsel: aday ${gorsel.aday} · eşleşen ${gorsel.eslesen} · yazılan ${gorsel.yazilan} · sırada ${gorsel.tavandaKalan}`);
+  } catch (e) {
+    console.error("   ⛔ görsel yazımı düştü:", e);
+    gorsel = { hata: e instanceof Error ? e.message : String(e) };
+  }
   await prisma.$disconnect();
   return {
     kanal: KOSUM_KANALI,
@@ -244,6 +264,7 @@ export async function n11ListelemeCekimKos(ayar: {
     yazilan: y2.yazilan,
     hata: y2.hata,
     yazdiMi: true,
+    gorsel,
   };
 }
 

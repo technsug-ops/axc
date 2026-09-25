@@ -12,6 +12,7 @@ import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { UzunAd } from "@/components/uzun-ad";
+import { UrunGorseli } from "@/components/urun-gorseli";
 import { kartAdresi } from "@/lib/kart-adresi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -133,6 +134,9 @@ export default async function UrunlerSayfasi({
           companySku: true,
           barcode: true,
           isDefault: true,
+          /* K273: küçük resim — ana varyantınki gösterilir. */
+          gorselUrl: true,
+          gorselKaynak: true,
           /**
            * ⛔ VARYANT AKTİFLİĞİ LİSTEDE ÇEKİLİR (21.09.2026). Ekran bugüne
            * kadar yalnız ÜRÜN düzeyini gösteriyordu; oysa aramayı süzen alan
@@ -282,6 +286,8 @@ export default async function UrunlerSayfasi({
                           bloğa konur — `<td>` üzerinde `max-width` yok
                           sayılıyor (bkz. UzunAd). */}
                       <TableCell>
+                        <div className="flex items-center gap-2.5">
+                        <UrunGorseli variantId={ana?.id ?? null} url={ana?.gorselUrl ?? null} kaynak={ana?.gorselKaynak ?? null} ad={urun.name} />
                         {/* MARKA ADIN ALTINDA: ayrı sütun 117px yiyordu ve
                             marka adı zaten ürün adının başında geçiyor. */}
                         <IkiSatir
@@ -367,6 +373,7 @@ export default async function UrunlerSayfasi({
                             />
                           }
                         />
+                        </div>
                       </TableCell>
                       <TableCell>
                         {/* Firma SKU üstte, barkod altta: ikisi de kimlik
@@ -418,6 +425,7 @@ export default async function UrunlerSayfasi({
               return (
                 <ListeKarti
                   key={urun.id}
+                  gorsel={<UrunGorseli variantId={ana?.id ?? null} url={ana?.gorselUrl ?? null} kaynak={ana?.gorselKaynak ?? null} ad={urun.name} boyut={48} />}
                   baslik={
                     /*
                       ⚠ MOBİLDE DE KART — tabloyla AYNI kuraldan.

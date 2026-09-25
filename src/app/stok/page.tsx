@@ -15,6 +15,7 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { UzunAd } from "@/components/uzun-ad";
+import { UrunGorseli } from "@/components/urun-gorseli";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -678,6 +679,9 @@ export default async function StokSayfasi({
                     {/* Uzun ad kesilir, tamamı `title`'da (bkz. UzunAd).
                         Marka alt satırda kalır — kısaltmaya dahil değil. */}
                     <TableCell>
+                      <div className="flex items-center gap-2.5">
+                      <UrunGorseli variantId={varyant.id} url={varyant.gorselUrl} kaynak={varyant.gorselKaynak} ad={varyant.product.name} />
+                      <div className="min-w-0">
                       <UzunAd
                         metin={varyant.product.name}
                         href={`/stok/${varyant.id}`}
@@ -687,6 +691,8 @@ export default async function StokSayfasi({
                           {varyant.product.brand}
                         </div>
                       ) : null}
+                      </div>
+                      </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {varyant.name ?? t("varsayilan")}
@@ -749,6 +755,7 @@ export default async function StokSayfasi({
             {varyantlar.map((varyant) => (
               <ListeKarti
                 key={varyant.id}
+                gorsel={<UrunGorseli variantId={varyant.id} url={varyant.gorselUrl} kaynak={varyant.gorselKaynak} ad={varyant.product.name} boyut={48} />}
                 baslik={
                   <Baglanti href={`/stok/${varyant.id}`}>
                     {varyant.product.name}

@@ -11,11 +11,14 @@ import type { ReactNode } from "react";
  */
 export function ListeKarti({
   baslik,
+  gorsel,
   altBaslik,
   alanlar,
   eylemler,
 }: {
   baslik: ReactNode;
+  /** K273: başlığın SOLUNDA ürün küçük resmi (`UrunGorseli`). */
+  gorsel?: ReactNode;
   altBaslik?: ReactNode;
   /** Etiket-değer çiftleri; değeri boş olanlar gösterilmez. */
   alanlar: { etiket: string; deger: ReactNode }[];
@@ -26,11 +29,14 @@ export function ListeKarti({
   const ucSutun = alanlar.length % 3 === 0;
   return (
     <div className="bg-card min-w-0 space-y-2.5 rounded-xl border p-3">
-      <div className="space-y-1">
+      <div className="flex items-start gap-2.5">
+      {gorsel}
+      <div className="min-w-0 flex-1 space-y-1">
         <div className="line-clamp-2 min-w-0 leading-tight font-medium break-words">{baslik}</div>
         {altBaslik ? (
           <div className="text-muted-foreground min-w-0 truncate text-xs">{altBaslik}</div>
         ) : null}
+      </div>
       </div>
 
       <dl className={`grid gap-1.5 text-sm ${ucSutun ? "grid-cols-3" : "grid-cols-2"}`}>

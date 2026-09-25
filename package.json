@@ -419,7 +419,9 @@
     "canli:n11-ice-aktar": "tsx scripts/canli-n11-ice-aktar.ts",
     "alim-promosyon:dogrula": "tsx scripts/alim-promosyon-dogrula.ts",
     "iade-kdv:dogrula": "tsx scripts/iade-kdv-dogrula.ts",
-    "canli:oneri-esik-olcum": "tsx scripts/canli-oneri-esik-olcum.ts"
+    "canli:oneri-esik-olcum": "tsx scripts/canli-oneri-esik-olcum.ts",
+    "urun-gorseli:dogrula": "tsx scripts/urun-gorseli-dogrula.ts",
+    "urun-gorseli-mutasyon:kontrol": "tsx scripts/urun-gorseli-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

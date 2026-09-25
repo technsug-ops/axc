@@ -1,0 +1,238 @@
+import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
+
+/**
+ * ============================================================================
+ *  ÜRÜN GÖRSELİ — MUTASYON HARNESS'I (K273, 25.09.2026)
+ * ----------------------------------------------------------------------------
+ *      npm run urun-gorseli-mutasyon:kontrol
+ *
+ *  `urun-gorseli:dogrula` iki katmanlı: saf kural DEĞERLE, zincir (senkron →
+ *  yazıcı → ekran → kırık bildirimi) yorumsuz kaynakla sınanıyor. Burası iki
+ *  katmanın da DİŞİNİ sınar. ÜÇ YÖN: zararsız · kaldıran · fazladan.
+ *  Harness mutasyonun UYGULANDIĞINI ve GERİ ALINDIĞINI doğrular; çapası
+ *  tutmayan mutasyon "yeşil" değil ÖLÇÜLEMEDİ sayılır.
+ * ============================================================================
+ */
+
+const BEKCI = "scripts/urun-gorseli-dogrula.ts";
+const BEKCI_BASLIGI = "BAĞLANTI";
+const KURAL = "src/lib/urun-gorseli.ts";
+const YAZICI = "src/lib/urun-gorseli-yaz.ts";
+const TY_SENKRON = "scripts/canli-kanal-listeleme-yaz.ts";
+const N11_SENKRON = "scripts/canli-n11-listeleme-yaz.ts";
+const TY_NORMAL = "scripts/ty/urun-v2.ts";
+const KART = "src/components/liste-karti.tsx";
+const BILESEN = "src/components/urun-gorseli.tsx";
+const EYLEM = "src/app/gorsel-eylemleri.ts";
+const STOK = "src/app/stok/page.tsx";
+const SATISLAR = "src/app/satislar/page.tsx";
+
+type Mutasyon = {
+  ad: string;
+  yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN";
+  dosya: string;
+  bul: string;
+  koy: string;
+  bozdugu: string;
+};
+
+const SAHTE_YAZICI =
+  "    gorsel = await (async (_a: unknown) => ({ aday: 0, eslesen: 0, degisecek: 0, yazilan: 0, tavandaKalan: 0 }))(";
+
+const MUTASYONLAR: Mutasyon[] = [
+  {
+    ad: "ZARARSIZ - yalniz yorum degisti (harness saglamasi)",
+    yon: "ZARARSIZ",
+    dosya: YAZICI,
+    bul: "  /* Barkod başına İLK aday — bir içeriğin birden çok görseli varsa ilki (ana görsel). */",
+    koy: "  /* Barkod basina ilk aday. */",
+    bozdugu: "hicbir sey - YESIL kalmali",
+  },
+  {
+    ad: "TY SENKRONU YAZICIYI CAGIRMIYOR",
+    yon: "KALDIRAN",
+    dosya: TY_SENKRON,
+    bul: "    gorsel = await gorselleriYaz(",
+    koy: SAHTE_YAZICI,
+    bozdugu: "Trendyol taramasi gorsel getirir ama hicbir urune yazilmaz - ekran hep bas harf gosterir",
+  },
+  {
+    ad: "N11 SENKRONU YAZICIYI CAGIRMIYOR",
+    yon: "KALDIRAN",
+    dosya: N11_SENKRON,
+    bul: "    gorsel = await gorselleriYaz(",
+    koy: SAHTE_YAZICI,
+    bozdugu: "yedek kaynak kapanir; kirik Trendyol gorseli N11'e dusemez",
+  },
+  {
+    ad: "TY OKUMASI GORSELI DUSURUYOR (tek varyantli dal)",
+    yon: "KALDIRAN",
+    dosya: TY_NORMAL,
+    bul: "    gorselUrl: anaGorsel(ham),",
+    koy: '    gorselUrl: "",',
+    bozdugu: "bir urun sinifi sessizce gorselsiz kalir",
+  },
+  {
+    ad: "LISTE KARTI GORSEL YUVASINI CIZMIYOR",
+    yon: "KALDIRAN",
+    dosya: KART,
+    bul: "      {gorsel}",
+    koy: "",
+    bozdugu: "telefonda hicbir listede resim yok - sayfalar verir, kart yutar",
+  },
+  {
+    ad: "STOK TELEFON KARTI RESMI KAYBETTI",
+    yon: "KALDIRAN",
+    dosya: STOK,
+    bul: "                gorsel={<UrunGorseli variantId={varyant.id} url={varyant.gorselUrl} kaynak={varyant.gorselKaynak} ad={varyant.product.name} boyut={48} />}",
+    koy: "",
+    bozdugu: "depo telefonunda (birincil cihaz) stok listesi resimsiz",
+  },
+  {
+    ad: "SATISLAR MASAUSTU RESMI KAYBETTI",
+    yon: "KALDIRAN",
+    dosya: SATISLAR,
+    bul: "                      <UrunGorseli variantId={satis.items[0]?.variant.id ?? null} url={satis.items[0]?.variant.gorselUrl ?? null} kaynak={satis.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(satis)} />",
+    koy: "",
+    bozdugu: "masaustu tablo resimsiz, telefon resimli - Ilke #10 ayrisir",
+  },
+  {
+    ad: "BILESEN KIRIGI BILDIRMIYOR",
+    yon: "KALDIRAN",
+    dosya: BILESEN,
+    bul: "        if (variantId) void gorselKirikBildir(variantId);",
+    koy: "",
+    bozdugu: "kirik link hic isaretlenmez, sira bastan islemez - istenen onarim yolu kopar",
+  },
+  {
+    ad: "BILESEN BUYUK ADRESI YUKLUYOR",
+    yon: "KALDIRAN",
+    dosya: BILESEN,
+    bul: "      src={kucukGorselAdresi(url, kaynak)}",
+    koy: "      src={url}",
+    bozdugu: "50 satirlik liste 50 x 749 KB indirir (kucuk surum 7,5 KB olculdu)",
+  },
+  {
+    ad: "AG HATASI KIRIK YAZIYOR",
+    yon: "FAZLADAN",
+    dosya: EYLEM,
+    bul: '      console.error("[gorselKirikBildir] yoklama hatası:", variantId, e);\n      return { durum: "HATA" };',
+    koy: '      console.error("[gorselKirikBildir] yoklama hatası:", variantId, e);',
+    bozdugu: "bizim tarafin anlik ag sorunu saglam gorseli kirik isaretler",
+  },
+  {
+    ad: "YAZICI TAVANI KALKTI",
+    yon: "FAZLADAN",
+    dosya: YAZICI,
+    bul: "yazilacak.slice(0, GORSEL_YAZIM_TAVANI)",
+    koy: "yazilacak.slice(0)",
+    bozdugu: "ilk dolumda ~1.200 satir tek kosuma biner, senkron rotasi zaman asimina ugrar",
+  },
+  {
+    ad: "KURAL: KIRIK GORSEL YERINE YENISI YAZILMIYOR",
+    yon: "KALDIRAN",
+    dosya: KURAL,
+    bul: "  if (mevcut.url === null || gorselKirikMi(mevcut)) return { url: aday.url, kaynak: aday.kaynak };",
+    koy: "  if (mevcut.url === null) return { url: aday.url, kaynak: aday.kaynak };",
+    bozdugu: "kirik gorsel sonsuza kadar kirik kalir - 'siraya don' davranisi olur",
+  },
+  {
+    ad: "KURAL: IZINSIZ SUNUCU KABUL",
+    yon: "FAZLADAN",
+    dosya: KURAL,
+    bul: "  if (aday === null || !gorselAdresiGecerliMi(aday.url, aday.kaynak)) return null;",
+    koy: "  if (aday === null) return null;",
+    bozdugu: "pazaryeri verisinden gelen herhangi bir adres (http, izleyici) ekrana gomulur",
+  },
+  {
+    ad: "KURAL: BILINEN KIRIK ADRES GERI KABUL",
+    yon: "FAZLADAN",
+    dosya: KURAL,
+    bul: "  if (aday.url === mevcut.kirikUrl) return null;",
+    koy: "",
+    bozdugu: "N11'e dusulmus urun, Trendyol ayni bozuk adresi yollayinca yeniden kiriga doner",
+  },
+];
+
+function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
+  const r = spawnSync("npx tsx " + BEKCI, { shell: true, encoding: "utf8", maxBuffer: 40 * 1024 * 1024 });
+  const cikti = (r.stdout ?? "") + (r.stderr ?? "");
+  return { kod: r.status ?? 1, ciktiVar: cikti.includes(BEKCI_BASLIGI) };
+}
+
+console.log("");
+console.log("URUN GORSELI - MUTASYON TURU (K273)");
+console.log("");
+
+let yakalanan = 0;
+const kacan: string[] = [];
+const bozuk: string[] = [];
+
+for (const m of MUTASYONLAR) {
+  const asil = readFileSync(m.dosya, "utf8");
+  const bul = desenNormalle(asil, m.bul);
+  const koy = desenNormalle(asil, m.koy);
+  const adet = asil.split(bul).length - 1;
+  if (adet !== 1) {
+    bozuk.push(`${m.ad}\n       desen ${m.dosya} icinde ${adet} kez geciyor (1 olmali) - OLCULEMEDI`);
+    continue;
+  }
+  const mutant = asil.replace(bul, koy);
+  let sonuc: { kod: number; ciktiVar: boolean };
+  try {
+    dayanikliYaz(m.dosya, mutant);
+    if (readFileSync(m.dosya, "utf8") !== mutant || mutant === asil) {
+      bozuk.push(`${m.ad}\n       mutasyon diske UYGULANMADI`);
+      continue;
+    }
+    sonuc = bekciyiKostur();
+  } finally {
+    /* git checkout DEGIL: dosya commit edilmemis olabilir. */
+    dayanikliYaz(m.dosya, asil);
+    if (readFileSync(m.dosya, "utf8") !== asil) {
+      bozuk.push(`${m.ad}\n       GERI ALMA BASARISIZ - dosya mutasyonlu kaldi`);
+    }
+  }
+  const isaret = m.yon === "ZARARSIZ" ? "o" : m.yon === "KALDIRAN" ? "-" : "+";
+  if (m.yon === "ZARARSIZ") {
+    if (sonuc.kod === 0 && sonuc.ciktiVar) {
+      yakalanan++;
+      console.log(`  OK  ${isaret} ${m.ad}`);
+    } else if (!sonuc.ciktiVar) {
+      bozuk.push(`${m.ad}\n       bekci COKTU (baslik basilmadi) - olcum gecersiz`);
+    } else {
+      kacan.push(`${m.ad}\n       YALANCI KIRMIZI: zararsiz degisiklik bekciyi kirmizi yakti`);
+    }
+    continue;
+  }
+  if (sonuc.kod !== 0 && sonuc.ciktiVar) {
+    yakalanan++;
+    console.log(`  OK  ${isaret} ${m.ad}`);
+  } else if (sonuc.kod !== 0) {
+    bozuk.push(`${m.ad}\n       bekci COKTU (baslik basilmadi) - olcum gecersiz`);
+  } else {
+    kacan.push(`${m.ad}\n       KORUMASIZ: ${m.bozdugu}`);
+  }
+}
+
+console.log("");
+if (kacan.length) {
+  console.log("  KACAN MUTASYONLAR - bekci bunlari GORMEDI:\n");
+  for (const k of kacan) console.log("  X  " + k);
+  console.log("");
+}
+if (bozuk.length) {
+  console.log("  HARNESS HATASI - mutasyon olculemedi:\n");
+  for (const b of bozuk) console.log("  !! " + b);
+  console.log("");
+}
+console.log(`  ${yakalanan}/${MUTASYONLAR.length} mutasyon beklendigi gibi davrandi`);
+if (kacan.length || bozuk.length) {
+  console.log("\n  Kacan ya da olculemeyen mutasyon var - bekci eksik.\n");
+  process.exitCode = 1;
+} else {
+  console.log("\n  OK  Urun gorseli UC YONDEN sinandi, kirmizi yandigi GORULDU.\n");
+}

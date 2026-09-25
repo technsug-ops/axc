@@ -191,6 +191,82 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K274 — HALKA SARMALAYICISI GENİŞLİKSİZDİ (K270 artığı) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 25.09 (ekran görüntüsü): _«halka kareli alan kadar olmalı, 2 pazaryeri veya 3
+pazaryeri eklenmiş olması halkayı büyütüp küçültmemeli»_. Kök K270'teydi: telefon/masaüstü
+ayrımı için halkanın çevresine eklenen `div` genişlik taşımıyordu; SVG genişliği o `div`in
+İÇERİĞİNDEN (yazılardan) alıyordu. Sonuç: halka küçük ve kanal adlarının uzunluğuna göre boy
+değiştiriyor. Çare iki sarmalayıcıya `w-full` — halka yine kartın tam genişliğinden ölçekleniyor.
+
+Bekçi: `panel:dogrula` ölçütü + panel harness'ine «HALKA SARMALAYICISI GENİŞLİKSİZ» mutasyonu
+(kırmızı yandığı görüldü).
+
+### HALİL TEST LİSTESİ
+
+1. Masaüstü `/` → «Ciro kanala göre»: halka kartın genişliğini dolduruyor (K271 boyu).
+2. Dönem süzgecini değiştirin (2 kanallı ve 3 kanallı bir dönem) — halka boyu **değişmemeli**.
+
+**mobil doğrulama:** kompakt halka ayrı gövde, değişmedi · **i18n: ✓** (metin yok)
+
+---
+
+## 🔴 K273 — ÜRÜN KÜÇÜK RESMİ: PAZARYERİNDEN OTOMATİK, LİNK OLARAK · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 25.09: _«ürünlerin küçük resmini getirebilir miyiz… otomatik yüklemeyi tercih
+ederim, sıralı olarak herhangi birinde varsa alıp… hangi firmadan alındığı mühim değil…
+database'e link olarak depolayabiliriz»_ · kırık link için: _«tekrar aynı sıralama ile ilk
+Trendyol'a bakar»_ · _«best practice çalış»_.
+
+**Karar ve gerekçe:**
+- **Link saklanır, kopya değil.** Kopyalamak için kendi depomuz gerekir (Blob K206'da askıda);
+  link bugün çalışır, kırığı ekran fark edip bildirir. Kopya kararı K206 açılınca yeniden verilir.
+- **Kaynak sırası: ELLE → Trendyol → N11.** Hepsiburada ELENDİ — katalog ucu yalnız dosya adı
+  veriyor, adres vermiyor (ölçüldü).
+- **Sabitlik:** çalışan görsel yerinde kalır; yalnız daha öncelikli kaynak ya da kırık hâl
+  değiştirir. Bilinen kırık adres bir daha kabul edilmez (N11'e düşmüş ürün, Trendyol aynı
+  bozuk adresi yollayınca kırığa dönmesin). Elle yüklenene senkron dokunmaz.
+- **Küçük sürüm:** Trendyol CDN küçültmesi `mnresize/128/192/` — **749 KB → 7,5 KB** ölçüldü.
+  N11'in küçültme yolu çalışmıyor (106 KB, aynen).
+- **Güvenlik:** yalnız izinli `https` sunucular (Trendyol: `cdn.dsmcdn.com` + ürünü Trendyol'a
+  yükleyen XML entegratörü `cdnN.xmlbankasi.com` — 1.673 görselin 5'i; adres Trendyol'un kendi
+  API'sinden geliyor; N11: `n11scdnN.akamaized.net`).
+- **Kırık bildirimi istemciye güvenmez:** sunucu adresi kendisi yoklar (GET, HEAD değil — bazı
+  sunucular HEAD'e 405 döner); **ağ hatası kırık yazmaz**, yalnız sunucunun hata kodu.
+
+**Şema (canlıda koştu, onaylı):** `ProductVariant` + `gorselUrl` · `gorselKaynak` ·
+`gorselAt` · `gorselKirikUrl`; enum `GorselKaynagi`. Migration `20260925120000_urun_gorseli`.
+
+**Yazım:** Trendyol ve N11 listeleme senkronları aynı taramadan (ek istek yok) barkodla eşleyip
+yazar; satır satır, tekrar koşulabilir; **koşum başına 150 tavan** (60 sn'lik rota). Kuru koşum:
+Trendyol 1.225 eşleşen / 1.222 yazılacak, N11 +12 · toplam ≈ **1.234 / 1.874 varyant** →
+ilk dolum ~9 koşum ≈ 45 dk. Resmi olmayan ürün baş harfli gri kutu gösterir.
+
+**Ekran:** ürünler · stok · satışlar · alımlar — masaüstünde adın solunda 40 px, telefon
+kartında başlığın solunda 48 px (`ListeKarti` yeni `gorsel` yuvası). Satış/alımda ilk kalemin
+resmi. Tembel yükleme.
+
+Bekçi: `urun-gorseli:dogrula` (41 kontrol — kural DEĞERLE, zincir yorumsuz kaynakla:
+senkron → yazıcı → ekran → kırık bildirimi) · harness `urun-gorseli-mutasyon:kontrol` 14/14
+(zararsız · 10 kaldıran/fazladan zincir · 3 kural).
+
+### HALİL TEST LİSTESİ (canlı, deploy + ~45 dk sonra)
+
+1. `/urunler` (bilgisayar): ad sütununun solunda küçük resimler. Resmi olmayan ürünlerde
+   adın **baş harfi** gri kutuda — kırık resim ikonu **hiçbir yerde** olmamalı.
+2. Aynı sayfayı telefonda açın: her kartın başlığının solunda resim.
+3. `/stok`, `/satislar`, `/alimlar`: aynı resimler (satış/alımda ilk ürünün resmi).
+4. Trendyol'da satılan bir ürünü seçin, resmin Trendyol'daki ana görselle **aynı** olduğunu
+   kontrol edin.
+5. Sayfa yavaşlamamalı: 50 satırlık listede kaydırırken resimler aşağı indikçe yükleniyor.
+6. İlk dolum sürerken bazı ürünler baş harf gösterir — ~45 dk sonra oran belirgin artmalı
+   (hedef ≈ 1.234 / 1.874; kalan ~640 varyantın iki kanalda da kaydı yok).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok; resim süs, ekran okuyucu adı
+okur) · **kullanıcı kolaylığı: ✓** (İlke #3 · #8 · #9 · #10)
+
+---
+
 ## 🔴 K272 — İÇ SAYFALAR TELEFON ①: BEŞ ORTAK BİLEŞEN · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı 25.09 (alımlar · ürünler · stok · iade ekran görüntüleri): _«panel kartlarındaki

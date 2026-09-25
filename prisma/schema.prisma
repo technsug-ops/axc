@@ -184,6 +184,13 @@ enum AnalysisResult {
   SORUN_BULUNAMADI
 }
 
+/// Ürün görselinin kaynağı (K273). Sıra ve öncelik `src/lib/urun-gorseli.ts`de.
+enum GorselKaynagi {
+  ELLE
+  TRENDYOL
+  N11
+}
+
 enum ChannelType {
   MARKETPLACE // Trendyol, Hepsiburada, Amazon...
   OWN_STORE // kendi siteniz
@@ -427,6 +434,20 @@ model ProductVariant {
   name      String?
   isDefault Boolean @default(false)
   isActive  Boolean @default(true)
+
+  /// ── ÜRÜN GÖRSELİ (K273) ──────────────────────────────────────────────
+  /// Pazaryerinden OTOMATİK gelen görsel adresi. Sıra `src/lib/urun-gorseli.ts`
+  /// (Trendyol → N11; ELLE hiç ezilmez). Görsel çalıştıkça SABİT; kırılınca
+  /// sıra baştan işler. Boş = hiçbir kaynakta görsel bulunamadı (ekranda yer
+  /// tutucu) — uydurulmaz.
+  gorselUrl      String?        @db.VarChar(500)
+  gorselKaynak   GorselKaynagi?
+  /// Görselin yazıldığı an (kaynak değişince de güncellenir).
+  gorselAt       DateTime?
+  /// SON KIRIK ADRES. `gorselUrl` buna eşitse görsel kırıktır. Ayrı tutulur ki
+  /// kaynak aynı bozuk adresi tekrar yolladığında öncelik kuralı onu geri
+  /// getirmesin.
+  gorselKirikUrl String?        @db.VarChar(500)
 
   /// Depodaki raf konumu (opsiyonel).
   /// ŞU AN: varyant başına TEK konum — bilerek basit tutuldu.

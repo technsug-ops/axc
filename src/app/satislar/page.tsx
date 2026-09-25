@@ -31,6 +31,7 @@ import { TopluKargo } from "./toplu-kargo";
 import { ListeKarti } from "@/components/liste-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { UzunAd } from "@/components/uzun-ad";
+import { UrunGorseli } from "@/components/urun-gorseli";
 import { NetKar } from "@/components/net-kar";
 import { MarjSerhi } from "@/components/marj-serhi";
 import { MarjOlcegi } from "@/components/marj-olcegi";
@@ -894,6 +895,10 @@ export default async function SatislarSayfasi({
                     {/* Uzun ürün özeti kesilir, tamamı `title`'da; satırın
                         Detay düğmesi kaydın tamamına götürür (bkz. UzunAd). */}
                     <TableCell>
+                      <div className="flex items-center gap-2.5">
+                      {/* K273: ilk kalemin küçük resmi — ad da ilk kalemden başlıyor. */}
+                      <UrunGorseli variantId={satis.items[0]?.variant.id ?? null} url={satis.items[0]?.variant.gorselUrl ?? null} kaynak={satis.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(satis)} />
+                      <div className="min-w-0">
                       <UzunAd
                         metin={urunOzeti(satis)}
                         /* Ürün adı → KÂRLILIK KARTI, arada tıklama yok (İlke #9).
@@ -912,6 +917,8 @@ export default async function SatislarSayfasi({
                           düştü. Genişliği ürün adı belirliyor zaten. */}
                       <div className="text-muted-foreground text-xs tabular-nums">
                         {t("toplamAdet", { sayi: satirAdedi(satis) })}
+                      </div>
+                      </div>
                       </div>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
@@ -969,6 +976,7 @@ export default async function SatislarSayfasi({
             {satislar.map((satis) => (
               <ListeKarti
                 key={satis.id}
+                gorsel={<UrunGorseli variantId={satis.items[0]?.variant.id ?? null} url={satis.items[0]?.variant.gorselUrl ?? null} kaynak={satis.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(satis)} boyut={48} />}
                 baslik={
                   <span className="flex flex-wrap items-center gap-2">
                     {/*
