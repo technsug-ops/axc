@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { MENU_IKONLARI } from "../src/lib/menu/ikonlar";
 
 import {
   KOD_SABLONU,
@@ -950,9 +951,15 @@ async function etiketKontrolleri() {
     "  ...GÜNLÜK grupta (ayarlara gömülmemiş)",
     /\{ anahtar: "yerlestir", varsayilanGrup: null \}/.test(katalog),
   );
+  /**
+   * *** ÖLÇÜT ESKİDİ, SUSTURULMADI (K270, 25.09.2026). ESKİ: ikon haritası sol
+   * menünün içindeydi, ölçüt `app-sidebar.tsx`i tarıyordu. NİYE ESKİDİ: harita
+   * `lib/menu/ikonlar.ts`e çıktı (alt bar + telefon menüsü de okuyor). Ölçüt
+   * artık DEĞERİ sınıyor — kaynak taramıyor.
+   */
   kontrol(
-    "  ...ikonu var",
-    /yerlestir: \w+,/.test(readFileSync("src/components/app-sidebar.tsx", "utf8")),
+    "  ...ikonu var (tek gövde: lib/menu/ikonlar)",
+    Boolean(MENU_IKONLARI["yerlestir"]),
   );
   const sozluk4 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
     Menu: Record<string, string>;

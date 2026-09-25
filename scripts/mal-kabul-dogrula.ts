@@ -227,8 +227,13 @@ console.log("\n3) toplam ile seri AYNI kayıtlardan");
    * artık etiketin 400 önce–400 sonrası; iki yön de aynı çipin içinde.
    */
   const kartBasi = panel.indexOf('t("malKabulAdedi")');
+  /* *** PENCERE ÇİPİN KENDİSİNE BAĞLI (K270, 25.09.2026): sabit ±400 karakter,
+     çipe telefon sınıfları eklenince `href`i dışarıda bıraktı — «pencere
+     ölçülür, gövde büyüyünce dar pencere sessizce kör kalır». Blok = etiketi
+     saran `<Baglanti`nin başından etiketten 400 sonrasına. */
+  const cipBasi = kartBasi < 0 ? -1 : panel.lastIndexOf("<Baglanti", kartBasi);
   const kartBloku =
-    kartBasi < 0 ? "" : panel.slice(Math.max(0, kartBasi - 400), kartBasi + 400);
+    kartBasi < 0 || cipBasi < 0 ? "" : panel.slice(cipBasi, kartBasi + 400);
   kontrol("mal kabul kartı bulundu", kartBasi >= 0);
   kontrol(
     "panel KARTI /mal-kabul'e bağlanıyor",
