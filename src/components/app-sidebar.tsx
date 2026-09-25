@@ -18,6 +18,7 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { CikisButonu } from "@/components/cikis-butonu";
 import { ALT_OGELER, MENU_IKONLARI } from "@/lib/menu/ikonlar";
@@ -157,6 +158,19 @@ export function AppSidebar({
   duzen: CozulmusDuzen;
 }) {
   const pathname = usePathname();
+  /**
+   * K278 — TELEFONDA MENÜ, SEÇİMDEN SONRA KAPANIR (kullanıcı 25.09: _«menüye
+   * basıyoruz, altta sayfa açılıyor ama menünün kapanması için boşluğa basmak
+   * gerekiyor»_). Telefonda kenar paneli bir çekmece (`openMobile`); bağlantı
+   * sayfayı değiştiriyor ama çekmeceyi kapatan yoktu.
+   * ⚠ TIKLAMAYA bağlı, adres değişimine DEĞİL: bulunduğun sayfaya basınca adres
+   * değişmez ama menü yine kapanmalı. Masaüstünde (`isMobile` yanlış) dokunmaz —
+   * orada daraltma kullanıcının kendi tercihi.
+   */
+  const { isMobile, setOpenMobile } = useSidebar();
+  const menuyuKapat = () => {
+    if (isMobile) setOpenMobile(false);
+  };
   const t = useTranslations("Uygulama");
   const tMenu = useTranslations("Menu");
 
@@ -227,7 +241,7 @@ export function AppSidebar({
     return (
       <SidebarMenuItem key={oge.anahtar}>
         <SidebarMenuButton asChild isActive={seciliMi(oge)}>
-          <Link href={oge.href}>
+          <Link href={oge.href} onClick={menuyuKapat}>
             <oge.icon />
             <span>{tMenu(oge.anahtar)}</span>
           </Link>
@@ -327,6 +341,7 @@ export function AppSidebar({
         {/* Logo ana sayfaya döner. */}
         <Link
           href="/"
+          onClick={menuyuKapat}
           className="hover:bg-sidebar-accent -mx-2 flex items-center gap-2.5 rounded-md px-2 py-1 transition-colors"
         >
           {/* MARKA KARESİ — tasarım referansındaki aksan renkli kare.

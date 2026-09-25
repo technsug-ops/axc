@@ -30,6 +30,7 @@ const KARGO = "src/app/satislar/kargo-durumu.tsx";
 const PAKET = "src/app/satislar/paketlendi-durumu.tsx";
 const STOK_SUZGEC = "src/app/stok/sirala-suzgec.tsx";
 const IADE_GECIS = "src/app/iadeler/bildirim-durumu.tsx";
+const KENAR_MENU = "src/components/app-sidebar.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -313,6 +314,31 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "className={`h-11 md:h-8 ${GECIS_DUGMESI} max-md:col-span-2`} asChild>",
     koy: "className={`h-11 md:h-8 ${GECIS_DUGMESI}`} asChild>",
     bozdugu: "ana eylem ikincil gecislerle ayni boyda kalir, one cikmaz",
+  },
+  /* ── K278 telefonda menü kapanır ── */
+  {
+    ad: "MENU OGESI TIKLANINCA MENU KAPANMIYOR (K278 vakasi)",
+    yon: "KALDIRAN",
+    dosya: KENAR_MENU,
+    bul: "<Link href={oge.href} onClick={menuyuKapat}>",
+    koy: "<Link href={oge.href}>",
+    bozdugu: "telefonda sayfa acilir, menu ustunde kalir - kapatmak icin bosluga basmak gerekir",
+  },
+  {
+    ad: "LOGO TIKLANINCA MENU KAPANMIYOR",
+    yon: "KALDIRAN",
+    dosya: KENAR_MENU,
+    bul: '          href="/"\n          onClick={menuyuKapat}',
+    koy: '          href="/"',
+    bozdugu: "logoya basinca panel acilir, menu ustunde kalir",
+  },
+  {
+    ad: "MENU MASAUSTUNDE DE DARALIYOR",
+    yon: "FAZLADAN",
+    dosya: KENAR_MENU,
+    bul: "    if (isMobile) setOpenMobile(false);",
+    koy: "    if (isMobile) setOpenMobile(false);\n    setOpen(false);",
+    bozdugu: "bilgisayarda her tiklamada kenar menu daralir - kullanicinin tercihi ezilir",
   },
 ];
 

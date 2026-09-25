@@ -26,7 +26,7 @@ import { DURUM_ZEMINI } from "../src/lib/renkler";
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 5; /* K272: +1 (telefon düzeni) · K275: +1 (durum düğmeleri) · K272-②③: +1 */
+const BOLUM_SAYISI = 6; /* K272: +1 (telefon düzeni) · K275: +1 (durum düğmeleri) · K272-②③: +1 · K278: +1 */
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -398,6 +398,24 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   kontrol("  ...HİÇBİR düğme eski sınıfta kalmadı", !bil.includes('className="h-11 md:h-8"') && (bil.match(/\$\{GECIS_DUGMESI\}/g) ?? []).length === 5);
   kontrol("  ...«İadeyi işle» telefonda tam satır (açık ve kilitli hâl)", (bil.match(/max-md:col-span-2/g) ?? []).length === 2);
   kosanBolumler.push("K272-②③");
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   K278 — TELEFONDA MENÜ SEÇİMDEN SONRA KAPANIR
+   Kullanıcı 25.09: «menüye basıyoruz, sayfa açılıyor ama menü kapanmıyor».
+   ──────────────────────────────────────────────────────────────────────── */
+{
+  console.log("\nK278 — telefonda menü seçimden sonra kapanır");
+  const kenar = readFileSync("src/components/app-sidebar.tsx", "utf8").replace(/\r\n/g, "\n")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const baglantilar = kenar.match(/<Link\b[^>]*>/g) ?? [];
+  kontrol("menüde bağlantı VAR (taban dolu)", baglantilar.length >= 2, baglantilar.length);
+  kontrol("  ...HER bağlantı tıklanınca menüyü kapatıyor", baglantilar.every((b) => b.includes("onClick={menuyuKapat}")), baglantilar);
+  const govde = kenar.slice(kenar.indexOf("const menuyuKapat = () => {"), kenar.indexOf("};", kenar.indexOf("const menuyuKapat = () => {")));
+  kontrol("  ...kapatan: YALNIZ telefonda, YALNIZ çekmece",
+    kenar.includes("const menuyuKapat = () => {") && govde.includes("if (isMobile) setOpenMobile(false);") && !/\bsetOpen\(/.test(govde));
+  kontrol("  ...çekmece durumu ortak kancadan", kenar.includes("const { isMobile, setOpenMobile } = useSidebar();"));
+  kosanBolumler.push("K278 menü");
 }
 
 console.log("\n" + "=".repeat(70));

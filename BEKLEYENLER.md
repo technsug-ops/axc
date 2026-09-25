@@ -191,6 +191,31 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K278 — TELEFONDA MENÜ SEÇİMDEN SONRA KAPANMIYORDU · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: _«mobilde menü açılıyor, herhangi bir menüye basıyoruz, altta sayfa açılıyor ama
+menünün kapanması için boşluğa basılması gerekiyor — bu bir hata»_. Telefonda kenar menü bir
+çekmece (`openMobile`); bağlantılar sayfayı değiştiriyordu ama çekmeceyi kapatan yoktu.
+
+Çare: `app-sidebar.tsx` — her bağlantı (menü öğeleri + logo) `onClick={menuyuKapat}`; kapatan
+YALNIZ telefonda (`isMobile`) ve YALNIZ çekmeceyi kapatır. Tıklamaya bağlı, adres değişimine
+değil: bulunduğun sayfaya basınca adres değişmez ama menü yine kapanır. Masaüstünde daraltma
+kullanıcının tercihi — dokunulmaz.
+
+Bekçi `satir-karti:dogrula` +1 bölüm (sayaçlı 5 → 6, 72 kontrol; «her bağlantı» ölçütü taban
+doluluğuyla). Harness **35/35** (+3: öğe · logo · masaüstünde daralma).
+
+### HALİL TEST LİSTESİ (telefon, canlı)
+1. Sol üstteki menü düğmesiyle menüyü açın → «Stok»a dokunun: sayfa açılır ve menü **kendiliğinden
+   kapanır**.
+2. Menüyü açın → zaten bulunduğunuz sayfaya dokunun: menü yine kapanır.
+3. Menüyü açın → üstteki logoya dokunun: panel açılır, menü kapanır.
+4. Bilgisayarda kenar menü eskisi gibi açık kalıyor (tıklayınca daralmıyor).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (metin yok) · **kullanıcı kolaylığı: ✓** (İlke #8 · #9)
+
+---
+
 ## 🔴 K277 — PANEL «MAL KABUL» = LİSTENİN GELEN ADETİ (K220 REGRESYONU) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı (telefon): _«buradaki 17 mal kabul /mal-kabul?pencere=BUGUN'e geliyor, doğru değil
