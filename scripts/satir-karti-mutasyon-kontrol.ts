@@ -31,6 +31,7 @@ const PAKET = "src/app/satislar/paketlendi-durumu.tsx";
 const STOK_SUZGEC = "src/app/stok/sirala-suzgec.tsx";
 const IADE_GECIS = "src/app/iadeler/bildirim-durumu.tsx";
 const KENAR_MENU = "src/components/app-sidebar.tsx";
+const MENU_SAYFASI = "src/app/menu/page.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -339,6 +340,15 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "    if (isMobile) setOpenMobile(false);",
     koy: "    if (isMobile) setOpenMobile(false);\n    setOpen(false);",
     bozdugu: "bilgisayarda her tiklamada kenar menu daralir - kullanicinin tercihi ezilir",
+  },
+  /* ── K281 tanımsız renk ── */
+  {
+    ad: "MENU ROZETI TANIMSIZ RENGE DONDU (K281 vakasi)",
+    yon: "KALDIRAN",
+    dosya: MENU_SAYFASI,
+    bul: "font-bold text-white tabular-nums",
+    koy: "font-bold text-destructive-foreground tabular-nums",
+    bozdugu: "rozet sayisi koyu kirmizi zeminde koyu kalir - okunmaz (25.09 ekran goruntusu)",
   },
 ];
 

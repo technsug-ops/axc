@@ -71,7 +71,7 @@ export default async function MenuSayfasi() {
           <Ikon className="size-[22px]" aria-hidden />
           {rozet > 0 ? (
             <span
-              className="bg-destructive text-destructive-foreground absolute -top-1 -right-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums"
+              className="bg-destructive ring-card absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] leading-none font-bold text-white tabular-nums ring-2"
               aria-label={t("bekleyen", { sayi: rozet })}
             >
               {rozet}

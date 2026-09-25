@@ -26,7 +26,7 @@ import { DURUM_ZEMINI } from "../src/lib/renkler";
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 6; /* K272: +1 (telefon düzeni) · K275: +1 (durum düğmeleri) · K272-②③: +1 · K278: +1 */
+const BOLUM_SAYISI = 7; /* K272: +1 (telefon düzeni) · K275: +1 (durum düğmeleri) · K272-②③: +1 · K278: +1 · K281: +1 */
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -416,6 +416,43 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
     kenar.includes("const menuyuKapat = () => {") && govde.includes("if (isMobile) setOpenMobile(false);") && !/\bsetOpen\(/.test(govde));
   kontrol("  ...çekmece durumu ortak kancadan", kenar.includes("const { isMobile, setOpenMobile } = useSidebar();"));
   kosanBolumler.push("K278 menü");
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   K281 — KULLANILAN HER «-foreground» RENGİ TASARIM SİSTEMİNDE TANIMLI
+   Kullanıcı 25.09 (telefon menüsü): «uyarının içindeki numaralar belli olmuyor».
+   `text-destructive-foreground` bu temada TANIMSIZDI (shadcn yeni sürümü o rengi
+   kaldırmış) — sınıf hiçbir şey yapmadı, sayı koyu kırmızı zeminde koyu kaldı.
+   Ölçüt dosya listesi tutmaz: src'nin TAMAMI taranır, yarın yazılan sınıf da kapsamda.
+   ──────────────────────────────────────────────────────────────────────── */
+{
+  console.log("\nK281 — kullanılan her «-foreground» rengi tanımlı");
+  const css = readFileSync("src/app/globals.css", "utf8");
+  const tanimli = new Set([...css.matchAll(/--color-([a-z-]*foreground)\s*:/g)].map((m) => m[1]));
+  kontrol("tema tabanı DOLU (≥ 5 foreground rengi tanımlı)", tanimli.size >= 5, [...tanimli]);
+  const kaynaklar: string[] = [];
+  const tara = (d: string) => {
+    for (const g of readdirSync(d, { withFileTypes: true })) {
+      const y = `${d}/${g.name}`;
+      if (g.isDirectory()) tara(y);
+      else if (/\.(tsx|ts)$/.test(g.name)) kaynaklar.push(y);
+    }
+  };
+  tara("src");
+  const kullanim = new Map<string, string[]>();
+  for (const y of kaynaklar) {
+    for (const m of readFileSync(y, "utf8").matchAll(/\b(?:bg|text|border|ring|fill|stroke|outline|decoration)-([a-z-]+-foreground)\b/g)) {
+      const l = kullanim.get(m[1]) ?? [];
+      l.push(y);
+      kullanim.set(m[1], l);
+    }
+  }
+  kontrol("kullanım tabanı DOLU (≥ 5 farklı foreground rengi kullanılıyor)", kullanim.size >= 5, [...kullanim.keys()]);
+  const tanimsiz = [...kullanim].filter(([ad]) => !tanimli.has(ad)).map(([ad, y]) => `${ad} ← ${[...new Set(y)].join(", ")}`);
+  kontrol("TANIMSIZ renk sınıfı yok (sınıf sessizce hiçbir şey yapmaz)", tanimsiz.length === 0, tanimsiz);
+  const menu = readFileSync("src/app/menu/page.tsx", "utf8");
+  kontrol("menü rozeti: kırmızı zeminde BEYAZ sayı, ≥ 11 px", /bg-destructive[^"]*text-white/.test(menu) && /bg-destructive[^"]*text-\[11px\]/.test(menu));
+  kosanBolumler.push("K281 renk tanımı");
 }
 
 console.log("\n" + "=".repeat(70));

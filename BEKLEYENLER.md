@@ -191,6 +191,27 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K281 — MENÜ ROZETLERİNDE SAYI OKUNMUYORDU (TANIMSIZ RENK) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (telefon menüsü ekran görüntüsü): _«uyarının içindeki numaralar belli olmuyor»_. Rozet
+`text-destructive-foreground` kullanıyordu; bu temada **o renk tanımlı değil** (`globals.css`te
+`--color-destructive-foreground` yok — shadcn'in yeni sürümü kaldırmış). Sınıf SESSİZCE hiçbir şey
+yapmadı; sayı koyu kırmızı zeminde koyu kaldı. Çare: `text-white`, 20 px rozet, 11 px sayı, kart
+renginde halka (ikon kutusundan ayrışsın).
+
+⚠ **Genel ölçüt, tek vaka değil:** `satir-karti:dogrula` yeni bölüm — `src`nin TAMAMINDA kullanılan
+her `*-foreground` renk sınıfı `globals.css`te tanımlı olmalı (dosya listesi yok; taban doluluğu
+iki yönden). Bugün taranan: 10 farklı renk, 1 tanımsız (bu vaka) → 0. Harness **36/36** (+1).
+
+### HALİL TEST LİSTESİ (telefon, canlı)
+1. Alt bar → «Menü»: Paketle · Mal kabul · İadeler üstündeki kırmızı rozetlerde **beyaz sayı**
+   net okunuyor.
+2. Sayılar paneldeki «Bugün ne yapmalıyım» kutularıyla aynı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (metin yok)
+
+---
+
 ## 🔴 K280 — TELEFON HALKASINDA YÜZDELER %1 · %0 · %0 · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı (telefon ekran görüntüsü, «Bugün»): _«pasta grafikte hâlâ oranlar yanlış»_ —
