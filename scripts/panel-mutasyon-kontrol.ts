@@ -908,9 +908,9 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     dosya: SAYFA,
     bul:
-      "<div className=\"md:hidden\">\n                      <HalkaKompakt",
+      "<div className=\"w-full md:hidden\">\n                      <HalkaKompakt",
     koy:
-      "<div className=\"hidden\">\n                      <HalkaKompakt",
+      "<div className=\"w-full hidden\">\n                      <HalkaKompakt",
     bozdugu:
       "telefonda halka hic cizilmez (ok cizgili masaustunde gizli)",
   },
@@ -990,6 +990,17 @@ const MUTASYONLAR: Mutasyon[] = [
       "const R = 76;",
     bozdugu:
       "pazaryeri karti uzadikca halka kartinda bosluk birikir - kullanicinin sikayeti",
+  },
+  {
+    ad: "HALKA SARMALAYICISI GENISLIKSIZ (K270 artigi)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "<div className=\"w-full max-md:hidden\">",
+    koy:
+      "<div className=\"max-md:hidden\">",
+    bozdugu:
+      "halka ic olcusune kuculur ve kanal sayisiyla oynar - kullanicinin yakaladigi",
   },
 ];
 

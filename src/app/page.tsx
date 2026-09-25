@@ -3132,7 +3132,7 @@ export default async function AnaSayfa({
                     <>
                     {/* K270: telefonda KOMPAKT halka (liste sağda) — ok çizgili
                         kadraj 358 px'te okunmuyordu. Aynı dilimler, aynı toplam. */}
-                    <div className="md:hidden">
+                    <div className="w-full md:hidden">
                       <HalkaKompakt
                         dilimler={dilimler}
                         toplam={ustBlok.toplamGelir}
@@ -3145,7 +3145,10 @@ export default async function AnaSayfa({
                         })}
                       />
                     </div>
-                    <div className="max-md:hidden">
+                    {/* ⛔ `w-full` ZORUNLU (K274): kart içeriği yatay flex; genişliksiz
+                        sarmalayıcıda SVG kendi iç ölçüsüne küçülüyor ve kanal sayısına
+                        göre oynuyordu (K270 artığı, kullanıcı yakaladı). */}
+                    <div className="w-full max-md:hidden">
                     <HalkaGrafik
                       dilimler={dilimler}
                       toplam={ustBlok.toplamGelir}

@@ -6894,8 +6894,9 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("pazaryeri telefonda YATAY kayar (tasma sayfada degil kapta)",
     /grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 [^"]*max-sm:flex[^"]*max-sm:overflow-x-auto/.test(sayfaT));
   kontrol("halka: telefonda KOMPAKT, masaustunde ok cizgili (ikisi de, kendi kirilmasinda)",
-    /<div className="md:hidden">\s*<HalkaKompakt/.test(sayfaT) &&
-      /<div className="max-md:hidden">\s*<HalkaGrafik/.test(sayfaT));
+    /<div className="w-full md:hidden">\s*<HalkaKompakt/.test(sayfaT) &&
+      /<div className="w-full max-md:hidden">\s*<HalkaGrafik/.test(sayfaT));
+  /* K274: sarmalayıcı TAM GENİŞLİK — yoksa halka iç ölçüsüne küçülür, kanal sayısıyla oynar. */
   kontrol("urun analizi ve 12 aylik grafik TELEFONDA yok (menude)",
     /<div className="max-md:hidden">\s*<SekmeliBolum\s*baslik=\{t\("urunAnaliziBaslik"/.test(sayfaT) &&
       /<div className="max-md:hidden">\s*<SekmeliBolum\s*baslik=\{t\("grafikBaslik"/.test(sayfaT));
