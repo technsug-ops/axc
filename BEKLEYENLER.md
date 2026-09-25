@@ -459,6 +459,29 @@ kutu) · ④ sayfa başlıkları ve kalan formlar (tek tek bakılır, düzgünse
 **mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok) · **kullanıcı kolaylığı: ✓**
 (İlke #1 · #8 · #10 · #12)
 
+─── ②③ STOK SÜZGEÇLERİ · İADE GEÇİŞ DÜĞMELERİ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+② `/stok` süzgeçleri (3 sıralama + sıfırı gizle · 7 raf yaşı · kanalda kodu yok): telefonda
+15 çip 5–6 satıra kırılıp listeyi aşağı itiyordu → her grup KENDİ satırında, başında etiketi,
+**yana kayar**; çip ezilmez. Masaüstü AYNEN: grup sarmalayıcısı `contents` (kutusuz).
+③ İade bildirimi geçiş düğmeleri: telefonda farklı genişliklerde dağınıktı, «İtiraz KAZANILDI
+olarak işaretle» gibi uzun etiketler taşıyordu → **eşit iki sütun**, etiket kutu içinde kırılır,
+≥44 px; «İadeyi işle» tam satır. Masaüstü AYNEN (yalnız `max-md:`).
+
+Bekçi `satir-karti:dogrula` +1 bölüm (sayaçlı 4 → 5, 68 kontrol). Harness **32/32** (+6).
+
+④ **Sayfa başlıkları ve formlar — KODDAN BULGU YOK, ekran bekleniyor.** Tarama (sabit genişlik ·
+mobil karşılığı olmayan çok sütunlu ızgara) 18 aday verdi; hepsi 358 px içerik alanına sığıyor ya
+da telefona özel tasarlanmış. Ekranı görmeden "düzgün" hükmü verilmiyor → kullanıcı dağınık
+gördüğü sayfanın ekran görüntüsünü gönderir, o sayfa ele alınır. (Açılış şartı bu.)
+
+**HALİL TEST LİSTESİ ②③ (telefon, canlı)**
+1. `/stok`: süzgeçler üç satır — «Sırala», «Raf yaşı», «Kanalda kodu yok»; her satır parmakla
+   yana kayıyor, çipler ezilmiyor. Bir çipe dokunun → liste süzülüyor (davranış aynı).
+2. `/iadeler` → açık bir bildirim: «İadeyi işle» tam genişlik, altında geçiş düğmeleri iki
+   eşit sütun; uzun yazı kutunun içinde iki satır, taşmıyor.
+3. Bilgisayarda iki ekran da eskisi gibi.
+
 ---
 
 ## 🔴 K271 — HALKA KADRAJIN %39'U → %47'Sİ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]

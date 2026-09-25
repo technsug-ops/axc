@@ -26,7 +26,7 @@ import { DURUM_ZEMINI } from "../src/lib/renkler";
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 4; /* K272: +1 (telefon düzeni) · K275: +1 (durum düğmeleri) */
+const BOLUM_SAYISI = 5; /* K272: +1 (telefon düzeni) · K275: +1 (durum düğmeleri) · K272-②③: +1 */
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -364,6 +364,40 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
     kargo.includes("{isaretli && telefonKutusu ? (") && isaretliTel.includes("className={`md:hidden ${DURUM_EYLEMI_SINIFI}`}") &&
       isaretliTel.includes("onClick={() => guncelle(null)}") && kargo.includes('${telefonKutusu ? "max-md:hidden" : ""}'));
   kosanBolumler.push("K275 durum düğmeleri");
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   K272-② STOK SÜZGEÇLERİ · K272-③ İADE GEÇİŞ DÜĞMELERİ (telefon)
+   ──────────────────────────────────────────────────────────────────────── */
+{
+  console.log("\nK272-②③ — stok süzgeç grupları · iade geçiş düğmeleri");
+  const temiz2 = (y: string) => readFileSync(y, "utf8").replace(/\r\n/g, "\n").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const sabit = (kaynak: string, ad: string) => {
+    const m = new RegExp(`const ${ad} =\\s*"([^"]*)"`).exec(kaynak);
+    return m ? m[1] : "";
+  };
+
+  const suz = temiz2("src/app/stok/sirala-suzgec.tsx");
+  const kap = sabit(suz, "SUZGEC_KABI");
+  const grup = sabit(suz, "SUZGEC_GRUBU");
+  const grupSiniflari = grup.split(/\s+/).filter(Boolean);
+  kontrol("stok süzgeci: telefonda gruplar ALT ALTA", /max-md:flex-col/.test(kap) && /max-md:flex-nowrap/.test(kap), kap);
+  kontrol("  ...her grup telefonda TEK SATIR, YANA KAYAR", /max-md:flex\b/.test(grup) && /max-md:overflow-x-auto/.test(grup), grup);
+  kontrol("  ...masaüstünde grup KUTUSUZ (contents) — düzen aynen",
+    grupSiniflari[0] === "contents" && grupSiniflari.slice(1).every((s) => s.startsWith("max-md:")), grup);
+  kontrol("  ...ÜÇ grup: sıralama · raf yaşı · kanal kodu yok", (suz.match(/<div className=\{SUZGEC_GRUBU\}>/g) ?? []).length === 3);
+  kontrol("  ...çip kayan satırda EZİLMEZ (shrink-0 · tek satır)", /"inline-flex h-11 shrink-0 [^"]*whitespace-nowrap/.test(suz));
+
+  const bil = temiz2("src/app/iadeler/bildirim-durumu.tsx");
+  const gkap = sabit(bil, "GECIS_KABI");
+  const gdug = sabit(bil, "GECIS_DUGMESI");
+  kontrol("iade geçişleri: telefonda EŞİT iki sütun", /max-md:grid max-md:grid-cols-2/.test(gkap), gkap);
+  kontrol("  ...düğme kutuyu doldurur, uzun etiket KIRILIR (taşmaz), ≥44 px",
+    /max-md:w-full/.test(gdug) && /max-md:whitespace-normal/.test(gdug) && /max-md:min-h-11/.test(gdug), gdug);
+  kontrol("  ...masaüstüne dokunmaz (yalnız max-md:)", gdug.split(/\s+/).filter(Boolean).every((s) => s.startsWith("max-md:")), gdug);
+  kontrol("  ...HİÇBİR düğme eski sınıfta kalmadı", !bil.includes('className="h-11 md:h-8"') && (bil.match(/\$\{GECIS_DUGMESI\}/g) ?? []).length === 5);
+  kontrol("  ...«İadeyi işle» telefonda tam satır (açık ve kilitli hâl)", (bil.match(/max-md:col-span-2/g) ?? []).length === 2);
+  kosanBolumler.push("K272-②③");
 }
 
 console.log("\n" + "=".repeat(70));

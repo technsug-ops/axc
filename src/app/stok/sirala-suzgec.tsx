@@ -53,7 +53,7 @@ function Cip({
        * varyantlar mobilde tek başına kullanılmaz.
        */
       className={cn(
-        "inline-flex h-11 items-center gap-1.5 rounded-md border px-3 text-sm font-medium transition-colors",
+        "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md border px-3 text-sm font-medium whitespace-nowrap transition-colors",
         aktif
           ? "bg-primary text-primary-foreground border-primary"
           : "bg-background hover:bg-muted",
@@ -65,6 +65,17 @@ function Cip({
     </Link>
   );
 }
+
+/**
+ * K272-② (kullanıcı 25.09: «iç sayfalar dağınık»). TELEFONDA her grup (sıralama ·
+ * raf yaşı · kanalda kodu yok) KENDİ satırında, başında etiketiyle, YANA KAYAR —
+ * 15 çip telefonda 5–6 satıra kırılıp listeyi aşağı itiyordu. MASAÜSTÜ AYNEN:
+ * grup sarmalayıcısı `contents` — kutusu yok, çipler eskisi gibi tek akışta.
+ */
+const SUZGEC_KABI =
+  "flex flex-wrap items-center gap-2 max-md:flex-col max-md:flex-nowrap max-md:items-stretch";
+const SUZGEC_GRUBU =
+  "contents max-md:-mx-4 max-md:flex max-md:items-center max-md:gap-2 max-md:overflow-x-auto max-md:px-4 max-md:pb-1";
 
 export async function SiralaSuzgec({
   sira,
@@ -118,8 +129,9 @@ export async function SiralaSuzgec({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-muted-foreground text-sm">{t("siralaEtiket")}</span>
+    <div className={SUZGEC_KABI}>
+      <div className={SUZGEC_GRUBU}>
+      <span className="text-muted-foreground shrink-0 text-sm">{t("siralaEtiket")}</span>
 
       {SIRALAMA_ALANLARI.map((alan) => {
         const aktif = sira.alan === alan;
@@ -171,6 +183,7 @@ export async function SiralaSuzgec({
         <EyeOff className="size-4" aria-hidden />
         {t("sifirGizle")}
       </Cip>
+      </div>
 
       {/*
         ═══ K131 — RAF YAŞI KOVALARI ═════════════════════════════════════
@@ -186,7 +199,8 @@ export async function SiralaSuzgec({
         ⚠ AKTİF KOVAYA TEKRAR BASMAK SÜZGECİ KALDIRIR (İlke #10: açtığın
         şeyi kapatmanın yolu, açtığın düğmedir).
       */}
-      <span className="text-muted-foreground ml-2 text-sm">
+      <div className={SUZGEC_GRUBU}>
+      <span className="text-muted-foreground ml-2 shrink-0 text-sm max-md:ml-0">
         {t("yasKovaBaslik")}
       </span>
       {YAS_KOVALARI.map((k) => (
@@ -202,6 +216,7 @@ export async function SiralaSuzgec({
           {t(`yasKova${k.kod}`)}
         </Cip>
       ))}
+      </div>
 
       {/*
         ═══ K112 — KANALDA KODU OLMAYANLAR ═══════════════════════════════
@@ -216,8 +231,8 @@ export async function SiralaSuzgec({
         "Satışta değil" demek, tutamayacağımız bir söz olurdu.
       */}
       {kanallar.length > 0 ? (
-        <>
-          <span className="text-muted-foreground ml-2 text-sm">
+        <div className={SUZGEC_GRUBU}>
+          <span className="text-muted-foreground ml-2 shrink-0 text-sm max-md:ml-0">
             {t("kanalKapsami")}
           </span>
           {kanallar.map((k) => (
@@ -233,7 +248,7 @@ export async function SiralaSuzgec({
               {t("kanaldaKodYok", { kanal: k.ad })}
             </Cip>
           ))}
-        </>
+        </div>
       ) : null}
     </div>
   );

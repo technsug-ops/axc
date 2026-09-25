@@ -62,6 +62,17 @@ export type DurumSecenegi = {
   sebep?: string;
 };
 
+/**
+ * K272-③ (kullanıcı 25.09: «iç sayfalar dağınık, yazılar taşıyor»). TELEFONDA
+ * geçiş düğmeleri EŞİT iki sütunlu ızgara; «İadeyi işle» tam satır. Uzun etiket
+ * («İtiraz KAZANILDI olarak işaretle») kutu İÇİNDE iki satıra kırılır, taşmaz.
+ * MASAÜSTÜ AYNEN (sınıflar yalnız `max-md:`).
+ */
+const GECIS_KABI =
+  "flex flex-wrap items-center gap-2 max-md:grid max-md:grid-cols-2";
+const GECIS_DUGMESI =
+  "max-md:h-auto max-md:min-h-11 max-md:w-full max-md:py-2 max-md:text-xs max-md:leading-tight max-md:whitespace-normal";
+
 export function BildirimDurumu({
   bildirimId,
   mevcutDurum,
@@ -126,10 +137,10 @@ export function BildirimDurumu({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={GECIS_KABI}>
         {/* --- AŞAMA B KAPISI: iadeyi işle --- */}
         {iadeIsle.acik && iadeIsle.adres ? (
-          <Button size="sm" className="h-11 md:h-8" asChild>
+          <Button size="sm" className={`h-11 md:h-8 ${GECIS_DUGMESI} max-md:col-span-2`} asChild>
             <Link href={iadeIsle.adres}>
               <Undo2 className="size-4" />
               {iadeIsle.etiket}
@@ -143,8 +154,8 @@ export function BildirimDurumu({
            */
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="inline-flex">
-                <Button size="sm" className="h-11 md:h-8" variant="outline" disabled>
+              <span className="inline-flex max-md:col-span-2 max-md:w-full">
+                <Button size="sm" className={`h-11 md:h-8 ${GECIS_DUGMESI}`} variant="outline" disabled>
                   <Ban className="size-4" />
                   {iadeIsle.etiket}
                 </Button>
@@ -170,7 +181,7 @@ export function BildirimDurumu({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-11 md:h-8"
+                    className={`h-11 md:h-8 ${GECIS_DUGMESI}`}
                     disabled={bekliyor}
                   >
                     <ArrowRight className="size-4" />
@@ -292,7 +303,7 @@ export function BildirimDurumu({
                 key={s.hedef}
                 size="sm"
                 variant="outline"
-                className="h-11 md:h-8"
+                className={`h-11 md:h-8 ${GECIS_DUGMESI}`}
                 disabled={bekliyor}
                 onClick={() => git(s.hedef)}
               >
@@ -303,8 +314,8 @@ export function BildirimDurumu({
           ) : (
             <Tooltip key={s.hedef}>
               <TooltipTrigger asChild>
-                <span className="inline-flex">
-                  <Button size="sm" variant="ghost" className="h-11 md:h-8" disabled>
+                <span className="inline-flex max-md:w-full">
+                  <Button size="sm" variant="ghost" className={`h-11 md:h-8 ${GECIS_DUGMESI}`} disabled>
                     {s.etiket}
                   </Button>
                 </span>

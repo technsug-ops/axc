@@ -28,6 +28,8 @@ const ARAMA = "src/components/kod-arama-kutusu.tsx";
 const EXCEL = "src/components/excel-indir.tsx";
 const KARGO = "src/app/satislar/kargo-durumu.tsx";
 const PAKET = "src/app/satislar/paketlendi-durumu.tsx";
+const STOK_SUZGEC = "src/app/stok/sirala-suzgec.tsx";
+const IADE_GECIS = "src/app/iadeler/bildirim-durumu.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -262,6 +264,55 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: 'variant={paketliMi ? "default" : "outline"}',
     koy: 'variant="outline"',
     bozdugu: "etiket iki halde ayni; renk de ayni olursa paketli mi degil mi gorunmez",
+  },
+  /* ── K272-② stok süzgeçleri · ③ iade geçişleri ── */
+  {
+    ad: "STOK GRUBU MASAUSTUNDE KUTU OLDU (contents dustu)",
+    yon: "FAZLADAN",
+    dosya: STOK_SUZGEC,
+    bul: '"contents max-md:-mx-4',
+    koy: '"flex max-md:-mx-4',
+    bozdugu: "masaustunde cipler tek akistan cikar, gruplar ayri kutu olur - masaustu degisir",
+  },
+  {
+    ad: "STOK GRUBU TELEFONDA KAYMIYOR",
+    yon: "KALDIRAN",
+    dosya: STOK_SUZGEC,
+    bul: " max-md:overflow-x-auto max-md:px-4",
+    koy: " max-md:px-4",
+    bozdugu: "7 raf yasi cipi telefonda ekrandan tasar, sayfa yatay kayar",
+  },
+  {
+    ad: "STOK CIPI KAYAN SATIRDA EZILIYOR",
+    yon: "KALDIRAN",
+    dosya: STOK_SUZGEC,
+    bul: '"inline-flex h-11 shrink-0 items-center',
+    koy: '"inline-flex h-11 items-center',
+    bozdugu: "cipler daralir, yazi iki satira kirilir - kaydirma yerine ezilme",
+  },
+  {
+    ad: "IADE GECISLERI TELEFONDA IZGARA DEGIL",
+    yon: "KALDIRAN",
+    dosya: IADE_GECIS,
+    bul: '"flex flex-wrap items-center gap-2 max-md:grid max-md:grid-cols-2"',
+    koy: '"flex flex-wrap items-center gap-2"',
+    bozdugu: "gecis dugmeleri telefonda farkli genislikte daginik dizilir (25.09 sikayeti)",
+  },
+  {
+    ad: "IADE DUGMESI ETIKETI TASIYOR (kirilmiyor)",
+    yon: "KALDIRAN",
+    dosya: IADE_GECIS,
+    bul: " max-md:leading-tight max-md:whitespace-normal",
+    koy: " max-md:leading-tight",
+    bozdugu: "'Itiraz KAZANILDI olarak isaretle' kutudan tasar",
+  },
+  {
+    ad: "IADEYI ISLE TELEFONDA YARIM SATIR",
+    yon: "KALDIRAN",
+    dosya: IADE_GECIS,
+    bul: "className={`h-11 md:h-8 ${GECIS_DUGMESI} max-md:col-span-2`} asChild>",
+    koy: "className={`h-11 md:h-8 ${GECIS_DUGMESI}`} asChild>",
+    bozdugu: "ana eylem ikincil gecislerle ayni boyda kalir, one cikmaz",
   },
 ];
 
