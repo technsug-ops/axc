@@ -363,6 +363,21 @@ console.log("\n5) panel «Mal kabul» = listenin gelen adeti (K277)");
   kontrol("panel çipi GELEN ADETİ yazıyor", bas >= 0 && /\{alim\.gelenAdet\}/.test(cip));
   kontrol("  ...KAYIT sayısını (alim.adet) YAZMIYOR — K252'de kaybolan düzeltme", !/\{alim\.adet\}/.test(cip));
   kontrol("  ...kıyas rozeti de adetle", /kiyasRozeti\(alim\.gelenAdet, kiyasAlim\?\.gelenAdet/.test(cip));
+
+  /**
+   * K279 (kullanıcı kararı 25.09): panelde İKİ «Mal kabul» vardı — huni kutusu
+   * (bugün stoğa GİREN adet) ve görev kutusu (teslim alınmayı BEKLEYEN alım).
+   * Aynı ad iki farklı sayıyı taşıyordu; görev etiketi «Mal kabul bekleyen» oldu.
+   * Ölçüt DEĞERLE: iki etiket aynı olamaz, görev etiketi BEKLEMEyi söyler.
+   */
+  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    Panel: Record<string, string>;
+    Gorevler: { kisa: Record<string, string> };
+  };
+  const huniAdi = sozluk.Panel.malKabulAdedi;
+  const gorevAdi = sozluk.Gorevler.kisa.malKabulBekleyen;
+  kontrol("görev kutusu ile huni kutusu AYNI adı taşımıyor", typeof huniAdi === "string" && typeof gorevAdi === "string" && huniAdi.trim() !== gorevAdi.trim(), { huniAdi, gorevAdi });
+  kontrol("  ...görev etiketi BEKLEYENİ söylüyor", /bekleyen/i.test(gorevAdi ?? ""), gorevAdi);
 }
 kosanBolumler.push("gelen adet = liste");
 

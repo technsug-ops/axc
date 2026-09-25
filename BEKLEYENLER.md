@@ -191,6 +191,26 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K279 — GÖREV KUTUSU «MAL KABUL» → «MAL KABUL BEKLEYEN» · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+K277'nin yan bulgusu, kullanıcı kararı («yap»): panelde İKİ «Mal kabul» vardı — huni kutusu
+(bugün stoğa GİREN adet, K277) ve «Bugün ne yapmalıyım» kutusu (teslim alınmayı BEKLEYEN alım).
+Aynı ad iki farklı sayıyı taşıyordu. Görev kısa etiketi `Gorevler.kisa.malKabulBekleyen` →
+«Mal kabul bekleyen» (uzun adı zaten «Mal kabul bekleyen alım»dı).
+
+Bekçi `mal-kabul:dogrula` +2 (DEĞERLE: iki etiket aynı olamaz · görev etiketi «bekleyen» der),
+49/49. Harness **16/16** (+1: etiket eskiye döner → kırmızı).
+
+### HALİL TEST LİSTESİ
+1. Panel → «Bugün ne yapmalıyım»: kutu **«Mal kabul bekleyen»** yazıyor; dokununca teslim
+   alınmayı bekleyen alımlar açılıyor (davranış aynı).
+2. Üstteki huni kutusu hâlâ **«Mal kabul»** (bugün giren adet) — iki kutu artık ayrı adla.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (değer değişti, anahtar aynı; en boş) ·
+**kullanıcı kolaylığı: ✓** (İlke #10 · #16)
+
+---
+
 ## 🔴 K278 — TELEFONDA MENÜ SEÇİMDEN SONRA KAPANMIYORDU · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı: _«mobilde menü açılıyor, herhangi bir menüye basıyoruz, altta sayfa açılıyor ama

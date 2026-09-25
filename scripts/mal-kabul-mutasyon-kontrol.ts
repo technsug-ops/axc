@@ -171,6 +171,14 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "        ...(aralik ? { receivedAt: aralik } : {}),",
     bozdugu: "suzgec kapaliyken teslim alinmamis alim listeye girer",
   },
+  {
+    ad: "GOREV ETIKETI YINE HUNIYLE AYNI (K279)",
+    yon: "KALDIRAN",
+    dosya: SOZLUK,
+    bul: '"malKabulBekleyen": "Mal kabul bekleyen",',
+    koy: '"malKabulBekleyen": "Mal kabul",',
+    bozdugu: "panelde iki farkli sayi (giren adet · bekleyen alim) ayni adi tasir",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
