@@ -191,6 +191,78 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K270 — TELEFON DÜZENİ: EŞİT KUTU IZGARASI, HIZLI İŞLEMLER, SABİT ALT BAR, MENÜ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 25.09: Entegra / Trendyol / Hepsiburada satıcı uygulamalarını gösterip
+_«alt butonların fonksiyonelliği, kartların boyutlarının düzenli olması hem güven
+veriyor hem kullanım kolaylığı… bizde kartlar ve içindeki yazılar çok büyük, boşluk
+çok, kart boyutlarındaki farklar özensizlik hissi veriyor… özellikle hızlı menü
+tuşları çok efektif olabilir»_. Önce HTML demo istendi; tasarım tuvaline üç telefon
+ekranı eklendi (açılış · aşağı kaydırınca · menü). Kullanıcı: _«sadece pasta dilimi
+biraz büyüyebilir, bu şekilde mobili onaylıyorum»_ — halka büyütüldü, koda geçildi.
+
+### YAPILAN — MASAÜSTÜ AYNEN, her değişiklik `max-sm` / `max-md` / `md:hidden`
+
+- **Alt bar** (`alt-cubuk.tsx`): sabit, 5 sekme — Panel · Satışlar · **Okut** (ortada)
+  · Alımlar · Menü; güvenli alan, 44+ px; içerik `pb-24` ile barın arkasına kaymaz.
+- **Menü sayfası** (`/menu`): 4 sütunlu gruplar, sıra/gruplar sol menüyle **aynı
+  kaynaktan** (`menuDuzeni` — `/ayarlar/menu`den değişince ikisi birlikte değişir);
+  bekleyen iş ikon üstünde **rozet** (paketle · mal kabul · iadeler · kanal SKU, panel
+  sayacıyla aynı gövde); arama ortak `KodAramaKutusu` (kamera).
+- **İkon kataloğu** (`lib/menu/ikonlar.ts`): harita sol menünün içindeydi, üç
+  tüketici doğunca tek gövdeye çıktı; sol menüde kopya kalmadı (ölçütü var).
+- **Panel — telefon:** başlık yalnız ekran okuyucuda, alt satır gizli (çekim uyarısı
+  görünür) · **dönem çipleri hep görünür**, tek satır, yatay kayar (kanal/kıyas
+  «Süzgeçler»in arkasında) · **KPI 6 sütun: [ciro] [NET-1 · NET-2] [marj · satış ·
+  iade]** — satırlar tam ve eşit; açıklama satırları telefonda gizli, rakam bir kademe
+  küçük · **huni 4 eşit kutu** (iki tarih ekseni notu altta, 14.08 kuralı) · **görev
+  3×2 eşit kutu** (Paketlenecek geniş; temiz kutu bağlantı değil) · **Hızlı işlemler**
+  (Okut koyu · Paketle · Mal kabul · Yerleştir) · kanal sırası tek satır üç eşit düğme
+  · **pazaryeri yatay kayan kartlar** (%80, bir sonraki kartın kenarı görünür) ·
+  **kompakt halka** (halka solda, liste sağda — ok çizgili kadraj 358 px'te okunmuyordu).
+- **Telefonda gizlenenler** (demo dışı; masaüstünde ve menüde duruyor): «Rafta var,
+  vitrinde yok» afişi · günlük operasyon grafiği · ürün analizi · 12 aylık grafik.
+- **44 px:** demo dönem çiplerini 36 px çizmişti — kural demodan önce gelir, çipler
+  `h-11` (İlke #8). Bekçi ikisini de sayıyor.
+
+### BEKÇİ
+
+`panel:dogrula` **+26 ölçüt** (866 → 892): değer testleri (`sekmeAktifMi` · alt bar
+sırası · hızlı işlemlerin adres+ikon tabanı) ve kullanım bloğuna daraltılmış kaynak
+ölçütleri — KPI satır toplamları **6 · 3+3 · 2+2+2** tek ölçütte (boş hücre yok).
+Eskiyen iki ölçüt gerekçesiyle çevrildi: ikon ölçütü artık DEĞERİ sınıyor (harita
+kataloğa çıktı), huni penceresi sabit 3500 karakter yerine bloğun gerçek sonuna bağlı
+(telefon sınıfları eklenince not pencereden düşmüştü — «pencere ölçülür»).
+Harness: **+14 mutasyon** — 84/84 (14 yeni hepsi kirmizi yandi; iki kor nokta — ayni desen telefon + masaustu IKI yerde — harness yakaladi, olcutler yer basina sayiyor).
+
+### HALİL TEST LİSTESİ (telefon, canlı adres)
+
+1. `/` açılış: üstte **dönem çipleri tek satır** (Dün · Bugün · Bu hafta · Son 30 gün
+   · Bu ay · Özel ▾), sağa kaydırılabilir; «Panel» başlığı ve uzun alt satır **yok**.
+2. Para kartı: **ciro tam genişlik**, altında **NET-1 | NET-2 yan yana**, altında
+   **marj | satış | iade üçü eşit**. Hiçbir satırda boş kutu yok; rakamlar tek satır.
+3. Altında huni: **4 eşit kutu** (Satın alınan · Mal kabul · Kargoya verilen · Kargo
+   bekleyen), kargo bekleyende yalnız sayı; tarih ekseni notu altta.
+4. «Bugün ne yapmalıyım»: **3×2 kutu** — Paketlenecek iki kutu genişliğinde, diğerleri
+   eşit; temiz olanlar soluk + ✓ ve **tıklanmaz**, bekleyenler tıklanınca listesi açılır.
+5. **Hızlı işlemler**: 4 daire (Barkod okut koyu) — her biri kendi ekranını açmalı.
+6. Pazaryeri: kanal sırası **tek satır üç düğme**; kartlar **sağa kaydırılıyor**, bir
+   sonraki kartın kenarı görünüyor.
+7. Ciro kanala göre: **halka solda, kanallar sağda liste** (ad · tutar · yüzde).
+8. En altta **sabit bar**: 5 sekme; sayfa kaydırılınca bar yerinde kalır, son satır
+   barın altında kalmaz. Bulunduğunuz sekme vurgulu (Satışlar'a girince Satışlar).
+9. **Menü** sekmesi: arama (kamera ikonlu) + gruplar 4 sütun; Paketle / Mal kabul /
+   İadeler / Kanal SKU üstünde **bekleyen sayısı rozeti** — panel şeridindeki sayılarla
+   **birebir**.
+10. `/ayarlar/menu`de bir öğenin grubunu değiştirin → telefon menüsünde de değişmeli.
+11. Masaüstünde **hiçbir şey değişmemeli** (alt bar yok, eski düzen).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`AltCubuk` ×6 · `MobilMenu` ×4 ·
+`Basliklar.menu` · `Panel.hizliIslemler`; tr+en) · **kullanıcı kolaylığı: ✓**
+(İlke #1 · #2 · #7 · #8 · #9 · #10 · #12 · #13)
+
+---
+
 ## 🟡 K269 — `uyari:dogrula` ve `cron-yollari:dogrula` MUTASYON HARNESS'İ YOK · 24.09.2026 · [ELLE TUR KOŞTU — KALICISI AÇIK]
 
 K264 ve K266 bu iki bekçiye **11 yeni ölçüt** ekledi; ikisinin de mutasyon
