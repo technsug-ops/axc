@@ -43,9 +43,20 @@ const CX = 235;
  * vardı; delik 98→122 birime çıktı, merkez rakam (`merkezYaziBoyu`) delikten
  * türediği için kendiliğinden büyüdü (11 karakter: 13 → 16,5).
  */
-const CY = 150;
-const R = 76;
-const KALINLIK = 30;
+/**
+ * K271 (kullanıcı 25.09.2026: «pazaryeri arttıkça yuvarlak ufalıyor»): halka
+ * kadrajın GENİŞLİĞİNE göre ölçekleniyor; pazaryeri kartı uzayınca halka kartı
+ * da uzuyor ama halka büyüyemiyor, boşluk birikiyordu. Darboğaz yazı payıydı:
+ * oklar iki yanda ~100 birim ayırıyor, halka genişliğin %39'unu kullanıyordu.
+ * ÖLÇÜLDÜ: en uzun ad/tutar ≈ 80 birim («Hepsiburada», «₺133.777,48»). Ok kısaldı
+ * (dirsek halkadan 22, yatay 12), yazı payı 90 → R 76→95, kalınlık 30→32:
+ * dış çap 182 → 222 (%47). Bekçi oranı ölçer (`HALKA_DIS_CAP`).
+ */
+const CY = 160;
+const R = 95;
+const KALINLIK = 32;
+export const HALKA_KADRAJ_GENISLIGI = 470;
+export const HALKA_DIS_CAP = 2 * (R + KALINLIK / 2);
 const CEVRE = 2 * Math.PI * R;
 /** Halkanın DELİĞİ — merkez yazının sığması gereken çap (R − kalınlık/2)·2. */
 export const DELIK_CAPI = 2 * (R - KALINLIK / 2);
@@ -94,11 +105,13 @@ export function halkaDilimleriniTopla(
 /** Bir etiket iki satır (ad + tutar) ≈ 28 birim; oklar bundan yakın olamaz. */
 export const OK_ETIKET_ARALIGI = 30;
 /** Yazı en fazla ~90 birim; uç bu payı kadrajın dışına taşıramaz. */
-const OK_UC_X_SOL = 96;
-const OK_UC_X_SAG = 470 - 96;
+const OK_UC_X_SOL = 90;
+const OK_UC_X_SAG = 470 - 90;
 /** Halka büyüyünce (K267) tepe/dip uçları kadrajın dışına taşabilir — y de kırpılır. */
 const OK_UC_Y_UST = 20;
-const OK_UC_Y_ALT = 300 - 30;
+const OK_UC_Y_ALT = 335 - 30;
+/** Ok uçlarının kadraj sınırları — bekçi değerle sınar. */
+export const OK_UC_SINIRI = { sol: OK_UC_X_SOL, sag: OK_UC_X_SAG, ust: OK_UC_Y_UST, alt: OK_UC_Y_ALT };
 
 export type OkUcu = { sagda: boolean; x: number; y: number };
 
@@ -175,10 +188,10 @@ export function HalkaGrafik({
     const cos = Math.cos(ortaAci);
     const sin = Math.sin(ortaAci);
     const sagda = cos >= 0;
-    /* Ok: bant dışından (R + kalınlık/2 + 3) dirseğe (R + 52), sonra yatay 16. */
+    /* Ok: bant dışından (dış + 3) dirseğe (dış + 22), sonra yatay 12 (K271). */
     const bas = { x: CX + (R + KALINLIK / 2 + 3) * cos, y: CY + (R + KALINLIK / 2 + 3) * sin };
-    const dirsek = { x: CX + (R + 52) * cos, y: CY + (R + 52) * sin };
-    const uc = { x: dirsek.x + (sagda ? 16 : -16), y: dirsek.y };
+    const dirsek = { x: CX + (R + KALINLIK / 2 + 22) * cos, y: CY + (R + KALINLIK / 2 + 22) * sin };
+    const uc = { x: dirsek.x + (sagda ? 12 : -12), y: dirsek.y };
     return {
       d,
       uzunluk,
@@ -198,7 +211,7 @@ export function HalkaGrafik({
 
   return (
     <svg
-      viewBox="0 0 470 300"
+      viewBox="0 0 470 335"
       className="block h-auto w-full"
       role="img"
       aria-label={aciklama}
@@ -281,7 +294,7 @@ export function HalkaGrafik({
         </g>
       ))}
       {dipnot ? (
-        <text x={CX} y={290} textAnchor="middle" fontSize="11" className="fill-muted-foreground">
+        <text x={CX} y={325} textAnchor="middle" fontSize="11" className="fill-muted-foreground">
           {dipnot}
         </text>
       ) : null}

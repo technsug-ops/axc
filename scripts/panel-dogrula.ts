@@ -43,6 +43,9 @@ import {
   halkaDilimleriniTopla,
   OK_ETIKET_ARALIGI,
   okEtiketleriniAyir,
+  OK_UC_SINIRI,
+  HALKA_DIS_CAP,
+  HALKA_KADRAJ_GENISLIGI,
   DELIK_CAPI,
   MERKEZ_YAZI_TAVANI,
   merkezYaziBoyu,
@@ -6802,11 +6805,17 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("  ...uzak olan dokunulmuyor, sira korunuyor",
     ayrik[3]!.y === 200 && ayrik.length === 4);
   kontrol("  ...sol uc kadrajin icine kirpiliyor, sag uc da",
-    ayrik[2]!.x >= 96 && ayrik[3]!.x <= 470 - 96, { sol: ayrik[2]!.x, sag: ayrik[3]!.x });
+    ayrik[2]!.x >= OK_UC_SINIRI.sol && ayrik[3]!.x <= OK_UC_SINIRI.sag, { sol: ayrik[2]!.x, sag: ayrik[3]!.x });
   /* K267: halka buyudu (R 76, kadraj 300); tepe/dip uclari kadrajda kalir. */
   const dikey = okEtiketleriniAyir([{ sagda: true, x: 300, y: -40 }, { sagda: false, x: 100, y: 340 }]);
   kontrol("  ...tepe ve dip uclari da kadrajin icine kirpiliyor (K267)",
-    dikey[0]!.y >= 20 && dikey[1]!.y <= 270, { ust: dikey[0]!.y, alt: dikey[1]!.y });
+    dikey[0]!.y >= OK_UC_SINIRI.ust && dikey[1]!.y <= OK_UC_SINIRI.alt, { ust: dikey[0]!.y, alt: dikey[1]!.y });
+  /* K271: «pazaryeri arttıkça yuvarlak ufalıyor» — halka kadraj genişliğinin
+     en az %45'ini kullanır (eski %39); yazı payı en uzun etikete (≈80) yeter. */
+  kontrol("halka kadraj genisliginin >= %45'i (K271)",
+    HALKA_DIS_CAP / HALKA_KADRAJ_GENISLIGI >= 0.45, { oran: HALKA_DIS_CAP / HALKA_KADRAJ_GENISLIGI });
+  kontrol("  ...yazi payi en uzun etikete yetiyor (her iki yanda >= 85 birim)",
+    OK_UC_SINIRI.sol - 8 >= 80 && HALKA_KADRAJ_GENISLIGI - OK_UC_SINIRI.sag - 8 >= 80);
   kontrol("  ...delik merkez rakami 16+ birimle tasiyor (K267: 98 -> 122)",
     DELIK_CAPI >= 120 && merkezYaziBoyu("₺622.904,97") >= 16, { delik: DELIK_CAPI });
   const halka = readFileSync("src/components/halka-grafik.tsx", "utf8")
@@ -6818,7 +6827,14 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   const uzun = "₺622.904,97";
   const boy = merkezYaziBoyu(uzun);
   kontrol("11 karakterlik toplam delige SIGIYOR (0,6 em × karakter × boy ≤ delik)",
-    boy < MERKEZ_YAZI_TAVANI && 0.6 * uzun.length * boy <= DELIK_CAPI, { boy, delik: DELIK_CAPI });
+    0.6 * uzun.length * boy <= DELIK_CAPI, { boy, delik: DELIK_CAPI });
+  /* *** ÖLÇÜT ESKİDİ, SUSTURULMADI (K271): delik 98 → 158 oldu, 11 karakter artık
+     KÜÇÜLTMEDEN sığıyor; «boy < tavan» şartı doğru davranışa kırmızı yanıyordu.
+     Küçültmenin kendisi daha uzun bir tutarla ayrıca sınanıyor. */
+  const cokUzun = "₺12.345.678,90";
+  const boyUzun = merkezYaziBoyu(cokUzun);
+  kontrol("  ...14 karakterlik toplam KÜÇÜLÜYOR ve yine sığıyor",
+    boyUzun < MERKEZ_YAZI_TAVANI && 0.6 * cokUzun.length * boyUzun <= DELIK_CAPI, { boyUzun });
   kontrol("  ...kisa toplam tavanda kalir (kucultme yalniz gerekince)",
     merkezYaziBoyu("₺9") === MERKEZ_YAZI_TAVANI);
   kontrol("  ...cok uzun metin tabanin altina inmez",

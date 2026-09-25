@@ -191,6 +191,29 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K271 — HALKA KADRAJIN %39'U → %47'Sİ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı 25.09: _«pazaryeri arttıkça yuvarlak ufalıyor»_. Sebep: halka kadrajın
+GENİŞLİĞİNE göre ölçekleniyor; pazaryeri kartı uzayınca halka kartı da uzuyor
+ama halka büyüyemiyordu. Darboğaz okların iki yanda ayırdığı ~100 birimlik yazı
+payıydı. **Ölçüldü:** en uzun ad/tutar ≈ 80 birim. Oklar kısaldı (dirsek halkadan
+22, yatay 12), yazı payı 90; R 76→95, kalınlık 30→32 → dış çap **182 → 222**
+(kadrajın %47'si). Merkez rakam delikten türediği için kendiliğinden büyüdü.
+
+Bekçi: oran ≥ %45 ve yazı payı ≥ 80 birim değerle sınanıyor; sınır testleri artık
+sabit sayı değil dışa açılan sınırları okuyor. Mutasyon: R 76'ya dönüş → kırmızı.
+
+### HALİL TEST LİSTESİ
+
+1. Masaüstü `/` → «Ciro kanala göre»: halka belirgin büyük; kanal adları ve tutarlar
+   kesilmeden okunuyor (sol/sağ kenarda).
+2. «Bu hafta» ve «Son 30 gün» arasında geçin — halka boyu değişmemeli.
+3. Merkezdeki toplam deliğin içinde; %59/%39 bant yazıları okunur.
+
+**mobil doğrulama:** telefonda kompakt halka (K270), değişmedi · **i18n: ✓**
+
+---
+
 ## 🔴 K270 — TELEFON DÜZENİ: EŞİT KUTU IZGARASI, HIZLI İŞLEMLER, SABİT ALT BAR, MENÜ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı 25.09: Entegra / Trendyol / Hepsiburada satıcı uygulamalarını gösterip

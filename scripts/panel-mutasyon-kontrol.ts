@@ -980,6 +980,17 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "kullanici /ayarlar/menu'den sirayi degistirir, telefon menusu eski kalir",
   },
+  {
+    ad: "HALKA YINE KUCUK (R 76, kadrajin %39'u)",
+    yon: "KALDIRAN",
+    dosya: HALKA,
+    bul:
+      "const R = 95;",
+    koy:
+      "const R = 76;",
+    bozdugu:
+      "pazaryeri karti uzadikca halka kartinda bosluk birikir - kullanicinin sikayeti",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
