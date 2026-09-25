@@ -190,4 +190,14 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * ötekinin MUTANTINI "asıl" sanıp geri yazar.
    */
   "vitrin-mutasyon:kontrol",
+  /**
+   * K273 (25.09.2026) — `urun-gorseli` ortak liste bileşenini (`liste-karti.tsx`)
+   * ve `/stok` sayfasını mutasyona uğratıyor. `satir-karti` aynı kartı,
+   * `stok-siralama` aynı sayfayı hedefliyor; üçü paralel koşsa biri ötekinin
+   * MUTANTINI asıl sanıp geri yazabilirdi. Beyan unutulmuştu —
+   * `mutasyon-cakisma:dogrula` push turunda yakaladı.
+   */
+  "satir-karti-mutasyon:kontrol",
+  "stok-siralama-mutasyon:kontrol",
+  "urun-gorseli-mutasyon:kontrol",
 ];
