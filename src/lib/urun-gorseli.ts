@@ -94,8 +94,47 @@ export function gorselSec(
 
 /** Listede gösterilecek KÜÇÜK adres (Trendyol CDN küçültmesi; ötekiler aynen). */
 export const TY_KUCUK_ONEK = "mnresize/128/192/";
-export function kucukGorselAdresi(url: string, kaynak: GorselKaynagi): string {
+/**
+ * Üstüne gelince açılan ÖNİZLEME (K273-②). Ölçüldü 25.09.2026, üç gerçek görsel:
+ * orijinal 128–327 KB · 600/900 **27–82 KB** · 400/600 13–47 KB. Önizleme ~290 px;
+ * yüksek yoğunluklu ekranda 400 geniş bulanık kalırdı → 600/900.
+ */
+export const TY_BUYUK_ONEK = "mnresize/600/900/";
+function tyKucult(url: string, kaynak: GorselKaynagi, onek: string): string {
   if (kaynak !== "TRENDYOL") return url;
   const m = /^https:\/\/cdn\.dsmcdn\.com\/(?!mnresize\/)(.+)$/.exec(url);
-  return m ? `https://cdn.dsmcdn.com/${TY_KUCUK_ONEK}${m[1]}` : url;
+  return m ? `https://cdn.dsmcdn.com/${onek}${m[1]}` : url;
+}
+export function kucukGorselAdresi(url: string, kaynak: GorselKaynagi): string {
+  return tyKucult(url, kaynak, TY_KUCUK_ONEK);
+}
+export function buyukGorselAdresi(url: string, kaynak: GorselKaynagi): string {
+  return tyKucult(url, kaynak, TY_BUYUK_ONEK);
+}
+
+/** Önizleme kutusunun kenarı (px) — K273-②. */
+export const ONIZLEME_BOYU = 288;
+const KENAR_PAYI = 8;
+
+/**
+ * Önizlemenin ekrandaki yeri — SAF, değerle sınanır. Resmin SAĞINA açılır;
+ * sağda yer yoksa SOLUNA; dikeyde resmin hizasından başlar ve ekrana sığacak
+ * kadar yukarı çekilir. Bileşen `fixed` konumlar: tablonun kaydırma alanı
+ * (`overflow-x-auto`) onu KESMEZ.
+ */
+export function onizlemeKonumu(
+  kutu: { left: number; right: number; top: number },
+  ekran: { genislik: number; yukseklik: number },
+  boy = ONIZLEME_BOYU,
+): { left: number; top: number } {
+  const sag = kutu.right + KENAR_PAYI;
+  const left =
+    sag + boy + KENAR_PAYI <= ekran.genislik
+      ? sag
+      : Math.max(KENAR_PAYI, kutu.left - KENAR_PAYI - boy);
+  const top = Math.min(
+    Math.max(KENAR_PAYI, kutu.top),
+    Math.max(KENAR_PAYI, ekran.yukseklik - boy - KENAR_PAYI),
+  );
+  return { left, top };
 }

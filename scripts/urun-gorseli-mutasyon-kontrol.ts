@@ -155,6 +155,55 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "",
     bozdugu: "N11'e dusulmus urun, Trendyol ayni bozuk adresi yollayinca yeniden kiriga doner",
   },
+  /* ── K273-② kutuyu doldurma + önizleme ── */
+  {
+    ad: "LISTE RESMI YINE SIGDIRIYOR (object-contain)",
+    yon: "KALDIRAN",
+    dosya: BILESEN,
+    bul: "block cursor-zoom-in rounded-md border object-cover",
+    koy: "block cursor-zoom-in rounded-md border object-contain",
+    bozdugu: "dikey resim kare kutuda kuculur, iki yanda bosluk - kullanicinin 25.09 sikayeti",
+  },
+  {
+    ad: "BUYUK RESIM HER SATIRDA INIYOR (kosul kalkti)",
+    yon: "FAZLADAN",
+    dosya: BILESEN,
+    bul: "      {onizleme ? (",
+    koy: "      {onizleme || true ? (",
+    bozdugu: "50 satirlik liste 50 x 27-82 KB onizleme indirir; ustune gelmeden acik durur",
+  },
+  {
+    ad: "DOKUNMA IKI OLAY URETIYOR (fare kapisi kalkti)",
+    yon: "FAZLADAN",
+    dosya: BILESEN,
+    bul: 'if (e.pointerType === "mouse") ac(e.currentTarget);',
+    koy: "ac(e.currentTarget);",
+    bozdugu: "telefonda dokununca once acilir, ardindan tiklama kapatir - onizleme hic gorunmez",
+  },
+  {
+    ad: "FARE TIKLAMASI ONIZLEMEYI KAPATIYOR (dokunma kapisi kalkti)",
+    yon: "FAZLADAN",
+    dosya: BILESEN,
+    bul: "        if (!dokunma.current) return;",
+    koy: "",
+    bozdugu: "bilgisayarda resme tiklayan onizlemeyi kapatir; ustundeyken kaybolur",
+  },
+  {
+    ad: "ONIZLEME SAGDA TASIYOR (sola donme kalkti)",
+    yon: "KALDIRAN",
+    dosya: KURAL,
+    bul: "    sag + boy + KENAR_PAYI <= ekran.genislik\n      ? sag\n      : Math.max(KENAR_PAYI, kutu.left - KENAR_PAYI - boy);",
+    koy: "    sag;",
+    bozdugu: "sag kenara yakin resimde onizleme ekrandan tasar, yarisi gorunmez",
+  },
+  {
+    ad: "ONIZLEME KUCUK ADRESI KULLANIYOR",
+    yon: "KALDIRAN",
+    dosya: KURAL,
+    bul: 'export const TY_BUYUK_ONEK = "mnresize/600/900/";',
+    koy: 'export const TY_BUYUK_ONEK = "mnresize/128/192/";',
+    bozdugu: "288 px onizleme 128 px resimden buyutulur - bulanik, buyutme ise yaramaz",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

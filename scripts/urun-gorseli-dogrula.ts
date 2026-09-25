@@ -16,6 +16,9 @@ import {
   gorselKirikMi,
   gorselSec,
   kucukGorselAdresi,
+  buyukGorselAdresi,
+  onizlemeKonumu,
+  ONIZLEME_BOYU,
   type MevcutGorsel,
 } from "../src/lib/urun-gorseli";
 
@@ -150,6 +153,41 @@ const iB = eylem.indexOf("if (acildi)");
 const iC = eylem.indexOf("data: { gorselKirikUrl: v.gorselUrl }");
 kontrol("kırık bildirimi: ağ hatası YAZMADAN döner", iA >= 0 && iB >= 0 && iA < iB && eylem.slice(iA, iB).includes('return { durum: "HATA" };'));
 kontrol("  ...kırık ancak sunucu açılmadı derse yazılır", iB >= 0 && iC >= 0 && iB < iC && eylem.slice(iB, iC).includes('return { durum: "SAGLAM" };'));
+
+/* ────────────────────────────────────────────────────────────────────────
+   K273-② — KUTUYU DOLDURMA + ÜSTÜNE GELİNCE BÜYÜME
+   ──────────────────────────────────────────────────────────────────────── */
+console.log("");
+console.log("ÖNİZLEME — kutuyu doldurma ve büyütme (K273-②)");
+kontrol("önizleme adresi Trendyol orta boy önekini alır (600/900 — 27–82 KB ölçüldü)",
+  buyukGorselAdresi(TY1, "TRENDYOL") === "https://cdn.dsmcdn.com/mnresize/600/900/ty1948/prod/a/1_org_zoom.jpg");
+kontrol("  ...küçük adresten FARKLI (liste küçüğü, önizleme büyüğü)", buyukGorselAdresi(TY1, "TRENDYOL") !== kucukGorselAdresi(TY1, "TRENDYOL"));
+kontrol("  ...N11 adresi aynen", buyukGorselAdresi(N1, "N11") === N1);
+const EKRAN = { genislik: 1280, yukseklik: 800 };
+const B = ONIZLEME_BOYU;
+kontrol("önizleme boyu makul (240–360 px)", B >= 240 && B <= 360);
+kontrol("sağda yer varsa resmin SAĞINA açılır", onizlemeKonumu({ left: 100, right: 140, top: 200 }, EKRAN).left === 148);
+{
+  const k = onizlemeKonumu({ left: 1200, right: 1240, top: 200 }, EKRAN);
+  kontrol("sağda yer yoksa SOLUNA açılır ve ekranda kalır", k.left === 1200 - 8 - B && k.left + B <= EKRAN.genislik, k);
+}
+kontrol("dikeyde resmin hizasından başlar", onizlemeKonumu({ left: 100, right: 140, top: 200 }, EKRAN).top === 200);
+kontrol("  ...alt kenarda ekrana sığacak kadar YUKARI çekilir", onizlemeKonumu({ left: 100, right: 140, top: 780 }, EKRAN).top === 800 - B - 8);
+kontrol("  ...dar telefonda sola taşmaz (ekran 375)", onizlemeKonumu({ left: 16, right: 56, top: 100 }, { genislik: 375, yukseklik: 700 }).left >= 8);
+
+const bil = oku("src/components/urun-gorseli.tsx");
+const kucukImg = bil.slice(bil.indexOf("src={kucukGorselAdresi(url, kaynak)}"), bil.indexOf("/>", bil.indexOf("src={kucukGorselAdresi(url, kaynak)}")));
+kontrol("liste resmi kutuyu DOLDURUR (object-cover)", bil.includes("src={kucukGorselAdresi(url, kaynak)}") && kucukImg.includes("object-cover") && !kucukImg.includes("object-contain"));
+const iOn = bil.indexOf("{onizleme ? (");
+const iBuyuk = bil.indexOf("src={buyukGorselAdresi(url, kaynak)}");
+kontrol("büyük resim YALNIZ önizleme açıkken istenir (koşullu dal içinde)",
+  iOn >= 0 && iBuyuk > iOn && adet(bil, "buyukGorselAdresi(url, kaynak)") === 1 && bil.slice(iOn, iBuyuk).split("<img").length === 2);
+const onImg = bil.slice(iBuyuk, bil.indexOf("/>", iBuyuk));
+kontrol("  ...önizlemede ürün TAM görünür (object-contain) ve tablo kesmez (fixed)", onImg.includes("object-contain") && /\bfixed\b/.test(onImg));
+kontrol("fare olayları YALNIZ fareyle (dokunmada açılıp kapanmasın)",
+  adet(bil, 'if (e.pointerType === "mouse") ac(e.currentTarget);') === 1 && adet(bil, 'if (e.pointerType === "mouse") setOnizleme(null);') === 1);
+const tik = bil.slice(bil.indexOf("onClick={(e) => {"), bil.indexOf("}}", bil.indexOf("onClick={(e) => {")));
+kontrol("  ...dokunma ile aç/kapa, fare tıklaması YOK SAYILIR", bil.includes("onClick={(e) => {") && tik.includes("if (!dokunma.current) return;"));
 
 console.log("");
 console.log("=".repeat(70));

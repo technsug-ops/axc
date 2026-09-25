@@ -271,6 +271,30 @@ senkron → yazıcı → ekran → kırık bildirimi) · harness `urun-gorseli-m
 **mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok; resim süs, ekran okuyucu adı
 okur) · **kullanıcı kolaylığı: ✓** (İlke #3 · #8 · #9 · #10)
 
+─── ② KUTUYU DOLDURMA + ÜSTÜNE GELİNCE BÜYÜME · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (ekran görüntüleri): _«resimler kutucuğun içine dolmalı»_ · _«üzerine gelince
+büyüyebilir mi»_. Sebep: pazaryeri resimleri dikey (2:3), kare kutuda `object-contain` iki
+yanda boşluk bırakıyordu → `object-cover`. Önizleme: fareyle üstüne gelince yanında 288 px,
+ürün kırpılmadan (`object-contain`); telefonda dokununca açılır, ikinci dokunuş / başka yere
+dokunma / kaydırma kapatır. Ekran kenarında sola döner, altta yukarı çekilir; `fixed` →
+tablo kaydırma alanı kesmez. Önizleme resmi Trendyol `mnresize/600/900/` (ölçüldü **27–82 KB**,
+orijinal 128–327 KB) ve **yalnız açılınca** iner.
+
+⚠ Dokunma tarayıcıda hem "üstüne gelme" hem "tıklama" üretir; ikisi işlenseydi önizleme
+açılıp hemen kapanırdı → fare olayları yalnız fareyle, tıklama yalnız dokunmayla.
+
+Bekçi: 41 → **55** kontrol (konum hesabı DEĞERLE; bileşen kullanım bloklarıyla). Harness
+14 → **20/20** (+6: sığdırmaya dönüş · koşulsuz büyük resim · fare kapısı · dokunma kapısı ·
+sola dönme · küçük adres).
+
+**HALİL TEST LİSTESİ ②**
+1. Bilgisayar `/urunler`: resimler kutuyu **kenardan kenara** dolduruyor, beyaz yan boşluk yok.
+2. Bir resmin üstüne gelin → sağında büyük resim, ürün **tam** görünüyor; fareyi çekince kapanıyor.
+3. Sayfayı daraltın ya da en sağdaki bir resmi deneyin → önizleme ekrandan taşmıyor.
+4. Telefon `/stok`: resme dokunun → büyük resim açılıyor; tekrar dokunun ya da sayfayı
+   kaydırın → kapanıyor. Satır bağlantısı (ürün adı) eskisi gibi çalışıyor.
+
 ---
 
 ## 🔴 K272 — İÇ SAYFALAR TELEFON ①: BEŞ ORTAK BİLEŞEN · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
