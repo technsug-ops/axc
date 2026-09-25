@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Package, PackageCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { DURUM_EYLEMI_KABI, DURUM_EYLEMI_SINIFI } from "@/components/satir-eylemi";
 
 import { paketlendiDurumuGuncelle } from "./actions";
 
@@ -40,13 +41,13 @@ export function PaketlendiDurumu({
   };
 
   return (
-    <span className="inline-flex flex-col gap-1">
+    <span className={`inline-flex flex-col gap-1 ${DURUM_EYLEMI_KABI}`}>
       <Button
         type="button"
         variant={paketliMi ? "default" : "outline"}
         size="sm"
-        /* ⚠ MOBİLDE 44px — İlke #8. */
-        className="h-11 md:h-8"
+        /* ⚠ MOBİLDE 52px ızgara kutusu (K275; İlke #8 ≥ 44). */
+        className={`md:h-8 ${DURUM_EYLEMI_SINIFI}`}
         disabled={bekliyor}
         onClick={() => guncelle(!paketliMi)}
         aria-label={paketliMi ? t("paketliKaldir") : t("paketliIsaretle")}
@@ -57,7 +58,9 @@ export function PaketlendiDurumu({
         ) : (
           <Package className="size-4" />
         )}
-        {paketliMi ? t("paketSuzgeciHazirlanan") : t("paketSuzgeciBekleyen")}
+        <span className="max-w-full truncate">
+          {paketliMi ? t("paketSuzgeciHazirlanan") : t("paketSuzgeciBekleyen")}
+        </span>
       </Button>
       {hata ? (
         <span role="alert" className="text-destructive text-xs">

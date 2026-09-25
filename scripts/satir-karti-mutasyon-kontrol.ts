@@ -26,6 +26,8 @@ const EYLEM = "src/components/satir-eylemi.tsx";
 const LISTE = "src/components/liste-karti.tsx";
 const ARAMA = "src/components/kod-arama-kutusu.tsx";
 const EXCEL = "src/components/excel-indir.tsx";
+const KARGO = "src/app/satislar/kargo-durumu.tsx";
+const PAKET = "src/app/satislar/paketlendi-durumu.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -195,6 +197,55 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "className=\"max-md:size-11 max-md:px-0\"",
     koy: "className=\"\"",
     bozdugu: "baslik satiri iki satira bolunur",
+  },
+  /* ── K275 durum düğmeleri (Kargolanacak · Paketlendi) ── */
+  {
+    ad: "DURUM KUTUSU 52 PX DEGIL",
+    yon: "KALDIRAN",
+    dosya: EYLEM,
+    bul: '"max-md:h-[52px] max-md:w-full max-md:min-w-0 max-md:flex-col',
+    koy: '"max-md:w-full max-md:min-w-0 max-md:flex-col',
+    bozdugu: "durum dugmeleri oteki eylemlerden kisa kalir - satir tutarsiz (Ilke #10)",
+  },
+  {
+    ad: "DURUM SINIFI MASAUSTUNE SIZDI",
+    yon: "FAZLADAN",
+    dosya: EYLEM,
+    bul: '"max-md:h-[52px] max-md:w-full max-md:min-w-0 max-md:flex-col',
+    koy: '"h-[52px] max-md:w-full max-md:min-w-0 max-md:flex-col',
+    bozdugu: "masaustu tablo satirlari 52 px'e buyur",
+  },
+  {
+    ad: "PAKETLENDI ESKI DUGMEYE DONDU",
+    yon: "KALDIRAN",
+    dosya: PAKET,
+    bul: "className={`md:h-8 ${DURUM_EYLEMI_SINIFI}`}",
+    koy: 'className="h-11 md:h-8"',
+    bozdugu: "Paketlendi dugmesi hucreden tasar, komsu dugmenin ustune biner",
+  },
+  {
+    ad: "KARGO ASGARI GENISLIGI TELEFONA DONDU",
+    yon: "KALDIRAN",
+    dosya: KARGO,
+    bul: "md:min-w-[8.75rem]",
+    koy: "min-w-[8.75rem]",
+    bozdugu: "kullanicinin 25.09 ekran goruntusu: Kargoya verildi Paketlendi'nin ustune biner",
+  },
+  {
+    ad: "KARGO ETIKETI ESKIYE DONDU",
+    yon: "KALDIRAN",
+    dosya: KARGO,
+    bul: '{t("kargolanacak")}',
+    koy: '{t("kargoyaVerildi")}',
+    bozdugu: "kullanici 'Kargoya verildi' yazisini durum sanir; istenen 'Kargolanacak'",
+  },
+  {
+    ad: "ISARETLI TELEFON KUTUSU MASAUSTUNDE DE CIKIYOR",
+    yon: "FAZLADAN",
+    dosya: KARGO,
+    bul: "className={`md:hidden ${DURUM_EYLEMI_SINIFI}`}",
+    koy: "className={`${DURUM_EYLEMI_SINIFI}`}",
+    bozdugu: "masaustunde tarih iki kez gorunur (kutu + eski satir)",
   },
 ];
 

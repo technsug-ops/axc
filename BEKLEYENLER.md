@@ -191,6 +191,34 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K275 — SATIŞ KARTI: KARGO DÜĞMESİ PAKETLENDİ'NİN ÜSTÜNE BİNİYORDU · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (telefon ekran görüntüsü): _«Kargoya verildi butonu diğer butonun üzerine gelmiş;
+"Kargoya verilecek" yerine "Kargolanacak" olarak değiştirebilirsin»_. Kök K272'deydi: satır
+eylemleri telefonda eşit ızgaraya girdi, ama METİNLİ iki durum düğmesi (Kargo · Paketlendi)
+o kutu sınıfını almadı; kargo düğmesinde satır hizası için konmuş `min-w-[8.75rem]` telefonda
+da geçerliydi → ~75 px'lik hücreden taşıp komşunun üstüne biniyordu.
+
+Çare: ortak `DURUM_EYLEMI_SINIFI` (yalnız `max-md:` — masaüstü AYNEN) + `DURUM_EYLEMI_KABI`;
+asgari genişlik `md:`'ye taşındı; etiket «Kargolanacak» (durumu söyler — Paketlendi /
+Paketlenmedi ile aynı dil), ipucu «Kargoya verildi olarak işaretle» (ne yapacağını söyler).
+Kargolanmış satışta telefonda tarih + kaldırma TEK kutu (tarih + 44 px ✕ hücreye sığmıyordu).
+
+Bekçi: `satir-karti:dogrula` yeni bölüm (sayaçlı 3 → 4, 47 → 57). Harness +6, **24/24**.
+
+### HALİL TEST LİSTESİ (telefon, canlı)
+
+1. `/satislar`: kargolanmamış bir satışın kartında eylemler **tek satır, eşit kutular**:
+   «Kargolanacak» · «Paketlendi/Paketlenmedi» · «Detay» · «İade Al» — hiçbiri üst üste binmiyor.
+2. «Kargolanacak»a dokunun → kutu **bugünün tarihi + ✕** olur. Tekrar dokunun → işaret kalkar.
+3. Bilgisayarda aynı satır: düğme «Kargolanacak» yazıyor, üstüne gelince «Kargoya verildi
+   olarak işaretle»; başka hiçbir şey değişmemiş.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (2 yeni anahtar) · **kullanıcı kolaylığı: ✓**
+(İlke #5 · #8 · #10)
+
+---
+
 ## 🔴 K274 — HALKA SARMALAYICISI GENİŞLİKSİZDİ (K270 artığı) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı 25.09 (ekran görüntüsü): _«halka kareli alan kadar olmalı, 2 pazaryeri veya 3

@@ -42,6 +42,18 @@ import { cn } from "@/lib/utils";
 export const EYLEM_SINIFI =
   "h-[52px] w-full min-w-0 flex-col gap-0.5 px-1 text-[11px] md:h-8 md:w-8 md:flex-row md:gap-2 md:px-0 md:text-sm";
 
+/**
+ * DURUM DÜĞMESİ (K275) — metni masaüstünde de gösteren eylemler (Kargolanacak ·
+ * Paketlendi). Masaüstü kendi sınıfında kalır; TELEFONDA `EYLEM_SINIFI` ile AYNI
+ * kutu: 52 px, tam genişlik, ikon üstte, ad altta. Kullanıcı 25.09: _«Kargoya
+ * verildi butonu diğer butonun üzerine gelmiş»_ — iki düğme eşit ızgaraya
+ * (K272) girmemişti, kendi genişliklerinde kalıp komşu kutuya taşıyordu.
+ */
+export const DURUM_EYLEMI_SINIFI =
+  "max-md:h-[52px] max-md:w-full max-md:min-w-0 max-md:flex-col max-md:gap-0.5 max-md:px-1 max-md:text-[11px]";
+/** Izgara hücresinde kutuyu saran öğe — telefonda hücreyi doldurur, taşmaz. */
+export const DURUM_EYLEMI_KABI = "max-md:w-full max-md:min-w-0";
+
 /** Metin masaüstünde gizlenir; ikon her iki görünümde de durur. */
 export function EylemEtiketi({ children }: { children: React.ReactNode }) {
   return <span className="max-w-full truncate md:hidden">{children}</span>;

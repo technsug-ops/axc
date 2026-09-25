@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { SatirKarti, SatirListesi } from "../src/components/satir-karti";
-import { EYLEM_SINIFI } from "../src/components/satir-eylemi";
+import { DURUM_EYLEMI_KABI, DURUM_EYLEMI_SINIFI, EYLEM_SINIFI } from "../src/components/satir-eylemi";
 import { DURUM_ZEMINI } from "../src/lib/renkler";
 
 /**
@@ -26,7 +26,7 @@ import { DURUM_ZEMINI } from "../src/lib/renkler";
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 3; /* K272: +1 (telefon düzeni) */
+const BOLUM_SAYISI = 4; /* K272: +1 (telefon düzeni) · K275: +1 (durum düğmeleri) */
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -330,6 +330,37 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   kontrol("Excel düğmesi telefonda İKON (44 px), ad ekran okuyucuda",
     /max-md:size-11 max-md:px-0/.test(excelK) && /<span className="max-md:sr-only">/.test(excelK));
   kosanBolumler.push("K272 telefon");
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   K275 — DURUM DÜĞMELERİ (Kargolanacak · Paketlendi) telefonda IZGARA KUTUSU
+   Kullanıcı 25.09: «Kargoya verildi butonu diğer butonun üzerine gelmiş».
+   ──────────────────────────────────────────────────────────────────────── */
+{
+  console.log("\nK275 — durum düğmeleri telefonda ızgara kutusu");
+  kontrol("durum sınıfı telefonda EYLEM kutusuyla AYNI ölçü (52 px · tam genişlik · alt alta)",
+    /max-md:h-\[52px\]/.test(DURUM_EYLEMI_SINIFI) && /max-md:w-full/.test(DURUM_EYLEMI_SINIFI) && /max-md:min-w-0/.test(DURUM_EYLEMI_SINIFI) && /max-md:flex-col/.test(DURUM_EYLEMI_SINIFI), DURUM_EYLEMI_SINIFI);
+  kontrol("  ...masaüstüne DOKUNMAZ (yalnız max-md: önekli)", DURUM_EYLEMI_SINIFI.split(/\s+/).every((s) => s.startsWith("max-md:")));
+  kontrol("  ...kap hücreyi doldurur, taşmaz", /max-md:w-full/.test(DURUM_EYLEMI_KABI) && /max-md:min-w-0/.test(DURUM_EYLEMI_KABI));
+  const temiz = (y: string) => readFileSync(y, "utf8").replace(/\r\n/g, "\n").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const paket = temiz("src/app/satislar/paketlendi-durumu.tsx");
+  kontrol("Paketlendi: kap ve düğme durum sınıfını kullanıyor",
+    paket.includes("className={`inline-flex flex-col gap-1 ${DURUM_EYLEMI_KABI}`}") && paket.includes("className={`md:h-8 ${DURUM_EYLEMI_SINIFI}`}"));
+  kontrol("  ...etiket kesilir, kutudan taşmaz", /<span className="max-w-full truncate">\s*\{paketliMi \?/.test(paket));
+  const kargo = temiz("src/app/satislar/kargo-durumu.tsx");
+  kontrol("Kargo: satır kipinde kap durum sınıfını kullanıyor",
+    kargo.includes('const telefonKutusu = kip === "satir";') && kargo.includes("${telefonKutusu ? DURUM_EYLEMI_KABI : \"\"}"));
+  kontrol("  ...asgari genişlik YALNIZ masaüstünde (telefonda taşmanın kökü)",
+    kargo.includes("md:min-w-[8.75rem]") && !/[" ]min-w-\[8\.75rem\]/.test(kargo));
+  kontrol("  ...işaretsiz düğme telefonda kutu, etiket «Kargolanacak»",
+    kargo.includes("className={telefonKutusu ? `md:h-8 ${DURUM_EYLEMI_SINIFI}` : \"h-11 md:h-8\"}") &&
+      kargo.includes('<span className="max-w-full truncate">{t("kargolanacak")}</span>') && !kargo.includes('{t("kargoyaVerildi")}'));
+  kontrol("  ...ipucu ne YAPACAĞINI söylüyor", kargo.includes('title={t("kargoyaVerildiIsaretle")}'));
+  const isaretliTel = kargo.slice(kargo.indexOf("{isaretli && telefonKutusu ? ("), kargo.indexOf("{isaretli ? ("));
+  kontrol("  ...işaretliyken telefonda TEK kutu (tarih + kaldır), masaüstü hâli telefonda gizli",
+    kargo.includes("{isaretli && telefonKutusu ? (") && isaretliTel.includes("className={`md:hidden ${DURUM_EYLEMI_SINIFI}`}") &&
+      isaretliTel.includes("onClick={() => guncelle(null)}") && kargo.includes('${telefonKutusu ? "max-md:hidden" : ""}'));
+  kosanBolumler.push("K275 durum düğmeleri");
 }
 
 console.log("\n" + "=".repeat(70));

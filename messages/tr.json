@@ -1218,7 +1218,9 @@
     "onaySecimBaslik": "Hangi partiden düşülsün?",
     "onaySecenek": "{tarih} partisi · {kalan} adet · birim {maliyet}",
     "onaySecenekMaliyetsiz": "{tarih} partisi · {kalan} adet · maliyet kaydı yok",
-    "onayOnerilen": "önerilen (FIFO)"
+    "onayOnerilen": "önerilen (FIFO)",
+    "kargolanacak": "Kargolanacak",
+    "kargoyaVerildiIsaretle": "Kargoya verildi olarak işaretle"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",

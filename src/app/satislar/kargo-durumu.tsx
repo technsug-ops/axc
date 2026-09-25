@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Truck, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { DURUM_EYLEMI_KABI, DURUM_EYLEMI_SINIFI } from "@/components/satir-eylemi";
 import { Input } from "@/components/ui/input";
 import { useBicim } from "@/lib/bicim-istemci";
 
@@ -61,9 +62,11 @@ export function KargoDurumu({
   };
 
   const isaretli = shippedAt !== null;
+  /* K275: satır kipinde telefonda ızgara kutusu (detay kipinde tek kayıt, kutu yok). */
+  const telefonKutusu = kip === "satir";
 
   return (
-    <span className="inline-flex flex-col gap-1">
+    <span className={`inline-flex flex-col gap-1 ${telefonKutusu ? DURUM_EYLEMI_KABI : ""}`}>
       {/**
        * SATIRDA SABİT TABAN GENİŞLİK (kullanıcı isteği 17.08.2026).
        *
@@ -78,11 +81,30 @@ export function KargoDurumu({
        */}
       <span
         className={`inline-flex items-center gap-1 ${
-          kip === "satir" ? "min-w-[8.75rem]" : ""
+          kip === "satir" ? `md:min-w-[8.75rem] ${DURUM_EYLEMI_KABI}` : ""
         }`}
       >
+        {isaretli && telefonKutusu ? (
+          /* TELEFON: tarih + kaldırma TEK kutuda — 75 px'lik hücreye "tarih + 44 px ✕"
+             sığmıyordu. Dokunulan şey aynı eylem: işareti kaldır. */
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={`md:hidden ${DURUM_EYLEMI_SINIFI}`}
+            aria-label={t("kargoIsaretiKaldir")}
+            title={t("kargoIsaretiKaldir")}
+            disabled={bekliyor}
+            onClick={() => guncelle(null)}
+          >
+            <X className="size-4" />
+            <span className="max-w-full truncate">
+              {bicim.tarih(new Date(`${shippedAt}T00:00:00.000Z`))}
+            </span>
+          </Button>
+        ) : null}
         {isaretli ? (
-          <>
+          <span className={`inline-flex items-center gap-1 ${telefonKutusu ? "max-md:hidden" : ""}`}>
             <span className="text-xs whitespace-nowrap">
               {bicim.tarih(new Date(`${shippedAt}T00:00:00.000Z`))}
             </span>
@@ -99,14 +121,18 @@ export function KargoDurumu({
             >
               <X className="size-4" />
             </Button>
-          </>
+          </span>
         ) : (
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="h-11 md:h-8"
+            className={telefonKutusu ? `md:h-8 ${DURUM_EYLEMI_SINIFI}` : "h-11 md:h-8"}
             disabled={bekliyor}
+            /* Etiket DURUMU söyler (kullanıcı 25.09: «Kargolanacak» — Paketlendi/
+               Paketlenmedi ile aynı dil); ne yapacağını ipucu söyler. */
+            title={t("kargoyaVerildiIsaretle")}
+            aria-label={t("kargoyaVerildiIsaretle")}
             /**
              * BOŞ METİN GÖNDERİLMEZ, "BUGÜN" İSTENİR: sunucu iş takvimi
              * gününü yazar. İstemci `new Date()` gönderseydi Almanya'da gece
@@ -115,7 +141,7 @@ export function KargoDurumu({
             onClick={() => guncelle("BUGUN")}
           >
             <Truck className="size-4" />
-            {t("kargoyaVerildi")}
+            <span className="max-w-full truncate">{t("kargolanacak")}</span>
           </Button>
         )}
       </span>
