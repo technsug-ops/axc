@@ -1,7 +1,8 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { KALEM_GECERLI, kalemGecerliMi, kaldirilmisMi } from "../src/lib/kalem-gecerli";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -206,7 +207,7 @@ console.log("\n2) DESEN YASAĞI — para okuyan her SORGU süzüyor");
 const MUAFIYET = /KALEM_SUZGECI MUAF:[^\n]{20,}/;
 const hepsi = dosyalar("src");
 const satisParaOkuyanlar = hepsi.filter((y) => {
-  const kod = readFileSync(y, "utf8");
+  const kod = kaynakOku(y);
   if (!kod.includes("unitPriceAmount")) return false;
   if (!/quantity/.test(kod)) return false;
   /** Alım tarafı bu kuralın dışında — `PurchaseItem`in kaldırması yok. */
@@ -221,7 +222,7 @@ kontrol(
 
 const tumBulgular: Bulgu[] = [];
 for (const yol of satisParaOkuyanlar) {
-  const ham = readFileSync(yol, "utf8");
+  const ham = kaynakOku(yol);
   tumBulgular.push(
     ...satisKalemiSorgulari(yol.replace(/\\/g, "/"), yorumMaskeli(ham), ham),
   );

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -6,6 +6,7 @@ import {
   SAYIM_ISRAR_SEBEPLERI,
   sayimKorumasi,
 } from "../src/lib/sayim-korumasi";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -141,7 +142,7 @@ const acik: string[] = [];
 for (const yol of dosyalar("src")) {
   const d = yol.replace(/\\/g, "/");
   if (d.includes("/generated/")) continue;
-  const ham = readFileSync(yol, "utf8");
+  const ham = kaynakOku(yol);
   const kod = yorumsuz(ham);
   if (!/\bstockMovement\.create(Many)?\s*\(/.test(kod)) continue;
   /** ⚠ `occurredAt` SABİT Mİ — yalnız `new Date()` yazan yol geriye dönemez. */
@@ -241,7 +242,7 @@ for (const yol of dosyalar("src")) {
  */
 const SINIF_DESENI = /BETIK SINIFI:\s*(SUREKLI|TEK_SEFERLIK)/;
 for (const yol of dosyalar("scripts")) {
-  const ham = readFileSync(yol, "utf8");
+  const ham = kaynakOku(yol);
   const kod = yorumsuz(ham);
   if (!/\bstockMovement\.create(Many)?\s*\(/.test(kod)) continue;
   const tarihler = kod.match(/occurredAt:\s*[^,\n}]+/g) ?? [];
@@ -361,7 +362,7 @@ for (const yol of dosyalar("scripts")) {
      * dizesi yazma sanıldı".)_
      */
     if (duz.endsWith("scripts/sayim-korumasi-dogrula.ts")) continue;
-    const kod = yorumsuz(readFileSync(yol, "utf8"));
+    const kod = yorumsuz(kaynakOku(yol));
     /** ⚠ Gövdenin KENDİ tanımı sayılmaz — `export function` satırı. */
     if (/export\s+async\s+function\s+sayimGecersizlestir/.test(kod)) continue;
     if (/\bsayimGecersizlestir\s*\(/.test(kod)) yazan.push(yol.replace(/\\/g, "/"));

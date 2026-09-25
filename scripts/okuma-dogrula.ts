@@ -12,7 +12,7 @@
  *  ve orada da kullanım bloğuna daraltılıyor.
  * ============================================================================
  */
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { bulunanAlan, kaydiOku, kaydiYaz } from "../src/lib/okuma/kayit";
 import {
@@ -44,7 +44,7 @@ import { haftaAnahtari, pazartesiBasi } from "../src/lib/okuma/rapor";
  * OKUMA KAPISINDA yapılıyor.
  */
 function semaMetni(): string {
-  return readFileSync("prisma/schema.prisma", "utf8")
+  return kaynakOku("prisma/schema.prisma")
     .split("\r\n")
     .join("\n");
 }
@@ -71,7 +71,7 @@ function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   }
 }
 
-const okuyucu = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
+const okuyucu = kaynakOku("src/app/okut/okuyucu.tsx");
 
 /**
  * ⚠ DESEN YORUMDA DEĞİL KODDA ARANIR — bu bekçi ilk koşumunda kendi kurduğu
@@ -94,8 +94,8 @@ function yorumsuz(kaynak: string): string {
 }
 
 const okuyucuKod = yorumsuz(okuyucu);
-const eylemler = readFileSync("src/app/okut/actions.ts", "utf8");
-const sayfa = readFileSync("src/app/okut/page.tsx", "utf8");
+const eylemler = kaynakOku("src/app/okut/actions.ts");
+const sayfa = kaynakOku("src/app/okut/page.tsx");
 
 // ===========================================================================
 console.log("\n1) KOVA KURALLARI — DÖRT KOVA, ÜÇÜ OKUMADAN DOĞAR");
@@ -424,7 +424,7 @@ console.log("\n6) UYARISIZLIK SÖZÜ — VE KAMERA");
     ),
   );
   /** Teklif, talep değil: atlanabilir olduğu METİNDE yazıyor. */
-  const teklif = readFileSync("messages/tr.json", "utf8");
+  const teklif = kaynakOku("messages/tr.json");
   kontrol(
     "  ...'biliyorsan göster' metni atlanabilir olduğunu söylüyor",
     /"gosterTeklifi": "[^"]*[Aa]tla/.test(teklif),
@@ -563,7 +563,7 @@ console.log("\n7) SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1)");
    * ⚠ SUNUCU DOĞRUYDU, EKRAN YANLIŞTI. Bu yüzden kontrol sorguya değil
    * ÇİZİME bakıyor: "bulundu" hükmü iki kaynaktan da geliyor mu.
    */
-  const ekran = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
+  const ekran = kaynakOku("src/app/okut/okuyucu.tsx");
   const ekranKodu = ekran.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, " ");
 
   /**
@@ -612,7 +612,7 @@ console.log("\n7) SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1)");
    * döndüren mutasyon (`adet: 1`) sorguyu yerinde bıraktığı için YEŞİL
    * KALDI. Ölçülen şey artık hesabın EKRANA ULAŞMASI.
    */
-  const okutEylem = readFileSync("src/app/okut/actions.ts", "utf8")
+  const okutEylem = kaynakOku("src/app/okut/actions.ts")
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/^\s*\/\/.*$/gm, "");
   kontrol(
@@ -688,7 +688,7 @@ console.log("\n7) SİPARİŞSİZ OKUMADA SADE EKRAN (İŞ 1)");
    * cümle, gönderi numarasının aranmadığını söylerdi — metin sahip olmadığı
    * anlamı iddia etmiş olurdu.
    */
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
     Okuma: Record<string, string>;
   };
   kontrol(
@@ -828,7 +828,7 @@ console.log("\n8) PAKETLEME İZİ (İŞ 2)");
     !/\brequired\b/.test(okuyucuKod),
   );
 
-  const paketEylem = readFileSync("src/app/okut/actions.ts", "utf8");
+  const paketEylem = kaynakOku("src/app/okut/actions.ts");
   /**
    * ⚠ K207'DEN SONRA YAZIM GÖVDESİ `lib/okuma/paketleme.ts`TE — `/okut`
    * VE `/satislar` (elle işaretleme) AYNI gövdeyi çağırıyor. Aşağıdaki üç
@@ -837,7 +837,7 @@ console.log("\n8) PAKETLEME İZİ (İŞ 2)");
    * ölçüt kendi kendini yanlış yerden doğrulardı (anayasa: "kaynak tarayan
    * kontrol, deseni dosyanın tamamında değil kullanım bloğunda arar").
    */
-  const paketIzGovdesi = readFileSync("src/lib/okuma/paketleme.ts", "utf8");
+  const paketIzGovdesi = kaynakOku("src/lib/okuma/paketleme.ts");
   kontrol(
     "iz AuditLog'a yazılıyor, satışa bağlı",
     /targetType: "Sale"/.test(paketIzGovdesi),
@@ -863,7 +863,7 @@ console.log("\n8) PAKETLEME İZİ (İŞ 2)");
    * `auditLog.create`'ine çevirebilir ve iki ayrı "hazırlanıyor" yorumu
    * sessizce doğardı (anayasa: "iki yerde iki ölçüt olmaz").
    */
-  const satislarEylem = readFileSync("src/app/satislar/actions.ts", "utf8");
+  const satislarEylem = kaynakOku("src/app/satislar/actions.ts");
   kontrol(
     "  ...elle işaretleme (/satislar) AYNI gövdeyi çağırıyor",
     /paketlemeIziYaz\(\s*paketlendi \? PAKETLENDI_EYLEMI/.test(satislarEylem) &&

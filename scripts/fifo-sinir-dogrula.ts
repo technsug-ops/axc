@@ -1,5 +1,6 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -61,7 +62,7 @@ const bulgular: string[] = [];
 
 for (const kok of KOK) {
   for (const yol of dosyalar(kok)) {
-    const ham = readFileSync(yol, "utf8");
+    const ham = kaynakOku(yol);
     /** Motorun kendi gövdesi ölçütün dışında — tanımın kendisi burada. */
     if (yol.replace(/\\/g, "/").endsWith("src/lib/stok.ts")) continue;
     /** ⚠ Ölçütün kendi metni ölçülmez — yoksa bekçi kendini kırmızı yakar. */
@@ -198,7 +199,7 @@ for (const kok of KOK) {
  * katmanı, desen tarayan bekçiye muhtaç olmaz").
  */
 {
-  const kaynak = readFileSync("src/lib/stok.ts", "utf8");
+  const kaynak = kaynakOku("src/lib/stok.ts");
   const govde = kaynak.slice(kaynak.indexOf("export async function acikPartilerToplu"));
   const pencere = govde.slice(0, 1200);
   const kodP = yorumsuz(pencere);

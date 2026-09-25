@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
-import { desenNormalle } from "./mutasyon-deseni";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
@@ -191,7 +191,7 @@ for (const m of MUTASYONLAR) {
   const mutant = asil.replace(bul, koy);
   let sonuc: { kod: number; ciktiVar: boolean };
   try {
-    writeFileSync(m.dosya, mutant, "utf8");
+    dayanikliYaz(m.dosya, mutant);
     /**
      * ⚠ MUTASYONUN UYGULANDIĞI DOĞRULANIYOR. Desen tutmadan koşan bir
      * harness, hiçbir şeyi ölçmeden "yeşil" raporlar.
@@ -208,7 +208,7 @@ for (const m of MUTASYONLAR) {
      * olabilir ve checkout bütün çalışmayı silerdi (anayasa, 02.09 vakası).
      * Asıl içerik bellekte tutulup geri YAZILIYOR.
      */
-    writeFileSync(m.dosya, asil, "utf8");
+    dayanikliYaz(m.dosya, asil);
     if (readFileSync(m.dosya, "utf8") !== asil) {
       bozuk.push(`${m.ad}\n       ⛔ GERİ ALMA BAŞARISIZ — dosya mutasyonlu kaldı`);
     }

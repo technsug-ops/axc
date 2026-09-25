@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import {
   ENGELLI_DURUMLAR,
   SATIR_DURUMLARI,
@@ -11,6 +11,7 @@ import {
 } from "../src/lib/vitrin-kutusu";
 import { listelemeDurumu, kanalAdedi, satisaEngel, engelGrubu } from "../src/lib/kanal-listeleme";
 import { vitrinSerhi, kanalSorunluMu } from "../src/lib/panel/vitrin-serhi";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -196,14 +197,14 @@ console.log("\n5) pazaryerine yazma yolu YOK");
   const yorumsuz = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
-  const istemci = yorumsuz(readFileSync("scripts/ty/istemci.ts", "utf8"));
+  const istemci = yorumsuz(kaynakOku("scripts/ty/istemci.ts"));
   for (const fiil of ['"POST"', '"PUT"', '"PATCH"', '"DELETE"']) {
     dogru(`istemcide ${fiil} YOK`, !istemci.includes(fiil));
   }
   dogru("istemcide apiPost/apiPut gibi bir gövde YOK", !/export async function api(Post|Put|Patch|Delete)/i.test(istemci));
 
   /** Yazma gövdesi de pazaryerine hiçbir şey göndermemeli. */
-  const yazici = yorumsuz(readFileSync("src/lib/kanal-listeleme-yaz.ts", "utf8"));
+  const yazici = yorumsuz(kaynakOku("src/lib/kanal-listeleme-yaz.ts"));
   dogru("yazıcıda fetch YOK", !/\bfetch\s*\(/.test(yazici));
   dogru("yazıcıda apigw adresi YOK", !yazici.includes("apigw."));
   /**
@@ -265,9 +266,9 @@ console.log("\n6) zincir — kutu panele, süzgeç /stok'a BAĞLI mı");
    * olmaz — kanal başına bir kart, 11 kanal hedefi).
    * KURAL AYNI: kutu BİR YERDE çiziliyor ve verisi ONA gidiyor.
    */
-  const panel = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
+  const panel = yorumsuz(kaynakOku("src/app/page.tsx"));
   const kanalSayfasi = yorumsuz(
-    readFileSync("src/app/kanal-listeleme/page.tsx", "utf8"),
+    kaynakOku("src/app/kanal-listeleme/page.tsx"),
   );
   dogru(
     "döküm /kanal-listeleme'de ÇİZİLİYOR (<VitrinKutusu)",
@@ -307,7 +308,7 @@ console.log("\n6) zincir — kutu panele, süzgeç /stok'a BAĞLI mı");
    * ⚠ Ölçüt KOŞULA bağlı: bağlantının varlığı değil, KAPISI ölçülüyor.
    */
   {
-    const serhEkrani = yorumsuz(readFileSync("src/app/vitrin-serhi.tsx", "utf8"));
+    const serhEkrani = yorumsuz(kaynakOku("src/app/vitrin-serhi.tsx"));
     dogru(
       "şerh SİFIRDA bağlantı ÇİZMİYOR (temiz && !dikkat → null)",
       /\{temiz \&\& !s\.dikkatGerek \? null : \(/.test(serhEkrani),
@@ -322,7 +323,7 @@ console.log("\n6) zincir — kutu panele, süzgeç /stok'a BAĞLI mı");
     !panel.includes("<VitrinKutusu"),
   );
 
-  const stok = yorumsuz(readFileSync("src/app/stok/page.tsx", "utf8"));
+  const stok = yorumsuz(kaynakOku("src/app/stok/page.tsx"));
   dogru("/stok vitrin parametresini OKUYOR", /\bvitrin\s*[,}]/.test(stok));
   dogru("/stok koşulu GÖVDEDEN alıyor", stok.includes("vitrinKosulu("));
   dogru(
@@ -407,7 +408,7 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
    * geçiyor (kayıt-yok ve ölçülmemiş ölçümleri). _(Anayasa: kaynak tarayan
    * kontrol, deseni dosyada değil KULLANIM BLOĞUNDA arar.)_
    */
-  const veri = yorumsuz2(readFileSync("src/lib/panel/vitrin-verisi.ts", "utf8"));
+  const veri = yorumsuz2(kaynakOku("src/lib/panel/vitrin-verisi.ts"));
   const donguBas = veri.indexOf("for (const s of VITRIN_SATIRLARI)");
   dogru("üç satır döngüsü bulundu", donguBas >= 0);
   const dongu =
@@ -421,7 +422,7 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
    * görünen her şey tıklanabilir olmalı, tersi de geçerli). Ama SATIR VAR.
    * ⚠ İKİ YÖN AYRI: dolu satır bağlantı OLMALI, sıfır satır OLMAMALI.
    */
-  const kutu = yorumsuz2(readFileSync("src/app/vitrin-kutusu.tsx", "utf8"));
+  const kutu = yorumsuz2(kaynakOku("src/app/vitrin-kutusu.tsx"));
   /**
    * ⚠ 07.09.2026: kutu çok kanallı olunca satırlar `veri.` yerine kutu
    * değişkeninden (`k.`) geliyor — ölçüt ESKİDİ, davranış değil.
@@ -498,7 +499,7 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
    * ⛔ /stok AYNI KÜMEYE GİTMELİ — yoksa kutuda 19 yazarken liste boş çıkar
    * ve "sayı = liste" sözü bozulur.
    */
-  const stok2 = yorumsuz2(readFileSync("src/app/stok/page.tsx", "utf8"));
+  const stok2 = yorumsuz2(kaynakOku("src/app/stok/page.tsx"));
   dogru("/stok ölçülmemiş gövdesini alıyor", stok2.includes("olculmemisKosulu("));
 
   /**
@@ -508,7 +509,7 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
    * koşmadı" ile "koştu ve düzeldi" ayırt edilemezdi.
    * _(Anayasa: "şemadaki alan da bir iddiadır — yazıcısı yoksa vaat boştur".)_
    */
-  const betik = yorumsuz2(readFileSync("scripts/canli-kanal-listeleme-yaz.ts", "utf8"));
+  const betik = yorumsuz2(kaynakOku("scripts/canli-kanal-listeleme-yaz.ts"));
   dogru("başarılı koşum iz YAZIYOR", /kosumIziniYaz\(\{\s*basarili: true/.test(betik));
 
   /**
@@ -527,7 +528,7 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
    * damgala". Yalnız ilki olsaydı hiç değişmeyen kanal BAYAT görünürdü;
    * yalnız ikincisi olsaydı 504 geri gelirdi.
    */
-  const tyYazici = yorumsuz2(readFileSync("src/lib/kanal-listeleme-yaz.ts", "utf8"));
+  const tyYazici = yorumsuz2(kaynakOku("src/lib/kanal-listeleme-yaz.ts"));
   dogru(
     "TY yazıcı DEĞİŞMEYEN satıra dokunmuyor",
     /if \(s\.listelemeDurumu !== k\.durum \|\| s\.kanalAdet !== k\.adet\)/.test(tyYazici),
@@ -568,10 +569,10 @@ console.log("\n9) çok kanallı kutu — hesap tekil değil, iz kendi kanalında
   const yorumsuz3 = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
-  const veri3 = yorumsuz3(readFileSync("src/lib/panel/vitrin-verisi.ts", "utf8"));
-  const kutu3 = yorumsuz3(readFileSync("src/app/vitrin-kutusu.tsx", "utf8"));
-  const stok3 = yorumsuz3(readFileSync("src/app/stok/page.tsx", "utf8"));
-  const sozlesme = yorumsuz3(readFileSync("src/lib/vitrin-kutusu.ts", "utf8"));
+  const veri3 = yorumsuz3(kaynakOku("src/lib/panel/vitrin-verisi.ts"));
+  const kutu3 = yorumsuz3(kaynakOku("src/app/vitrin-kutusu.tsx"));
+  const stok3 = yorumsuz3(kaynakOku("src/app/stok/page.tsx"));
+  const sozlesme = yorumsuz3(kaynakOku("src/lib/vitrin-kutusu.ts"));
 
   /**
    * ⛔ KUTU ÇOK KANALLI — VE BU BİR ARIZADAN SONRA (07.09.2026).
@@ -611,7 +612,7 @@ console.log("\n9) çok kanallı kutu — hesap tekil değil, iz kendi kanalında
   const ihlal: string[] = [];
   for (const d of kaynakDosyalari("src")) {
     if (d === SOZLESME_DOSYASI) continue;
-    const m = yorumsuz3(readFileSync(d, "utf8"));
+    const m = yorumsuz3(kaynakOku(d));
     /** ⚠ İKİ İŞARET BİRLİKTE: tek başına `groupBy` ya da tek başına damga masum. */
     if (m.includes('by: ["channelAccountId"]') && m.includes("kanalOlcumAt")) ihlal.push(d);
   }
@@ -672,8 +673,8 @@ console.log("\n9) çok kanallı kutu — hesap tekil değil, iz kendi kanalında
     veri3.includes('contains: `"kosumKanali":"${h.kanalAdi}"`'),
   );
   dogru("iz süzgeci action ile BİRLİKTE", /action: KOSUM_IZI,[\s\S]{0,200}kosumKanali/.test(veri3));
-  const tyYazici = yorumsuz3(readFileSync("src/lib/kanal-listeleme-yaz.ts", "utf8"));
-  const hbYazici = yorumsuz3(readFileSync("src/lib/kanal-listeleme-hb-yaz.ts", "utf8"));
+  const tyYazici = yorumsuz3(kaynakOku("src/lib/kanal-listeleme-yaz.ts"));
+  const hbYazici = yorumsuz3(kaynakOku("src/lib/kanal-listeleme-hb-yaz.ts"));
   dogru("TY izi kanalını YAZIYOR", /detail: JSON\.stringify\(\{[\s\S]{0,120}kosumKanali/.test(tyYazici));
   dogru("HB izi kanalını YAZIYOR", /detail: JSON\.stringify\(\{[\s\S]{0,120}kosumKanali/.test(hbYazici));
   /** ⛔ HB izi TY ile AYNI ŞEKLİ taşır — yoksa okuyan taraf onu hiç göremez. */
@@ -752,7 +753,7 @@ console.log("\n9) çok kanallı kutu — hesap tekil değil, iz kendi kanalında
     yakin("boş küme sıfır döndürür", vitrinSerhi([]).adet, 0);
   }
 
-  const serhGovdesi = readFileSync("src/lib/panel/vitrin-serhi.ts", "utf8");
+  const serhGovdesi = kaynakOku("src/lib/panel/vitrin-serhi.ts");
   dogru(
     "iz yokluğu SORUN sayılıyor (ortak gövdede)",
     /return k\.sonKosumBasarisiz \|\| bayat \|\| k\.kosumIziYok/.test(
@@ -765,7 +766,7 @@ console.log("\n9) çok kanallı kutu — hesap tekil değil, iz kendi kanalında
   );
   dogru(
     "  ...şerh de AYNI gövdeden besleniyor",
-    readFileSync("src/app/vitrin-serhi.tsx", "utf8").includes("vitrinSerhi(veri)"),
+    kaynakOku("src/app/vitrin-serhi.tsx").includes("vitrinSerhi(veri)"),
   );
 
   /**

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import { MENU_IKONLARI } from "../src/lib/menu/ikonlar";
 
 import {
@@ -156,7 +156,7 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
  */
 {
   console.log("\n5) EKRAN — ONAYSIZ YAZMA YOK");
-  const eylem = readFileSync("src/app/ayarlar/depo/eylemler.ts", "utf8");
+  const eylem = kaynakOku("src/app/ayarlar/depo/eylemler.ts");
   const eY = eylem.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
   /** Önizleme dalı yazma çağrısı içermemeli. */
@@ -189,7 +189,7 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
    * ⚠ "KISALTMA SONRADAN DEĞİŞMEZ" BAŞTAN SÖYLENİR (mimar şartı).
    * Kullanıcı bunu kurarken bilmeli, basılı etiketle karşılaşınca değil.
    */
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
     Depo: Record<string, string>;
   };
   kontrol(
@@ -273,7 +273,7 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
   kontrol("sayım tutmuyorsa düşer", !sayimTutuyorMu(6, 5));
 
   // ── SUNUCU EYLEMİ ──────────────────────────────────────────────────
-  const gocEylem = readFileSync("src/app/ayarlar/depo/goc/eylemler.ts", "utf8")
+  const gocEylem = kaynakOku("src/app/ayarlar/depo/goc/eylemler.ts")
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/^\s*\/\/.*$/gm, "");
 
@@ -326,8 +326,8 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
     m
       .replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " "))
       .replace(/\/\/[^\n]*/g, (x) => x.replace(/[^\n]/g, " "));
-  const kurulum = yorumsuzla(readFileSync("src/app/ayarlar/depo/eylemler.ts", "utf8"));
-  const ekran = yorumsuzla(readFileSync("src/app/ayarlar/depo/page.tsx", "utf8"));
+  const kurulum = yorumsuzla(kaynakOku("src/app/ayarlar/depo/eylemler.ts"));
+  const ekran = yorumsuzla(kaynakOku("src/app/ayarlar/depo/page.tsx"));
 
   kontrol("bölüm `DepoBolumu`ya yazılıyor", /depoBolumu\.upsert\s*\(/.test(kurulum));
   /**
@@ -430,7 +430,7 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
     kisaltmaCakismalari([{ ad: "Salon" }, { ad: "Depo" }]).length === 0,
   );
 
-  const gocEkran = readFileSync("src/app/ayarlar/depo/goc/page.tsx", "utf8");
+  const gocEkran = kaynakOku("src/app/ayarlar/depo/goc/page.tsx");
   kontrol("göç ekranı ölçütü SAF GÖVDEDEN çağırıyor",
     /kisaltmaCakismalari\(hepsi\)/.test(gocEkran));
   kontrol("  ...ve çakışmayı EKRANDA gösteriyor",
@@ -442,7 +442,7 @@ const TARIF: BolumTarifi = { ad: "Salon", kisaltma: "SLN", uniteSayisi: 2, gozSa
    * `gocPlani`nin kendi gerekçesiyle aynı ilke: eşleştirmeyi depoyu bilen
    * yapar. Metin "birleştirildi" deseydi kullanıcı işin bittiğini sanardı.
    */
-  const sozluk2 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk2 = JSON.parse(kaynakOku("messages/tr.json")) as {
     Goc: Record<string, string>;
   };
   kontrol(
@@ -583,7 +583,7 @@ async function etiketKontrolleri() {
     "src/lib/depo/etiket.ts",
     "src/app/ayarlar/konumlar/etiketler/page.tsx",
   ]) {
-    const m = yorumsuz(readFileSync(yol, "utf8"));
+    const m = yorumsuz(kaynakOku(yol));
     kontrol(
       `dış servis çağrısı YOK — ${yol.split("/").pop()}`,
       !/\bfetch\s*\(|https?:\/\/(?!www\.w3\.org)/.test(m),
@@ -592,14 +592,11 @@ async function etiketKontrolleri() {
   /** ⭐ Kodlayıcı BAĞIMSIZ: hiçbir şey içeri almıyor, dolayısıyla hiçbir şeye bağlı değil. */
   kontrol(
     "Code128 kodlayıcısının HİÇ içe aktarması yok",
-    !/^\s*import\s/m.test(readFileSync("src/lib/depo/code128.ts", "utf8")),
+    !/^\s*import\s/m.test(kaynakOku("src/lib/depo/code128.ts")),
   );
 
   /** ═══ EKRAN GERÇEKTEN BU GÖVDEYİ ÇAĞIRIYOR MU ════════════════════════ */
-  const etiketEkran = readFileSync(
-    "src/app/ayarlar/konumlar/etiketler/page.tsx",
-    "utf8",
-  );
+  const etiketEkran = kaynakOku("src/app/ayarlar/konumlar/etiketler/page.tsx");
   kontrol(
     "etiket ekranı ORTAK gövdeyi çağırıyor",
     /await rafEtiketiSvg\(konum\.code\)/.test(etiketEkran),
@@ -651,7 +648,7 @@ async function etiketKontrolleri() {
   kontrol("hepsi biliniyorsa 0", yeriBilinmeyenOzeti(0, 0, 500).bilinmeyen === 0);
   kontrol("kova kodu sabiti", KOVA_KODU === "DEPO");
 
-  const depoEkran = readFileSync("src/app/ayarlar/depo/page.tsx", "utf8");
+  const depoEkran = kaynakOku("src/app/ayarlar/depo/page.tsx");
   const depoY = depoEkran
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
@@ -685,7 +682,7 @@ async function etiketKontrolleri() {
     "bileşim ekranda yazıyor",
     /t\("yeriBilinmeyenBilesim"/.test(depoEkran),
   );
-  const sozluk3 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk3 = JSON.parse(kaynakOku("messages/tr.json")) as {
     Depo: Record<string, string>;
   };
   /**
@@ -798,7 +795,7 @@ async function etiketKontrolleri() {
   );
 
   /* ═══ SUNUCU EYLEMİ ══════════════════════════════════════════════════ */
-  const yEylem = readFileSync("src/app/yerlestir/actions.ts", "utf8");
+  const yEylem = kaynakOku("src/app/yerlestir/actions.ts");
   const yY = yEylem
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
@@ -909,7 +906,7 @@ async function etiketKontrolleri() {
   );
 
   /* ═══ EKRAN ══════════════════════════════════════════════════════════ */
-  const yEkran = readFileSync("src/app/yerlestir/yerlestirici.tsx", "utf8");
+  const yEkran = kaynakOku("src/app/yerlestir/yerlestirici.tsx");
   /**
    * ⛔ OKUNAN DEĞER DURUMDAN OKUNMAZ. Kamera `setKod` çağırıp hemen işlemi
    * tetiklerse durum HENÜZ ESKİ değeri taşır ve yanlış ürün yanlış rafa
@@ -944,7 +941,7 @@ async function etiketKontrolleri() {
    * çiziliyor, kimse bulamıyor.
    * _(Anayasa: "kural doğru mu değil, kural teslim edilebilir mi".)_
    */
-  const katalog = readFileSync("src/lib/menu/katalog.ts", "utf8");
+  const katalog = kaynakOku("src/lib/menu/katalog.ts");
   kontrol("menü katalogunda adresi var", /yerlestir: "\/yerlestir"/.test(katalog));
   kontrol("  ...ve katalog kalemi var", /anahtar: "yerlestir"/.test(katalog));
   kontrol(
@@ -961,7 +958,7 @@ async function etiketKontrolleri() {
     "  ...ikonu var (tek gövde: lib/menu/ikonlar)",
     Boolean(MENU_IKONLARI["yerlestir"]),
   );
-  const sozluk4 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk4 = JSON.parse(kaynakOku("messages/tr.json")) as {
     Menu: Record<string, string>;
   };
   kontrol("  ...menü metni var", (sozluk4.Menu.yerlestir ?? "").length > 0);
@@ -1112,7 +1109,7 @@ async function etiketKontrolleri() {
   kontrol("  ...stok hareketi YAZILMIYOR", !/stockMovement\./.test(tBlok));
 
   /* ═══ EKRAN ══════════════════════════════════════════════════════════ */
-  const tEkran = readFileSync("src/app/yerlestir/tasi/tasiyici.tsx", "utf8");
+  const tEkran = kaynakOku("src/app/yerlestir/tasi/tasiyici.tsx");
   kontrol("ekran SAF gövdeyi çağırıyor", /const karar = tasimaKarari\(\{/.test(tEkran));
   /**
    * ⛔ ONAYSIZ YAZMA YOK: düğme yalnız HAZIR iken açılır — ve niye kapalı
@@ -1148,7 +1145,7 @@ async function etiketKontrolleri() {
     "  ...ve serbest metin girişi YOK",
     !/<input(?![^>]*type="checkbox")/.test(tEkran),
   );
-  const sozluk5 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk5 = JSON.parse(kaynakOku("messages/tr.json")) as {
     Tasi: Record<string, string>;
   };
   /** ⚠ HER DURUMUN METNİ VAR — sebepsiz kilitli düğme kalmasın. */
@@ -1170,7 +1167,7 @@ async function etiketKontrolleri() {
   /** ⛔ Ekran ULAŞILABİLİR: `/yerlestir`den bağlantı var. */
   kontrol(
     "yerleştirme ekranından bağlantı var",
-    /href="\/yerlestir\/tasi"/.test(readFileSync("src/app/yerlestir/page.tsx", "utf8")),
+    /href="\/yerlestir\/tasi"/.test(kaynakOku("src/app/yerlestir/page.tsx")),
   );
   // =========================================================================
   console.log("\nİKİ RAF DESENİ BİRBİRİNİ TANIYOR MU (K50-⑨)");

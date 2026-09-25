@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -28,7 +28,7 @@ function kontrol(ad: string, kosul: boolean, ipucu?: string) {
 
 /** ⚠ Bir kuralı ANLATAN yorum, o kuralı UYGULAMIŞ sayılmaz. */
 function oku(yol: string): string {
-  return readFileSync(yol, "utf8")
+  return kaynakOku(yol)
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ")
@@ -259,7 +259,7 @@ kontrol(
 const kapanis = oku("src/app/okut/sayim-kapanis.tsx");
 const yazim = oku("src/app/okut/sayim-yazim-actions.ts");
 const veri = oku("src/lib/sayim/kapanis-verisi.ts");
-const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
   Sayim: Record<string, string>;
 };
 

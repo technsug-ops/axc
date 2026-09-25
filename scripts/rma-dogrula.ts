@@ -19,7 +19,7 @@ import {
   kanalNormaldeOderMi,
   yenidenGonderimSorulurMu,
 } from "../src/lib/iade/yeniden-gonderim";
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { BILDIRIM_DURUM_RENGI } from "../src/lib/durum-renkleri";
 
@@ -38,7 +38,7 @@ import { BILDIRIM_DURUM_RENGI } from "../src/lib/durum-renkleri";
  * OKUMA KAPISINDA yapılıyor.
  */
 function semaMetni(): string {
-  return readFileSync("prisma/schema.prisma", "utf8")
+  return kaynakOku("prisma/schema.prisma")
     .split("\r\n")
     .join("\n");
 }
@@ -222,7 +222,7 @@ console.log("\n1) BİLDİRİM — DURUM MAKİNESİ");
       anahtar,
     );
   }
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json"));
   const eksikMetin = durumlar
     .map((d) => IADE_ISLE_SEBEP_ANAHTARI[d])
     .filter((a): a is string => a !== null)
@@ -537,7 +537,7 @@ console.log("\n3) DOSYA EKLERİ — SINIRLAR");
   );
 
   /** YEDEK UYARISI SÖZLÜKTE VAR: ekranda boş metin çıkmasın. */
-  const sozluk2 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk2 = JSON.parse(kaynakOku("messages/tr.json"));
   kontrol(
     "yedek uyarısı sözlükte ve DOSYALARIN girmediğini söylüyor",
     typeof sozluk2.Ekler?.yedekUyarisi === "string" &&
@@ -546,7 +546,7 @@ console.log("\n3) DOSYA EKLERİ — SINIRLAR");
   );
 
   /** ATTACHMENT YEDEK MANİFESTİNDE: satırlar kaybolmasın. */
-  const bicim = readFileSync("src/lib/yedek-bicim.ts", "utf8");
+  const bicim = kaynakOku("src/lib/yedek-bicim.ts");
   kontrol(
     "Attachment yedek manifestinde",
     bicim.includes('"Attachment"'),
@@ -584,7 +584,7 @@ console.log("\n4) FORM KURALLARI — 14.08.2026'DA CANLIDA ÇIKAN HATALAR");
   );
 
   /** DÖNEN ÜRÜN ALANI EKRANDA GERÇEKTEN VAR MI (hata 1'in ta kendisi). */
-  const form = readFileSync("src/app/iadeler/bildirim-formu.tsx", "utf8");
+  const form = kaynakOku("src/app/iadeler/bildirim-formu.tsx");
   kontrol(
     "form dönen ürün alanını ÇİZİYOR (donenSorulur bloğu)",
     form.includes("donenSorulur ?") && form.includes("bildirim-donen"),
@@ -602,7 +602,7 @@ console.log("\n4) FORM KURALLARI — 14.08.2026'DA CANLIDA ÇIKAN HATALAR");
     form.includes("tumVaryantlar"),
   );
 
-  const sayfa = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/iadeler/page.tsx");
   kontrol(
     "sayfa ayrılan listeyi stoğa göre süzüyor",
     sayfa.includes("formStoklari.get(v.id) ?? 0) > 0"),
@@ -653,12 +653,12 @@ console.log("\n4) FORM KURALLARI — 14.08.2026'DA CANLIDA ÇIKAN HATALAR");
   kontrol("adet 0 ile ayırma anlamsız -> REDDEDİLİR", !ayirmaMumkunMu({ mevcutStok: 9, zatenAyrilmis: 0, istenen: 0 }));
 
   /** SUNUCU DA AYNI FONKSİYONU ÇAĞIRIYOR: ekranda engellemek yetki değildir. */
-  const eylem = readFileSync("src/app/iadeler/bildirim-actions.ts", "utf8");
+  const eylem = kaynakOku("src/app/iadeler/bildirim-actions.ts");
   kontrol("sunucu ayırma kontrolünü yapıyor", eylem.includes("ayirmaMumkunMu"));
   kontrol("sunucu dönen ürün zorunluluğunu yapıyor", eylem.includes("donenUrunZorunluMu"));
 
   // --- DÜĞME ETİKETLERİ EYLEM DİLİNDE (hata 4) ---
-  const sozluk3 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk3 = JSON.parse(kaynakOku("messages/tr.json"));
   const gecis = sozluk3.BildirimGecisi ?? {};
   for (const durum of Object.keys(IZINLI_GECISLER)) {
     kontrol(
@@ -964,16 +964,13 @@ console.log("\n5) İADE FORMU — ÖN-DOLU GEÇİŞ (T4/14 CANLI HATASI)");
   );
 
   // --- EKRAN BU FONKSİYONLARI GERÇEKTEN ÇAĞIRIYOR MU (bağlantı kontrolü) ---
-  const iadeForm = readFileSync(
-    "src/app/satislar/[id]/iade/iade-formu.tsx",
-    "utf8",
-  );
+  const iadeForm = kaynakOku("src/app/satislar/[id]/iade/iade-formu.tsx");
   kontrol(
     "form çizim kararını saf fonksiyondan alıyor (kopya mantık yok)",
     iadeForm.includes("urunAlanlariCizilirMi({") &&
       !iadeForm.includes("stogaGirer && adet > 0"),
   );
-  const iadeSayfa = readFileSync("src/app/satislar/[id]/iade/page.tsx", "utf8");
+  const iadeSayfa = kaynakOku("src/app/satislar/[id]/iade/page.tsx");
   kontrol(
     "sayfa ön-dolu kararını saf fonksiyondan alıyor",
     iadeSayfa.includes("iadeFormuOnDolu({"),
@@ -1026,7 +1023,7 @@ console.log("\n5) İADE FORMU — ÖN-DOLU GEÇİŞ (T4/14 CANLI HATASI)");
   );
 
   // --- SÖZLÜK ---
-  const sozluk4 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk4 = JSON.parse(kaynakOku("messages/tr.json"));
   for (const anahtar of [
     "stokMetni",
     "degisimUrunuSecin",
@@ -1102,7 +1099,7 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
   );
 
   // --- EKRAN BAĞLANTISI ---
-  const sayfa2 = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  const sayfa2 = kaynakOku("src/app/iadeler/page.tsx");
   kontrol(
     "arama SUNUCUDA yapılıyor (sorgunun içinde)",
     sayfa2.includes("bildirimAramaKosulu(bildirimArama)") &&
@@ -1411,7 +1408,7 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
     sayfa2.includes("talepNoKisa") && sayfa2.includes("<KopyalanabilirKod"),
   );
 
-  const bForm = readFileSync("src/app/iadeler/bildirim-formu.tsx", "utf8");
+  const bForm = kaynakOku("src/app/iadeler/bildirim-formu.tsx");
   kontrol(
     "satış seçici ARANABİLİR (düz açılır liste değil)",
     bForm.includes('id="bildirim-satis"') &&
@@ -1423,7 +1420,7 @@ console.log("\n6) BİLDİRİM LİSTESİ — BULUNABİLİRLİK");
       bForm.includes("satisListesiSinirli"),
   );
 
-  const sozluk5 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk5 = JSON.parse(kaynakOku("messages/tr.json"));
   for (const anahtar of [
     "aramaIpucu",
     "aramaSonucYok",
@@ -1538,7 +1535,7 @@ console.log("\n7) GERİ GELEN MAL — STOK ŞARTI YOK, MALİYET ŞARTI VAR");
   );
 
   // --- DEĞİŞİMDE GİDECEK ÜRÜN: STOK ŞARTI DEVAM EDİYOR ---
-  const kaynak = readFileSync("src/lib/iade.ts", "utf8");
+  const kaynak = kaynakOku("src/lib/iade.ts");
   kontrol(
     "değişimde gidecek ürüne stok kontrolü UYGULANIYOR (kural kalktı sanılmasın)",
     /**
@@ -1561,16 +1558,13 @@ console.log("\n7) GERİ GELEN MAL — STOK ŞARTI YOK, MALİYET ŞARTI VAR");
       kaynak.includes("donenMalDagilimi({"),
   );
 
-  const eylem2 = readFileSync(
-    "src/app/satislar/[id]/iade/actions.ts",
-    "utf8",
-  );
+  const eylem2 = kaynakOku("src/app/satislar/[id]/iade/actions.ts");
   kontrol(
     "ekran bu hatayı AYRI mesajla gösteriyor",
     eylem2.includes("DonenMaliyetYokHatasi") &&
       eylem2.includes("donenMaliyetYok"),
   );
-  const sozluk6 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk6 = JSON.parse(kaynakOku("messages/tr.json"));
   kontrol(
     "mesaj stok yetersizliği DEMİYOR, maliyeti işaret ediyor",
     typeof sozluk6.Iade?.donenMaliyetYok === "string" &&
@@ -1634,16 +1628,13 @@ console.log("\n8) GERİ ALINAMAZ GEÇİŞ — ONAY ZORUNLU");
     kontrol(`  ${hedef} geçişi onay istiyor`, gecisOnayIster(hedef));
   }
 
-  const durumBileseni = readFileSync(
-    "src/app/iadeler/bildirim-durumu.tsx",
-    "utf8",
-  );
+  const durumBileseni = kaynakOku("src/app/iadeler/bildirim-durumu.tsx");
   kontrol(
     "düğme onay diyaloğuna sarılı (tek tıkla geçiş yok)",
     durumBileseni.includes("gecisOnayIster(s.hedef)") &&
       durumBileseni.includes("AlertDialog"),
   );
-  const sozluk7 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk7 = JSON.parse(kaynakOku("messages/tr.json"));
   kontrol(
     "onay metni GERİ ALINAMAZ diyor",
     typeof sozluk7.Bildirim2?.gecisOnayAciklama === "string" &&
@@ -1651,7 +1642,7 @@ console.log("\n8) GERİ ALINAMAZ GEÇİŞ — ONAY ZORUNLU");
   );
 
   /** Satış kutusu ne beklediğini söylüyor mu (aynı tuzağa iki kez düşüldü). */
-  const bForm2 = readFileSync("src/app/iadeler/bildirim-formu.tsx", "utf8");
+  const bForm2 = kaynakOku("src/app/iadeler/bildirim-formu.tsx");
   kontrol(
     "satış seçme kutusu ne aranacağını SÖYLÜYOR",
     bForm2.includes("satisIpucu") &&
@@ -1669,10 +1660,7 @@ console.log("\n8) GERİ ALINAMAZ GEÇİŞ — ONAY ZORUNLU");
       typeof sozluk7.Bildirim2?.satisPencereIpucu === "string" &&
       sozluk7.Bildirim2.satisPencereIpucu.includes("Sipariş numarasıyla"),
   );
-  const secimBileseni = readFileSync(
-    "src/components/aranabilir-secim.tsx",
-    "utf8",
-  );
+  const secimBileseni = kaynakOku("src/components/aranabilir-secim.tsx");
   kontrol(
     "  ...bileşen ipucunu arama kutusunun ALTINA çiziyor",
     secimBileseni.includes("{ipucu ? <p"),
@@ -1751,7 +1739,7 @@ console.log("\n9) DOSYA YÜKLEME — BEYAN EDİLEN SINIR TAŞINABİLİR OLMALI")
   kontrol("hiçbir girdide İSTİSNA fırlatmıyor (hata DEĞER olarak döner)", !firlatti);
 
   // --- YÜKLEME YOLU ---
-  const ekBileseni = readFileSync("src/app/iadeler/ekler.tsx", "utf8");
+  const ekBileseni = kaynakOku("src/app/iadeler/ekler.tsx");
   kontrol(
     "istemci dosyayı GÖNDERMEDEN ÖNCE eliyor (aynı saf kural)",
     ekBileseni.includes("ekiDogrula({"),
@@ -1769,13 +1757,13 @@ console.log("\n9) DOSYA YÜKLEME — BEYAN EDİLEN SINIR TAŞINABİLİR OLMALI")
     ekBileseni.includes("t.has(anahtar)"),
   );
 
-  const ekAction = readFileSync("src/app/iadeler/ek-actions.ts", "utf8");
+  const ekAction = kaynakOku("src/app/iadeler/ek-actions.ts");
   kontrol(
     "çöken Server Action KALDIRILDI (tek yol kaldı)",
     !ekAction.includes("export async function ekYukle"),
   );
 
-  const ekRota = readFileSync("src/app/api/ekler/route.ts", "utf8");
+  const ekRota = kaynakOku("src/app/api/ekler/route.ts");
   kontrol(
     "rota her hatayı KOD olarak döndürüyor (istisna dışarı taşmıyor)",
     ekRota.includes("} catch (e) {") && ekRota.includes('hataDon("YUKLENEMEDI")'),
@@ -1803,10 +1791,7 @@ console.log("\n9) DOSYA YÜKLEME — BEYAN EDİLEN SINIR TAŞINABİLİR OLMALI")
     ekRota.includes("blobPath: yuklenen.pathname"),
   );
 
-  const indirmeRotasi = readFileSync(
-    "src/app/api/ekler/[id]/route.ts",
-    "utf8",
-  );
+  const indirmeRotasi = kaynakOku("src/app/api/ekler/[id]/route.ts");
   kontrol(
     "indirme kendi ucumuzdan ve YETKİ KONTROLÜYLE geçiyor",
     indirmeRotasi.includes('yetkiIste("iade.gor")') &&
@@ -1831,7 +1816,7 @@ console.log("\n9) DOSYA YÜKLEME — BEYAN EDİLEN SINIR TAŞINABİLİR OLMALI")
     ekRota.includes("process.env.BLOB_READ_WRITE_TOKEN"),
   );
 
-  const sozluk8 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk8 = JSON.parse(kaynakOku("messages/tr.json"));
   kontrol(
     "sınır metni 4 MB diyor (beyan ile kural tutuyor)",
     typeof sozluk8.Ekler?.hataDOSYA_COK_BUYUK === "string" &&
@@ -1914,7 +1899,7 @@ console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
   );
 
   /* Panel ile ekran AYNI ölçütü kullanmalı — yoksa "sayı = liste" bozulur. */
-  const gorev = readFileSync("src/lib/panel/gorev-verisi.ts", "utf8");
+  const gorev = kaynakOku("src/lib/panel/gorev-verisi.ts");
   kontrol(
     "panel görev kutusu da açık kümeyi sayıyor",
     /returnNotice\.count\(\{\s*where: \{ status: \{ in: ACIK_BILDIRIM_DURUMLARI \} \}/.test(
@@ -1923,7 +1908,7 @@ console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
   );
 
   // ── EKRAN DÜZENİ ──────────────────────────────────────────────────────
-  const sayfa10 = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  const sayfa10 = kaynakOku("src/app/iadeler/page.tsx");
 
   kontrol(
     "ekran üç sekmeye ayrıldı",
@@ -2040,7 +2025,7 @@ console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
       /bdurum: bDurum/.test(bildirimBloku),
   );
 
-  const sozluk10 = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk10 = JSON.parse(kaynakOku("messages/tr.json"));
   for (const anahtar of [
     "sekmeBildirimler",
     "sekmeIslenmis",
@@ -2186,14 +2171,14 @@ console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
     ["şema", "prisma/schema.prisma"],
     ["durum makinesi", "src/lib/iade/bildirim.ts"],
   ] as const) {
-    const kacak = bayatCumle(readFileSync(yol, "utf8"));
+    const kacak = bayatCumle(kaynakOku(yol));
     kontrol(
       `${ad}: 'ürün müşteride kalır' artık HÜKÜM olarak kurulmuyor`,
       kacak.length === 0,
       kacak.map((m) => m[0]),
     );
   }
-  const sozluk10b = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk10b = JSON.parse(kaynakOku("messages/tr.json")) as {
     Bildirim2?: Record<string, string>;
     BildirimGecisi?: Record<string, string>;
     BildirimDurumu?: Record<string, string>;
@@ -2235,10 +2220,7 @@ console.log("\n10) AÇIK BİLDİRİM ÖLÇÜTÜ VE İADE EKRANI DÜZENİ");
    * Bilmediğimiz bir kuraldan tarih türetmek, sistemin takip etmediği şey
    * hakkında iddia kurmaktır. Kodda böyle bir türetme OLMAMALI.
    */
-  const bildirimEylem = readFileSync(
-    "src/app/iadeler/bildirim-actions.ts",
-    "utf8",
-  );
+  const bildirimEylem = kaynakOku("src/app/iadeler/bildirim-actions.ts");
   kontrol(
     "otomatik onay tarihi TÜRETİLMİYOR (gün ekleyerek hesaplanmıyor)",
     !/otomatikOnayTarihi[^;]{0,120}gunEkle/.test(bildirimEylem),
@@ -2335,10 +2317,7 @@ console.log("\n11) FORMUN SUNDUĞU GEREKÇE = SUNUCUNUN KABUL ETTİĞİ GEREKÇE
    * "seçmedin" cevabı alır ve sistemin sustuğu yer hiç açılmaz. Bu hatanın
    * KEŞFEDİLMESİNİ geciktiren şey tam olarak buydu.
    */
-  const gerekceEylemi = readFileSync(
-    "src/app/iadeler/bildirim-actions.ts",
-    "utf8",
-  );
+  const gerekceEylemi = kaynakOku("src/app/iadeler/bildirim-actions.ts");
   const gerekceBloku = gerekceEylemi.slice(
     gerekceEylemi.indexOf("reason: z"),
     gerekceEylemi.indexOf("/** Değişim için ayrılan ürün"),
@@ -2558,7 +2537,7 @@ console.log("\n12) SON TARİH SAYAÇLARI (K31 ①)");
   );
 
   // ── EKRAN VE ÇAN ─────────────────────────────────────────────────────
-  const rozet = readFileSync("src/app/iadeler/sayac-rozeti.tsx", "utf8");
+  const rozet = kaynakOku("src/app/iadeler/sayac-rozeti.tsx");
   const rozetKod = rozet
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -2589,7 +2568,7 @@ console.log("\n12) SON TARİH SAYAÇLARI (K31 ①)");
    * `new Date()`, ekran iş takvimi günü kullanıyordu ve iki DOĞRU sayı
    * (83 ↔ 67) çelişiyormuş gibi göründü.
    */
-  const can = readFileSync("src/lib/uyari/iade-sayaci.ts", "utf8");
+  const can = kaynakOku("src/lib/uyari/iade-sayaci.ts");
   kontrol(
     "panel çanı ekranla AYNI ölçütü çağırıyor",
     /isleyenSayac\(/.test(can) && /acilMi\(/.test(can),
@@ -2616,7 +2595,7 @@ console.log("\n12) SON TARİH SAYAÇLARI (K31 ①)");
   );
 
   /** Türetmenin izi bırakılıyor mu — tarih bir OLGU değil bir HESAP. */
-  const eylemMetni = readFileSync("src/app/iadeler/bildirim-actions.ts", "utf8");
+  const eylemMetni = kaynakOku("src/app/iadeler/bildirim-actions.ts");
   kontrol(
     "türetme AuditLog'a iz bırakıyor",
     /SON_TARIH_EYLEMI/.test(eylemMetni) && /kural: `geçiş anı \+ \$\{kural\.gun\} gün`/.test(eylemMetni),
@@ -2719,7 +2698,7 @@ console.log("\n13) RET GEREKÇESİ (8) VE ANALİZ SONUCU (3) — K31 ④");
       ),
   );
 
-  const eylemK4 = readFileSync("src/app/iadeler/bildirim-actions.ts", "utf8");
+  const eylemK4 = kaynakOku("src/app/iadeler/bildirim-actions.ts");
   const gerekceBlok = eylemK4.slice(
     eylemK4.indexOf("if (itirazGerekcesiGerekliMi(hedef))"),
     eylemK4.indexOf("── SON TARİH TÜRETMESİ"),
@@ -2774,7 +2753,7 @@ console.log("\n13) RET GEREKÇESİ (8) VE ANALİZ SONUCU (3) — K31 ④");
   );
 
   // ── EKRAN ────────────────────────────────────────────────────────────
-  const durumEkrani = readFileSync("src/app/iadeler/bildirim-durumu.tsx", "utf8");
+  const durumEkrani = kaynakOku("src/app/iadeler/bildirim-durumu.tsx");
   const ekranKod = durumEkrani
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -2805,7 +2784,7 @@ console.log("\n13) RET GEREKÇESİ (8) VE ANALİZ SONUCU (3) — K31 ④");
    * ⚠ YAZILIP GÖRÜNMEYEN ALAN, YAZILMAMIŞ GİBİDİR. Bu iki sütun tam da
    * "kaydediliyor ama hiçbir yerde okunmuyor" durumundaydı.
    */
-  const listeEkrani = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  const listeEkrani = kaynakOku("src/app/iadeler/page.tsx");
   kontrol(
     "seçilen gerekçe LİSTEDE görünüyor",
     /itirazGerekcesiRozet/.test(listeEkrani) &&
@@ -2897,7 +2876,7 @@ console.log("\n14) KARGOLANACAK KUTUSU (K31 ②) VE ASKIDA (③)");
   );
 
   // ── EKRAN ────────────────────────────────────────────────────────────
-  const kutu = readFileSync("src/app/iadeler/kargolanacak-kutusu.tsx", "utf8");
+  const kutu = kaynakOku("src/app/iadeler/kargolanacak-kutusu.tsx");
   const kutuKod = kutu
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -2962,7 +2941,7 @@ console.log("\n14) KARGOLANACAK KUTUSU (K31 ②) VE ASKIDA (③)");
    * bir "kargolanması gereken" iade SESSİZCE görünmezdi. (Bekleyen
    * sayacında aynı tuzak 15.08'de yaşanmıştı.)
    */
-  const listeK2 = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  const listeK2 = kaynakOku("src/app/iadeler/page.tsx");
   kontrol(
     "kutu AYRI sorgudan besleniyor (50'lik listeden değil)",
     /where: \{ status: \{ in: \["ITIRAZ_KABUL", "ASKIDA"\] \} \}/.test(listeK2),
@@ -3047,7 +3026,7 @@ console.log("\n15) BİLDİRİM TAVANI VE İTİRAZDA DEĞİŞİM ÜRÜNÜ");
   );
   kontrol("  ...başka gerekçede sorulmuyor", yanlisSoran.length === 0, yanlisSoran);
 
-  const eylemK5 = readFileSync("src/app/iadeler/bildirim-actions.ts", "utf8");
+  const eylemK5 = kaynakOku("src/app/iadeler/bildirim-actions.ts");
 
   /** Tavan SUNUCUDA da uygulanıyor — ekranda pasif düğme yetki değildir. */
   const tavanBlok = eylemK5.slice(
@@ -3150,10 +3129,7 @@ console.log("\n15) BİLDİRİM TAVANI VE İTİRAZDA DEĞİŞİM ÜRÜNÜ");
   );
 
   // ── EKRAN ────────────────────────────────────────────────────────────
-  const durumEkraniK5 = readFileSync(
-    "src/app/iadeler/bildirim-durumu.tsx",
-    "utf8",
-  );
+  const durumEkraniK5 = kaynakOku("src/app/iadeler/bildirim-durumu.tsx");
   const ekranKodK5 = durumEkraniK5
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -3166,7 +3142,7 @@ console.log("\n15) BİLDİRİM TAVANI VE İTİRAZDA DEĞİŞİM ÜRÜNÜ");
     /degisimVaryant === ""/.test(ekranKodK5),
   );
 
-  const formK5 = readFileSync("src/app/iadeler/bildirim-formu.tsx", "utf8");
+  const formK5 = kaynakOku("src/app/iadeler/bildirim-formu.tsx");
   const formKod = formK5
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -3304,7 +3280,7 @@ console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
   );
 
   // ── EKRAN ────────────────────────────────────────────────────────────
-  const listeK6 = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  const listeK6 = kaynakOku("src/app/iadeler/page.tsx");
   /**
    * ⚠ SESSİZ KAYIP GÖRÜNÜR OLMALI. Ürün depodan çıktı, defter bilmiyor —
    * bu gerçek bir eksik ve kırmızı olması doğru. ("Siparişte yok" gibi
@@ -3321,10 +3297,7 @@ console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
     /ayrilmisDusmeyiBekliyor\(b\) &&/.test(listeK6) &&
       /<DegisimGonder/.test(listeK6),
   );
-  const degisimEkrani = readFileSync(
-    "src/app/iadeler/degisim-gonder.tsx",
-    "utf8",
-  );
+  const degisimEkrani = kaynakOku("src/app/iadeler/degisim-gonder.tsx");
   kontrol(
     "  ...uyarı metni yazılıyor",
     /ayrilmisDusmedi/.test(degisimEkrani),
@@ -3382,7 +3355,7 @@ console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
    * iadede ne satışta yazılırdı, yani KAYBOLURDU. İki değişiklik (bağ ekleme
    * + satır kaldırma) birbirine bağımlı; kontrol ikisini birden tutuyor.
    */
-  const iadeMotoru = readFileSync("src/lib/iade.ts", "utf8");
+  const iadeMotoru = kaynakOku("src/lib/iade.ts");
   const exBasi = iadeMotoru.indexOf('type: "EXCHANGE_OUT"');
   const exBloku = iadeMotoru.slice(exBasi, iadeMotoru.indexOf("});", exBasi));
   kontrol("EXCHANGE_OUT bloğu kesilebildi", exBasi > -1 && exBloku.length > 0);
@@ -3395,10 +3368,7 @@ console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
     /returnItemId: iadeKalemi\.id,/.test(exBloku),
   );
   /** Yeni düğme yolu da AYNI bağı kurar — iki yol tek yere yazar. */
-  const dugmeEylemi = readFileSync(
-    "src/app/iadeler/bildirim-actions.ts",
-    "utf8",
-  );
+  const dugmeEylemi = kaynakOku("src/app/iadeler/bildirim-actions.ts");
   const dugmeBloku = dugmeEylemi.slice(
     dugmeEylemi.indexOf('type: "EXCHANGE_OUT"'),
     dugmeEylemi.indexOf("});", dugmeEylemi.indexOf('type: "EXCHANGE_OUT"')),
@@ -3429,10 +3399,7 @@ console.log("\n16) AYRILAN DEĞİŞİM ÜRÜNÜ STOKTAN DÜŞMELİ");
    * ve Halil eskiden elle iade giderine yazıyordu, bu alışkanlığın yerine
    * geçen mekanizma tam da bu.
    */
-  const hurdaBetigi = readFileSync(
-    "scripts/canli-hurda-axcali1672.ts",
-    "utf8",
-  );
+  const hurdaBetigi = kaynakOku("scripts/canli-hurda-axcali1672.ts");
   kontrol(
     "hurda betiği ELLE GİDER YAZMIYOR (çift sayım kapısı)",
     !/expense\.create/i.test(hurdaBetigi),
@@ -3563,10 +3530,7 @@ console.log("\n17) K39 — KAPANMIŞ BİLDİRİMİ İPTAL ET (24.08.2026)");
   );
 
   // ── EYLEM ──────────────────────────────────────────────────────────────
-  const iptalEylemi = readFileSync(
-    "src/app/iadeler/bildirim-actions.ts",
-    "utf8",
-  );
+  const iptalEylemi = kaynakOku("src/app/iadeler/bildirim-actions.ts");
   const iptalBasi = iptalEylemi.indexOf(
     "export async function kapanmisBildirimiIptalEt",
   );
@@ -3610,7 +3574,7 @@ console.log("\n17) K39 — KAPANMIŞ BİLDİRİMİ İPTAL ET (24.08.2026)");
   );
 
   // ── EKRAN ──────────────────────────────────────────────────────────────
-  const iptalListe = readFileSync("src/app/iadeler/page.tsx", "utf8");
+  const iptalListe = kaynakOku("src/app/iadeler/page.tsx");
   const iptalListeKodu = iptalListe.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
   const iptalDugmeBasi = iptalListeKodu.indexOf('b.status === "KAPANDI"');
   const iptalDugmeBloku = iptalListeKodu.slice(
@@ -3647,7 +3611,7 @@ console.log("\n17) K39 — KAPANMIŞ BİLDİRİMİ İPTAL ET (24.08.2026)");
   );
 
   // ── DİYALOG ────────────────────────────────────────────────────────────
-  const diyalog = readFileSync("src/app/iadeler/bildirim-iptal.tsx", "utf8");
+  const diyalog = kaynakOku("src/app/iadeler/bildirim-iptal.tsx");
   /**
    * ⚠ DESEN DOSYADA ÜÇ KEZ GEÇİYOR — import satırı, eşik hesabı ve uyarı
    * metninin parametresi. Dosyanın tamamında arayan ilk yazım, eşiği elle
@@ -3730,10 +3694,7 @@ console.log("\n18) YENİDEN GÖNDERİM KARGOSU — ALAN NE ZAMAN SORULUR (24.08.
   );
   kontrol("kanal ödüyorsa not tersine döner", !kanalNormaldeOderMi(true));
 
-  const form = readFileSync(
-    "src/app/satislar/[id]/iade/iade-formu.tsx",
-    "utf8",
-  );
+  const form = kaynakOku("src/app/satislar/[id]/iade/iade-formu.tsx");
   const formKodu = form.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
   const blokBasi = formKodu.indexOf("yenidenGonderimSorulurMu({");
   const yenidenBloku = formKodu.slice(blokBasi, blokBasi + 900);

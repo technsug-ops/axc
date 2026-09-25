@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
@@ -15,7 +15,7 @@ import { readFileSync } from "node:fs";
  * OKUMA KAPISINDA yapılıyor.
  */
 function semaMetni(): string {
-  return readFileSync("prisma/schema.prisma", "utf8")
+  return kaynakOku("prisma/schema.prisma")
     .split("\r\n")
     .join("\n");
 }
@@ -180,10 +180,10 @@ console.log("\n3) KALAN ADET — aynı hasar iki kez talep edilemez");
    * geri gelir. Eylem kendi `replace` zincirini KURAMAZ.
    */
   {
-    const eylem = readFileSync("src/app/tazminat/actions.ts", "utf8");
+    const eylem = kaynakOku("src/app/tazminat/actions.ts");
     kontrol("eylem ORTAK çözücüyü çağırıyor", /talepTutariniCoz\(formData\.get\("amount"\)\)/.test(eylem));
     kontrol("  ...kendi çözücüsü KALMADI", !/function tutaraCevir/.test(eylem));
-    const govde = readFileSync("src/lib/tazminat.ts", "utf8");
+    const govde = kaynakOku("src/lib/tazminat.ts");
     kontrol("saf gövde deponun ortak sayı çözücüsünü kullanıyor", /sayiCoz\(metin\)/.test(govde));
   }
 
@@ -292,7 +292,7 @@ console.log("\n4) KARŞI TARAF — ÜÇ TÜRDEN BİRİ, AMA EN AZ BİRİ");
    * iki kimliği bir gün ayrışır — Soundcore vakası (`194645027819` vs
    * `194644037819`). Tedarikçi seed'inde kargo firması adı geçmemeli.
    */
-  const seed = readFileSync("prisma/seed.ts", "utf8");
+  const seed = kaynakOku("prisma/seed.ts");
   const kargoAdlari = ["ARAS", "YURTICI", "HEPSIJET", "SURAT", "HOROZ"];
   const seedTedarikci = seed.slice(
     seed.indexOf("supplier"),
@@ -316,7 +316,7 @@ console.log("\n4) KARŞI TARAF — ÜÇ TÜRDEN BİRİ, AMA EN AZ BİRİ");
    *  'var' sayılmaz."_ Saf mantığı sınamak yetmez, ÇAĞRILDIĞI da sınanır.
    * ════════════════════════════════════════════════════════════════════
    */
-  const eylem = readFileSync("src/app/tazminat/actions.ts", "utf8");
+  const eylem = kaynakOku("src/app/tazminat/actions.ts");
   kontrol(
     "kural KAPIYA takılı (action gerçekten çağırıyor)",
     /if\s*\(!karsiTarafGecerliMi\(/.test(eylem),
@@ -333,7 +333,7 @@ console.log("\n4) KARŞI TARAF — ÜÇ TÜRDEN BİRİ, AMA EN AZ BİRİ");
     { kapiYeri, yazmaYeri },
   );
   /** Sessiz düşmez: kullanıcı NEDEN açılamadığını görür (İlke #5). */
-  const sozlukT = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozlukT = JSON.parse(kaynakOku("messages/tr.json")) as {
     Tazminat?: Record<string, string>;
   };
   /**
@@ -444,7 +444,7 @@ console.log("\n5) TAHSİLAT İZİ — PAKETLEME İZİYLE AYNI DESEN (K209)");
    *  geçerken gerçekten `izYaz` çağrıldığı kaynaktan doğrulanır.
    * ════════════════════════════════════════════════════════════════════
    */
-  const eylem = readFileSync("src/app/tazminat/actions.ts", "utf8");
+  const eylem = kaynakOku("src/app/tazminat/actions.ts");
   const durumBloku = eylem.slice(
     eylem.indexOf("export async function tazminatDurumDegistir"),
   );
@@ -494,7 +494,7 @@ console.log("\n5) TAHSİLAT İZİ — PAKETLEME İZİYLE AYNI DESEN (K209)");
    * çağrılmayan `hazirlaniyorMu` dersinin aynısı. Kaynak `/rapor/page.tsx`
    * hem izi sorguluyor hem `girdi.tazminatlar`a bağlıyor mu.
    */
-  const raporSayfa = readFileSync("src/app/rapor/page.tsx", "utf8");
+  const raporSayfa = kaynakOku("src/app/rapor/page.tsx");
   kontrol(
     "/rapor tahsilat izini SORGULUYOR (TÜM geçmiş, tarih süzgeçsiz)",
     /TAZMINAT_TAHSILAT_EYLEMLERI/.test(raporSayfa) &&

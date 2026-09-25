@@ -22,7 +22,7 @@
  * ============================================================================
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -38,6 +38,7 @@ import {
   tamYetkiliMi,
 } from "../src/lib/yetki/izinler";
 import { yetkiBekcisi } from "./yetki-bekci";
+import { kaynakOku } from "./kaynak-oku";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -99,7 +100,7 @@ console.log("\n1) KORUMASIZ ACTION BEKÇİSİ");
   const istisna: string[] = [];
 
   for (const yol of KAYNAKLAR) {
-    const icerik = readFileSync(yol, "utf8");
+    const icerik = kaynakOku(yol);
     /**
      * ⚠ DİREKTİF YORUMDA DEĞİL, KODDA ARANIR — 23.08.2026'da yakalandı.
      *
@@ -213,7 +214,7 @@ const SAYFA_ISTISNALARI = new Map<string, string>([
  * ============================================================================
  */
 const SAYFA_KAPILARI = [
-  ...readFileSync("src/lib/yetki/index.ts", "utf8")
+  ...kaynakOku("src/lib/yetki/index.ts")
     .replace(/\r/g, "")
     .matchAll(/export async function (sayfa[A-Za-z]+)\(/g),
 ].map((e) => e[1]);
@@ -238,7 +239,7 @@ kontrol(
     const anahtar = yol.replace(/\\/g, "/");
     if (SAYFA_ISTISNALARI.has(anahtar)) continue;
 
-    const icerik = readFileSync(yol, "utf8");
+    const icerik = kaynakOku(yol);
     if (KORUMA_DESENI.test(icerik)) {
       korumali++;
     } else {
@@ -315,7 +316,7 @@ const API_ISTISNALARI = new Map<string, string>([
     if (!/\/api\/.*route\.ts$/.test(anahtar)) continue;
     if (API_ISTISNALARI.has(anahtar)) continue;
 
-    const icerik = readFileSync(yol, "utf8");
+    const icerik = kaynakOku(yol);
     if (/apiIzni\(|yetkiIste\(|izinVarMi\(/.test(icerik)) korumali++;
     else korumasiz.push(anahtar);
   }
@@ -356,7 +357,7 @@ console.log("\n2c) NET KÂR SIZINTI BEKÇİSİ");
 
   for (const yol of KAYNAKLAR) {
     if (!/[\\/]page\.tsx$/.test(yol)) continue;
-    const icerik = readFileSync(yol, "utf8");
+    const icerik = kaynakOku(yol);
     if (!/\bnet1|\bnet2|Net1|Net2/.test(icerik)) continue;
 
     const anahtar = yol.replace(/\\/g, "/");
@@ -413,7 +414,7 @@ console.log("\n3) İZİN LİSTESİ TUTARLILIĞI");
   // Kodda geçen her yetkiIste("x") anahtarı tanınıyor mu?
   const kullanilan = new Set<string>();
   for (const yol of KAYNAKLAR) {
-    const icerik = readFileSync(yol, "utf8");
+    const icerik = kaynakOku(yol);
     for (const e of icerik.matchAll(/yetkiIste\("([^"]+)"\)/g)) kullanilan.add(e[1]);
     for (const e of icerik.matchAll(/izinVarMi\("([^"]+)"\)/g)) kullanilan.add(e[1]);
     for (const e of icerik.matchAll(/sayfaIzni\("([^"]+)"\)/g)) kullanilan.add(e[1]);
@@ -561,7 +562,7 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
    * yazılmazsa, tam yetkili rol o izni HİÇ görmez ve ekran canlıda
    * SESSİZCE kaybolur (13.08.2026 `/iadeler` vakası).
    */
-  const seed = readFileSync("prisma/seed-yetki.ts", "utf8");
+  const seed = kaynakOku("prisma/seed-yetki.ts");
   const dogan = seed.slice(
     seed.indexOf("const SONRADAN_DOGAN"),
     seed.indexOf("const dagitilacak"),
@@ -574,11 +575,11 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
    * Değer testi göremez: `yetkiIste` her iki anahtarla da çalışır, sadece
    * YANLIŞ olanı sorar. Sorulan anahtarın kendisi sınanmalı.
    */
-  const duzenle = readFileSync("src/app/satislar/[id]/duzenle-actions.ts", "utf8");
+  const duzenle = kaynakOku("src/app/satislar/[id]/duzenle-actions.ts");
   kontrol('duzenle-actions "satis.duzenle" ister', duzenle.includes('yetkiIste("satis.duzenle")'));
   kontrol("  ...ve satis.yaz'a DAYANMAZ", !duzenle.includes('yetkiIste("satis.yaz")'));
 
-  const iptal = readFileSync("src/app/satislar/[id]/iptal-actions.ts", "utf8");
+  const iptal = kaynakOku("src/app/satislar/[id]/iptal-actions.ts");
   kontrol('iptal-actions "satis.iptal" ister', iptal.includes('yetkiIste("satis.iptal")'));
   kontrol("  ...ve satis.yaz'a DAYANMAZ", !iptal.includes('yetkiIste("satis.yaz")'));
 
@@ -587,7 +588,7 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
    * alabilmeli; ayrılsaydı kendi hatasını düzeltemeyen bir rol doğardı ve
    * iş yine sahibe düşerdi (17.08.2026'da tam olarak bu yaşandı).
    */
-  const gerial = readFileSync("src/app/satislar/[id]/geri-al-actions.ts", "utf8");
+  const gerial = kaynakOku("src/app/satislar/[id]/geri-al-actions.ts");
   kontrol('geri-al-actions "satis.iptal" ister', gerial.includes('yetkiIste("satis.iptal")'));
   kontrol(
     "  ...geri alma için AYRI izin açılmadı",
@@ -598,7 +599,7 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
    * EKRAN DA SÜZÜYOR MU — yapamayacağı eylemi göstermek, kullanıcıyı
    * boşuna deneten tasarımdır (İlke #5: sessiz başarısızlık yasak).
    */
-  const ekran = readFileSync("src/app/satislar/[id]/page.tsx", "utf8");
+  const ekran = kaynakOku("src/app/satislar/[id]/page.tsx");
   kontrol('ekran "satis.duzenle" izni okuyor', ekran.includes('izinVarMi("satis.duzenle")'));
   kontrol('ekran "satis.iptal" izni okuyor', ekran.includes('izinVarMi("satis.iptal")'));
   kontrol(
@@ -682,7 +683,7 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
    * izni dağıtmaz, bekçi eksik sayar ve her tam yetkili rol kırmızı
    * yanardı — bekçi bir süre sonra görmezden gelinen bir alarma dönerdi.
    */
-  const bekci = readFileSync("scripts/yetki-bekci.ts", "utf8");
+  const bekci = kaynakOku("scripts/yetki-bekci.ts");
   kontrol(
     "bekçi ölçütü FİRMA izinleri (sağlayıcıyı eksik saymıyor)",
     bekci.includes("FIRMA_IZINLERI.filter((i) => !sahipOldugu.has(i))"),
@@ -697,7 +698,7 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
     bekci.includes("ölçüt DIŞI (sağlayıcı düzlemi"),
   );
 
-  const seed = readFileSync("prisma/seed-yetki.ts", "utf8");
+  const seed = kaynakOku("prisma/seed-yetki.ts");
   kontrol(
     "seed dağıtımı saf fonksiyondan geçiriyor",
     seed.includes("otomatikDagitilacak(SONRADAN_DOGAN)"),
@@ -790,7 +791,7 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
     kontrol(
       "gövdede boş taban kapısı DURUYOR",
       /if \(FIRMA_IZINLERI\.length === 0\) return false;/.test(
-        readFileSync("src/lib/yetki/izinler.ts", "utf8"),
+        kaynakOku("src/lib/yetki/izinler.ts"),
       ),
     );
 
@@ -802,7 +803,7 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
     const kacakOlcut: string[] = [];
     for (const ad of readdirSync("src/lib/yetki")) {
       if (!ad.endsWith(".ts") || ad === "izinler.ts") continue;
-      const ham = readFileSync(join("src/lib/yetki", ad), "utf8");
+      const ham = kaynakOku(join("src/lib/yetki", ad));
       const kod = ham
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/(^|[^:])\/\/.*$/gm, "$1");
@@ -825,7 +826,7 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
      * çağırdığı bir alttaki bölümde ayrıca ölçülüyor.
      */
     {
-      const korumaKodu = readFileSync("src/lib/yetki/koruma.ts", "utf8")
+      const korumaKodu = kaynakOku("src/lib/yetki/koruma.ts")
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/(^|[^:])\/\/.*$/gm, "$1");
       kontrol(
@@ -896,7 +897,7 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
       kontrol(
         "kilit ölçütünde boş taban kapısı VAR",
         /if \(KILIT_ACMA_IZINLERI\.length === 0\) return false;/.test(
-          readFileSync("src/lib/yetki/izinler.ts", "utf8"),
+          kaynakOku("src/lib/yetki/izinler.ts"),
         ),
       );
       kontrol("kilit tabanı DOLU", KILIT_ACMA_IZINLERI.length === 2);
@@ -904,14 +905,14 @@ console.log("\nDÜZELTME VE İPTAL — AYRI İZİNLER");
       kontrol(
         "koruma `sistemiAcabilirMi` ÇAĞIRIYOR",
         /sistemiAcabilirMi\(new Set\(/.test(
-          readFileSync("src/lib/yetki/koruma.ts", "utf8"),
+          kaynakOku("src/lib/yetki/koruma.ts"),
         ),
       );
       /** ⛔ BAKIM ROTASI SIKI ÖLÇÜTTE KALDI. */
       kontrol(
         "bakım rotası `tamYetkiliMi` kullanıyor",
         /if \(!tamYetkiliMi\(baglam\.izinler\)\) notFound\(\);/.test(
-          readFileSync("src/lib/yetki/index.ts", "utf8"),
+          kaynakOku("src/lib/yetki/index.ts"),
         ),
       );
     }

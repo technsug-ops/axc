@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import { spawnSync } from "node:child_process";
 
 /**
@@ -48,7 +48,7 @@ const dusen: string[] = [];
 console.log("\nBELGE BEKÇİSİ\n");
 
 for (const ad of BELGELER) {
-  const html = readFileSync("docs/" + ad + ".html", "utf8");
+  const html = kaynakOku("docs/" + ad + ".html");
 
   /** Yeniden üret — ve üretecin ÇALIŞTIĞINI doğrula (çıkış kodu). */
   const r = spawnSync("npx tsx scripts/belge-uret.ts " + ad, {
@@ -61,7 +61,7 @@ for (const ad of BELGELER) {
     continue;
   }
 
-  const yeni = readFileSync("docs/" + ad + ".html", "utf8");
+  const yeni = kaynakOku("docs/" + ad + ".html");
   if (yeni === html) {
     gecen++;
     console.log("  ✓  " + ad + " — HTML kaynakla güncel");

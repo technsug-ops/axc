@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import { join } from "node:path";
 import {
   ACIKLAMA_ZORUNLU_NEDENLER,
@@ -399,10 +399,7 @@ console.log("\nSATIŞ DÜZENLEME — DOĞRULAMA\n");
    *
    * O yüzden burada DEĞER değil, ÇAĞRININ VARLIĞI sınanır.
    */
-  const kaynak = readFileSync(
-    join(process.cwd(), "src/lib/satis-duzenleme-veri.ts"),
-    "utf8",
-  );
+  const kaynak = kaynakOku(join(process.cwd(), "src/lib/satis-duzenleme-veri.ts"));
   const govde = kaynak.slice(kaynak.indexOf("export async function duzenlemeUygula"));
   kontrol(
     "duzenlemeUygula kaydedilebilirMi ÇAĞIRIR",
@@ -450,8 +447,8 @@ console.log("DESİ DEĞİŞİNCE KARGO ÜCRETİ TAZELENİYOR MU");
    * tarifeden tazeleniyor, kullanıcı tutara dokunursa "elle" olup öyle
    * kalıyor. Fiyat denemesindeki "elle > zemin" sırasının aynısı.
    */
-  const form = readFileSync("src/app/satislar/[id]/duzenle-formu.tsx", "utf8");
-  const eylem = readFileSync("src/app/satislar/[id]/duzenle-actions.ts", "utf8");
+  const form = kaynakOku("src/app/satislar/[id]/duzenle-formu.tsx");
+  const eylem = kaynakOku("src/app/satislar/[id]/duzenle-actions.ts");
 
   kontrol("tarife okuma eylemi var", eylem.includes("export async function kargoTarifesiniOku"));
   /**

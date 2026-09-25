@@ -17,7 +17,7 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, readFileSync as hamOku } from "node:fs";
+import { existsSync } from "node:fs";
 
 /**
  * ⛔ OKUMA KAPISI (K258-②, 24.09.2026): kaynak, METNİN GELİŞ BİÇİMİNDEN
@@ -29,10 +29,12 @@ import { existsSync, readFileSync as hamOku } from "node:fs";
  * (`sutunMu\n`), BAŞINDA ise değil (`\nexport` CRLF'de de bulunur).
  * Öteki 86 bekçideki 613 çıplak okuma → K262 (pano).
  * İki yönde sınandı: dosya CRLF ✓ · LF ✓ · kapı kaldırılınca 3 ölçüt KIRMIZI.
+ *
+ * ⭐ K262 (25.09.2026): bu yerel kapı ORTAK kapıya taşındı — `scripts/kaynak-oku.ts`
+ * → `kaynakOku` (CRLF + tek CR + BOM). Okumalar artık oradan; yerel fonksiyon
+ * kaldırıldı. Gerekçe yukarıda duruyor: kapının NEDEN var olduğu budur.
+ * `bekci-kapisi:dogrula` bu dosyanın da `readFileSync`i doğrudan almadığını ölçer.
  */
-function readFileSync(yol: string, kodlama: "utf8"): string {
-  return hamOku(yol, kodlama).replace(/\r\n/g, "\n");
-}
 import {
   HIZLI_KIYAS,
   KIYAS_ANAHTARLARI,
@@ -194,6 +196,7 @@ import {
   kanalSiraKipi,
   VARSAYILAN_KANAL_SIRASI,
 } from "../src/lib/kanal-sirasi";
+import { kaynakOku } from "./kaynak-oku";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -1884,7 +1887,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     );
 
     // ── EKRAN ──────────────────────────────────────────────────────────
-    const takvimEkrani = readFileSync("src/app/nakit-takvimi/page.tsx", "utf8");
+    const takvimEkrani = kaynakOku("src/app/nakit-takvimi/page.tsx");
     const ekranKodu = takvimEkrani
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
       .replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -2137,12 +2140,12 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * tüketicisi artık `lib/uyari/topla.ts`. Adres ölçütü `uyari:dogrula`ya
      * taşındı (adres orada yaşıyor).
      */
-    const panelKaynagi = readFileSync("src/app/page.tsx", "utf8");
+    const panelKaynagi = kaynakOku("src/app/page.tsx");
     kontrol(
       "panel şeride SÜRE geçirmiyor (K266: tarife çanda)",
       !panelKaynagi.includes("sureler={{") && !panelKaynagi.includes("tarifeUyarisiVarMi("),
     );
-    const kutuKaynagi = readFileSync("src/app/gorev-kutusu.tsx", "utf8");
+    const kutuKaynagi = kaynakOku("src/app/gorev-kutusu.tsx");
     kontrol(
       "görev kutucuğu SÜRE metni çizmiyor (mekanizma çanla gitti)",
       !kutuKaynagi.includes("sureMetni !== undefined"),
@@ -2150,7 +2153,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   }
 
   // --------------------------- ÇİFT SAYIM KAPISI ---------------------------
-  const veriKaynagi = readFileSync("src/lib/panel/takvim-verisi.ts", "utf8");
+  const veriKaynagi = kaynakOku("src/lib/panel/takvim-verisi.ts");
   /**
    * ÇİFT SAYIM KAPISI İKİ ANAHTARLI OLMALI. Canlı denetim 15.08.2026:
    * 110 rapor kaleminin hiçbiri bir satışa bağlı değildi (saleId boş),
@@ -2184,10 +2187,10 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   kontrol(
     "giriş kaynağı TEK (çift sayım yapısal olarak imkânsız)",
     !/kaynak:\s*"HAKEDIS_TAHMIN"/.test(
-      readFileSync("src/lib/panel/takvim-verisi.ts", "utf8"),
+      kaynakOku("src/lib/panel/takvim-verisi.ts"),
     ),
   );
-  const panelKartlari = readFileSync("src/app/panel-kartlari.tsx", "utf8");
+  const panelKartlari = kaynakOku("src/app/panel-kartlari.tsx");
   kontrol(
     "panel listesi satırı daralabiliyor (grid öğesinde min-w-0)",
     panelKartlari.includes(
@@ -2253,7 +2256,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * gösteren ve rakamı yanlış olan ekran, SUSAN ekrandan tehlikelidir —
    * kullanıcı ona bakıp karar verir.
    */
-  const takvimEkran = readFileSync("src/app/nakit-takvimi/page.tsx", "utf8");
+  const takvimEkran = kaynakOku("src/app/nakit-takvimi/page.tsx");
   const acikBasi = takvimEkran.indexOf("const acikMi =");
   const acikBloku = takvimEkran.slice(acikBasi, acikBasi + 220);
   kontrol("açık ölçütü kesilebildi", acikBasi > 0);
@@ -2283,7 +2286,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * ⚠ PİRİNÇ KOVA BEKLENEN GİRİŞE KATILMAZ. Katılsaydı takvim ₺801 bin
    * fazla iyimser çıkardı (ölçüldü 24.08).
    */
-  const takvimGovde = readFileSync("src/lib/panel/nakit-takvimi.ts", "utf8");
+  const takvimGovde = kaynakOku("src/lib/panel/nakit-takvimi.ts");
   /**
    * ⚠ NEGATİF KALEM ATILMAZ — İYİMSER TAKVİM ÜRETİR.
    *
@@ -2312,10 +2315,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * ⚠ Yorumlar da soyuluyor: aynı desen, kaldırma gerekçesini anlatan
    * yorumda da geçiyor. Bu tuzağa bugün ÜÇ kez düşüldü.
    */
-  const takvimVeriHam = readFileSync(
-    "src/lib/panel/takvim-verisi.ts",
-    "utf8",
-  );
+  const takvimVeriHam = kaynakOku("src/lib/panel/takvim-verisi.ts");
   const hakedisBasi = takvimVeriHam.indexOf("const raporKalemleri");
   const hakedisBloku = takvimVeriHam
     .slice(
@@ -2465,11 +2465,11 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
 
   // ------------------- EKRAN: SINIR VE BAĞIMSIZLIK YAZILI MI -------------------
-  const takvimSayfasi = readFileSync("src/app/nakit-takvimi/page.tsx", "utf8");
-  const nakitOzeti = readFileSync("src/app/nakit-ozeti.tsx", "utf8");
-  const panelSayfasi = readFileSync("src/app/page.tsx", "utf8");
-  const raporSayfasi = readFileSync("src/app/rapor/page.tsx", "utf8");
-  const sozlukP = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const takvimSayfasi = kaynakOku("src/app/nakit-takvimi/page.tsx");
+  const nakitOzeti = kaynakOku("src/app/nakit-ozeti.tsx");
+  const panelSayfasi = kaynakOku("src/app/page.tsx");
+  const raporSayfasi = kaynakOku("src/app/rapor/page.tsx");
+  const sozlukP = JSON.parse(kaynakOku("messages/tr.json"));
 
   kontrol(
     "dönem süzgecinden bağımsızlık EKRANDA yazıyor",
@@ -2687,7 +2687,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    *  şart koşuyor — biri yarın siyaha döndürürse sessizce geri gitmesin.
    * ════════════════════════════════════════════════════════════════════
    */
-  const tema = readFileSync("src/app/globals.css", "utf8");
+  const tema = kaynakOku("src/app/globals.css");
   // Dilim ":root {" ile ONDAN SONRAKİ ".dark {" arasından alınır. Düz bir
   // indexOf(".dark") dosyanın başındaki @custom-variant satırına takılıp
   // dilimi boş bırakıyordu; iki değer de NaN çıkıyor ve kontrol kendi
@@ -2709,8 +2709,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * → hex. Zincir kopuyorsa NaN döner ve kontrol kırmızı yanar — "bulamadım"
    * sessizce "temiz" sayılmaz.
    */
-  const KOBALT = readFileSync("src/styles/selliora-kobalt.css", "utf8");
-  const GECE = readFileSync("src/styles/selliora-gece.css", "utf8");
+  const KOBALT = kaynakOku("src/styles/selliora-kobalt.css");
+  const GECE = kaynakOku("src/styles/selliora-gece.css");
 
   /** `#RRGGBB` → 0–1 aralığında üç kanal. */
   const hexKanal = (hex: string): [number, number, number] => [
@@ -2745,7 +2745,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    */
   kontrol(
     "aktif sekme aksan renginde (siyah dolgu kalmadı)",
-    !readFileSync("src/components/sekmeli-bolum.tsx", "utf8").includes(
+    !kaynakOku("src/components/sekmeli-bolum.tsx").includes(
       "bg-foreground text-background",
     ),
   );
@@ -2942,7 +2942,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * ════════════════════════════════════════════════════════════════════
      */
     {
-      const yerlesim = readFileSync("src/app/layout.tsx", "utf8");
+      const yerlesim = kaynakOku("src/app/layout.tsx");
       kontrol(
         "üst çubuk kabuk kapsamıyla işaretli",
         /<header\s+data-kabuk="ust"/.test(yerlesim),
@@ -3036,7 +3036,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     );
     kontrol(
       "  ...kart halkası da AYNI ölçüden",
-      readFileSync("src/components/ui/card.tsx", "utf8").includes(
+      kaynakOku("src/components/ui/card.tsx").includes(
         "ring-(length:--se-kutu-cizgi)",
       ),
     );
@@ -3241,7 +3241,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
        */
       kontrol(
         "  ...ve yazma eylemi `ad` alanını KORUYOR (silmiyor)",
-        readFileSync("src/app/ayarlar/menu/eylemler.ts", "utf8").includes(
+        kaynakOku("src/app/ayarlar/menu/eylemler.ts").includes(
           "...(g.ad === undefined ? {} : { ad: g.ad })",
         ),
       );
@@ -3274,8 +3274,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * ÇÖKTÜ (25.08.2026); çökme sessiz geçmedi ama blok kapsamlı bir tanım
      * aynı sessizlikle yanlış dosyayı da okuyabilirdi.
      */
-    const kenar = readFileSync("src/components/app-sidebar.tsx", "utf8");
-    const SOZLUK = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    const kenar = kaynakOku("src/components/app-sidebar.tsx");
+    const SOZLUK = JSON.parse(kaynakOku("messages/tr.json")) as {
       Menu?: Record<string, string>;
       MenuDuzeni?: Record<string, string>;
     };
@@ -3380,7 +3380,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       /**
        * ⚠ YAZMA EYLEMİ KİLİDİ UYGULUYOR MU — beyan yetmez, kod ölçülür.
        */
-      const eylem = readFileSync("src/app/ayarlar/menu/eylemler.ts", "utf8");
+      const eylem = kaynakOku("src/app/ayarlar/menu/eylemler.ts");
       kontrol(
         "kaydetme eylemi DÜŞÜRÜLEMEZ kilidini uyguluyor",
         eylem.includes("MENUDEN_DUSURULEMEZ.filter(") &&
@@ -3404,7 +3404,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
        */
       kontrol(
         "  ...ve YENİ İZİN açılmamış (mevcut ayar.yaz)",
-        readFileSync("src/lib/menu/katalog.ts", "utf8").includes(
+        kaynakOku("src/lib/menu/katalog.ts").includes(
           'MENU_IZNI = "ayar.yaz"',
         ) && eylem.includes("yetkiIste(MENU_IZNI)"),
       );
@@ -3429,10 +3429,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
        * Anayasa bu sınıfı adıyla anıyor: _"muafiyetin uygulanması ve beyanı
        * ayrı sınanır — doğru davranışın GÖRÜNMEZLİĞİ de yalancı yeşildir."_
        */
-      const duzenleyici = readFileSync(
-        "src/app/ayarlar/menu/duzenleyici.tsx",
-        "utf8",
-      );
+      const duzenleyici = kaynakOku("src/app/ayarlar/menu/duzenleyici.tsx");
       kontrol(
         "taşınan satır VURGULANIYOR (basılan tuş işe yaradı mı görünür)",
         duzenleyici.includes("setSonDokunulan(anahtar)") &&
@@ -3536,10 +3533,10 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     /** İlkel bileşen ELLE DÜZENLENMEDİ — ölçü tek yerde, globals'ta. */
     kontrol(
       "  ...shadcn ilkeline dokunulmadı",
-      !readFileSync("src/components/ui/sidebar.tsx", "utf8").includes("0.9375rem"),
+      !kaynakOku("src/components/ui/sidebar.tsx").includes("0.9375rem"),
     );
 
-    const duzen = readFileSync("src/app/layout.tsx", "utf8");
+    const duzen = kaynakOku("src/app/layout.tsx");
     kontrol("tema seçici üst çubukta", duzen.includes("<TemaSecici />"));
     /**
      * ⚠ TEMA REACT'TEN ÖNCE UYGULANMALI (FOUC). Betik `<head>`te koşmazsa
@@ -3571,7 +3568,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       duzen.includes("prefers-color-scheme"),
     );
 
-    const secici = readFileSync("src/components/tema-secici.tsx", "utf8");
+    const secici = kaynakOku("src/components/tema-secici.tsx");
     kontrol("seçici .dark sınıfını da çeviriyor", secici.includes('classList.toggle("dark"'));
     kontrol("  ...seçim localStorage'a yazılıyor", secici.includes("localStorage.setItem"));
     kontrol("  ...ekran okuyucu etiketi sözlükten", /aria-label=\{etiket\}/.test(secici));
@@ -3582,10 +3579,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * kısıt #2 çöker ("asla doygun koca blok"). Bu yüzden `DURUM_CIPI` yalnız
    * `size-7` ikon kutusunda geçmeli.
    */
-  const kutuKaynak = readFileSync(
-    "src/components/istatistik-kutusu.tsx",
-    "utf8",
-  );
+  const kutuKaynak = kaynakOku("src/components/istatistik-kutusu.tsx");
   kontrol(
     "doygun çip KÜÇÜK alanda (size-7 ikon kutusu)",
     kutuKaynak.includes("size-7") && kutuKaynak.includes("DURUM_CIPI[durum]"),
@@ -3679,7 +3673,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   const yorumsuz = (kaynak: string) =>
     kaynak.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
   const kirliler = kaynakDosyalari.filter((y) =>
-    HAM_RENK.test(yorumsuz(readFileSync(y, "utf8"))),
+    HAM_RENK.test(yorumsuz(kaynakOku(y))),
   );
   kontrol(
     `ham Tailwind renk sınıfı YOK (${kaynakDosyalari.length} kaynak dosyası tarandı)`,
@@ -3713,7 +3707,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * `text-2xl font-semibold` kalıbı geri sızarsa sayfa yine "bir renkli bir
    * renksiz" hâle döner — kullanıcının 15.08.2026'daki tam şikâyeti buydu.
    */
-  const panelKaynak = readFileSync("src/app/page.tsx", "utf8");
+  const panelKaynak = kaynakOku("src/app/page.tsx");
   kontrol(
     "panel rakam kutuları ORTAK bileşenden",
     panelKaynak.includes("<IstatistikKutusu"),
@@ -3781,7 +3775,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    *  yerde iki sabit. Panel de rapor da `lib/karsilastirma.ts` çağırmalı.
    * ════════════════════════════════════════════════════════════════════
    */
-  const raporKaynak = readFileSync("src/app/rapor/page.tsx", "utf8");
+  const raporKaynak = kaynakOku("src/app/rapor/page.tsx");
   kontrol(
     "panel karşılaştırmayı ORTAK kaynaktan alıyor",
     panelKaynak.includes('from "@/lib/karsilastirma"') &&
@@ -3872,7 +3866,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
 
   kontrol(
     "  ...grafiğin ana serisi aksan renginde (sayfayla aynı dil)",
-    readFileSync("src/components/cizgi-grafik.tsx", "utf8").includes(
+    kaynakOku("src/components/cizgi-grafik.tsx").includes(
       'className="text-primary"',
     ),
   );
@@ -3913,12 +3907,12 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
   kontrol(
     "  ...kart bileşeni lg yarıçapı kullanıyor (xl referanstan yuvarlaktı)",
-    !readFileSync("src/components/ui/card.tsx", "utf8").includes("rounded-xl"),
+    !kaynakOku("src/components/ui/card.tsx").includes("rounded-xl"),
   );
   kontrol(
     "  ...rozet referans ölçüsünde (11px yazı, küçük yarıçap)",
     (() => {
-      const rozet = readFileSync("src/components/durum-rozeti.tsx", "utf8");
+      const rozet = kaynakOku("src/components/durum-rozeti.tsx");
       return rozet.includes("text-[11px]") && rozet.includes("rounded-sm");
     })(),
   );
@@ -3946,7 +3940,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     ["panel kartları", "src/app/panel-kartlari.tsx"],
   ];
   for (const [ad, yol] of renkTaranacak) {
-    const kaynak = readFileSync(yol, "utf8");
+    const kaynak = kaynakOku(yol);
     kontrol(
       `  ${ad} ham renk kodu YAZMIYOR (palet tek kapıdan)`,
       !/#[0-9A-Fa-f]{6}/.test(kaynak),
@@ -3954,7 +3948,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   }
 
   /** Palet ve sunum bileşeni AYNI ton kümesini tanımalı. */
-  const rozetBileseni = readFileSync("src/components/durum-rozeti.tsx", "utf8");
+  const rozetBileseni = kaynakOku("src/components/durum-rozeti.tsx");
   kontrol(
     "sunum bileşeni üç katmanı da sunuyor (şerit · zemin · rakam)",
     rozetBileseni.includes("DURUM_SERIDI") &&
@@ -3974,7 +3968,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   kontrol("zararda olumsuz", karDurumu(-10) === "olumsuz");
   kontrol("sıfır kâr NÖTR", karDurumu(0) === "notr");
   /** NET-2 sunumu paletten geliyor ve yanında KELİME var (kısıt #1). */
-  const netKar = readFileSync("src/components/net-kar.tsx", "utf8");
+  const netKar = kaynakOku("src/components/net-kar.tsx");
   kontrol(
     "NET-2 rengi paletten, yanında kelime var",
     netKar.includes("karDurumu(sayi)") &&
@@ -3991,7 +3985,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * İlk turda `DURUM_SERIDI` tanımlıydı ama hiçbir ekran kullanmıyordu;
    * "tanımlandı" ile "uygulandı" arasındaki farkı test görmemişti.
    */
-  const satisSayfasi = readFileSync("src/app/satislar/page.tsx", "utf8");
+  const satisSayfasi = kaynakOku("src/app/satislar/page.tsx");
   kontrol(
     "satış satırı: zarar edende sol şerit var",
     satisSayfasi.includes("DURUM_SERIDI.olumsuz") &&
@@ -4062,7 +4056,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   ] as const) {
     kontrol(
       `  ${ad} ORTAK eşlemeden okuyor`,
-      readFileSync(yol, "utf8").includes(sembol),
+      kaynakOku(yol).includes(sembol),
     );
   }
   kontrol(
@@ -4089,7 +4083,7 @@ console.log("\nKANAL SÜZGECİ — HER KART AYNI EVRENDE");
    * Bu kontrol EKRAN KODUNU tarar. Saf fonksiyon zaten doğru çalışıyordu;
    * hata ona NE VERİLDİĞİNDEYDİ ve değer testiyle yakalanamazdı.
    */
-  const ekran = readFileSync("src/app/page.tsx", "utf8");
+  const ekran = kaynakOku("src/app/page.tsx");
 
   const cagrilar = [...ekran.matchAll(/panelHesapla\(([\s\S]*?)\n\s*\)/g)].map(
     (m) => m[1],
@@ -4140,7 +4134,7 @@ console.log("\nKIYAS BOŞKEN SESSİZLİK YOK");
    * DEĞER TESTİ BUNU GÖREMEZ: `kiyasRozeti` doğru davranıyordu (null dönmesi
    * kasıtlıydı) ve metin de vardı. Hata hesapta değil YERLEŞİMDEYDİ.
    */
-  const ekran = readFileSync("src/app/page.tsx", "utf8");
+  const ekran = kaynakOku("src/app/page.tsx");
 
   kontrol(
     "kıyas boşken rakam kartında ibare VAR",
@@ -4179,7 +4173,7 @@ console.log("\nKART SIRASI VE YAPIŞKAN ÇUBUK");
    * ⚠ Halil kararı 18.08.2026. İkisi de YERLEŞİM kuralı: değer testi
    * göremez, ekran kodu taranır.
    */
-  const ekran = readFileSync("src/app/page.tsx", "utf8");
+  const ekran = kaynakOku("src/app/page.tsx");
 
   /**
    * ⚠ SIRA ÖLÇÜTÜ ESKİDİ, SUSTURULMADI — GÜNCELLENDİ (K253, 23.09.2026).
@@ -4212,7 +4206,7 @@ console.log("\nKART SIRASI VE YAPIŞKAN ÇUBUK");
     /<SuzgecCubugu[\s\S]{0,400}?\byapiskan\b/.test(ekran),
   );
 
-  const cubuk = readFileSync("src/components/suzgec-cubugu.tsx", "utf8");
+  const cubuk = kaynakOku("src/components/suzgec-cubugu.tsx");
   kontrol("çubuk sticky sınıfını taşıyor", /sticky top-0/.test(cubuk));
   /**
    * MASAÜSTÜNDE YAPIŞMAZ — orada çubuk zaten açık duruyor ve yapışkan
@@ -4288,7 +4282,7 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
     );
   }
 
-  const grafik = readFileSync("src/components/uc-serili-grafik.tsx", "utf8");
+  const grafik = kaynakOku("src/components/uc-serili-grafik.tsx");
   const toplamBloku = grafik.slice(
     grafik.indexOf("TOPLAM ÇİZGİSİ"),
     grafik.indexOf("TIKLANABİLİR NOKTALAR"),
@@ -4340,7 +4334,7 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
    * ilk kontrol tam da bunu sabitliyor.
    */
   {
-    const veri = readFileSync("src/lib/panel/gorev-verisi.ts", "utf8");
+    const veri = kaynakOku("src/lib/panel/gorev-verisi.ts");
     const bas = veri.indexOf("export async function paketlenenSiparisSayisi");
     const govde = veri.slice(bas, veri.indexOf("\nexport ", bas + 10));
     kontrol("paketlenen sayacının gövdesi kesilebildi", bas > 0 && govde.length > 100);
@@ -4404,7 +4398,7 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
       !/shippedAt/.test(cozumGovdesi),
     );
 
-    const kutu = readFileSync("src/app/gorev-kutusu.tsx", "utf8");
+    const kutu = kaynakOku("src/app/gorev-kutusu.tsx");
     const kutuKodu = kutu.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
     /**
      * ⚠ İLERLEMESİ OLMAYAN GÖREVDE HİÇ ÇİZİLMEZ. `?? 0` ile çizilseydi
@@ -4446,7 +4440,7 @@ console.log("\nGÜNLÜK OPERASYON — TOPLAM İŞ ÇİZGİSİ");
     );
   }
 
-  const panel = readFileSync("src/app/page.tsx", "utf8");
+  const panel = kaynakOku("src/app/page.tsx");
   kontrol(
     "panel toplam adını YALNIZ seri varken veriyor",
     /operasyonSeri\.toplam \? t\("operasyonToplamSeri"\) : undefined/.test(panel),
@@ -4501,7 +4495,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
  * panelde kutu YOKTU.)_
  */
 {
-  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+  const sayfa = kaynakOku("src/app/page.tsx")
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
   kontrol(
@@ -4532,7 +4526,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   );
   {
     const sozluk = (
-      JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+      JSON.parse(kaynakOku("messages/tr.json")) as {
         Panel: Record<string, string>;
       }
     ).Panel;
@@ -4575,7 +4569,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
 }
 
 {
-  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+  const sayfa = kaynakOku("src/app/page.tsx")
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
   kontrol(
@@ -4593,7 +4587,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   );
   {
     const sozluk = (
-      JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+      JSON.parse(kaynakOku("messages/tr.json")) as {
         Panel: Record<string, string>;
       }
     ).Panel;
@@ -4614,7 +4608,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
  * dolaşırdı.
  */
 {
-  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+  const sayfa = kaynakOku("src/app/page.tsx")
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
   /** K256: pasta + yan liste → OK ÇİZGİLİ HALKA (`HalkaGrafik`), kendi kartında. */
@@ -4694,7 +4688,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
  * rakam yanında, tek satırda.
  */
 {
-  const kutu = readFileSync("src/app/gorev-kutusu.tsx", "utf8")
+  const kutu = kaynakOku("src/app/gorev-kutusu.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   /**
@@ -4742,7 +4736,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
  * yuzde yarim kaldi. Taban genislik sigmazsa `flex-wrap` devreye girer.
  */
 {
-  const pasta = readFileSync("src/components/pasta-grafik.tsx", "utf8")
+  const pasta = kaynakOku("src/components/pasta-grafik.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
   kontrol(
     "halka efsanesinin TABAN GENISLIGI var (kirpilmaz)",
@@ -4795,7 +4789,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     hizliKiyas.length >= 1 && hizliKiyas.every((k) => (KIYAS_ANAHTARLARI as readonly string[]).includes(k)),
   );
 
-  const cubuk = readFileSync("src/components/suzgec-cubugu.tsx", "utf8")
+  const cubuk = kaynakOku("src/components/suzgec-cubugu.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   /** * OLCUT KULLANIMA BAGLI: `.map(` cagrisi, ad degil. */
@@ -4819,7 +4813,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     !/LISTE_PENCERELERI\.filter/.test(cubuk),
   );
 
-  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+  const sayfa = kaynakOku("src/app/page.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol(
@@ -4849,7 +4843,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
  * satir. 01.09 karari CEVRILMEDI: huni yasiyor, yalniz yer degistirdi.
  */
 {
-  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+  const sayfa = kaynakOku("src/app/page.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("hukum izgarasi ALTI sutun (kar gorunurken)", /xl:grid-cols-6/.test(sayfa));
@@ -4913,7 +4907,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
  * kalir — kartla degil, ince ayrac + grup ikonuyla.
  */
 {
-  const kutu = readFileSync("src/app/gorev-kutusu.tsx", "utf8")
+  const kutu = kaynakOku("src/app/gorev-kutusu.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol(
@@ -4952,7 +4946,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
       /<span className="inline-flex max-w-full flex-wrap items-center gap-1" title=\{uzunEtiket\}>/.test(kutu),
   );
   {
-    const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
       Gorevler: { kisa?: Record<string, string> };
     };
     const kisa = sozluk.Gorevler.kisa ?? {};
@@ -5012,7 +5006,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   kontrol("  ...ciro kipi hala ciroya gore (ayrisiyor)",
     ciroSira === "N11,HEPSIBURADA,TRENDYOL", ciroSira);
 
-  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+  const sayfa = kaynakOku("src/app/page.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   const kb = sayfa.search(/\r?\n {2}const kanalIzgarasi = \(/);
@@ -5034,9 +5028,9 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   kontrol("alt satir satisi olmayan kanallarin ADINI yaziyor",
     /t\("satisiOlmayanKanallar"/.test(kart) && /bosKanallar\.map\(\(\[, ad\]\) => ad\)\.join/.test(kart));
 
-  const cubuk = readFileSync("src/app/kanal-sira-cubugu.tsx", "utf8");
+  const cubuk = kaynakOku("src/app/kanal-sira-cubugu.tsx");
   kontrol("sira cubugu NET-2 kipini etiketliyor", /net2: t\("kanalSiraNet2"\)/.test(cubuk));
-  const pay = readFileSync("src/components/istatistik-kutusu.tsx", "utf8");
+  const pay = kaynakOku("src/components/istatistik-kutusu.tsx");
   kontrol("PayCubugu renk + soluk prop'unu UYGULUYOR",
     /backgroundColor: renk, opacity: soluk \? 0\.45 : 1/.test(pay));
   kontrol("  ...renk verilmezse eski notr ton (oteki kullanimlar degismedi)",
@@ -5063,7 +5057,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     cok.dilimler.map((x) => x.etiket + ":" + x.tutar).join(" "));
   kontrol("  ...ve tavan 4 (ok cizgileri birbirine girmesin)", HALKA_DILIM_TAVANI === 4);
 
-  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+  const sayfa = kaynakOku("src/app/page.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   /** * TOPLANAN SEY SESSIZCE KAYBOLMAZ: dipnot yalniz toplama VARKEN yazar. */
@@ -5075,7 +5069,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   /** * ERISILEBILIR AD: ekran okuyucu grafigi atlamaz, cumleyi okur. */
   kontrol("halkanin aria-label cumlesi dilimlerden kuruluyor",
     /aciklama=\{t\("halkaAciklama", \{[\s\S]{0,200}?dilimler\.map/.test(sayfa));
-  const halka = readFileSync("src/components/halka-grafik.tsx", "utf8")
+  const halka = kaynakOku("src/components/halka-grafik.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("halka bileseni SUNUCUDA ciziliyor (use client yok)", !/"use client"/.test(halka) && !/'use client'/.test(halka));
@@ -5136,7 +5130,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     hafta.length === 3 && hafta[0]!.baslangic.getTime() === ilkGun.getTime() && hafta[2]!.sonGun.getTime() === sonGun.getTime() && hafta[2]!.gelir === 50,
     hafta.map((h) => [h.baslangic.toISOString().slice(0, 10), h.sonGun.toISOString().slice(0, 10)]));
 
-  const sayfa = readFileSync("src/app/page.tsx", "utf8")
+  const sayfa = kaynakOku("src/app/page.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("Ciro/NET-2 karti CIZILIYOR (CizgiGrafik + ciroNetNoktalari, her gun etiketli)",
@@ -5145,7 +5139,7 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     /donemCiroNetSerisi\(\s*donemSatislari[\s\S]{0,200}?paraBirimi === seciliPara[\s\S]{0,160}?donem,\s*operasyonKirilimi,\s*\)/.test(sayfa));
   kontrol("  ...baslik secili pencerenin ADINI tasiyor (son 14 gun degil)",
     /t\("ciroNetBaslik", \{ pencere: tPencere\(PENCERE_ANAHTARI\[donemTuru\]\)/.test(sayfa) && !/son14/.test(sayfa));
-  const grafikK = readFileSync("src/components/cizgi-grafik.tsx", "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const grafikK = kaynakOku("src/components/cizgi-grafik.tsx").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("  ...etiket tavani govdeye BAGLI (etiketAtlamasi(n, etiketTavani))",
     /etiketAtlamasi\(noktalar\.length, etiketTavani\)/.test(grafikK));
   const i14 = sayfa.indexOf("t(\"ciroNetBaslik\"");
@@ -5167,8 +5161,8 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
 {
   const yorumsuz = (m: string) =>
     m.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
-  const sayfa = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
-  const grafik = yorumsuz(readFileSync("src/components/uc-serili-grafik.tsx", "utf8"));
+  const sayfa = yorumsuz(kaynakOku("src/app/page.tsx"));
+  const grafik = yorumsuz(kaynakOku("src/components/uc-serili-grafik.tsx"));
   kontrol("operasyon grafigi SUTUN kipinde cagriliyor",
     /<UcSeriliGrafik[\s\S]{0,60}?sekil="sutun"/.test(sayfa));
   /** * TEK SATIR: 14 gun (3/5) + operasyon (2/5), ayni izgarada, bu sirayla. */
@@ -5236,7 +5230,7 @@ console.log("=".repeat(70));
   kontrol("  ...dün de gelecek değil", !gelecekMi(new Date("2026-08-24T00:00:00Z"), bugun));
 
   /** ── MOTOR: SÜZGEÇ NEREYE BAĞLI ───────────────────────────────────── */
-  const stok = readFileSync("src/lib/stok.ts", "utf8");
+  const stok = kaynakOku("src/lib/stok.ts");
 
   /**
    * ⚠ EN KRİTİK KİLİT: SÜZGEÇ TÜKETİMLERE DE UYGULANIR. Yalnız GİRİŞLERE
@@ -5288,15 +5282,15 @@ console.log("=".repeat(70));
   );
   kontrol(
     "  ...ve envanterVerisi AYNI motoru çağırıyor",
-    readFileSync("src/lib/envanter-veri.ts", "utf8").includes(
+    kaynakOku("src/lib/envanter-veri.ts").includes(
       "acikPartilerToplu(prisma, null, sinir)",
     ),
   );
 
   /** ── DİL KURALI: "DEĞER/FOTOĞRAF", "SAYIM" DEĞİL ──────────────────── */
-  const ekran = readFileSync("src/app/envanter-degeri/page.tsx", "utf8");
-  const disa = readFileSync("src/lib/disa-aktarma/listeler.ts", "utf8");
-  const SOZ = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const ekran = kaynakOku("src/app/envanter-degeri/page.tsx");
+  const disa = kaynakOku("src/lib/disa-aktarma/listeler.ts");
+  const SOZ = JSON.parse(kaynakOku("messages/tr.json")) as {
     Envanter?: Record<string, string>;
     Basliklar?: Record<string, string>;
   };
@@ -5479,7 +5473,7 @@ console.log("=".repeat(70));
      * türetilseydi üç rakam üretilirdi ve üçüncüsü bir gün ötekilerden
      * ayrıştığında hangisinin doğru olduğu anlaşılmazdı.
      */
-    const aralikGovde = readFileSync("src/lib/envanter-aralik.ts", "utf8");
+    const aralikGovde = kaynakOku("src/lib/envanter-aralik.ts");
     kontrol(
       "fark = kapanış − açılış (üçüncü sorgu YOK)",
       aralikGovde.includes("farkAdet: kapanisAdet - acilisAdet"),
@@ -5510,10 +5504,7 @@ console.log("=".repeat(70));
       "  ...ve sınırları EKRANLA aynı (gte açılış / lt kapanış)",
       aralikGovde.includes("occurredAt: { gte: acilisSiniri, lt: kapanisSiniri }"),
     );
-    const gorunum = readFileSync(
-      "src/app/envanter-degeri/aralik-gorunumu.tsx",
-      "utf8",
-    );
+    const gorunum = kaynakOku("src/app/envanter-degeri/aralik-gorunumu.tsx");
     kontrol(
       "  ...ayrışma EKRANDA söyleniyor",
       gorunum.includes('t("caprazAyrisma"'),
@@ -5692,10 +5683,7 @@ console.log("=".repeat(70));
      * "adresten okumuyor" kontrolü onu bulup düştü. Desen dosyada değil
      * KULLANIM BLOĞUNDA aranır; yorum kullanım değildir.
      */
-    const secici = readFileSync(
-      "src/app/envanter-degeri/tarih-secici.tsx",
-      "utf8",
-    )
+    const secici = kaynakOku("src/app/envanter-degeri/tarih-secici.tsx")
       .replace(/[/][*][^]*?[*][/]/g, "")
       .replace(/^\s*[/][/].*$/gm, "");
     kontrol(
@@ -5827,7 +5815,7 @@ console.log("=".repeat(70));
    * kullanıcı yine "hangileri?" diye arar. Desen ADA değil KULLANIMA
    * bağlanıyor: `href={karEksik...}`.
    */
-  const panelHam = readFileSync("src/app/page.tsx", "utf8");
+  const panelHam = kaynakOku("src/app/page.tsx");
   kontrol(
     "aylık tablodaki sayı LİNK (href=ay adresi)",
     /href=\{karEksikAyAdresi\(nokta\.yil, nokta\.ay\)\}/.test(panelHam),
@@ -5904,7 +5892,7 @@ console.log("K106) KANAL SIRASI — sabit duzen, ciro degil");
   );
 
   /** BAGLANTI: panel govdesi gercekten bu siralamayi cagiriyor mu. */
-  const panelGovde = readFileSync("src/lib/panel.ts", "utf8");
+  const panelGovde = kaynakOku("src/lib/panel.ts");
   kontrol(
     "panel govdesi sabit duzeni CAGIRIYOR",
     /const liste = kanallariSirala\(/.test(panelGovde),
@@ -5958,7 +5946,7 @@ console.log("K106) KANAL SIRASI — sabit duzen, ciro degil");
   );
 
   /** BAGLANTI: ekran cubugu ciziyor ve kip iki cagriya da gidiyor. */
-  const panelEkran = readFileSync("src/app/page.tsx", "utf8");
+  const panelEkran = kaynakOku("src/app/page.tsx");
   kontrol("panel sira cubugunu CIZIYOR", /<KanalSiraCubugu/.test(panelEkran));
   /**
    * KIYAS BLOGU DA AYNI KIPTE. Ayrissaydi ust blok sabit duzende, kiyas
@@ -6096,7 +6084,7 @@ console.log("\nKANAL KARTI TAVANI — PANELDE 3, DÖKÜM SAYFASINDA HEPSİ (K124
    * ⛔ ZİNCİR — GÖVDE DOĞRU OLUP EKRANA BAĞLANMAZSA HİÇBİR ŞEY DEĞİŞMEZ.
    * K121'de tur 98/98 yeşilken kutu ekranda YOKTU; ders bu.
    */
-  const ekranK124 = readFileSync("src/app/page.tsx", "utf8")
+  const ekranK124 = kaynakOku("src/app/page.tsx")
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
   kontrol(
@@ -6161,7 +6149,7 @@ console.log("\nKANAL KARTI TAVANI — PANELDE 3, DÖKÜM SAYFASINDA HEPSİ (K124
     /yalnizKanallar\)[\s\S]{0,1500}kanalIzgarasi\(ustBlok, ustPaylar\)/.test(ekranK124),
   );
 
-  const rotaK124 = readFileSync("src/app/kanallar/page.tsx", "utf8")
+  const rotaK124 = kaynakOku("src/app/kanallar/page.tsx")
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
   /**
@@ -6220,7 +6208,7 @@ console.log("\nZAMAN TABLOSU SIRASI — EN YENİ ÜSTTE (K125)");
    * ⛔ ZİNCİR — VE İKİ YÖN AYRI SINANIYOR: tablo TERS okumalı, grafik HAM
    * okumalı. Yalnız biri sınansaydı öteki yön serbest kalırdı.
    */
-  const grafikKaynagi = readFileSync("src/components/uc-serili-grafik.tsx", "utf8")
+  const grafikKaynagi = kaynakOku("src/components/uc-serili-grafik.tsx")
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
   const detayBasi = grafikKaynagi.indexOf("<details");
@@ -6358,7 +6346,7 @@ console.log("\nZAMAN TABLOSU SIRASI — EN YENİ ÜSTTE (K125)");
    * farklı iki hesap aynı anahtarı üretirse React satırları karıştırır.
    * _(Anayasa: "sınanmamış ekran, ekran değildir".)_
    */
-  const panelKaynagi = readFileSync("src/app/page.tsx", "utf8");
+  const panelKaynagi = kaynakOku("src/app/page.tsx");
   kontrol(
     "ekran hesap satırını KİMLİKLE anahtarlıyor",
     /key=[{]`[$][{]kanal[.]kanalKodu[}]-[$][{]hesap[.]hesapId[}]`[}]/.test(
@@ -6416,7 +6404,7 @@ kontrol("  ...her kanalın kendi izi var",
   kontrol("  ...hepsi tazeyse en YAŞLI olan",
     enKotuCekim([taze, { kod: "HB", durum: cekimDurumu(dkOnce(3), an) }])?.kod === "HB");
 }
-const panelKaynagi = readFileSync("src/app/page.tsx", "utf8");
+const panelKaynagi = kaynakOku("src/app/page.tsx");
 kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   /const cekimler = await sonCekimler\(prisma, new Date\(\)\);/.test(panelKaynagi) &&
     /enKotuCekim\(cekimler\)/.test(panelKaynagi));
@@ -6562,7 +6550,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
    * ⛔ VE `indexOf` "yok" hâlinde −1 döner ve karşılaştırmayı sessizce geçer;
    * varlık AYRICA kapılanır (anayasa: nötr görünen varsayılan).
    */
-  const panelEkrani = readFileSync("src/app/page.tsx", "utf8");
+  const panelEkrani = kaynakOku("src/app/page.tsx");
   const aSon = panelEkrani.indexOf("nokta.iadeAdedi > 0");
   const aBas = panelEkrani.lastIndexOf("bicim.para(nokta.net2, seciliPara)", aSon);
   kontrol("K170-②: aylık NET-2 hücresi bulundu (çapa)", aBas >= 0 && aSon > aBas, {
@@ -6588,9 +6576,9 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
 {
   const yorumsuz3 = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-  const panel3 = yorumsuz3(readFileSync("src/app/page.tsx", "utf8"));
-  const rapor3 = yorumsuz3(readFileSync("src/app/rapor/page.tsx", "utf8"));
-  const donem3 = yorumsuz3(readFileSync("src/lib/donem-raporu.ts", "utf8"));
+  const panel3 = yorumsuz3(kaynakOku("src/app/page.tsx"));
+  const rapor3 = yorumsuz3(kaynakOku("src/app/rapor/page.tsx"));
+  const donem3 = yorumsuz3(kaynakOku("src/lib/donem-raporu.ts"));
 
   kontrol(
     "panel: iade ATFI satışın gününden",
@@ -6635,7 +6623,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   );
 
   /** ⛔ FARK EKRANDA SÖYLENİR (İlke #10) — iki atıf sessizce ayrışmaz. */
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
     Panel?: Record<string, string>;
   };
   const not = sozluk.Panel?.iadeOraniNotu ?? "";
@@ -6657,8 +6645,8 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
    * kötüdür: bir sonraki okuyucuya YANLIŞ kuralı öğretir ve üstüne akıl
    * yürütülür. _(Anayasa: "şemadaki alan da bir iddiadır" — belge tarafı.)_
    */
-  const panelTip = readFileSync("src/lib/panel.ts", "utf8");
-  const raporTip = readFileSync("src/lib/rapor.ts", "utf8");
+  const panelTip = kaynakOku("src/lib/panel.ts");
+  const raporTip = kaynakOku("src/lib/rapor.ts");
   /**
    * ⚠ TİP BLOĞUNA DARALTILIR — `tarih: Date;` dosyada BİRDEN ÇOK tipte
    * geçiyor (`PanelSatisi` de taşıyor). `indexOf` ilkini bulur ve ölçüt
@@ -6719,8 +6707,8 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
 {
   const yorumsuz4 = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-  const grafik4 = yorumsuz4(readFileSync("src/components/karsilastirma-grafigi.tsx", "utf8"));
-  const panel4 = yorumsuz4(readFileSync("src/app/page.tsx", "utf8"));
+  const grafik4 = yorumsuz4(kaynakOku("src/components/karsilastirma-grafigi.tsx"));
+  const panel4 = yorumsuz4(kaynakOku("src/app/page.tsx"));
 
   /** ⛔ RAKAM KAPISI GERİ GELEMEZ: tek seri şartı rakamları söndürüyordu. */
   kontrol(
@@ -6777,7 +6765,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
  * === YIGILMIS SUTUN (K260) + OK ETIKETLERI AYRIK (K261) — 24.09.2026 =====
  */
 {
-  const grafik = readFileSync("src/components/uc-serili-grafik.tsx", "utf8")
+  const grafik = kaynakOku("src/components/uc-serili-grafik.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   /** * YIGIN yalniz toplamin ANLAMLI oldugu kipte: ciro kipinde alim/satis zit akis. */
   kontrol("yigilmis = sutun && toplamVar (ciro kipinde gruplu kalir)",
@@ -6819,7 +6807,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     OK_UC_SINIRI.sol - 8 >= 80 && HALKA_KADRAJ_GENISLIGI - OK_UC_SINIRI.sag - 8 >= 80);
   kontrol("  ...delik merkez rakami 16+ birimle tasiyor (K267: 98 -> 122)",
     DELIK_CAPI >= 120 && merkezYaziBoyu("₺622.904,97") >= 16, { delik: DELIK_CAPI });
-  const halka = readFileSync("src/components/halka-grafik.tsx", "utf8")
+  const halka = kaynakOku("src/components/halka-grafik.tsx")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("halka ayrilmis uclari CIZIYOR (govde dogru ama baglanmamis olmasin)",
     /const uclar = okEtiketleriniAyir\(/.test(halka) && /yerlesimAyrik\.map\(\(y\) => \(/.test(halka));
@@ -6865,18 +6853,18 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("  ...one cikan islem hizli islemlerden biri", (HIZLI_ISLEMLER as readonly string[]).includes(ONE_CIKAN_ISLEM));
 
   /* ── YERLESIM: alt bar ── */
-  const yerlesim = yorumsuz(readFileSync("src/app/layout.tsx", "utf8"));
+  const yerlesim = yorumsuz(kaynakOku("src/app/layout.tsx"));
   kontrol("alt bar CIZILIYOR (layout, icerikten sonra)",
     /\{children\}[\s\S]{0,200}?<\/div>\s*<AltCubuk \/>/.test(yerlesim));
   kontrol("  ...icerik barin ARKASINA kaymaz (pb-24, masaustunde md:pb-6)",
     /flex-1[^"]*\bpb-24\b[^"]*\bmd:pb-6\b/.test(yerlesim));
-  const altCubuk = yorumsuz(readFileSync("src/components/alt-cubuk.tsx", "utf8"));
+  const altCubuk = yorumsuz(kaynakOku("src/components/alt-cubuk.tsx"));
   kontrol("  ...bar yalniz TELEFONDA, sabit, altta, guvenli alanli",
     /<nav[\s\S]{0,120}?className="[^"]*\bfixed inset-x-0 bottom-0\b[^"]*safe-area-inset-bottom[^"]*\bmd:hidden\b/.test(altCubuk));
   kontrol("  ...her sekme 44+ px (min-h-14, Ilke #8)", /<Link[\s\S]{0,200}?min-h-14/.test(altCubuk));
 
   /* ── PANEL SAYFASI ── */
-  const sayfaT = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
+  const sayfaT = yorumsuz(kaynakOku("src/app/page.tsx"));
   kontrol("hizli islemler gorev kutusunun HEMEN ALTINDA",
     /<GorevKutusu[\s\S]{0,700}?\/>\s*<HizliIslemler \/>/.test(sayfaT));
   kontrol("KPI izgarasi telefonda 6 sutun", /grid grid-cols-6 gap-2 sm:grid-cols-2 md:grid-cols-3/.test(sayfaT));
@@ -6899,7 +6887,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("halka yuzdesi 0-100 araliginda (16.010 / 31.550 = %50,7)", Math.abs(dilimYuzdesi(16010, 31550) - 50.745) < 0.01, dilimYuzdesi(16010, 31550));
   kontrol("  ...toplam 0 iken 0 (sifira bolunmez)", dilimYuzdesi(5, 0) === 0);
   {
-    const halkaK = readFileSync("src/components/halka-grafik.tsx", "utf8").replace(/\r\n/g, "\n")
+    const halkaK = kaynakOku("src/components/halka-grafik.tsx").replace(/\r\n/g, "\n")
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
     kontrol("  ...TELEFON halkasi ortak govdeyi cagiriyor", halkaK.includes("{yuzdeMetni(dilimYuzdesi(d.tutar, toplam))}") && !/yuzdeMetni\(d\.tutar \/ toplam\)/.test(halkaK));
     kontrol("  ...MASAUSTU halkasi da", halkaK.includes("yuzde: dilimYuzdesi(d.tutar, payda),"));
@@ -6916,7 +6904,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
       /<div className="max-md:hidden">\s*<SekmeliBolum\s*baslik=\{t\("grafikBaslik"/.test(sayfaT));
 
   /* ── GOREV KUTUSU: telefonda 3x2, masaustunde serit — ikisi AYNI anda cizilmez ── */
-  const kutuT = yorumsuz(readFileSync("src/app/gorev-kutusu.tsx", "utf8"));
+  const kutuT = yorumsuz(kaynakOku("src/app/gorev-kutusu.tsx"));
   kontrol("gorev telefonda 3 sutun izgara, yalniz telefonda",
     /<section aria-label=\{t\("baslik"\)\} className="space-y-2 md:hidden">[\s\S]{0,400}?grid grid-cols-3 gap-2/.test(kutuT));
   kontrol("  ...serit telefonda GIZLI (cift cizim yok)", /rounded-lg border px-3 py-2 max-md:hidden"/.test(kutuT));
@@ -6926,7 +6914,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     kutucuk.length > 200 && /gorev\.temizMi \? \(\s*<span className=\{sinif\}>/.test(kutucuk) && /<Link href=\{gorev\.adres\}/.test(kutucuk));
 
   /* ── SUZGEC: telefon cipleri ── */
-  const cubukT = yorumsuz(readFileSync("src/components/suzgec-cubugu.tsx", "utf8"));
+  const cubukT = yorumsuz(kaynakOku("src/components/suzgec-cubugu.tsx"));
   kontrol("donem cipleri telefonda HEP GORUNUR, tek satir, yatay kayar",
     /flex gap-2 overflow-x-auto[^"]*md:hidden"[\s\S]{0,200}?HIZLI_PENCERELER\.map/.test(cubukT));
   kontrol("  ...44 px (Ilke #8) — iki cip de h-11", (cubukT.match(/className="h-11 shrink-0 rounded-full"/g) ?? []).length === 2);
@@ -6934,7 +6922,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     (cubukT.match(/className="h-11 md:h-8 max-md:hidden"/g) ?? []).length === 2);
 
   /* ── MENU SAYFASI: tek govde ── */
-  const menuT = yorumsuz(readFileSync("src/app/menu/page.tsx", "utf8"));
+  const menuT = yorumsuz(kaynakOku("src/app/menu/page.tsx"));
   kontrol("menu sayfasi GIRIS ister ve duzeni FIRMA KAYDINDAN okur (elle liste yok)",
     /await sayfaGirisi\(\)/.test(menuT) && /menuDuzeni\(baglam\.companyId\)/.test(menuT) &&
       /MENU_ADRESLERI\[anahtar\]/.test(menuT) && /MENU_IKONLARI\[anahtar\]/.test(menuT));

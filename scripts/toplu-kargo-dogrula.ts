@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -52,10 +52,10 @@ function yorumsuz(metin: string): string {
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
 }
 
-const actions = yorumsuz(readFileSync("src/app/satislar/actions.ts", "utf8"));
-const liste = yorumsuz(readFileSync("src/app/satislar/page.tsx", "utf8"));
-const diyalog = yorumsuz(readFileSync("src/app/satislar/toplu-kargo.tsx", "utf8"));
-const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+const actions = yorumsuz(kaynakOku("src/app/satislar/actions.ts"));
+const liste = yorumsuz(kaynakOku("src/app/satislar/page.tsx"));
+const diyalog = yorumsuz(kaynakOku("src/app/satislar/toplu-kargo.tsx"));
+const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
   Satis: Record<string, string>;
 };
 

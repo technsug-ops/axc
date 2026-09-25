@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   LISTE_PENCERELERI,
@@ -490,7 +490,7 @@ console.log("\n9) TABLO GRAFİKLE AYNI ŞEYİ GÖSTERİR — kırpma YOK");
    * yeniden kırpılsa bile öteki iki kullanım testi yeşil geçirirdi.
    * Bu yüzden desen `<tbody>` BLOĞUNA daraltılarak aranıyor.
    */
-  const bilesen = readFileSync("src/components/uc-serili-grafik.tsx", "utf8");
+  const bilesen = kaynakOku("src/components/uc-serili-grafik.tsx");
   const tbodyBas = bilesen.indexOf("<tbody>");
   const tbodySon = bilesen.indexOf("</tbody>");
   kontrol("tablo gövdesi bulunabiliyor", tbodyBas > 0 && tbodySon > tbodyBas);
@@ -542,7 +542,7 @@ console.log("\n9) TABLO GRAFİKLE AYNI ŞEYİ GÖSTERİR — kırpma YOK");
    * ⚠ VE VAAT EDİLEN HEDEF: sözlükte de kalıntı kalmamalı. Anahtar dursaydı
    * bir sonraki geliştirici onu "kullanılmıyor" sanıp geri bağlayabilirdi.
    */
-  const sozluk = readFileSync("messages/tr.json", "utf8");
+  const sozluk = kaynakOku("messages/tr.json");
   kontrol(
     "sözlükte de kalıntı yok (operasyonTumunuGor silindi)",
     !sozluk.includes("operasyonTumunuGor"),

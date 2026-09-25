@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import {
   ALIM_EKSENLERI,
   VARSAYILAN_EKSEN,
@@ -106,7 +106,7 @@ console.log("\n3) zincir — seçici ekrana ve süzgece BAĞLI mı");
   const yorumsuz = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
-  const suzgec = yorumsuz(readFileSync("src/lib/liste-suzgeci.ts", "utf8"));
+  const suzgec = yorumsuz(kaynakOku("src/lib/liste-suzgeci.ts"));
   dogru("süzgeç ekseni ÇÖZÜYOR", suzgec.includes("alimEkseniCoz("));
   /** ⛔ SABİT ALAN ADI KALMAMALI: `purchasedAt:` çıplak yazılıysa eksen etkisiz. */
   dogru(
@@ -116,7 +116,7 @@ console.log("\n3) zincir — seçici ekrana ve süzgece BAĞLI mı");
   dogru("süzgeç alanı GÖVDEDEN alıyor", suzgec.includes("eksenAlani(eksen)"));
   dogru("süzgeç ekseni DÖNDÜRÜYOR", /return \{ kosul, pencere, eksen \}/.test(suzgec));
 
-  const ekran = yorumsuz(readFileSync("src/app/alimlar/page.tsx", "utf8"));
+  const ekran = yorumsuz(kaynakOku("src/app/alimlar/page.tsx"));
   dogru("ekran ekseni ALIYOR", /const \{ kosul, pencere, eksen \}/.test(ekran));
   /**
    * ⛔ SIRALAMA DA EKSENİ İZLEMELİ — ve bu AYRI sınanıyor: süzgeç doğru,

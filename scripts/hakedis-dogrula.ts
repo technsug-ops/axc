@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
 /**
  * ============================================================================
@@ -627,7 +627,7 @@ console.log("\nEŞİK BEYANI SABİTTEN GELİYOR MU");
    * DEĞER TESTİ GÖREMEZ: eşiğin kendisi doğru çalışıyordu. Sınanan şey
    * metnin sabite BAĞLI olması.
    */
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json"));
   const not = sozluk.Hakedis?.karsilastirmaNotu ?? "";
 
   kontrol("karşılaştırma notu eşiği PARAMETREYLE söylüyor", not.includes("{tutar}"));
@@ -637,7 +637,7 @@ console.log("\nEŞİK BEYANI SABİTTEN GELİYOR MU");
     not.slice(0, 80),
   );
 
-  const ekran = readFileSync("src/app/hakedis/page.tsx", "utf8");
+  const ekran = kaynakOku("src/app/hakedis/page.tsx");
   kontrol(
     "ekran sabiti METNE geçiriyor",
     /karsilastirmaNotu"?,\s*\{[\s\S]{0,120}?HAKEDIS_ESIKLERI\.tutarFarki/.test(ekran),
@@ -1180,7 +1180,7 @@ console.log("\n9) ÖDEME ÖZETİ — pazaryeri paneli düzeni (22.09.2026)");
    * `hakedis-ozeti-mutasyon:kontrol`.
    */
   const yorumsuz = (yol: string) =>
-    readFileSync(yol, "utf8")
+    kaynakOku(yol)
       .replace(/\/\*[\s\S]*?\*\//g, " ")
       .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
 

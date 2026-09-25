@@ -16,7 +16,7 @@
  *  durumuna yol açardı — burada KIRMIZI yanar.
  * ============================================================================
  */
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   gercekCakismaGruplari,
@@ -38,7 +38,7 @@ function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
 }
 
 function main() {
-  const paket = JSON.parse(readFileSync("package.json", "utf8")) as {
+  const paket = JSON.parse(kaynakOku("package.json")) as {
     scripts: Record<string, string>;
   };
   const mutasyonAdlari = Object.keys(paket.scripts).filter(mutasyonAdiMi).sort();

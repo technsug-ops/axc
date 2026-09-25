@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
-import { desenNormalle } from "./mutasyon-deseni";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 import { spawnSync } from "node:child_process";
 
 /**
@@ -490,7 +490,7 @@ for (const m of MUTASYONLAR) {
   const mutant = asil.replace(bul, koy);
   let sonuc: { kod: number; ciktiVar: boolean };
   try {
-    writeFileSync(m.dosya, mutant, "utf8");
+    dayanikliYaz(m.dosya, mutant);
     /**
      * ⚠ ② TAM EŞİTLİK — "farklı" DEĞİL. Kısmi/bozuk bir yazımı "uygulandı"
      * saymamak için; K98'de devralınan kapı EKLEYEN mutasyonlarda yanlış
@@ -503,7 +503,7 @@ for (const m of MUTASYONLAR) {
     }
     sonuc = bekciyiKostur(m.bekci);
   } finally {
-    writeFileSync(m.dosya, asil, "utf8");
+    dayanikliYaz(m.dosya, asil);
   }
 
   const isaret = m.yon === "KALDIRAN" ? "−" : "+";

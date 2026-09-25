@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   geriAlmaPlani,
@@ -307,7 +307,7 @@ kontrol(
 
 {
   /** Şema enumu da aynı şeyi söylemeli — liste ile enum ayrışamaz. */
-  const sema = readFileSync("prisma/schema.prisma", "utf8");
+  const sema = kaynakOku("prisma/schema.prisma");
   /**
    * ⚠ PENCERE SABİT SAYIYLA KESİLMEZ — İLK YAZIMDA TAM BU OLDU: 400 karakter
    * bir SONRAKİ enuma taşıyordu ve ölçüt 7 değer sayıyordu (2 + 5). Sınır
@@ -395,7 +395,7 @@ kosanBolumler.push("geri alma");
 console.log("\n6) YAZMA KATMANI");
 
 {
-  const veri = yorumsuz(readFileSync("src/lib/kalem-kaldirma-veri.ts", "utf8"));
+  const veri = yorumsuz(kaynakOku("src/lib/kalem-kaldirma-veri.ts"));
 
   /** ⭐ ÇAPA KULLANIMA BAĞLI — `SALE_CANCEL_IN` yazan create bloğuna. */
   const aynaBloku = blok(veri, 'type: "SALE_CANCEL_IN"', 700);

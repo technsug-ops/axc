@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 /**
  * ============================================================================
  *  GEÇMİŞ EKSTRE OKUYUCU DOĞRULAMA
@@ -556,16 +556,10 @@ console.log("=".repeat(70));
 console.log("7) EKRAN BAĞI — YAZDIM AMA GÖSTEREMİYORUM OLMASIN");
 console.log("=".repeat(70));
 {
-  const aktarici = readFileSync(
-    "src/app/ayarlar/gecmis-ekstre/ice-aktarici.tsx",
-    "utf8",
-  );
-  const eylemler = readFileSync(
-    "src/app/ayarlar/gecmis-ekstre/eylemler.ts",
-    "utf8",
-  );
-  const kartBorcu = readFileSync("src/app/kart-borcu/page.tsx", "utf8");
-  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const aktarici = kaynakOku("src/app/ayarlar/gecmis-ekstre/ice-aktarici.tsx");
+  const eylemler = kaynakOku("src/app/ayarlar/gecmis-ekstre/eylemler.ts");
+  const kartBorcu = kaynakOku("src/app/kart-borcu/page.tsx");
+  const tr = JSON.parse(kaynakOku("messages/tr.json")) as {
     GecmisEkstre?: Record<string, string>;
     KartBorcu?: Record<string, string>;
   };

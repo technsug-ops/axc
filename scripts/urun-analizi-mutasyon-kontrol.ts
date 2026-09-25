@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
+import { dayanikliYaz } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
@@ -191,7 +192,7 @@ for (const m of MUTASYONLAR) {
     continue;
   }
 
-  writeFileSync(m.dosya, asil.replace(m.eski, m.yeni), "utf8");
+  dayanikliYaz(m.dosya, asil.replace(m.eski, m.yeni));
 
   let cikisKodu = 0;
   try {
@@ -201,7 +202,7 @@ for (const m of MUTASYONLAR) {
     cikisKodu = h.status ?? 1;
   } finally {
     /** Asıl içerik HER HÂLÜKÂRDA geri yazılır. */
-    writeFileSync(m.dosya, asil, "utf8");
+    dayanikliYaz(m.dosya, asil);
   }
 
   if (cikisKodu !== 0) {

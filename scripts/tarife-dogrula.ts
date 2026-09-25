@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   DILIMLI_TARIFE_OKUYUCUSU_OLAN,
@@ -55,7 +55,7 @@ import {
  * sayılmaz — bu depoda aynı tuzak bugün bir kez daha çıktı.
  */
 function yorumsuzOku(yol: string): string {
-  return readFileSync(yol, "utf8")
+  return kaynakOku(yol)
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\/\/.*$/gm, "");
 }
@@ -476,7 +476,7 @@ console.log("\nKOMİSYON TARİFESİ — DOĞRULAMA\n");
  */
 {
   console.log("\n10b) ENGEL KODU → TÜRKÇE CÜMLE");
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
     Tarife: Record<string, string>;
   };
   const kodlar = Object.keys(ENGEL_ANAHTARI);
@@ -519,7 +519,7 @@ console.log("\nKOMİSYON TARİFESİ — DOĞRULAMA\n");
 
   /* ⚠ VE EKRAN BU KAPIDAN GEÇMELİ. Desen ADA değil KULLANIMA bağlanıyor:
      "ENGEL_ANAHTARI" kelimesi import satırında da geçiyor. */
-  const eylem = readFileSync("src/app/ayarlar/tarife/eylemler.ts", "utf8");
+  const eylem = kaynakOku("src/app/ayarlar/tarife/eylemler.ts");
   kontrol(
     "ekran engeli ENGEL_ANAHTARI üzerinden çeviriyor",
     eylem.includes("ENGEL_ANAHTARI[engel.kod]"),
@@ -879,7 +879,7 @@ console.log("K49b) EKRAN — DELİK GERÇEKTEN ÇİZİLİYOR MU");
    * bulamayıp ÇÖKERDİ — ya da (daha kötüsü) yönlendirme gövdesini
    * okuyup "boşluk kuralı çağrılmıyor" diye YANLIŞ KIRMIZI yakardı.
    */
-  const EKRAN = readFileSync("src/app/ayarlar/tarife/durum.tsx", "utf8");
+  const EKRAN = kaynakOku("src/app/ayarlar/tarife/durum.tsx");
 
   /**
    * ⚠ İŞARET RENDER YERİNE BAĞLI, IMPORT'A DEĞİL. `bosluklariBul` kelimesi
@@ -1004,7 +1004,7 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
  * bu haftanın dosyasını indirmek — sessizce kaçardı.
  */
 {
-  const PANEL = readFileSync("src/lib/panel/gorev-verisi.ts", "utf8");
+  const PANEL = kaynakOku("src/lib/panel/gorev-verisi.ts");
   kontrol(
     "panel görev verisi boşluk kuralını ÇAĞIRMIYOR (delik görev değil)",
     !PANEL.includes("bosluklariBul"),

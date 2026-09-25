@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   adetToplami,
@@ -305,7 +305,7 @@ console.log("\nADET EKRANA VARIYOR MU — kaynak taraması");
     ["satışlar", "src/app/satislar/page.tsx", 'etiket: t("adetToplami")'],
     ["alımlar", "src/app/alimlar/page.tsx", 'etiket: t("adetToplami")'],
   ] as const) {
-    const kaynak = readFileSync(yol, "utf8");
+    const kaynak = kaynakOku(yol);
     esit(
       `${ad} — süzgeç adedini HESAPLIYOR (veritabanı gövdesinden)`,
       /const adetToplam = toplam(lar|Verisi)\.adet;/.test(kaynak),
@@ -331,7 +331,7 @@ console.log("\nADET EKRANA VARIYOR MU — kaynak taraması");
    * `String(...)` ya da şablon içinde çıplak sayı, binlik ayracını kaybeder
    * ve 1284 adet "1284" görünür.
    */
-  const bilesen = readFileSync("src/components/liste-toplami.tsx", "utf8");
+  const bilesen = kaynakOku("src/components/liste-toplami.tsx");
   esit("ek kutular tek gövdeden çiziliyor", bilesen.includes("function ekKutulari("), true);
   esit(
     "öncekiler ve ekler AYNI çiziciyi kullanıyor",

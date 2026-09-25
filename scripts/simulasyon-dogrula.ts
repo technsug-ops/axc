@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { SIMULASYON_KANALLARI } from "../src/lib/simulasyon/kanal-kurallari";
 import {
@@ -374,7 +374,7 @@ console.log("\n4) KAYNAK BEYANI — kaynağı yazılmayan sayı kullanılamaz");
    * veritabanına da bir şey yazmaz.
    */
   const kodu = (yol: string) =>
-    readFileSync(yol, "utf8")
+    kaynakOku(yol)
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/\/\/.*$/gm, "");
 
@@ -382,7 +382,7 @@ console.log("\n4) KAYNAK BEYANI — kaynağı yazılmayan sayı kullanılamaz");
     "simülasyon kuralları veritabanına YAZMIYOR",
     !/prisma|channelFee/i.test(kodu("src/lib/simulasyon/kanal-kurallari.ts")),
   );
-  const motor = readFileSync("src/lib/simulasyon/karsilastir.ts", "utf8");
+  const motor = kaynakOku("src/lib/simulasyon/karsilastir.ts");
   kontrol(
     "karşılaştırma da yazma yapmıyor",
     !/prisma|\.create\(|\.update\(/i.test(
@@ -466,10 +466,10 @@ console.log("\n5) DÖKÜM VE PASTA — satış fiyatı nereye gidiyor");
   }
 
   /** Döküm MOTORDAN geliyor — ekran kendi toplamını kurmuyor. */
-  const motor = readFileSync("src/lib/simulasyon/karsilastir.ts", "utf8");
+  const motor = kaynakOku("src/lib/simulasyon/karsilastir.ts");
   kontrol("döküm motordan taşınıyor", motor.includes("dokum: s.dokum"));
 
-  const pasta = readFileSync("src/components/pasta-grafik.tsx", "utf8");
+  const pasta = kaynakOku("src/components/pasta-grafik.tsx");
   /**
    * ⚠ RENK TEK BAŞINA KONUŞMAZ (renk sistemi kısıt #1): pastanın yanında
    * etiket ve tutar listesi olmalı. Renk körü bir kullanıcı için grafik süs,
@@ -490,7 +490,7 @@ console.log("\n5) DÖKÜM VE PASTA — satış fiyatı nereye gidiyor");
     /payda = Math\.max/.test(pasta),
   );
 
-  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const ekran = kaynakOku("src/app/simulasyon/deneme.tsx");
   kontrol(
     "her kanal kutusunda pasta çiziliyor",
     ekran.includes("<PastaGrafik"),
@@ -509,7 +509,7 @@ console.log("\n5) DÖKÜM VE PASTA — satış fiyatı nereye gidiyor");
 console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
 // ===========================================================================
 {
-  const zemin = readFileSync("src/lib/simulasyon/urun-zemini.ts", "utf8");
+  const zemin = kaynakOku("src/lib/simulasyon/urun-zemini.ts");
   /**
    * ⚠ ARAMA ORTAK KOŞULDAN. Bu depoda `varyantAra` Kanal SKU'yu hiç
    * sormuyordu; kendi sorgusunu yazan her yer o kümeden ayrışır.
@@ -540,7 +540,7 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
   kontrol(
     "  ...ve çağıran onu 'bulunamadı' diye ÇİZMİYOR",
     /zemin\.durum === "COK"[\s\S]{0,160}?t\("cokEslesme"/.test(
-      readFileSync("src/app/simulasyon/actions.ts", "utf8"),
+      kaynakOku("src/app/simulasyon/actions.ts"),
     ),
   );
   /**
@@ -569,7 +569,7 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
     !/\.create\(|\.update\(|\.delete\(/.test(zemin),
   );
 
-  const action = readFileSync("src/app/simulasyon/actions.ts", "utf8");
+  const action = kaynakOku("src/app/simulasyon/actions.ts");
   /**
    * ⚠ SERVER ACTION KENDİ BAŞINA BİR UÇTUR. Ekranın `sayfaIzni` ile korunuyor
    * olması bu action'ı KORUMAZ; izin burada da sorulmalı.
@@ -580,7 +580,7 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
   );
   kontrol("bulunamadı sessiz kalmıyor", action.includes('tur: "BULUNAMADI"'));
 
-  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const ekran = kaynakOku("src/app/simulasyon/deneme.tsx");
   kontrol("ekranda kod arama kutusu var", ekran.includes("urunAra("));
   /**
    * USB okuyucu Enter basar (İlke #7).
@@ -596,7 +596,7 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
     "okuyucunun Enter'ı çalışıyor (BarkodGirisi üstlendi)",
     /<BarkodGirisi/.test(ekran) && /onOkundu=/.test(ekran),
   );
-  const okuyucu = readFileSync("src/components/barkod-okuyucu.tsx", "utf8");
+  const okuyucu = kaynakOku("src/components/barkod-okuyucu.tsx");
   /**
    * ⚠ DESEN KARŞILAŞTIRMA YÖNÜNE TAKILMASIN. İlk yazımda yalnız
    * `key === "Enter"` aranıyordu; bileşen erken dönüş kalıbıyla
@@ -698,7 +698,7 @@ console.log("\n7) KANAL BAŞINA KOMİSYON — tek oran yanlış sonuç verir");
     ty(bozuk).komisyonOrani,
   );
 
-  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const ekran = kaynakOku("src/app/simulasyon/deneme.tsx");
   /**
    * ⚠ DESEN DOSYADA DEĞİL, KULLANIM BLOĞUNDA ARANIR. `setKanalOranlari`
    * dosyada üç yerde geçiyor (durum tanımı · ürün sıfırlama · form kutusu);
@@ -735,7 +735,7 @@ console.log("\n7) KANAL BAŞINA KOMİSYON — tek oran yanlış sonuç verir");
     ekran.includes("setKanalOranlari({})"),
   );
 
-  const motor = readFileSync("src/lib/simulasyon/karsilastir.ts", "utf8");
+  const motor = kaynakOku("src/lib/simulasyon/karsilastir.ts");
   /**
    * ⚠ ELLE ORAN VARSA DİLİM TARİFESİ DEVREDEN ÇIKMALI. Yoksa tarife kazanır
    * ve kullanıcının girdiği sayı sessizce yok sayılır.
@@ -852,7 +852,7 @@ console.log("8) ORTAK ORAN ZORUNLU DEĞİL — kapı kanal kutularını kapatmas
    * kutusundan düzenlenebilseydi, hangisinin geçerli olduğu ekranda
    * cevapsız kalırdı. Sonuç kutusu artık yalnız KULLANILAN oranı okutur.
    */
-  const ekran8 = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const ekran8 = kaynakOku("src/app/simulasyon/deneme.tsx");
   const kanalKutusu = ekran8.slice(ekran8.indexOf("function KanalKutusu("));
   kontrol(
     "sonuç kutusunda ikinci girdi kutusu YOK",
@@ -1016,7 +1016,7 @@ console.log("9) KANAL BAŞINA BUY BOX FİYATI — asıl satış kararı burada")
   );
 
   // ── EKRAN ────────────────────────────────────────────────────────────
-  const ekran9 = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const ekran9 = kaynakOku("src/app/simulasyon/deneme.tsx");
   const blok9 = ekran9.slice(
     ekran9.indexOf("PAZARYERİ BAŞINA GİRDİ — FİYAT + KOMİSYON"),
     ekran9.indexOf("══════════════ SONUÇ ══════════════"),
@@ -1051,7 +1051,7 @@ console.log("");
 console.log("10) EKRAN — son satış fiyatı, yanıltıcı satır, durum rengi");
 // ===========================================================================
 {
-  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const ekran = kaynakOku("src/app/simulasyon/deneme.tsx");
 
   /**
    * ⚠ ORTALAMA DEĞİL SON SATIŞ (kullanıcı kararı 21.08.2026). Ortalama,
@@ -1092,7 +1092,7 @@ console.log("10) EKRAN — son satış fiyatı, yanıltıcı satır, durum rengi
     /alis: para\(urun\.ortalamaAlis\)/.test(ekran) &&
       /sonAlis:/.test(ekran),
   );
-  const zemin = readFileSync("src/lib/simulasyon/urun-zemini.ts", "utf8");
+  const zemin = kaynakOku("src/lib/simulasyon/urun-zemini.ts");
   /**
    * ⚠ SON SATIŞ, ORTALAMAYLA AYNI KÜMEDEN: iki rakam farklı kümelerden
    * gelseydi ekranda yan yana durup birbirini yalanlarlardı.
@@ -1127,7 +1127,7 @@ console.log("10) EKRAN — son satış fiyatı, yanıltıcı satır, durum rengi
    * o kutuya ne yazılacağını söylüyormuş gibi okunuyordu (kullanıcı bildirdi).
    */
   kontrol("yanıltıcı 'oranHenuz' satırı ekranda YOK", !ekran.includes("oranHenuz"));
-  const sozluk = readFileSync("messages/tr.json", "utf8");
+  const sozluk = kaynakOku("messages/tr.json");
   kontrol("  ...sözlükten de kalktı", !sozluk.includes("oranHenuz"));
 
   /**
@@ -1254,7 +1254,7 @@ console.log("11) HEPSİNİ TEMİZLE — tek düğme, HİÇBİR alan geride kalma
    * kanalda eski oran durmaktadır ve sonraki denemenin hükmünü sessizce
    * bozar. Bu yüzden her alan TEK TEK sınanıyor.
    */
-  const ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const ekran = kaynakOku("src/app/simulasyon/deneme.tsx");
   const govde = ekran.slice(
     ekran.indexOf("const hepsiniTemizle = () => {"),
     ekran.indexOf("const sayi = (m: string)"),
@@ -1505,7 +1505,7 @@ console.log("K105) KARGO ZORUNLU — unutulan gider NET'i sisiriyordu");
   );
 
   /** EKRAN: uyari kargo alaninin YANINDA ve care yazili. */
-  const k105Ekran = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const k105Ekran = kaynakOku("src/app/simulasyon/deneme.tsx");
   kontrol(
     "ekran eksik SEBEBINI cozuyor (sessiz kapi degil)",
     /const sebep = eksikSebebi\(girdi\)/.test(k105Ekran),

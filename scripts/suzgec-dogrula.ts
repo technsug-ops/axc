@@ -33,7 +33,7 @@ import {
   satisKosulu,
 } from "../src/lib/liste-suzgeci";
 import { GOREV_ADRESLERI } from "../src/lib/panel/bugun-ne-yapmaliyim";
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   DONUS_TAVANI,
@@ -917,7 +917,7 @@ console.log("\nGERİ DÖNÜŞ — zincir ekranlarda kurulu mu");
    * geçiyor; import tek başına hiçbir bağlantı kurmaz. Bu yüzden işaret
    * ÇAĞRIYA bağlanıyor: `donusTasiyan(`.
    */
-  const liste = readFileSync("src/app/alimlar/page.tsx", "utf8");
+  const liste = kaynakOku("src/app/alimlar/page.tsx");
   kontrol("liste dönüş değerini ÜRETİYOR", liste.includes("donusDegeri(p)"));
   kontrol(
     "liste bağlantıları tek gövdeden",
@@ -933,7 +933,7 @@ console.log("\nGERİ DÖNÜŞ — zincir ekranlarda kurulu mu");
     !/href=\{`\/alimlar\/\$\{alim\.id\}/.test(liste),
   );
 
-  const detay = readFileSync("src/app/alimlar/[id]/page.tsx", "utf8");
+  const detay = kaynakOku("src/app/alimlar/[id]/page.tsx");
   kontrol(
     "detay zinciri TÜKETİYOR (geriAdresi)",
     detay.includes('geriAdresi("/alimlar", donus)'),
@@ -947,7 +947,7 @@ console.log("\nGERİ DÖNÜŞ — zincir ekranlarda kurulu mu");
     ["mal kabul", "src/app/alimlar/[id]/mal-kabul/page.tsx"],
     ["düzenle", "src/app/alimlar/[id]/duzenle/page.tsx"],
   ] as const) {
-    const kaynak = readFileSync(yol, "utf8");
+    const kaynak = kaynakOku(yol);
     kontrol(`${ad} — dönüşü okuyor`, kaynak.includes("searchParams"));
     kontrol(
       `${ad} — geri tuşu zinciri taşıyor`,
@@ -1033,7 +1033,7 @@ kosanBolumler.push("geri dönüş");
    * kargoya VERİLMİŞ eski siparişler de listeye girerdi ve liste rakamdan
    * BÜYÜK çıkardı — sayı tıklanınca kendini yalanlardı.
    */
-  const panel = readFileSync("src/app/page.tsx", "utf8");
+  const panel = kaynakOku("src/app/page.tsx");
   const adresYeri = panel.indexOf("ilerlemeAdresleri={{");
   const adresBloku = panel.slice(adresYeri, adresYeri + 200);
   kontrol("panel ilerleme adresi veriyor", adresYeri > 0);
@@ -1050,7 +1050,7 @@ kosanBolumler.push("geri dönüş");
    * ⚠ RAKAM GERÇEKTEN BAĞLANTI OLMALI (İlke #2). Düz `<span>` kalsaydı
    * tıklanabilir görünmez ve kullanıcı listenin varlığını bilemezdi.
    */
-  const kutu = readFileSync("src/app/gorev-kutusu.tsx", "utf8");
+  const kutu = kaynakOku("src/app/gorev-kutusu.tsx");
   const kutuKodu = kutu.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, " ");
   const ilerlemeBasi = kutuKodu.indexOf("gorev.ilerleme !== null ?");
   const ilerlemeBloku = kutuKodu.slice(

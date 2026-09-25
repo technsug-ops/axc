@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import * as XLSX from "xlsx";
@@ -7,7 +7,8 @@ import {
   BicimTaninmadiHatasi,
   bicimTani,
   tabloOku,
-} from "../src/lib/tablo/tablo-oku";
+} from "../src/lib/tablo/tablo-oku";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -296,7 +297,7 @@ async function main(): Promise<void> {
     const ihlal = dosyalar.filter(
       (d) =>
         !d.endsWith(KAPI_DOSYASI) &&
-        /readXlsxFile[ ]*\(/.test(yorumsuz(readFileSync(d, "utf8"))),
+        /readXlsxFile[ ]*\(/.test(yorumsuz(kaynakOku(d))),
     );
     kontrol(
       `çıplak readXlsxFile( yok (ihlal: ${ihlal.map(kisalt).join(", ") || "-"})`,
@@ -312,7 +313,7 @@ async function main(): Promise<void> {
     kontrol(`taranan ts dosyası >= 200 (ölçülen: ${dosyalar.length})`, dosyalar.length >= 200);
 
     const cagiran = dosyalar.filter((d) =>
-      /\btabloOku\(/.test(yorumsuz(readFileSync(d, "utf8"))),
+      /\btabloOku\(/.test(yorumsuz(kaynakOku(d))),
     );
     kontrol(
       `kapıyı çağıran yükleme yolu >= 5 (ölçülen: ${cagiran.length})`,

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   MARJ_ALT_SINIRLARI,
@@ -180,7 +180,7 @@ console.log("\n4) EKRANA VARIYOR MU — kaynak taraması");
    * (import + kullanım); import satırı tek başına hiçbir şey çizmez. Bu
    * yüzden işaret ÇAĞRI yerine bağlanıyor: `<MarjPili`.
    */
-  const rozet = readFileSync("src/components/marj-rozeti.tsx", "utf8");
+  const rozet = kaynakOku("src/components/marj-rozeti.tsx");
   kontrol("rozet pili ÇİZİYOR (<MarjPili)", rozet.includes("<MarjPili"));
   /**
    * ⚠ VE KOŞULUYLA BİRLİKTE: pil yalnız bandı olan göstergede çizilmeli.
@@ -192,7 +192,7 @@ console.log("\n4) EKRANA VARIYOR MU — kaynak taraması");
     /gosterge\.bant\s*!==\s*null\s*\)\s*\{[\s\S]{0,400}?<MarjPili/.test(rozet),
   );
 
-  const pil = readFileSync("src/components/marj-pili.tsx", "utf8");
+  const pil = kaynakOku("src/components/marj-pili.tsx");
   /**
    * RENK TEK BAŞINA KONUŞMAZ (renk sistemi kısıt #1). Pilde durumun KELİMESİ
    * ekran okuyucuya ulaşmalı; yalnız `title` bırakmak dokunmatikte bilgiyi
@@ -207,7 +207,7 @@ console.log("\n4) EKRANA VARIYOR MU — kaynak taraması");
     !/#[0-9A-Fa-f]{6}/.test(pil),
   );
 
-  const olcek = readFileSync("src/components/marj-olcegi.tsx", "utf8");
+  const olcek = kaynakOku("src/components/marj-olcegi.tsx");
   /**
    * ⚠ YORUMLAR ELENİYOR — VE BUNU KENDİ TESTİM ÖĞRETTİ.
    * "Elle yazılmış eşik var mı" kontrolü ilk hâlinde KIRMIZI yandı; suçlu
@@ -233,7 +233,7 @@ console.log("\n4) EKRANA VARIYOR MU — kaynak taraması");
     olcek.includes("<details") && !olcek.includes("<details open"),
   );
 
-  const sayfa = readFileSync("src/app/satislar/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/satislar/page.tsx");
   kontrol("satış listesi ölçeği çiziyor", sayfa.includes("<MarjOlcegi />"));
   /**
    * ⚠ VE KOŞULUYLA BİRLİKTE — cetvel, olmayan bir renklendirmeyi
@@ -249,8 +249,8 @@ console.log("\n4) EKRANA VARIYOR MU — kaynak taraması");
 console.log("\n5) SÖZLÜK — her bandın adı var mı");
 // ===========================================================================
 {
-  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8"));
-  const en = JSON.parse(readFileSync("messages/en.json", "utf8"));
+  const tr = JSON.parse(kaynakOku("messages/tr.json"));
+  const en = JSON.parse(kaynakOku("messages/en.json"));
   for (const bant of MARJ_BANTLARI) {
     kontrol(
       `tr → bant_${bant}`,

@@ -1,7 +1,8 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { hatirlananListe, listeyiHatirla } from "../src/lib/liste-hafizasi";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -166,7 +167,7 @@ console.log("§1 SAF GÖVDE — hatırlanan adres güvenli mi");
    * kodda ve cagri blogunda.
    */
   const bilesen = yorumsuz(
-    readFileSync("src/components/liste-hafizasi-bilesenleri.tsx", "utf8"),
+    kaynakOku("src/components/liste-hafizasi-bilesenleri.tsx"),
   );
   /**
    * ⚠ AYRIŞTIRICI `;` İLE KESİLEMEZ — K133'te kırıldı ve sebebi buydu.
@@ -238,7 +239,7 @@ const suzgecliRotalar = new Map<string, string[]>();
         ? "/"
         : "/" + duz.slice(kok.length + 1, -"/page.tsx".length);
     if (rota.includes("[")) continue;
-    const kaynak = readFileSync(yol, "utf8");
+    const kaynak = kaynakOku(yol);
     const m = /searchParams:\s*Promise<\{([^}]*)\}>/.exec(kaynak);
     if (!m) continue;
     const adlar = [...m[1].matchAll(/(\w+)\?:/g)].map((x) => x[1]);
@@ -273,7 +274,7 @@ console.log("§3 DESEN YASAĞI — süzgeçli listeye sabit href ile dönülemez
   let taranan = 0;
 
   for (const yol of dosyalar("src")) {
-    const kaynak = yorumsuz(readFileSync(yol, "utf8"));
+    const kaynak = yorumsuz(kaynakOku(yol));
     taranan += 1;
     /** ⛔ YASAK: süzgeçli bir rotaya SABİT `GeriBaglanti`. */
     for (const m of kaynak.matchAll(/<GeriBaglanti\s+href="([^"]+)"/g)) {
@@ -321,7 +322,7 @@ console.log("§3 DESEN YASAĞI — süzgeçli listeye sabit href ile dönülemez
       rota === "/" ? "src/app/page.tsx" : `src/app${rota}/page.tsx`;
     let kaynak = "";
     try {
-      kaynak = yorumsuz(readFileSync(sayfa, "utf8"));
+      kaynak = yorumsuz(kaynakOku(sayfa));
     } catch {
       kaydedicisiz.push(`${rota} → sayfa okunamadı (${sayfa})`);
       continue;

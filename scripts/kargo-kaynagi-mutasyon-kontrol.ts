@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
-import { desenNormalle } from "./mutasyon-deseni";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
@@ -172,14 +172,14 @@ for (const m of MUTASYONLAR) {
   const mutant = asil.replace(bul, koy);
   let sonuc: { kod: number; ciktiVar: boolean };
   try {
-    writeFileSync(m.dosya, mutant, "utf8");
+    dayanikliYaz(m.dosya, mutant);
     if (readFileSync(m.dosya, "utf8") !== mutant || mutant === asil) {
       bozuk.push(m.ad + "\n       mutasyon diske UYGULANMADI");
       continue;
     }
     sonuc = bekciyiKostur();
   } finally {
-    writeFileSync(m.dosya, asil, "utf8");
+    dayanikliYaz(m.dosya, asil);
   }
 
   const isaret = m.yon === "KALDIRAN" ? "-" : "+";

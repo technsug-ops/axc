@@ -10,7 +10,7 @@ import { tedarikciAdi, tedarikciAnahtari } from "../src/lib/tedarikci-adi";
 import { aramaKarari } from "../src/lib/kart-arama-karari";
 import { aramaKosulu } from "../src/lib/varyant-arama-kurali";
 import { kanalDesiOrtalamasi } from "../src/lib/urun-karti-verisi";
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -563,7 +563,7 @@ console.log("\nÜRÜN KÂRLILIK KARTI — DOĞRULAMA\n");
    * tedarikçi sipariş no üzerinden. Ortak aramaya EKLENMEDİ çünkü satış/alım
    * formlarında ürün seçerken sipariş numarası aramak yanıltıcı olurdu.
    */
-  const kaynak = readFileSync("src/lib/kart-arama-verisi.ts", "utf8");
+  const kaynak = kaynakOku("src/lib/kart-arama-verisi.ts");
   kontrol(
     "kart araması SATIŞ sipariş no'ya bakıyor",
     /prisma\.sale\.findMany/.test(kaynak),
@@ -606,7 +606,7 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
    * tamamında arasaydım hiçbir şey ayırt edemezdim. Bu yüzden desen
    * `sonAlimHareketi` BLOĞUNA daraltılarak aranıyor.
    */
-  const kaynak = readFileSync("src/lib/urun-karti-verisi.ts", "utf8");
+  const kaynak = kaynakOku("src/lib/urun-karti-verisi.ts");
 
   /**
    * ═══ ZİNCİRİN ORTA HALKASI — VERİ KATMANI (28.08.2026) ═════════════════
@@ -698,7 +698,7 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
     /sonAlimAcikMi,/.test(kaynak.slice(kaynak.lastIndexOf("return {"))),
   );
 
-  const kart = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  const kart = kaynakOku("src/app/kart/[variantId]/page.tsx");
   /**
    * ⚠ VE KOŞULUYLA BİRLİKTE ARANIYOR: yalnız `partiTukendi` anahtarını
    * arasaydım, koşulu `true`ya çeviren bir mutasyon (her zaman "tükendi"
@@ -709,7 +709,7 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
     /veri\.sonAlimAcikMi\s*\?\s*null\s*:\s*t\("partiTukendi"\)/.test(kart),
   );
 
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8"));
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json"));
   kontrol(
     "metin sözlükten",
     typeof sozluk.UrunKarti?.partiTukendi === "string" &&
@@ -732,10 +732,7 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
 //  KART KÜNYESİ — KDV · KATEGORİ · DESİ (24.08.2026)
 // ===========================================================================
 {
-  const kartEkrani = readFileSync(
-    "src/app/kart/[variantId]/page.tsx",
-    "utf8",
-  );
+  const kartEkrani = kaynakOku("src/app/kart/[variantId]/page.tsx");
   const kartKodu = kartEkrani.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, " ");
 
   kontrol("kartta KDV oranı yazıyor", /t\("kdvSatiri"/.test(kartKodu));
@@ -805,7 +802,7 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
    * — yarın eklenen bir `#RRGGBB` ya da ham Tailwind rengi kırmızı yanar.
    * Renk tek kaynaktan (`lib/renkler`) gelir, ekranda elle yazılmaz.
    */
-  const kartHam = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  const kartHam = kaynakOku("src/app/kart/[variantId]/page.tsx");
   const hexler = kartHam.match(/#[0-9a-fA-F]{6}\b/g) ?? [];
   kontrol(`kartta gömülü hex YOK (${hexler.length})`, hexler.length === 0, hexler);
   const hamRenkler =
@@ -839,7 +836,7 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
  *  üretirdi. _(Anayasa: "önce deseni say".)_
  * ══════════════════════════════════════════════════════════════════════════ */
 {
-  const kaynak = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  const kaynak = kaynakOku("src/app/kart/[variantId]/page.tsx");
   const bas = kaynak.indexOf('etiket={t("ortalamaMaliyet")}');
   const son = kaynak.indexOf('etiket={t("hiz")}');
   kontrol("ortalama maliyet kutusu bulunabiliyor", bas > 0 && son > bas);
@@ -941,7 +938,7 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
   );
 
   /** ⚠ EKRAN gövdeyi ÇAĞIRIYOR MU — kural burada, ekranda kopyalanmadı. */
-  const kartVerisiKaynagi = readFileSync("src/lib/urun-karti-verisi.ts", "utf8");
+  const kartVerisiKaynagi = kaynakOku("src/lib/urun-karti-verisi.ts");
   kontrol(
     "kartVerisiniTopla saf gövdeyi ÇAĞIRIYOR (kopyalanmadı)",
     /const kanalDesi = kanalDesiOrtalamasi\(/.test(kartVerisiKaynagi),
@@ -949,10 +946,7 @@ console.log("\nSON ALIM — geçmiş sorusu, stok sorusu DEĞİL");
 
   /** ⚠ EKRAN VERİ YOKKEN SATIRI HİÇ ÇİZMİYOR (İlke #12 — her üründe
    *  "kanal verisi yok" yazmak gürültü üretirdi). */
-  const kartEkraniKaynagi = readFileSync(
-    "src/app/kart/[variantId]/page.tsx",
-    "utf8",
-  );
+  const kartEkraniKaynagi = kaynakOku("src/app/kart/[variantId]/page.tsx");
   kontrol(
     "kanalDesi null iken blok HİÇ render edilmiyor (veri.kanalDesi !== null şartı var)",
     /veri\.kanalDesi !== null/.test(kartEkraniKaynagi),

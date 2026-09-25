@@ -668,7 +668,7 @@ Harness: **+14 mutasyon** — 84/84 (14 yeni hepsi kirmizi yandi; iki kor nokta 
 
 ---
 
-## 🟡 K269 — `uyari:dogrula` ve `cron-yollari:dogrula` MUTASYON HARNESS'İ YOK · 24.09.2026 · [ELLE TUR KOŞTU — KALICISI AÇIK]
+## 🟢 K269 — `uyari:dogrula` ve `cron-yollari:dogrula` MUTASYON HARNESS'İ YOK · 24.09.2026 · [KALICISI YAZILDI 25.09 — 10/10]
 
 K264 ve K266 bu iki bekçiye **11 yeni ölçüt** ekledi; ikisinin de mutasyon
 harness'i yok (ölçüldü: `scripts/*mutasyon*.ts` içinde ikisine de çapa yok).
@@ -696,9 +696,15 @@ TS'e çevrilir), `package.json`a bekçi olarak eklenir — böylece
 **AÇILIŞ ŞARTI:** bu iki bekçiye bir sonraki ölçüt eklendiğinde (ya da
 K262/K263 paketi açıldığında — üçü de «bekçi altyapısı» ailesi).
 
+─── ② YAPILDI · 25.09.2026 — `scripts/uyari-cron-mutasyon-kontrol.ts` (`uyari-cron-mutasyon:kontrol`)
+
+Elle koşulan Python turunun birebir TS hâli; bekçi turuna girer. Her mutasyon KENDİ bekçisini
+koşturur (uyari · cron-yollari · ice-aktarma); çöken bekçi «ısırdı» sayılmaz. **10/10** (2
+zararsız yeşil + 8 ısırdı).
+
 ---
 
-## 🟡 K263 — HARNESS YAZIMLARI ORTAK DAYANIKLI KAPIDAN · 24.09.2026 · [AÇIK — KOMUT VERİLMEDİ]
+## 🟢 K263 — HARNESS YAZIMLARI ORTAK DAYANIKLI KAPIDAN · 24.09.2026 · [KOD KOŞTU 25.09]
 
 K251-②'nin genel hâli. Ölçüldü (24.09): **36 mutasyon harness'i** kaynağa
 çıplak `writeFileSync` ile yazıyor; Windows geçici kilidi (`UNKNOWN`, errno
@@ -714,9 +720,18 @@ kapıyı atlayan yeni harness kırmızı. Dosya listesi tutulmaz.
 imzayla çökmesi — hangisi önce gelirse. K262 (okuma kapısı) ile aynı pakette
 gidebilir: ikisi de «bekçi altyapısı tek kapıdan» ailesi.
 
+─── ② YAPILDI · 25.09.2026 (K262 ile tek paket)
+
+**36 harness'te 73 yazım** → `dayanikliYaz` (aynı ayrıştırıcı dönüşümü, çevrilemeyen 0).
+Harness'ler OKUMAK için `readFileSync` tutar — geri alma baytı birebir olmalı, normalleşmiş metin
+dosyanın satır sonunu değiştirirdi. Desen yasağı `bekci-kapisi:dogrula` ②: `scripts/*mutasyon*.ts`
+`writeFileSync`i içeri alamaz (tek istisna `mutasyon-deseni.ts`). Çakışma tarayıcısı
+(`mutasyon-hedefleri.ts`) artık `dayanikliYaz` çağrısını da hedef sayıyor — yoksa yalnız onunla
+yazan harness'in hedefi görünmez, çakışma bekçisi körleşirdi (ayrı mutasyonla sınandı).
+
 ---
 
-## 🟡 K262 — BEKÇİLERE ORTAK OKUMA KAPISI: KAYNAK SATIR SONUNDAN BAĞIMSIZ OKUNUR · 24.09.2026 · [AÇIK — KOMUT VERİLMEDİ]
+## 🟢 K262 — BEKÇİLERE ORTAK OKUMA KAPISI: KAYNAK SATIR SONUNDAN BAĞIMSIZ OKUNUR · 24.09.2026 · [KOD KOŞTU 25.09 — kullanıcı komutu «yapalım bunları»]
 
 K258-②'nin genel hâli. Ölçüldü (24.09): **87 bekçide 613** çıplak
 `readFileSync` çağrısı; **12 bekçide** `\n` taşıyan dize çapası (api ·
@@ -735,6 +750,24 @@ tutulmaz — desen yasağı yarın eklenen bekçiyi de kapsar.
 **AÇILIŞ ŞARTI:** bir sonraki bekçi paketi ya da ikinci bir satır sonu
 kırılması — hangisi önce gelirse. Panel bekçisi bugün kendi kapısıyla korunuyor
 (K258-②); bu kalem o kapıyı ORTAK yapar.
+
+─── ② YAPILDI · 25.09.2026 (K263 + K269 ile TEK paket)
+
+`scripts/kaynak-oku.ts` → `kaynakOku` (CRLF · tek CR · BOM normalleşir) ve `hamOku` (bayt).
+Dönüşüm **düz metin değişimiyle DEĞİL, TypeScript ayrıştırıcısıyla** yapıldı (çok satıra yayılan
+çağrılar düz metinle bozulurdu): **88 bekçide 645 okuma** → `kaynakOku`, çevrilemeyen **0**.
+Panel bekçisinin K258-② yerel kapısı ortak kapıya taşındı (gerekçe yorumu yerinde bırakıldı).
+
+⭐ **KARŞILAŞTIRMA TABANI:** paketten ÖNCE ve SONRA 111 hızlı bekçi koşuldu; çıkış kodları ve
+özet satırları **birebir aynı** (0 fark) — normalleşme hiçbir bekçinin saydığını değiştirmedi.
+Tek fark `mutasyon-capa:dogrula` oldu ve GERÇEK bir bulguydu: yeni kapı harness'imin bir
+çapası, hiç dosya okumayan `rapor-dogrula`yı varsaymıştı → çapa kopuk, «ölçülemedi» dendi,
+yeşil sayılmadı. Çapa doğru bekçiye taşındı.
+
+**Desen yasağı** — `bekci-kapisi:dogrula` (22 kontrol, sayaçlı): `scripts/*-dogrula.ts`
+`readFileSync`i doğrudan içeri alamaz (takma ad · ad alanı · `require` dahil); yorumsuz taranır;
+taban doluluğu iki yönden. ⚠ İLK KOŞUMDA GERÇEK İHLAL BULDU: panel bekçisi `readFileSync`i takma
+adla almıştı (yerel kapı) — kaldırıldı. Harness `bekci-kapisi-mutasyon:kontrol` **5/5**.
 
 ---
 

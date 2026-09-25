@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 
 import {
   hbKargoDamgasi,
@@ -7,6 +7,7 @@ import {
   teslimGuncellemesi,
   teslimYazimiVarMi,
 } from "../src/lib/kanal-kargo-damgasi";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -316,7 +317,7 @@ console.log("\n  ── İÇE AKTARMALAR (uydurma tarih yasağı)");
 const ICE_AKTARMALAR = readdirSync("scripts")
   .filter((a) => a.startsWith("canli-") && a.endsWith("-ice-aktar.ts"))
   .map((a) => "scripts/" + a);
-const KAYNAKLAR = new Map(ICE_AKTARMALAR.map((y) => [y, readFileSync(y, "utf8")]));
+const KAYNAKLAR = new Map(ICE_AKTARMALAR.map((y) => [y, kaynakOku(y)]));
 
 /**
  * ⭐ İKİ ALAN, TEK DÖNGÜ (K195-2). Kargo ve teslim damgası AYNI yasağa tabi;

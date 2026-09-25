@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
-import { desenNormalle } from "./mutasyon-deseni";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
@@ -430,7 +430,7 @@ for (const m of MUTASYONLAR) {
   const mutant = asil.replace(bul, koy);
   let sonuc: { kod: number; ciktiVar: boolean };
   try {
-    writeFileSync(m.dosya, mutant, "utf8");
+    dayanikliYaz(m.dosya, mutant);
     const diskten = readFileSync(m.dosya, "utf8");
     if (diskten !== mutant || mutant === asil) {
       bozuk.push(`${m.ad}\n       mutasyon diske UYGULANMADI`);
@@ -439,7 +439,7 @@ for (const m of MUTASYONLAR) {
     sonuc = bekciyiKostur(m);
   } finally {
     /** ⛔ `git checkout` DEĞİL: dosya commit edilmemiş olabilir. */
-    writeFileSync(m.dosya, asil, "utf8");
+    dayanikliYaz(m.dosya, asil);
     if (readFileSync(m.dosya, "utf8") !== asil) {
       bozuk.push(`${m.ad}\n       ⛔ GERİ ALMA BAŞARISIZ — dosya mutasyonlu kaldı`);
     }

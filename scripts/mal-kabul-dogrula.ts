@@ -1,7 +1,8 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { kabulHareketKosulu, kabulKosulu, kabulGunu } from "../src/lib/panel/kabul-sayimi";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -111,7 +112,7 @@ console.log("\n2) panelde çıplak `purchasedAt` yasağı");
   for (const ad of readdirSync(kok)) {
     const yol = join(kok, ad);
     if (!statSync(yol).isFile() || !ad.endsWith(".ts")) continue;
-    const ham = readFileSync(yol, "utf8");
+    const ham = kaynakOku(yol);
     const kod = yorumsuz(ham);
     if (!/purchasedAt/.test(kod)) continue;
     /** Beyan YORUMDA da olabilir — bilinçli bir karardır, koda gömülmez. */
@@ -128,7 +129,7 @@ console.log("\n2) panelde çıplak `purchasedAt` yasağı");
   );
 
   /** ⚠ VE BEYANIN KENDİSİ DE ÖLÇÜLÜR: istisna gerçekten VAR olmalı. */
-  const takvim = readFileSync("src/lib/panel/takvim-verisi.ts", "utf8");
+  const takvim = kaynakOku("src/lib/panel/takvim-verisi.ts");
   kontrol(
     "kart takvimi istisnası BEYAN EDİLMİŞ",
     takvim.includes(BEYAN),
@@ -139,7 +140,7 @@ console.log("\n2) panelde çıplak `purchasedAt` yasağı");
    * KULLANMAK ZORUNDA — kullanıcının saydığı dört kalemin birincisi
    * "benim tarafımdan satın alınan ürünler", yani SİPARİŞ VERME günü.
    */
-  const gorev = readFileSync("src/lib/panel/gorev-verisi.ts", "utf8");
+  const gorev = kaynakOku("src/lib/panel/gorev-verisi.ts");
   kontrol(
     "sipariş serisi istisnası BEYAN EDİLMİŞ",
     new RegExp(ISARET + "\\s*\\S+").test(gorev),
@@ -160,7 +161,7 @@ kosanBolumler.push("desen yasağı");
 // --- 3) SAYI = LİSTE: TEK SORGU, TEK EKSEN ------------------------------
 console.log("\n3) toplam ile seri AYNI kayıtlardan");
 {
-  const ham = readFileSync("src/lib/panel/gorev-verisi.ts", "utf8");
+  const ham = kaynakOku("src/lib/panel/gorev-verisi.ts");
   const bas = ham.indexOf("export async function donemAlimi");
   const son = ham.indexOf("export async function", bas + 10);
   const blok = ham.slice(bas, son > bas ? son : bas + 4000);
@@ -217,7 +218,7 @@ console.log("\n3) toplam ile seri AYNI kayıtlardan");
    * _(Anayasa: "aynı desen birden çok yerde geçiyorsa tarama ikincisini
    * bulur"; bu deponun en sık tekrarlayan körlüğü.)_
    */
-  const panel = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
+  const panel = yorumsuz(kaynakOku("src/app/page.tsx"));
   /**
    * ⚠ ÖLÇÜT ESKİDİ, SUSTURULMADI — PENCERE İKİ YÖNE AÇILDI (K253, 23.09.2026).
    * Eski kutuda `etiket` önce, `href` sonra geliyordu; pencere etiketten
@@ -264,7 +265,7 @@ console.log("\n4) rozet tutamayacağı sözü vermiyor");
    * ⚠ ÖLÇÜT SÖZLÜK DEĞERLERİNDE — ekranda GÖRÜNEN metin orada. Kaynak
    * dosyada aramak yalnız anahtarı bulurdu ve anahtar masumdur.
    */
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as Record<
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as Record<
     string,
     Record<string, string>
   >;
@@ -284,7 +285,7 @@ console.log("\n4) rozet tutamayacağı sözü vermiyor");
   kontrol("`kodYok` metni tanımlı", (bolum.kodYok ?? "").trim() !== "");
 
   /** ⛔ `isActive` EKRANDA GÖSTERİLMEZ — bizim bayrağımız, kanalın durumu değil. */
-  const ekran = yorumsuz(readFileSync("src/app/mal-kabul/page.tsx", "utf8"));
+  const ekran = yorumsuz(kaynakOku("src/app/mal-kabul/page.tsx"));
   kontrol(
     "ekran `isActive` değerini BASMIYOR",
     !/\{[^}]*isActive[^}]*\}\s*</.test(ekran),
@@ -305,7 +306,7 @@ console.log("\n4) rozet tutamayacağı sözü vermiyor");
    */
   kontrol("  ...ve ürün kimliğini TAŞIYOR (`ekle=`)", /&ekle=\$\{/.test(ekran));
 
-  const kanalSayfa = yorumsuz(readFileSync("src/app/kanal-sku/page.tsx", "utf8"));
+  const kanalSayfa = yorumsuz(kaynakOku("src/app/kanal-sku/page.tsx"));
   kontrol(
     "  ...kanal-SKU sayfası `ekle` parametresini OKUYOR",
     /ekle\?:\s*string/.test(kanalSayfa) && /=\s*await searchParams/.test(kanalSayfa),
@@ -319,7 +320,7 @@ console.log("\n4) rozet tutamayacağı sözü vermiyor");
     /onDolu=\{onDoluVaryant\}/.test(kanalSayfa),
   );
 
-  const form = yorumsuz(readFileSync("src/app/kanal-sku/yeni-esleme.tsx", "utf8"));
+  const form = yorumsuz(kaynakOku("src/app/kanal-sku/yeni-esleme.tsx"));
   /**
    * ⚠ SON HALKA: form onu GERÇEKTEN başlangıç değeri yapıyor mu? Prop'u
    * alıp kullanmamak, en sessiz kopuş biçimi — hiçbir hata çıkmaz, alan
@@ -348,16 +349,16 @@ console.log("\n5) panel «Mal kabul» = listenin gelen adeti (K277)");
   kontrol("  ...aralık KABUL günüyle (receivedAt)", k.purchaseItem.purchase.receivedAt === ara);
   kontrol("  ...aralık yoksa kabul edilmemiş alım girmez", JSON.stringify(kabulHareketKosulu().purchaseItem.purchase.receivedAt) === JSON.stringify({ not: null }));
 
-  const liste = yorumsuz(readFileSync("src/app/mal-kabul/page.tsx", "utf8"));
+  const liste = yorumsuz(kaynakOku("src/app/mal-kabul/page.tsx"));
   kontrol("liste koşulu ORTAK gövdeden", (liste.match(/where: kabulHareketKosulu\(pencere\.aralik\)/g) ?? []).length === 1);
   kontrol("  ...liste kendi kopyasını yazmıyor (satır içi PURCHASE_IN yok)", !/type:\s*"PURCHASE_IN"/.test(liste));
 
-  const gorev = yorumsuz(readFileSync("src/lib/panel/gorev-verisi.ts", "utf8"));
+  const gorev = yorumsuz(kaynakOku("src/lib/panel/gorev-verisi.ts"));
   kontrol("panel gelen adeti AYNI gövdeden, ledger toplamıyla",
     /stockMovement\.aggregate\(\{\s*where: kabulHareketKosulu\(\{ gte: pencere\.baslangic, lt: pencere\.bitisHaric \}\),\s*_sum: \{ quantityDelta: true \}/.test(gorev) &&
       /gelenAdet: gelen\._sum\.quantityDelta \?\? 0/.test(gorev));
 
-  const panel = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
+  const panel = yorumsuz(kaynakOku("src/app/page.tsx"));
   const bas = panel.indexOf('{t("malKabulAdedi")}');
   const cip = bas >= 0 ? panel.slice(bas, panel.indexOf("</Baglanti>", bas)) : "";
   kontrol("panel çipi GELEN ADETİ yazıyor", bas >= 0 && /\{alim\.gelenAdet\}/.test(cip));
@@ -370,7 +371,7 @@ console.log("\n5) panel «Mal kabul» = listenin gelen adeti (K277)");
    * Aynı ad iki farklı sayıyı taşıyordu; görev etiketi «Mal kabul bekleyen» oldu.
    * Ölçüt DEĞERLE: iki etiket aynı olamaz, görev etiketi BEKLEMEyi söyler.
    */
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
     Panel: Record<string, string>;
     Gorevler: { kisa: Record<string, string> };
   };

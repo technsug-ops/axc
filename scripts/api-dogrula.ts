@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import { join } from "node:path";
 
 /**
@@ -113,7 +114,7 @@ const apiDosyalari = tumDosyalar
   .filter((y) => y !== KENDI)
   .filter((y) => {
     try {
-      const icerik = readFileSync(y, "utf8");
+      const icerik = kaynakOku(y);
       return (
         API_IZLERI.some((iz) => icerik.includes(iz)) ||
         ISTEMCI_IZLERI.some((iz) => icerik.includes(iz))
@@ -188,11 +189,11 @@ const KANALA_YAZMASI_BEYANLI = new Map<string, { gerekce: string; bekcisi: strin
 ]);
 
 for (const yol of apiDosyalari) {
-  const y = yorumsuzla(readFileSync(yol, "utf8"));
+  const y = yorumsuzla(kaynakOku(yol));
   const bulunanlar = YASAK.filter((x) => y.includes(x.desen)).map((x) => x.ad);
   const kanalBeyani = KANALA_YAZMASI_BEYANLI.get(yol.split("\\").join("/"));
   if (kanalBeyani) {
-    const komutlar = JSON.parse(readFileSync("package.json", "utf8")) as {
+    const komutlar = JSON.parse(kaynakOku("package.json")) as {
       scripts: Record<string, string>;
     };
     kontrol(
@@ -272,7 +273,7 @@ import { YAZMASI_BEYANLI } from "./yazici-beyani";
 for (const yol of apiDosyalari) {
   const dosyaAdi = yol.split(new RegExp("[\\\\/]")).pop() ?? yol;
   const beyan = YAZMASI_BEYANLI.find((b) => b.dosya === dosyaAdi);
-  const y = yorumsuzla(readFileSync(yol, "utf8"));
+  const y = yorumsuzla(kaynakOku(yol));
   if (!prismayaUlasiyorMu(y)) {
     kontrol(`  ${yol} — prisma istemcisi ALMIYOR, yazamaz`, true);
     continue;
@@ -284,7 +285,7 @@ for (const yol of apiDosyalari) {
      * doğrulaması `package.json`da KAYITLI olmalı — yoksa liste, denetimi
      * kaldırmanın kolay yoluna dönerdi.
      */
-    const komutlar = JSON.parse(readFileSync("package.json", "utf8")) as {
+    const komutlar = JSON.parse(kaynakOku("package.json")) as {
       scripts: Record<string, string>;
     };
     kontrol(
@@ -334,7 +335,7 @@ console.log("\n2b) SALT OKUMA BEYANI OLAN API UCU YAZMAZ");
 
 const beyanliUclar = dosyalar("src/app/api").filter((y) => {
   try {
-    return readFileSync(y, "utf8").includes("SALT OKUMA");
+    return kaynakOku(y).includes("SALT OKUMA");
   } catch {
     return false;
   }
@@ -343,7 +344,7 @@ const beyanliUclar = dosyalar("src/app/api").filter((y) => {
 kontrol("beyanlı uç bulundu", beyanliUclar.length > 0, beyanliUclar);
 
 for (const yol of beyanliUclar) {
-  const y = yorumsuzla(readFileSync(yol, "utf8"));
+  const y = yorumsuzla(kaynakOku(yol));
   const bulunanlar = prismaYazmalari(y);
   kontrol(`  ${yol} — yazma çağrısı yok`, bulunanlar.length === 0, bulunanlar);
   /**
@@ -362,7 +363,7 @@ for (const yol of beyanliUclar) {
 console.log("\n3) ANAHTAR DEĞERİ EKRANA BASILMIYOR");
 
 for (const yol of apiDosyalari) {
-  const y = yorumsuzla(readFileSync(yol, "utf8"));
+  const y = yorumsuzla(kaynakOku(yol));
   const satirlar = y.split(/\r?\n/).filter((l) => l.includes("console.log"));
   /** Değer sızıntısı: anahtarı taşıyan DEĞİŞKENİN basılması. */
   const sizan = satirlar.filter((l) => /\.\s*(key|secret)\b/.test(l));
@@ -393,7 +394,7 @@ const cronUclari = dosyalar("src/app/api/cron").filter(
 kontrol(`cron ucu bulundu (${cronUclari.length})`, cronUclari.length >= 5, cronUclari);
 
 for (const yol of cronUclari) {
-  const y = yorumsuzla(readFileSync(yol, "utf8"));
+  const y = yorumsuzla(kaynakOku(yol));
   /** ⚠ ADA DEĞİL KULLANIMA: `CRON_SECRET` kelimesi hata METNİNDE de geçer. */
   kontrol(`  ${yol} — sır ORTAMDAN okunuyor`, y.includes("process.env.CRON_SECRET"));
   kontrol(`    ...ve karşılaştırılıyor`, /Bearer \$\{sir\}/.test(y));

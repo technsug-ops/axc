@@ -55,7 +55,7 @@ export function gercekHedefler(harnessYolu: string): string[] {
 
   const hedefler = new Set<string>();
   for (const m of metin.matchAll(
-    /(?:readFileSync|writeFileSync)\(\s*([A-Za-z_.]+|"[^"]+")\s*,/g,
+    /(?:readFileSync|writeFileSync|dayanikliYaz)\(\s*([A-Za-z_.]+|"[^"]+")\s*,/g,
   )) {
     const arg = m[1]!;
     if (arg.startsWith('"')) {

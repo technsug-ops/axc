@@ -1,5 +1,6 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { dayanikliYaz } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
@@ -374,7 +375,7 @@ for (const m of MUTASYONLAR) {
 
   let sonuc: Sonuc;
   try {
-    writeFileSync(m.dosya, mutant, "utf8");
+    dayanikliYaz(m.dosya, mutant);
 
     // ── Kapı 2: mutasyon GERÇEKTEN uygulandı mı (diskten okunur) ───────────
     const diskten = readFileSync(m.dosya, "utf8");
@@ -385,7 +386,7 @@ for (const m of MUTASYONLAR) {
 
     sonuc = bekciyiKostur();
   } finally {
-    writeFileSync(m.dosya, asil, "utf8");
+    dayanikliYaz(m.dosya, asil);
   }
 
   const isaret = m.yon === "KALDIRAN" ? "−" : "+";

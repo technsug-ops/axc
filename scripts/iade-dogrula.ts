@@ -17,7 +17,7 @@
 
 import "dotenv/config";
 
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   cezaOnerisi,
@@ -446,10 +446,7 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
   );
 
   /** İKİ YOL DA AYNI PARÇALARI ÇAĞIRIYOR MU (kopya kalmadı mı). */
-  const onizlemeKaynagi = readFileSync(
-    "src/app/satislar/[id]/iade/actions.ts",
-    "utf8",
-  );
+  const onizlemeKaynagi = kaynakOku("src/app/satislar/[id]/iade/actions.ts");
   kontrol(
     "önizleme paylaşılan parçaları çağırıyor",
     onizlemeKaynagi.includes("satisCikisMaliyeti(") &&
@@ -476,7 +473,7 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
     /\bacikPartiler\(\s*prisma,\s*g\.exchangeVariantId\b/.test(onizlemeKaynagi) &&
       !onizlemeKaynagi.includes("quantityDelta: { gt: 0 }"),
   );
-  const kayitKaynagi = readFileSync("src/lib/iade.ts", "utf8");
+  const kayitKaynagi = kaynakOku("src/lib/iade.ts");
   kontrol(
     "kayıt da aynı parçaları çağırıyor",
     kayitKaynagi.includes("satisCikisMaliyeti(kalem.stockMovements)") &&
@@ -739,10 +736,10 @@ function iadeNotuEkranda() {
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
   const bilesen = yorumsuz(
-    readFileSync("src/components/iade-blogu.tsx", "utf8"),
+    kaynakOku("src/components/iade-blogu.tsx"),
   );
   const sayfa = yorumsuz(
-    readFileSync("src/app/satislar/[id]/page.tsx", "utf8"),
+    kaynakOku("src/app/satislar/[id]/page.tsx"),
   );
 
   /** ① TİP HALKASI — görünüm tipi alanı taşıyor mu. */
@@ -788,7 +785,7 @@ function iadeNotuEkranda() {
 
   /** ④ SÖZLÜK HALKASI — anahtar İKİ dilde de var mı (biri boş iskelet). */
   for (const dosya of ["messages/tr.json", "messages/en.json"]) {
-    const sozluk = JSON.parse(readFileSync(dosya, "utf8")) as {
+    const sozluk = JSON.parse(kaynakOku(dosya)) as {
       Iade?: Record<string, string>;
     };
     kontrol(
@@ -940,7 +937,7 @@ async function cezaTesti() {
       }) !== null,
     );
     {
-      const motor = readFileSync("src/lib/iade.ts", "utf8");
+      const motor = kaynakOku("src/lib/iade.ts");
       /** RETURN_IN kapısı — desen SATIRIN KENDİSİ, ad değil. */
       kontrol(
         "tarihsel kip: RETURN_IN bloğu stokYazilmaz kapılı",

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import { TEMALAR } from "../src/components/tema-secici";
 
 /**
@@ -43,7 +43,7 @@ function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   }
 }
 
-const oku = (yol: string) => readFileSync(yol, "utf8");
+const oku = (yol: string) => kaynakOku(yol);
 
 /**
  * Yorumları söker.

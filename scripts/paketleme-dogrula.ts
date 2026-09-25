@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   PAKETLEME_ADIMLARI,
@@ -230,7 +230,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
  */
 {
   console.log("\n5) EKRAN KURALI ÇAĞIRIYOR");
-  const ekran = readFileSync("src/app/paketle/paketleyici.tsx", "utf8");
+  const ekran = kaynakOku("src/app/paketle/paketleyici.tsx");
   const yorumsuz = ekran
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
@@ -358,7 +358,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   }
   /** ⚠ ÜÇ SÖZLÜK ANAHTARI DA DOLU — boş kalan bir cümle sessiz bir boşluk üretir. */
   const paketSozlukK203 = (
-    JSON.parse(readFileSync("messages/tr.json", "utf8")) as { Paketle: Record<string, string> }
+    JSON.parse(kaynakOku("messages/tr.json")) as { Paketle: Record<string, string> }
   ).Paketle;
   for (const anahtar of ["eslesti", "eslestiDevamEdiyor", "eslestiZatenTam"]) {
     kontrol(
@@ -391,7 +391,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
 // --- 6) SUNUCU EYLEMİ — SÜZGEÇ ÇAĞRI YERİNDE -------------------------------
 {
   console.log("\n6) SUNUCU EYLEMİ");
-  const eylem = readFileSync("src/app/paketle/actions.ts", "utf8");
+  const eylem = kaynakOku("src/app/paketle/actions.ts");
   const yorumsuz = eylem.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
   /**
@@ -472,7 +472,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
 
   /** ⚠ MESAJ, KULLANICININ YAPACAĞI İŞİ ADIYLA SÖYLEMELİ (İlke #5). */
   const paketSozluk = (
-    JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    JSON.parse(kaynakOku("messages/tr.json")) as {
       Paketle: Record<string, string>;
     }
   ).Paketle;
@@ -562,7 +562,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
 
   /** ⛔ GÖVDE ÇALIŞIP EKRAN ÇİZMEZSE HİÇBİR ŞEY DEĞİŞMEZ (K121 dersi). */
   {
-    const urunEkrani = readFileSync("src/app/paketle/paketleyici.tsx", "utf8")
+    const urunEkrani = kaynakOku("src/app/paketle/paketleyici.tsx")
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
       .replace(/\/\*[\s\S]*?\*\//g, " ");
     kontrol(
@@ -590,7 +590,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
 {
   console.log("");
   console.log("8) KÖPRÜ — TEK YÖNLÜ, YALNIZ SİPARİŞ DALINDA");
-  const okuyucu = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
+  const okuyucu = kaynakOku("src/app/okut/okuyucu.tsx");
   const oY = okuyucu
     .replace(/[/][*][^]*?[*][/]/g, "")
     .replace(/[{][/][*][^]*?[*][/][}]/g, "");
@@ -617,13 +617,13 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   );
 
   /** ⚠ ADRESLE GELEN KOD, ELLE OKUTULANLA AYNI KAPIDAN GİRER. */
-  const sayfa = readFileSync("src/app/paketle/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/paketle/page.tsx");
   const sY = sayfa.replace(/[/][*][^]*?[*][/]/g, "");
   kontrol("?kod= aynı arama işlevinden geçiyor", sY.includes("paketlemeIcinAra("));
   kontrol("  ...ve searchParams okunuyor", sY.includes("searchParams"));
 
   /** ⚠ TERS YÖN AÇILMAMALI. */
-  const ekranY = readFileSync("src/app/paketle/paketleyici.tsx", "utf8")
+  const ekranY = kaynakOku("src/app/paketle/paketleyici.tsx")
     .replace(/[/][*][^]*?[*][/]/g, "")
     .replace(/[{][/][*][^]*?[*][/][}]/g, "");
   kontrol(
@@ -741,7 +741,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   );
 
   /* ═══ EKRAN — İKİ "YAPMAMA" İDDİASI ═════════════════════════════════ */
-  const pEkran = readFileSync("src/app/paketle/paketleyici.tsx", "utf8");
+  const pEkran = kaynakOku("src/app/paketle/paketleyici.tsx");
   const pY = pEkran
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
@@ -788,7 +788,7 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   /** ⚠ Raf notu YOKSA hiç çıkmaz — sönmeyen kutu okunmaz olur. */
   kontrol("raf notu yoksa kutu HİÇ çıkmıyor", /\{rafNotu \? \(/.test(pEkran));
 
-  const sozlukP = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozlukP = JSON.parse(kaynakOku("messages/tr.json")) as {
     Paketle: Record<string, string>;
   };
   /**

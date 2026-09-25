@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -32,8 +32,8 @@ function yorumsuz(kaynak: string): string {
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
 }
 
-const actions = yorumsuz(readFileSync("src/app/alimlar/actions.ts", "utf8"));
-const form = yorumsuz(readFileSync("src/app/alimlar/alim-formu.tsx", "utf8"));
+const actions = yorumsuz(kaynakOku("src/app/alimlar/actions.ts"));
+const form = yorumsuz(kaynakOku("src/app/alimlar/alim-formu.tsx"));
 
 // ── ZOD: iki yönlü kapı — superRefine bloğuna daraltılmış ──────────────────
 const refBasi = actions.indexOf(".superRefine((k, ctx) =>");

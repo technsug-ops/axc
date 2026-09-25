@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   SIRALAMA_ALANLARI,
@@ -245,7 +245,7 @@ console.log("\n§3 SIRALAMA — hareketsiz kayıt kaybolmuyor, sona gidiyor");
 console.log("\n§4 EKRAN — sıra SÜZGECİN TAMAMI üzerinde kuruluyor");
 // ═══════════════════════════════════════════════════════════════════════
 {
-  const sayfa = readFileSync("src/app/stok/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/stok/page.tsx");
 
   /**
    * ⛔ EN PAHALI HATA: sayfayı çekip ELDEKİ 50 satırı sıralamak. Ekran
@@ -316,7 +316,7 @@ console.log("\n§4 EKRAN — sıra SÜZGECİN TAMAMI üzerinde kuruluyor");
     "Excel indirmesi sıfır süzgecini taşıyor",
     /stok: stokSuzgeciAcik \? "var" : undefined/.test(excelBloku),
   );
-  const disaAktarma = readFileSync("src/lib/disa-aktarma/listeler.ts", "utf8");
+  const disaAktarma = kaynakOku("src/lib/disa-aktarma/listeler.ts");
   /**
    * ⛔ VE ÖLÇÜT PAYLAŞILAN GÖVDEDEN. Excel kendi `!== 0`unu yazsaydı biri
    * gün gelip `> 0` olur, ikisi sessizce ayrışırdı.
@@ -327,7 +327,7 @@ console.log("\n§4 EKRAN — sıra SÜZGECİN TAMAMI üzerinde kuruluyor");
   );
 
   /** Süzgeç ve sıra ekranda GÖRÜNÜR — sessiz süzgeç yasak. */
-  const cubuk = readFileSync("src/app/stok/sirala-suzgec.tsx", "utf8");
+  const cubuk = kaynakOku("src/app/stok/sirala-suzgec.tsx");
   kontrol(
     "sıralama çubuğu ekranda çiziliyor",
     /<SiralaSuzgec/.test(sayfa) && /export async function SiralaSuzgec/.test(cubuk),
@@ -412,7 +412,7 @@ console.log("\n§5 KÂR CÜMLESİ — satış fiyatı, maliyet ve adet bir arada
     birimSatisFiyati({ ...satir, hesaplananAdet: 0 }) === null,
   );
 
-  const kart = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  const kart = kaynakOku("src/app/kart/[variantId]/page.tsx");
   /**
    * ⚠ PENCERE ÖLÇÜLDÜ, TAHMİN EDİLMEDİ: `karBaslik` ile son ölçütün aradığı
    * `tekSatisMi` arasındaki mesafe **3951 karakter**. İlk yazımda 3600
@@ -477,7 +477,7 @@ console.log("");
 console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
 // ═══════════════════════════════════════════════════════════════════════
 {
-  const kart = readFileSync("src/app/kart/[variantId]/page.tsx", "utf8");
+  const kart = kaynakOku("src/app/kart/[variantId]/page.tsx");
   /**
    * ⚠ ÖLÇÜT 30.08.2026'DA PENCEREDEN KURTARILDI — VE NİYE, BURADA YAZAR.
    * Önce `blok(kart, "mx-auto max-w-3xl", 400)` penceresi kullanılıyordu.
@@ -577,10 +577,7 @@ console.log("§6 KART DÜZENİ — geniş ekranda iki sütun, mobilde tek");
    * (olumlu/olumsuz/uyarı); fiyat denemesine renk koymak olmayan bir hüküm
    * iddia ederdi. Vurgu `shadow` ile — biri renge çevirirse burası yanar.
    */
-  const deneKaynak = readFileSync(
-    "src/app/kart/[variantId]/fiyat-dene.tsx",
-    "utf8",
-  );
+  const deneKaynak = kaynakOku("src/app/kart/[variantId]/fiyat-dene.tsx");
   /**
    * ⛔ PENCERE DEĞİL, NİTELİĞİN TAMAMI — VE BUNU MUTASYON ÖĞRETTİ.
    * Önce `blok(deneKaynak, "space-y-4 rounded-xl border p-4", 120)` vardı:
@@ -662,7 +659,7 @@ console.log("§7 SÜZGEÇ KALICILIĞI — detaya girip dönünce filtre DURUYOR"
    * _(Anayasa: "ölçüt YORUMSUZ KODDA arar — bir davranışı anlatan yorum,
    * o davranış silinse bile deseni ayakta tutar".)_
    */
-  const arama = yorumsuz(readFileSync("src/app/stok/stok-arama.tsx", "utf8"));
+  const arama = yorumsuz(kaynakOku("src/app/stok/stok-arama.tsx"));
 
   /**
    * ⛔ KULLANICI BULGUSU (K104): "Anker" arayıp sıralayınca, ikinci aramada

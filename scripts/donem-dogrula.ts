@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -11,6 +11,7 @@ import { betikDonemKarari, donemIstisnaIzi } from "../src/lib/donem-kapisi";
 import { PENCERE_TURLERI, gunMetni, pencereOlustur } from "../src/lib/donem";
 import { kiyasPenceresi } from "../src/lib/karsilastirma";
 import { israrGecerliMi } from "../src/lib/sayim-korumasi";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -180,7 +181,7 @@ console.log("§4 BAĞLANTI — beş yolun her biri kapıyı ÇAĞIRIYOR mu");
     ["içe aktarma", "src/lib/ice-aktarma/yaz.ts", "BETIK"],
   ];
   for (const [ad, yol, tur] of YOLLAR) {
-    const kod = yorumsuz(readFileSync(yol, "utf8"));
+    const kod = yorumsuz(kaynakOku(yol));
     const cagri = tur === "EKRAN" ? "donemKapisi(" : "betikDonemKarari(";
     kontrol(`${ad}: kapıyı İÇERİ ALIYOR`, kod.includes("donem-kapisi"));
     kontrol(`  ...${ad}: ve GERÇEKTEN ÇAĞIRIYOR (${cagri})`, kod.includes(cagri));
@@ -190,7 +191,7 @@ console.log("§4 BAĞLANTI — beş yolun her biri kapıyı ÇAĞIRIYOR mu");
    * Kullanılsaydı toplu bir yazım kullanıcıya soru sorar ve soracak kimse
    * olmadığı için hata fırlatıp bütün aktarımı düşürürdü.
    */
-  const aktarma = yorumsuz(readFileSync("src/lib/ice-aktarma/yaz.ts", "utf8"));
+  const aktarma = yorumsuz(kaynakOku("src/lib/ice-aktarma/yaz.ts"));
   kontrol(
     "içe aktarma SORAN kapıyı çağırmıyor (soracak kimse yok)",
     !aktarma.includes("donemKapisi("),
@@ -231,7 +232,7 @@ console.log("§5 EKRAN — kapatma kuralları ve rapor kapsamı");
 // ═══════════════════════════════════════════════════════════════════════
 {
   const eylem = yorumsuz(
-    readFileSync("src/app/ayarlar/donemler/eylemler.ts", "utf8"),
+    kaynakOku("src/app/ayarlar/donemler/eylemler.ts"),
   );
   /**
    * ⛔ GELECEK VE BUGÜNKÜ DÖNEM KAPATILAMAZ. Bitmemiş bir ayı kapatmak, o ay
@@ -249,7 +250,7 @@ console.log("§5 EKRAN — kapatma kuralları ve rapor kapsamı");
    */
   kontrol("yeniden açma satırı SİLMİYOR", !/muhasebeDonemi\.delete/.test(eylem));
 
-  const rapor = yorumsuz(readFileSync("src/lib/donem-raporu.ts", "utf8"));
+  const rapor = yorumsuz(kaynakOku("src/lib/donem-raporu.ts"));
   /**
    * ⛔ RAPOR KENDİ HESABINI YAZMAZ — envanteri mevcut gövdeden alır.
    * Kendi hesabını yazsaydı bu sayfa envanter ekranından farklı bir rakam
@@ -280,7 +281,7 @@ console.log("§5 EKRAN — kapatma kuralları ve rapor kapsamı");
     !/periodStart|periodEnd/.test(rapor),
   );
   const ekran = yorumsuz(
-    readFileSync("src/app/ayarlar/donemler/[donem]/page.tsx", "utf8"),
+    kaynakOku("src/app/ayarlar/donemler/[donem]/page.tsx"),
   );
   /** ⚠ HER RAKAM KAPSAMIYLA — "N satış üstünden" yazılmadan belge olmaz. */
   kontrol("rapor ekranı KAPSAMI yazıyor", /t\("kapsam"/.test(ekran));

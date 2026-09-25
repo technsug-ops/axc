@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { kalemGecerliMi } from "./n11/yazici";
 
@@ -54,7 +54,7 @@ function yorumsuz(metin: string): string {
 console.log("\nKANAL-YAZMA BEKÇİSİ (K169 · K194)\n");
 
 /* ═══ BEYANDAN TÜRETME ═══════════════════════════════════════════════ */
-const apiBekci = readFileSync("scripts/api-dogrula.ts", "utf8");
+const apiBekci = kaynakOku("scripts/api-dogrula.ts");
 const beyanBasi = apiBekci.indexOf("KANALA_YAZMASI_BEYANLI = new Map");
 const beyanSonu = apiBekci.indexOf("]);", beyanBasi);
 const beyanBloku =
@@ -85,7 +85,7 @@ for (const yol of yazicilar) {
   console.log("\n  ── " + kod.toUpperCase() + " (" + yol + ")");
 
   /* ① TEK FİİL, TEK UÇ */
-  const yazici = yorumsuz(readFileSync(yol, "utf8"));
+  const yazici = yorumsuz(kaynakOku(yol));
   const postSayisi = yazici.split('method: "POST"').length - 1;
   kontrol("① yazıcıda TAM BİR adet POST var", postSayisi === 1, postSayisi);
   kontrol(
@@ -105,7 +105,7 @@ for (const yol of yazicilar) {
 
   /* ② ÖNİZLEME — SALT OKUMA VE AYRI EYLEM */
   const eylem = yorumsuz(
-    readFileSync("src/app/kart/[variantId]/actions.ts", "utf8"),
+    kaynakOku("src/app/kart/[variantId]/actions.ts"),
   );
   const onizleAd = kod + "GonderimOnizle";
   const gonderAd = kod + "StokFiyatGonder";
@@ -216,7 +216,7 @@ for (const yol of yazicilar) {
   const dyalogYolu = "src/app/kart/[variantId]/" + kod + "-gonderim.tsx";
   let dyalog = "";
   try {
-    dyalog = yorumsuz(readFileSync(dyalogYolu, "utf8"));
+    dyalog = yorumsuz(kaynakOku(dyalogYolu));
   } catch {
     dyalog = "";
   }

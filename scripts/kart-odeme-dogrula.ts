@@ -10,7 +10,7 @@ import {
   oncekiOdenen,
   tersKayit,
 } from "../src/lib/kart-odeme/hesap";
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import { odemeMetni } from "../src/lib/gider-odemesi";
 
 /**
@@ -36,11 +36,11 @@ let kalan = 0;
  * Çökme sessiz geçmedi — ama blok kapsamlı bir tanım aynı sessizlikle
  * yanlış dosyayı da okuyabilirdi. Kaynaklar tek yerde durur.
  */
-const form = readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8");
-const sayfa = readFileSync("src/app/kart-borcu/page.tsx", "utf8");
-const satir = readFileSync("src/app/kart-borcu/odeme-satiri.tsx", "utf8");
-const eylem = readFileSync("src/app/kart-borcu/eylemler.ts", "utf8");
-const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+const form = kaynakOku("src/app/kart-borcu/odeme-formu.tsx");
+const sayfa = kaynakOku("src/app/kart-borcu/page.tsx");
+const satir = kaynakOku("src/app/kart-borcu/odeme-satiri.tsx");
+const eylem = kaynakOku("src/app/kart-borcu/eylemler.ts");
+const tr = JSON.parse(kaynakOku("messages/tr.json")) as {
   KartOdeme?: Record<string, string>;
   KartBorcu?: Record<string, string>;
 };
@@ -873,10 +873,10 @@ console.log("=".repeat(70));
   );
   kontrol(
     "ekranda önceki ödeme satırı ve 'bu ödemeden sonra kalan' etiketi var",
-    readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8").includes(
+    kaynakOku("src/app/kart-borcu/odeme-formu.tsx").includes(
       't("oncekiOdenen")',
     ) &&
-      readFileSync("src/app/kart-borcu/odeme-formu.tsx", "utf8").includes(
+      kaynakOku("src/app/kart-borcu/odeme-formu.tsx").includes(
         't("kalanSonra")',
       ),
   );
@@ -931,7 +931,7 @@ console.log("=".repeat(70));
   console.log("KARTLA ÖDENEN GİDER → KART BORCU");
 
   const yorumsuz = (yol: string) =>
-    readFileSync(yol, "utf8")
+    kaynakOku(yol)
       .replace(/[/][*][^]*?[*][/]/g, "")
       .replace(/^\s*[/][/].*$/gm, "");
 
@@ -1013,7 +1013,7 @@ console.log("=".repeat(70));
   console.log("GİDER ÖDEME YÖNTEMİ");
 
   const yorumsuz = (yol: string) =>
-    readFileSync(yol, "utf8")
+    kaynakOku(yol)
       .replace(/[/][*][^]*?[*][/]/g, "")
       .replace(/^\s*[/][/].*$/gm, "");
 

@@ -1,4 +1,5 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -89,7 +90,7 @@ console.log("\n1) `use client` dosyalarında fonksiyon prop'u YASAK");
   let istemciDosyasi = 0;
 
   for (const yol of kaynaklar("src")) {
-    const ham = readFileSync(yol, "utf8");
+    const ham = kaynakOku(yol);
     taranan++;
     /** ⚠ İlk 400 karakterde aranır: direktif dosyanın BAŞINDA olmak zorunda. */
     if (!/^\s*["']use client["']/m.test(ham.slice(0, 400))) continue;
@@ -160,8 +161,8 @@ kosanBolumler.push("desen yasağı");
 /* ═══ ② VAKANIN KENDİSİ ═══════════════════════════════════════════════ */
 console.log("\n2) 07.09 vakası — karşılaştırma grafiği birim TANIMI taşır");
 {
-  const g = readFileSync("src/components/karsilastirma-grafigi.tsx", "utf8");
-  const p = readFileSync("src/app/page.tsx", "utf8");
+  const g = kaynakOku("src/components/karsilastirma-grafigi.tsx");
+  const p = kaynakOku("src/app/page.tsx");
   dogru("seri BİRİM TÜRÜ taşıyor", /birimTuru:\s*"PARA"\s*\|\s*"SAYI"/.test(g));
   dogru("biçim İSTEMCİDE çözülüyor (useBicim)", g.includes("const bicim = useBicim();"));
   /** ⛔ Fonksiyon alanları GERİ GELEMEZ. */
@@ -192,11 +193,8 @@ console.log("\n3) 20.09 vakası — hakediş kanal dağılımı da aynı hatayı
  * `/hakedis` artık `<PastaGrafik` YAZAMAZ.
  */
 {
-  const sayfa = readFileSync("src/app/hakedis/page.tsx", "utf8");
-  const sarmalayici = readFileSync(
-    "src/app/hakedis/kanal-dagilimi-grafigi.tsx",
-    "utf8",
-  );
+  const sayfa = kaynakOku("src/app/hakedis/page.tsx");
+  const sarmalayici = kaynakOku("src/app/hakedis/kanal-dagilimi-grafigi.tsx");
   dogru("/hakedis PastaGrafik'i DOĞRUDAN çağırmıyor", !/<PastaGrafik\b/.test(sayfa));
   dogru("/hakedis sarmalayıcıyı kullanıyor", /<KanalDagilimiGrafigi\b/.test(sayfa));
   dogru(

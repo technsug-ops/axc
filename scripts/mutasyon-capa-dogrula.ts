@@ -1,7 +1,8 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import ts from "typescript";
 
 import { desenAdedi } from "./mutasyon-deseni";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -115,7 +116,7 @@ function capalariTopla(harnessYolu: string): {
   capasiz: number;
   cozulemeyen: string[];
 } {
-  const metin = readFileSync(harnessYolu, "utf8");
+  const metin = kaynakOku(harnessYolu);
   const kaynak = ts.createSourceFile(
     harnessYolu,
     metin,
@@ -222,7 +223,7 @@ for (const h of harnessler) {
     incelenen += 1;
     let hedef: string;
     try {
-      hedef = readFileSync(c.dosya, "utf8");
+      hedef = kaynakOku(c.dosya);
     } catch {
       incelenemeyen.push(
         h.replace("scripts/", "") +

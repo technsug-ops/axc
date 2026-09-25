@@ -1,7 +1,7 @@
 import { tutarBelirteclerineAyir, tutarCoz } from "../src/lib/kargo-tarife-pdf/deger";
 import { desiDizisiniDogrula, monotonlukUyarilari } from "../src/lib/kargo-tarife-pdf/dogrulama";
 import { sutunlaraEsle } from "../src/lib/kargo-tarife-pdf/sutun-esleme";
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { etkinTarihiCoz } from "../src/lib/kargo-tarife-pdf/pdf-oku";
 import {
@@ -243,7 +243,7 @@ function yorumsuz(kaynak: string): string {
     .replace(/\/\/.*$/gm, "");
 }
 
-const yaziciKaynak = readFileSync("src/lib/kargo-tarife-pdf/yaz.ts", "utf8");
+const yaziciKaynak = kaynakOku("src/lib/kargo-tarife-pdf/yaz.ts");
 const iOrtak = yaziciKaynak.indexOf("async function ortakDenetle");
 kontrol("ortakDenetle govdesi bulundu", iOrtak > 0);
 const ortakBlok = iOrtak > 0 ? yorumsuz(yaziciKaynak.slice(iOrtak, iOrtak + 1800)) : "";

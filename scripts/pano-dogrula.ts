@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   CEKIRDEK,
@@ -81,7 +81,7 @@ function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
 /** Bir dosyanın satır kimliklerini çekirdeğe indirger. */
 function kimlikleriOku(dosya: string): Map<string, Kayit[]> {
   const harita = new Map<string, Kayit[]>();
-  const satirlar = readFileSync(dosya, "utf8").split(/\r?\n/);
+  const satirlar = kaynakOku(dosya).split(/\r?\n/);
 
   satirlar.forEach((satir, i) => {
     /**
@@ -167,7 +167,7 @@ for (const dosya of DOSYALAR) {
  */
 console.log("\n1b) İSTİSNA BEYANI ÇÜRÜMEDİ Mİ");
 for (const x of KALEM_DEGIL) {
-  const bulundu = readFileSync(x.dosya, "utf8")
+  const bulundu = kaynakOku(x.dosya)
     .split(/\r?\n/)
     .some((l) => {
       /** ⚠ Beyan yalnız TABLO satırı için — istisna orada yaşıyor. */
@@ -320,7 +320,7 @@ kontrol(
    * (Anayasa: "eşik, ölçüldüğü popülasyonun dışına uygulanamaz".)
    */
   const baslikli = DOSYALAR.flatMap((dosya) =>
-    readFileSync(dosya, "utf8")
+    kaynakOku(dosya)
       .split(/\r?\n/)
       .filter((l) => l.startsWith("## ") && satirKimligi(l) !== null),
   ).length;
@@ -458,7 +458,7 @@ kontrol(
 
 {
   const olcum = durumCeliskileri(
-    readFileSync("BEKLEYENLER.md", "utf8").split(/\r?\n/),
+    kaynakOku("BEKLEYENLER.md").split(/\r?\n/),
   );
   /**
    * ⛔ TABAN DOLULUĞU: pano okunamazsa `celisenler.length === 0`

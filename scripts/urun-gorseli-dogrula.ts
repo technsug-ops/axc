@@ -7,7 +7,7 @@
  *  korunması, izinli sunucu kapısı ve küçük adres üretimi.
  * ============================================================================
  */
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   GORSEL_KAYNAKLARI,
@@ -102,7 +102,7 @@ function yorumsuz(kod: string): string {
   const satirYorumu = /(^|[^:])\/\/[^\n]*/g;
   return kod.split("\r\n").join("\n").replace(blokYorumu, "").replace(satirYorumu, "$1");
 }
-const oku = (yol: string) => yorumsuz(readFileSync(yol, "utf8"));
+const oku = (yol: string) => yorumsuz(kaynakOku(yol));
 const adet = (metin: string, desen: string) => metin.split(desen).length - 1;
 
 /* ① Senkronlar yazıcıyı ÇAĞIRIYOR — kaynak etiketi doğru. */

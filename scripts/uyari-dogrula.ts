@@ -14,7 +14,7 @@
  * ============================================================================
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 
 import {
   canSayisi,
@@ -53,6 +53,7 @@ import {
 } from "../src/lib/uyari/turler";
 import type { Parti } from "../src/lib/stok";
 import { KAR_SUZGECLERI } from "../src/lib/liste-suzgeci";
+import { kaynakOku } from "./kaynak-oku";
 
 let gecen = 0;
 let kalan = 0;
@@ -355,9 +356,9 @@ console.log("=".repeat(70));
    *  kontrol etmek uygulayanın işidir.
    * ════════════════════════════════════════════════════════════════════
    */
-  const stokSayfasi = readFileSync("src/app/stok/page.tsx", "utf8");
-  const satisSuzgeci = readFileSync("src/lib/liste-suzgeci.ts", "utf8");
-  const canBileseni = readFileSync("src/components/uyari-cani.tsx", "utf8");
+  const stokSayfasi = kaynakOku("src/app/stok/page.tsx");
+  const satisSuzgeci = kaynakOku("src/lib/liste-suzgeci.ts");
+  const canBileseni = kaynakOku("src/components/uyari-cani.tsx");
   /**
    * YORUMLAR SOYULUR. Bu kontrol ilk yazıldığında kırmızı yandı: dosyanın
    * BAŞLIK YORUMUNDA "çan kendi `prisma.sale.count` sorgusunu yazsaydı…"
@@ -369,8 +370,8 @@ console.log("=".repeat(70));
    */
   const yorumsuz = (metin: string) =>
     metin.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-  const toplayici = yorumsuz(readFileSync("src/lib/uyari/topla.ts", "utf8"));
-  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const toplayici = yorumsuz(kaynakOku("src/lib/uyari/topla.ts"));
+  const tr = JSON.parse(kaynakOku("messages/tr.json")) as {
     Uyari?: Record<string, string>;
   };
 
@@ -650,9 +651,9 @@ console.log("=".repeat(70));
    * kod"), bizim uyarımız "kodu hiç olmayan varyant". Sayı 2 derken liste
    * bambaşka bir küme gösterirdi.
    */
-  const stok = readFileSync("src/app/stok/page.tsx", "utf8");
-  const satislar = readFileSync("src/app/satislar/page.tsx", "utf8");
-  const suzgec = readFileSync("src/lib/liste-suzgeci.ts", "utf8");
+  const stok = kaynakOku("src/app/stok/page.tsx");
+  const satislar = kaynakOku("src/app/satislar/page.tsx");
+  const suzgec = kaynakOku("src/lib/liste-suzgeci.ts");
 
   kontrol("kanalKodsuz adresi /stok?kanal=yok", UYARI_ADRESLERI.kanalKodsuzStok === "/stok?kanal=yok");
   kontrol("  ...stok ekranı `kanal` parametresini okuyor", /kanal\?: string/.test(stok));
@@ -668,7 +669,7 @@ console.log("=".repeat(70));
   kontrol("boş küme 'hepsini göster'e düşmüyor", /supheliIdler \?\? \[\]/.test(suzgec));
 
   /** Nötr nokta çanda var mı ve RAKAMSIZ mı? */
-  const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
+  const can = kaynakOku("src/components/uyari-cani.tsx");
   kontrol("çanda nötr varlık noktası var", /notrVarMi\(uyarilar\)/.test(can));
   kontrol("  ...yalnız rozet YOKKEN çiziliyor", /sayi === 0 && notrVarMi/.test(can));
   kontrol("  ...ve rakam taşımıyor", /aria-hidden/.test(can));
@@ -685,7 +686,7 @@ console.log("=".repeat(70));
    * HİÇBİRİ bir satış kaydıyla eşleşmiyor. Bilmediğimiz bir şeyi
    * "gecikti" diye iddia ediyorduk.
    */
-  const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
+  const topla = kaynakOku("src/lib/uyari/topla.ts");
   kontrol(
     "geciken sayımı satışa BAĞLI kalemle sınırlı",
     /gecikmeKosulu\(bugun\), saleId: \{ not: null \}/.test(topla) &&
@@ -729,9 +730,9 @@ console.log("=".repeat(70));
 console.log("F2-F) ZARARINA SATIŞ + ÜÇ SEVİYELİ EKRAN");
 console.log("=".repeat(70));
 {
-  const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
-  const form = readFileSync("src/app/satislar/kar-durumu.tsx", "utf8");
-  const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
+  const topla = kaynakOku("src/lib/uyari/topla.ts");
+  const form = kaynakOku("src/app/satislar/kar-durumu.tsx");
+  const can = kaynakOku("src/components/uyari-cani.tsx");
 
   /**
    * ⚠ SAYI İLE LİSTE AYNI KOŞULDAN. Süzgeç `/satislar?kar=zarar` şunu
@@ -798,7 +799,7 @@ console.log("=".repeat(70));
     kontrol(`${ad} cümlesi maliyeti RAKAMLA veriyor`, /maliyet: bicim\.para\(birimMaliyet/.test(blok));
     kontrol(`  ...${ad} cümlesi satış fiyatını da`, /satis: bicim\.para\(fiyat/.test(blok));
   }
-  const sz2 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sz2 = JSON.parse(kaynakOku("messages/tr.json")) as {
     Satis?: Record<string, string>;
   };
   kontrol("  ...sözlükte iki dayanak da yer alıyor",
@@ -845,7 +846,7 @@ console.log("=".repeat(70));
     !/seviye === "kirmizi" \? "olumsuz" : "uyari"/.test(can));
 
   /** Grup başlıkları sözlükten — koda gömülü metin yasak. */
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
     Uyari?: Record<string, string>;
   };
   for (const sv of ["kirmizi", "amber", "notr"]) {
@@ -855,7 +856,7 @@ console.log("=".repeat(70));
     );
   }
   for (const anahtar of ["zararUyarisi", "zararAltDilimKurtarir", "zararAltDilimKurtarmaz"]) {
-    const satis = (JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+    const satis = (JSON.parse(kaynakOku("messages/tr.json")) as {
       Satis?: Record<string, string>;
     }).Satis;
     kontrol(`  form metni sözlükte: ${anahtar}`, (satis?.[anahtar] ?? "").length > 0);
@@ -867,7 +868,7 @@ console.log("=".repeat(70));
 console.log("F2-G) GECİKME SINIRI TEK KAYNAK");
 console.log("=".repeat(70));
 {
-  const topla = readFileSync("src/lib/uyari/topla.ts", "utf8");
+  const topla = kaynakOku("src/lib/uyari/topla.ts");
   /**
    * ⚠ İKİ SAYI TEK SINIRDAN. Kırmızı sayaç ile muafiyet beyanı yalnızca
    * `saleId` ile ayrılmalı; gecikme tanımı ikisinde de aynı. Ayrı
@@ -895,7 +896,7 @@ console.log("=".repeat(70));
    * N gecikme sayımından ÇIKARILAN sayıydı (67); bağsız kalem toplamı
    * 658. Metin, sahip olmadığı bir anlamı iddia ediyordu.
    */
-  const sz = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sz = JSON.parse(kaynakOku("messages/tr.json")) as {
     Uyari?: Record<string, string>;
   };
   kontrol(
@@ -953,10 +954,10 @@ console.log("=".repeat(70));
   kontrol("damga kuruşa yuvarlanıyor", damgaKur({ net2: 1.005, maliyet: 2.004, ciro: 3 }).maliyet === 2);
 
   /** ---- EKRAN VE SUNUCU BAĞI ---- */
-  const veri = readFileSync("src/lib/uyari/faz2-veri.ts", "utf8");
-  const eylem = readFileSync("src/app/satislar/dogrula-actions.ts", "utf8");
-  const buton = readFileSync("src/app/satislar/dogrula-butonu.tsx", "utf8");
-  const liste = readFileSync("src/app/satislar/page.tsx", "utf8");
+  const veri = kaynakOku("src/lib/uyari/faz2-veri.ts");
+  const eylem = kaynakOku("src/app/satislar/dogrula-actions.ts");
+  const buton = kaynakOku("src/app/satislar/dogrula-butonu.tsx");
+  const liste = kaynakOku("src/app/satislar/page.tsx");
 
   kontrol("sayım doğrulanmışı düşürüyor", /susturmaGecerliMi\(damga, bugunku\)/.test(veri));
   kontrol("  ...ve iz AuditLog'dan okunuyor", /action: DOGRULAMA_EYLEMI/.test(veri));
@@ -986,7 +987,7 @@ console.log("=".repeat(70));
   kontrol("  ...DİĞER'de onay kilitli", /notEksik/.test(buton));
   kontrol("düğme YALNIZ şüpheli kalemde çiziliyor", /supheliKalemHaritasi\.get\(satis\.id\)/.test(liste));
 
-  const sz = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sz = JSON.parse(kaynakOku("messages/tr.json")) as {
     Satis?: Record<string, string>;
   };
   for (const a of ["dogrulaBaslik", "dogrulaGecicilik", "dogrulaNotZorunlu"]) {
@@ -1024,14 +1025,14 @@ console.log("=".repeat(70));
   kontrol("tarih yoksa hüküm YOK", gecTeslimMi(null, g("2026-07-01")) === null);
 
   /** Form SORAR, ENGELLEMEZ — mal gerçekten geç gelmiş olabilir. */
-  const form = readFileSync("src/app/alimlar/[id]/mal-kabul/mal-kabul-formu.tsx", "utf8");
+  const form = kaynakOku("src/app/alimlar/[id]/mal-kabul/mal-kabul-formu.tsx");
   kontrol("form uyarıyı çiziyor", /gecTeslimMi\(/.test(form));
   kontrol("  ...ve sipariş tarihini alıyor", /siparisTarihi: string/.test(form));
-  const sayfa = readFileSync("src/app/alimlar/[id]/mal-kabul/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/alimlar/[id]/mal-kabul/page.tsx");
   kontrol("  ...sayfa siparişi geçiriyor", /siparisTarihi=\{alim\.purchasedAt/.test(sayfa));
 
   /** ---- İZ DOĞUM BEYANI ---- */
-  const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
+  const can = kaynakOku("src/components/uyari-cani.tsx");
   kontrol("iz doğum beyanı KUTUNUN İÇİNDE", /izDogumu/.test(can));
   kontrol("  ...yalnız veriSupheli kutusunda", /u\.anahtar === "veriSupheli"/.test(can));
   kontrol("  ...tarih sabitten okunuyor", /IZ_DOGUM_TARIHI/.test(can));
@@ -1042,10 +1043,10 @@ console.log("=".repeat(70));
 console.log("F2-J) HALİL TURU DÜZELTMELERİ");
 console.log("=".repeat(70));
 {
-  const can = readFileSync("src/components/uyari-cani.tsx", "utf8");
-  const liste = readFileSync("src/app/satislar/page.tsx", "utf8");
-  const form = readFileSync("src/app/satislar/kar-durumu.tsx", "utf8");
-  const buton = readFileSync("src/app/satislar/dogrula-butonu.tsx", "utf8");
+  const can = kaynakOku("src/components/uyari-cani.tsx");
+  const liste = kaynakOku("src/app/satislar/page.tsx");
+  const form = kaynakOku("src/app/satislar/kar-durumu.tsx");
+  const buton = kaynakOku("src/app/satislar/dogrula-butonu.tsx");
 
   /**
    * ⚠ B4a — ROZET BAYAT KALIYORDU. Veri yalnız ilk çizimde çekiliyordu;
@@ -1118,7 +1119,7 @@ console.log("=".repeat(70));
   /** Yer tutucu sebebe göre — ne yazılacağını gösteriyor. */
   kontrol("yer tutucu sebebe göre", /dogrulaNotIpucu_\$\{sebep\}/.test(buton));
 
-  const sz = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sz = JSON.parse(kaynakOku("messages/tr.json")) as {
     Satis?: Record<string, string>;
   };
   for (const a of ["bosSupheliVeri", "zararDilimYok", "zararEnAltDilim"]) {
@@ -1141,7 +1142,7 @@ console.log("=".repeat(70));
    * Önceki davranış bilinçliydi ("snapshot geçmişin kaydıdır") ama
    * yanlış tarafta duruyordu: orada korunan geçmiş değil, HATAYDI.
    */
-  const eylem = readFileSync("src/app/satislar/[id]/hesap-actions.ts", "utf8");
+  const eylem = kaynakOku("src/app/satislar/[id]/hesap-actions.ts");
   /**
    * ⚠ DESEN DEĞİL, İFADE. `if (false) await karYenidenYaz({` yazan
    * mutasyon deseni ayakta bırakıyordu; kontrol artık çağrının KOŞULSUZ
@@ -1175,7 +1176,7 @@ console.log("=".repeat(70));
   /** Kargo çevirisi tek kaynaktan — betik kendi çarpanını yazmasın. */
   kontrol("  ...kargo kdvDahilKargo ile", /kdvDahilKargo\(/.test(eylem));
 
-  const sz3 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sz3 = JSON.parse(kaynakOku("messages/tr.json")) as {
     Satis?: Record<string, string>;
   };
   kontrol("diyalog metni artık 'otomatik' diyor",
@@ -1196,7 +1197,7 @@ console.log("=".repeat(70));
    * o satışın kazandırdığı sanılmasına yol açar. Oysa iptal edilen satış
    * HİÇ DOĞMAMIŞ sayılır ve hiçbir toplama girmez.
    */
-  const detay = readFileSync("src/app/satislar/[id]/page.tsx", "utf8");
+  const detay = kaynakOku("src/app/satislar/[id]/page.tsx");
   const iptalKutusu = detay.indexOf('tIpt("iptalEdildi"');
   const bilgiKarti = detay.indexOf('{t("satisBilgileri")}');
   const karBlogu = detay.indexOf('t("kalemKari")');
@@ -1241,8 +1242,8 @@ console.log("=".repeat(70));
  * ============================================================================
  */
 {
-  const serhKaynak = readFileSync("src/lib/ice-aktarma-serhi.ts", "utf8");
-  const ekranKaynak = readFileSync("src/app/stok/page.tsx", "utf8");
+  const serhKaynak = kaynakOku("src/lib/ice-aktarma-serhi.ts");
+  const ekranKaynak = kaynakOku("src/app/stok/page.tsx");
 
   /**
    * ⚠ ÖLÇÜT PENCEREYE DEĞİL İMZAYA BAĞLI. İlk hâli fonksiyon adıyla
@@ -1343,14 +1344,14 @@ console.log("K266) ŞERİTTEN ÇANA — iki bakım uyarısı");
     const sayfaYolu = `src/app${UYARI_ADRESLERI[a].split("?")[0]}/page.tsx`;
     kontrol(`${a} adresi VAR OLAN ekrana gidiyor (${sayfaYolu})`, existsSync(sayfaYolu));
   }
-  const toplaK = readFileSync("src/lib/uyari/topla.ts", "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const toplaK = kaynakOku("src/lib/uyari/topla.ts").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol(
     "toplayıcı iki ölçümü de BESLİYOR (gövde var ama bağlanmamış değil)",
     /oransizKanalSku: \{ sayi: gorevSayilari\.oransizKanalSku \}/.test(toplaK) &&
       /tarifePenceresi: \{ sayi: tarifeUyarisiVarMi\(tarifeKapsam\) \? 1 : 0 \}/.test(toplaK),
   );
   /** ⚠ İKİ YERDE İKİ TANIM OLMAZ: şeritte artık yoklar. */
-  const seritK = readFileSync("src/lib/panel/bugun-ne-yapmaliyim.ts", "utf8");
+  const seritK = kaynakOku("src/lib/panel/bugun-ne-yapmaliyim.ts");
   const anahtarBlok = seritK.slice(
     seritK.indexOf("GOREV_ANAHTARLARI = ["),
     seritK.indexOf("] as const;"),

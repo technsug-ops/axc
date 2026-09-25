@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   hbAdedi,
@@ -188,7 +188,7 @@ kosanBolumler.push("zincir");
 // ═══ 5) YAZICI — YALNIZ ÜÇ ALAN, KANALA YAZMA YOK ═════════════════════════
 console.log("\n5) YAZICI");
 {
-  const kaynak = readFileSync("scripts/canli-hb-listeleme-yaz.ts", "utf8");
+  const kaynak = kaynakOku("scripts/canli-hb-listeleme-yaz.ts");
   const yorumsuz = kaynak
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
@@ -203,7 +203,7 @@ console.log("\n5) YAZICI");
    * doğrudan yazamaz. _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış
    * demez; eskiyen ölçüt güncellenir, SUSTURULMAZ".)_
    */
-  const yaziciKaynak = readFileSync("src/lib/kanal-listeleme-hb-yaz.ts", "utf8");
+  const yaziciKaynak = kaynakOku("src/lib/kanal-listeleme-hb-yaz.ts");
   const yaziciYorumsuz = yaziciKaynak
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");

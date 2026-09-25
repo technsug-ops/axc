@@ -6,7 +6,7 @@ import {
   zararOzeti,
   type DagilimGirdisi,
 } from "../src/lib/panel/dagilim";
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { satisKosulu } from "../src/lib/liste-suzgeci";
 import {
@@ -432,7 +432,7 @@ console.log("=".repeat(70));
    * tıklayınca sayfa başa atıyor, "panele döndü" görünüyordu.
    * Rozet EYLEME götürmeli.
    */
-  const panel = readFileSync("src/app/page.tsx", "utf8");
+  const panel = kaynakOku("src/app/page.tsx");
   kontrol(
     "ölü sermaye rozeti /stok yaş süzgecine gidiyor",
     panel.includes("/stok?yas=") && panel.includes("href={oluSermayeAdresi}"),
@@ -453,7 +453,7 @@ console.log("=".repeat(70));
       !panel.includes("kalem: oluSermaye.kalem"),
   );
 
-  const stok = readFileSync("src/app/stok/page.tsx", "utf8");
+  const stok = kaynakOku("src/app/stok/page.tsx");
   /**
    * ⚠ ÜÇ ÇAPA K131'DE ESKİDİ — SUSTURULMADI, GÜNCELLENDİ (02.09.2026).
    *
@@ -473,7 +473,7 @@ console.log("=".repeat(70));
    * `bandinVaryantlari`ye devrediyor. Ölçüt bu DEVRİ de sınıyor: devir
    * kopsaydı iki ekran aynı bandı iki farklı kuralla süzerdi.
    */
-  const yaslanmaKaynagi = readFileSync("src/lib/yaslanma.ts", "utf8");
+  const yaslanmaKaynagi = kaynakOku("src/lib/yaslanma.ts");
   kontrol(
     "  ...AYNI kuralı çağırıyor (bandinVaryantlari — tek kaynak)",
     stok.includes("secimVaryantlari(") &&

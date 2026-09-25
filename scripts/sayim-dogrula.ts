@@ -8,7 +8,7 @@ import {
   okumayaAcikMi,
   acilisUyarisiGerekirMi,
 } from "../src/lib/sayim/oturum";
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { satirKarari } from "../src/lib/sayim/karar";
 import {
@@ -447,7 +447,7 @@ esit(
 //  kendisine konur — uydurulmaz.")_
 
 {
-  const kaynak = readFileSync("src/lib/sayim/okuma.ts", "utf8")
+  const kaynak = kaynakOku("src/lib/sayim/okuma.ts")
     /* ⚠ YORUMSUZ: yasağı ANLATAN yorum, yasağı ÇİĞNEMİŞ sayılmaz. */
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");

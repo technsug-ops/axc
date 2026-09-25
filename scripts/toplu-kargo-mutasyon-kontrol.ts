@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
-import { desenNormalle } from "./mutasyon-deseni";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 import { spawnSync } from "node:child_process";
 
 /**
@@ -154,7 +154,7 @@ for (const m of MUTASYONLAR) {
   const mutant = asil.replace(bul, koy);
   let sonuc: Sonuc;
   try {
-    writeFileSync(m.dosya, mutant, "utf8");
+    dayanikliYaz(m.dosya, mutant);
     /**
      * ⚠ ÖLÇÜT 30.08.2026'DA SIKILAŞTIRILDI: "diskteki metin ASILDAN farklı"
      * yerine "diskteki metin BEKLENENE eşit". Eskisi kısmi/bozuk bir yazımı
@@ -168,7 +168,7 @@ for (const m of MUTASYONLAR) {
     }
     sonuc = bekciyiKostur();
   } finally {
-    writeFileSync(m.dosya, asil, "utf8");
+    dayanikliYaz(m.dosya, asil);
   }
 
   const isaret = m.yon === "KALDIRAN" ? "−" : "+";

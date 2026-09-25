@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -71,7 +72,7 @@ const hedefler = [...KOKLER.flatMap((k) => dosyalar(k)), ...BELGELER];
 {
   for (const yol of hedefler) {
     taranan++;
-    const metin = readFileSync(yol, "utf8");
+    const metin = kaynakOku(yol);
     for (let i = 0; i < metin.length; i++) {
       const k = metin.charCodeAt(i);
       /* C0 denetim karakterleri + DEL. */

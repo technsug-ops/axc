@@ -24,7 +24,8 @@
  * ============================================================================
  */
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -40,8 +41,8 @@ function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   }
 }
 
-const layout = readFileSync("src/app/layout.tsx", "utf8");
-const table = readFileSync("src/components/ui/table.tsx", "utf8");
+const layout = kaynakOku("src/app/layout.tsx");
+const table = kaynakOku("src/components/ui/table.tsx");
 
 console.log("\n1) KABUK — flex zinciri küçülebiliyor mu?");
 {
@@ -173,7 +174,7 @@ console.log("\n3) SÜTUN BÜTÇESİ — liste tabloları tek ekrana sığıyor m
   })("src/app");
 
   const tabloluEkranlar = ekranlar
-    .map((yol) => [yol, readFileSync(yol, "utf8")] as const)
+    .map((yol) => [yol, kaynakOku(yol)] as const)
     .filter(([, kaynak]) => kaynak.includes("<TableHeader>"));
 
   /**

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -49,7 +49,7 @@ function yorumsuz(metin: string): string {
 console.log("\nKARE TEŞHİSİ BEKÇİSİ — K113");
 console.log("=".repeat(66));
 
-const ham = readFileSync("src/components/barkod-okuyucu.tsx", "utf8");
+const ham = kaynakOku("src/components/barkod-okuyucu.tsx");
 const kod = yorumsuz(ham);
 
 // --- 1) ⭐ GETSETTINGS DÖNGÜNÜN DIŞINDA ---------------------------------
@@ -109,7 +109,7 @@ console.log("\n2) teşhis satırı çiziliyor ve sessiz düşmüyor");
     /focusMode \?\? t\("odakYok"\)/.test(kod),
   );
 
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as Record<
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as Record<
     string,
     Record<string, string>
   >;
@@ -153,7 +153,7 @@ kosanBolumler.push("kare kaydetme");
 // --- 4) MASAÜSTÜ ARACI AYNI AYARLARI KULLANIYOR -------------------------
 console.log("\n4) masaüstü aracı uygulamanın AYARLARINI kullanıyor");
 {
-  const arac = yorumsuz(readFileSync("scripts/kare-cozum-testi.ts", "utf8"));
+  const arac = yorumsuz(kaynakOku("scripts/kare-cozum-testi.ts"));
   /**
    * ⛔ AYARLAR AYRIŞIRSA TEST BAŞKA ŞEYİ ÖLÇER. Araç kendi biçim listesini
    * yazsaydı "masaüstünde çözülüyor ama ekranda çözülmüyor" sonucu ANLAMSIZ

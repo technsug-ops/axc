@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -89,7 +90,7 @@ console.log("SUNUCU EYLEMİ BEKÇİSİ — `\"use server\"` yalnız async dışa
 console.log("=".repeat(70));
 
 const hepsi = dosyalar("src");
-const eylemDosyalari = hepsi.filter((y) => sunucuEylemiMi(readFileSync(y, "utf8")));
+const eylemDosyalari = hepsi.filter((y) => sunucuEylemiMi(kaynakOku(y)));
 
 /**
  * ⛔ SIFIR DOSYA BULMAK "TEMİZ" DEĞİL, "OKUYAMADIM"DIR. Tarama bozulursa
@@ -128,7 +129,7 @@ const YASAK = /^\s*export\s+(const|let|var|function|class|default)\b/gm;
 
 let ihlal = 0;
 for (const yol of eylemDosyalari) {
-  const kaynak = yorumsuz(readFileSync(yol, "utf8"));
+  const kaynak = yorumsuz(kaynakOku(yol));
   const bulunanlar: string[] = [];
   for (const m of kaynak.matchAll(YASAK)) {
     const satir = kaynak.slice(m.index).split("\n")[0].trim();

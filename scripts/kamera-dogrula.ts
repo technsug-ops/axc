@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { RETAIL_BARCODE_FORMATS } from "zxing-wasm/reader";
 
 import {
@@ -13,6 +13,7 @@ import {
   perakendeBoslugu,
 } from "../src/lib/barkod-formatlari";
 import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -88,7 +89,7 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
    */
   const kacaklar: string[] = [];
   for (const yol of dosyalar("src")) {
-    const metin = readFileSync(yol, "utf8");
+    const metin = kaynakOku(yol);
     const yorumsuzMetin = metin
       .replace(/\/\*[\s\S]*?\*\//g, " ")
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
@@ -111,7 +112,7 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
    * başına yalancı yeşil verebilirdi: herkes ortak bileşene geçer, bileşen
    * de kamerayı kaybeder ve kontrol hâlâ yeşil yanar.
    */
-  const kutu = readFileSync("src/components/kod-arama-kutusu.tsx", "utf8");
+  const kutu = kaynakOku("src/components/kod-arama-kutusu.tsx");
   kontrol(
     "ortak arama kutusu BarkodGirisi kullanıyor (kamera + USB)",
     /<BarkodGirisi/.test(kutu) &&
@@ -198,7 +199,7 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
    * bileşeni kullanmıyor (sonucu adrese değil duruma yazıyor), bu yüzden
    * kendi Temizlesi ayrıca sınanıyor.
    */
-  const okuyucu = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
+  const okuyucu = kaynakOku("src/app/okut/okuyucu.tsx");
   /**
    * ⚠ DİLİM ÇİZİM KOŞULUNDAN BAŞLIYOR — 700 karakter geriden değil.
    *
@@ -233,7 +234,7 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
 
   /** Ortak bileşeni kullanan ekranlar — en az altı liste ekranı olmalı. */
   const kullananlar = dosyalar("src").filter((y) =>
-    readFileSync(y, "utf8").includes("<KodAramaKutusu"),
+    kaynakOku(y).includes("<KodAramaKutusu"),
   );
   kontrol(
     "ortak kutu liste ekranlarında kullanılıyor",
@@ -246,7 +247,7 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
    * kutu (`Bul`). Ortak bileşen oraya oturmuyor ama kamera kuralı yine
    * geçerli — `BarkodGirisi` doğrudan kullanılıyor.
    */
-  const deneme = readFileSync("src/app/simulasyon/deneme.tsx", "utf8");
+  const deneme = kaynakOku("src/app/simulasyon/deneme.tsx");
   kontrol("fiyat denemesinde de kamera var", /<BarkodGirisi/.test(deneme));
   /**
    * ⚠ BAYAT DURUM TUZAĞI. Kamera okuyunca önce `setKod` çalışır, hemen
@@ -282,7 +283,7 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
  */
 {
   console.log("\nBİÇİM KAPSAMI — ürün VE kargo etiketleri");
-  const ham = readFileSync("src/components/barkod-okuyucu.tsx", "utf8");
+  const ham = kaynakOku("src/components/barkod-okuyucu.tsx");
   /**
    * ⚠ YORUM AYIKLANIR — YOKSA AÇIKLAMA KENDİNİ İHLAL SANDIRIR. İlk yazımda
    * kontrol dosyanın tamamını tarıyordu ve TEMİZ koşumda kırmızı yandı:
@@ -590,7 +591,7 @@ console.log("\n12) tarama maliyeti — hızlı kare esas, zor kare emniyet");
    * ⛔ ZİNCİR — GÖVDELER KUSURSUZ ÇALIŞIP KİMSE ÇAĞIRMAZSA HİÇBİR ŞEY
    * DEĞİŞMEZ. K121'de tur 98/98 yeşilken kutu ekranda yoktu; ders bu.
    */
-  const okuyucuKaynagi = readFileSync("src/components/barkod-okuyucu.tsx", "utf8")
+  const okuyucuKaynagi = kaynakOku("src/components/barkod-okuyucu.tsx")
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
   kontrol(

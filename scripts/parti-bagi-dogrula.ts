@@ -1,5 +1,6 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -94,7 +95,7 @@ for (const kok of KOK) {
   for (const yol of dosyalar(kok)) {
     const duz = yol.replace(/\\/g, "/");
     if (duz.endsWith(KENDI)) continue;
-    const kod = yorumsuz(readFileSync(yol, "utf8"));
+    const kod = yorumsuz(kaynakOku(yol));
     for (const c of cagrilar(kod)) {
       const tip = /type:\s*"([A-Z_]+)"/.exec(c.blok)?.[1];
       if (!tip || !GIRIS_TIPLERI.includes(tip)) continue;

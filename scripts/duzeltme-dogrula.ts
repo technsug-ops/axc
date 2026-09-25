@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 /**
  * ============================================================================
  *  STOK DÜZELTME DOĞRULAMA
@@ -34,7 +34,7 @@ import { bantDisiMi, komisyonBandi } from "../src/lib/komisyon-bandi";
  * OKUMA KAPISINDA yapılıyor.
  */
 function semaMetni(): string {
-  return readFileSync("prisma/schema.prisma", "utf8")
+  return kaynakOku("prisma/schema.prisma")
     .split("\r\n")
     .join("\n");
 }
@@ -371,7 +371,7 @@ console.log("\n3) RAPORA ETKİSİ — GERÇEK NET'ten düşer, NET-2'ye KARIŞMA
   );
 
   /** EKRAN BAĞI — kutu net'e değil, hareketin varlığına bakıyor. */
-  const raporEkrani = readFileSync("src/app/rapor/page.tsx", "utf8");
+  const raporEkrani = kaynakOku("src/app/rapor/page.tsx");
   kontrol(
     "ekran kutusu NET'e değil hareketin VARLIĞINA bakıyor",
     raporEkrani.includes("b.fireZarari > 0 ||") &&
@@ -531,15 +531,9 @@ console.log("\n5) NEDEN YÖNÜ — ANLAMSIZ BİLEŞİM KURULAMAZ");
    *  Süzgeç görünürlük değil GEÇERLİLİK meselesi.
    * ════════════════════════════════════════════════════════════════════
    */
-  const seed = readFileSync("prisma/seed-stok-duzeltme.ts", "utf8");
-  const form = readFileSync(
-    "src/app/stok/[variantId]/duzeltme-formu.tsx",
-    "utf8",
-  );
-  const varyantSayfasi = readFileSync(
-    "src/app/stok/[variantId]/page.tsx",
-    "utf8",
-  );
+  const seed = kaynakOku("prisma/seed-stok-duzeltme.ts");
+  const form = kaynakOku("src/app/stok/[variantId]/duzeltme-formu.tsx");
+  const varyantSayfasi = kaynakOku("src/app/stok/[variantId]/page.tsx");
   const sema = semaMetni();
 
   const yonu = (ad: string) => {
@@ -625,24 +619,12 @@ console.log("\n5) NEDEN YÖNÜ — ANLAMSIZ BİLEŞİM KURULAMAZ");
    *  "Kullanıcıya 'şunu tanımla' diyorsam, onu tanımlayacak EKRAN var mı?"
    * ════════════════════════════════════════════════════════════════════
    */
-  const nedenFormu = readFileSync(
-    "src/app/ayarlar/duzeltme-nedenleri/neden-formu.tsx",
-    "utf8",
-  );
-  const nedenSatiri = readFileSync(
-    "src/app/ayarlar/duzeltme-nedenleri/neden-satiri.tsx",
-    "utf8",
-  );
-  const nedenEylem = readFileSync(
-    "src/app/ayarlar/duzeltme-nedenleri/actions.ts",
-    "utf8",
-  );
-  const nedenSayfasi = readFileSync(
-    "src/app/ayarlar/duzeltme-nedenleri/page.tsx",
-    "utf8",
-  );
-  const trSozluk2 = JSON.parse(readFileSync("messages/tr.json", "utf8")) as { Stok?: Record<string, string> };
-  const trSozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const nedenFormu = kaynakOku("src/app/ayarlar/duzeltme-nedenleri/neden-formu.tsx");
+  const nedenSatiri = kaynakOku("src/app/ayarlar/duzeltme-nedenleri/neden-satiri.tsx");
+  const nedenEylem = kaynakOku("src/app/ayarlar/duzeltme-nedenleri/actions.ts");
+  const nedenSayfasi = kaynakOku("src/app/ayarlar/duzeltme-nedenleri/page.tsx");
+  const trSozluk2 = JSON.parse(kaynakOku("messages/tr.json")) as { Stok?: Record<string, string> };
+  const trSozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
     DuzeltmeNedeni?: Record<string, string>;
   };
 
@@ -691,7 +673,7 @@ console.log("\n5) NEDEN YÖNÜ — ANLAMSIZ BİLEŞİM KURULAMAZ");
    * kurulabilir, eski sekme açık kalabilir, kullanıcı neden seçtikten
    * sonra yönü değiştirebilir. Süzgeç bir GÜVENLİK değil kolaylıktır.
    */
-  const duzeltmeEylemi = readFileSync("src/app/stok/duzeltme-actions.ts", "utf8");
+  const duzeltmeEylemi = kaynakOku("src/app/stok/duzeltme-actions.ts");
   kontrol(
     "sunucu neden-yön uyumunu DOĞRULUYOR",
     duzeltmeEylemi.includes(`neden.yon !== "HER_IKISI" && neden.yon !== yon`),

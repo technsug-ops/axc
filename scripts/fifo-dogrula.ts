@@ -15,7 +15,7 @@
  * ============================================================================
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import "dotenv/config";
 
@@ -26,6 +26,7 @@ import {
   YetersizStokHatasi,
   SiparisNoCakismasiHatasi,
 } from "../src/lib/satis";
+import { kaynakOku } from "./kaynak-oku";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -515,7 +516,7 @@ async function ucanUca() {
   const yazanGovdeler: string[] = [];
   const bagsizlar: string[] = [];
   for (const yol of hepsi) {
-    const ham = readFileSync(yol, "utf8");
+    const ham = kaynakOku(yol);
     const kod = yorumsuzKod(ham);
     if (!/stockMovement\.create/.test(kod)) continue;
     yazanGovdeler.push(yol.replace(/\\/g, "/"));
@@ -539,7 +540,7 @@ async function ucanUca() {
    * bağlı: dağıtım sonucu `sourceMovementId` olarak yazılmazsa bağ kurulmaz
    * ve yasak boşa çıkar.
    */
-  const stokGovdesi = readFileSync("src/lib/stok.ts", "utf8");
+  const stokGovdesi = kaynakOku("src/lib/stok.ts");
   kontrol(
     "FIFO gövdesi parti kimliğini taşıyor",
     /sourceMovementId/.test(stokGovdesi),

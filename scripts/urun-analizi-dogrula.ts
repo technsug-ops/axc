@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   analizAdresi,
@@ -397,7 +397,7 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
    * Bu ölçüt saf gövdeye taşınamaz (sunucu bileşeni), o yüzden kaynak
    * taranıyor — ve desen KULLANIM YERİNE bağlı, ada değil.
    */
-  const sayfa = readFileSync("src/app/rapor/urunler/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/rapor/urunler/page.tsx");
 
   dogru(
     "ekran: toplam SÜZÜLMÜŞ kümeden hesaplanıyor",
@@ -426,8 +426,8 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
 // 8) EKRAN — PARETO YALNIZ KENDİ SIRASINDA; PANEL ADRESİ GÖVDEDEN
 // ═══════════════════════════════════════════════════════════════════════════
 {
-  const sayfa = readFileSync("src/app/rapor/urunler/page.tsx", "utf8");
-  const panel = readFileSync("src/app/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/rapor/urunler/page.tsx");
+  const panel = kaynakOku("src/app/page.tsx");
 
   /**
    * ⛔ Kümülatif pay yalnız NET-2 AZALAN sırada anlamlı. Başka sırada
@@ -460,7 +460,7 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
   );
 
   /** Menü kaydı — ekran menüde YOKSA kimse ulaşamaz. */
-  const katalog = readFileSync("src/lib/menu/katalog.ts", "utf8");
+  const katalog = kaynakOku("src/lib/menu/katalog.ts");
   dogru(
     "menü: adres kayıtlı",
     /urunAnalizi: "\/rapor\/urunler"/.test(katalog),
@@ -620,7 +620,7 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
 // 10) KİMLİK KODLARI LİSTEDE (İlke #3 + #4) — kullanıcı isteği 02.09.2026
 // ═══════════════════════════════════════════════════════════════════════════
 {
-  const sayfa = readFileSync("src/app/rapor/urunler/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/rapor/urunler/page.tsx");
   /** Bileşen gövdesine daralt — desen dosyanın başka yerinde de geçebilir. */
   const bas = sayfa.indexOf("async function KimlikSatiri");
   const blok = bas < 0 ? "" : sayfa.slice(bas);
@@ -660,7 +660,7 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
   );
 
   /** Gövde tarafı: aynıysa `null` yazılıyor mu — DEĞER testi. */
-  const veri = readFileSync("src/lib/rapor/urun-analizi-verisi.ts", "utf8");
+  const veri = kaynakOku("src/lib/rapor/urun-analizi-verisi.ts");
   dogru(
     "gövde: companySku === sku ise firmaSku null",
     /firmaSku: v\.companySku === v\.sku \? null : v\.companySku/.test(veri),
@@ -854,10 +854,7 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
  * uzun liste, her tuşta göndermek gereksiz sayfa geçişi üretirdi).
  */
 {
-  const suzgecKaynagi = readFileSync(
-    "src/app/rapor/urunler/analiz-suzgeci.tsx",
-    "utf8",
-  );
+  const suzgecKaynagi = kaynakOku("src/app/rapor/urunler/analiz-suzgeci.tsx");
   dogru(
     "OtomatikGonderSecim İTHAL EDİLİYOR",
     suzgecKaynagi.includes(
@@ -892,10 +889,7 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
       ),
   );
 
-  const secimKaynagi = readFileSync(
-    "src/app/rapor/urunler/otomatik-gonder-secim.tsx",
-    "utf8",
-  );
+  const secimKaynagi = kaynakOku("src/app/rapor/urunler/otomatik-gonder-secim.tsx");
   dogru(
     "OtomatikGonderSecim GERÇEKTEN formu gönderiyor (onChange → requestSubmit)",
     /onChange=\{\(e\) => e\.currentTarget\.form\?\.requestSubmit\(\)\}/.test(
@@ -914,7 +908,7 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
  * liste açan bir çip İlke #2'yi çiğniyordu.
  */
 {
-  const sayfa = readFileSync("src/app/rapor/urunler/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/rapor/urunler/page.tsx");
   dogru(
     "kanal seçenekleri yalnız GERÇEK satışı olan kanalları soruyor",
     sayfa.includes(

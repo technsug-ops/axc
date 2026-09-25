@@ -3,7 +3,7 @@ import { ozetPaketiKur, type OzetSayisi } from "../src/lib/ozet/veri-toplama";
 import { kartlarinAcikToplami } from "../src/lib/kart-borcu";
 import { desiFarkliMi } from "../src/lib/desi-karsilastirma";
 import { ozetTazeligi, OZET_ESIK_SAAT } from "../src/lib/ozet/tazelik";
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import { baslikMi, ozetTeaseri } from "../src/lib/ozet/teaser";
 
 /**
@@ -422,7 +422,7 @@ kontrol(
    * GORUNMEZLIGI' dogar - o da yalanci yesildir. Olcut KULLANIMA bagli.
    */
   {
-    const kutu = readFileSync("src/app/ozet-kutusu.tsx", "utf8")
+    const kutu = kaynakOku("src/app/ozet-kutusu.tsx")
       .replace(/\/\*[\s\S]*?\*\//g, " ");
     kontrol(
       "panel kutusu SAF GOVDEYI cagiriyor",

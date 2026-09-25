@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { kartAdresi } from "../src/lib/kart-adresi";
 import { kodDizisi } from "../src/lib/varyant-ozet";
@@ -18,6 +18,7 @@ import {
   kodKosuluToplu,
   satisKodKosulu,
 } from "../src/lib/varyant-arama-kurali";
+import { kaynakOku } from "./kaynak-oku";
 
 /** Yorumları siler — bir yasağı ANLATAN yorum, o yasağı ÇİĞNEMİŞ sayılmaz. */
 function yorumsuz(kod: string): string {
@@ -57,7 +58,7 @@ function kaynakDosyalari(kok: string): string[] {
  * OKUMA KAPISINDA yapılıyor.
  */
 function semaMetni(): string {
-  return readFileSync("prisma/schema.prisma", "utf8")
+  return kaynakOku("prisma/schema.prisma")
     .split("\r\n")
     .join("\n");
 }
@@ -204,7 +205,7 @@ console.log("\nKANAL KODLARI EKRANI — KİMLİK VE ORAN LİSTEDE");
  * gibidir" — bu, aynı gün iade tarafında dört sütun çiftinde de çıkan desen.
  */
 {
-  const ekran = readFileSync("src/app/kanal-sku/page.tsx", "utf8");
+  const ekran = kaynakOku("src/app/kanal-sku/page.tsx");
   const ekranKod = ekran
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -315,7 +316,7 @@ console.log("\nKANAL KODLARI EKRANI — KİMLİK VE ORAN LİSTEDE");
    * oran birer input kutusunun içindeydi. Sütun olarak eklenince aynı değer
    * İKİ KEZ göründü. Doğru bölüşüm: **liste OKUR, diyalog YAZAR.**
    */
-  const editor = readFileSync("src/app/kanal-sku/satir-duzenle.tsx", "utf8");
+  const editor = kaynakOku("src/app/kanal-sku/satir-duzenle.tsx");
   const editorKod = editor
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
     .replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -490,7 +491,7 @@ console.log("");
     kontrol("  ...dolu sorgu KIRPILARAK geçer", satisAramasiHazirla("  4864776792 ") === "4864776792");
 
     /** ⛔ VE KAPILAR GERÇEKTEN BAĞLI: async gövde ikisini de ÇAĞIRIYOR. */
-    const govde = yorumsuz(readFileSync("src/lib/satis-kodundan-varyant.ts", "utf8"));
+    const govde = yorumsuz(kaynakOku("src/lib/satis-kodundan-varyant.ts"));
     kontrol(
       "async gövde boş-sorgu kapısını KULLANIYOR",
       /const temiz = satisAramasiHazirla\(sorgu\);[\s\S]{0,80}if \(temiz === null\) return \[\];/.test(govde),
@@ -517,10 +518,10 @@ console.log("");
    * BAĞLI olduğu; üçüncü bir ekran açılırsa o da aynı gövdeyi çağırmalı. */
   {
     const stokKaynak = yorumsuz(
-      readFileSync("src/app/stok/page.tsx", "utf8"),
+      kaynakOku("src/app/stok/page.tsx"),
     );
     const urunlerKaynak = yorumsuz(
-      readFileSync("src/app/urunler/page.tsx", "utf8"),
+      kaynakOku("src/app/urunler/page.tsx"),
     );
     for (const [ad, kaynak, dal] of [
       ["/stok", stokKaynak, "{ id: { in: satisVaryantIdleri } }"],
@@ -571,7 +572,7 @@ console.log("");
   );
 
   // ── SUNUCU: ÇAKIŞMA HÜKMÜ ────────────────────────────────────────────
-  const satisLib = readFileSync("src/lib/satis.ts", "utf8");
+  const satisLib = kaynakOku("src/lib/satis.ts");
   kontrol(
     "kayıt sırasında çakışma SORULUYOR (ham DB hatasına bırakılmıyor)",
     /where: \{ shipmentCode: girdi\.shipmentCode \}/.test(satisLib),
@@ -583,10 +584,7 @@ console.log("");
     ),
   );
 
-  const gonderiEylemi = readFileSync(
-    "src/app/satislar/[id]/gonderi-no-actions.ts",
-    "utf8",
-  );
+  const gonderiEylemi = kaynakOku("src/app/satislar/[id]/gonderi-no-actions.ts");
   kontrol(
     "sonradan girişte de çakışma sorgulanıyor",
     /where: \{ shipmentCode: kod \}/.test(gonderiEylemi),
@@ -602,7 +600,7 @@ console.log("");
   );
 
   // ── /okut: SATIŞ KİMLİĞİ ARAMASI ─────────────────────────────────────
-  const okutEylemi = readFileSync("src/app/okut/actions.ts", "utf8");
+  const okutEylemi = kaynakOku("src/app/okut/actions.ts");
   kontrol(
     "/okut varyant bulunamazsa SATIŞ kimliğinde arıyor",
     /satisKodCosulu|satisKodKosulu\(temiz\)/.test(okutEylemi),
@@ -627,17 +625,14 @@ console.log("");
       okutEylemi,
     ),
   );
-  const okuyucu = readFileSync("src/app/okut/okuyucu.tsx", "utf8");
+  const okuyucu = kaynakOku("src/app/okut/okuyucu.tsx");
   kontrol(
     "  ...ve EKRANDA yazıyor (alanAdi sözlüğünde)",
     /shipmentCode: t\("alanShipmentCode"\)/.test(okuyucu),
   );
 
   // ── FORM: OKUNAN DEĞER DOĞRUDAN TAŞINIR ──────────────────────────────
-  const gonderiFormu = readFileSync(
-    "src/app/satislar/[id]/gonderi-no.tsx",
-    "utf8",
-  );
+  const gonderiFormu = kaynakOku("src/app/satislar/[id]/gonderi-no.tsx");
   /**
    * ⚠ ARA DURUMDAN OKUMA YASAK. React durumu senkron güncellenmiyor;
    * `setKod(x)` deyip hemen `kaydet()` çağırmak BİR ÖNCEKİ değeri
@@ -654,7 +649,7 @@ console.log("");
   );
 
   // ── /satislar ARAMASI ────────────────────────────────────────────────
-  const suzgec = readFileSync("src/lib/liste-suzgeci.ts", "utf8");
+  const suzgec = kaynakOku("src/lib/liste-suzgeci.ts");
   /**
    * ⚠ ÖLÇÜT 30.08.2026'DA GÜNCELLENDİ — VE NİYE GÜNCELLENDİĞİ BURADA YAZAR.
    *
@@ -741,7 +736,7 @@ console.log("");
     ["alımlar", "src/app/alimlar/page.tsx"],
     ["ürünler", "src/app/urunler/page.tsx"],
   ] as const) {
-    const kaynak = readFileSync(yol, "utf8");
+    const kaynak = kaynakOku(yol);
     const cagri = (kaynak.match(/kartAdresi\(/g) ?? []).length;
     const mobilBasi = kaynak.indexOf("md:hidden");
     const ciftRender = mobilBasi > 0;
@@ -771,7 +766,7 @@ console.log("");
    * Satış/alımda kayıt zaten tek varyantlı; orada düşülecek bir yer yok ve
    * ad düz metin kalır.
    */
-  const urunlerKaynak = readFileSync("src/app/urunler/page.tsx", "utf8");
+  const urunlerKaynak = kaynakOku("src/app/urunler/page.tsx");
   kontrol(
     "ürünler: belirsizken ürün sayfasına düşüyor (bağlantı kaybolmuyor)",
     /kartAdresi\([\s\S]{0,120}\) \?\? `\/urunler\/\$\{urun\.id\}`/.test(
@@ -871,7 +866,7 @@ console.log("");
   const taranan = kaynakDosyalari("src");
   const ihlaller: string[] = [];
   for (const yol of taranan) {
-    const kod = yorumsuz(readFileSync(yol, "utf8"));
+    const kod = yorumsuz(kaynakOku(yol));
     /** Kuralın KENDİ dosyası muaf — eşdeğeri o üretiyor. */
     if (duzYol(yol).endsWith("lib/varyant-arama-kurali.ts")) continue;
     const eslesmeler = kod.match(/barcode:\s*\{\s*contains:\s*([A-Za-z_$][\w$]*)/g) ?? [];
@@ -946,7 +941,7 @@ console.log("");
    * hâlâ aynı — sayım yolu pasifi ELEMEZ ve bunu BEYAN eder.
    * _(Anayasa: "dize, davranışın vekilidir — ve refaktör vekili eskitir.")_
    */
-  const sayimKaynagi = readFileSync("src/app/okut/sayim-actions.ts", "utf8");
+  const sayimKaynagi = kaynakOku("src/app/okut/sayim-actions.ts");
   const sayimCagri = sayimKaynagi.indexOf("kodlaVaryantCoz(temiz");
   kontrol("sayım yolu ortak gövdeyi çağırıyor", sayimCagri >= 0);
   if (sayimCagri >= 0) {
@@ -1053,7 +1048,7 @@ console.log("");
      * YORUMDUR, olması gereken de budur) ve bekçi bu kez onları suçladı.
      * **ÇAĞRI koddan, BEYAN yorumdan okunur.**
      */
-    const ham = readFileSync("src/" + p, "utf8");
+    const ham = kaynakOku("src/" + p);
     const metin = ham
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/\/\/.*$/gm, "");
@@ -1122,7 +1117,7 @@ console.log("");
   const BEYANLI: ((p: string) => boolean)[] = [];
   const ciplak: string[] = [];
   for (const p of kaynaklar) {
-    if (!readFileSync("src/" + p, "utf8").includes("channelSkus: { some: { channelSku:")) continue;
+    if (!kaynakOku("src/" + p).includes("channelSkus: { some: { channelSku:")) continue;
     if (BEYANLI.some((uyar) => uyar(p))) continue;
     ciplak.push(p);
   }
@@ -1155,7 +1150,7 @@ console.log("");
     (p): p is string => typeof p === "string" && p.endsWith(".tsx"),
   );
   const kutular = tsxKaynaklar.filter((y) => {
-    const k = readFileSync(join("src", y), "utf8");
+    const k = kaynakOku(join("src", y));
     return k.includes("useState(baslangic)") && k.includes('ortak("temizle")');
   });
   /** ⚠ TABAN DOLULUĞU AYRICA KANITLANIR: boş küme her koşulu sağlar. */
@@ -1165,7 +1160,7 @@ console.log("");
   );
   const linkleTemizleyen: string[] = [];
   for (const y of kutular) {
-    const k = readFileSync(join("src", y), "utf8")
+    const k = kaynakOku(join("src", y))
       .replace(/\/\*[\s\S]*?\*\//g, " ")
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ");
     const i = k.indexOf('ortak("temizle")');
@@ -1181,7 +1176,7 @@ console.log("");
     console.log("        `<Link>` İLE TEMİZLEYEN: " + linkleTemizleyen.join(" · "));
   const durumuSifirlamayan: string[] = [];
   for (const y of kutular) {
-    const k = readFileSync(join("src", y), "utf8");
+    const k = kaynakOku(join("src", y));
     if (!/setSorgu\(""\)/.test(k)) durumuSifirlamayan.push(y);
   }
   kontrol(

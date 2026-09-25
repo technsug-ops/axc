@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { engelGrubu, satisaEngel } from "../src/lib/kanal-listeleme";
 import {
@@ -38,7 +38,7 @@ function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   }
 }
 const yorumsuz = (yol: string) =>
-  readFileSync(yol, "utf8")
+  kaynakOku(yol)
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
 

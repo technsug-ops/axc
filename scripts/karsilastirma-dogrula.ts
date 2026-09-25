@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { gunDegeri, gunMetni, pencereOlustur } from "../src/lib/donem";
 
@@ -259,7 +259,7 @@ console.log("5) EKRAN KURALLARI — İKİ TUZAK");
 console.log("=".repeat(70));
 
 {
-  const rapor = readFileSync("src/app/rapor/page.tsx", "utf8");
+  const rapor = kaynakOku("src/app/rapor/page.tsx");
   /**
    * TUZAK 2 — İADE SATIRI ROZET ALMAZ. Geçmiş ayın malı bu ay iade
    * edilince etkisi bu ayın hanesine yazılır; rozet bunu performans

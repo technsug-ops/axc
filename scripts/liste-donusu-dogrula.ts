@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -245,10 +245,7 @@ const {
 // 4) EKRAN — HEDEF VE METİN TEK KAYNAKTAN
 // ═══════════════════════════════════════════════════════════════════════════
 {
-  const bilesen = readFileSync(
-    "src/components/liste-hafizasi-bilesenleri.tsx",
-    "utf8",
-  );
+  const bilesen = kaynakOku("src/components/liste-hafizasi-bilesenleri.tsx");
 
   /**
    * ⛔ HEDEF İLE ETİKET AYRI AYRI SEÇİLEMEZ. Ayrı seçilseydi bağlantı

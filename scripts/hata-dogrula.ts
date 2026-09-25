@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   EKRAN_DURUMLARI,
@@ -85,7 +85,7 @@ function kontrol(ad: string, kosul: boolean, ipucu?: string) {
  * Bu depoda dosyaların bir kısmı CRLF, bir kısmı LF — kapı tek olmalı.
  */
 function oku(yol: string): string {
-  return readFileSync(yol, "utf8").replace(/\r/g, "");
+  return kaynakOku(yol).replace(/\r/g, "");
 }
 
 /**

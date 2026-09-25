@@ -1,5 +1,5 @@
 import { siparisKesintiKurallari } from "../src/lib/siparis-kesintileri";
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 /**
  * ============================================================================
  *  KÂR MOTORU DOĞRULAMA
@@ -805,7 +805,7 @@ console.log("=".repeat(70));
      * — import satırı da o adı taşıyor ve ad araması onu bulurdu.
      */
     for (const yol of ["src/lib/satis.ts", "src/lib/kar-yeniden.ts"]) {
-      const kaynak = readFileSync(yol, "utf8");
+      const kaynak = kaynakOku(yol);
       kontrol(
         `${yol}: ortak gövdeyi ÇAĞIRIYOR`,
         kaynak.includes("siparisKesintiKurallari(kurallar)"),
@@ -824,12 +824,12 @@ console.log("=".repeat(70));
    * kanal taşımasında, adet düzeltmesinde, maliyet hizalamasında
    * kendiliğinden koşuyor.
    */
-  const yeniden = readFileSync("src/lib/kar-yeniden.ts", "utf8");
+  const yeniden = kaynakOku("src/lib/kar-yeniden.ts");
   kontrol(
     "yeniden hesap paket sayısını SATIŞTAN okuyor",
     /paketSayisi: satis\.paketSayisi,/.test(yeniden),
   );
-  const satisKaynak = readFileSync("src/lib/satis.ts", "utf8");
+  const satisKaynak = kaynakOku("src/lib/satis.ts");
   kontrol(
     "kayıt sırasında paket sayısı motora GİDİYOR",
     /paketSayisi: girdi\.paketSayisi,/.test(satisKaynak),
@@ -887,7 +887,7 @@ console.log("=".repeat(70));
  */
 {
   console.log("NET: yalnız CALCULATED iken yazılır");
-  const y = readFileSync("src/lib/kar-yeniden.ts", "utf8");
+  const y = kaynakOku("src/lib/kar-yeniden.ts");
   kontrol(
     "netYaz gövdesi CALCULATED şartını taşıyor",
     /durum === "CALCULATED" \? String\(deger\) : null/.test(y),
@@ -942,7 +942,7 @@ console.log("=".repeat(70));
  */
 {
   console.log("TAHMİNİ KARGO cargoAmount'A YAZILMAZ");
-  const y = readFileSync("src/lib/kar-yeniden.ts", "utf8");
+  const y = kaynakOku("src/lib/kar-yeniden.ts");
 
   kontrol(
     "cargoAmount yazımı, karOnizle'nin DÖNDÜRDÜĞÜ cargoTahminMi'ye bağlı",
@@ -1055,7 +1055,7 @@ console.log("=".repeat(70));
  */
 {
   console.log("satisKaydet — TAHMİNİ KARGO cargoAmount'A YAZILMAZ (K202-2)");
-  const y = readFileSync("src/lib/satis.ts", "utf8");
+  const y = kaynakOku("src/lib/satis.ts");
   const basi = y.indexOf("// --- kargo: ELLE GİRİLEN TUTAR TARİFEYİ EZER ---");
   const sonu = y.indexOf("// --- kalem maliyetleri FIFO dağıtımından ---", basi);
   const blok = basi >= 0 && sonu > basi ? y.slice(basi, sonu) : "";

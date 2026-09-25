@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -131,7 +132,7 @@ console.log("\n1) DESEN YASAĞI — birim maliyeti yazan, özeti de yazar");
 const tumu = [...dosyalar("src"), ...dosyalar("scripts")];
 const yazanlar: string[] = [];
 for (const yol of tumu) {
-  const ham = readFileSync(yol, "utf8");
+  const ham = kaynakOku(yol);
   const kod = yorumsuz(ham);
   const bloklar = cagriBloklari(kod);
   if (bloklar.length === 0) continue;
@@ -152,7 +153,7 @@ kontrol(
 );
 
 for (const yol of yazanlar) {
-  const ham = readFileSync(yol, "utf8");
+  const ham = kaynakOku(yol);
   const kod = yorumsuz(ham);
   const ad = yol.replace(/\\/g, "/");
   if (MUAFIYET.test(ham)) {
@@ -187,7 +188,7 @@ for (const yol of yazanlar) {
 }
 
 console.log("\n2) HİZALAMA ARACI — ölçütü ve denetim sayaçları yerinde");
-const hizala = readFileSync("scripts/canli-goods-amount-hizala.ts", "utf8");
+const hizala = kaynakOku("scripts/canli-goods-amount-hizala.ts");
 const hizalaKod = yorumsuz(hizala);
 /**
  * Araç ölçütü YENİDEN HESAPLIYOR mu — yoksa bir listeden mi okuyor?

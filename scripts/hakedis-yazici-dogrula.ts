@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { YAZMASI_BEYANLI } from "./yazici-beyani";
 
@@ -127,7 +127,7 @@ kontrol(
 );
 for (const d of DOSYALAR) console.log(`     · ${d}`);
 
-const metinler = new Map(DOSYALAR.map((d) => [d, yorumsuz(readFileSync(d, "utf8"))]));
+const metinler = new Map(DOSYALAR.map((d) => [d, yorumsuz(kaynakOku(d))]));
 
 console.log("① --yaz KAPISI, YAZMA ÇAĞRILARINDAN ÖNCE GELİYOR MU");
 for (const d of DOSYALAR) kontrol(`  ${d}`, yazKapisiOncedeMi(metinler.get(d)!));

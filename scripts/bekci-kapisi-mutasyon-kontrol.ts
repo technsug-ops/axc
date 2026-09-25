@@ -5,18 +5,22 @@ import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
- *  N11 ESLESTIRME BETIGI - MUTASYON HARNESS'I (22.09.2026)
+ *  BEKÇİ ALTYAPISI TEK KAPIDAN — MUTASYON HARNESS'I (K262 · K263, 25.09.2026)
  * ----------------------------------------------------------------------------
- *      npm run n11-esleme-mutasyon:kontrol
+ *      npm run bekci-kapisi-mutasyon:kontrol
  *
- *  Bekci kaynak tariyor; taradigi desenin DAVRANISA bagli oldugunu ancak
- *  mutasyon gosterir. UC YON: zararsiz - kaldiran - fazladan.
+ *  `bekci-kapisi:dogrula`nın dişini sınar. Kilit mutasyonlar GERÇEK dosyalarda:
+ *  bir bekçi kapıyı atlayıp `readFileSync`i yeniden içeri alır, bir harness
+ *  `writeFileSync`i yeniden içeri alır — ikisi de KIRMIZI yanmalı. ÜÇ YÖN.
  * ============================================================================
  */
 
-const BEKCI = "scripts/n11-esleme-dogrula.ts";
-const BEKCI_BASLIGI = "N11 EŞLEŞTİRME — BEKÇİ";
-const BETIK = "scripts/canli-n11-esle.ts";
+const BEKCI = "scripts/bekci-kapisi-dogrula.ts";
+const BEKCI_BASLIGI = "BEKÇİ ALTYAPISI TEK KAPIDAN";
+const KAPI = "scripts/kaynak-oku.ts";
+const ORNEK_BEKCI = "scripts/alim-ekseni-dogrula.ts";
+const ORNEK_HARNESS = "scripts/tazminat-mutasyon-kontrol.ts";
+const HEDEFLER = "scripts/mutasyon-hedefleri.ts";
 
 type Mutasyon = {
   ad: string;
@@ -29,71 +33,55 @@ type Mutasyon = {
 
 const MUTASYONLAR: Mutasyon[] = [
   {
-    ad: "ZARARSIZ - yalniz yorum degisti (harness saglamasi)",
+    ad: "ZARARSIZ - kapi yorumu degisti (harness saglamasi)",
     yon: "ZARARSIZ",
-    dosya: BETIK,
-    bul: "    /** Hedef: barkod ya da stockCode ile TEK varyant. */",
-    koy: "    /** hedef. */",
-    bozdugu: "hicbir sey - bu mutasyon YESIL kalmali",
+    dosya: KAPI,
+    bul: "/** Saf gövde — değer testi bunu çağırır. */",
+    koy: "/** Saf govde. */",
+    bozdugu: "hicbir sey - YESIL kalmali",
   },
   {
-    ad: "K231 KAPISI DUSTU - baskasinin kodu esleme olarak acilir",
+    ad: "KAPI CRLF'I NORMALLESTIRMIYOR",
     yon: "KALDIRAN",
-    dosya: BETIK,
-    bul: "    if (baskasi) { cakisan.push({ stockCode: l.stockCode, sebep: `${baskasi.sku} (${baskasi.ad.slice(0, 40)})` }); continue; }",
-    koy: "    if (false) { cakisan.push({ stockCode: l.stockCode, sebep: `${baskasi?.sku}` }); continue; }",
-    bozdugu:
-      "bir kod iki varyanta birden baglanir - 21.09'da uc ikizi doguran adimin ta kendisi, 58 kez",
-  },
-  {
-    ad: "COK ESLESME YINE DE ACILIYOR - ilk aday sessizce secilir",
-    yon: "KALDIRAN",
-    dosya: BETIK,
-    bul: "    if (adaylar.size > 1 || !adayBilgi) { cokEslesme.push(l); continue; }",
-    koy: "    if (!adayBilgi) { cokEslesme.push(l); continue; }",
-    bozdugu:
-      "barkodu iki varyanta uyan listeleme ilk bulunana baglanir - findFirst'un sessiz secimi geri gelir",
-  },
-  {
-    ad: "IKINCI KAYNAK YAZILIYOR - komisyon orani API'den defter'e",
-    yon: "FAZLADAN",
-    dosya: BETIK,
-    bul: "      data: { channelAccountId: hesap.id, variantId: a.variantId, channelSku: a.stockCode },",
-    koy: "      data: { channelAccountId: hesap.id, variantId: a.variantId, channelSku: a.stockCode, commissionRate: null },",
-    bozdugu:
-      "komisyon oraninin iki kaynagi olur (dosya yukleyici + API); hangisinin kazandigi belirsizlesir",
-  },
-  {
-    ad: "GERI ALMA OLCULMUS SATIRI DA SILIYOR",
-    yon: "FAZLADAN",
-    dosya: BETIK,
-    bul: "        listelemeDurumu: \"BILINMIYOR\",\n        kanalOlcumAt: null,",
+    dosya: KAPI,
+    bul: '.replace(/\\r\\n?/g, "\\n")',
     koy: "",
-    bozdugu:
-      "senkron bir kez kostuktan sonra geri alma, olculmus 58 kaydi siler - geri alma bir yazimdir ve ayni disipline tabidir",
+    bozdugu: "ortasinda \\n tasiyan capa CRLF dosyada sessizce kirilir - kapi kagit uzerinde kalir",
   },
   {
-    ad: "KURU KOSUM KAPISI DUSTU - --uygula olmadan yazar",
+    ad: "BIR BEKCI KAPIYI ATLADI (readFileSync geri geldi)",
     yon: "KALDIRAN",
-    dosya: BETIK,
-    bul: "  if (!uygula) {",
-    koy: "  if (false) {",
-    bozdugu: "onay istemeden canliya yazar",
+    dosya: ORNEK_BEKCI,
+    bul: 'import { kaynakOku } from "./kaynak-oku";',
+    koy: 'import { readFileSync } from "node:fs";\nimport { kaynakOku } from "./kaynak-oku";',
+    bozdugu: "yarin eklenen bekci cipak okur - satir sonu tuzagi geri doner",
+  },
+  {
+    ad: "BIR HARNESS YAZMA KAPISINI ATLADI (writeFileSync geri geldi)",
+    yon: "KALDIRAN",
+    dosya: ORNEK_HARNESS,
+    bul: 'import { readFileSync } from "node:fs";',
+    koy: 'import { readFileSync, writeFileSync } from "node:fs";',
+    bozdugu: "Windows kilidinde geri alma yazimi duser, mutant diskte kalir",
+  },
+  {
+    ad: "HEDEF TARAYICISI dayanikliYaz'I TANIMIYOR",
+    yon: "KALDIRAN",
+    dosya: HEDEFLER,
+    bul: "(?:readFileSync|writeFileSync|dayanikliYaz)",
+    koy: "(?:readFileSync|writeFileSync)",
+    bozdugu: "yalniz dayanikliYaz ile yazan harness'in hedefi gorunmez - cakisma bekcisi kor",
   },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
-  const r = spawnSync("npx tsx " + BEKCI, {
-    shell: true,
-    encoding: "utf8",
-    maxBuffer: 40 * 1024 * 1024,
-  });
+  const r = spawnSync("npx tsx " + BEKCI, { shell: true, encoding: "utf8", maxBuffer: 40 * 1024 * 1024 });
   const cikti = (r.stdout ?? "") + (r.stderr ?? "");
   return { kod: r.status ?? 1, ciktiVar: cikti.includes(BEKCI_BASLIGI) };
 }
 
 console.log("");
-console.log("N11 ESLESTIRME - MUTASYON TURU");
+console.log("BEKCI ALTYAPISI TEK KAPIDAN - MUTASYON TURU (K262 · K263)");
 console.log("");
 
 let yakalanan = 0;
@@ -104,13 +92,11 @@ for (const m of MUTASYONLAR) {
   const asil = readFileSync(m.dosya, "utf8");
   const bul = desenNormalle(asil, m.bul);
   const koy = desenNormalle(asil, m.koy);
-
   const adet = asil.split(bul).length - 1;
   if (adet !== 1) {
-    bozuk.push(`${m.ad}\n       desen ${m.dosya} icinde ${adet} kez geciyor (1 olmali)`);
+    bozuk.push(`${m.ad}\n       desen ${m.dosya} icinde ${adet} kez geciyor (1 olmali) - OLCULEMEDI`);
     continue;
   }
-
   const mutant = asil.replace(bul, koy);
   let sonuc: { kod: number; ciktiVar: boolean };
   try {
@@ -127,7 +113,6 @@ for (const m of MUTASYONLAR) {
       bozuk.push(`${m.ad}\n       GERI ALMA BASARISIZ - dosya mutasyonlu kaldi`);
     }
   }
-
   const isaret = m.yon === "ZARARSIZ" ? "o" : m.yon === "KALDIRAN" ? "-" : "+";
   if (m.yon === "ZARARSIZ") {
     if (sonuc.kod === 0 && sonuc.ciktiVar) {
@@ -140,7 +125,6 @@ for (const m of MUTASYONLAR) {
     }
     continue;
   }
-
   if (sonuc.kod !== 0 && sonuc.ciktiVar) {
     yakalanan++;
     console.log(`  OK  ${isaret} ${m.ad}`);
@@ -162,11 +146,10 @@ if (bozuk.length) {
   for (const b of bozuk) console.log("  !! " + b);
   console.log("");
 }
-
 console.log(`  ${yakalanan}/${MUTASYONLAR.length} mutasyon beklendigi gibi davrandi`);
 if (kacan.length || bozuk.length) {
   console.log("\n  Kacan ya da olculemeyen mutasyon var - bekci eksik.\n");
   process.exitCode = 1;
 } else {
-  console.log("\n  OK  N11 eslestirme UC YONDEN sinandi, kirmizi yandigi GORULDU.\n");
+  console.log("\n  OK  Bekci altyapisi kapisi UC YONDEN sinandi, kirmizi yandigi GORULDU.\n");
 }

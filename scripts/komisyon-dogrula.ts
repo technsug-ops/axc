@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   KAMPANYA_ORANI_OKUYUCUSU_OLAN,
@@ -812,7 +812,7 @@ console.log("\nYÜKLEME KAYDI (AuditLog dördüncü yazıcı)");
    * Değer testi göremez: `yuklemeDetayi` her iki yolda da doğru çalışır;
    * sınanan şey ÇAĞRILIYOR olması.
    */
-  const rota = readFileSync("src/app/api/komisyon/route.ts", "utf8");
+  const rota = kaynakOku("src/app/api/komisyon/route.ts");
   const cagriSayisi = (rota.match(/yuklemeKaydiYaz\(/g) ?? []).length;
   kontrol("rota İKİ yerden kayıt yazıyor", cagriSayisi === 2, cagriSayisi);
   kontrol(
@@ -986,7 +986,7 @@ console.log("\nORAN UYARISI (satış formu)");
    * EKRAN BAĞLI MI — kaynak taranır. Değer testi göremez: saf fonksiyon
    * doğru çalışsa da form onu çağırmıyorsa uyarı hiç görünmez.
    */
-  const form = readFileSync("src/app/satislar/satis-formu.tsx", "utf8");
+  const form = kaynakOku("src/app/satislar/satis-formu.tsx");
   kontrol("satış formu uyarıyı ÇAĞIRIYOR", /oranUyarisi\(/.test(form));
   kontrol("  ...kayıtlı oranı ayrı saklıyor", /onerilenOran: bilgi\?\.komisyonOrani/.test(form));
   /**
@@ -1004,8 +1004,8 @@ console.log("\nORAN UYARISI (satış formu)");
    * seferinde çıkıyor; değişen tek şey o SİPARİŞ için açık onay ve
    * onun kayda geçmesi.
    */
-  const bilgiKaynak = readFileSync("src/app/satislar/kalem-bilgisi.ts", "utf8");
-  const veriKaynak0 = readFileSync("src/lib/fiyatlama/kart-verisi.ts", "utf8");
+  const bilgiKaynak = kaynakOku("src/app/satislar/kalem-bilgisi.ts");
+  const veriKaynak0 = kaynakOku("src/lib/fiyatlama/kart-verisi.ts");
   kontrol(
     "taban VERİDEN ölçülüyor (tarifenin en düşüğü)",
     /_min: \{ oran: true \}/.test(veriKaynak0),
@@ -1028,7 +1028,7 @@ console.log("\nORAN UYARISI (satış formu)");
     "  ...form satış tarihini geçiriyor",
     /kalemBilgisiGetir\([\s\S]{0,200}soldAt/.test(form),
   );
-  const veriKaynak = readFileSync("src/lib/fiyatlama/kart-verisi.ts", "utf8");
+  const veriKaynak = kaynakOku("src/lib/fiyatlama/kart-verisi.ts");
   kontrol(
     "  ...pencere tarihi KAPSAMA göre seçiliyor",
     /pencereBaslangic: \{ lte: satisTarihi \}/.test(veriKaynak) &&
@@ -1050,7 +1050,7 @@ console.log("\nORAN UYARISI (satış formu)");
   kontrol("  ...ve sebebi ekranda YAZIYOR", /oranOnayBekliyor/.test(form));
   kontrol("onay kayda gidiyor", /oranIstisnasi: k\.oranIstisnasi/.test(form));
 
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
     Satis?: Record<string, string>;
   };
   for (const a of [
@@ -1154,7 +1154,7 @@ console.log("\nORAN UYARISI (satış formu)");
    * ⚠ SAF GÖVDE DOĞRU OLABİLİR VE ÇAĞRILMAYABİLİR — anayasadaki "zincir,
    * halkalarının varlığıyla değil BAĞLANTISIYLA sınanır" vakası.
    */
-  const envanter = readFileSync("scripts/canli-komisyon-envanter.ts", "utf8");
+  const envanter = kaynakOku("scripts/canli-komisyon-envanter.ts");
   kontrol("betik ritmi GÖVDEDEN okuyor", /ritimGunleri\(kod\)/.test(envanter));
   /**
    * ⛔ DESEN İKİ YERDE GEÇİYOR — SAYILARAK ÖLÇÜLÜR (mutasyon K14c-5,
@@ -1215,7 +1215,7 @@ console.log("\nORAN UYARISI (satış formu)");
    * içinde aranıyor. `teklifDosyasiMi` import satırında da geçiyor ve dosya
    * genelinde arayan bir ölçüt, dal silinse bile YEŞİL kalırdı.
    */
-  const kaynak = readFileSync("src/lib/komisyon/yukle.ts", "utf8");
+  const kaynak = kaynakOku("src/lib/komisyon/yukle.ts");
   const capa = kaynak.indexOf('if (tanima.durum === "TANINMADI")');
   kontrol("TANINMADI dalı bulundu", capa > 0);
   const dal = capa > 0 ? kaynak.slice(capa, capa + 1200) : "";
@@ -1265,7 +1265,7 @@ console.log("\nORAN UYARISI (satış formu)");
     ORAN_OKUYUCUSU_OLAN.length >= 3,
   );
 
-  const sozluk = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as {
     Komisyon: Record<string, string>;
   };
   const K = sozluk.Komisyon;
@@ -1294,7 +1294,7 @@ console.log("\nORAN UYARISI (satış formu)");
    * dördüncü platform eklendiğinde TypeScript susar ve aynı kusur yeniden
    * doğar. Tip tek gövdeye bağlı olmalı.
    */
-  const ekran = readFileSync("src/app/kanal-sku/komisyon-aktar/yukleyici.tsx", "utf8");
+  const ekran = kaynakOku("src/app/kanal-sku/komisyon-aktar/yukleyici.tsx");
   kontrol(
     "ekranın platform tipi TEK GÖVDEDEN geliyor (çıplak birlik yok)",
     /platform: KomisyonPlatformu;/.test(ekran) &&
@@ -1386,7 +1386,7 @@ console.log("\nORAN UYARISI (satış formu)");
    * satirinda da geciyor ve dosya genelinde arayan bir olcut, dal silinse
    * bile YESIL kalirdi).
    */
-  const kaynakY = readFileSync("src/lib/komisyon/yukle.ts", "utf8");
+  const kaynakY = kaynakOku("src/lib/komisyon/yukle.ts");
   const iKip = kaynakY.indexOf('if (kip === "KAMPANYA_ORANI")');
   kontrol("KAMPANYA kip dali bulundu", iKip > 0);
   const kipDali = iKip > 0 ? kaynakY.slice(iKip, iKip + 1400) : "";
@@ -1402,7 +1402,7 @@ console.log("\nORAN UYARISI (satış formu)");
   );
 
   /* Uc nokta kipi gercekten geciyor mu - orta halka. */
-  const rota = readFileSync("src/app/api/komisyon/route.ts", "utf8");
+  const rota = kaynakOku("src/app/api/komisyon/route.ts");
   kontrol(
     "uc nokta kipi formdan OKUYOR ve komisyonDenetle'ye GECIYOR",
     /form.get\("kip"\)/.test(rota) && /komisyonDenetle\(bayt, hesapId, kip\)/.test(rota),

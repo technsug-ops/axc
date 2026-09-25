@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { iadeKdvEtkisi } from "../src/lib/iade-kdv";
 
@@ -35,7 +35,7 @@ kontrol("net2 null → null", iadeKdvEtkisi(200, null) === null);
 kontrol("kuruşa yuvarlar", iadeKdvEtkisi(100.005, 0) === 100.01);
 
 // ── GÖSTERİM — iade-blogu çağırıyor (davranışa bağlı) ──────────────────────
-const blogu = readFileSync("src/components/iade-blogu.tsx", "utf8");
+const blogu = kaynakOku("src/components/iade-blogu.tsx");
 kontrol(
   "iade-blogu iadeKdvEtkisi'ni ÇAĞIRIYOR (net1,net2 ile)",
   /iadeKdvEtkisi\(iade\.net1, iade\.net2\)/.test(blogu),
@@ -83,7 +83,7 @@ kontrol(
  * (Math.min / clamp) bu ölçütü kırmızı yakar. Ölçüldü 06.09.2026: kırpma
  * 216 iadede KDV satırını sıfırlar, ₺92.972,02 bilgi silinir.
  */
-const iadeMotoru = readFileSync("src/lib/iade.ts", "utf8");
+const iadeMotoru = kaynakOku("src/lib/iade.ts");
 kontrol(
   "K170-①: net2Etkisi KAYNAKTA kırpılmıyor (ham fark yazılır)",
   /net2Etkisi:\s*net1Etkisi\s*-\s*odenecekKdvDegisimi\s*,/.test(iadeMotoru),
@@ -154,7 +154,7 @@ kontrol(
 );
 
 // ── K52 — ŞEMA AÇILMADI (türetilebilen için sütun yok) ─────────────────────
-const sema = readFileSync("prisma/schema.prisma", "utf8");
+const sema = kaynakOku("prisma/schema.prisma");
 kontrol(
   "Return'e iadeKdvEtkisi SÜTUNU açılmadı (türetme, şema değil)",
   !/^\s*iadeKdvEtkisi\s+Decimal/m.test(sema),

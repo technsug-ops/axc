@@ -1,4 +1,5 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -45,7 +46,7 @@ function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
 
 /** Yorumsuz okur — bir yasağı anlatan yorum, o yasağı çiğnemiş sayılmaz. */
 function yorumsuzOku(yol: string): string {
-  return readFileSync(yol, "utf8")
+  return kaynakOku(yol)
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/\/\/.*$/gm, "");
 }

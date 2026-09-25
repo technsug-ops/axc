@@ -1,9 +1,10 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { SatirKarti, SatirListesi } from "../src/components/satir-karti";
 import { DURUM_EYLEMI_KABI, DURUM_EYLEMI_SINIFI, EYLEM_SINIFI } from "../src/components/satir-eylemi";
 import { DURUM_ZEMINI } from "../src/lib/renkler";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -194,7 +195,7 @@ console.log("\n1) ANATOMİ (gövde çağrılır, değer sınanır)");
   {
     /** ⚠ YORUMSUZ KODDA ARANIR: bir kuralı ANLATAN yorum onu SAĞLAMIS sayilmaz. */
     const yorumsuzOku = (y: string) =>
-      readFileSync(y, "utf8")
+      kaynakOku(y)
         .replace(/\/\*[\s\S]*?\*\//g, " ")
         .replace(/^\s*\/\/.*$/gm, " ");
     const sayfa = yorumsuzOku("src/app/tazminat/page.tsx");
@@ -247,7 +248,7 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   const yorumsuz = (k: string) =>
     k.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
   const ciftRender = dosyalar.filter((y) => {
-    const k = yorumsuz(readFileSync(y, "utf8"));
+    const k = yorumsuz(kaynakOku(y));
     return k.includes("ListeKarti") && k.includes("<Table>");
   });
 
@@ -271,7 +272,7 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   }
 
   /** ⛔ ORTAK GÖVDEDEN BESLENİYOR MU — kaynağın kendisi kopya olamaz. */
-  const kullananlar = dosyalar.filter((y) => yorumsuz(readFileSync(y, "utf8")).includes("<SatirKarti"));
+  const kullananlar = dosyalar.filter((y) => yorumsuz(kaynakOku(y)).includes("<SatirKarti"));
   kontrol(`SatirKarti'yi kullanan ekran sayısı (taban dolu) — ${kullananlar.length}`, kullananlar.length >= 4, kullananlar);
   kontrol(
     "hakediş ödeme satırı da ortak gövdeden (kaynağın kendisi ikinci kopya değil)",
@@ -281,12 +282,12 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
 }
 /** K268 — sağ blok GENİŞ: alımlarda ürün/kalem/kart ortaya (satışlar düzeni). */
 {
-  const bilesenK = readFileSync("src/components/satir-karti.tsx", "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const bilesenK = kaynakOku("src/components/satir-karti.tsx").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol(
     "sagGenis verilince sağ blok satırın kalanını alıyor (sm:flex-[2] sm:min-w-0)",
     /sagGenis \? " sm:min-w-0 sm:flex-\[2\]" : ""/.test(bilesenK),
   );
-  const alimlarK = readFileSync("src/app/alimlar/page.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const alimlarK = kaynakOku("src/app/alimlar/page.tsx").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   const sagBasi = alimlarK.indexOf("sag={");
   const sagBloku = sagBasi >= 0 ? alimlarK.slice(sagBasi, sagBasi + 1600) : "";
   kontrol("alımlar sağ bloğu geniş ve ilk sütunu esnek (minmax(0,1fr))",
@@ -308,25 +309,25 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   kontrol("eylem kutusu telefonda 52 px · tam genişlik · ikon üstte (>= 44, İlke #8)",
     /\bh-\[52px\]/.test(EYLEM_SINIFI) && /\bw-full\b/.test(EYLEM_SINIFI) && /(^| )flex-col( |$)/.test(EYLEM_SINIFI), EYLEM_SINIFI);
   kontrol("  ...masaüstü AYNEN (md:h-8 md:w-8 ikon düğme)", /md:h-8 md:w-8/.test(EYLEM_SINIFI) && /md:flex-row/.test(EYLEM_SINIFI));
-  const eylemK = readFileSync("src/components/satir-eylemi.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const eylemK = kaynakOku("src/components/satir-eylemi.tsx").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("eylemler telefonda TEK SATIR eşit sütun ızgara (sarmalanmaz)",
     /className="grid w-full auto-cols-\[minmax\(0,1fr\)\] grid-flow-col[^"]*md:flex/.test(eylemK) && !/flex-wrap items-center gap-2 md:flex-nowrap/.test(eylemK));
   kontrol("  ...eylem adı taşmaz (truncate)", /max-w-full truncate md:hidden/.test(eylemK));
-  const listeK = readFileSync("src/components/liste-karti.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const listeK = kaynakOku("src/components/liste-karti.tsx").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("liste kartı: alanlar EŞİT kutu, 3'ün katıysa 3 sütun",
     /const ucSutun = alanlar\.length % 3 === 0;/.test(listeK) && /bg-muted\/60 min-w-0 rounded-lg/.test(listeK));
   kontrol("  ...tek kalan kutu satırı doldurur (boş hücre yok)",
     /!ucSutun && alanlar\.length % 2 === 1 && i === alanlar\.length - 1 \? "col-span-2"/.test(listeK));
   kontrol("  ...eylemler tek satır eşit sütun, değer ve başlık taşmaz",
     /grid auto-cols-\[minmax\(0,1fr\)\] grid-flow-col gap-1\.5/.test(listeK) && /dd className="truncate/.test(listeK) && /line-clamp-2/.test(listeK));
-  const kartK = readFileSync("src/components/satir-karti.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const kartK = kaynakOku("src/components/satir-karti.tsx").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("satır kartı: sağ blok telefonda TAM genişlik", /"flex flex-wrap items-center gap-2 max-sm:w-full"/.test(kartK));
-  const aramaK = readFileSync("src/components/kod-arama-kutusu.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const aramaK = kaynakOku("src/components/kod-arama-kutusu.tsx").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("arama kutusu telefonda tam genişlik (min-w-0 flex-1)", /className="min-w-0 flex-1 md:max-w-xs md:min-w-44"/.test(aramaK));
   kontrol("  ...«Ara» ve «Temizle» telefonda İKON, ad ekran okuyucuda",
     (aramaK.match(/className="max-md:size-11 max-md:px-0"/g) ?? []).length === 2 &&
       (aramaK.match(/<span className="max-md:sr-only">/g) ?? []).length === 2);
-  const excelK = readFileSync("src/components/excel-indir.tsx", "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const excelK = kaynakOku("src/components/excel-indir.tsx").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("Excel düğmesi telefonda İKON (44 px), ad ekran okuyucuda",
     /max-md:size-11 max-md:px-0/.test(excelK) && /<span className="max-md:sr-only">/.test(excelK));
   kosanBolumler.push("K272 telefon");
@@ -342,7 +343,7 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
     /max-md:h-\[52px\]/.test(DURUM_EYLEMI_SINIFI) && /max-md:w-full/.test(DURUM_EYLEMI_SINIFI) && /max-md:min-w-0/.test(DURUM_EYLEMI_SINIFI) && /max-md:flex-col/.test(DURUM_EYLEMI_SINIFI), DURUM_EYLEMI_SINIFI);
   kontrol("  ...masaüstüne DOKUNMAZ (yalnız max-md: önekli)", DURUM_EYLEMI_SINIFI.split(/\s+/).every((s) => s.startsWith("max-md:")));
   kontrol("  ...kap hücreyi doldurur, taşmaz", /max-md:w-full/.test(DURUM_EYLEMI_KABI) && /max-md:min-w-0/.test(DURUM_EYLEMI_KABI));
-  const temiz = (y: string) => readFileSync(y, "utf8").replace(/\r\n/g, "\n").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const temiz = (y: string) => kaynakOku(y).replace(/\r\n/g, "\n").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   const paket = temiz("src/app/satislar/paketlendi-durumu.tsx");
   kontrol("Paketlendi: kap ve düğme durum sınıfını kullanıyor",
     paket.includes("className={`inline-flex flex-col gap-1 ${DURUM_EYLEMI_KABI}`}") && paket.includes("className={`md:h-8 ${DURUM_EYLEMI_SINIFI}`}"));
@@ -371,7 +372,7 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
    ──────────────────────────────────────────────────────────────────────── */
 {
   console.log("\nK272-②③ — stok süzgeç grupları · iade geçiş düğmeleri");
-  const temiz2 = (y: string) => readFileSync(y, "utf8").replace(/\r\n/g, "\n").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const temiz2 = (y: string) => kaynakOku(y).replace(/\r\n/g, "\n").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   const sabit = (kaynak: string, ad: string) => {
     const m = new RegExp(`const ${ad} =\\s*"([^"]*)"`).exec(kaynak);
     return m ? m[1] : "";
@@ -406,7 +407,7 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
    ──────────────────────────────────────────────────────────────────────── */
 {
   console.log("\nK278 — telefonda menü seçimden sonra kapanır");
-  const kenar = readFileSync("src/components/app-sidebar.tsx", "utf8").replace(/\r\n/g, "\n")
+  const kenar = kaynakOku("src/components/app-sidebar.tsx").replace(/\r\n/g, "\n")
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   const baglantilar = kenar.match(/<Link\b[^>]*>/g) ?? [];
   kontrol("menüde bağlantı VAR (taban dolu)", baglantilar.length >= 2, baglantilar.length);
@@ -427,7 +428,7 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
    ──────────────────────────────────────────────────────────────────────── */
 {
   console.log("\nK281 — kullanılan her «-foreground» rengi tanımlı");
-  const css = readFileSync("src/app/globals.css", "utf8");
+  const css = kaynakOku("src/app/globals.css");
   const tanimli = new Set([...css.matchAll(/--color-([a-z-]*foreground)\s*:/g)].map((m) => m[1]));
   kontrol("tema tabanı DOLU (≥ 5 foreground rengi tanımlı)", tanimli.size >= 5, [...tanimli]);
   const kaynaklar: string[] = [];
@@ -441,7 +442,7 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   tara("src");
   const kullanim = new Map<string, string[]>();
   for (const y of kaynaklar) {
-    for (const m of readFileSync(y, "utf8").matchAll(/\b(?:bg|text|border|ring|fill|stroke|outline|decoration)-([a-z-]+-foreground)\b/g)) {
+    for (const m of kaynakOku(y).matchAll(/\b(?:bg|text|border|ring|fill|stroke|outline|decoration)-([a-z-]+-foreground)\b/g)) {
       const l = kullanim.get(m[1]) ?? [];
       l.push(y);
       kullanim.set(m[1], l);
@@ -450,7 +451,7 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   kontrol("kullanım tabanı DOLU (≥ 5 farklı foreground rengi kullanılıyor)", kullanim.size >= 5, [...kullanim.keys()]);
   const tanimsiz = [...kullanim].filter(([ad]) => !tanimli.has(ad)).map(([ad, y]) => `${ad} ← ${[...new Set(y)].join(", ")}`);
   kontrol("TANIMSIZ renk sınıfı yok (sınıf sessizce hiçbir şey yapmaz)", tanimsiz.length === 0, tanimsiz);
-  const menu = readFileSync("src/app/menu/page.tsx", "utf8");
+  const menu = kaynakOku("src/app/menu/page.tsx");
   kontrol("menü rozeti: kırmızı zeminde BEYAZ sayı, ≥ 11 px", /bg-destructive[^"]*text-white/.test(menu) && /bg-destructive[^"]*text-\[11px\]/.test(menu));
   kosanBolumler.push("K281 renk tanımı");
 }

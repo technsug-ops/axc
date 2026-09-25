@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { listelemeDurumu } from "../src/lib/kanal-listeleme";
@@ -7,6 +7,7 @@ import {
   onaysizUrunuNormallestir,
   v2KayitlariniNormallestir,
 } from "./ty/urun-v2";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -280,7 +281,7 @@ function yorumsuz(kaynak: string): string {
     const d = yol.replace(/\\/g, "/");
     taranan++;
     if (d === SAHIP) continue;
-    if (YASAK.test(yorumsuz(readFileSync(yol, "utf8")))) suclular.push(d);
+    if (YASAK.test(yorumsuz(kaynakOku(yol)))) suclular.push(d);
   }
   /** ⭐ TABAN DOLU — tarama boşalırsa döngü hiçbir şey ölçmez. */
   kontrol("TABAN DOLU — taranan dosya (" + taranan + ")", taranan >= 100);
@@ -292,7 +293,7 @@ function yorumsuz(kaynak: string): string {
   /** ⚠ VE SAHİBİNDE DURDUĞU DA ÖLÇÜLÜR: yasak, yolun kaybolması demek değil. */
   kontrol(
     "yol SAHİBİNDE duruyor (kıyas/geçiş için)",
-    YASAK.test(readFileSync(SAHIP, "utf8")),
+    YASAK.test(kaynakOku(SAHIP)),
   );
 }
 kosanBolumler.push("desen yasağı");

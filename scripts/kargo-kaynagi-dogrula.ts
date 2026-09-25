@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 
 import {
   desiSecimi,
@@ -6,6 +6,7 @@ import {
   kargoTahminiMi,
   KURESEL_DESI_ORTANCASI,
 } from "../src/lib/kargo-kaynagi";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -219,7 +220,7 @@ function atamaSatirlari(metin: string, alan: string): string[] {
 
 let tahminYazan = 0;
 for (const yol of ICE) {
-  const metin = readFileSync(yol, "utf8");
+  const metin = kaynakOku(yol);
   const ad = yol.split("/").pop()!;
   kontrol(
     ad + " — cargoAmount'a DOKUNMUYOR",
@@ -247,7 +248,7 @@ kontrol("tahmini kargo yazan içe aktarma VAR (bugün 1 — N11)", tahminYazan =
  * varlığıyla değil bağlantısıyla sınanır" — saf gövde doğru, tüketici yoktu.)_
  */
 {
-  const sayfa = readFileSync("src/app/satislar/[id]/page.tsx", "utf8");
+  const sayfa = kaynakOku("src/app/satislar/[id]/page.tsx");
   kontrol(
     "satış detayı desiSecimi'yi İTHAL EDİYOR",
     /import \{ desiSecimi \} from "@\/lib\/kargo-kaynagi";/.test(sayfa),
@@ -311,7 +312,7 @@ kontrol("tahmini kargo yazan içe aktarma VAR (bugün 1 — N11)", tahminYazan =
   );
   {
     const sozluk = (
-      JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+      JSON.parse(kaynakOku("messages/tr.json")) as {
         Satis: Record<string, string>;
       }
     ).Satis;

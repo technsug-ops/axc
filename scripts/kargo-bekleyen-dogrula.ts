@@ -1,7 +1,8 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { kargoBekliyorMu, KARGO_BEKLEYEN } from "../src/lib/kargo-bekleyen";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -140,7 +141,7 @@ kontrol(
 
 const suclular: string[] = [];
 for (const yol of dosyalar("src")) {
-  const kod = yorumsuz(readFileSync(yol, "utf8"));
+  const kod = yorumsuz(kaynakOku(yol));
   if (!/shippedAt:\s*null/.test(kod)) continue;
   if (ISTISNALAR.has(yol)) continue;
   suclular.push(yol);
@@ -170,7 +171,7 @@ const OKUYUCULAR = [
 ] as const;
 
 for (const [ad, yol] of OKUYUCULAR) {
-  const kod = yorumsuz(readFileSync(yol, "utf8"));
+  const kod = yorumsuz(kaynakOku(yol));
   kontrol(
     "③ " + ad + " gövdeyi İÇERİ ALIYOR",
     /from "@\/lib\/kargo-bekleyen"/.test(kod),

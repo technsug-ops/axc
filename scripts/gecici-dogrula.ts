@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -68,7 +69,7 @@ console.log("1) KLASÖR VE KILAVUZ");
    * bir doğrulama, hiç yazılmamış bir doğrulamadan kötüdür (yeşil sanılır).
    */
   const kilavuz = existsSync("scripts/tmp/BENIOKU.md")
-    ? readFileSync("scripts/tmp/BENIOKU.md", "utf8")
+    ? kaynakOku("scripts/tmp/BENIOKU.md")
     : "";
   kontrol(
     "  ...ve ÖLÇÜTÜ yazıyor (ikinci kez koşulacak mı?)",

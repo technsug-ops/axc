@@ -1,5 +1,6 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -72,7 +73,7 @@ kontrol("route.ts dosyası bulundu (taban DOLU)", routeDosyalari.length >= 10, r
  */
 const cronSecretKullananlar = routeDosyalari.filter((yol) =>
   /process\.env\.CRON_SECRET|process\.env\[["']CRON_SECRET["']\]/.test(
-    readFileSync(yol, "utf8"),
+    kaynakOku(yol),
   ),
 );
 kontrol(
@@ -82,7 +83,7 @@ kontrol(
 );
 
 console.log("\n2) HER BİRİ ACIK_YOLLAR'DA MI");
-const proxyMetni = readFileSync("src/proxy.ts", "utf8");
+const proxyMetni = kaynakOku("src/proxy.ts");
 /** ⚠ DESEN KULLANIM BLOĞUNA DARALTILDI — dizinin TANIMI, dosyanın tamamı değil. */
 const dizinBasi = proxyMetni.indexOf("const ACIK_YOLLAR");
 const dizinSonu = proxyMetni.indexOf("\n];", dizinBasi);
@@ -101,7 +102,7 @@ for (const dosya of cronSecretKullananlar) {
  * Küme DESENDEN: çekirdek çağıran (`CekimKos(`) her rota — liste tutulmaz.
  */
 console.log("\n3) «ATLANDI» 503 DÖNER (K264)");
-const cekimRotalari = routeDosyalari.filter((yol) => /CekimKos\(/.test(readFileSync(yol, "utf8")));
+const cekimRotalari = routeDosyalari.filter((yol) => /CekimKos\(/.test(kaynakOku(yol)));
 kontrol("çekim çekirdeği çağıran rota bulundu (taban DOLU, >= 3)", cekimRotalari.length >= 3, cekimRotalari.map(urlYolu));
 /**
  * ⚠ ÖLÇÜT SON CEVABA BAĞLI, tek kalıba değil: tek çekirdekli rota `ozet`,
@@ -110,7 +111,7 @@ kontrol("çekim çekirdeği çağıran rota bulundu (taban DOLU, >= 3)", cekimRo
  * çağrısı `status:` taşır ve atlandı dalı 200 DEĞİLDİR.
  */
 for (const dosya of cekimRotalari) {
-  const metin = readFileSync(dosya, "utf8");
+  const metin = kaynakOku(dosya);
   const sonCevap = metin.slice(metin.lastIndexOf("NextResponse.json("));
   kontrol(
     `${urlYolu(dosya)} → atlandı ise 503/500, koştuysa 200 (son cevapta status var)`,

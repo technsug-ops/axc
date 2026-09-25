@@ -1,11 +1,5 @@
-import { desenNormalle } from "./mutasyon-deseni";
-import {
-  readFileSync,
-  writeFileSync,
-  unlinkSync,
-  mkdirSync,
-  rmSync,
-} from "node:fs";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
+import { readFileSync, unlinkSync, mkdirSync, rmSync } from "node:fs";
 import { dirname } from "node:path";
 import { spawnSync } from "node:child_process";
 
@@ -168,7 +162,7 @@ for (const m of MUTASYONLAR) {
     const dizin = dirname(m.dosya);
     try {
       mkdirSync(dizin, { recursive: true });
-      writeFileSync(m.dosya, m.koy, "utf8");
+      dayanikliYaz(m.dosya, m.koy);
       const diskten = readFileSync(m.dosya, "utf8");
       if (diskten !== m.koy) {
         bozuk.push(m.ad + "\n       mutasyon diske UYGULANMADI");
@@ -197,7 +191,7 @@ for (const m of MUTASYONLAR) {
     }
     const mutant = asil.replace(bul, koy);
     try {
-      writeFileSync(m.dosya, mutant, "utf8");
+      dayanikliYaz(m.dosya, mutant);
       const diskten = readFileSync(m.dosya, "utf8");
       if (diskten !== mutant || mutant === asil) {
         bozuk.push(m.ad + "\n       mutasyon diske UYGULANMADI");
@@ -205,7 +199,7 @@ for (const m of MUTASYONLAR) {
       }
       sonuc = bekciyiKostur();
     } finally {
-      writeFileSync(m.dosya, asil, "utf8");
+      dayanikliYaz(m.dosya, asil);
     }
   }
 

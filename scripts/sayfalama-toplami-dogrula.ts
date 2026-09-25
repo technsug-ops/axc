@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -48,7 +48,7 @@ function yorumsuz(metin: string): string {
  * yazarsa biri sessizce eşleşmez. Tek kapıdan normalleştiriliyor.
  */
 function oku(yol: string): string {
-  return yorumsuz(readFileSync(yol, "utf8")).replaceAll("\r\n", "\n");
+  return yorumsuz(kaynakOku(yol)).replaceAll("\r\n", "\n");
 }
 
 const EKRANLAR = [

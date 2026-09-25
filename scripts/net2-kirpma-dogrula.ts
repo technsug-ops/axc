@@ -1,6 +1,7 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kdvMahsubu, type UrunSatiri } from "../src/lib/panel-listeler";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -65,7 +66,7 @@ function blok(metin: string, capa: string, uzunluk: number): string {
 }
 
 function oku(yol: string): string {
-  return readFileSync(yol, "utf8");
+  return kaynakOku(yol);
 }
 
 const satir = (net1: number, net2: number): UrunSatiri => ({

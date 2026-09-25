@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { maliyetDuzeltmePlani } from "../src/lib/parti-maliyeti";
 
@@ -171,7 +171,7 @@ console.log("\n3) zincir — gövde yazıma ve ekrana BAĞLI mı");
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
   const eylem = yorumsuz(
-    readFileSync("src/app/stok/parti-maliyet-actions.ts", "utf8"),
+    kaynakOku("src/app/stok/parti-maliyet-actions.ts"),
   );
   dogru("eylem saf planı ÇAĞIRIYOR", eylem.includes("maliyetDuzeltmePlani({"));
   /** ⛔ KAPI: bu iş defterin maliyet tarafına yazıyor. */
@@ -207,7 +207,7 @@ console.log("\n3) zincir — gövde yazıma ve ekrana BAĞLI mı");
     !/data: \{[^}]*quantityDelta/.test(eylem),
   );
 
-  const ekran = yorumsuz(readFileSync("src/app/satislar/[id]/page.tsx", "utf8"));
+  const ekran = yorumsuz(kaynakOku("src/app/satislar/[id]/page.tsx"));
   dogru("satış detayı diyaloğu ÇİZİYOR", ekran.includes("<PartiMaliyetDuzelt"));
   /**
    * ⛔ DÜZELTİLEN ŞEY PARTİ, ÇIKIŞ DEĞİL. `dusum.id` geçilseydi eylem
@@ -227,7 +227,7 @@ console.log("\n3) zincir — gövde yazıma ve ekrana BAĞLI mı");
   dogru("buton izne bağlı", ekran.includes("maliyetDuzeltebilir"));
 
   const diyalog = yorumsuz(
-    readFileSync("src/app/satislar/[id]/parti-maliyet-duzelt.tsx", "utf8"),
+    kaynakOku("src/app/satislar/[id]/parti-maliyet-duzelt.tsx"),
   );
   /** ⛔ İKİ ADIM: önce göster, sonra yaz. Onay GÖRDÜĞÜ şeye verilir. */
   dogru("önizleme eylemi bağlı", diyalog.includes("partiMaliyetiOnizle"));

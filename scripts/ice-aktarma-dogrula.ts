@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import { gunHassasiyetliMi } from "../src/lib/donem";
 import { onayaUygunMu, onayDurumuAnahtari } from "../src/lib/onay-kuyrugu";
@@ -47,7 +47,7 @@ function kontrol(ad: string, sonuc: boolean) {
  * o dersin bu dosyadaki karşılığı.
  */
 function oku(yol: string): string {
-  return readFileSync(yol, "utf8").replace(/\r\n/g, "\n").replace(/^﻿/, "");
+  return kaynakOku(yol).replace(/\r\n/g, "\n").replace(/^﻿/, "");
 }
 
 /**
@@ -696,7 +696,7 @@ kontrol(
 );
 /** HB ve N11 aynı kusuru taşıyordu — üçü BİRLİKTE ölçülür, biri unutulmasın. */
 for (const [kanal, dosya] of [["HB", "scripts/canli-hb-ice-aktar.ts"], ["N11", "scripts/canli-n11-ice-aktar.ts"]] as const) {
-  const m = readFileSync(dosya, "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const m = kaynakOku(dosya).replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol(
     `  ...${kanal} içe aktarması da YALNIZ AKTİF varyantı arıyor`,
     /where:\s*\{\s*isActive:\s*true,\s*OR:\s*kodKosuluToplu\(tumKodlar\)\s*\}/.test(m),
@@ -1674,8 +1674,8 @@ kontrol(
  */
 {
   console.log("`sinir` parametresi — iki kullanım ayrı");
-  const bagi = readFileSync("scripts/canli-ice-aktarma-stok-bagi.ts", "utf8");
-  const env = readFileSync("src/lib/envanter-veri.ts", "utf8");
+  const bagi = kaynakOku("scripts/canli-ice-aktarma-stok-bagi.ts");
+  const env = kaynakOku("src/lib/envanter-veri.ts");
 
   kontrol(
     "K55 stok bağı `sinir` VERMİYOR",
@@ -1738,7 +1738,7 @@ kontrol(
 {
   console.log("K162-② canlı yazım kapısı — bekçi turu koşarken çekim koşmaz");
   const cekimKaynak = yorumsuz(
-    readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"),
+    kaynakOku("scripts/canli-ty-ice-aktar.ts"),
   );
   const kapiBasi = cekimKaynak.indexOf("if (bekciTuruKosuyorMu())");
   /** ⚠ indexOf -1 tuzağı: VARLIK ayrıca kapılanır. */
@@ -1767,7 +1767,7 @@ kontrol(
 {
   console.log("K163 sipariş saati — gerçek an yazılır, bilinmeyen saat gösterilmez");
   const cekimK163 = yorumsuz(
-    readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"),
+    kaynakOku("scripts/canli-ty-ice-aktar.ts"),
   );
   kontrol(
     "çekim soldAt'e GERÇEK ANI yazıyor",
@@ -1787,7 +1787,7 @@ kontrol(
     gunHassasiyetliMi(new Date("2026-09-04T00:01:00.000Z")) === false,
   );
   const listeK163 = yorumsuz(
-    readFileSync("src/app/satislar/page.tsx", "utf8"),
+    kaynakOku("src/app/satislar/page.tsx"),
   );
   /**
    * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL — TAZELENDİ 07.09.2026.
@@ -1810,7 +1810,7 @@ kontrol(
     "  ...ve listede ARTIK elle kurulmuş kopya YOK",
     !listeK163.includes("gunHassasiyetliMi(satis.soldAt)"),
   );
-  const bicimK = yorumsuz(readFileSync("src/lib/bicim-ortak.ts", "utf8"));
+  const bicimK = yorumsuz(kaynakOku("src/lib/bicim-ortak.ts"));
   const govde = bicimK.slice(bicimK.indexOf("tarihSaat(tarih: Date)"));
   kontrol(
     "  ...kapı ORTAK gövdede: saat yalnız BİLİNİYORSA (İlke #11)",
@@ -1827,7 +1827,7 @@ kontrol(
 {
   console.log("K164 onay kuyruğu — eylem kapısı, saat taşınımı, sayı=liste");
   const eylemK = yorumsuz(
-    readFileSync("src/app/satislar/actions.ts", "utf8"),
+    kaynakOku("src/app/satislar/actions.ts"),
   );
   /** ⚠ ÖLÇÜT ÇEKİRDEĞE TAŞINDI (K168, 05.09.2026): SALE_OUT yazımı,
    *  occurredAt, sourceMovementId ve onaylandiAt artık `onay-cekirdegi.ts`te
@@ -1836,7 +1836,7 @@ kontrol(
    *  _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez — ölçüt
    *  eskiyebilir; güncellenirken NİYE eskidiği yazılır".)_ */
   const cekirdekK = yorumsuz(
-    readFileSync("src/lib/onay-cekirdegi.ts", "utf8"),
+    kaynakOku("src/lib/onay-cekirdegi.ts"),
   );
   const kapiBasi = cekirdekK.indexOf("const uygunluk = onayaUygunMu(");
   kontrol("onay çekirdeği SAF ön-kontrolü çağırıyor", kapiBasi >= 0);
@@ -1900,7 +1900,7 @@ kontrol(
     onizB.includes("fifoDagit(") && !onizB.includes("stockMovement.create"),
   );
   const dyalog = yorumsuz(
-    readFileSync("src/app/satislar/siparis-onayi.tsx", "utf8"),
+    kaynakOku("src/app/satislar/siparis-onayi.tsx"),
   );
   const cagriBasi = dyalog.indexOf("await onayOnizleme(saleId)");
   kontrol("diyalog planı SUNUCUDAN çekiyor", cagriBasi >= 0);
@@ -1914,7 +1914,7 @@ kontrol(
     dugmeBasi >= 0,
   );
 
-  const paketK = yorumsuz(readFileSync("src/app/paketle/actions.ts", "utf8"));
+  const paketK = yorumsuz(kaynakOku("src/app/paketle/actions.ts"));
   const ayrimBasi = paketK.indexOf("if (disarida.shippedAt === null)");
   kontrol("paketleme: onay-bekleyen ayrımı KOŞULA bağlı", ayrimBasi >= 0);
   const ayrimB = ayrimBasi >= 0 ? paketK.slice(ayrimBasi, ayrimBasi + 300) : "";
@@ -1925,13 +1925,13 @@ kontrol(
 
   /** Sayı = liste: panel sayısı ve liste kümesi AYNI gövdeden (İlke #16). */
   const gorevK = yorumsuz(
-    readFileSync("src/lib/panel/gorev-verisi.ts", "utf8"),
+    kaynakOku("src/lib/panel/gorev-verisi.ts"),
   );
   kontrol(
     "panel sayısı kuyruk SAHİBİNDEN (onayBekleyenIdleri)",
     gorevK.includes("onayBekleyenIdleri(prisma)"),
   );
-  const listeK = yorumsuz(readFileSync("src/lib/liste-suzgeci.ts", "utf8"));
+  const listeK = yorumsuz(kaynakOku("src/lib/liste-suzgeci.ts"));
   const onaySuzBasi = listeK.indexOf('if (temiz(p.onay) === "1")');
   kontrol("liste süzgeci onay parametresini okuyor", onaySuzBasi >= 0);
   const onaySuzB = onaySuzBasi >= 0 ? listeK.slice(onaySuzBasi, onaySuzBasi + 200) : "";
@@ -1950,7 +1950,7 @@ kontrol(
  */
 {
   console.log("K165 HB eşlemesi — birim fiyat, İstanbul saati, oran kaynağı");
-  const hbK = yorumsuz(readFileSync("scripts/canli-hb-ice-aktar.ts", "utf8"));
+  const hbK = yorumsuz(kaynakOku("scripts/canli-hb-ice-aktar.ts"));
   /** Saf gövdeler DEĞERLE sınanır. */
   const an = hbAni("2026-09-04T16:12:09.935");
   kontrol(
@@ -2016,7 +2016,7 @@ kontrol(
    * değer için de AYNI 4 kaydı döndürdü — parametre YOK SAYILIYOR. Buna
    * güvenen kod "durum süzdüm" sanır ve hep aynı kümeyi çeker.
    */
-  const hbIstemci = yorumsuz(readFileSync("scripts/hb/istemci.ts", "utf8"));
+  const hbIstemci = yorumsuz(kaynakOku("scripts/hb/istemci.ts"));
   kontrol(
     "durum PARAMETRESİ kullanılmıyor (uç onu yok sayıyor)",
     !hbIstemci.includes("status=") && !hbK.includes("status="),
@@ -2165,7 +2165,7 @@ kontrol(
 {
   console.log("K166 sunucu ucu — tek gövde, sır kapısı 404");
   const rota = yorumsuz(
-    readFileSync("src/app/api/cron/ty-cekim/route.ts", "utf8"),
+    kaynakOku("src/app/api/cron/ty-cekim/route.ts"),
   );
   kontrol(
     "rota ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)",
@@ -2179,7 +2179,7 @@ kontrol(
     kapiB.includes("{ status: 404 }"),
   );
   const betik = yorumsuz(
-    readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"),
+    kaynakOku("scripts/canli-ty-ice-aktar.ts"),
   );
   kontrol(
     "betik modu da AYNI çekirdeği çağırıyor",
@@ -2196,9 +2196,9 @@ kontrol(
  */
 {
   console.log("K-HB-CRON — HB ucu, sır kapısı, tek çekirdek, tetikleyici");
-  const hbRota = yorumsuz(readFileSync("src/app/api/cron/hb-cekim/route.ts", "utf8"));
-  const hbBetik = yorumsuz(readFileSync("scripts/canli-hb-ice-aktar.ts", "utf8"));
-  const akis = readFileSync(".github/workflows/ty-cekim.yml", "utf8");
+  const hbRota = yorumsuz(kaynakOku("src/app/api/cron/hb-cekim/route.ts"));
+  const hbBetik = yorumsuz(kaynakOku("scripts/canli-hb-ice-aktar.ts"));
+  const akis = kaynakOku(".github/workflows/ty-cekim.yml");
 
   kontrol("HB ucu ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)", hbRota.includes("await hbCekimKos({"));
   kontrol("çekirdek DIŞA AKTARILMIŞ", hbBetik.includes("export async function hbCekimKos("));
@@ -2238,7 +2238,7 @@ kontrol(
    * koşumu BİR SONRAKİ koşum görebilir: işaret dosyası başlangıçta yazılır,
    * temiz bitişte silinir. _(Anayasa: "kaçışın kendisi görünür kılınır".)_ */
   {
-    const cekimCmd = readFileSync("scripts/kanal-sik-cekim.cmd", "utf8");
+    const cekimCmd = kaynakOku("scripts/kanal-sik-cekim.cmd");
     kontrol("çekim başlangıçta İŞARET yazıyor", /echo %date% %time%> "%ISARET%"/.test(cekimCmd));
     kontrol("  ...temiz bitişte İŞARETİ siliyor", /del "%ISARET%"/.test(cekimCmd));
     kontrol("  ...işaret duruyorsa UYARI yazıyor", cekimCmd.includes("ONCEKI KOSUM YARIM KALDI"));
@@ -2359,7 +2359,7 @@ kontrol(
   /** ⛔ 200 DIŞI HER ŞEY KIRMIZI — sessiz kaçış olmasın. */
   kontrol("  ...ve 200 dışı KIRMIZI biter", hbAdim.includes('test "$KOD" = "200"'));
   /** ⚠ Vercel cron'a HB EKLENMEZ — birincil tetikleyici o değil. */
-  const vercelYapi = readFileSync("vercel.json", "utf8");
+  const vercelYapi = kaynakOku("vercel.json");
   kontrol("HB Vercel cron'a EKLENMEDİ (birincil GitHub Actions)", !vercelYapi.includes("hb-cekim"));
 }
 
@@ -2376,7 +2376,7 @@ kontrol(
  */
 {
   console.log("K213 HB — sipariş sonradan iptal — toplu iptal listesi");
-  const hK = yorumsuz(readFileSync("scripts/canli-hb-ice-aktar.ts", "utf8"));
+  const hK = yorumsuz(kaynakOku("scripts/canli-hb-ice-aktar.ts"));
 
   /**
    * ═══ GERİ DOLDURMA SEÇİMİ İKİ ALANI DA SORAR (K243, 23.09.2026) ════
@@ -2414,7 +2414,7 @@ kontrol(
   kontrol(
     "hb/istemci.ts YENİ UCU tanımlıyor (iptalEdilenSiparisler)",
     /iptalEdilenSiparisler: \(k: Kimlik, offset: number, limit: number\) =>/.test(
-      yorumsuz(readFileSync("scripts/hb/istemci.ts", "utf8")),
+      yorumsuz(kaynakOku("scripts/hb/istemci.ts")),
     ),
   );
 
@@ -2490,7 +2490,7 @@ kontrol(
  */
 {
   console.log("K167-② N11 eşlemesi — birim tabanı, epoch anı, çok-adet kovası");
-  const nK = yorumsuz(readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"));
+  const nK = yorumsuz(kaynakOku("scripts/canli-n11-ice-aktar.ts"));
   /** Saf gövdeler DEĞERLE sınanır. */
   kontrol(
     "n11Ani: epoch ms mutlak ana çevrilir",
@@ -2554,7 +2554,7 @@ kontrol(
  */
 {
   console.log("K213 N11 — sipariş tümüyle sonradan iptal — otomatik tespit");
-  const nK = yorumsuz(readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"));
+  const nK = yorumsuz(kaynakOku("scripts/canli-n11-ice-aktar.ts"));
 
   kontrol(
     "betik otomatikIptalAdayiMi'yi İTHAL EDİYOR",
@@ -2625,7 +2625,7 @@ kontrol(
 {
   console.log("K167-③ N11 sunucu ucu — tek gövde, sır kapısı 404");
   const rota = yorumsuz(
-    readFileSync("src/app/api/cron/n11-cekim/route.ts", "utf8"),
+    kaynakOku("src/app/api/cron/n11-cekim/route.ts"),
   );
   kontrol(
     "rota ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)",
@@ -2639,7 +2639,7 @@ kontrol(
     kapiB.includes("{ status: 404 }"),
   );
   const betik = yorumsuz(
-    readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"),
+    kaynakOku("scripts/canli-n11-ice-aktar.ts"),
   );
   kontrol(
     "betik modu da AYNI çekirdeği çağırıyor",
@@ -2657,11 +2657,11 @@ kontrol(
  */
 {
   console.log("K168 otomatik onay — tek çekirdek, gevşetmeyen kapılar");
-  const cekirdek = yorumsuz(readFileSync("src/lib/onay-cekirdegi.ts", "utf8"));
-  const kuyruk = yorumsuz(readFileSync("src/lib/onay-kuyrugu.ts", "utf8"));
-  const actions = yorumsuz(readFileSync("src/app/satislar/actions.ts", "utf8"));
-  const n11 = yorumsuz(readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"));
-  const ty = yorumsuz(readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"));
+  const cekirdek = yorumsuz(kaynakOku("src/lib/onay-cekirdegi.ts"));
+  const kuyruk = yorumsuz(kaynakOku("src/lib/onay-kuyrugu.ts"));
+  const actions = yorumsuz(kaynakOku("src/app/satislar/actions.ts"));
+  const n11 = yorumsuz(kaynakOku("scripts/canli-n11-ice-aktar.ts"));
+  const ty = yorumsuz(kaynakOku("scripts/canli-ty-ice-aktar.ts"));
 
   /** Elle onay çekirdeği ÇAĞIRIYOR (ikinci gövde yazılmadı). */
   kontrol(
@@ -2839,7 +2839,7 @@ console.log("\nONAY DURUMU ETİKETİ");
   );
 
   /** Tanımlamak çizmek değildir — ekran gövdeyi ÇAĞIRIYOR mu. */
-  const detay = readFileSync("src/app/satislar/[id]/page.tsx", "utf8");
+  const detay = kaynakOku("src/app/satislar/[id]/page.tsx");
   kontrol(
     "detay ekranı saf gövdeyi ÇAĞIRIYOR",
     detay.includes("onayDurumuAnahtari(onayDurumu, satis.onaylandiAt)"),
@@ -2862,7 +2862,7 @@ console.log("\nONAY DURUMU ETİKETİ");
  */
 {
   console.log("K213 çakışan sipariş sonradan iptal — otomatik tespit");
-  const ty = yorumsuz(readFileSync("scripts/canli-ty-ice-aktar.ts", "utf8"));
+  const ty = yorumsuz(kaynakOku("scripts/canli-ty-ice-aktar.ts"));
 
   kontrol(
     "betik otomatikIptalAdayiMi'yi İTHAL EDİYOR",
@@ -2922,10 +2922,7 @@ console.log("\nONAY DURUMU ETİKETİ");
 
   /** ⚠ MOTOR AYRIMI: elle iptal ile OTOMATİK iptal AYNI iki fonksiyonu
    *  çağırıyor mu — iki ayrı motor olsaydı biri sessizce ayrışırdı. */
-  const elleIptal = readFileSync(
-    "src/app/satislar/[id]/iptal-actions.ts",
-    "utf8",
-  );
+  const elleIptal = kaynakOku("src/app/satislar/[id]/iptal-actions.ts");
   kontrol(
     "elle iptal ekranı da AYNI iptalOnizle/iptalUygula'yı çağırıyor",
     /iptalOnizle\(saleId, sebep, not\)/.test(elleIptal) &&
@@ -2940,7 +2937,7 @@ console.log("\nONAY DURUMU ETİKETİ");
  */
 {
   console.log("K264 N11 boş çekim — damga yazar, HESAP hatası saymaz");
-  const n11 = yorumsuz(readFileSync("scripts/canli-n11-ice-aktar.ts", "utf8"));
+  const n11 = yorumsuz(kaynakOku("scripts/canli-n11-ice-aktar.ts"));
   const iBos = n11.indexOf("if (paketler.length === 0) {");
   const iSeller = n11.indexOf("if (sellerIdler.length !== 1) {");
   kontrol("boş paket dalı VAR ve sellerId kapısından ÖNCE", iBos >= 0 && iSeller >= 0 && iBos < iSeller);
@@ -2958,7 +2955,7 @@ console.log("\nONAY DURUMU ETİKETİ");
     /channel: \{ code: "N11" \}, externalId: \{ not: null \}/.test(bosDali) && /n11Hesaplari\.length !== 1/.test(bosDali),
   );
   /* Rotalar: atlandı → 503 (ayrıntı cron-yollari:dogrula'da; burada N11 rotası). */
-  const rota = readFileSync("src/app/api/cron/n11-cekim/route.ts", "utf8");
+  const rota = kaynakOku("src/app/api/cron/n11-cekim/route.ts");
   kontrol("n11 rotası atlandı ise 503 dönüyor", /status: "atlandi" in ozet \? 503 : 200/.test(rota));
 }
 

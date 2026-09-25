@@ -35,13 +35,14 @@
  * ============================================================================
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 
 import readXlsxFile from "read-excel-file/node";
 
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { paketiNormalle } from "../src/lib/tablo/paket";
+import { hamOku } from "./kaynak-oku";
 
 const DOSYA = "C:/Users/yapra/Desktop/excel/satis.xlsx";
 
@@ -71,7 +72,7 @@ async function main() {
   console.log("=".repeat(92));
 
   /** Kaynak — yazım betiğiyle BİREBİR aynı sayfa/satır/sütun. */
-  const sayfalar = await readXlsxFile(paketiNormalle(readFileSync(DOSYA)).bayt);
+  const sayfalar = await readXlsxFile(paketiNormalle(hamOku(DOSYA)).bayt);
   const sayfa = sayfalar.find((x) =>
     String((x as unknown as { sheet: string }).sheet).includes("SATIŞ"),
   ) as unknown as { data: unknown[][] } | undefined;

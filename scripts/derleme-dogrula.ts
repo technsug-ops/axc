@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -192,7 +193,7 @@ if (tipDizinleri.length === 0) {
   for (const d of tipDizinleri) {
     for (const ad of readdirSync(d)) {
       if (!/\.d\.ts$/.test(ad)) continue;
-      const metin = readFileSync(join(d, ad), "utf8");
+      const metin = kaynakOku(join(d, ad));
       for (const m of metin.matchAll(/^\s*(?:type|interface)\s+([A-Z][\w$]*)/gm)) {
         gercek.add(m[1]);
       }
@@ -263,7 +264,7 @@ let tarandi = 0;
 const ihlaller: string[] = [];
 for (const yol of kaynaklar) {
   tarandi++;
-  for (const tip of cozulmemisAtiflar(readFileSync(yol, "utf8"))) {
+  for (const tip of cozulmemisAtiflar(kaynakOku(yol))) {
     ihlaller.push(`${yol.replace(/\\/g, "/")} → ${tip}`);
   }
 }

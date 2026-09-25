@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { readdirSync, statSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -81,7 +82,7 @@ function istemciMi(kaynak: string): boolean {
 function sunucuEylemiMi(yol: string): boolean {
   let kaynak: string;
   try {
-    kaynak = readFileSync(yol, "utf8");
+    kaynak = kaynakOku(yol);
   } catch {
     return false;
   }
@@ -185,7 +186,7 @@ console.log('İSTEMCİ SINIRI BEKÇİSİ — `"use client"` sunucuya uzanamaz');
 console.log("=".repeat(70));
 
 const hepsi = dosyalar("src");
-const istemciler = hepsi.filter((y) => istemciMi(readFileSync(y, "utf8")));
+const istemciler = hepsi.filter((y) => istemciMi(kaynakOku(y)));
 
 /** ⛔ Sıfır dosya bulmak "temiz" değil "okuyamadım"dır. */
 kontrol(`istemci bileşeni BULUNDU (${istemciler.length})`, istemciler.length > 0);
@@ -205,7 +206,7 @@ function kirliYol(baslangic: string): string[] | null {
     gorulen.add(yol);
     let kaynak: string;
     try {
-      kaynak = readFileSync(yol, "utf8");
+      kaynak = kaynakOku(yol);
     } catch {
       continue;
     }
@@ -256,7 +257,7 @@ kontrol("hiçbir istemci bileşeni sunucu modülüne UZANMIYOR", kirli === 0, ki
 const METADATA_YASAGI = /^\s*export\s+(const\s+metadata\b|async\s+function\s+generateMetadata\b)/m;
 let metadatali = 0;
 for (const y of istemciler) {
-  if (METADATA_YASAGI.test(yorumsuz(readFileSync(y, "utf8")))) {
+  if (METADATA_YASAGI.test(yorumsuz(kaynakOku(y)))) {
     metadatali++;
     kontrol(`${y}`, false, "istemci bileşeninde metadata — SESSİZCE yok sayılır");
   }

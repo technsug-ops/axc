@@ -17,7 +17,8 @@
  */
 
 import "dotenv/config";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 import {
   farkRaporu,
@@ -43,7 +44,7 @@ import { dbAdresiAyikla, dbSaglikliMi } from "../src/lib/db-saglik";
  * OKUMA KAPISINDA yapılıyor.
  */
 function semaMetni(): string {
-  return readFileSync("prisma/schema.prisma", "utf8")
+  return kaynakOku("prisma/schema.prisma")
     .split("\r\n")
     .join("\n");
 }
@@ -52,7 +53,7 @@ import {
   YEDEK_TABLOLARI,
   yedegiMetneCevir,
   yedekUret,
-} from "../src/lib/yedek";
+} from "../src/lib/yedek";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -122,7 +123,7 @@ async function main() {
      * ayrışabildiği sürece "yedek:dogrula geçti" cümlesi hiçbir şey
      * garanti etmez.
      */
-    const uretici = readFileSync("src/lib/yedek.ts", "utf8");
+    const uretici = kaynakOku("src/lib/yedek.ts");
     const bas = uretici.indexOf("const tablolar: Record<string, unknown[]> = {");
     const govde = uretici.slice(bas, uretici.indexOf("return {", bas));
     kontrol("üretici gövdesi bulundu", bas >= 0 && govde.length > 500, govde.length);
@@ -545,7 +546,7 @@ async function main() {
     const kilitli = yedekGovdeleri.filter(
       (a) =>
         a !== MUAF &&
-        readFileSync("src/lib/" + a, "utf8").includes('from "@vercel/blob"'),
+        kaynakOku("src/lib/" + a).includes('from "@vercel/blob"'),
     );
     kontrol(
       "hiçbir yedek gövdesi @vercel/blob'a doğrudan bağlı değil (muaf: " +
@@ -556,7 +557,7 @@ async function main() {
     );
     kontrol(
       "yazma çekirdeği hedef soyutlamasını kullanır",
-      readFileSync("src/lib/yedek-yaz.ts", "utf8").includes(
+      kaynakOku("src/lib/yedek-yaz.ts").includes(
         'from "@/lib/yedek-hedefi"',
       ),
     );
@@ -566,7 +567,7 @@ async function main() {
      * ⚠ KAPSAM KULLANIM BLOĞUNA DARALTILDI: başarı kodu rotanın başka
      * yerlerinde geçebilir; ölçüt yalnız `!sonuc.tamam` dalının İÇİNE bakar.
      */
-    const rota = readFileSync("src/app/api/yedek/otomatik/route.ts", "utf8");
+    const rota = kaynakOku("src/app/api/yedek/otomatik/route.ts");
     const dalBasi = rota.indexOf("if (!sonuc.tamam)");
     kontrol("rotada başarısızlık dalı var", dalBasi >= 0);
     if (dalBasi >= 0) {
@@ -622,7 +623,7 @@ async function main() {
     const blobKullanan: string[] = [];
     const listCagiran: string[] = [];
     for (const d of dosyalar) {
-      const metin = readFileSync(d, "utf8");
+      const metin = kaynakOku(d);
       if (!metin.includes("@vercel/blob")) continue;
       blobKullanan.push(d);
       /**
@@ -660,7 +661,7 @@ async function main() {
     }
 
     /** ⭐ VE MANİFEST GERÇEKTEN KULLANILIYOR MU — yasak tek başına yetmez. */
-    const hedef = readFileSync("src/lib/yedek-hedefi.ts", "utf8");
+    const hedef = kaynakOku("src/lib/yedek-hedefi.ts");
     kontrol(
       "blob hedefi kayıtları MANİFEST'ten okuyor",
       hedef.includes("yedek/index.json"),

@@ -34,7 +34,8 @@
  * ============================================================================
  */
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -56,7 +57,7 @@ console.log("=".repeat(70));
 console.log("  YETİM BEKÇİ YASAĞI");
 console.log("=".repeat(70));
 
-const paket = JSON.parse(readFileSync("package.json", "utf8")) as {
+const paket = JSON.parse(kaynakOku("package.json")) as {
   scripts: Record<string, string>;
 };
 const komutlar = Object.entries(paket.scripts);
@@ -85,7 +86,7 @@ const isaretEdilen = new Set(
  */
 const tumKaynaklar = readdirSync("scripts")
   .filter((d) => d.endsWith(".ts"))
-  .map((d) => [d, readFileSync(`scripts/${d}`, "utf8")] as const);
+  .map((d) => [d, kaynakOku(`scripts/${d}`)] as const);
 
 function iceAktaran(dosya: string): string[] {
   const modul = dosya.replace(/[.]ts$/, "");
@@ -130,7 +131,7 @@ function iceAktaran(dosya: string): string[] {
       kutuphaneler.push(`${dosya} ← ${alanlar.join(", ")}`);
       continue;
     }
-    const kaynak = readFileSync(`scripts/${dosya}`, "utf8");
+    const kaynak = kaynakOku(`scripts/${dosya}`);
     const m = /BEKCI SINIFI: BAGIMSIZ(.*)/.exec(kaynak);
     if (m === null) {
       yetimler.push(dosya);
@@ -206,7 +207,7 @@ function iceAktaran(dosya: string): string[] {
         dosya !== null &&
         /-(dogrula|bekci|kontrol)\.ts$/.test(dosya) &&
         !turdakiDosyalar.has(dosya) &&
-        !/BEKCI SINIFI: BAGIMSIZ/.test(readFileSync(`scripts/${dosya}`, "utf8")),
+        !/BEKCI SINIFI: BAGIMSIZ/.test(kaynakOku(`scripts/${dosya}`)),
     );
   kontrol(
     `tur dışında kalan ve BEYANI OLMAYAN bekçi dosyası YOK (${turDisi.length})`,

@@ -14,10 +14,11 @@
  * ============================================================================
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { MENU_KATALOGU } from "../src/lib/menu/katalog";
+import { kaynakOku } from "./kaynak-oku";
 
 let gecen = 0;
 let kalan = 0;
@@ -34,8 +35,8 @@ function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   }
 }
 
-const KAYNAK = readFileSync("src/lib/el-kitabi/icerik.ts", "utf8");
-const SOZLUK = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+const KAYNAK = kaynakOku("src/lib/el-kitabi/icerik.ts");
+const SOZLUK = JSON.parse(kaynakOku("messages/tr.json")) as {
   Menu: Record<string, string>;
 };
 const MENU_ADLARI = new Set(Object.values(SOZLUK.Menu));
@@ -224,7 +225,7 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
    * kapıya bağlandı: bu alanlar TİPTE olamaz, bu tablolar veri katmanında
    * SORGULANAMAZ. Sorgulanmayan veri yazılamaz.
    */
-  const VERI = readFileSync("src/lib/el-kitabi/veri.ts", "utf8");
+  const VERI = kaynakOku("src/lib/el-kitabi/veri.ts");
 
   /** Tipte bulunmaması gereken alanlar — hepsi kurulum kimliği taşır. */
   const YASAK_ALAN = [
@@ -428,7 +429,7 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
    * bakmamakla aynı kapıya çıkar (İlke #9: az tıkla). Menüde de duruyor
    * ama menü mobilde kapalı.
    */
-  const DUZEN = readFileSync("src/app/layout.tsx", "utf8");
+  const DUZEN = kaynakOku("src/app/layout.tsx");
   /**
    * ⚠ DESENİ KULLANIM BLOĞUNDA ARA. "el-kitabi" dizesi bu dosyada bir kez
    * geçiyor ama işaret bağlantının KENDİSİNE bağlandı; yorumda geçen bir
@@ -451,7 +452,7 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
     "  ...etiket SÖZLÜKTEN geliyor (koda gömülü değil)",
     /aria-label=\{ortak\("elKitabiKisayolu"\)\}/.test(DUZEN),
   );
-  const SOZ = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const SOZ = JSON.parse(kaynakOku("messages/tr.json")) as {
     Ortak: Record<string, string>;
   };
   kontrol(

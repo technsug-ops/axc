@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
-import { desenNormalle } from "./mutasyon-deseni";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
@@ -219,7 +219,7 @@ for (const m of MUTASYONLAR) {
   const mutant = asil.replace(bul, koy);
   let sonuc: { kod: number; ciktiVar: boolean };
   try {
-    writeFileSync(m.dosya, mutant, "utf8");
+    dayanikliYaz(m.dosya, mutant);
     /**
      * ⛔ MUTASYONUN UYGULANDIĞI DOĞRULANIR — "uygulanamadı" YEŞİL DEĞİLDİR.
      * Desen tutmazsa `replace` sessizce hiçbir şey yapmaz; bekçi o zaman
@@ -235,7 +235,7 @@ for (const m of MUTASYONLAR) {
      * ⛔ GERİ ALMA `git checkout` İLE YAPILMAZ: commit edilmemiş çalışmayı
      * siler (02.09 vakası). Asıl içerik bellekte tutulur ve o geri yazılır.
      */
-    writeFileSync(m.dosya, asil, "utf8");
+    dayanikliYaz(m.dosya, asil);
   }
 
   const isaret = m.yon === "KALDIRAN" ? "-" : "+";

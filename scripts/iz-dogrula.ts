@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -82,7 +83,7 @@ console.log("\n1) iz TEK GÖVDEDEN yazılır");
   const kacaklar: string[] = [];
   for (const yol of KAYNAKLAR) {
     if (yol === IZ_GOVDESI) continue;
-    if (/auditLog\.create\(/.test(yorumsuz(readFileSync(yol, "utf8")))) {
+    if (/auditLog\.create\(/.test(yorumsuz(kaynakOku(yol)))) {
       kacaklar.push(yol.replace(/\\/g, "/"));
     }
   }
@@ -90,7 +91,7 @@ console.log("\n1) iz TEK GÖVDEDEN yazılır");
   /** ⛔ VE GÖVDENİN KENDİSİ GERÇEKTEN YAZIYOR — "0 buldum" ile "temiz" ayrı. */
   kontrol(
     "iz gövdesi gerçekten yazıyor",
-    /auditLog\.create\(/.test(readFileSync(IZ_GOVDESI, "utf8")),
+    /auditLog\.create\(/.test(kaynakOku(IZ_GOVDESI)),
   );
 }
 
@@ -110,7 +111,7 @@ console.log("\n2) `StockMovement` güncelleyen her gövde İZ bırakır");
   const yazanlar: string[] = [];
   const izsizler: string[] = [];
   for (const yol of KAYNAKLAR) {
-    const kod = yorumsuz(readFileSync(yol, "utf8"));
+    const kod = yorumsuz(kaynakOku(yol));
     if (!/stockMovement\.(update|updateMany|delete|deleteMany)\(/.test(kod)) {
       continue;
     }
@@ -132,7 +133,7 @@ console.log("\n2) `StockMovement` güncelleyen her gövde İZ bırakır");
 // --- 3) İZ GÖVDESİ "KİM"İ GERÇEKTEN DAMGALIYOR MU -----------------------
 console.log("\n3) iz gövdesi — kim damgası ve boş oturum");
 {
-  const iz = readFileSync(IZ_GOVDESI, "utf8");
+  const iz = kaynakOku(IZ_GOVDESI);
   /**
    * ⛔ VERİLMEMİŞSE OTURUMDAN ÇÖZÜLÜR. Bu satır düşerse `userId` sessizce
    * `undefined` gider ve iz yine "kim"siz yazılır — tam düzeltilen hata.

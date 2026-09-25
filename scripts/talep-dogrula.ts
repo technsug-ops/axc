@@ -13,7 +13,7 @@
  * ============================================================================
  */
 
-import { readFileSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ⚠ ŞEMA SATIR SONUNDAN BAĞIMSIZ OKUNUR (24.08.2026).
@@ -29,7 +29,7 @@ import { readFileSync } from "node:fs";
  * OKUMA KAPISINDA yapılıyor.
  */
 function semaMetni(): string {
-  return readFileSync("prisma/schema.prisma", "utf8")
+  return kaynakOku("prisma/schema.prisma")
     .split("\r\n")
     .join("\n");
 }
@@ -252,18 +252,15 @@ console.log("=".repeat(70));
 {
   const yorumsuz = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-  const eylem = yorumsuz(readFileSync("src/app/talepler/eylemler.ts", "utf8"));
-  const durumKontrolu = readFileSync(
-    "src/app/talepler/durum-kontrolu.tsx",
-    "utf8",
-  );
-  const sayfa = readFileSync("src/app/talepler/page.tsx", "utf8");
-  const buton = readFileSync("src/components/bildir-butonu.tsx", "utf8");
-  const duzen = readFileSync("src/app/layout.tsx", "utf8");
-  const ekler = readFileSync("src/lib/ekler.ts", "utf8");
-  const izinler = readFileSync("src/lib/yetki/izinler.ts", "utf8");
-  const seed = readFileSync("prisma/seed-yetki.ts", "utf8");
-  const tr = JSON.parse(readFileSync("messages/tr.json", "utf8")) as {
+  const eylem = yorumsuz(kaynakOku("src/app/talepler/eylemler.ts"));
+  const durumKontrolu = kaynakOku("src/app/talepler/durum-kontrolu.tsx");
+  const sayfa = kaynakOku("src/app/talepler/page.tsx");
+  const buton = kaynakOku("src/components/bildir-butonu.tsx");
+  const duzen = kaynakOku("src/app/layout.tsx");
+  const ekler = kaynakOku("src/lib/ekler.ts");
+  const izinler = kaynakOku("src/lib/yetki/izinler.ts");
+  const seed = kaynakOku("prisma/seed-yetki.ts");
+  const tr = JSON.parse(kaynakOku("messages/tr.json")) as {
     Talep?: Record<string, string>;
   };
 
@@ -474,7 +471,7 @@ console.log("=".repeat(70));
    *  sönmeyen uyarı bir süre sonra okunmayan uyarıdır (aynı gerekçe
    *  maliyetsiz stokta "tükenmiş parti sayılmaz" kuralında da var).
    */
-  const toplayici = yorumsuz(readFileSync("src/lib/uyari/topla.ts", "utf8"));
+  const toplayici = yorumsuz(kaynakOku("src/lib/uyari/topla.ts"));
   kontrol(
     "çan yalnız ACIK talepleri sayıyor",
     toplayici.includes('prisma.talep.count({ where: { durum: "ACIK" } })'),
