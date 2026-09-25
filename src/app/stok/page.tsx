@@ -6,7 +6,7 @@
  * eklenirse beyan bayatlar ve bekci kirmizi yanar.
  */
 import { getTranslations } from "next-intl/server";
-import { sayfaIzni } from "@/lib/yetki";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { History, Package } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
@@ -124,6 +124,8 @@ export default async function StokSayfasi({
   }>;
 }) {
   await sayfaIzni("stok.gor");
+  /* K273-③: resimsiz kutuda "resim ekle" rozeti yalnız ürün düzenleme izniyle. */
+  const resimEkleyebilir = await izinVarMi("urun.yaz");
 
   const sp = await searchParams;
   const { q, sayfa, yas, maliyet, kanal, sirala, yon, stok, vitrin } = sp;
@@ -680,7 +682,7 @@ export default async function StokSayfasi({
                         Marka alt satırda kalır — kısaltmaya dahil değil. */}
                     <TableCell>
                       <div className="flex items-center gap-2.5">
-                      <UrunGorseli variantId={varyant.id} url={varyant.gorselUrl} kaynak={varyant.gorselKaynak} ad={varyant.product.name} />
+                      <UrunGorseli ekleyebilir={resimEkleyebilir} variantId={varyant.id} url={varyant.gorselUrl} kaynak={varyant.gorselKaynak} ad={varyant.product.name} />
                       <div className="min-w-0">
                       <UzunAd
                         metin={varyant.product.name}
@@ -755,7 +757,7 @@ export default async function StokSayfasi({
             {varyantlar.map((varyant) => (
               <ListeKarti
                 key={varyant.id}
-                gorsel={<UrunGorseli variantId={varyant.id} url={varyant.gorselUrl} kaynak={varyant.gorselKaynak} ad={varyant.product.name} boyut={48} />}
+                gorsel={<UrunGorseli ekleyebilir={resimEkleyebilir} variantId={varyant.id} url={varyant.gorselUrl} kaynak={varyant.gorselKaynak} ad={varyant.product.name} boyut={48} />}
                 baslik={
                   <Baglanti href={`/stok/${varyant.id}`}>
                     {varyant.product.name}

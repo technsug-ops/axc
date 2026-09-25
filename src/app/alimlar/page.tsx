@@ -1,6 +1,6 @@
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
-import { sayfaIzni } from "@/lib/yetki";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { Eye, Pencil, PackageCheck, Plus } from "lucide-react";
 
@@ -71,6 +71,8 @@ export default async function AlimlarSayfasi({
   }>;
 }) {
   await sayfaIzni("alim.gor");
+  /* K273-③: resimsiz kutuda "resim ekle" rozeti yalnız ürün düzenleme izniyle. */
+  const resimEkleyebilir = await izinVarMi("urun.yaz");
 
   const p = await searchParams;
   const arama = (p.q ?? "").trim();
@@ -559,7 +561,7 @@ export default async function AlimlarSayfasi({
                         AYNI gövde); altında adet · kalem · kart. Uzun ad kırpılır,
                         tam hâli ipucunda (`UzunAd`); hücre `min-w-0` ki kırpma işlesin. */}
                     <div className="flex min-w-0 items-center gap-2.5 max-sm:basis-full">
-                    <UrunGorseli variantId={alim.items[0]?.variantId ?? null} url={alim.items[0]?.variant.gorselUrl ?? null} kaynak={alim.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(alim)} />
+                    <UrunGorseli ekleyebilir={resimEkleyebilir} variantId={alim.items[0]?.variantId ?? null} url={alim.items[0]?.variant.gorselUrl ?? null} kaynak={alim.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(alim)} />
                     <div className="min-w-0">
                       <UzunAd
                         metin={urunOzeti(alim)}

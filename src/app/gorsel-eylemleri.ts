@@ -1,7 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
+import { izYaz } from "@/lib/iz";
 import { prisma } from "@/lib/prisma";
-import { gorselAdresiGecerliMi } from "@/lib/urun-gorseli";
+import { elleGorselDenetle, gorselAdresiGecerliMi, type ElleGorselHatasi } from "@/lib/urun-gorseli";
 import { yetkiBaglami } from "@/lib/yetki";
 
 /**
@@ -57,5 +60,49 @@ export async function gorselKirikBildir(
   } catch (e) {
     console.error("[gorselKirikBildir] beklenmeyen hata:", variantId, e);
     return { durum: "HATA" };
+  }
+}
+
+/**
+ * ============================================================================
+ *  ELLE RESİM EKLEME (K273-③)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcının yapıştırdığı linki `ELLE` kaynağıyla yazar; senkron bir daha
+ *  dokunmaz. İzin: `urun.yaz` (ürün kartını düzenleyebilen). Biçim denetimi
+ *  SAF kuraldan (`elleGorselDenetle`); sunucu adrese İSTEK ATMAZ (SSRF —
+ *  gerekçe kuralın başlığında). Kırık işareti temizlenir.
+ *  ⛔ İZ: eski ve yeni adres birlikte (`URUN_GORSELI_ELLE`).
+ *  ⚠ Hata KOD döner, metne ekran çevirir; beklenmeyen hata TAM günlüğe.
+ * ============================================================================
+ */
+export async function gorselElleKaydet(
+  variantId: string,
+  ham: string,
+): Promise<{ durum: "KAYDEDILDI" } | { hata: ElleGorselHatasi | "YETKISIZ" | "BULUNAMADI" | "HATA" }> {
+  try {
+    const baglam = await yetkiBaglami();
+    if (!baglam || !baglam.izinler.has("urun.yaz")) return { hata: "YETKISIZ" };
+    const denetim = elleGorselDenetle(ham);
+    if ("hata" in denetim) return { hata: denetim.hata };
+    const v = await prisma.productVariant.findUnique({
+      where: { id: variantId },
+      select: { gorselUrl: true, gorselKaynak: true },
+    });
+    if (!v) return { hata: "BULUNAMADI" };
+    await prisma.productVariant.update({
+      where: { id: variantId },
+      data: { gorselUrl: denetim.url, gorselKaynak: "ELLE", gorselAt: new Date(), gorselKirikUrl: null },
+    });
+    await izYaz({
+      action: "URUN_GORSELI_ELLE",
+      targetType: "ProductVariant",
+      targetId: variantId,
+      detail: JSON.stringify({ eskiUrl: v.gorselUrl, eskiKaynak: v.gorselKaynak, yeniUrl: denetim.url }),
+    });
+    for (const yol of ["/urunler", "/stok", "/satislar", "/alimlar"]) revalidatePath(yol);
+    return { durum: "KAYDEDILDI" };
+  } catch (e) {
+    console.error("[gorselElleKaydet] beklenmeyen hata:", variantId, e);
+    return { hata: "HATA" };
   }
 }

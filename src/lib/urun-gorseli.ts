@@ -138,3 +138,40 @@ export function onizlemeKonumu(
   );
   return { left, top };
 }
+
+/**
+ * ============================================================================
+ *  ELLE EKLENEN RESİM (K273-③) — kullanıcı 25.09: _«resmi olmayan ürünlerin
+ *  sağ alt köşesinde "resim ekle" uyarısı olsun; resim eklenince gitsin»_.
+ * ----------------------------------------------------------------------------
+ *  Kaynak `ELLE` → senkron bir daha DOKUNMAZ (`gorselSec`). Sunucu listesi
+ *  YOK: kullanıcı resmi istediği siteden alabilir.
+ *  ⚠ SUNUCU ADRESİ YOKLAMAZ, BİLEREK: kullanıcının yazdığı adrese sunucudan
+ *  istek atmak, sunucuyu iç ağa istek atan bir araca çevirir (SSRF). Resmin
+ *  açıldığını TARAYICI önizlemeyle gösterir; kayıt ancak önizleme açılınca
+ *  yapılabilir. Sonradan kırılırsa ekran yine "resim ekle" gösterir.
+ *  Bu denetim biçimi ölçer: https · uzunluk · kimlik bilgisi · yerel adres.
+ * ============================================================================
+ */
+export const ELLE_GORSEL_AZAMI_UZUNLUK = 500; /* şema: VarChar(500) */
+export type ElleGorselHatasi = "BOS" | "COK_UZUN" | "GECERSIZ" | "HTTPS_DEGIL" | "KIMLIKLI" | "YEREL";
+export function elleGorselDenetle(ham: string): { url: string } | { hata: ElleGorselHatasi } {
+  const url = ham.trim();
+  if (url === "") return { hata: "BOS" };
+  if (url.length > ELLE_GORSEL_AZAMI_UZUNLUK) return { hata: "COK_UZUN" };
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return { hata: "GECERSIZ" };
+  }
+  if (u.protocol !== "https:") return { hata: "HTTPS_DEGIL" };
+  if (u.username !== "" || u.password !== "") return { hata: "KIMLIKLI" };
+  const h = u.hostname.toLowerCase();
+  const ipv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(h);
+  const ipv6 = h.startsWith("[");
+  if (ipv4 || ipv6 || h === "localhost" || !h.includes(".") || /\.(local|internal|localhost)$/.test(h)) {
+    return { hata: "YEREL" };
+  }
+  return { url };
+}

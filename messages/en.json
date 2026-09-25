@@ -4488,5 +4488,30 @@
     "grupYardim": "",
     "bekleyen": "",
     "aramaIpucu": ""
+  },
+  "UrunGorseli": {
+    "resimEkle": "",
+    "resimEkleEtiket": "",
+    "baslik": "",
+    "aciklama": "",
+    "linkEtiketi": "",
+    "linkIpucu": "",
+    "onizlemeBos": "",
+    "onizlemeYukleniyor": "",
+    "onizlemeAcilmadi": "",
+    "onizlemeBekleniyor": "",
+    "kaydet": "",
+    "kaydediliyor": "",
+    "hata": {
+      "BOS": "",
+      "COK_UZUN": "",
+      "GECERSIZ": "",
+      "HTTPS_DEGIL": "",
+      "KIMLIKLI": "",
+      "YEREL": "",
+      "YETKISIZ": "",
+      "BULUNAMADI": "",
+      "HATA": ""
+    }
   }
 }

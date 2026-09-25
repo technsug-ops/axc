@@ -1,6 +1,6 @@
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
-import { sayfaIzni } from "@/lib/yetki";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { Eye, PackagePlus, Pencil, Plus } from "lucide-react";
 
@@ -46,6 +46,8 @@ export default async function UrunlerSayfasi({
   searchParams: Promise<{ q?: string; sayfa?: string }>;
 }) {
   await sayfaIzni("urun.gor");
+  /* K273-③: resimsiz kutuda "resim ekle" rozeti yalnız ürün düzenleme izniyle. */
+  const resimEkleyebilir = await izinVarMi("urun.yaz");
 
   const { q, sayfa } = await searchParams;
   const arama = (q ?? "").trim();
@@ -287,7 +289,7 @@ export default async function UrunlerSayfasi({
                           sayılıyor (bkz. UzunAd). */}
                       <TableCell>
                         <div className="flex items-center gap-2.5">
-                        <UrunGorseli variantId={ana?.id ?? null} url={ana?.gorselUrl ?? null} kaynak={ana?.gorselKaynak ?? null} ad={urun.name} />
+                        <UrunGorseli ekleyebilir={resimEkleyebilir} variantId={ana?.id ?? null} url={ana?.gorselUrl ?? null} kaynak={ana?.gorselKaynak ?? null} ad={urun.name} />
                         {/* MARKA ADIN ALTINDA: ayrı sütun 117px yiyordu ve
                             marka adı zaten ürün adının başında geçiyor. */}
                         <IkiSatir
@@ -425,7 +427,7 @@ export default async function UrunlerSayfasi({
               return (
                 <ListeKarti
                   key={urun.id}
-                  gorsel={<UrunGorseli variantId={ana?.id ?? null} url={ana?.gorselUrl ?? null} kaynak={ana?.gorselKaynak ?? null} ad={urun.name} boyut={48} />}
+                  gorsel={<UrunGorseli ekleyebilir={resimEkleyebilir} variantId={ana?.id ?? null} url={ana?.gorselUrl ?? null} kaynak={ana?.gorselKaynak ?? null} ad={urun.name} boyut={48} />}
                   baslik={
                     /*
                       ⚠ MOBİLDE DE KART — tabloyla AYNI kuraldan.

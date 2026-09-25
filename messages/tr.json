@@ -4488,5 +4488,30 @@
     "grupYardim": "Yardım",
     "bekleyen": "{sayi} bekleyen iş",
     "aramaIpucu": "Ürün, SKU, barkod ya da sipariş no"
+  },
+  "UrunGorseli": {
+    "resimEkle": "Resim ekle",
+    "resimEkleEtiket": "{ad} için resim ekle",
+    "baslik": "Resim ekle",
+    "aciklama": "Resmin linkini yapıştırın: pazaryeri ya da üretici sayfasında resme sağ tıklayıp «Resim adresini kopyala» deyin. Eklediğiniz resmi pazaryeri senkronu değiştirmez.",
+    "linkEtiketi": "Resim linki",
+    "linkIpucu": "örn. https://site.com/urun.jpg",
+    "onizlemeBos": "Link yapıştırınca resim burada görünür.",
+    "onizlemeYukleniyor": "Resim açılıyor…",
+    "onizlemeAcilmadi": "Bu linkte resim açılmadı. Sayfanın değil, resmin kendi adresini kopyaladığınızdan emin olun.",
+    "onizlemeBekleniyor": "Kaydetmek için önce resmin önizlemede açılması gerekiyor.",
+    "kaydet": "Kaydet",
+    "kaydediliyor": "Kaydediliyor…",
+    "hata": {
+      "BOS": "Link boş.",
+      "COK_UZUN": "Link çok uzun (en fazla 500 karakter).",
+      "GECERSIZ": "Bu bir link değil.",
+      "HTTPS_DEGIL": "Link «https://» ile başlamalı.",
+      "KIMLIKLI": "Link kullanıcı adı ya da parola içeremez.",
+      "YEREL": "Yerel ağ adresi kabul edilmez; internetteki bir resim linki girin.",
+      "YETKISIZ": "Resim eklemek için ürün düzenleme yetkiniz yok.",
+      "BULUNAMADI": "Ürün bulunamadı; sayfayı yenileyin.",
+      "HATA": "Resim kaydedilemedi. Tekrar deneyin; sürerse yöneticiye bildirin."
+    }
   }
 }

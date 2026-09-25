@@ -19,6 +19,7 @@ import {
   buyukGorselAdresi,
   onizlemeKonumu,
   ONIZLEME_BOYU,
+  elleGorselDenetle,
   type MevcutGorsel,
 } from "../src/lib/urun-gorseli";
 
@@ -188,6 +189,49 @@ kontrol("fare olayları YALNIZ fareyle (dokunmada açılıp kapanmasın)",
   adet(bil, 'if (e.pointerType === "mouse") ac(e.currentTarget);') === 1 && adet(bil, 'if (e.pointerType === "mouse") setOnizleme(null);') === 1);
 const tik = bil.slice(bil.indexOf("onClick={(e) => {"), bil.indexOf("}}", bil.indexOf("onClick={(e) => {")));
 kontrol("  ...dokunma ile aç/kapa, fare tıklaması YOK SAYILIR", bil.includes("onClick={(e) => {") && tik.includes("if (!dokunma.current) return;"));
+
+/* ────────────────────────────────────────────────────────────────────────
+   K273-③ — RESİMSİZ KUTUDA "RESİM EKLE" (elle link)
+   ──────────────────────────────────────────────────────────────────────── */
+console.log("");
+console.log("RESİM EKLE — elle link (K273-③)");
+const elleD = (u: string) => elleGorselDenetle(u);
+kontrol("geçerli https linki kabul", "url" in elleD("  https://www.philips.com.tr/a/urun.jpg  ") && (elleD(" https://x.com/a.jpg ") as { url: string }).url === "https://x.com/a.jpg");
+kontrol("  ...boş link → BOS", JSON.stringify(elleD("   ")) === JSON.stringify({ hata: "BOS" }));
+kontrol("  ...http → HTTPS_DEGIL", JSON.stringify(elleD("http://x.com/a.jpg")) === JSON.stringify({ hata: "HTTPS_DEGIL" }));
+kontrol("  ...link olmayan → GECERSIZ", JSON.stringify(elleD("resim.jpg")) === JSON.stringify({ hata: "GECERSIZ" }));
+kontrol("  ...500 karakteri aşan → COK_UZUN (şema sınırı)", JSON.stringify(elleD("https://x.com/" + "a".repeat(500))) === JSON.stringify({ hata: "COK_UZUN" }));
+kontrol("  ...kullanıcı adı/parola → KIMLIKLI", JSON.stringify(elleD("https://u:p@x.com/a.jpg")) === JSON.stringify({ hata: "KIMLIKLI" }));
+for (const yerel of ["https://localhost/a.jpg", "https://127.0.0.1/a.jpg", "https://[::1]/a.jpg", "https://nas.local/a.jpg", "https://intranet/a.jpg"]) {
+  kontrol(`  ...yerel adres reddedilir: ${yerel}`, JSON.stringify(elleD(yerel)) === JSON.stringify({ hata: "YEREL" }));
+}
+kontrol("elle yüklenen resme senkron dokunmaz (kaynak ELLE)", gorselSec({ url: "https://x.com/a.jpg", kaynak: "ELLE", kirikUrl: null }, { url: TY1, kaynak: "TRENDYOL" }) === null);
+
+const bil3 = oku("src/components/urun-gorseli.tsx");
+kontrol("resimsiz kutu İZİNLİYSE düğme olur", adet(bil3, "if (ekleyebilir && variantId) {\n      return <ResimEkle variantId={variantId} ad={ad} boyut={boyut} />;") === 1);
+const rozetBas = bil3.indexOf("function ResimEkle(");
+const rozet = rozetBas >= 0 ? bil3.slice(rozetBas) : "";
+kontrol("  ...rozet SAĞ ALT köşede", /absolute -right-1 -bottom-1/.test(rozet));
+kontrol("  ...kayıt ancak önizleme AÇILINCA", adet(rozet, 'disabled={!gecerli || onizleme !== "ACILDI" || bekliyor}') === 1 && adet(rozet, 'if (!gecerli || onizleme !== "ACILDI") return;') === 1);
+kontrol("  ...kayıttan sonra ekran tazelenir (rozet gider)", /setAcik\(false\);[\s\S]{0,60}router\.refresh\(\);/.test(rozet));
+
+const ey = oku("src/app/gorsel-eylemleri.ts");
+const kayBas = ey.indexOf("export async function gorselElleKaydet(");
+const kay = kayBas >= 0 ? ey.slice(kayBas) : "";
+const iIzin = kay.indexOf('baglam.izinler.has("urun.yaz")');
+const iYaz = kay.indexOf("prisma.productVariant.update(");
+kontrol("eylem: izin, YAZIMDAN ÖNCE soruluyor", iIzin >= 0 && iYaz >= 0 && iIzin < iYaz);
+kontrol("  ...biçim SAF kuraldan", kay.includes("const denetim = elleGorselDenetle(ham);"));
+kontrol("  ...kaynak ELLE ve kırık işareti temizleniyor", kay.includes('gorselKaynak: "ELLE"') && kay.includes("gorselKirikUrl: null"));
+kontrol("  ...eski ve yeni adres İZE yazılıyor", kay.includes('action: "URUN_GORSELI_ELLE"') && kay.includes("eskiUrl: v.gorselUrl"));
+kontrol("  ...sunucu kullanıcının adresine İSTEK ATMIYOR (SSRF)", kayBas >= 0 && !/\bfetch\s*\(/.test(kay));
+
+for (const yol of ["src/app/urunler/page.tsx", "src/app/stok/page.tsx", "src/app/satislar/page.tsx", "src/app/alimlar/page.tsx"]) {
+  const m = oku(yol);
+  const toplam = adet(m, "<UrunGorseli ");
+  kontrol(`${yol.split("/")[2]}: her küçük resim izni taşıyor (${toplam})`,
+    toplam > 0 && adet(m, "<UrunGorseli ekleyebilir={resimEkleyebilir} ") === toplam && adet(m, 'const resimEkleyebilir = await izinVarMi("urun.yaz");') === 1);
+}
 
 console.log("");
 console.log("=".repeat(70));

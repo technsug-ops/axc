@@ -295,6 +295,42 @@ sola dönme · küçük adres).
 4. Telefon `/stok`: resme dokunun → büyük resim açılıyor; tekrar dokunun ya da sayfayı
    kaydırın → kapanıyor. Satır bağlantısı (ürün adı) eskisi gibi çalışıyor.
 
+─── ③ RESİMSİZ 646'NIN TEŞHİSİ + "RESİM EKLE" ROZETİ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: _«tüm ürünlerin EAN kodu var, pazaryerinde resmi olmaması mümkün değil»_. **Ölçüldü:**
+resimsiz 646'nın **606'sı tek günde (03.09.2026) içe aktarmayla** doğmuş, SKU'su Hepsiburada
+kodu (HBCV 379 · HBV 120), **barkodsuz** — içe aktarılan dosyada EAN yoktu. Ürünün gerçekte
+EAN'ı VAR; bizim kaydımızda yok, eşleme EAN ile yapıldığı için bulunamıyor. İkinci sebep:
+pazaryeri API'leri yalnız ŞU AN listelenen ürünleri veriyor; **500'ünün son satışı 2026
+öncesi**, 622'sinin sistemde hiç alımı yok. HB sipariş detayı EAN vermiyor (oradaki 14 haneli
+`barcode` KARGO paketinin barkodu), resim alanı da yok. TY'de adla eşleşme: birebir **9**,
+benzer 120 — benzer ad aynı ürün değil, yazılmadı.
+
+**Excel verildi:** `Masaüstü/resimsiz-urunler-2026-09-25.xlsx` (depoya girmez) — 646 satır,
+öncelik sırasıyla: güncel (satılıyor/stokta) 23 · 2026'da satılmış 49 · eski 500 · hiç
+satılmamış 74; kodlar, stok, son satış, boş «Resim linki» sütunu.
+
+**Rozet:** resimsiz (ya da açılmayan) kutunun **sağ alt köşesinde** küçük «+» rozeti; kutunun
+TAMAMI düğme (İlke #8). Tıklayınca «Resim ekle» diyaloğu: link yapıştır → **tarayıcıda
+önizleme** → açılırsa «Kaydet». Kaynak `ELLE` → senkron bir daha dokunmaz; iz
+`URUN_GORSELI_ELLE` (eski + yeni adres). İzin `urun.yaz`; izni olmayan rozeti görmez.
+⛔ **Sunucu kullanıcının adresine istek ATMAZ** (SSRF — sunucuyu iç ağa istek atan araca
+çevirirdi); biçim saf kuraldan: https · ≤500 · kimlik bilgisi yok · yerel adres yok.
+Dosya yükleme YOK — depolama (K206) askıda; link yolu bugün çalışıyor.
+
+Bekçi 55 → **80** · harness 20 → **30/30** (+10: izin · ELLE · SSRF · önizlemesiz kayıt ·
+izinsiz rozet · rozet köşesi · tazeleme · http · yerel adres · stok izni). Kayan iki çapa taşındı.
+
+**HALİL TEST LİSTESİ ③**
+1. Excel'i açın: ilk 23 satır «1 - Güncel»; ör. `axcali2755` Soundcore Q21i.
+2. `/stok`'ta `axcali2755` arayın → baş harfli kutunun **sağ altında «+»**.
+3. Kutuya tıklayın → «Resim ekle». Pazaryeri sayfasında resme sağ tıklayıp «Resim adresini
+   kopyala», yapıştırın → önizlemede resim görünmeli; «Kaydet».
+4. Diyalog kapanır, kutuda **resim**, «+» **yok**. `/urunler`'de de aynı resim.
+5. Sayfa linki yapıştırın (resim değil) → «Bu linkte resim açılmadı», «Kaydet» kilitli ve
+   altında nedeni yazıyor.
+6. Ertesi gün aynı ürün: resim **değişmemiş** olmalı (senkron elle ekleneni ezmez).
+
 ---
 
 ## 🔴 K272 — İÇ SAYFALAR TELEFON ①: BEŞ ORTAK BİLEŞEN · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]

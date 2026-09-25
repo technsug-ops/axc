@@ -1,10 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { ImagePlus } from "lucide-react";
 
-import { gorselKirikBildir } from "@/app/gorsel-eylemleri";
+import { gorselElleKaydet, gorselKirikBildir } from "@/app/gorsel-eylemleri";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { DURUM_YAZISI } from "@/lib/renkler";
 import {
   buyukGorselAdresi,
+  elleGorselDenetle,
   kucukGorselAdresi,
   onizlemeKonumu,
   ONIZLEME_BOYU,
@@ -32,6 +48,11 @@ import {
  *    bir sonraki senkron sırayı baştan işletir.
  *  · Süsleme: ad hemen yanında yazıyor → `alt=""` + `aria-hidden` (ekran
  *    okuyucu adı iki kez okumasın).
+ *  · RESİM EKLE (K273-③, kullanıcı 25.09): resmi olmayan (ya da açılmayan)
+ *    kutunun SAĞ ALT köşesinde küçük "+" rozeti; kutunun TAMAMI düğmedir
+ *    (İlke #8 — rozet tek başına dokunma hedefi olamayacak kadar küçük).
+ *    Yalnız `ekleyebilir` (ürün düzenleme izni) iken çizilir. Resim eklenince
+ *    kutu resme döner, rozet kendiliğinden gider.
  * ============================================================================
  */
 export function UrunGorseli({
@@ -40,12 +61,15 @@ export function UrunGorseli({
   kaynak,
   ad,
   boyut = 40,
+  ekleyebilir = false,
 }: {
   variantId: string | null;
   url: string | null;
   kaynak: GorselKaynagi | null;
   ad: string;
   boyut?: number;
+  /** Ürün düzenleme izni (`urun.yaz`) — sayfa sunucuda hesaplar. */
+  ekleyebilir?: boolean;
 }) {
   const [kirik, setKirik] = useState(false);
   const [onizleme, setOnizleme] = useState<{ left: number; top: number } | null>(null);
@@ -69,6 +93,9 @@ export function UrunGorseli({
 
   const stil = { width: boyut, height: boyut };
   if (!url || !kaynak || kirik) {
+    if (ekleyebilir && variantId) {
+      return <ResimEkle variantId={variantId} ad={ad} boyut={boyut} />;
+    }
     return (
       <span
         aria-hidden
@@ -134,5 +161,131 @@ export function UrunGorseli({
         />
       ) : null}
     </span>
+  );
+}
+
+/** Resimsiz kutu + sağ alt "+" rozeti + link yapıştırma diyaloğu (K273-③). */
+function ResimEkle({ variantId, ad, boyut }: { variantId: string; ad: string; boyut: number }) {
+  const t = useTranslations("UrunGorseli");
+  const ortak = useTranslations("Ortak");
+  const router = useRouter();
+  const [acik, setAcik] = useState(false);
+  const [link, setLink] = useState("");
+  const [onizleme, setOnizleme] = useState<"YUKLENIYOR" | "ACILDI" | "ACILMADI">("YUKLENIYOR");
+  const [hata, setHata] = useState<string | null>(null);
+  const [bekliyor, basla] = useTransition();
+
+  const denetim = elleGorselDenetle(link);
+  const gecerli = "url" in denetim ? denetim.url : null;
+  /* Biçim hatası yalnız bir şey yazılmışken söylenir; boş alan hata değil. */
+  const bicimHatasi = link.trim() !== "" && "hata" in denetim ? t(`hata.${denetim.hata}`) : null;
+
+  const kaydet = () => {
+    if (!gecerli || onizleme !== "ACILDI") return;
+    setHata(null);
+    basla(async () => {
+      const sonuc = await gorselElleKaydet(variantId, gecerli);
+      if ("hata" in sonuc) {
+        setHata(t(`hata.${sonuc.hata}`));
+        return;
+      }
+      setAcik(false);
+      setLink("");
+      router.refresh();
+    });
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAcik(true)}
+        aria-label={t("resimEkleEtiket", { ad })}
+        title={t("resimEkle")}
+        style={{ width: boyut, height: boyut }}
+        className="bg-muted text-muted-foreground hover:border-primary focus-visible:ring-ring relative inline-flex shrink-0 cursor-pointer items-center justify-center rounded-md border border-dashed text-xs font-semibold uppercase focus-visible:ring-2 focus-visible:outline-none"
+      >
+        <span aria-hidden>{ad.trim().charAt(0) || "·"}</span>
+        <span
+          aria-hidden
+          className="bg-primary text-primary-foreground absolute -right-1 -bottom-1 inline-flex size-4 items-center justify-center rounded-full shadow"
+        >
+          <ImagePlus className="size-2.5" />
+        </span>
+      </button>
+      <Dialog
+        open={acik}
+        onOpenChange={(a) => {
+          setAcik(a);
+          if (!a) setHata(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("baslik")}</DialogTitle>
+            <DialogDescription>{t("aciklama")}</DialogDescription>
+          </DialogHeader>
+          <p className="truncate text-sm font-medium" title={ad}>
+            {ad}
+          </p>
+          <div className="space-y-1">
+            <Label htmlFor={`resim-link-${variantId}`}>{t("linkEtiketi")}</Label>
+            <Input
+              id={`resim-link-${variantId}`}
+              value={link}
+              inputMode="url"
+              autoComplete="off"
+              placeholder={t("linkIpucu")}
+              onChange={(e) => {
+                setLink(e.target.value);
+                setOnizleme("YUKLENIYOR");
+                setHata(null);
+              }}
+              className="h-11 md:h-10"
+            />
+            {bicimHatasi ? <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>{bicimHatasi}</p> : null}
+          </div>
+          <div className="bg-muted/40 flex h-48 items-center justify-center rounded-lg border">
+            {gecerli ? (
+              /* eslint-disable-next-line @next/next/no-img-element -- kullanıcının linki; önizleme tarayıcıda */
+              <img
+                key={gecerli}
+                src={gecerli}
+                alt=""
+                referrerPolicy="no-referrer"
+                onLoad={() => setOnizleme("ACILDI")}
+                onError={() => setOnizleme("ACILMADI")}
+                className={onizleme === "ACILDI" ? "max-h-44 max-w-full object-contain" : "hidden"}
+              />
+            ) : null}
+            {!gecerli ? (
+              <span className="text-muted-foreground px-4 text-center text-xs">{t("onizlemeBos")}</span>
+            ) : onizleme === "ACILMADI" ? (
+              <span className={`px-4 text-center text-xs ${DURUM_YAZISI.olumsuz}`}>{t("onizlemeAcilmadi")}</span>
+            ) : onizleme === "YUKLENIYOR" ? (
+              <span className="text-muted-foreground px-4 text-center text-xs">{t("onizlemeYukleniyor")}</span>
+            ) : null}
+          </div>
+          {/* ⚠ SESSİZ BAŞARISIZLIK YASAK (İlke #5): düğme kilitliyse NEDENİ yazar. */}
+          {gecerli && onizleme !== "ACILDI" ? (
+            <p className="text-muted-foreground text-xs">{t("onizlemeBekleniyor")}</p>
+          ) : null}
+          {hata ? <p className={`text-sm ${DURUM_YAZISI.olumsuz}`}>{hata}</p> : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" className="h-11 md:h-10" onClick={() => setAcik(false)}>
+              {ortak("vazgec")}
+            </Button>
+            <Button
+              type="button"
+              className="h-11 md:h-10"
+              disabled={!gecerli || onizleme !== "ACILDI" || bekliyor}
+              onClick={kaydet}
+            >
+              {bekliyor ? t("kaydediliyor") : t("kaydet")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

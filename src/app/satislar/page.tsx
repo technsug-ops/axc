@@ -108,6 +108,8 @@ export default async function SatislarSayfasi({
   }>;
 }) {
   await sayfaIzni("satis.gor");
+  /* K273-③: resimsiz kutuda "resim ekle" rozeti yalnız ürün düzenleme izniyle. */
+  const resimEkleyebilir = await izinVarMi("urun.yaz");
   // TEK ALAN-İZNİ (bilinçli istisna, bkz. lib/yetki/izinler.ts başlığı):
   // izin modeli sayfa bazlıdır; NET-2 kolonu operasyonun görmemesi gereken
   // TEK alandır ve sayfayı komple kapatmak satış girişini imkânsız kılardı.
@@ -897,7 +899,7 @@ export default async function SatislarSayfasi({
                     <TableCell>
                       <div className="flex items-center gap-2.5">
                       {/* K273: ilk kalemin küçük resmi — ad da ilk kalemden başlıyor. */}
-                      <UrunGorseli variantId={satis.items[0]?.variant.id ?? null} url={satis.items[0]?.variant.gorselUrl ?? null} kaynak={satis.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(satis)} />
+                      <UrunGorseli ekleyebilir={resimEkleyebilir} variantId={satis.items[0]?.variant.id ?? null} url={satis.items[0]?.variant.gorselUrl ?? null} kaynak={satis.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(satis)} />
                       <div className="min-w-0">
                       <UzunAd
                         metin={urunOzeti(satis)}
@@ -976,7 +978,7 @@ export default async function SatislarSayfasi({
             {satislar.map((satis) => (
               <ListeKarti
                 key={satis.id}
-                gorsel={<UrunGorseli variantId={satis.items[0]?.variant.id ?? null} url={satis.items[0]?.variant.gorselUrl ?? null} kaynak={satis.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(satis)} boyut={48} />}
+                gorsel={<UrunGorseli ekleyebilir={resimEkleyebilir} variantId={satis.items[0]?.variant.id ?? null} url={satis.items[0]?.variant.gorselUrl ?? null} kaynak={satis.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(satis)} boyut={48} />}
                 baslik={
                   <span className="flex flex-wrap items-center gap-2">
                     {/*
