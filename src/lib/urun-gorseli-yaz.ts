@@ -11,9 +11,12 @@ import { gorselSec, type GorselKaynagi } from "@/lib/urun-gorseli";
  *
  *  ⛔ TOPLU YAZIM ŞARTLARI: satır satır, TEKRAR KOŞULABİLİR — her satır
  *  bağımsız, ikinci koşum zararsız (kural değişiklik yoksa `null` döner).
- *  Koşum başına TAVAN var: senkron rotası 60 sn içinde üç kanalı birden
- *  çekiyor; ilk dolumda ~1.100 satır tek koşuma sığmaz. Kalan bir sonraki
- *  koşumda (5 dk) devam eder — sayılar her koşumda yazar.
+ *  Koşum başına TAVAN var: senkron rotası (`listeleme-cekim`, GÜNDE BİR,
+ *  04:50 UTC, 300 sn) üç kanalı birden çekiyor; ~1.200 satırlık dolum tek
+ *  koşuma sığmaz. Kalan ertesi gece devam eder — sayılar her koşumda yazar.
+ *  ⚠ İLK YAZIMDA "5 dk'da bir" yazılmıştı — YANLIŞTI, rota ölçülmeden
+ *  sipariş çekimiyle karıştırılmıştı. İlk dolum bu yüzden 25.09.2026'da tek
+ *  seferlik betikle yapıldı (1.227 TY + 1 N11, 9 tur).
  * ============================================================================
  */
 export const GORSEL_YAZIM_TAVANI = 150;

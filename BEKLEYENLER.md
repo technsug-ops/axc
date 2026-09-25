@@ -238,9 +238,15 @@ Trendyol'a bakar»_ · _«best practice çalış»_.
 `gorselAt` · `gorselKirikUrl`; enum `GorselKaynagi`. Migration `20260925120000_urun_gorseli`.
 
 **Yazım:** Trendyol ve N11 listeleme senkronları aynı taramadan (ek istek yok) barkodla eşleyip
-yazar; satır satır, tekrar koşulabilir; **koşum başına 150 tavan** (60 sn'lik rota). Kuru koşum:
-Trendyol 1.225 eşleşen / 1.222 yazılacak, N11 +12 · toplam ≈ **1.234 / 1.874 varyant** →
-ilk dolum ~9 koşum ≈ 45 dk. Resmi olmayan ürün baş harfli gri kutu gösterir.
+yazar; satır satır, tekrar koşulabilir; **koşum başına 150 tavan**. Senkron **günde bir** koşar
+(04:50 UTC) — ilk raporda yazılan _"5 dk'da bir, ~45 dk'da dolar"_ **YANLIŞTI** (rota ölçülmemişti;
+bu tavanla dolum ~9 gün sürerdi). Bu yüzden **ilk dolum 25.09 tek seferlik betikle yapıldı**:
+Trendyol **1.227** + N11 **1** = **1.228 / 1.874**; örnek 28 adres yoklandı, 28'i de açıldı.
+Yeni ürünün resmi ertesi gece gelir. Resmi olmayan ürün baş harfli gri kutu gösterir.
+
+**Kalan 646 resimsiz (ölçüldü 25.09):** 599'u barkodsuz, 612'sinin hiçbir kanal kaydı yok —
+çoğu içe aktarılmış eski ürün. **Son 90 günde satılan ya da stokta olan yalnız 23.** Yol
+önerisi kullanıcıya sunuldu (HB dosya adı · link yapıştırma · Excel ile toplu); karar bekliyor.
 
 **Ekran:** ürünler · stok · satışlar · alımlar — masaüstünde adın solunda 40 px, telefon
 kartında başlığın solunda 48 px (`ListeKarti` yeni `gorsel` yuvası). Satış/alımda ilk kalemin
@@ -250,7 +256,7 @@ Bekçi: `urun-gorseli:dogrula` (41 kontrol — kural DEĞERLE, zincir yorumsuz k
 senkron → yazıcı → ekran → kırık bildirimi) · harness `urun-gorseli-mutasyon:kontrol` 14/14
 (zararsız · 10 kaldıran/fazladan zincir · 3 kural).
 
-### HALİL TEST LİSTESİ (canlı, deploy + ~45 dk sonra)
+### HALİL TEST LİSTESİ (canlı — ilk dolum yapıldı, hemen denenebilir)
 
 1. `/urunler` (bilgisayar): ad sütununun solunda küçük resimler. Resmi olmayan ürünlerde
    adın **baş harfi** gri kutuda — kırık resim ikonu **hiçbir yerde** olmamalı.
@@ -259,8 +265,8 @@ senkron → yazıcı → ekran → kırık bildirimi) · harness `urun-gorseli-m
 4. Trendyol'da satılan bir ürünü seçin, resmin Trendyol'daki ana görselle **aynı** olduğunu
    kontrol edin.
 5. Sayfa yavaşlamamalı: 50 satırlık listede kaydırırken resimler aşağı indikçe yükleniyor.
-6. İlk dolum sürerken bazı ürünler baş harf gösterir — ~45 dk sonra oran belirgin artmalı
-   (hedef ≈ 1.234 / 1.874; kalan ~640 varyantın iki kanalda da kaydı yok).
+6. `/stok`'ta aşağıdaki satılan/stoklu ürünlerden birini arayın (ör. `axcali2242` Waffle
+   Makinesi): baş harf görünmeli — bu 23 ürün iki kanalda da eşleşmiyor.
 
 **mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok; resim süs, ekran okuyucu adı
 okur) · **kullanıcı kolaylığı: ✓** (İlke #3 · #8 · #9 · #10)
