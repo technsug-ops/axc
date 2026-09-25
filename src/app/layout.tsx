@@ -9,6 +9,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { cn } from "@/lib/utils";
+import { AltCubuk } from "@/components/alt-cubuk";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BasariBildirimi } from "@/components/basari-bildirimi";
 import {
@@ -342,12 +343,15 @@ export default async function RootLayout({
                   `clip` seçildi, `hidden` değil: `hidden` yeni bir kaydırma
                   bağlamı açar ve içteki `sticky` başlıkları bozar.
                 */}
-                <div className="min-w-0 flex-1 overflow-x-clip p-4 md:p-6 print:p-0">
+                <div className="min-w-0 flex-1 overflow-x-clip p-4 pb-24 md:p-6 md:pb-6 print:p-0">
                   {/* Basari mesaji TEK YERDE: her ekranda ayni yerde,
                       ayni gorunumde cikar (Kullanici Kolayligi #10). */}
                   <BasariBildirimi />
                   {children}
                 </div>
+                {/* TELEFON ALT BARI (K270): sabit, beş sekme; `pb-24` yukarıda onun
+                    içindir — içerik barın arkasına kaymaz. Masaüstünde yok (`md:hidden`). */}
+                <AltCubuk />
               </SidebarInset>
             </SidebarProvider>
           </TooltipProvider>

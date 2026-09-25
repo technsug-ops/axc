@@ -56,7 +56,7 @@ import { GENEL_KDV_ORANI, kdvHaric } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { kutuOranlari } from "@/lib/panel/kar-orani";
 import { payFarki } from "@/lib/panel/pay-farki";
-import { HalkaGrafik, halkaDilimleriniTopla } from "@/components/halka-grafik";
+import { HalkaGrafik, HalkaKompakt, halkaDilimleriniTopla } from "@/components/halka-grafik";
 import { donemCiroNetSerisi } from "@/lib/panel/son-gun-serisi";
 import { KANAL_RENKLERI, KANAL_RENGI_VARSAYILAN } from "@/lib/renkler";
 import { HIZLI_KIYAS } from "@/lib/karsilastirma";
@@ -124,6 +124,7 @@ import {
 } from "@/lib/renkler";
 import { acikPartilerToplu } from "@/lib/stok";
 import { GorevKutusu } from "./gorev-kutusu";
+import { HizliIslemler } from "./hizli-islemler";
 import { OzetKutusu } from "./ozet-kutusu";
 import { VitrinSerhi } from "./vitrin-serhi";
 import {
@@ -2057,7 +2058,7 @@ export default async function AnaSayfa({
         kip={kanalKipi}
         tasinanlar={parametreler as Record<string, string | undefined>}
       />
-    <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 max-sm:-mx-4 max-sm:flex max-sm:snap-x max-sm:overflow-x-auto max-sm:px-4 max-sm:pb-1">
       {/* ⛔ TAVAN VARSA YUVALARDAN ÇİZİLİR (K126-B): sabit düzende üç
           kanal satış olmasa da yerinde durur. Tavansız dökümde eski davranış. */}
       {(yuvalar === null
@@ -2069,7 +2070,7 @@ export default async function AnaSayfa({
              Kart soluk çizilir: "var ama boş" ile "hiç yok" ayrışsın. */
           <div
             key={`yuva-${kod}`}
-            className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3"
+            className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3 max-sm:w-[80%] max-sm:shrink-0 max-sm:snap-start"
           >
             <div className="font-medium">
               <Baglanti href={kanalSatislariAdresi(kod)}>{ad}</Baglanti>
@@ -2104,7 +2105,7 @@ export default async function AnaSayfa({
           return (
         <div
           key={kanal.kanalKodu}
-          className="bg-card min-w-0 space-y-2.5 rounded-lg border border-l-[3px] p-3"
+          className="bg-card min-w-0 space-y-2.5 rounded-lg border border-l-[3px] p-3 max-sm:w-[80%] max-sm:shrink-0 max-sm:snap-start"
           style={{ borderLeftColor: kanalRengi }}
         >
           <div className="flex min-w-0 items-center gap-2">
@@ -2279,7 +2280,7 @@ export default async function AnaSayfa({
       {(tavan !== null ? [] : bosKanallar).map(([kod, ad]) => (
           <div
             key={`bos-${kod}`}
-            className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3"
+            className="text-muted-foreground min-w-0 space-y-2 rounded-lg border border-dashed p-3 max-sm:w-[80%] max-sm:shrink-0 max-sm:snap-start"
           >
             <div className="font-medium">
               <Baglanti href={kanalSatislariAdresi(kod)}>{ad}</Baglanti>
@@ -2479,8 +2480,11 @@ export default async function AnaSayfa({
       */}
       <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
-          <p className="text-muted-foreground text-sm">
+          {/* K270: telefonda başlık yalnız ekran okuyucuya (üst çubuk «Selliora»
+              diyor) ve alt satır gizli — dönem çiplerde, kanal süzgeç düğmesinde.
+              Çekim rozeti (uyarı) GÖRÜNÜR kalır. */}
+          <h1 className="text-2xl font-semibold max-md:sr-only">{t("baslik")}</h1>
+          <p className="text-muted-foreground text-sm max-md:hidden">
             {t("altBaslikOzet", {
               aralik: aralikMetni,
               pencere: tPencere(PENCERE_ANAHTARI[donemTuru]),
@@ -2716,14 +2720,14 @@ export default async function AnaSayfa({
                        sunuldu, «6 demo kartı + huni altta ince satır» seçildi.
                        ⚠ `xl:grid-cols-6` yalnız kâr görünürken: izin yoksa
                        üç kart kalır (ciro · satış · iade) ve `md:grid-cols-3` yeter. */
-                    className={`grid gap-2 sm:grid-cols-2 md:grid-cols-3 ${karGorunur ? "xl:grid-cols-6" : ""}`}
+                    className={`grid grid-cols-6 gap-2 sm:grid-cols-2 md:grid-cols-3 ${karGorunur ? "xl:grid-cols-6" : ""}`}
                   >
 
                     {/* CİRO — kutu düzenine girmiyor çünkü tek rakam değil, üç
                       satır (brüt · iade düşümü · net). Kendi bileşeni var ve
                       panelin ciro gösterdiği dört yüzeyin hepsinde aynı
                       (mimar kararı 13.08.2026). */}
-                    <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3">
+                    <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3 max-sm:col-span-6">
                       <span className="text-muted-foreground min-w-0 text-xs break-words">
                         {t("ciro")}
                       </span>
@@ -2756,6 +2760,7 @@ export default async function AnaSayfa({
                       <>
                         <IstatistikKutusu
                           etiket={t("net1")}
+                          className="max-sm:col-span-3"
                           cocuk={bicim.para(blok.toplamNet1, blok.paraBirimi)}
                           rozet={karRozeti(blok.toplamNet1)}
                           kiyas={kiyasRozeti(
@@ -2764,12 +2769,13 @@ export default async function AnaSayfa({
                             (n) => bicim.para(n, blok.paraBirimi),
                           )}
                           altNot={
-                            <>
+                            /* K270: açıklama satırları telefonda gizli — yarım kutuda dört satır oluyordu. */
+                            <span className="block max-sm:hidden">
                               {oranSatirlari(blok.toplamNet1, blok)}
                               <span className="text-muted-foreground block">
                                 {t("net1Aciklama")}
                               </span>
-                            </>
+                            </span>
                           }
                         />
                         {/* NET-2 BAŞROL. Beş kutu da aynı boydayken hiçbiri
@@ -2777,6 +2783,7 @@ export default async function AnaSayfa({
                           rakam budur. Tek "bas" kutusu o yüzden burada. */}
                         <IstatistikKutusu
                           etiket={t("net2")}
+                          className="max-sm:col-span-3"
                           bas
                           cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
                           rozet={karRozeti(blok.toplamNet2)}
@@ -2786,7 +2793,7 @@ export default async function AnaSayfa({
                             (n) => bicim.para(n, blok.paraBirimi),
                           )}
                           altNot={
-                            <>
+                            <span className="block max-sm:hidden">
                               {oranSatirlari(blok.toplamNet2, blok, true)}
                               <span className="text-muted-foreground block">
                                 {t("net2Aciklama")}
@@ -2803,7 +2810,7 @@ export default async function AnaSayfa({
                                   })}
                                 </span>
                               ) : null}
-                            </>
+                            </span>
                           }
                         />
                         {/*
@@ -2815,6 +2822,7 @@ export default async function AnaSayfa({
                         */}
                         <IstatistikKutusu
                           etiket={t("net2Marji")}
+                          className="max-sm:col-span-2"
                           cocuk={
                             marjD.simdi === null
                               ? t("marjHesaplanamaz")
@@ -2822,7 +2830,7 @@ export default async function AnaSayfa({
                           }
                           kiyas={oranKiyasRozeti(marjD)}
                           altNot={
-                            <span className="text-muted-foreground block">
+                            <span className="text-muted-foreground block max-sm:hidden">
                               {t("net2MarjiAciklama")}
                             </span>
                           }
@@ -2831,6 +2839,7 @@ export default async function AnaSayfa({
                     ) : null}
                     <IstatistikKutusu
                       etiket={t("satisAdedi")}
+                      className={karGorunur ? "max-sm:col-span-2" : "max-sm:col-span-3"}
                       cocuk={
                         <Baglanti
                           href={satisAdresi(
@@ -2864,6 +2873,7 @@ export default async function AnaSayfa({
                     */}
                     <IstatistikKutusu
                       etiket={t("iadeKisa")}
+                      className={karGorunur ? "max-sm:col-span-2" : "max-sm:col-span-3"}
                       cocuk={
                         <Baglanti href={iadeListesiAdresi}>{blok.toplamIadeAdedi}</Baglanti>
                       }
@@ -2885,18 +2895,18 @@ export default async function AnaSayfa({
                     satış SATIŞ tarihine, kargo SEVKİYAT tarihine göre süzülür.
                     ⚠ Çipler telefonda 44 px (İlke #8), masaüstünde ince.
                   */}
-                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                    <span className="font-medium">{t("huniEtiketi")}</span>
+                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs max-sm:grid max-sm:grid-cols-4 max-sm:gap-2">
+                    <span className="font-medium max-sm:hidden">{t("huniEtiketi")}</span>
                     <Baglanti
                       href={suzgecAdresi(
                             "/alimlar",
                             {},
                             { ...donemParametreleri(), eksen: "siparis" },
                           )}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
                     >
                       {t("siparisAdedi")}
-                      <span className="text-foreground font-semibold tabular-nums">
+                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
                         {alim.siparisGunluk.length}
                       </span>
                     </Baglanti>
@@ -2912,10 +2922,10 @@ export default async function AnaSayfa({
                             {},
                             donemParametreleri(),
                           )}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
                     >
                       {t("malKabulAdedi")}
-                      <span className="text-foreground font-semibold tabular-nums">
+                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
                         {alim.adet}
                       </span>
                       {/* Kıyas rozeti eski kutudan taşındı — çipe geçerken
@@ -2924,29 +2934,33 @@ export default async function AnaSayfa({
                     </Baglanti>
                     <Baglanti
                       href={kargoAdresi("verildi")}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
                     >
                       {/* SÜZGEÇ AÇIKKEN KANAL ADI ETİKETTE: çip hangi soruya cevap
                           verdiğini kendisi söyler (K253'te düşmüştü, bekçi yakaladı). */}
                       {seciliKanal
                         ? t("kargoDurumuKanal", { kanal: seciliKanalAdi })
                         : t("kargoDurumu")}
-                      <span className="text-foreground font-semibold tabular-nums">
+                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
                         {blok.kargoyaVerilenAdet}
                       </span>
                     </Baglanti>
                     <Baglanti
                       href={kargoAdresi("bekleyen")}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
                     >
                       {t("kargoBekleyenKisa")}
-                      <span className="text-foreground font-semibold tabular-nums">
+                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
+                        {/* K270: telefonda yalnız SAYI — etiket «Kargo bekleyen» zaten söylüyor. */}
+                        <span className="sm:hidden">{blok.kargoBekleyenAdet}</span>
+                        <span className="max-sm:hidden">
                         {t("kargoBekleyen", {
                                 sayi: blok.kargoBekleyenAdet,
                               })}
+                        </span>
                       </span>
                     </Baglanti>
-                    <span className="text-muted-foreground">
+                    <span className="text-muted-foreground max-sm:col-span-4">
                       {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
                       <span className="block">{t("kargoEkseniNotu")}</span>
                       <span className="block">
@@ -3039,6 +3053,8 @@ export default async function AnaSayfa({
             kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
           }}
         />
+        {/* HIZLI İŞLEMLER (K270) — yalnız telefonda; en sık dört iş. */}
+        <HizliIslemler />
 
 
         {/* ⚠ 2/5 — 3/5 düzeni KORUNDU: ızgaraya dokunulmadı.
@@ -3113,6 +3129,23 @@ export default async function AnaSayfa({
                     (tutar) => bicim.para(tutar, ustBlok.paraBirimi),
                   );
                   return (
+                    <>
+                    {/* K270: telefonda KOMPAKT halka (liste sağda) — ok çizgili
+                        kadraj 358 px'te okunmuyordu. Aynı dilimler, aynı toplam. */}
+                    <div className="md:hidden">
+                      <HalkaKompakt
+                        dilimler={dilimler}
+                        toplam={ustBlok.toplamGelir}
+                        toplamMetni={bicim.para(ustBlok.toplamGelir, ustBlok.paraBirimi)}
+                        toplamEtiketi={t("halkaToplam")}
+                        yuzdeMetni={(oran) => bicim.yuzde(oran, 0)}
+                        bosMesaj={t("donemBos")}
+                        aciklama={t("halkaAciklama", {
+                          liste: dilimler.map((d) => `${d.etiket} ${d.tutarMetni}`).join(", "),
+                        })}
+                      />
+                    </div>
+                    <div className="max-md:hidden">
                     <HalkaGrafik
                       dilimler={dilimler}
                       toplam={ustBlok.toplamGelir}
@@ -3127,6 +3160,8 @@ export default async function AnaSayfa({
                         liste: dilimler.map((d) => `${d.etiket} ${d.tutarMetni}`).join(", "),
                       })}
                     />
+                    </div>
+                    </>
                   );
                 })()}
               </CardContent>
@@ -3183,7 +3218,8 @@ export default async function AnaSayfa({
             ⚠ İZİNSİZ KULLANICIDA SAĞ SÜTUN BOŞ KALIR, KUTU DEĞİL:
             `OzetKutusu` null döner ve ızgara 3/5'te biter. */}
         <div className="grid min-w-0 items-stretch gap-4 xl:grid-cols-5">
-          <div className="min-w-0 xl:col-span-3">
+          {/* K270: afiş telefonda yok (onaylanan demo) — kanal listeleme ekranında ve masaüstünde duruyor. */}
+          <div className="min-w-0 xl:col-span-3 max-md:hidden">
             <VitrinSerhi veri={vitrin} />
           </div>
           <div className="min-w-0 xl:col-span-2">
@@ -3231,7 +3267,7 @@ export default async function AnaSayfa({
               />
             </CardContent>
           </Card>
-          <Card className="flex min-w-0 flex-col xl:col-span-2">
+          <Card className="max-md:hidden flex min-w-0 flex-col xl:col-span-2">
             <CardHeader className="pb-3">
               <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
                 <span className="flex items-center gap-2">
@@ -3437,6 +3473,8 @@ export default async function AnaSayfa({
             STOK   → stokta bekleyen                        (tek liste)
 
           Beş sekme üçe indi ve her sekme daha çok şey söylüyor. */}
+      {/* K270: ürün analizi telefonda MENÜDE (`/rapor/urunler`) — onaylanan demo. */}
+      <div className="max-md:hidden">
       <SekmeliBolum
         baslik={t("urunAnaliziBaslik")}
         notu={t("urunAnaliziNotu")}
@@ -3900,6 +3938,7 @@ export default async function AnaSayfa({
           },
         ]}
       />
+      </div>
 
       {/* Yaşlanma listesi ARTIK AYRI BLOK DEĞİL — "Ürün analizi" kartının
           bir sekmesi (14.08.2026). Tam genişlikte ayrı bir kart olarak
@@ -3916,6 +3955,8 @@ export default async function AnaSayfa({
 
           ⛔ VE SEKME BURADA YER KAZANMANIN KOLAY YOLU DEĞİL: birlikte
           okunması gereken rakamlar (ciro ile NET-2) AYNI sekmede kaldı. */}
+      {/* K270: 12 aylık grafik ve alt tabloları telefonda yok — Raporlar menüde. */}
+      <div className="max-md:hidden">
       <SekmeliBolum
         baslik={t("grafikBaslik", { ay: GRAFIK_AY_SAYISI })}
         secili={grafikSekmesi}
@@ -4287,6 +4328,7 @@ export default async function AnaSayfa({
           },
         ]}
       />
+      </div>
     </div>
   );
 }

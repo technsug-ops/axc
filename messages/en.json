@@ -174,7 +174,8 @@
     "malKabul": "",
     "maliyetYontemi": "",
     "gunlukOzet": "",
-    "kanalListeleme": ""
+    "kanalListeleme": "",
+    "menu": ""
   },
   "Ortak": {
     "kapat": "",
@@ -2389,7 +2390,8 @@
     "halkaDiger": "",
     "halkaDipnot": "",
     "halkaAciklama": "",
-    "ciroNetBaslik": ""
+    "ciroNetBaslik": "",
+    "hizliIslemler": ""
   },
   "Envanter": {
     "baslik": "",
@@ -4471,6 +4473,20 @@
     "olculmedi": "",
     "rozetKapaliDuran": "",
     "kutuKapaliDuranEksik": "",
+    "aramaIpucu": ""
+  },
+  "AltCubuk": {
+    "baslik": "",
+    "panel": "",
+    "satislar": "",
+    "okut": "",
+    "alimlar": "",
+    "menu": ""
+  },
+  "MobilMenu": {
+    "baslik": "",
+    "grupYardim": "",
+    "bekleyen": "",
     "aramaIpucu": ""
   }
 }

@@ -4,50 +4,7 @@ import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-  CalendarCheck,
-  BadgePercent,
-  BarChart3,
-  ListFilter,
-  Banknote,
-  ChevronDown,
-  BookOpen,
-  MessageSquarePlus,
-  Boxes,
-  CalendarClock,
-  ClipboardList,
-  Coins,
-  Calculator,
-  CreditCard,
-  DatabaseBackup,
-  Download,
-  FileSpreadsheet,
-  Landmark,
-  LayoutDashboard,
-  ListOrdered,
-  MapPin,
-  Package,
-  PackageX,
-  Undo2,
-  Percent,
-  Receipt,
-  Route,
-  ScanBarcode,
-  Inbox,
-  PackageCheck,
-  PackagePlus,
-  ScanSearch,
-  ShieldCheck,
-  Sparkles,
-  ShoppingCart,
-  Store,
-  Truck,
-  Users,
-  PackageSearch,
-  Tags,
-  Warehouse,
-  Wallet,
-} from "lucide-react";
+import { ChevronDown, type LucideIcon } from "lucide-react";
 
 import {
   Sidebar,
@@ -63,6 +20,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { CikisButonu } from "@/components/cikis-butonu";
+import { ALT_OGELER, MENU_IKONLARI } from "@/lib/menu/ikonlar";
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
 import type { CozulmusDuzen } from "@/lib/menu/duzen";
 import { UYGULAMA } from "@/lib/uygulama";
@@ -79,7 +37,7 @@ type MenuOgesi = {
   /** Menu sozlugundeki anahtar; etiket cizim aninda cozulur. */
   anahtar: string;
   href: string;
-  icon: typeof Package;
+  icon: LucideIcon;
   aktif: boolean;
 };
 
@@ -102,61 +60,8 @@ type MenuOgesi = {
  * için saf kalmalı; ikon bir React bileşenidir. Bekçi bu eşlemenin TAM
  * olduğunu ayrıca ölçüyor — ikonsuz bir katalog kalemi çizilemezdi.
  */
-const MENU_IKONLARI: Record<string, typeof Package> = {
-  panel: LayoutDashboard,
-  satislar: Receipt,
-  alimlar: ShoppingCart,
-  urunler: Package,
-  stok: Boxes,
-  iadeler: Undo2,
-  paketle: PackageCheck,
-  okut: ScanSearch,
-  yerlestir: PackagePlus,
-  simulasyon: Calculator,
-
-  giderler: Wallet,
-  kartlar: CreditCard,
-  kartBorcu: Landmark,
-  hakedis: Banknote,
-  tazminat: PackageX,
-  nakitTakvimi: CalendarClock,
-  gunlukOzet: Sparkles,
-  rapor: BarChart3,
-  urunAnalizi: ListFilter,
-
-  urunKarti: ScanBarcode,
-  kanalSkulari: Tags,
-  kanalListeleme: PackageSearch,
-  kanalHesaplari: Store,
-  envanterDegeri: Coins,
-
-  depoKurulumu: Warehouse,
-  rafKonumlari: MapPin,
-  kategoriler: Percent,
-  duzeltmeNedenleri: ClipboardList,
-  tedarikciler: Truck,
-  kullanicilar: Users,
-  roller: ShieldCheck,
-  menuDuzeni: ListOrdered,
-  donemler: CalendarCheck,
-  /** Hesap makinesi — maliyet MOTORU; takvim (dönem) ile karışmasın. */
-  maliyetYontemi: Calculator,
-  /** Depoya GİREN mal — kutuya düşen ok. `paketle`/`yerlestir` ikonlarıyla
-   *  çakışmaması için ayrı: aynı ikon iki farklı iş demez (İlke #10). */
-  malKabul: Inbox,
-
-  veriAktarimi: FileSpreadsheet,
-  veriDisari: Download,
-  geriYukleme: DatabaseBackup,
-  gecmisEkstre: FileSpreadsheet,
-  komisyonKapisi: Percent,
-  tarife: Percent,
-  /** K234 — tarife hesaplama; `komisyonKapisi`nin Percent'i yükleme kapısı, bu bakma ekranı. */
-  tarifeHesaplama: BadgePercent,
-  /** Kargo TARİFESİ — `tedarikciler`in Truck'ıyla çakışmasın diye ayrı ikon. */
-  kargoTarifesi: Route,
-  hbKargoTarife: Route,
-};
+/* İKON HARİTASI KATALOĞA ÇIKTI (K270): `lib/menu/ikonlar.ts` — alt bar ve
+   telefon menüsü de aynı haritayı okur. Burada kopyası tutulmaz. */
 
 /** Anahtardan çizilebilir öğe kurar. Adres ve ikon TEK kaynaktan. */
 function ogeKur(anahtar: string): MenuOgesi | null {
@@ -172,15 +77,7 @@ function ogeKur(anahtar: string): MenuOgesi | null {
 }
 
 /** En altta sabit — her zaman erişilebilir, hiçbir grubun içinde değil. */
-const ALT: MenuOgesi[] = [
-  { anahtar: "elKitabi", href: "/el-kitabi", icon: BookOpen, aktif: true },
-  {
-    anahtar: "talepler",
-    href: "/talepler",
-    icon: MessageSquarePlus,
-    aktif: true,
-  },
-];
+const ALT: MenuOgesi[] = ALT_OGELER.map((o) => ({ ...o, aktif: true }));
 
 /**
  * ── AÇIK GRUPLAR TARAYICIDA HATIRLANIR ──────────────────────────────────

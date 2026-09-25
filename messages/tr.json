@@ -174,7 +174,8 @@
     "malKabul": "Mal kabul",
     "maliyetYontemi": "Maliyet yöntemi",
     "gunlukOzet": "Günlük Özet",
-    "kanalListeleme": "Kanal Listeleme Durumu"
+    "kanalListeleme": "Kanal Listeleme Durumu",
+    "menu": "Menü"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -2389,7 +2390,8 @@
     "halkaDiger": "{sayi} kanal daha",
     "halkaDipnot": "En küçük {sayi} kanal tek dilimde toplandı",
     "halkaAciklama": "Ciro dağılımı: {liste}",
-    "ciroNetBaslik": "Ciro ve NET-2 — {pencere}"
+    "ciroNetBaslik": "Ciro ve NET-2 — {pencere}",
+    "hizliIslemler": "Hızlı işlemler"
   },
   "Envanter": {
     "baslik": "Envanter değeri",
@@ -4472,5 +4474,19 @@
     "rozetKapaliDuran": "satılamıyor",
     "kutuKapaliDuranEksik": "son satış fiyatı × stok — {sayi} ürünün fiyatı bilinmiyor, bu toplamda YOK",
     "aramaIpucu": "Ürün adı, SKU, Firma SKU, barkod veya kanal kodu"
+  },
+  "AltCubuk": {
+    "baslik": "Ana gezinme",
+    "panel": "Panel",
+    "satislar": "Satışlar",
+    "okut": "Okut",
+    "alimlar": "Alımlar",
+    "menu": "Menü"
+  },
+  "MobilMenu": {
+    "baslik": "Menü",
+    "grupYardim": "Yardım",
+    "bekleyen": "{sayi} bekleyen iş",
+    "aramaIpucu": "Ürün, SKU, barkod ya da sipariş no"
   }
 }

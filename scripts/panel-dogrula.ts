@@ -73,6 +73,13 @@ import {
   MENU_KATALOGU,
   MENUDEN_DUSURULEMEZ,
 } from "../src/lib/menu/katalog";
+import {
+  ALT_CUBUK_SEKMELERI,
+  HIZLI_ISLEMLER,
+  MENU_IKONLARI,
+  ONE_CIKAN_ISLEM,
+} from "../src/lib/menu/ikonlar";
+import { sekmeAktifMi } from "../src/components/alt-cubuk";
 
 import {
   gunDegeri,
@@ -3290,10 +3297,23 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
        * `ogeKur` içinde `null` döner ve satır SESSİZCE ÇİZİLMEZ — ekran
        * canlıda var, menüde yok. Yetki tuzağının menü hâli.
        */
-      const ikonsuz = MENU_KATALOGU.filter(
-        (o) => !new RegExp(`^\\s*${o.anahtar}:\\s*[A-Z]`, "m").test(kenar),
-      ).map((o) => o.anahtar);
+      /**
+       * *** ÖLÇÜT ESKİDİ, SUSTURULMADI (K270, 25.09.2026). ESKİ: ikon haritası
+       * kenar çubuğunun İÇİNDEYDİ, ölçüt kaynağı `anahtar: Ikon` deseniyle
+       * tarıyordu. NİYE ESKİDİ: telefon alt barı ve menü sayfası aynı haritayı
+       * okumak zorunda — harita `lib/menu/ikonlar.ts`e çıktı. Ölçüt artık
+       * DEĞERİ sınıyor (kaynak taramıyor: «saf katman desen tarayan bekçiye
+       * muhtaç olmaz»), ve kenar çubuğunda KOPYA kalmadığını ayrıca ölçüyor.
+       */
+      const ikonsuz = MENU_KATALOGU.filter((o) => !MENU_IKONLARI[o.anahtar]).map(
+        (o) => o.anahtar,
+      );
       kontrol("katalogdaki her ekranın İKONU var", ikonsuz.length === 0, ikonsuz);
+      kontrol(
+        "  ...ve kenar çubuğunda ikon haritasının KOPYASI yok (tek gövde: ikonlar.ts)",
+        !/const MENU_IKONLARI/.test(kenar) &&
+          /import \{[^}]*\bMENU_IKONLARI\b[^}]*\} from "@\/lib\/menu\/ikonlar"/.test(kenar),
+      );
 
       /** ⚠ ADRESİ olmayan kalem de çizilemez. */
       const adressiz = MENU_KATALOGU.filter(
@@ -4786,7 +4806,9 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
    */
   kontrol(
     "  ...katlanan secim dugmede ADIYLA yaziyor",
-    /katlananSecili\s*\?\s*tPencere\(PENCERE_ANAHTARI\[/.test(cubuk),
+    /* K270: IKI yerde (telefon cipi + katlanir dugme) — her biri sayilir; biri
+       bozulunca oteki olcutu ayakta tutmasin (harness yakaladi). */
+    (cubuk.match(/katlananSecili\s*\?\s*tPencere\(PENCERE_ANAHTARI\[/g) ?? []).length === 2,
   );
   kontrol(
     "  ...eski 11 dugmelik LISTE dolasimi KALKTI",
@@ -4848,7 +4870,12 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
    */
   const huniBas = sayfa.indexOf("t(\"huniEtiketi\")");
   kontrol("huni satiri CIZILIYOR", huniBas >= 0);
-  const huni = huniBas >= 0 ? sayfa.slice(huniBas, huniBas + 3500) : "";
+  /* *** PENCERE BLOĞUN SONUNA BAĞLI (K270): sabit 3500 karakter, telefon
+     sınıfları eklenince notu dışarıda bıraktı — «pencere ölçülür, gövde
+     büyüyünce dar pencere sessizce kör kalır». Son = huniden sonraki uyarı kartı. */
+  const huniSon = huniBas >= 0 ? sayfa.indexOf("blok.hesaplanamayanAdet > 0", huniBas) : -1;
+  kontrol("  ...huni bloğunun SONU bulundu", huniSon > huniBas);
+  const huni = huniBas >= 0 && huniSon > huniBas ? sayfa.slice(huniBas, huniSon) : "";
   for (const [ad, desen] of [
     ["satin alinan", /t\("siparisAdedi"\)/],
     ["mal kabul", /t\("malKabulAdedi"\)/],
@@ -4915,7 +4942,8 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   /** * KISA ETIKET cipte, uzun ad title'da (hover) — demo «Onay bekleyen 3». */
   kontrol(
     "cip etiketi KISA sozlukten (kisa.*), uzun ad title'da",
-    /etiket=\{t\(`kisa\.\$\{g\.anahtar\}`\)\}/.test(kutu) &&
+    /* K270: telefon kutucugu + masaustu cip = IKI kullanim, ikisi de kisa. */
+    (kutu.match(/etiket=\{t\(`kisa\.\$\{g\.anahtar\}`\)\}/g) ?? []).length === 2 &&
       /uzunEtiket=\{t\(g\.anahtar\)\}/.test(kutu) &&
       /<span className="inline-flex max-w-full flex-wrap items-center gap-1" title=\{uzunEtiket\}>/.test(kutu),
   );
@@ -6797,6 +6825,90 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     merkezYaziBoyu("₺" + "9".repeat(40)) >= 10);
   kontrol("  ...merkez yazi boyu GOVDEDEN okunuyor (sabit 20 degil)",
     /fontSize=\{merkezYaziBoyu\(toplamMetni\)\}/.test(halka) && !/fontSize="20"/.test(halka));
+}
+
+/**
+ * === TELEFON DUZENI (K270, 25.09.2026) ====================================
+ * Kullanici onayli mobil demo: esit kutu izgarasi + hizli islemler + sabit
+ * alt bar + menu sayfasi. Masaustu AYNEN — her degisiklik max-sm/max-md ya da
+ * md:hidden. Saf olanlar DEGERLE, cizim olanlar kullanim blogunda sinanir.
+ */
+{
+  const yorumsuz = (m: string) => m.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  /* ── DEGER TESTLERI ── */
+  kontrol("alt bar 5 sekme, Okut ORTADA (depoda ilk hareket)",
+    ALT_CUBUK_SEKMELERI.length === 5 && ALT_CUBUK_SEKMELERI[2] === "okut" && ALT_CUBUK_SEKMELERI[4] === "menu");
+  kontrol("sekme etkinligi: kok YALNIZ tam eslesir",
+    sekmeAktifMi("/", "/") && !sekmeAktifMi("/satislar", "/"));
+  kontrol("  ...alt yol etkin, benzer ad DEGIL (/satislar/1 evet, /satislarx hayir)",
+    sekmeAktifMi("/satislar/12", "/satislar") && !sekmeAktifMi("/satislarx", "/satislar"));
+  kontrol("hizli islemler taban DOLU (4) ve her birinin ADRESI + IKONU katalogda",
+    HIZLI_ISLEMLER.length === 4 && HIZLI_ISLEMLER.every((a) => Boolean(MENU_ADRESLERI[a]) && Boolean(MENU_IKONLARI[a])),
+    HIZLI_ISLEMLER.filter((a) => !MENU_ADRESLERI[a] || !MENU_IKONLARI[a]));
+  kontrol("  ...one cikan islem hizli islemlerden biri", (HIZLI_ISLEMLER as readonly string[]).includes(ONE_CIKAN_ISLEM));
+
+  /* ── YERLESIM: alt bar ── */
+  const yerlesim = yorumsuz(readFileSync("src/app/layout.tsx", "utf8"));
+  kontrol("alt bar CIZILIYOR (layout, icerikten sonra)",
+    /\{children\}[\s\S]{0,200}?<\/div>\s*<AltCubuk \/>/.test(yerlesim));
+  kontrol("  ...icerik barin ARKASINA kaymaz (pb-24, masaustunde md:pb-6)",
+    /flex-1[^"]*\bpb-24\b[^"]*\bmd:pb-6\b/.test(yerlesim));
+  const altCubuk = yorumsuz(readFileSync("src/components/alt-cubuk.tsx", "utf8"));
+  kontrol("  ...bar yalniz TELEFONDA, sabit, altta, guvenli alanli",
+    /<nav[\s\S]{0,120}?className="[^"]*\bfixed inset-x-0 bottom-0\b[^"]*safe-area-inset-bottom[^"]*\bmd:hidden\b/.test(altCubuk));
+  kontrol("  ...her sekme 44+ px (min-h-14, Ilke #8)", /<Link[\s\S]{0,200}?min-h-14/.test(altCubuk));
+
+  /* ── PANEL SAYFASI ── */
+  const sayfaT = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
+  kontrol("hizli islemler gorev kutusunun HEMEN ALTINDA",
+    /<GorevKutusu[\s\S]{0,700}?\/>\s*<HizliIslemler \/>/.test(sayfaT));
+  kontrol("KPI izgarasi telefonda 6 sutun", /grid grid-cols-6 gap-2 sm:grid-cols-2 md:grid-cols-3/.test(sayfaT));
+  /* Satir toplamlari 6: [ciro 6] [NET-1 3 · NET-2 3] [marj 2 · satis 2 · iade 2] — ESIT kutular. */
+  const span = (desen: RegExp) => Number((desen.exec(sayfaT) ?? ["", "0"])[1]);
+  const ciroS = span(/<div className="bg-card min-w-0 space-y-1 rounded-lg border p-3 max-sm:col-span-(\d)">/);
+  const net1S = span(/etiket=\{t\("net1"\)\}\s*className="max-sm:col-span-(\d)"/);
+  const net2S = span(/etiket=\{t\("net2"\)\}\s*className="max-sm:col-span-(\d)"/);
+  const marjS = span(/etiket=\{t\("net2Marji"\)\}\s*className="max-sm:col-span-(\d)"/);
+  const satisS = span(/etiket=\{t\("satisAdedi"\)\}\s*className=\{karGorunur \? "max-sm:col-span-(\d)"/);
+  const iadeS = span(/etiket=\{t\("iadeKisa"\)\}\s*className=\{karGorunur \? "max-sm:col-span-(\d)"/);
+  kontrol("  ...satirlar TAM ve ESIT: 6 · 3+3 · 2+2+2 (bos hucre yok)",
+    ciroS === 6 && net1S === 3 && net2S === 3 && marjS === 2 && satisS === 2 && iadeS === 2,
+    { ciroS, net1S, net2S, marjS, satisS, iadeS });
+  kontrol("huni telefonda 4 ESIT kutu", /max-sm:grid max-sm:grid-cols-4 max-sm:gap-2/.test(sayfaT));
+  kontrol("pazaryeri telefonda YATAY kayar (tasma sayfada degil kapta)",
+    /grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3 [^"]*max-sm:flex[^"]*max-sm:overflow-x-auto/.test(sayfaT));
+  kontrol("halka: telefonda KOMPAKT, masaustunde ok cizgili (ikisi de, kendi kirilmasinda)",
+    /<div className="md:hidden">\s*<HalkaKompakt/.test(sayfaT) &&
+      /<div className="max-md:hidden">\s*<HalkaGrafik/.test(sayfaT));
+  kontrol("urun analizi ve 12 aylik grafik TELEFONDA yok (menude)",
+    /<div className="max-md:hidden">\s*<SekmeliBolum\s*baslik=\{t\("urunAnaliziBaslik"/.test(sayfaT) &&
+      /<div className="max-md:hidden">\s*<SekmeliBolum\s*baslik=\{t\("grafikBaslik"/.test(sayfaT));
+
+  /* ── GOREV KUTUSU: telefonda 3x2, masaustunde serit — ikisi AYNI anda cizilmez ── */
+  const kutuT = yorumsuz(readFileSync("src/app/gorev-kutusu.tsx", "utf8"));
+  kontrol("gorev telefonda 3 sutun izgara, yalniz telefonda",
+    /<section aria-label=\{t\("baslik"\)\} className="space-y-2 md:hidden">[\s\S]{0,400}?grid grid-cols-3 gap-2/.test(kutuT));
+  kontrol("  ...serit telefonda GIZLI (cift cizim yok)", /rounded-lg border px-3 py-2 max-md:hidden"/.test(kutuT));
+  kontrol("  ...ve izgara GERCEKTEN cizdiriliyor", /<>\s*\{mobilIzgara\}/.test(kutuT));
+  const kutucuk = kutuT.slice(kutuT.indexOf("function GorevKutucugu("), kutuT.indexOf("export async function GorevKutusu("));
+  kontrol("  ...temiz kutu BAGLANTI degil (Ilke #2), bekleyen baglanti",
+    kutucuk.length > 200 && /gorev\.temizMi \? \(\s*<span className=\{sinif\}>/.test(kutucuk) && /<Link href=\{gorev\.adres\}/.test(kutucuk));
+
+  /* ── SUZGEC: telefon cipleri ── */
+  const cubukT = yorumsuz(readFileSync("src/components/suzgec-cubugu.tsx", "utf8"));
+  kontrol("donem cipleri telefonda HEP GORUNUR, tek satir, yatay kayar",
+    /flex gap-2 overflow-x-auto[^"]*md:hidden"[\s\S]{0,200}?HIZLI_PENCERELER\.map/.test(cubukT));
+  kontrol("  ...44 px (Ilke #8) — iki cip de h-11", (cubukT.match(/className="h-11 shrink-0 rounded-full"/g) ?? []).length === 2);
+  kontrol("  ...katlanir panelde ayni cipler telefonda GIZLI (iki kez cizilmez)",
+    (cubukT.match(/className="h-11 md:h-8 max-md:hidden"/g) ?? []).length === 2);
+
+  /* ── MENU SAYFASI: tek govde ── */
+  const menuT = yorumsuz(readFileSync("src/app/menu/page.tsx", "utf8"));
+  kontrol("menu sayfasi GIRIS ister ve duzeni FIRMA KAYDINDAN okur (elle liste yok)",
+    /await sayfaGirisi\(\)/.test(menuT) && /menuDuzeni\(baglam\.companyId\)/.test(menuT) &&
+      /MENU_ADRESLERI\[anahtar\]/.test(menuT) && /MENU_IKONLARI\[anahtar\]/.test(menuT));
+  kontrol("  ...rozet yalniz > 0 (sifir bir is degildir)", /rozet > 0 \? \(/.test(menuT));
+  kontrol("  ...arama kutusu ORTAK bilesen (kamera, Ilke #7)", /<KodAramaKutusu/.test(menuT) && !/<input/.test(menuT));
 }
 
 console.log("\n" + "=".repeat(70));

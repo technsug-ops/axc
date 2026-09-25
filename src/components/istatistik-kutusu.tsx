@@ -41,6 +41,7 @@ export function IstatistikKutusu({
   rozet,
   kiyas,
   altNot,
+  className,
 }: {
   etiket: string;
   /** Başrol kutusu: rakam bir boy iri. Ekranda en fazla bir tane olmalı. */
@@ -56,14 +57,18 @@ export function IstatistikKutusu({
   kiyas?: React.ReactNode;
   /** Açıklama ya da ikincil bağlantı. */
   altNot?: React.ReactNode;
+  /** Izgara yerleşimi için (ör. telefonda `max-sm:col-span-3`, K270). */
+  className?: string;
 }) {
   return (
-    <div className="bg-card flex min-w-0 flex-col gap-1.5 rounded-lg border p-3">
+    <div className={`bg-card flex min-w-0 flex-col gap-1.5 rounded-lg border p-3 ${className ?? ""}`}>
       <span className="text-muted-foreground min-w-0 text-xs break-words">
         {etiket}
       </span>
       <span
-        className={`min-w-0 font-semibold tabular-nums ${bas ? "text-3xl" : "text-2xl"}`}
+        /* K270 (kullanıcı 25.09.2026: «kartlar ve içindeki yazılar çok büyük»):
+           telefonda rakam bir kademe küçük — yarım genişlikte kutuya sığsın. */
+        className={`min-w-0 font-semibold tabular-nums ${bas ? "text-3xl max-sm:text-xl" : "text-2xl max-sm:text-lg"}`}
       >
         {cocuk}
       </span>

@@ -60,8 +60,10 @@ export async function KanalSiraCubugu({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-muted-foreground text-sm">
+    /* K270: telefonda üç düğme TEK SATIR, eşit — etiket gizli (başlık zaten
+       «Pazaryeri»). 44 px korunur (İlke #8). */
+    <div className="flex flex-wrap items-center gap-2 max-sm:grid max-sm:grid-cols-3">
+      <span className="text-muted-foreground text-sm max-sm:hidden">
         {t("kanalSiraEtiket")}
       </span>
       {KANAL_SIRA_KIPLERI.map((secenek) => (
@@ -70,7 +72,7 @@ export async function KanalSiraCubugu({
           href={adres(secenek)}
           /** ⚠ 44 px dokunma hedefi — depoda birincil cihaz telefon. */
           className={cn(
-            "inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors",
+            "inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors max-sm:justify-center max-sm:px-2 max-sm:text-xs",
             secenek === kip
               ? "bg-primary text-primary-foreground border-primary"
               : "bg-background hover:bg-muted",

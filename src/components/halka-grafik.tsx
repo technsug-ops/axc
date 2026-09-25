@@ -288,3 +288,93 @@ export function HalkaGrafik({
     </svg>
   );
 }
+
+/**
+ * ============================================================================
+ *  HALKA — TELEFON, KOMPAKT (K270, kullanıcı 25.09.2026)
+ * ----------------------------------------------------------------------------
+ *  Ok çizgili halka (üstte) 470 birimlik kadrajı 358 px'e sıkışınca etiketler
+ *  okunmuyordu. Onaylanan demo (Entegra kalıbı): halka SOLDA, kanallar SAĞDA
+ *  liste — ad · tutar alt alta, yüzde sağda. Aynı dilimler, aynı toplam; yalnız
+ *  şekil. Toplam merkezde; yazı boyu deliğe göre (`merkezYaziBoyu` ölçeklenir).
+ * ============================================================================
+ */
+const KOMPAKT_R = 44;
+const KOMPAKT_KALINLIK = 16;
+const KOMPAKT_CEVRE = 2 * Math.PI * KOMPAKT_R;
+const KOMPAKT_DELIK = 2 * (KOMPAKT_R - KOMPAKT_KALINLIK / 2);
+
+export function HalkaKompakt({
+  dilimler,
+  toplam,
+  toplamMetni,
+  toplamEtiketi,
+  yuzdeMetni,
+  bosMesaj,
+  aciklama,
+}: {
+  dilimler: HalkaDilimi[];
+  toplam: number;
+  toplamMetni: string;
+  toplamEtiketi: string;
+  yuzdeMetni: (oran: number) => string;
+  bosMesaj: string;
+  aciklama: string;
+}) {
+  if (toplam <= 0 || dilimler.length === 0) {
+    return <p className="text-muted-foreground py-6 text-center text-sm">{bosMesaj}</p>;
+  }
+  /* Kayma birikimi `reduce` ile — render içinde değişken güncellenmez (lint). */
+  const uzunluklar = dilimler.map((d) => (d.tutar / toplam) * KOMPAKT_CEVRE);
+  const yaylar = dilimler.map((d, i) => ({
+    renk: d.renk,
+    uzunluk: uzunluklar[i]!,
+    kayma: uzunluklar.slice(0, i).reduce((t, u) => t + u, 0),
+  }));
+  const boy = (merkezYaziBoyu(toplamMetni) * KOMPAKT_DELIK) / DELIK_CAPI;
+  return (
+    <div className="flex items-center gap-3.5">
+      <svg
+        viewBox="0 0 120 120"
+        className="size-[148px] shrink-0"
+        role="img"
+        aria-label={aciklama}
+      >
+        <g transform={`rotate(-90 60 60)`}>
+          <circle cx={60} cy={60} r={KOMPAKT_R} fill="none" strokeWidth={KOMPAKT_KALINLIK} className="stroke-muted" />
+          {yaylar.map((y, i) => (
+            <circle
+              key={i}
+              cx={60}
+              cy={60}
+              r={KOMPAKT_R}
+              fill="none"
+              stroke={y.renk}
+              strokeWidth={KOMPAKT_KALINLIK}
+              strokeDasharray={`${y.uzunluk} ${KOMPAKT_CEVRE - y.uzunluk}`}
+              strokeDashoffset={-y.kayma}
+            />
+          ))}
+        </g>
+        <text x={60} y={57} textAnchor="middle" fontSize={boy} fontWeight="700" className="fill-foreground tabular-nums">
+          {toplamMetni}
+        </text>
+        <text x={60} y={70} textAnchor="middle" fontSize="8.5" className="fill-muted-foreground">
+          {toplamEtiketi}
+        </text>
+      </svg>
+      <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
+        {dilimler.map((d) => (
+          <li key={d.etiket} className="bg-muted/60 flex min-h-[42px] items-center gap-2 rounded-lg px-2.5">
+            <span className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: d.renk }} aria-hidden />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-xs font-semibold">{d.etiket}</span>
+              <span className="text-muted-foreground text-[11px] tabular-nums">{d.tutarMetni}</span>
+            </span>
+            <span className="text-[13px] font-bold tabular-nums">{yuzdeMetni(d.tutar / toplam)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

@@ -187,6 +187,46 @@ export function SuzgecCubugu({
       }
     >
       {/* --- TELEFON: katlanır düğme --- */}
+      {/* ══ TELEFON — HIZLI DÖNEM ÇİPLERİ, TEK SATIR, YATAY KAYAR (K270) ══
+          Onaylanan demo: dönem çipleri «Süzgeçler» düğmesinin ARKASINDA değil,
+          ⚠ 44 px (İlke #8) — demo 36 çizmişti; kural demodan önce gelir.
+          hep görünür; kanal ve kıyas düğmenin arkasında kalır. Aynı çipler
+          katlanır panelde telefonda gizlenir (`max-md:hidden`) — iki kez
+          çizilmez. Masaüstünde bu satır yok (`md:hidden`), K252 tek satırı sürer. */}
+      {zaman ? (
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none] md:hidden">
+          {HIZLI_PENCERELER.map((p) => (
+            <Button
+              key={`mobil-${p}`}
+              size="sm"
+              className="h-11 shrink-0 rounded-full"
+              variant={zaman.secili === p ? "default" : "outline"}
+              onClick={() => {
+                setOzelAcik(false);
+                git({ pencere: p, baslangic: "", bitis: "" });
+              }}
+            >
+              {tPencere(PENCERE_ANAHTARI[p])}
+            </Button>
+          ))}
+          <Button
+            size="sm"
+            className="h-11 shrink-0 rounded-full"
+            variant={zaman.secili === "OZEL" || katlananSecili ? "default" : "outline"}
+            onClick={() => {
+              setAcik(true);
+              setOzelAcik(true);
+            }}
+            aria-expanded={acik && ozelAcik}
+          >
+            <CalendarRange />
+            {katlananSecili
+              ? tPencere(PENCERE_ANAHTARI[zaman.secili as PencereTuru])
+              : tPencere("ozel")}
+            <ChevronDown className="size-3.5" aria-hidden />
+          </Button>
+        </div>
+      ) : null}
       <Button
         variant="outline"
         className="h-11 w-full justify-between md:hidden"
@@ -227,7 +267,7 @@ export function SuzgecCubugu({
                 <Button
                   key={p}
                   size="sm"
-                  className="h-11 md:h-8"
+                  className="h-11 md:h-8 max-md:hidden"
                   variant={zaman.secili === p ? "default" : "outline"}
                   onClick={() => {
                     setOzelAcik(false);
@@ -239,7 +279,7 @@ export function SuzgecCubugu({
               ))}
               <Button
                 size="sm"
-                className="h-11 md:h-8"
+                className="h-11 md:h-8 max-md:hidden"
                 variant={
                   zaman.secili === "OZEL" || katlananSecili ? "default" : "outline"
                 }

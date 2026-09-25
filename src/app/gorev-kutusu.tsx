@@ -159,6 +159,58 @@ function GorevCipi({
   );
 }
 
+/**
+ * TELEFON KUTUSU (K270, kullanıcı 25.09.2026): etiket üstte, sayı büyük altta —
+ * Trendyol «Aksiyonlar» kalıbı, onaylanan demo. Temizde ✓ ve soluk zemin;
+ * sıfır kutu BAĞLANTI değil (İlke #2). İlerleme yalnız > 0 iken (K259-②).
+ * ⚠ Masaüstü çipiyle AYNI veri, farklı şekil — `Gorev` tek gövde.
+ */
+function GorevKutucugu({
+  gorev,
+  etiket,
+  temizMetni,
+  ilerlemeMetni,
+  genis,
+}: {
+  gorev: Gorev;
+  etiket: string;
+  temizMetni: string;
+  ilerlemeMetni: string;
+  /** İlk kutu iki sütun: ilerleme metni sığsın, 3×2 ızgara tam dolsun. */
+  genis: boolean;
+}) {
+  const icerik = (
+    <>
+      <span className="text-muted-foreground text-[11px] leading-tight">{etiket}</span>
+      {gorev.temizMi ? (
+        <span className={`flex items-center gap-1 text-[13px] font-semibold ${DURUM_YAZISI.olumlu}`}>
+          <Check className="size-3.5" aria-hidden />
+          {temizMetni}
+        </span>
+      ) : (
+        <span className="flex items-baseline gap-1.5">
+          <span className={`text-[22px] leading-none font-bold tabular-nums ${DURUM_YAZISI.uyari}`}>
+            {gorev.sayi}
+          </span>
+          {gorev.ilerleme !== null && gorev.ilerleme > 0 ? (
+            <span className="text-muted-foreground text-[10px]">{ilerlemeMetni}</span>
+          ) : null}
+        </span>
+      )}
+    </>
+  );
+  const sinif = `flex h-[74px] flex-col justify-between rounded-xl border p-2.5 ${genis ? "col-span-2" : ""} ${
+    gorev.temizMi ? "bg-muted/60" : "bg-card"
+  }`;
+  return gorev.temizMi ? (
+    <span className={sinif}>{icerik}</span>
+  ) : (
+    <Link href={gorev.adres} className={`${sinif} text-foreground no-underline`}>
+      {icerik}
+    </Link>
+  );
+}
+
 export async function GorevKutusu({
   sayilar,
   ilerlemeler,
@@ -174,7 +226,38 @@ export async function GorevKutusu({
   const gorevler = gorevleriKur(sayilar, ilerlemeler);
   const toplam = bekleyenToplam(gorevler);
 
+  /**
+   * TELEFON — 3×2 EŞİT KUTU (K270). Paketlenecek İLK ve GENİŞ (iki sütun):
+   * ilerleme metni sığar ve beş görev 3×2 ızgarayı tam doldurur — boş hücre
+   * kalmaz (İlke #14: adsız satır yazılmaz). Toplam rozeti YOK (K259-②
+   * kararı, elma+armut); hepsi sıfırsa «Hepsi temiz».
+   */
+  const oncelikli = gorevler.find((g) => g.anahtar === "kargoBekleyen");
+  const mobilSira = oncelikli ? [oncelikli, ...gorevler.filter((g) => g !== oncelikli)] : gorevler;
+  const mobilIzgara = (
+    <section aria-label={t("baslik")} className="space-y-2 md:hidden">
+      <div className="flex items-center gap-2 px-0.5">
+        <span className="text-[13px] font-semibold">{t("baslik")}</span>
+        {toplam === 0 ? <DurumRozeti durum="olumlu">{t("hepsiTemiz")}</DurumRozeti> : null}
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {mobilSira.map((g, i) => (
+          <GorevKutucugu
+            key={`m-${g.anahtar}`}
+            gorev={g}
+            etiket={t(`kisa.${g.anahtar}`)}
+            temizMetni={t("temiz")}
+            ilerlemeMetni={t("ilerleme", { sayi: g.ilerleme ?? 0 })}
+            genis={i === 0 && g.anahtar === "kargoBekleyen"}
+          />
+        ))}
+      </div>
+    </section>
+  );
+
   return (
+    <>
+    {mobilIzgara}
     <div
       /**
        * DEMO BİREBİR — TEK SATIR (K259-②, kullanıcı 24.09.2026: «çok karışık
@@ -194,7 +277,8 @@ export async function GorevKutusu({
        *   yalnız «Hepsi temiz».
        * Telefonda çipler sarar; yatay kaydırma yok (İlke #8).
        */
-      className="bg-card flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border px-3 py-2"
+      /* Şerit yalnız masaüstünde (K270) — telefonda üstteki ızgara. */
+      className="bg-card flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border px-3 py-2 max-md:hidden"
     >
       <span className="text-muted-foreground text-xs font-medium">
         {t("baslik")}
@@ -223,5 +307,6 @@ export async function GorevKutusu({
         </Fragment>
       ))}
     </div>
+    </>
   );
 }

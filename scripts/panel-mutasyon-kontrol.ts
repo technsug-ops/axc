@@ -49,6 +49,10 @@ const KUTU = "src/app/gorev-kutusu.tsx";
 const PASTA = "src/components/pasta-grafik.tsx";
 /** K252: tek satir suzgec — cubuk ve donem listesi. */
 const CUBUK = "src/components/suzgec-cubugu.tsx";
+/** K270: telefon duzeni. */
+const YERLESIM = "src/app/layout.tsx";
+const ALT = "src/components/alt-cubuk.tsx";
+const MENU = "src/app/menu/page.tsx";
 const DONEM = "src/lib/donem.ts";
 /** K246: iki pay çubuğunun farkı cümleye çevriliyor. */
 const PAY = "src/lib/panel/pay-farki.ts";
@@ -415,7 +419,8 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     dosya: SAYFA,
     bul:
-      "                    <span className=\"font-medium\">{t(\"huniEtiketi\")}</span>\n",
+      /* K270: etiket telefonda gizli sinifi aldi - capa tasindi. */
+      "                    <span className=\"font-medium max-sm:hidden\">{t(\"huniEtiketi\")}</span>\n",
     koy:
       "",
     bozdugu:
@@ -820,6 +825,160 @@ const MUTASYONLAR: Mutasyon[] = [
       "                noktalar={ciroNetNoktalari}\n",
     bozdugu:
       "30 gunluk pencerede eksen yine 3 gunde bir yazar - «gunler belirlensin» istegi duser",
+  },
+  {
+    ad: "ALT BAR KALKTI",
+    yon: "KALDIRAN",
+    dosya: YERLESIM,
+    bul:
+      "                <AltCubuk />",
+    koy:
+      "                {null}",
+    bozdugu:
+      "telefonda gezinme yok - demo onayinin omurgasi duser",
+  },
+  {
+    ad: "ALT BAR MASAUSTUNDE DE (sol menuyle iki gezinme)",
+    yon: "FAZLADAN",
+    dosya: ALT,
+    bul:
+      "safe-area-inset-bottom))] md:hidden print:hidden",
+    koy:
+      "safe-area-inset-bottom))] print:hidden",
+    bozdugu:
+      "masaustunde sol menu + alt bar ayni anda",
+  },
+  {
+    ad: "ICERIK BARIN ARKASINA KAYAR (pb-24 yok)",
+    yon: "KALDIRAN",
+    dosya: YERLESIM,
+    bul:
+      "p-4 pb-24 md:p-6 md:pb-6",
+    koy:
+      "p-4 md:p-6",
+    bozdugu:
+      "sayfanin son satiri sabit barin altinda kalir, tiklanamaz",
+  },
+  {
+    ad: "KOK SEKMESI HER YERDE ETKIN",
+    yon: "FAZLADAN",
+    dosya: ALT,
+    bul:
+      "  return yol === adres || yol.startsWith(adres + \"/\");",
+    koy:
+      "  return yol === adres || yol.startsWith(adres);",
+    bozdugu:
+      "Panel sekmesi her ekranda secili gorunur; /satislarx Satislar sanilir",
+  },
+  {
+    ad: "HIZLI ISLEMLER KALKTI",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "        <HizliIslemler />",
+    koy:
+      "        {null}",
+    bozdugu:
+      "kullanicinin «cok efektif» dedigi hizli tuslar yok",
+  },
+  {
+    ad: "KPI TELEFONDA TEK SUTUN",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "grid grid-cols-6 gap-2 sm:grid-cols-2",
+    koy:
+      "grid gap-2 sm:grid-cols-2",
+    bozdugu:
+      "alti kutu alt alta, tam genislik - «kartlar cok buyuk» sikayeti geri gelir",
+  },
+  {
+    ad: "NET-1 KUTUSU ESIT DEGIL (satir 5 hucre)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "                          etiket={t(\"net1\")}\n                          className=\"max-sm:col-span-3\"",
+    koy:
+      "                          etiket={t(\"net1\")}\n                          className=\"max-sm:col-span-2\"",
+    bozdugu:
+      "ikinci satirda bos hucre kalir - kart boyutlari yine duzensiz",
+  },
+  {
+    ad: "HALKA TELEFONDA KOMPAKT DEGIL",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul:
+      "<div className=\"md:hidden\">\n                      <HalkaKompakt",
+    koy:
+      "<div className=\"hidden\">\n                      <HalkaKompakt",
+    bozdugu:
+      "telefonda halka hic cizilmez (ok cizgili masaustunde gizli)",
+  },
+  {
+    ad: "URUN ANALIZI TELEFONA GERI GELDI",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul:
+      "      <div className=\"max-md:hidden\">\n      <SekmeliBolum\n        baslik={t(\"urunAnaliziBaslik\")}",
+    koy:
+      "      <div>\n      <SekmeliBolum\n        baslik={t(\"urunAnaliziBaslik\")}",
+    bozdugu:
+      "dort iri sekme dugmesi telefonda alt alta - kullanicinin isaretledigi blok",
+  },
+  {
+    ad: "GOREV SERIDI TELEFONDA DA (cift cizim)",
+    yon: "FAZLADAN",
+    dosya: KUTU,
+    bul:
+      "rounded-lg border px-3 py-2 max-md:hidden\"",
+    koy:
+      "rounded-lg border px-3 py-2\"",
+    bozdugu:
+      "telefonda hem 3x2 izgara hem serit - ayni is iki kez",
+  },
+  {
+    ad: "GOREV IZGARASI CIZDIRILMIYOR",
+    yon: "KALDIRAN",
+    dosya: KUTU,
+    bul:
+      "    {mobilIzgara}",
+    koy:
+      "    {null}",
+    bozdugu:
+      "izgara tanimli ama ekranda yok - telefonda gorev hic gorunmez",
+  },
+  {
+    ad: "TELEFON DONEM CIPLERI 36 PX",
+    yon: "KALDIRAN",
+    dosya: CUBUK,
+    bul:
+      "              key={`mobil-${p}`}\n              size=\"sm\"\n              className=\"h-11 shrink-0 rounded-full\"",
+    koy:
+      "              key={`mobil-${p}`}\n              size=\"sm\"\n              className=\"h-9 shrink-0 rounded-full\"",
+    bozdugu:
+      "44 px kurali (Ilke #8) delinir - demo boyu kurali ezer",
+  },
+  {
+    ad: "KATLANIR PANELDE CIPLER TELEFONDA DA",
+    yon: "FAZLADAN",
+    dosya: CUBUK,
+    bul:
+      "                  key={p}\n                  size=\"sm\"\n                  className=\"h-11 md:h-8 max-md:hidden\"",
+    koy:
+      "                  key={p}\n                  size=\"sm\"\n                  className=\"h-11 md:h-8\"",
+    bozdugu:
+      "suzgec acilinca ayni donemler iki kez cizilir",
+  },
+  {
+    ad: "MENU ELLE LISTE (firma duzeni okunmuyor)",
+    yon: "KALDIRAN",
+    dosya: MENU,
+    bul:
+      "    menuDuzeni(baglam.companyId),",
+    koy:
+      "    Promise.resolve({ gunluk: [\"panel\"], gruplar: [], yeniGelenler: [], taninmayanlar: [] }),",
+    bozdugu:
+      "kullanici /ayarlar/menu'den sirayi degistirir, telefon menusu eski kalir",
   },
 ];
 
