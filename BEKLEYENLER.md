@@ -191,6 +191,35 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K277 — PANEL «MAL KABUL» = LİSTENİN GELEN ADETİ (K220 REGRESYONU) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (telefon): _«buradaki 17 mal kabul /mal-kabul?pencere=BUGUN'e geliyor, doğru değil
+sanki»_. Ölçüldü (canlı, bugün): panel **17 = ALIM kaydı**; açılan liste **9 ürün · 27 adet** —
+17 listede hiçbir yerde yok (İlke #16). Karar (kullanıcı): **panel adet göstersin**.
+
+⛔ **REGRESYON:** aynı şey 16.09'da K220 ile düzeltilmişti (`e30048d`, `urunAdedi`); panel demo
+iskeletine taşınırken (K252, `74947e3`) çip yeniden `alim.adet` yazdı. **Hiçbir ölçüt çipin
+hangi alanı yazdığını sınamıyordu** — düzeltme sessizce düştü. Ayrıca K220'nin `urunAdedi`
+SİPARİŞ adedini sayıyordu (bugün 29), liste ise ledger'dan (27): o düzeltme de tam tutmazdı.
+
+Çare: ortak `kabulHareketKosulu` (`panel/kabul-sayimi.ts`) — liste ve panel ikisi de bu gövdeden;
+panel `stockMovement.aggregate` ile `gelenAdet`; kıyas rozeti de adetle.
+**Ölçüldü, canlı, gövdeler çağrılarak:** BUGÜN 27 = 27 · BU HAFTA 82 = 82 · SON 30 GÜN 337 = 337.
+
+Bekçi: `mal-kabul:dogrula` 5. bölüm (sayaçlı 4 → 5, 47/47) — koşul DEĞERLE, iki tüketici,
+çipin yazdığı alan. Harness **15/15** (+5: çip yine kayıt · sipariş adedi · listenin kendi
+koşulu · iptal · kabulsüz alım). «Satın alınan» kutusuna dokunulmadı (kayıt sayısı; açtığı
+alım listesinin kayıt sayısıyla tutuyor).
+
+### HALİL TEST LİSTESİ (canlı)
+1. Panel `/` → «Bugün» → «Mal kabul» kutusu bir sayı gösteriyor (25.09 için 27).
+2. Kutuya dokunun → `/mal-kabul` açılır; üstteki **«Gelen adet»** kutusu AYNI sayı.
+3. «Bu hafta» ve «Son 30 gün» için de 1–2'yi tekrarlayın — iki sayı her seferinde eşit.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok) · **kullanıcı kolaylığı: ✓** (İlke #16)
+
+---
+
 ## 🔴 K276 — PAKET DÜĞMESİ EYLEM ADI · PANEL HUNİ KUTULARI EŞİT BOY · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı (telefon ekran görüntüleri): _«Paketlenmedi değil Paketlendi olmalıydı buton»_ ·
@@ -206,7 +235,7 @@ sayısını ölçüyordu — BOY eşitliği ölçülmüyordu; bekçi yeşildi. �
 Bekçi: `satir-karti:dogrula` +1 ölçüt · `panel:dogrula` huni ölçütü. Harness: satır kartı
 **26/26** (+2), panel **87/87** (+1).
 
-⚠ **AYNI EKRANDA AÇIK SORU — «Mal kabul 17»** (kullanıcıya soruldu, karar bekliyor): panel
+✅ **«Mal kabul 17» SORUSU KAPANDI → K277** (kullanıcı kararı: panel adet göstersin). Eski not: panel
 teslim alınan ALIM sayısını (17) yazıyor, açılan `/mal-kabul` listesi ürün (9) ve adet (27)
 gösteriyor — 17 listede hiçbir yerde yazmıyor → İlke #16 ("sayı = liste") çiğneniyor.
 Ölçüldü 25.09 canlı: 17 alım · hepsi RECEIVED · stok girişi olmayan 0 · sipariş adedi 29,

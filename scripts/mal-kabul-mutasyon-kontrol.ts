@@ -28,6 +28,7 @@ const GOREV = "src/lib/panel/gorev-verisi.ts";
 const TAKVIM = "src/lib/panel/takvim-verisi.ts";
 const PANEL = "src/app/page.tsx";
 const SOZLUK = "messages/tr.json";
+const LISTE = "src/app/mal-kabul/page.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -128,6 +129,47 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "",
     bozdugu:
       "kullanici kanal-SKU ekranina bos formla duser ve az once gordugu urunu yeniden aramak zorunda kalir",
+  },
+  /* ── K277 panel «Mal kabul» = listenin gelen adeti ── */
+  {
+    ad: "PANEL CIPI YINE KAYIT SAYIYOR (K252 regresyonu)",
+    yon: "KALDIRAN",
+    dosya: PANEL,
+    bul: "                        {alim.gelenAdet}",
+    koy: "                        {alim.adet}",
+    bozdugu: "panel 17 der, liste 27 - kullanicinin 25.09 bulgusu ikinci kez",
+  },
+  {
+    ad: "PANEL SIPARIS ADEDINI SAYIYOR (ledger degil)",
+    yon: "KALDIRAN",
+    dosya: GOREV,
+    bul: "gelenAdet: gelen._sum.quantityDelta ?? 0,",
+    koy: "gelenAdet: urunSonuc.toplam,",
+    bozdugu: "panel 29 der (beklenen), liste 27 (giren) - hasarli/eksik mal farki ayristirir",
+  },
+  {
+    ad: "LISTE KENDI KOSULUNU YAZDI (iptalli de sayiyor)",
+    yon: "FAZLADAN",
+    dosya: LISTE,
+    bul: "where: kabulHareketKosulu(pencere.aralik),",
+    koy: 'where: { type: "PURCHASE_IN", purchaseItem: { purchase: { receivedAt: pencere.aralik ?? { not: null } } } },',
+    bozdugu: "iki ekran iki kosul - iptal edilen alim listede sayilir, panelde sayilmaz",
+  },
+  {
+    ad: "ORTAK KOSUL IPTALI ALIYOR",
+    yon: "FAZLADAN",
+    dosya: KURAL,
+    bul: '        status: { not: "CANCELLED" as const },',
+    koy: "",
+    bozdugu: "iptal edilen alimin stok girisi gelen adete eklenir",
+  },
+  {
+    ad: "ORTAK KOSUL KABULSUZ ALIMI ALIYOR",
+    yon: "FAZLADAN",
+    dosya: KURAL,
+    bul: "        receivedAt: aralik ?? { not: null },",
+    koy: "        ...(aralik ? { receivedAt: aralik } : {}),",
+    bozdugu: "suzgec kapaliyken teslim alinmamis alim listeye girer",
   },
 ];
 

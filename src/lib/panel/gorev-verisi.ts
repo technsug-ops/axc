@@ -10,7 +10,7 @@ import {
   tarifeKapsami,
   type TarifeKapsami,
 } from "@/lib/panel/tarife-penceresi";
-import { kabulKosulu } from "@/lib/panel/kabul-sayimi";
+import { kabulHareketKosulu, kabulKosulu } from "@/lib/panel/kabul-sayimi";
 import { prisma } from "@/lib/prisma";
 
 import type { CanaTasinanGorev, GorevAnahtari } from "./bugun-ne-yapmaliyim";
@@ -90,6 +90,20 @@ export async function donemAlimi(pencere: {
    * _(Anayasa: "kayıt sayısı ≠ adet" — `adetToplami` yorumu.)_
    */
   urunAdedi: number;
+  /**
+   * GELEN ADET — stoğa FİİLEN giren (K277, 25.09.2026). Panel kutusu BUNU
+   * gösterir; `/mal-kabul`in «gelen adet»iyle AYNI gövdeden (`kabulHareketKosulu`).
+   *
+   * ⚠ K220'NİN DÜZELTMESİ K252'DE KAYBOLDU: 16.09'da kutu `urunAdedi`ne
+   * çevrilmişti; panel demo iskeletine taşınırken (K252) çip yeniden `adet`
+   * (KAYIT) yazdı ve hiçbir bekçi korumadığı için kimse görmedi. 25.09'da
+   * kullanıcı aynı şeyi yeniden buldu (panel 17 · liste 27). Artık `panel:dogrula`
+   * çipin hangi alanı yazdığını ölçüyor.
+   *
+   * ⚠ `urunAdedi` DEĞİL: o SİPARİŞ adedi (beklenen, o gün 29); liste ledger'dan
+   * sayıyor (27). K220'nin kendi ölçümü de "13 adet" dediği listeye bakıyordu.
+   */
+  gelenAdet: number;
   toplam: ParaToplami[];
   gunluk: { tarih: Date; tutar: number; kdv: number }[];
   /**
@@ -192,9 +206,16 @@ export async function donemAlimi(pencere: {
     },
   });
 
+  /** K277 — liste ile AYNI koşul, ledger toplamı. */
+  const gelen = await prisma.stockMovement.aggregate({
+    where: kabulHareketKosulu({ gte: pencere.baslangic, lt: pencere.bitisHaric }),
+    _sum: { quantityDelta: true },
+  });
+
   return {
     adet: alimlar.length,
     urunAdedi: urunSonuc.toplam,
+    gelenAdet: gelen._sum.quantityDelta ?? 0,
     toplam: sonuc.toplam,
     siparisGunluk: siparisler.map((sp) => ({
       tarih: sp.purchasedAt,

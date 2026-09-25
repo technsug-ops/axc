@@ -75,3 +75,35 @@ export function kabulKosulu(pencere: KabulPenceresi) {
 export function kabulGunu(kayit: { receivedAt: Date | null }): Date | null {
   return kayit.receivedAt;
 }
+
+/**
+ * ============================================================================
+ *  GELEN ADET — STOĞA FİİLEN GİREN (K277, 25.09.2026)
+ * ----------------------------------------------------------------------------
+ *  Panelin «Mal kabul» kutusu ile `/mal-kabul` listesinin «gelen adet»i AYNI
+ *  koşuldan sayılır. Kullanıcı 25.09: panel **17** diyordu (ALIM kaydı), açılan
+ *  liste **9 ürün · 27 adet** — 17 listede hiçbir yerde yoktu (İlke #16 "sayı =
+ *  liste"). Karar: panel ADET gösterir.
+ *
+ *  ⚠ LEDGER'DAN, SİPARİŞ ADEDİNDEN DEĞİL: `PurchaseItem.quantity` BEKLENENdir
+ *  (o gün 29); hasarlı/eksik gelen mal onu tutmaz. Fiilen giren `PURCHASE_IN`
+ *  toplamıdır (27). Liste zaten böyle sayıyordu; panel de artık böyle.
+ *
+ *  ⚠ İPTAL DIŞARIDA; `aralik` yoksa KABUL EDİLMEMİŞ alım girmez (`receivedAt`
+ *  dolu olmalı) — listenin "süzgeç kapalı" davranışı aynen.
+ *
+ *  ⛔ TEK GÖVDE: iki ekran bu koşulu çağırır; birinde yeniden yazılırsa
+ *  bekçi kırmızı yanar (`mal-kabul:dogrula`).
+ * ============================================================================
+ */
+export function kabulHareketKosulu(aralik?: { gte: Date; lt: Date }) {
+  return {
+    type: "PURCHASE_IN" as const,
+    purchaseItem: {
+      purchase: {
+        status: { not: "CANCELLED" as const },
+        receivedAt: aralik ?? { not: null },
+      },
+    },
+  };
+}

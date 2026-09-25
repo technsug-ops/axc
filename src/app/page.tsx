@@ -2929,11 +2929,13 @@ export default async function AnaSayfa({
                     >
                       {t("malKabulAdedi")}
                       <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
-                        {alim.adet}
+                        {/* K277: GELEN ADET — açılan listenin «gelen adet»iyle birebir
+                            (aynı gövde). KAYIT sayısı (`alim.adet`) burada YAZILMAZ. */}
+                        {alim.gelenAdet}
                       </span>
                       {/* Kıyas rozeti eski kutudan taşındı — çipe geçerken
                           düşmüştü, `kiyasAlim` ölü kalmıştı (lint yakaladı). */}
-                      {kiyasRozeti(alim.adet, kiyasAlim?.adet ?? null, (n) => String(n))}
+                      {kiyasRozeti(alim.gelenAdet, kiyasAlim?.gelenAdet ?? null, (n) => String(n))}
                     </Baglanti>
                     <Baglanti
                       href={kargoAdresi("verildi")}

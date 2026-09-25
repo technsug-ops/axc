@@ -20,6 +20,7 @@ import { SuzgecCubugu } from "@/components/suzgec-cubugu";
 import { pazaryeriKanallari } from "@/lib/kanal-kapsami";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { pencereCoz } from "@/lib/liste-suzgeci";
+import { kabulHareketKosulu } from "@/lib/panel/kabul-sayimi";
 import { prisma } from "@/lib/prisma";
 import { sayfaIzni } from "@/lib/yetki";
 
@@ -95,17 +96,12 @@ export default async function MalKabulSayfasi({
    * ayrışsaydı "sayı 12, listede 11 satır" olurdu.
    */
   const hareketler = await prisma.stockMovement.findMany({
-    where: {
-      type: "PURCHASE_IN",
-      purchaseItem: {
-        purchase: {
-          status: { not: "CANCELLED" },
-          ...(pencere.aralik ? { receivedAt: pencere.aralik } : {}),
-          /** Süzgeç kapalıyken bile kabul edilmemiş alım listeye girmez. */
-          ...(pencere.aralik ? {} : { receivedAt: { not: null } }),
-        },
-      },
-    },
+    /**
+     * K277: koşul ORTAK gövdeden — panelin «Mal kabul» kutusu da bunu sayar.
+     * (Önceki satır içi hâl: iptal dışarıda · aralık varsa `receivedAt` aralığı ·
+     * yoksa `receivedAt` dolu. Gövde birebir aynısını kuruyor.)
+     */
+    where: kabulHareketKosulu(pencere.aralik),
     select: {
       quantityDelta: true,
       variantId: true,

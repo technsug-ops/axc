@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { kabulKosulu, kabulGunu } from "../src/lib/panel/kabul-sayimi";
+import { kabulHareketKosulu, kabulKosulu, kabulGunu } from "../src/lib/panel/kabul-sayimi";
 
 /**
  * ============================================================================
@@ -21,7 +21,7 @@ import { kabulKosulu, kabulGunu } from "../src/lib/panel/kabul-sayimi";
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 4;
+const BOLUM_SAYISI = 5; /* K277: +1 (gelen adet = liste) */
 const kosanBolumler: string[] = [];
 
 let gecen = 0;
@@ -331,6 +331,40 @@ console.log("\n4) rozet tutamayacağı sözü vermiyor");
   );
 }
 kosanBolumler.push("rozet sözü");
+
+// --- 5) K277 — PANEL «MAL KABUL» = LİSTENİN «GELEN ADET»İ ------------------
+/**
+ * Kullanıcı 25.09.2026: panel 17 (ALIM kaydı) diyordu, açılan liste 9 ürün ·
+ * 27 adet. İkinci kez: K220 (16.09) aynı şeyi düzeltmişti, K252'de düştü ve
+ * hiçbir ölçüt korumuyordu. Şimdi üç halka ayrı ölçülüyor: koşul gövdesi
+ * (DEĞER), iki tüketicinin ona bağlı olması, ve çipin HANGİ alanı yazdığı.
+ */
+console.log("\n5) panel «Mal kabul» = listenin gelen adeti (K277)");
+{
+  const ara = { gte: new Date("2026-09-24T21:00:00Z"), lt: new Date("2026-09-25T21:00:00Z") };
+  const k = kabulHareketKosulu(ara);
+  kontrol("koşul: yalnız STOK GİRİŞİ (PURCHASE_IN)", k.type === "PURCHASE_IN");
+  kontrol("  ...iptal edilmiş alım DIŞARIDA", JSON.stringify(k.purchaseItem.purchase.status) === JSON.stringify({ not: "CANCELLED" }));
+  kontrol("  ...aralık KABUL günüyle (receivedAt)", k.purchaseItem.purchase.receivedAt === ara);
+  kontrol("  ...aralık yoksa kabul edilmemiş alım girmez", JSON.stringify(kabulHareketKosulu().purchaseItem.purchase.receivedAt) === JSON.stringify({ not: null }));
+
+  const liste = yorumsuz(readFileSync("src/app/mal-kabul/page.tsx", "utf8"));
+  kontrol("liste koşulu ORTAK gövdeden", (liste.match(/where: kabulHareketKosulu\(pencere\.aralik\)/g) ?? []).length === 1);
+  kontrol("  ...liste kendi kopyasını yazmıyor (satır içi PURCHASE_IN yok)", !/type:\s*"PURCHASE_IN"/.test(liste));
+
+  const gorev = yorumsuz(readFileSync("src/lib/panel/gorev-verisi.ts", "utf8"));
+  kontrol("panel gelen adeti AYNI gövdeden, ledger toplamıyla",
+    /stockMovement\.aggregate\(\{\s*where: kabulHareketKosulu\(\{ gte: pencere\.baslangic, lt: pencere\.bitisHaric \}\),\s*_sum: \{ quantityDelta: true \}/.test(gorev) &&
+      /gelenAdet: gelen\._sum\.quantityDelta \?\? 0/.test(gorev));
+
+  const panel = yorumsuz(readFileSync("src/app/page.tsx", "utf8"));
+  const bas = panel.indexOf('{t("malKabulAdedi")}');
+  const cip = bas >= 0 ? panel.slice(bas, panel.indexOf("</Baglanti>", bas)) : "";
+  kontrol("panel çipi GELEN ADETİ yazıyor", bas >= 0 && /\{alim\.gelenAdet\}/.test(cip));
+  kontrol("  ...KAYIT sayısını (alim.adet) YAZMIYOR — K252'de kaybolan düzeltme", !/\{alim\.adet\}/.test(cip));
+  kontrol("  ...kıyas rozeti de adetle", /kiyasRozeti\(alim\.gelenAdet, kiyasAlim\?\.gelenAdet/.test(cip));
+}
+kosanBolumler.push("gelen adet = liste");
 
 // === ÖZET ===============================================================
 console.log("\n" + "=".repeat(70));
