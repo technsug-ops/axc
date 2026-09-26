@@ -15,7 +15,7 @@ import {
   type YuklenenSatir,
 } from "@/lib/supheli-urun";
 import { tabloOku } from "@/lib/tablo/tablo-oku";
-import { yetkiBaglami } from "@/lib/yetki";
+import { izinVarMi } from "@/lib/yetki";
 
 /**
  * ============================================================================
@@ -100,14 +100,10 @@ async function planKur(satirlar: YuklenenSatir[]): Promise<YuklemePlani> {
   return yuklemePlani(satirlar, dunya);
 }
 
-async function yetkiliMi(): Promise<boolean> {
-  const b = await yetkiBaglami();
-  return !!b && b.izinler.has("urun.yaz");
-}
-
 export async function supheliOnizle(formData: FormData): Promise<OnizlemeSonucu> {
   try {
-    if (!(await yetkiliMi())) return { tamam: false, hata: "YETKISIZ" };
+    /* İzin eylemin KENDİ gövdesinde (yetki bekçisi yardımcıya gizlenmiş kontrolü göremez). */
+    if (!(await izinVarMi("urun.yaz"))) return { tamam: false, hata: "YETKISIZ" };
     const satirlar = await dosyadanSatirlar(formData);
     if (typeof satirlar === "string") return { tamam: false, hata: satirlar };
     const plan = await planKur(satirlar);
@@ -147,7 +143,8 @@ export async function supheliOnizle(formData: FormData): Promise<OnizlemeSonucu>
 
 export async function supheliUygula(formData: FormData): Promise<UygulamaSonucu> {
   try {
-    if (!(await yetkiliMi())) return { tamam: false, hata: "YETKISIZ" };
+    /* İzin eylemin KENDİ gövdesinde (yetki bekçisi yardımcıya gizlenmiş kontrolü göremez). */
+    if (!(await izinVarMi("urun.yaz"))) return { tamam: false, hata: "YETKISIZ" };
     const satirlar = await dosyadanSatirlar(formData);
     if (typeof satirlar === "string") return { tamam: false, hata: satirlar };
     const plan = await planKur(satirlar);

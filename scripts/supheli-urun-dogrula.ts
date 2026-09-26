@@ -138,15 +138,15 @@ console.log("\n2) zincir — sayı = liste, okuma kapısı, şartlı ve izli yaz
   kontrol("dosya TEK okuma kapısından (tabloOku)", adet(eylem, "await tabloOku(Buffer.from(") === 1);
   kontrol("plan saf gövdeden", adet(eylem, "return yuklemePlani(satirlar, dunya);") === 1);
   const uygula = eylem.slice(eylem.indexOf("export async function supheliUygula"));
-  const iIzin = uygula.indexOf("if (!(await yetkiliMi()))");
+  const iIzin = uygula.indexOf('if (!(await izinVarMi("urun.yaz")))');
   const iYaz = uygula.indexOf("prisma.productVariant.updateMany(");
   kontrol("uygula: izin YAZIMDAN ÖNCE", iIzin >= 0 && iYaz >= 0 && iIzin < iYaz);
-  kontrol("  ...izin urun.yaz", eylem.includes('b.izinler.has("urun.yaz")'));
   kontrol("EAN yazımı ŞARTLI (okunan eski değer değişmediyse)", uygula.includes("where: { id: e.kimlik, barcode: e.eski },"));
   kontrol("  ...eski/yeni İZE", uygula.includes('action: "SUPHELI_EAN_YAZILDI"') && uygula.includes("JSON.stringify({ eski: e.eski, yeni: e.yeni })"));
   kontrol("pasif yazımı ŞARTLI ve İZLİ", uygula.includes("where: { id: p.kimlik, isActive: true }, data: { isActive: false }") && uygula.includes('action: "SUPHELI_PASIF"'));
   kontrol("aktif varyantı kalmayan ürün de pasif + iz", uygula.includes("if (aktif > 0) continue;") && uygula.includes('action: "SUPHELI_URUN_PASIF"'));
   const onizle = eylem.slice(eylem.indexOf("export async function supheliOnizle"), eylem.indexOf("export async function supheliUygula"));
+  kontrol("önizleme de izni KENDİ gövdesinde soruyor", onizle.includes('if (!(await izinVarMi("urun.yaz")))'));
   kontrol("önizleme HİÇBİR ŞEY YAZMAZ", !/\.(update|updateMany|create|createMany|delete|deleteMany|upsert)\(/.test(onizle) && !onizle.includes("izYaz("));
 
   const sayfa = oku("src/app/urunler/supheli/page.tsx");
