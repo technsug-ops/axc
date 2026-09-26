@@ -57,6 +57,7 @@
     "20260911175949_k_ozet_gunluk_ozet_tablosu",
     "20260919160000_settlement_item_payment_order_id",
     "20260925120000_urun_gorseli",
-    "20260926120000_ty_kategori_eslesme"
+    "20260926120000_ty_kategori_eslesme",
+    "20260926140000_marka_kod_tablosu"
   ]
 }

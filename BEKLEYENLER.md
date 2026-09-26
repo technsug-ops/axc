@@ -191,6 +191,58 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K285 — MARKA KOD TABLOSU (3 HARFLİ, BENZERSİZ) · 26.09.2026 · [KOD + MIGRATION KOŞTU — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: _«axcali21232 gibi anlamsız SKU istemiyorum»_ → SKU sistematiği KAT-MRK-MODEL-NN; marka
+parçası için kod tablosu (şema onayı 26.09). Eskiden kod her seferinde ADDAN hesaplanıyordu
+(`urunKisaltmasi`, 2 harf) ve çakışıyordu (Karaca/Karcher → KR).
+
+- **Migration** `20260926140000_marka_kod_tablosu` (SAF EKLEME, canlıda koştu, yerel diff BOŞ,
+  `migration:kontrol` 57/57): `Brand` (ad · yazım anahtarı UNIQUE · kod 3 karakter UNIQUE) ·
+  `Product.brandId` (boş bağ, marka silinirse NULL). `Product.brand` serbest metni OLDUĞU GİBİ kaldı.
+- **Kural** `lib/marka-kodu.ts` (saf): anahtar = katlanmış yazım (ANKER = Anker, Türkçe harf,
+  rakam kalır); «Philips» ≠ «Philips Avent» — birleştirme kullanıcının. Kod önerisi: okunaklı sabit
+  (KRC · KRH · PHL) → kural; aday yoksa `null` — kod uydurulmaz. ⚠ Dosya adı: `src/lib/marka/`
+  klasörü ZATEN VAR ve uygulamanın görsel kimliğini taşıyor → yeni kavram `marka-kodu`.
+- **Veri** `lib/marka-kodu-veri.ts`: üç küme tek gövdeden — tabloda · bağlanmayı bekleyen ·
+  markası boş. Öneriler SIRAYLA (aynı kod iki öneriye düşmez).
+- **Yazım** `lib/marka-kodu-yaz.ts`: kod denetimi yazımdan ÖNCE, bağ ŞARTLI (`brandId: null`),
+  kod değişimi ŞARTLI, hepsi İZE (`MARKA_EKLENDI` · `MARKA_BAGLANDI` · `MARKA_KODU_DEGISTI`).
+  Ürün kaydı (yeni + düzenle) bağı marka metninden YENİDEN hesaplıyor.
+- **Ekran** `/ayarlar/markalar` (menü: Tanımlar → Markalar, izin `ayar.yaz`): kutucuklar ·
+  markası boş uyarısı + Excel · bağlanmayı bekleyenler (EN ÜSTTE, öneriyle ekle / bağla,
+  «önerilen kodlarla hepsini ekle» onaylı) · tablodaki markalar (kod düzenlenir).
+- El kitabı bölümü `marka` · yedek listesi `Brand` (ürünlerden önce) · Excel «markasiz».
+
+**Canlı ölçüm (26.09, salt okuma):** 1.866 ürün · **733'ünde marka BOŞ** · 102 marka (18'i birden
+çok yazımla) · kuralın kod bulamadığı **1** marka. Tablo BOŞ — dolum kullanıcı düğmesiyle.
+
+**Bekçi** `marka-kodu:dogrula` 37 · harness **18/18** (üç yön).
+
+**AÇIK:** ① kodlar henüz SKU üretimine bağlı DEĞİL (SKU önizlemesi ayrı paket; kimlik kuralı
+«SKU doğduktan sonra değişmez» ile yeniden kodlama çelişkisi orada konuşulacak) · ② markası boş
+listenin geri yüklenmesi (K284 deseni).
+
+### HALİL TEST LİSTESİ (canlı)
+1. Sol menü → Tanımlar → **Markalar**. Üstte üç kutu: Tabloda **0** · Bağlanmayı bekleyen **102**
+   (altında ürün sayısı) · Markası boş **733**.
+2. Turuncu kutu «733 ürünün marka alanı boş» → «Excel indir»: 733 satır, ilk sütun Kimlik, son
+   sütun «Marka (doldurun)» boş.
+3. «Bağlanmayı bekleyen» listesinde bir markanın kod kutusunu değiştirin (örn. PHL → PHX) → «Ekle»
+   → altında «Eklendi · kod PHX · N ürün bağlandı»; marka alttaki «Tablodaki markalar»a geçer.
+4. Başka bir markada kod kutusuna az önce verdiğiniz kodu yazıp «Ekle» → kırmızı «Bu kod başka bir
+   markada kullanılıyor».
+5. «Önerilen kodlarla hepsini ekle» → onay → sonuç satırı: «N marka eklendi · N ürün bağlandı ·
+   … 1 markanın kodu elle girilmeli». Kalan tek marka listede, uyarısıyla durur; kodu elle girip ekleyin.
+6. Tablodaki bir markanın kodunu değiştirip «Kaydet» → «Kod … olarak kaydedildi».
+7. Bir ürünü düzenleyip markasını tablodaki başka bir markanın adıyla kaydedin → Markalar
+   ekranında iki markanın ürün sayısı 1 kayar.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`MarkaKodu` + menü/başlık) · **kullanıcı
+kolaylığı: ✓** (İlke #5 · #6 · #8 · #11 · #12 · #16)
+
+---
+
 ## 🔴 K284 — ŞÜPHELİ ÜRÜN LİSTESİ: İNDİR · DOLDUR · GERİ YÜKLE · 26.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 Kullanıcı: _«EAN ile çekebildiklerinin haricindeki hepsi şüpheli»_ · _«sistemimizi kuralım, bu ürünlerin

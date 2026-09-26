@@ -175,7 +175,8 @@
     "maliyetYontemi": "",
     "gunlukOzet": "",
     "kanalListeleme": "",
-    "menu": ""
+    "menu": "",
+    "markalar": ""
   },
   "Ortak": {
     "kapat": "",
@@ -888,7 +889,8 @@
     "malKabul": "",
     "maliyetYontemi": "",
     "gunlukOzet": "",
-    "kanalListeleme": ""
+    "kanalListeleme": "",
+    "markalar": ""
   },
   "GunlukOzet": {
     "baslik": "",
@@ -4611,5 +4613,58 @@
     "hayir": "",
     "baglanti": "",
     "ozetPasifStoklu": ""
+  },
+  "MarkaKodu": {
+    "baslik": "",
+    "aciklama": "",
+    "kutuTablo": "",
+    "kutuBagsiz": "",
+    "kutuMarkasiz": "",
+    "urunBirimi": "",
+    "urunSayisi": "",
+    "markasizBaslik": "",
+    "markasizMetin": "",
+    "bagsizBaslik": "",
+    "bagsizBos": "",
+    "tabloBaslik": "",
+    "tabloBos": "",
+    "yazimlar": "",
+    "tablodaVar": "",
+    "kodYerTutucu": "",
+    "kodEtiketi": "",
+    "kaydet": "",
+    "ekle": "",
+    "bagla": "",
+    "oneriYok": "",
+    "eklendi": "",
+    "kodKaydedildi": "",
+    "kodAyni": "",
+    "hepsiniEkle": "",
+    "ekleniyor": "",
+    "hepsiniEkleBaslik": "",
+    "hepsiniEkleMetin": "",
+    "hepsiniEkleOnay": "",
+    "topluSonuc": "",
+    "hata": {
+      "YETKISIZ": "",
+      "KODSUZ": "",
+      "URUN_YOK": "",
+      "YOK": "",
+      "DEGISMIS": "",
+      "BICIM": "",
+      "KULLANIMDA": "",
+      "HATA": ""
+    },
+    "evet": "",
+    "hayir": "",
+    "markasizListeAdi": "",
+    "sutunKimlik": "",
+    "sutunUrun": "",
+    "sutunSku": "",
+    "sutunFirmaSku": "",
+    "sutunBarkod": "",
+    "sutunKategori": "",
+    "sutunAktif": "",
+    "sutunMarka": ""
   }
 }

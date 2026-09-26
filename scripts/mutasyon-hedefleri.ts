@@ -215,4 +215,10 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    */
   "kod-cozumu-mutasyon:kontrol",
   "supheli-urun-mutasyon:kontrol",
+  /**
+   * K285 (26.09.2026) — `marka-kodu` ürün kaydını (`src/app/urunler/actions.ts`,
+   * `kod-cozumu` ile ortak) ve dışa aktarma listesini (`listeler.ts`,
+   * `supheli-urun` ile ortak) mutasyona uğratıyor. ⚠ Ölçümle zorlandı.
+   */
+  "marka-kodu-mutasyon:kontrol",
 ];

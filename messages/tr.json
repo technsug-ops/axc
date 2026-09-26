@@ -175,7 +175,8 @@
     "maliyetYontemi": "Maliyet yöntemi",
     "gunlukOzet": "Günlük Özet",
     "kanalListeleme": "Kanal Listeleme Durumu",
-    "menu": "Menü"
+    "menu": "Menü",
+    "markalar": "Markalar"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -888,7 +889,8 @@
     "malKabul": "Mal kabul",
     "maliyetYontemi": "Maliyet yöntemi",
     "gunlukOzet": "Günlük Özet",
-    "kanalListeleme": "Kanal Listeleme"
+    "kanalListeleme": "Kanal Listeleme",
+    "markalar": "Markalar"
   },
   "GunlukOzet": {
     "baslik": "Günlük Özet",
@@ -4611,5 +4613,58 @@
     "hayir": "Hayır",
     "baglanti": "Şüpheli ürünler: {sayi}",
     "ozetPasifStoklu": "Bunların {sayi} tanesinin stoğu var — pasife alınınca stok listesinde görünmez"
+  },
+  "MarkaKodu": {
+    "baslik": "Markalar",
+    "aciklama": "Her markanın 3 harfli, benzersiz bir kodu olur; bu kod SKU'nun marka parçasıdır. Aynı markanın farklı yazımları (ANKER · Anker) tek markada toplanır. Kod önerisi bir öneridir — eklerken ya da sonra değiştirebilirsiniz.",
+    "kutuTablo": "Tabloda",
+    "kutuBagsiz": "Bağlanmayı bekleyen",
+    "kutuMarkasiz": "Markası boş",
+    "urunBirimi": "ürün",
+    "urunSayisi": "{sayi} ürün",
+    "markasizBaslik": "{sayi} ürünün marka alanı boş",
+    "markasizMetin": "Bu ürünlere marka kodu verilemez, SKU'larının marka parçası da olamaz. Listeyi indirip markaları doldurun. Doldurulan listenin geri yüklenmesi sıradaki pakette; o güne kadar marka ürün düzenleme ekranından tek tek de girilebilir.",
+    "bagsizBaslik": "Bağlanmayı bekleyen markalar ({sayi})",
+    "bagsizBos": "Bağlanmayı bekleyen marka yok — markası yazılı her ürün tabloya bağlı.",
+    "tabloBaslik": "Tablodaki markalar ({sayi})",
+    "tabloBos": "Tabloda henüz marka yok. Yukarıdan ekleyin.",
+    "yazimlar": "Yazımlar",
+    "tablodaVar": "tabloda var, ürünleri bağlanmamış",
+    "kodYerTutucu": "örn. PHL",
+    "kodEtiketi": "{ad} marka kodu",
+    "kaydet": "Kaydet",
+    "ekle": "Ekle",
+    "bagla": "Bağla",
+    "oneriYok": "Kural bu marka için kod bulamadı — 3 harf/rakam girin.",
+    "eklendi": "Eklendi · kod {kod} · {sayi} ürün bağlandı",
+    "kodKaydedildi": "Kod {kod} olarak kaydedildi",
+    "kodAyni": "Kod zaten bu",
+    "hepsiniEkle": "Önerilen kodlarla hepsini ekle ({sayi})",
+    "ekleniyor": "Ekleniyor…",
+    "hepsiniEkleBaslik": "Bütün markalar önerilen kodlarla eklensin mi?",
+    "hepsiniEkleMetin": "{eklenecek} marka önerilen koduyla tabloya eklenecek, {baglanacak} marka için eksik ürün bağları kurulacak. Kodu bulunamayan {kodsuz} marka atlanır; onlara kodu elle girersiniz. Kodlar sonradan bu ekrandan değiştirilebilir.",
+    "hepsiniEkleOnay": "Ekle",
+    "topluSonuc": "{eklenen} marka eklendi · {baglanan} ürün bağlandı · {atlanan} atlandı · {kodsuz} markanın kodu elle girilmeli",
+    "hata": {
+      "YETKISIZ": "Bu işlem için yetkiniz yok.",
+      "KODSUZ": "Bu marka için kod önerilemedi — kodu elle girin.",
+      "URUN_YOK": "Bu markayla bağlanacak ürün kalmamış; sayfayı yenileyin.",
+      "YOK": "Marka bulunamadı; sayfayı yenileyin.",
+      "DEGISMIS": "Kod bu arada başka biri tarafından değiştirilmiş; sayfayı yenileyip tekrar deneyin.",
+      "BICIM": "Kod tam 3 karakter olmalı: harf (A-Z) ya da rakam.",
+      "KULLANIMDA": "Bu kod başka bir markada kullanılıyor — iki markaya aynı kod verilemez.",
+      "HATA": "Beklenmeyen bir hata oluştu; kayıt yapılmadı."
+    },
+    "evet": "Evet",
+    "hayir": "Hayır",
+    "markasizListeAdi": "Markası boş ürünler",
+    "sutunKimlik": "Kimlik",
+    "sutunUrun": "Ürün adı",
+    "sutunSku": "SKU",
+    "sutunFirmaSku": "Firma SKU",
+    "sutunBarkod": "Barkod",
+    "sutunKategori": "Kategori",
+    "sutunAktif": "Aktif",
+    "sutunMarka": "Marka (doldurun)"
   }
 }

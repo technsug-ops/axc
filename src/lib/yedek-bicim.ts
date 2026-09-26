@@ -27,6 +27,8 @@ export const YEDEK_TABLOLARI = [
   "Category",
   /** K283 — `Category`ye bağlı (categoryId, SetNull); kategoriden SONRA. */
   "TyKategoriEslesme",
+  /** K285 — marka kod tablosu; `Product.brandId` buna bağlı → ürünlerden ÖNCE. */
+  "Brand",
   /**
    * ⚠ `Location`DAN ÖNCE — `Location.bolumId` buna bağlı.
    * Geri yükleme sırası bağımlılığı izler; bölüm sonra gelseydi raflar

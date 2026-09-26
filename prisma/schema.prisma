@@ -318,6 +318,11 @@ model Product {
   name        String
   description String? @db.Text
   brand       String?
+  /// K285 — MARKA KAYDINA BAĞ. `brand` (serbest metin) OLDUĞU GİBİ kalır: o,
+  /// içe aktarmanın/kanalın yazdığı ham yazımdır. Bağ, 3 harfli benzersiz
+  /// marka KODUNU taşır (SKU'nun marka parçası). Boş = marka tabloya bağlanmadı.
+  brandId     String?
+  brandKaydi  Brand?  @relation(fields: [brandId], references: [id], onDelete: SetNull)
 
   /// Sadece arayüz ipucu: false ise ürünün tek (varsayılan) varyantı vardır.
   hasVariants Boolean @default(false)
@@ -377,6 +382,7 @@ model Product {
   @@index([name])
   @@index([isActive])
   @@index([categoryId])
+  @@index([brandId])
   @@index([tyKategori])
   @@index([isFavorite])
   @@index([needsReview])
@@ -428,6 +434,20 @@ model Category {
 /// etmiş.» Trendyol kategorisi ÖLÇÜLÜR; bizdeki karşılığı BİR KEZ seçilir ve
 /// burada durur. `categoryId = null` → karşılığı SEÇİLMEDİ: senkron o
 /// kategorideki ürüne kategori YAZMAZ, tahmin etmez; ekran seçim ister.
+/// K285 — MARKA KOD TABLOSU (kullanıcı onayı 26.09.2026).
+/// `anahtar` = katlanmış yazım (PHILIPS = Philips) — yazım farkları tek kayda
+/// düşer. `code` = 3 harf, BENZERSİZ: iki markaya aynı kod verilemez
+/// (addan hesaplanan eski 2 harfli kısaltmada Karaca/Karcher çakışıyordu).
+model Brand {
+  id        String    @id @default(cuid())
+  name      String    @db.VarChar(191)
+  anahtar   String    @unique @db.VarChar(191)
+  code      String    @unique @db.VarChar(3)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
 model TyKategoriEslesme {
   id         String    @id @default(cuid())
   tyKategori String    @unique @db.VarChar(191)

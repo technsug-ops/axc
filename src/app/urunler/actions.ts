@@ -8,6 +8,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { markaBagiBul } from "@/lib/marka-kodu-yaz";
 import { kodBaskaVaryantaAitMi } from "@/lib/varyant-kod-cozumu";
 import { benzerleriBul } from "@/lib/benzerlik";
 import { degisenKodlar, urunHareketliMi } from "@/lib/urun-hareket";
@@ -357,6 +358,8 @@ export async function urunOlustur(
       data: {
         name: veri.ad,
         brand: veri.marka || null,
+        /* K285: marka metni tablodaki bir markaya düşüyorsa bağ kurulur. */
+        brandId: await markaBagiBul(veri.marka),
         description: veri.aciklama || null,
         hasVariants: veri.varyantliMi,
         categoryId: veri.kategoriId || null,
@@ -454,6 +457,7 @@ export async function urunGuncelle(
     }
   }
 
+  const markaBagi = await markaBagiBul(veri.marka);
   try {
     await prisma.$transaction(async (tx) => {
       await tx.product.update({
@@ -461,6 +465,8 @@ export async function urunGuncelle(
         data: {
           name: veri.ad,
           brand: veri.marka || null,
+          /* K285: marka metni değişince bağ da YENİDEN hesaplanır — eski bağ kalmaz. */
+          brandId: markaBagi,
           description: veri.aciklama || null,
           hasVariants: veri.varyantliMi,
           categoryId: veri.kategoriId || null,

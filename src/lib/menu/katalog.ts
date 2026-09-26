@@ -61,6 +61,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   kategoriler: "/ayarlar/kategoriler",
   duzeltmeNedenleri: "/ayarlar/duzeltme-nedenleri",
   tedarikciler: "/ayarlar/tedarikciler",
+  /** K285 — marka kod tablosu (SKU'nun marka parçası). */
+  markalar: "/ayarlar/markalar",
   kullanicilar: "/ayarlar/kullanicilar",
   roller: "/ayarlar/roller",
   menuDuzeni: "/ayarlar/menu",
@@ -190,6 +192,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "kategoriler", varsayilanGrup: "grupTanimlar" },
   { anahtar: "duzeltmeNedenleri", varsayilanGrup: "grupTanimlar" },
   { anahtar: "tedarikciler", varsayilanGrup: "grupTanimlar" },
+  { anahtar: "markalar", varsayilanGrup: "grupTanimlar" },
 
   // ── VERİ ────────────────────────────────────────────────────────────────
   { anahtar: "veriAktarimi", varsayilanGrup: "grupVeri" },

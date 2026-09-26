@@ -58,6 +58,7 @@ export const BOLUMLER = [
   { kimlik: "duzeltme", ad: "Ayarlar — Düzeltme nedenleri" },
   { kimlik: "kanalHesabi", ad: "Ayarlar — Kanal Hesapları" },
   { kimlik: "tedarikci", ad: "Ayarlar — Tedarikçiler" },
+  { kimlik: "marka", ad: "Ayarlar — Markalar" },
   { kimlik: "kullanici", ad: "Ayarlar — Kullanıcılar" },
   { kimlik: "rol", ad: "Ayarlar — Roller" },
   { kimlik: "menu", ad: "Ayarlar — Menü düzeni" },
@@ -135,6 +136,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   duzeltmeNedenleri: "duzeltme",
   kanalHesaplari: "kanalHesabi",
   tedarikciler: "tedarikci",
+  markalar: "marka",
   veriAktarimi: "toplu",
   /** Yedek alma ve geri yükleme tek bölümde anlatılıyor. */
   geriYukleme: "yedek",
@@ -1670,6 +1672,28 @@ ${neZaman("Yeni bir yerden ilk kez mal aldığında.")}
 <p>Aynı ürünü iki tedarikçiden farklı fiyata alıyorsan, alım geçmişi bunu
 gösterir. Ayrıca bir iade ya da garanti durumunda malın <strong>nereden
 geldiği</strong> kayıtta durur, kutunun üstünde değil.</p>
+</section>
+
+<section id="marka">
+${baslik("marka")}
+<p><strong>Ayarlar → Markalar.</strong> Her markanın <strong>3 harfli,
+benzersiz bir kodu</strong> vardır (Philips → PHL, Karaca → KRC). Bu kod
+ürünün SKU'sunun marka parçasıdır; ürüne bakınca markası koddan okunur.</p>
+${neZaman("Yeni bir markadan ilk kez ürün girdiğinde — ekranın üstünde «bağlanmayı bekleyen» olarak görünür.")}
+<h3>Aynı marka, farklı yazım</h3>
+<p>«ANKER» ile «Anker» aynı markadır; sistem büyük/küçük harf ve Türkçe
+harf farkını yok sayıp ikisini tek markada toplar. «Philips» ile «Philips
+Avent» ise AYRI yazılır — aynı marka mı, ayrı mı, sen karar verirsin.</p>
+<div class="ek-not dikkat"><div class="etiket">İki markaya aynı kod verilemez</div>
+<p>Eskiden kod addan hesaplanıyordu ve Karaca ile Karcher ikisi de «KR»
+oluyordu. Artık kod tabloda durur ve kullanımdaki bir kodu ikinci bir
+markaya vermeye çalışırsan ekran reddeder ve nedenini yazar.</p></div>
+${sikHata([
+  {
+    hata: "Marka alanını boş bırakmak",
+    cozum: "Markası boş ürüne marka kodu verilemez, SKU'sunun marka parçası da olamaz. Ekrandaki «markası boş» listesini indirip doldur.",
+  },
+])}
 </section>
 
 <section id="kullanici">

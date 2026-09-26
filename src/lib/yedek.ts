@@ -54,6 +54,7 @@ export async function yedekUret(
   const tablolar: Record<string, unknown[]> = {
     Category: await istemci.category.findMany(),
     TyKategoriEslesme: await istemci.tyKategoriEslesme.findMany(),
+    Brand: await istemci.brand.findMany(),
     /** ⚠ `Location`DAN ÖNCE — `Location.bolumId` buna bağlı. */
     DepoBolumu: await istemci.depoBolumu.findMany(),
     Location: await istemci.location.findMany(),

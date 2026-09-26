@@ -20,6 +20,7 @@ import type { Sayfa } from "./xlsx";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { stoguVarMi } from "@/lib/stok-siralama";
 import { supheliSatirlari } from "@/lib/supheli-urun-veri";
+import { markasizUrunler } from "@/lib/marka-kodu-veri";
 
 /**
  * ============================================================================
@@ -45,6 +46,8 @@ export const LISTELER = [
   "iadeler",
   /** K284 — şüpheli ürünler; kullanıcı doldurup `/urunler/supheli`den geri yükler. */
   "supheli",
+  /** K285 — markası boş ürünler; marka kodu verilemeyenler (doldurulacak liste). */
+  "markasiz",
 ] as const;
 export type ListeAnahtari = (typeof LISTELER)[number];
 
@@ -86,6 +89,8 @@ export async function listeSayfasi(
       return iadelerSayfasi(p);
     case "supheli":
       return supheliSayfasi();
+    case "markasiz":
+      return markasizSayfasi();
   }
 }
 
@@ -840,5 +845,39 @@ async function supheliSayfasi(): Promise<Sayfa> {
     ],
     satirlar,
     genislikler: [28, 26, 14, 55, 12, 14, 18, 18, 22, 22, 7, 11, 18, 30],
+  };
+}
+
+/**
+ * MARKASI BOŞ ÜRÜNLER (K285) — ekranla AYNI gövde (`markasizUrunler`).
+ * İlk sütun KİMLİK (ileride geri yükleme kimliğe göre eşleşir); son sütun BOŞ:
+ * kullanıcı markayı yazar. Marka tahmin edilmez.
+ */
+async function markasizSayfasi(): Promise<Sayfa> {
+  const tMarka = await getTranslations("MarkaKodu");
+  const satirlar = (await markasizUrunler()).map((u) => [
+    u.kimlik,
+    u.ad,
+    u.sku,
+    u.firmaSku,
+    u.barkod,
+    u.kategori,
+    u.aktif ? tMarka("evet") : tMarka("hayir"),
+    "",
+  ]);
+  return {
+    ad: tMarka("markasizListeAdi"),
+    basliklar: [
+      tMarka("sutunKimlik"),
+      tMarka("sutunUrun"),
+      tMarka("sutunSku"),
+      tMarka("sutunFirmaSku"),
+      tMarka("sutunBarkod"),
+      tMarka("sutunKategori"),
+      tMarka("sutunAktif"),
+      tMarka("sutunMarka"),
+    ],
+    satirlar,
+    genislikler: [28, 60, 18, 18, 18, 22, 8, 24],
   };
 }
