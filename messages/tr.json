@@ -3207,7 +3207,9 @@
     "baslik_oransizKanalSku": "{sayi} kanal SKU'sunun komisyon oranı boş",
     "eylem_oransizKanalSku": "Oranı gir — o kalemlerde NET-2 hesaplanamaz",
     "baslik_tarifePenceresi": "Komisyon tarifesi yenilenmeli",
-    "eylem_tarifePenceresi": "Haftalık tarife dosyasını indirip yükle — pencere bitiyor ya da bitti"
+    "eylem_tarifePenceresi": "Haftalık tarife dosyasını indirip yükle — pencere bitiyor ya da bitti",
+    "baslik_tyKategoriKarsiliksiz": "{sayi} Trendyol kategorisinin karşılığı seçilmedi",
+    "eylem_tyKategoriKarsiliksiz": "Karşılığını seç — o kategorideki ürünlere kategori yazılmıyor"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",
@@ -4514,6 +4516,33 @@
       "YETKISIZ": "Resim eklemek için ürün düzenleme yetkiniz yok.",
       "BULUNAMADI": "Ürün bulunamadı; sayfayı yenileyin.",
       "HATA": "Resim kaydedilemedi. Tekrar deneyin; sürerse yöneticiye bildirin."
+    }
+  },
+  "KategoriEslesme": {
+    "baslik": "Trendyol kategori eşleşmesi",
+    "aciklama": "Ürünün kategorisi Trendyol'daki kendi kategorisinden gelir. Her Trendyol kategorisinin bizdeki karşılığını burada bir kez seçersiniz; o kategorideki ürünler buna göre güncellenir. Karşılığı seçilmemiş kategoriye sistem tahminle kategori yazmaz.",
+    "kurallar": "Elle seçtiğiniz kategoriye dokunulmaz. KDV oranını değiştirecek bir eşleşme o ürüne yazılmaz; ürün «KDV bekliyor» olarak sayılır.",
+    "karsiliksizBaslik": "{sayi} Trendyol kategorisinin karşılığı seçilmedi",
+    "karsiliksizMetin": "Bu kategorilerdeki ürünlere kategori yazılmıyor. Listenin en üstünde duruyorlar.",
+    "sayac": "{toplam} Trendyol kategorisi · {urun} ürün",
+    "urunSayisi": "{sayi} ürün",
+    "bizimKategori": "Bizdeki karşılığı",
+    "secilmedi": "— Seçilmedi —",
+    "kdvBekleyen": "{sayi} ürün KDV nedeniyle bekliyor",
+    "elleSecilmis": "{sayi} ürünün kategorisi elle seçilmiş",
+    "kaydediliyor": "Kaydediliyor…",
+    "kaydedildi": "Kaydedildi · {sayi} ürünün kategorisi güncellendi",
+    "kaydedildiKdv": "{sayi} ürün KDV oranı değişeceği için güncellenmedi",
+    "kaydedildiElle": "{sayi} ürünün kategorisi elle seçilmiş, dokunulmadı",
+    "kaydedildiTavan": "{sayi} ürün sırada — gece senkronunda işlenir",
+    "bos": "Henüz Trendyol kategorisi yok — listeleme senkronu ilk koştuğunda dolar.",
+    "baglantiMetin": "{toplam} Trendyol kategorisi · {karsiliksiz} karşılığı seçilmedi",
+    "baglantiAc": "Eşleşmeyi aç",
+    "hata": {
+      "YETKISIZ": "Bu işlem için ayar yetkiniz yok.",
+      "KATEGORI_YOK": "Seçilen kategori bulunamadı ya da pasif; sayfayı yenileyin.",
+      "ESLESME_YOK": "Bu Trendyol kategorisi bulunamadı; sayfayı yenileyin.",
+      "HATA": "Kaydedilemedi. Tekrar deneyin; sürerse yöneticiye bildirin."
     }
   }
 }

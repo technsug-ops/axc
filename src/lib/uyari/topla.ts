@@ -14,6 +14,7 @@ import { maliyetsizVaryantlar } from "./maliyetsiz-stok";
 import { iadeSayaciOlcumu } from "./iade-sayaci";
 import { yedekOlcumu } from "./yedek";
 import type { Uyari } from "./turler";
+import { tyKategoriKarsiliksizSayisi } from "@/lib/kategori-eslesme-yaz";
 
 /**
  * ============================================================================
@@ -306,6 +307,8 @@ export async function uyarilariTopla(
      * `UYARI_SAYISI_ANLAMSIZ` bu yüzden bu anahtarı da taşır.
      */
     tarifePenceresi: { sayi: tarifeUyarisiVarMi(tarifeKapsam) ? 1 : 0 },
+    /** K283 — eşleşme ekranındaki uyarıyla AYNI koşul (`tyKategoriKarsiliksizSayisi`). */
+    tyKategoriKarsiliksiz: { sayi: await tyKategoriKarsiliksizSayisi() },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:

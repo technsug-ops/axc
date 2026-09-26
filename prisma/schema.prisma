@@ -336,6 +336,17 @@ model Product {
   /// ama desi değişmez (karar 09.08.2026).
   desi Decimal? @db.Decimal(9, 3)
 
+  /// K283 — ÜRÜNÜN TRENDYOL'DAKİ KATEGORİSİ (ölçülen olgu, eşleşme değil).
+  /// Listeleme senkronu EAN eşleştiğinde yazar. Eşleşme tablosu değişince
+  /// ürünler Trendyol'a yeniden sorulmadan güncellenebilsin diye saklanır.
+  tyKategori       String?          @db.VarChar(191)
+  /// K283 — `categoryId` NEREDEN geldi. `ELLE` → senkron DOKUNMAZ.
+  /// `TRENDYOL` → eşleşme tablosundan yazıldı, eşleşme değişirse güncellenir.
+  /// `null` → kaynağı bilinmiyor (K283 öncesi) — elle sayılır; senkron
+  /// yalnız kategorisi BOŞ olan ürüne kategori yazar.
+  kategoriKaynak   KategoriKaynagi?
+  kategoriKaynakAt DateTime?
+
   /**
    * ══════════════════════════════════════════════════════════════════════
    * ETİKETLER — ORTAK, KULLANICI BAZLI DEĞİL (K212, kullanıcı kararı
@@ -366,6 +377,7 @@ model Product {
   @@index([name])
   @@index([isActive])
   @@index([categoryId])
+  @@index([tyKategori])
   @@index([isFavorite])
   @@index([needsReview])
 }
@@ -407,9 +419,32 @@ model Category {
   updatedAt DateTime @updatedAt
 
   products Product[]
+  tyEslesmeleri TyKategoriEslesme[]
 
   @@index([isActive])
 }
+/// K283 — KANAL KATEGORİSİ ↔ BİZİM KATEGORİ (kullanıcı kararı 26.09.2026).
+/// «Ürün adından karar vermek saçma, pazaryerleri ürünleri zaten kategorize
+/// etmiş.» Trendyol kategorisi ÖLÇÜLÜR; bizdeki karşılığı BİR KEZ seçilir ve
+/// burada durur. `categoryId = null` → karşılığı SEÇİLMEDİ: senkron o
+/// kategorideki ürüne kategori YAZMAZ, tahmin etmez; ekran seçim ister.
+model TyKategoriEslesme {
+  id         String    @id @default(cuid())
+  tyKategori String    @unique @db.VarChar(191)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([categoryId])
+}
+
+/// K283 — ürün kategorisinin kaynağı.
+enum KategoriKaynagi {
+  ELLE
+  TRENDYOL
+}
+
 
 /// Stok, SKU ve barkodun tutulduğu seviye. Ürün seviyesinde stok YOKTUR.
 model ProductVariant {

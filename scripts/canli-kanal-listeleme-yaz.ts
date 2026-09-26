@@ -130,6 +130,8 @@ export type TyListelemeOzeti =
       yazdiMi: boolean;
       /** K273: ürün görseli yazımı (yoksa: yazılmadı ya da düştü — sebep günlükte). */
       gorsel?: import("../src/lib/urun-gorseli-yaz").GorselYazimOzeti | { hata: string };
+      /** K283: kategori eşleşmesi yazımı. */
+      kategori?: import("../src/lib/kategori-eslesme-yaz").KategoriYazimOzeti | { hata: string };
     };
 
 export async function tyListelemeCekimKos(ayar: {
@@ -268,6 +270,26 @@ export async function tyListelemeCekimKos(ayar: {
     gorsel = { hata: e instanceof Error ? e.message : String(e) };
   }
 
+  /**
+   * K283 — ÜRÜN KATEGORİSİ TRENDYOL'UN KENDİ KATEGORİSİNDEN. Aynı taramadan, ek
+   * istek yok. Karar saf kuraldan (`kategoriKarari`): karşılığı seçilmemiş TY
+   * kategorisi yazılmaz (tahmin yok) · elle seçilmiş kategoriye dokunulmaz ·
+   * KDV değişecekse yazılmaz. Düşerse listeleme sonucu bozulmaz, hata TAM yazılır.
+   */
+  let kategori: import("../src/lib/kategori-eslesme-yaz").KategoriYazimOzeti | { hata: string };
+  try {
+    const { tyKategorileriniYaz } = await import("../src/lib/kategori-eslesme-yaz");
+    kategori = await tyKategorileriniYaz(
+      t.urunler.map((u) => ({ barkod: String(u.barcode ?? ""), tyKategori: String(u.kategori ?? "") })),
+    );
+    console.log(
+      `   kategori: yazılan ${kategori.kategoriYazilan} · TY kategorisi ${kategori.tyYazilan} · yeni TY kategorisi ${kategori.yeniTyKategori} · karşılıksız ${kategori.atlanan.KARSILIK_YOK} · KDV bekleyen ${kategori.atlanan.KDV_DEGISIR} · sırada ${kategori.tavandaKalan}`,
+    );
+  } catch (e) {
+    console.error("   ⛔ kategori yazımı düştü:", e);
+    kategori = { hata: e instanceof Error ? e.message : String(e) };
+  }
+
   const { kosumIziniYaz } = await import("../src/lib/kanal-listeleme-yaz");
   await kosumIziniYaz({
     basarili: true,
@@ -284,6 +306,7 @@ export async function tyListelemeCekimKos(ayar: {
     kanalKaydiYok: s.kanalKaydiYok,
     yazdiMi: true,
     gorsel,
+    kategori,
   };
 }
 

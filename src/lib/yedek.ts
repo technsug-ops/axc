@@ -53,6 +53,7 @@ export async function yedekUret(
   // Sıra YEDEK_TABLOLARI ile aynıdır — bağımlılık sırası.
   const tablolar: Record<string, unknown[]> = {
     Category: await istemci.category.findMany(),
+    TyKategoriEslesme: await istemci.tyKategoriEslesme.findMany(),
     /** ⚠ `Location`DAN ÖNCE — `Location.bolumId` buna bağlı. */
     DepoBolumu: await istemci.depoBolumu.findMany(),
     Location: await istemci.location.findMany(),

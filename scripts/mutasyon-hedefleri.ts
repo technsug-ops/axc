@@ -200,4 +200,11 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "satir-karti-mutasyon:kontrol",
   "stok-siralama-mutasyon:kontrol",
   "urun-gorseli-mutasyon:kontrol",
+  /**
+   * K283 (26.09.2026) — `kategori-eslesme` Trendyol listeleme senkronunu
+   * (`urun-gorseli` ile ortak) ve uyarı toplayıcısını (`uyari-cron` ile ortak)
+   * mutasyona uğratıyor; paralel koşsalar biri ötekinin mutantını asıl sanırdı.
+   */
+  "kategori-eslesme-mutasyon:kontrol",
+  "uyari-cron-mutasyon:kontrol",
 ];

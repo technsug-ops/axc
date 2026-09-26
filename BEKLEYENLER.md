@@ -191,6 +191,64 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K283 — ÜRÜN KATEGORİSİ TRENDYOL'UN KENDİ KATEGORİSİNDEN (EŞLEŞME TABLOSU) · 26.09.2026 · [KOD + MIGRATION + BAŞLANGIÇ VERİSİ KOŞTU — HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: _«ürün isminden karar vermemiz saçma, pazaryerleri ürünleri zaten kategorize etmiş»_ ·
+_«kesinlikle tahmin istemiyorum; bilmiyorsak liste yap dolduralım»_ · _«sistemimizi kuralım, EAN'lar
+gelince doğru yere kaydolur»_. Bağlam: SKU sistematiği (KAT-MRK-MODEL-NN) için kategori doğru
+olmalı; `Küçük Ev Aletleri`nde 964 ürün vardı (içe aktarma varsayılanı), LEGO'ların 48'i dahil.
+
+**① K282 (25–26.09, tek seferlik):** 734 ürünün kategorisi Trendyol eşleşmesine göre güncellendi
+(KDV'si değişen hiçbir ürün yazılmadı — KDV kapısı + tartışmalı liste dışarıda). Parti
+`K282-kategori-ty-20260926`, ürün başına iz `KATEGORI_TY_ESLESME` (eski/yeni), yazım öncesi anlık
+görüntü dosyada; plana uymayan 0.
+
+**② SİSTEM (K283):**
+- Migration `20260926120000_ty_kategori_eslesme` (SAF EKLEME, canlıda koştu, yerel diff BOŞ):
+  `TyKategoriEslesme` (TY kategorisi → bizim kategori; `categoryId=null` = KARŞILIK SEÇİLMEDİ) ·
+  `Product.tyKategori` (ölçülen olgu) · `Product.kategoriKaynak` (`ELLE`|`TRENDYOL`) + `…At`.
+- Saf karar `lib/kategori-eslesme.ts` (`kategoriKarari`): karşılık yok → YAZMAZ (tahmin yok) ·
+  aynı → yok · ELLE ya da kaynağı bilinmeyen dolu kategori → DOKUNMAZ · KDV değişecekse YAZMAZ
+  (istisna > kategori > %20; kategorisiz ürün %20 sayılır — bu kapı K282 kuru koşumunda iki
+  ürünü sessizce %10'a geçirecekti, yazımdan ÖNCE yakalandı).
+- Yazıcı `lib/kategori-eslesme-yaz.ts`: TY listeleme senkronu her gece çağırır; yeni görülen TY
+  kategorisi tabloya KARŞILIKSIZ girer; güncelleme şartlı (arada elle değişen ezilmez); tavan 300;
+  iz. Ekran girişi `eslesmeyiUrunlereUygula` aynı çekirdek.
+- Ekran `/ayarlar/kategoriler/trendyol` (izin `ayar.yaz`; Kategoriler sayfasında kart): her TY
+  kategorisi · ürün sayısı · seçici · KDV bekleyen / elle sayısı; karşılıksızlar EN ÜSTTE.
+- Çan uyarısı `tyKategoriKarsiliksiz` (amber, `ayar.yaz`) — kartla AYNI sayaç.
+- Yedek listesi + çakışma grubu + uyarı harness çapası güncellendi (hızlı bekçi turu yakaladı).
+
+**③ BAŞLANGIÇ VERİSİ (canlı, 26.09):** 208 TY kategorisi → 176 karşılıklı (kullanıcının onayladığı
+eşleşme) · **32 KARŞILIKSIZ** (benim «Genel Ürünler» yedek kuralımla düşenler dahil — tahmin
+sayılıp seçime bırakıldı). 734 ürün `TRENDYOL` kaynaklı işaretlendi. 1.218 ürüne TY kategorisi
+yazıldı; kategori değişen **0** (1.184 zaten doğru · 18 karşılıksız · 14 elle · 2 KDV kapısı).
+
+**Bekçi** `kategori-eslesme:dogrula` 28 (kural her dal iki yönden DEĞERLE + zincir) · harness
+**14/14** (bir kör nokta mutasyonla bulundu: yazıcı kuralı çağırıp sonucunu yok sayabiliyordu).
+
+**AÇIK — KULLANICIDA (doldurulacak listeler, Masaüstü):** `doldurulacak-liste-2026-09-26.xlsx`
+(KDV 33 · karşılığı yok 18 · kategorisi bilinmeyen 23 · sahipliği bilinmeyen 17) ·
+`supheli-urunler-2026-09-26.xlsx` (708 şüpheli, 38'i işlem görüyor — «Doğru EAN» sütunu) ·
+`muhasebeci-kdv-sorusu-v2.xlsx`. **Sıradaki paket:** şüpheli listesi Excel'inin geri yüklenmesi
+(EAN + «sizin mi» → pasif) · ardından marka kod tablosu ve SKU yeniden kodlama önizlemesi.
+
+### HALİL TEST LİSTESİ (canlı)
+1. Ayarlar → Kategoriler: üstte «Trendyol kategori eşleşmesi» kartı — «N Trendyol kategorisi · M
+   karşılığı seçilmedi»; «Eşleşmeyi aç».
+2. Açılan sayfada en üstte karşılığı seçilmemiş kategoriler. Birinde seçiciden kategori seçin →
+   altında «Kaydedildi · N ürünün kategorisi güncellendi» (+ varsa KDV/elle notu).
+3. O kategorideki bir ürünü Ürünler'de açın → kategori seçtiğiniz olmuş.
+4. Çan: karşılıksız kategori varken «N Trendyol kategorisinin karşılığı seçilmedi» → tıklayınca
+   eşleşme sayfası.
+5. Bir ürünün kategorisini ürün formundan ELLE değiştirin → ertesi gün (gece senkronundan sonra)
+   değişmemiş olmalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`KategoriEslesme` + 2 uyarı anahtarı) ·
+**kullanıcı kolaylığı: ✓** (İlke #5 · #9 · #16)
+
+---
+
 ## 🔴 K281 — MENÜ ROZETLERİNDE SAYI OKUNMUYORDU (TANIMSIZ RENK) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı (telefon menüsü ekran görüntüsü): _«uyarının içindeki numaralar belli olmuyor»_. Rozet

@@ -144,6 +144,9 @@ export const UYARI_ANAHTARLARI = [
   // ── K266 (24.09.2026): ŞERİTTEN ÇANA — günün işi değil, bakım uyarısı ──
   "oransizKanalSku",
   "tarifePenceresi",
+  // ── K283 (26.09.2026): Trendyol kategorisinin bizde karşılığı seçilmedi —
+  //    o kategorideki ürünlere kategori YAZILMIYOR (tahmin yok). ──
+  "tyKategoriKarsiliksiz",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -200,6 +203,7 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
    * götürürdü. Adres hedefin KENDİSİNİ gösterir.
    */
   tarifePenceresi: "/ayarlar/komisyon",
+  tyKategoriKarsiliksiz: "/ayarlar/kategoriler/trendyol",
 };
 
 /**
@@ -240,6 +244,7 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   /* Bakım işi: para kaybettirmez ama bırakılırsa NET-2 hesaplanamaz — amber. */
   oransizKanalSku: "amber",
   tarifePenceresi: "amber",
+  tyKategoriKarsiliksiz: "amber",
 };
 
 /**
@@ -271,6 +276,8 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   /* Operasyonel: depocu da görür — tutar/kâr taşımıyorlar. */
   oransizKanalSku: null,
   tarifePenceresi: null,
+  /* Eşleşme ekranı `ayar.yaz` ister — görüp açamayacağı uyarı gösterilmez. */
+  tyKategoriKarsiliksiz: "ayar.yaz",
 };
 
 export type Uyari = {

@@ -54,8 +54,10 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     bekci: "uyari:dogrula",
     dosya: TURLER,
-    bul: '  "oransizKanalSku",\n  "tarifePenceresi",\n] as const;',
-    koy: '  "tarifePenceresi",\n] as const;',
+    /* K283: listeye yeni anahtar eklendi (`tyKategoriKarsiliksiz`) — çapa listenin
+       SONUNA değil, iki anahtarın bitişikliğine bağlandı. */
+    bul: '  "oransizKanalSku",\n  "tarifePenceresi",\n',
+    koy: '  "tarifePenceresi",\n',
     bozdugu: "oransiz SKU hicbir yerde gorunmez - seritten cikti, cana girmedi",
   },
   {

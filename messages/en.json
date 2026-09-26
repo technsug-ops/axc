@@ -3207,7 +3207,9 @@
     "baslik_oransizKanalSku": "",
     "eylem_oransizKanalSku": "",
     "baslik_tarifePenceresi": "",
-    "eylem_tarifePenceresi": ""
+    "eylem_tarifePenceresi": "",
+    "baslik_tyKategoriKarsiliksiz": "",
+    "eylem_tyKategoriKarsiliksiz": ""
   },
   "Talep": {
     "bildirEtiketi": "",
@@ -4513,6 +4515,33 @@
       "YEREL": "",
       "YETKISIZ": "",
       "BULUNAMADI": "",
+      "HATA": ""
+    }
+  },
+  "KategoriEslesme": {
+    "baslik": "",
+    "aciklama": "",
+    "kurallar": "",
+    "karsiliksizBaslik": "",
+    "karsiliksizMetin": "",
+    "sayac": "",
+    "urunSayisi": "",
+    "bizimKategori": "",
+    "secilmedi": "",
+    "kdvBekleyen": "",
+    "elleSecilmis": "",
+    "kaydediliyor": "",
+    "kaydedildi": "",
+    "kaydedildiKdv": "",
+    "kaydedildiElle": "",
+    "kaydedildiTavan": "",
+    "bos": "",
+    "baglantiMetin": "",
+    "baglantiAc": "",
+    "hata": {
+      "YETKISIZ": "",
+      "KATEGORI_YOK": "",
+      "ESLESME_YOK": "",
       "HATA": ""
     }
   }

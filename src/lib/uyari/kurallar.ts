@@ -28,11 +28,13 @@ import {
  * ölçüm kümeleri (bekçi fixture'ları dahil) değişmeden derlenir. Taban
  * doluluğu bekçide AYRICA ölçülür — boş küme her koşulu sağlar.
  */
+/** K283: Trendyol kategori eşleşmesi ölçümü de İSTEĞE BAĞLI — aynı gerekçe. */
+type IstegeBagliOlcum = CanaTasinanGorev | "tyKategoriKarsiliksiz";
 export type UyariOlcumleri = Record<
-  Exclude<UyariAnahtari, CanaTasinanGorev>,
+  Exclude<UyariAnahtari, IstegeBagliOlcum>,
   { sayi: number; tutar?: number | null }
 > &
-  Partial<Record<CanaTasinanGorev, { sayi: number; tutar?: number | null }>>;
+  Partial<Record<IstegeBagliOlcum, { sayi: number; tutar?: number | null }>>;
 
 /**
  * NAKİT AÇIĞI — YALNIZ EKSİ POZİSYON UYARIR.

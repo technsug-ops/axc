@@ -25,6 +25,8 @@
 export const YEDEK_TABLOLARI = [
   // --- kimseye bağlı olmayanlar ---
   "Category",
+  /** K283 — `Category`ye bağlı (categoryId, SetNull); kategoriden SONRA. */
+  "TyKategoriEslesme",
   /**
    * ⚠ `Location`DAN ÖNCE — `Location.bolumId` buna bağlı.
    * Geri yükleme sırası bağımlılığı izler; bölüm sonra gelseydi raflar

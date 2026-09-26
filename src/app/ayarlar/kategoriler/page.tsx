@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { KategoriFormu } from "./kategori-formu";
 import { KategoriSatiri, type KategoriSatiriVerisi } from "./kategori-satiri";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { Baglanti } from "@/components/baglanti";
+import { tyKategoriKarsiliksizSayisi } from "@/lib/kategori-eslesme-yaz";
 
 /**
  * VERİTABANI OKUYAN SAYFA — HER İSTEKTE ÇİZİLİR.
@@ -28,6 +30,13 @@ export default async function KategorilerSayfasi() {
   await sayfaIzni("ayar.yaz");
 
   const t = await getTranslations("Kategori");
+  const tEs = await getTranslations("KategoriEslesme");
+  /* K283 — Trendyol eşleşmesi: kaç TY kategorisi var, kaçının karşılığı SEÇİLMEDİ
+     (ürünü olanlar). Sayı eşleşme ekranındaki uyarıyla aynı koşuldan. */
+  const [tyToplam, tyKarsiliksiz] = await Promise.all([
+    prisma.tyKategoriEslesme.count(),
+    tyKategoriKarsiliksizSayisi(),
+  ]);
 
   const kayitlar = await prisma.category.findMany({
     orderBy: [{ isActive: "desc" }, { vatRate: "desc" }],
@@ -68,6 +77,18 @@ export default async function KategorilerSayfasi() {
           </p>
         </div>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{tEs("baslik")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className={`text-sm ${tyKarsiliksiz > 0 ? DURUM_YAZISI.uyari : "text-muted-foreground"}`}>
+            {tEs("baglantiMetin", { toplam: tyToplam, karsiliksiz: tyKarsiliksiz })}
+          </p>
+          <Baglanti href="/ayarlar/kategoriler/trendyol">{tEs("baglantiAc")}</Baglanti>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
