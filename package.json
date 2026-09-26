@@ -426,7 +426,9 @@
     "bekci-kapisi-mutasyon:kontrol": "tsx scripts/bekci-kapisi-mutasyon-kontrol.ts",
     "uyari-cron-mutasyon:kontrol": "tsx scripts/uyari-cron-mutasyon-kontrol.ts",
     "kategori-eslesme:dogrula": "tsx scripts/kategori-eslesme-dogrula.ts",
-    "kategori-eslesme-mutasyon:kontrol": "tsx scripts/kategori-eslesme-mutasyon-kontrol.ts"
+    "kategori-eslesme-mutasyon:kontrol": "tsx scripts/kategori-eslesme-mutasyon-kontrol.ts",
+    "supheli-urun:dogrula": "tsx scripts/supheli-urun-dogrula.ts",
+    "supheli-urun-mutasyon:kontrol": "tsx scripts/supheli-urun-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

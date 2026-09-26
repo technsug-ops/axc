@@ -207,4 +207,12 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    */
   "kategori-eslesme-mutasyon:kontrol",
   "uyari-cron-mutasyon:kontrol",
+  /**
+   * K284 (26.09.2026) — `supheli-urun` Ürünler listesindeki şüpheli
+   * bağlantısını (`src/app/urunler/page.tsx`) mutasyona uğratıyor; aynı dosyayı
+   * `kod-cozumu` da bozuyor. Paralel koşsalar biri ötekinin mutantını asıl
+   * sanıp geri yazardı. ⚠ Beyan ölçümle zorlandı (`mutasyon-cakisma:dogrula`).
+   */
+  "kod-cozumu-mutasyon:kontrol",
+  "supheli-urun-mutasyon:kontrol",
 ];

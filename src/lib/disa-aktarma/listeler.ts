@@ -19,6 +19,7 @@ import { prisma } from "@/lib/prisma";
 import type { Sayfa } from "./xlsx";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { stoguVarMi } from "@/lib/stok-siralama";
+import { supheliSatirlari } from "@/lib/supheli-urun-veri";
 
 /**
  * ============================================================================
@@ -42,6 +43,8 @@ export const LISTELER = [
   "giderler",
   "envanter-degeri",
   "iadeler",
+  /** K284 — şüpheli ürünler; kullanıcı doldurup `/urunler/supheli`den geri yükler. */
+  "supheli",
 ] as const;
 export type ListeAnahtari = (typeof LISTELER)[number];
 
@@ -81,6 +84,8 @@ export async function listeSayfasi(
       return envanterDegeriSayfasi(p);
     case "iadeler":
       return iadelerSayfasi(p);
+    case "supheli":
+      return supheliSayfasi();
   }
 }
 
@@ -788,5 +793,52 @@ async function giderlerSayfasi(p: Parametreler): Promise<Sayfa> {
       tGider("sutunOdeme"),
     ],
     satirlar,
+  };
+}
+
+/**
+ * ŞÜPHELİ ÜRÜNLER (K284) — EKRANLA AYNI GÖVDE (`supheliSatirlari`).
+ * İLK SÜTUN KİMLİK: geri yükleme ada değil KİMLİĞE göre eşleşir — ad ya da SKU
+ * değişse de satır doğru ürüne gider. Son iki sütun BOŞ: kullanıcı doldurur.
+ * ⚠ Başlıklar sözlükten; geri yükleyen okuyucu da AYNI anahtarlardan arar.
+ */
+async function supheliSayfasi(): Promise<Sayfa> {
+  const tSupheli = await getTranslations("SupheliUrun");
+  const satirlar = (await supheliSatirlari()).map((s) => [
+    s.kimlik,
+    tSupheli(`sebep.${s.sebep}`),
+    s.islemGoruyor ? tSupheli("evet") : tSupheli("hayir"),
+    s.urunAdi,
+    s.varyant,
+    s.marka,
+    s.sku,
+    s.firmaSku,
+    s.barkod,
+    s.kategori,
+    s.stok,
+    gun(s.sonSatis),
+    "",
+    "",
+  ]);
+  return {
+    ad: tSupheli("baslik"),
+    basliklar: [
+      tSupheli("sutunKimlik"),
+      tSupheli("sutunSebep"),
+      tSupheli("sutunIslem"),
+      tSupheli("sutunUrun"),
+      tSupheli("sutunVaryant"),
+      tSupheli("sutunMarka"),
+      tSupheli("sutunSku"),
+      tSupheli("sutunFirmaSku"),
+      tSupheli("sutunBarkod"),
+      tSupheli("sutunKategori"),
+      tSupheli("sutunStok"),
+      tSupheli("sutunSonSatis"),
+      tSupheli("sutunDogruEan"),
+      tSupheli("sutunSizinMi"),
+    ],
+    satirlar,
+    genislikler: [28, 26, 14, 55, 12, 14, 18, 18, 22, 22, 7, 11, 18, 30],
   };
 }

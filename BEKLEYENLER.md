@@ -191,6 +191,52 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K284 — ŞÜPHELİ ÜRÜN LİSTESİ: İNDİR · DOLDUR · GERİ YÜKLE · 26.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: _«EAN ile çekebildiklerinin haricindeki hepsi şüpheli»_ · _«sistemimizi kuralım, bu ürünlerin
+EAN'ları gelince doğru yere kaydolur»_. K283'ün devamı: şüpheli listesinin ekrandan indirilip
+doldurulup geri yüklenmesi. **Şema değişikliği YOK.**
+
+- **Kural** `lib/supheli-urun.ts` (saf): TEMİZ = barkod gerçek EAN (biçim + **kontrol hanesi**) VE
+  ürünün TY kategorisi okunmuş. Sebep ölçülür: `BARKOD_YOK` · `EAN_DEGIL` · `TY_BULUNAMADI`.
+  Geri yükleme planı: kimliğe göre eşleşir; hatalı satır YAZILMAZ ve sebebi söylenir
+  (bilinmeyen ürün · aynı ürün iki satırda · geçersiz EAN · EAN başka üründe · aynı EAN iki
+  satırda · anlamsız cevap · «hayır» + EAN çelişkisi). Hiçbir değer düzeltilerek uydurulmaz.
+  ⚠ Excel sayı hücresinde baştaki sıfır kaybolursa 13 haneye tamamlanır (kontrol hanesi tutarsa);
+  12/13 hane ayrımı sayıdan bilinemez — ekran «başına ' koyun» diyor.
+- **Veri** `lib/supheli-urun-veri.ts`: liste ve sayı TEK aday koşulundan (`SUPHELI_ADAY_KOSULU`);
+  «işlem görüyor» = stokta ya da son 90 günde iptalsiz satılmış.
+- **Excel** «supheli» (Dışa aktarma kaydı): ilk sütun Kimlik, son iki sütun boş (Doğru EAN · Bu ürün
+  sizin mi) — ekranla aynı gövde.
+- **Ekran** `/urunler/supheli` (izin `urun.yaz`): sebep kutucukları (+ işlem gören sayısı) · 1) indir ·
+  2) yükle → ÖNİZLEME (hiçbir şey yazmaz) → onay diyaloğu → uygula. Yazım şartlı (arada değişen
+  barkod ezilmez, atlanır ve sayılır), her değişiklik eski/yeni değerle İZE (`SUPHELI_EAN_YAZILDI` ·
+  `SUPHELI_PASIF` · `SUPHELI_URUN_PASIF`). «Hayır» → varyant pasif; aktif varyantı kalmayan ürün de
+  pasif. Stoğu olan ürün pasife alınacaksa önizleme ayrıca uyarır.
+- **Ürünler** sayfasında «Şüpheli ürünler: N» bağlantısı (aynı sayaç, yalnız `urun.yaz`).
+
+**Bekçi** `supheli-urun:dogrula` 46 (kural her dal değerle + zincir) · harness **18/18** (üç yön).
+Hızlı turda iki kör nokta yakalandı: sözlük denetçisi dosyada tek `t` görüyordu (değişken
+`tSupheli` oldu) · `kod-cozumu` ile aynı dosyayı mutasyona uğratıyor (sıralı gruba beyan).
+
+### HALİL TEST LİSTESİ (canlı)
+1. Ürünler sayfası, başlığın altında «Şüpheli ürünler: 708» civarı bir bağlantı → tıklayın.
+2. Açılan sayfada üç kutu: «Barkod yok» · «EAN değil» · «Trendyol'da bulunamadı»; toplamları
+   üstteki sayıyla aynı olmalı.
+3. «1. Listeyi indirin» → Excel: ilk sütun Kimlik, son iki sütun boş. Satır sayısı = üstteki sayı.
+4. Excel'de 2 satır doldurun: birine gerçek EAN (başına ' koyarak), birine «Bu ürün sizin mi» =
+   «Hayır». Bir üçüncüsüne kasıtlı yanlış EAN yazın (son haneyi değiştirin).
+5. Kaydedip «2. Dosyayı yükleyin» → dosya seçin → «Önizle»: «1 EAN yazılacak · 1 ürün pasife
+   alınacak · 1 satırda hata» ve hata listesinde üçüncü satır «EAN geçersiz» sebebiyle.
+6. «Uygula» → onay → sonuç satırı. EAN yazdığınız ürünü Ürünler'de arayın: barkod yeni EAN.
+   «Hayır» dediğiniz ürün listede görünmemeli; şüpheli sayısı 2 azalmış olmalı.
+7. Aynı dosyayı tekrar yükleyip önizleyin: yazılacak 0 — «zaten aynı» sayılır.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`SupheliUrun`) · **kullanıcı kolaylığı: ✓**
+(İlke #5 · #6 · #8 · #11 · #16)
+
+---
+
 ## 🔴 K283 — ÜRÜN KATEGORİSİ TRENDYOL'UN KENDİ KATEGORİSİNDEN (EŞLEŞME TABLOSU) · 26.09.2026 · [KOD + MIGRATION + BAŞLANGIÇ VERİSİ KOŞTU — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı: _«ürün isminden karar vermemiz saçma, pazaryerleri ürünleri zaten kategorize etmiş»_ ·
@@ -231,7 +277,7 @@ yazıldı; kategori değişen **0** (1.184 zaten doğru · 18 karşılıksız ·
 (KDV 33 · karşılığı yok 18 · kategorisi bilinmeyen 23 · sahipliği bilinmeyen 17) ·
 `supheli-urunler-2026-09-26.xlsx` (708 şüpheli, 38'i işlem görüyor — «Doğru EAN» sütunu) ·
 `muhasebeci-kdv-sorusu-v2.xlsx`. **Sıradaki paket:** şüpheli listesi Excel'inin geri yüklenmesi
-(EAN + «sizin mi» → pasif) · ardından marka kod tablosu ve SKU yeniden kodlama önizlemesi.
+(EAN + «sizin mi» → pasif) **→ K284'te yazıldı** · ardından marka kod tablosu ve SKU yeniden kodlama önizlemesi.
 
 ### HALİL TEST LİSTESİ (canlı)
 1. Ayarlar → Kategoriler: üstte «Trendyol kategori eşleşmesi» kartı — «N Trendyol kategorisi · M

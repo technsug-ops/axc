@@ -13,6 +13,7 @@ import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { SayfalamaCubugu } from "@/components/sayfalama";
 import { UzunAd } from "@/components/uzun-ad";
 import { UrunGorseli } from "@/components/urun-gorseli";
+import { supheliSayisi } from "@/lib/supheli-urun-veri";
 import { kartAdresi } from "@/lib/kart-adresi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,12 +49,15 @@ export default async function UrunlerSayfasi({
   await sayfaIzni("urun.gor");
   /* K273-③: resimsiz kutuda "resim ekle" rozeti yalnız ürün düzenleme izniyle. */
   const resimEkleyebilir = await izinVarMi("urun.yaz");
+  /* K284: şüpheli sayısı listeyle AYNI gövdeden; yalnız düzenleme izniyle (ekran urun.yaz ister). */
+  const supheli = resimEkleyebilir ? await supheliSayisi() : null;
 
   const { q, sayfa } = await searchParams;
   const arama = (q ?? "").trim();
   const bicim = await bicimlendirici();
   const t = await getTranslations("Urunler");
   const ortak = await getTranslations("Ortak");
+  const tSupheli = await getTranslations("SupheliUrun");
   const tBaslik = await getTranslations("Basliklar");
 
   /**
@@ -231,6 +235,15 @@ export default async function UrunlerSayfasi({
             {ortak("kayitSayisi", { sayi: urunler.length })}
             {arama ? ortak("aramaEki", { arama }) : ""}
           </p>
+          {supheli !== null ? (
+            supheli > 0 ? (
+              <Baglanti href="/urunler/supheli" className="inline-flex min-h-11 items-center text-sm md:min-h-0">
+                {tSupheli("baglanti", { sayi: supheli })}
+              </Baglanti>
+            ) : (
+              <p className="text-muted-foreground text-sm">{tSupheli("baglanti", { sayi: 0 })}</p>
+            )
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           <ExcelIndir liste="urunler" parametreler={{ q: arama }} />
