@@ -191,7 +191,56 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
-## 🔴 K285 — MARKA KOD TABLOSU (3 HARFLİ, BENZERSİZ) · 26.09.2026 · [KOD + MIGRATION KOŞTU — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🔴 K286 — SKU ÖNİZLEMESİ (KAT-MRK-NNNN) · 26.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı kararları 26.09: model parçası **addan tahmin edilmez** (canlıda «1000W» güç değeri,
+«KX» marka harfleri model sanıldı) → **sıra no**; yeni kod **Firma SKU**'ya; eski kod silinmez,
+aramada çalışmaya devam eder (uygulama AYRI paket).
+
+- **Kural** `lib/sku-onizleme.ts` (saf): `KAT-MRK-NNNN`, ön ek başına sıra, verilen KALICI sırayla.
+  Kod alamayan UYDURULMAZ: `KATEGORI_YOK` · `KATEGORI_KODSUZ` · `MARKA_YOK`. Başka kayıttaki kod
+  ATLANIR (kendi kodu hariç), sıradaki verilir.
+- **Veri** `lib/sku-onizleme-veri.ts`: aktif varyant · kalıcı sıra (ürün giriş anı → varyant →
+  kimlik) · çakışma kümesi BÜTÜN kayıtların (pasifler dahil) SKU/Firma SKU/barkodu. HİÇBİR ŞEY YAZMAZ.
+- **Ekran** `/urunler/sku-onizleme` (izin `urun.gor`; Ürünler sayfasında bağlantı): durum kutuları
+  (sıfırken de durur) · kod alamayanların TAMAMI · ilk 50 örnek · Excel «sku-onizleme».
+- **Canlı (26.09):** 1.255 aktif ürün → **1.255 kod alabilir**, tekrar eden kod **0**, 172 ön ek
+  (OYU-LEG ×245 · KUC-KRC ×112 · MUT-KRC ×60 …).
+- **Bekçi** `sku-onizleme:dogrula` 21 · harness **13/13**.
+
+**AÇIK:** ① uygulama paketi (Firma SKU'ya yazım + eski kodun aramada yaşaması — `kodKosulu`na
+«eski kod» rolü; şema kararı gerekir) · ② `sku-oner.ts` yeni ürün için hâlâ ESKİ biçimi (2 harfli,
+addan) öneriyor — uygulama paketiyle birlikte tabloya bağlanır · ③ etiket basımı (yazıcı/ölçü kararı).
+
+### BUGÜNKÜ VERİ İŞLERİ (26.09, canlı, hepsi izli · şartlı · anlık görüntülü)
+- **EAN — 391 ürün** (şüpheli listesi): HB sipariş detayı `productBarcode` **367** (K284-hb-ean) ·
+  `alislar (5).xlsx` md5 b4ccfd3b…, tedarikçi sipariş no eşleşmesi **10** · HB katalog (mpop) **1** ·
+  kullanıcı beyanı **13** (3'ü web teyitli: LEGO 42160, Grundig VCP 3930, Dolu 1848; Iceflow'da baştaki
+  0 düşmüştü → `041604375644`, eBay teyidi). İş gören şüpheli ürünlerde EAN eksiği **0**.
+  ⚠ Ölçüm: HB listeleme ucu barkod DÖNMÜYOR; sipariş detayı dönüyor (2024-06'ya kadar geriye).
+- **Marka:** TY ürün kaydı `brand.name` ile **108** ürün (K285-ty-marka) · kullanıcı: Shark,
+  Lamborghini ×3, Tefal · LG=LGE · «hepsini ekle» ile 6 marka + Lamborghini=LMB → tabloda **109** marka.
+- **KDV — 21 ürün istisnası** (muhasebeci listesi + Oral-B D100 kullanıcı mesajı); kategoriye
+  dokunulmadı, geçmiş satış değişmedi.
+- **Pasif — 619 uyuyan kayıt** (kategori/marka boş · stok TAM 0 · 90 gün satış yok · HİÇBİR kanalda
+  açık değil; ⚠ sipariş aktarımı yalnız AKTİF varyantı eşleştiriyor — kanalda açık 1 ürün hariç tutuldu).
+- **TY eşitlemesi elle koşuldu:** 31 kategori + 31 görsel.
+
+### HALİL TEST LİSTESİ (canlı)
+1. Ürünler → başlığın altında **«SKU önizlemesi»** bağlantısı → tıklayın.
+2. Üstte altı kutu: «Kod alabilir» **1.255** · diğer beşi **0** (Kategorisi yok, Markası tabloya bağlı
+   değil, … hepsi görünür, sıfır yazar).
+3. «Kod alamayan ürünler (0)» — «Kod alamayan ürün yok» yazmalı.
+4. Örnek listede ilk satırlar: `axcali1719 → MUT-TFL-0001` (Tefal Optiss) · `axcali1665 → OYU-LEG-0001`.
+5. «Excel indir» → 1.255 satır; «Önerilen yeni Firma SKU» sütunu dolu, aynı kod iki satırda yok.
+6. Sayfayı yenileyin → aynı kodlar (sıra değişmemeli).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`SkuOnizleme`) · **kullanıcı kolaylığı: ✓**
+(İlke #5 · #12 · #13 · #16)
+
+---
+
+## 🟢 K285 — MARKA KOD TABLOSU (3 HARFLİ, BENZERSİZ) · 26.09.2026 · [CANLIDA — HALİL TESTİ GEÇTİ 26.09 (Karcher KRH→KAR→KRH izli; çakışma reddi ekranda görüldü); MİMAR ONAYI BEKLİYOR]
 
 Kullanıcı: _«axcali21232 gibi anlamsız SKU istemiyorum»_ → SKU sistematiği KAT-MRK-MODEL-NN; marka
 parçası için kod tablosu (şema onayı 26.09). Eskiden kod her seferinde ADDAN hesaplanıyordu

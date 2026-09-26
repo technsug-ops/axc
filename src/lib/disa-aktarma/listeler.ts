@@ -21,6 +21,7 @@ import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { stoguVarMi } from "@/lib/stok-siralama";
 import { supheliSatirlari } from "@/lib/supheli-urun-veri";
 import { markasizUrunler } from "@/lib/marka-kodu-veri";
+import { skuOnizlemeSatirlari } from "@/lib/sku-onizleme-veri";
 
 /**
  * ============================================================================
@@ -48,6 +49,8 @@ export const LISTELER = [
   "supheli",
   /** K285 — markası boş ürünler; marka kodu verilemeyenler (doldurulacak liste). */
   "markasiz",
+  /** K286 — SKU önizlemesi (KAT-MRK-NNNN); hiçbir şey yazmaz. */
+  "sku-onizleme",
 ] as const;
 export type ListeAnahtari = (typeof LISTELER)[number];
 
@@ -91,6 +94,8 @@ export async function listeSayfasi(
       return supheliSayfasi();
     case "markasiz":
       return markasizSayfasi();
+    case "sku-onizleme":
+      return skuOnizlemeSayfasi();
   }
 }
 
@@ -879,5 +884,40 @@ async function markasizSayfasi(): Promise<Sayfa> {
     ],
     satirlar,
     genislikler: [28, 60, 18, 18, 18, 22, 8, 24],
+  };
+}
+
+/**
+ * SKU ÖNİZLEMESİ (K286) — ekranla AYNI gövde (`skuOnizlemeSatirlari`).
+ * Hiçbir şey yazmaz; her aktif ürünün alacağı kodu ya da alamama nedenini gösterir.
+ */
+async function skuOnizlemeSayfasi(): Promise<Sayfa> {
+  const tSku = await getTranslations("SkuOnizleme");
+  const satirlar = (await skuOnizlemeSatirlari()).map((s) => [
+    s.kimlik,
+    s.urunAdi,
+    s.varyant,
+    s.kategori,
+    s.marka,
+    s.eskiFirmaSku,
+    s.sku,
+    s.yeniKod ?? "",
+    tSku(`durum.${s.durum}`),
+  ]);
+  return {
+    ad: tSku("baslik"),
+    basliklar: [
+      tSku("sutunKimlik"),
+      tSku("sutunUrun"),
+      tSku("sutunVaryant"),
+      tSku("sutunKategori"),
+      tSku("sutunMarka"),
+      tSku("sutunEski"),
+      tSku("sutunSku"),
+      tSku("sutunYeni"),
+      tSku("sutunDurum"),
+    ],
+    satirlar,
+    genislikler: [28, 55, 12, 22, 16, 20, 20, 20, 26],
   };
 }

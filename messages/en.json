@@ -4666,5 +4666,33 @@
     "sutunKategori": "",
     "sutunAktif": "",
     "sutunMarka": ""
+  },
+  "SkuOnizleme": {
+    "baslik": "",
+    "aciklama": "",
+    "kural": "",
+    "sayac": "",
+    "durum": {
+      "HAZIR": "",
+      "AYNI": "",
+      "KATEGORI_YOK": "",
+      "KATEGORI_KODSUZ": "",
+      "MARKA_YOK": "",
+      "CAKISMA": ""
+    },
+    "sorunluBaslik": "",
+    "sorunluBos": "",
+    "ornekBaslik": "",
+    "ornekNot": "",
+    "sutunKimlik": "",
+    "sutunUrun": "",
+    "sutunVaryant": "",
+    "sutunKategori": "",
+    "sutunMarka": "",
+    "sutunEski": "",
+    "sutunSku": "",
+    "sutunYeni": "",
+    "sutunDurum": "",
+    "baglanti": ""
   }
 }

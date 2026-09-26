@@ -4666,5 +4666,33 @@
     "sutunKategori": "Kategori",
     "sutunAktif": "Aktif",
     "sutunMarka": "Marka (doldurun)"
+  },
+  "SkuOnizleme": {
+    "baslik": "SKU önizlemesi",
+    "aciklama": "Yeni Firma SKU biçimi: KATEGORİ-MARKA-SIRA (örn. OYU-LEG-0001). Bu ekran HİÇBİR ŞEY DEĞİŞTİRMEZ — yalnız her ürünün hangi kodu alacağını gösterir.",
+    "kural": "Sıra numarası ürünün sisteme giriş sırasına göre verilir; başka bir kayıtta kullanılan kod atlanır. Kod alamayan ürünün nedeni yazar.",
+    "sayac": "{toplam} aktif ürün · {hazir} kod alabilir",
+    "durum": {
+      "HAZIR": "Kod alabilir",
+      "AYNI": "Kodu zaten bu",
+      "KATEGORI_YOK": "Kategorisi yok",
+      "KATEGORI_KODSUZ": "Kategorisinin kodu yok",
+      "MARKA_YOK": "Markası tabloya bağlı değil",
+      "CAKISMA": "Kod çakışıyor"
+    },
+    "sorunluBaslik": "Kod alamayan ürünler ({sayi})",
+    "sorunluBos": "Kod alamayan ürün yok — bütün aktif ürünler yeni kodu alabilir.",
+    "ornekBaslik": "İlk {sayi} ürünün önizlemesi",
+    "ornekNot": "Tamamı Excel'de: «Listeyi indir».",
+    "sutunKimlik": "Kimlik",
+    "sutunUrun": "Ürün adı",
+    "sutunVaryant": "Varyant",
+    "sutunKategori": "Kategori",
+    "sutunMarka": "Marka",
+    "sutunEski": "Şimdiki Firma SKU",
+    "sutunSku": "SKU",
+    "sutunYeni": "Önerilen yeni Firma SKU",
+    "sutunDurum": "Durum",
+    "baglanti": "SKU önizlemesi"
   }
 }

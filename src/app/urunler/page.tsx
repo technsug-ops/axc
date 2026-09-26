@@ -58,6 +58,7 @@ export default async function UrunlerSayfasi({
   const t = await getTranslations("Urunler");
   const ortak = await getTranslations("Ortak");
   const tSupheli = await getTranslations("SupheliUrun");
+  const tSku = await getTranslations("SkuOnizleme");
   const tBaslik = await getTranslations("Basliklar");
 
   /**
@@ -244,6 +245,10 @@ export default async function UrunlerSayfasi({
               <p className="text-muted-foreground text-sm">{tSupheli("baglanti", { sayi: 0 })}</p>
             )
           ) : null}
+          {/* K286: salt okuma önizleme — ürün görebilen herkese. */}
+          <Baglanti href="/urunler/sku-onizleme" className="inline-flex min-h-11 items-center text-sm md:ml-4 md:min-h-0">
+            {tSku("baglanti")}
+          </Baglanti>
         </div>
         <div className="flex flex-wrap gap-2">
           <ExcelIndir liste="urunler" parametreler={{ q: arama }} />

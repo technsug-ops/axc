@@ -430,7 +430,9 @@
     "supheli-urun:dogrula": "tsx scripts/supheli-urun-dogrula.ts",
     "supheli-urun-mutasyon:kontrol": "tsx scripts/supheli-urun-mutasyon-kontrol.ts",
     "marka-kodu:dogrula": "tsx scripts/marka-kodu-dogrula.ts",
-    "marka-kodu-mutasyon:kontrol": "tsx scripts/marka-kodu-mutasyon-kontrol.ts"
+    "marka-kodu-mutasyon:kontrol": "tsx scripts/marka-kodu-mutasyon-kontrol.ts",
+    "sku-onizleme:dogrula": "tsx scripts/sku-onizleme-dogrula.ts",
+    "sku-onizleme-mutasyon:kontrol": "tsx scripts/sku-onizleme-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

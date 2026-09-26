@@ -221,4 +221,9 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * `supheli-urun` ile ortak) mutasyona uğratıyor. ⚠ Ölçümle zorlandı.
    */
   "marka-kodu-mutasyon:kontrol",
+  /**
+   * K286 (26.09.2026) — `sku-onizleme` dışa aktarma listesini (`listeler.ts`,
+   * `supheli-urun` ve `marka-kodu` ile ortak) mutasyona uğratıyor. ⚠ Ölçümle zorlandı.
+   */
+  "sku-onizleme-mutasyon:kontrol",
 ];
