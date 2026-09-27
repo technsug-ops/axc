@@ -191,7 +191,14 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
-## 🔴 K291 — ÜRÜN ETİKETİ BASIMI (XP-490B, FİRMA SKU BARKODU) · 27.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🔴 K291 — ÜRÜN ETİKETİ BASIMI (XP-490B, FİRMA SKU BARKODU) · 27.09.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
+
+─── ② 40×30 KARAKODLU (`c9fb71e`, 27.09): kullanıcının ürün rulosu 40×30; Code128 çizgisi 203 dpi'de
+~1,6 nokta (güvensiz) → 40×30 karekod + kod iki satır (ön ek / sıra no), VARSAYILAN ölçü. Bekçi 28,
+harness 10/10. ⚠ Basılan ilk etiket `OYU*LEG*0020` okundu: etiket DOĞRUYDU, USB okuyucu ABD klavye
+düzenindeydi (TR Q'da `-` tuşu `*` yazar; küçük `i` → `ı`). Kullanıcı okuyucuyu ayarladı, düzeldi.
+Sistem tarafı emniyet («bulunamazsa `*`→`-`, `ı`→`i` ile bir kez daha ara») ÖNERİLDİ, onay yok —
+açılış şartı: ikinci bir okuyucu/bilgisayarda aynı belirti.
 
 Kullanıcı: yazıcı **Xprinter XP-490B** (termal, 4 inç); rulo kargo ölçüsünde (100×100 / 100×150);
 içerik kararı «Firma SKU barkodu + kod + ürün adı» (raf YAZILMAZ — ürün taşınırsa etiket yalancı olur).
@@ -314,7 +321,7 @@ değiştirin → arama kaybolmaz · Tazminat'ta bir ürün adı · Hakediş → 
 
 ---
 
-## 🔴 K287 — ESKİ KOD TABLOSU + ARAMADA ESKİ KOD + YENİ BİÇİMDE «SKU ÖNER» · 27.09.2026 · [KOD + MIGRATION KOŞTU — DEPLOY, SONRA UYGULAMA]
+## 🔴 K287 — ESKİ KOD TABLOSU + ARAMADA ESKİ KOD + YENİ BİÇİMDE «SKU ÖNER» · 27.09.2026 · [KOŞTU — UYGULANDI: 1.255 aktif varyant yeni kodda, `SKU_YENIDEN_KODLANDI` izi 1.255, `EskiKod` 1.255; eski kodda kalan 623 kaydın HEPSİ pasif (ölçüldü 27.09) — HALİL TESTİ BEKLİYOR]
 
 Kullanıcı kararları 26–27.09: yeni kod **Firma SKU**'ya; eski kod **silinmez**, aramada ve okutmada
 çalışır. «Ek alan» yerine **tablo** (onaylı): ikinci bir yeniden kodlamada ilk eski kod kaybolmasın;
