@@ -138,8 +138,7 @@ tutar+durum+eylemler sağda — arada koca bir boşluk.
 
 ---
 
-## 🔴 K264 — N11 «ÇEKİM KOŞMADI» YANLIŞ ALARMDI: BOŞ ÇEKİM DAMGA YAZAR, ROTA 503 · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🔴 K264 — N11 «ÇEKİM KOŞMADI» YANLIŞ ALARMDI: BOŞ ÇEKİM DAMGA YAZAR, ROTA 503 · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → ÖLÇÜLDÜ 28.09 (salt okuma, canlı iz): N11 damgası 25.09'dan beri kesintisiz — 25.09: 707 · 26.09: 752 · 27.09: 748, hepsi boş çekim (apiPaket 0), en uzun ara 20 dk → yanlış «koşmadı» alarmı doğamaz. ⚠ Madde 4 (gerçek N11 siparişi) AÇIK: bu aralıkta N11 siparişi yok, yol tetiklenmedi]
 Kullanıcı 24.09 09:58: panel _«N11 çekimi 660 DAKİKADIR koşmadı — zamanlayıcıyı
 kontrol edin»_ diyor, cron-job.org her 2 dk **200 OK** — _«N11 normal çalışıyor
 görünüyor, problem nedir?»_
@@ -1766,8 +1765,7 @@ yetim kaldığı için silindi) · **kullanıcı kolaylığı: ✓** (İlke #5 �
     panel-mutasyon:kontrol   41/41 (14'ü yeni · 4 K248 mutasyonu çipe taşındı · 1'i yön değiştirdi)
     i18n · lint (0 hata) · kontrol-karakteri · mutasyon-cakisma · tsc   0
 
-## 🔴 K251 — TUR, KIRMIZI BEKÇİNİN TAM ÇIKTISINI SAKLIYOR · 23.09.2026 · [KOD KOŞTU]
-
+## 🟢 K251 — TUR, KIRMIZI BEKÇİNİN TAM ÇIKTISINI SAKLIYOR · 23.09.2026 · [KOD KOŞTU → KAPANDI 28.09: tur 27.09 gecesi reddedilen push'ta kırmızı bekçinin TAM satırını raporladı («BEKLEYENLER.md:207 → 0x08»), sebep turun kendi çıktısından bulundu]
 ### ⛔ VAKA — BİR TUR BOŞA GİTTİ
 
 `panel-mutasyon:kontrol` turun içinde **27,9 saniyede çöktü** ve push düştü.
