@@ -630,8 +630,7 @@ Bekçi `mal-kabul:dogrula` +2 (DEĞERLE: iki etiket aynı olamaz · görev etike
 
 ---
 
-## 🔴 K278 — TELEFONDA MENÜ SEÇİMDEN SONRA KAPANMIYORDU · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K278 — TELEFONDA MENÜ SEÇİMDEN SONRA KAPANMIYORDU · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (telefon + bilgisayar test listesi A–H, kullanıcı: «hepsi tamam»); MİMAR ONAYI BEKLİYOR]
 Kullanıcı: _«mobilde menü açılıyor, herhangi bir menüye basıyoruz, altta sayfa açılıyor ama
 menünün kapanması için boşluğa basılması gerekiyor — bu bir hata»_. Telefonda kenar menü bir
 çekmece (`openMobile`); bağlantılar sayfayı değiştiriyordu ama çekmeceyi kapatan yoktu.
@@ -655,8 +654,7 @@ doluluğuyla). Harness **35/35** (+3: öğe · logo · masaüstünde daralma).
 
 ---
 
-## 🔴 K277 — PANEL «MAL KABUL» = LİSTENİN GELEN ADETİ (K220 REGRESYONU) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K277 — PANEL «MAL KABUL» = LİSTENİN GELEN ADETİ (K220 REGRESYONU) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (telefon + bilgisayar test listesi A–H, kullanıcı: «hepsi tamam»); MİMAR ONAYI BEKLİYOR]
 Kullanıcı (telefon): _«buradaki 17 mal kabul /mal-kabul?pencere=BUGUN'e geliyor, doğru değil
 sanki»_. Ölçüldü (canlı, bugün): panel **17 = ALIM kaydı**; açılan liste **9 ürün · 27 adet** —
 17 listede hiçbir yerde yok (İlke #16). Karar (kullanıcı): **panel adet göstersin**.
@@ -684,8 +682,7 @@ alım listesinin kayıt sayısıyla tutuyor).
 
 ---
 
-## 🔴 K276 — PAKET DÜĞMESİ EYLEM ADI · PANEL HUNİ KUTULARI EŞİT BOY · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K276 — PAKET DÜĞMESİ EYLEM ADI · PANEL HUNİ KUTULARI EŞİT BOY · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (telefon + bilgisayar test listesi A–H, kullanıcı: «hepsi tamam»); MİMAR ONAYI BEKLİYOR]
 Kullanıcı (telefon ekran görüntüleri): _«Paketlenmedi değil Paketlendi olmalıydı buton»_ ·
 _«kare diğerlerinden farklı boyutta»_.
 
@@ -716,8 +713,7 @@ giren 27. Seçenek: panel adet göstersin ya da liste «kabul edilen alım» kut
 
 ---
 
-## 🔴 K275 — SATIŞ KARTI: KARGO DÜĞMESİ PAKETLENDİ'NİN ÜSTÜNE BİNİYORDU · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K275 — SATIŞ KARTI: KARGO DÜĞMESİ PAKETLENDİ'NİN ÜSTÜNE BİNİYORDU · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (telefon + bilgisayar test listesi A–H, kullanıcı: «hepsi tamam»); MİMAR ONAYI BEKLİYOR]
 Kullanıcı (telefon ekran görüntüsü): _«Kargoya verildi butonu diğer butonun üzerine gelmiş;
 "Kargoya verilecek" yerine "Kargolanacak" olarak değiştirebilirsin»_. Kök K272'deydi: satır
 eylemleri telefonda eşit ızgaraya girdi, ama METİNLİ iki durum düğmesi (Kargo · Paketlendi)
@@ -744,8 +740,7 @@ Bekçi: `satir-karti:dogrula` yeni bölüm (sayaçlı 3 → 4, 47 → 57). Harne
 
 ---
 
-## 🔴 K274 — HALKA SARMALAYICISI GENİŞLİKSİZDİ (K270 artığı) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K274 — HALKA SARMALAYICISI GENİŞLİKSİZDİ (K270 artığı) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (telefon + bilgisayar test listesi A–H, kullanıcı: «hepsi tamam»); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 25.09 (ekran görüntüsü): _«halka kareli alan kadar olmalı, 2 pazaryeri veya 3
 pazaryeri eklenmiş olması halkayı büyütüp küçültmemeli»_. Kök K270'teydi: telefon/masaüstü
 ayrımı için halkanın çevresine eklenen `div` genişlik taşımıyordu; SVG genişliği o `div`in
@@ -764,8 +759,7 @@ Bekçi: `panel:dogrula` ölçütü + panel harness'ine «HALKA SARMALAYICISI GEN
 
 ---
 
-## 🔴 K273 — ÜRÜN KÜÇÜK RESMİ: PAZARYERİNDEN OTOMATİK, LİNK OLARAK · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K273 — ÜRÜN KÜÇÜK RESMİ: PAZARYERİNDEN OTOMATİK, LİNK OLARAK · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (telefon + bilgisayar test listesi A–H, kullanıcı: «hepsi tamam»); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 25.09: _«ürünlerin küçük resmini getirebilir miyiz… otomatik yüklemeyi tercih
 ederim, sıralı olarak herhangi birinde varsa alıp… hangi firmadan alındığı mühim değil…
 database'e link olarak depolayabiliriz»_ · kırık link için: _«tekrar aynı sıralama ile ilk
@@ -886,8 +880,7 @@ izinsiz rozet · rozet köşesi · tazeleme · http · yerel adres · stok izni)
 
 ---
 
-## 🔴 K272 — İÇ SAYFALAR TELEFON ①: BEŞ ORTAK BİLEŞEN · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K272 — İÇ SAYFALAR TELEFON ①: BEŞ ORTAK BİLEŞEN · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (telefon + bilgisayar test listesi A–H, kullanıcı: «hepsi tamam»); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 25.09 (alımlar · ürünler · stok · iade ekran görüntüleri): _«panel kartlarındaki
 yapıyı iç sayfalarda da yapabilir miyiz? Çok dağınık, farklı boylarda, farklı genişlikte,
 yazılar taşıyor»_. Demo (tuval Telefon ④–⑥) onaylandı. Kök ortak bileşenlerdeydi;
@@ -948,8 +941,7 @@ gördüğü sayfanın ekran görüntüsünü gönderir, o sayfa ele alınır. (A
 
 ---
 
-## 🔴 K271 — HALKA KADRAJIN %39'U → %47'Sİ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K271 — HALKA KADRAJIN %39'U → %47'Sİ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (telefon + bilgisayar test listesi A–H, kullanıcı: «hepsi tamam»); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 25.09: _«pazaryeri arttıkça yuvarlak ufalıyor»_. Sebep: halka kadrajın
 GENİŞLİĞİNE göre ölçekleniyor; pazaryeri kartı uzayınca halka kartı da uzuyor
 ama halka büyüyemiyordu. Darboğaz okların iki yanda ayırdığı ~100 birimlik yazı
@@ -971,8 +963,7 @@ sabit sayı değil dışa açılan sınırları okuyor. Mutasyon: R 76'ya dönü
 
 ---
 
-## 🔴 K270 — TELEFON DÜZENİ: EŞİT KUTU IZGARASI, HIZLI İŞLEMLER, SABİT ALT BAR, MENÜ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K270 — TELEFON DÜZENİ: EŞİT KUTU IZGARASI, HIZLI İŞLEMLER, SABİT ALT BAR, MENÜ · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (telefon + bilgisayar test listesi A–H, kullanıcı: «hepsi tamam»); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 25.09: Entegra / Trendyol / Hepsiburada satıcı uygulamalarını gösterip
 _«alt butonların fonksiyonelliği, kartların boyutlarının düzenli olması hem güven
 veriyor hem kullanım kolaylığı… bizde kartlar ve içindeki yazılar çok büyük, boşluk
