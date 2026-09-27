@@ -1,5 +1,9 @@
 import { kaynakOku } from "./kaynak-oku";
+import { createTranslator } from "next-intl";
+
+import tr from "../messages/tr.json";
 import { giderAramaKosulu } from "../src/lib/gider-arama";
+import { rafAramasi } from "../src/lib/raf-arama";
 
 /**
  * ============================================================================
@@ -16,7 +20,7 @@ import { giderAramaKosulu } from "../src/lib/gider-arama";
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 2;
+const BOLUM_SAYISI = 3;
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
     gecen++;
@@ -46,6 +50,8 @@ console.log("\n2) ekranlar");
 {
   const raf = oku("src/app/ayarlar/konumlar/page.tsx");
   kontrol("Raflar: arama kutusu + liste aramadan", raf.includes('<KodAramaKutusu temelAdres="/ayarlar/konumlar"') && raf.includes("{gorunen.map((konum) => ("));
+  kontrol("Raflar: liste gövdeden (rafAramasi), çıplak süzgeç yok", raf.includes("= rafAramasi(konumlar, arama);") && !raf.includes(".includes(kucuk(arama))"));
+  kontrol("  ...tam eşleşmede «N raf daha» cümlesi çiziliyor", raf.includes('tamEslesme ? t("aramaTamEslesme", { q: arama, sayi: benzerSayisi })'));
   kontrol("  ...başlık sayısı TÜM raflar", raf.includes('t("tanimliRaflar", { sayi: konumlar.length })'));
 
   const gider = oku("src/app/giderler/page.tsx");
@@ -66,6 +72,33 @@ console.log("\n2) ekranlar");
   kontrol("  ...ayrı parametre (ödeme araması `q` ile çakışmıyor)", hak.includes('parametre="pq"') && hak.includes("tasinanlar={sp}"));
 }
 kosanBolumler.push("ekran");
+
+console.log("\n3) raf araması — değerle (K289-③: «A1 yazınca A11, A12 de geliyor»)");
+{
+  const raflar = [
+    { code: "A1", name: null },
+    { code: "A11", name: null },
+    { code: "A12", name: "a1 yanı" },
+    { code: "B2", name: "koridor a1 karşısı" },
+    { code: "C3", name: null },
+  ];
+  const kodlar = (x: { gorunen: { code: string }[] }) => x.gorunen.map((k) => k.code).join(",");
+  const a1 = rafAramasi(raflar, "A1");
+  kontrol("«A1» → YALNIZ A1 (birebir kod)", kodlar(a1) === "A1" && a1.tamEslesme, kodlar(a1));
+  kontrol("  ...içinde geçen öteki 3 raf SAYILIYOR (A11 · A12 · B2)", a1.benzerSayisi === 3, a1.benzerSayisi);
+  kontrol("«a1» küçük harfle de birebir", kodlar(rafAramasi(raflar, " a1 ")) === "A1");
+  const a = rafAramasi(raflar, "A");
+  kontrol("«A» (birebir raf yok) → içinde geçenlerin hepsi, tam eşleşme DEĞİL", !a.tamEslesme && a.gorunen.length === 4 && a.benzerSayisi === 0, kodlar(a));
+  const ad = rafAramasi(raflar, "koridor");
+  kontrol("adla arama sürüyor", kodlar(ad) === "B2" && !ad.tamEslesme);
+  kontrol("boş arama → hepsi", rafAramasi(raflar, "  ").gorunen.length === raflar.length);
+  const t = createTranslator({ locale: "tr", messages: tr as never, namespace: "Raf" as never }) as unknown as (k: string, v: object) => string;
+  const iki = t("aramaTamEslesme", { q: "A1", sayi: 2 });
+  const sifir = t("aramaTamEslesme", { q: "A1", sayi: 0 });
+  kontrol("cümle: benzer varsa sayısını söylüyor", iki.includes("2 raf daha"), iki);
+  kontrol("cümle: benzer yoksa «0 raf daha» DEMİYOR", sifir.includes("birebir") && !sifir.includes("raf daha"), sifir);
+}
+kosanBolumler.push("raf");
 
 console.log("\n" + "=".repeat(70));
 if (kosanBolumler.length !== BOLUM_SAYISI) {

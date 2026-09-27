@@ -22,6 +22,7 @@ const FILTRE = "src/app/giderler/filtre.tsx";
 const LISTE = "src/lib/disa-aktarma/listeler.ts";
 const TAZ = "src/app/tazminat/page.tsx";
 const HAK = "src/app/hakedis/page.tsx";
+const RAFARA = "src/lib/raf-arama.ts";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -30,6 +31,15 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "/**\n * GİDER ARAMASI — TEK KOŞUL", koy: "/**\n * GIDER ARAMASI - TEK KOSUL", bozdugu: "hicbir sey" },
   { ad: "GIDER ARAMASI KART ADINI ARAMIYOR", yon: "KALDIRAN", dosya: KOSUL,
     bul: "      { creditCard: { label: { contains: e } } },\n", koy: "", bozdugu: "kartla odenen gider kart adindan bulunamaz" },
+  /* K289-③ raf araması: birebir kod. */
+  { ad: "RAF BIREBIR DALI KALKTI (A1 -> A11, A12 de gelir)", yon: "KALDIRAN", dosya: RAFARA,
+    bul: "  if (tam.length > 0) return", koy: "  if (false) return", bozdugu: "okutulan raf baskalariyla karisir" },
+  { ad: "RAF BIREBIR ONEKE GENISLEDI", yon: "FAZLADAN", dosya: RAFARA,
+    bul: "kucuk(k.code) === q", koy: "kucuk(k.code).startsWith(q)", bozdugu: "A1 aramasi A11'i birebir sayar" },
+  { ad: "RAF BENZER SAYISI SIFIRLANDI", yon: "KALDIRAN", dosya: RAFARA,
+    bul: "benzerSayisi: icerenler.length - tam.length", koy: "benzerSayisi: 0", bozdugu: "gizlenen raflarin varligi ekranda yazmaz" },
+  { ad: "RAF TAM ESLESME CUMLESI CIZILMIYOR", yon: "KALDIRAN", dosya: RAF,
+    bul: 'tamEslesme ? t("aramaTamEslesme"', koy: 'false ? t("aramaTamEslesme"', bozdugu: "kullanici neden tek raf geldigini bilmez" },
   { ad: "RAF LISTESI ARAMAYI YOK SAYIYOR", yon: "KALDIRAN", dosya: RAF,
     bul: "{gorunen.map((konum) => (", koy: "{konumlar.map((konum) => (", bozdugu: "arama yazilir, liste suzulmez" },
   { ad: "GIDER ARAMASI SORGUDA DEGIL (toplam aramaya uymaz)", yon: "KALDIRAN", dosya: GIDER,

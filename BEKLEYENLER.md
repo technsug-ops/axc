@@ -263,7 +263,7 @@ adım: kontrolleri GitHub Actions'a taşımak (depo açık → ücretsiz; DB ist
 
 ---
 
-## 🔴 K288 — MARKA LİSTESİ GERİ YÜKLEME + ARAMA (İLKE #17) · 27.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🟢 K288 — MARKA LİSTESİ GERİ YÜKLEME + ARAMA (İLKE #17) · 27.09.2026 · [CANLIDA — HALİL TESTİ GEÇTİ 27.09 (Markalar arama/kod/sayılar/önizle kapalı; SKU önizleme arama); MİMAR ONAYI BEKLİYOR]
 
 Kullanıcı: _«markalarda olmayanı indirebiliyoruz ama düzeltip yükleyemiyoruz, onu da kurgula»_ ·
 _«Markalar kısmında arama tuşu yok, aradığım bir markayı bulmak saatler alır»_ · **KURAL:** _«birçok
@@ -300,7 +300,7 @@ marka** yazıldı (577 bağlı; FİSHER PRIZE → Fisher Price, LENOVO 600 → L
 
 ---
 
-## 🔴 K289 — İLKE #17 TARAMASI: ARAMASIZ BÜYÜYEN LİSTELER · 27.09.2026 · [② KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🔴 K289 — İLKE #17 TARAMASI: ARAMASIZ BÜYÜYEN LİSTELER · 27.09.2026 · [③ RAF BİREBİR KOD — KOD YAZILDI, RAF TESTİ YENİDEN BEKLİYOR; öteki üç ekran GEÇTİ]
 
 Canlı kayıt sayıları (27.09): **Hakediş** partileri **69** · **Raf konumları** **43** · **Giderler**
 **24** · **Tazminat** **21** — hepsi büyüyen listeler, arama kutusu YOK. Küçük ve sabit kalanlar
@@ -318,6 +318,8 @@ alacak» özeti TÜM taleplerden ve bunu yazar; boş arama «hiç kayıt yok» D
 50 tavanı eski partiyi gizlemesin). Bekçi `liste-aramasi:dogrula` 13 · harness **9/9**.
 HALİL: Raflar'da `A1` → tek raf · Giderler'de bir kategori adı → liste VE toplam şeridi değişir, sonra ay
 değiştirin → arama kaybolmaz · Tazminat'ta bir ürün adı · Hakediş → Detay → Partiler'de `Trendyol`.
+
+─── ③ 27.09.2026 — HALİL TESTİ: 8·9·10·11 + D (Markalar) + E (SKU önizlemesi) GEÇTİ; **7 DÜŞTÜ:** «A1 yazınca A1, A11, A12 geliyor». Arama «içinde geçen» çalışıyordu; raf kodu bir KİMLİK ve okutulan etiket birebirdir. Kural `lib/raf-arama.ts` (saf): kod BİREBİR tutuyorsa yalnız o raf, içinde geçenler SAYI olarak yazar («… N raf daha var»; 0 ise cümle yok — ICU çoğul); birebir yoksa eski davranış («A» → hepsi). Bekçi 13→23 (değer + cümlenin iki hâli next-intl ile çizilerek), harness 9→13. HALİL: Raflar'da `A1` → yalnız A1 + «2 raf daha var» · `A` → A ile başlayanların hepsi.
 
 ---
 

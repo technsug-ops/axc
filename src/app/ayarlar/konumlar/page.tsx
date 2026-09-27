@@ -10,6 +10,7 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { Badge } from "@/components/ui/badge";
 import { rafKoduGecerliMi } from "@/lib/kimlik";
+import { rafAramasi } from "@/lib/raf-arama";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -69,9 +70,9 @@ export default async function KonumlarSayfasi({ searchParams }: { searchParams: 
   // zorla düzeltilmez. Ama görünür olur: kod değişirse etiket yeniden basılır,
   // bu yüzden karar kullanıcınındır.
   const bicimsizSayi = konumlar.filter((k) => !rafKoduGecerliMi(k.code)).length;
-  /* K289 · İlke #17: raf kodu ya da adında arar (kamerayla raf etiketi okutulabilir); sayılar TÜM kümeden. */
-  const kucuk = (x: string) => x.toLocaleLowerCase("tr");
-  const gorunen = arama ? konumlar.filter((k) => [k.code, k.name ?? ""].some((a) => kucuk(a).includes(kucuk(arama)))) : konumlar;
+  /* K289 · İlke #17: raf kodu ya da adında arar (kamerayla raf etiketi okutulabilir); sayılar TÜM kümeden.
+     K289-③: kod bir rafla BİREBİR tutuyorsa yalnız o raf (A1 → A11/A12 değil); içinde geçenler sayı olarak yazar. */
+  const { gorunen, tamEslesme, benzerSayisi } = rafAramasi(konumlar, arama);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -127,7 +128,11 @@ export default async function KonumlarSayfasi({ searchParams }: { searchParams: 
           {konumlar.length > 0 ? (
             <div className="space-y-1">
               <KodAramaKutusu temelAdres="/ayarlar/konumlar" baslangic={arama} tasinanlar={{}} ipucu={t("aramaIpucu")} />
-              {arama ? <p className="text-muted-foreground text-xs">{t("aramaSonuc", { q: arama, sayi: gorunen.length })}</p> : null}
+              {arama ? (
+                <p className="text-muted-foreground text-xs">
+                  {tamEslesme ? t("aramaTamEslesme", { q: arama, sayi: benzerSayisi }) : t("aramaSonuc", { q: arama, sayi: gorunen.length })}
+                </p>
+              ) : null}
             </div>
           ) : null}
           {konumlar.length === 0 ? (

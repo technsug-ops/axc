@@ -486,7 +486,8 @@
     "etiketOlcusu": "Etiket ölçüsü: {en}×{boy} mm (termal rulo)",
     "aramaIpucu": "Raf kodu ya da adı ara (raf etiketini kamerayla okutabilirsiniz)",
     "aramaSonuc": "«{q}» için {sayi} raf",
-    "aramaBos": "«{q}» aramasına uyan raf yok."
+    "aramaBos": "«{q}» aramasına uyan raf yok.",
+    "aramaTamEslesme": "«{q}» rafı birebir bulundu.{sayi, plural, =0 {} other { İçinde «{q}» geçen # raf daha var — onlar için kodun devamını yazın.}}"
   },
   "KanalHesabi": {
     "kanalSecilmeli": "Kanal seçilmeli",
