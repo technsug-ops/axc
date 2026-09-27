@@ -189,6 +189,38 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K293 — ÜRÜN ANALİZİ TELEFONDA: SÜZGEÇLER KATLANIR, LİSTE İLK EKRANDA · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: _«mobilde ürün analizi filtrelerden dolayı çok verimsiz»_ · onay «başla». Ölçüm (kaynak): telefonda
+listeden önce 9 süzgeç bloğu alt alta (Sırala/Yön/Satır/En az adet/En az ciro beşi TAM genişlik; 11 kanal
+3–4 satır; dönem çipleri sarıyor) → ilk ürün 1,5–2 ekran aşağıda.
+
+- **Telefon:** eksen sekmeleri (ve mevsim çeyrekleri) tek satır yana kayar · arama HEP açık · kalan her şey
+  `TelefonSuzgecKabi` içinde, varsayılan KAPALI; düğmede açık süzgeçlerin ÖZETİ + sayısı («Süzgeçler (N)»).
+  Açılınca: Sırala·Yön·Satır tek satır, En az adet·ciro tek satır, dönem/kanal/raf yaşı çipleri tek satır kayar
+  («Özel aralık» kaydırılan satırın dışında — açılan form kırpılmasın), Uygula/Temizle eşit genişlik.
+- **Masaüstü aynen** (`md:block`, iç kap `md:contents`, ızgara `sm:` üstü değişmedi).
+- **Kural saf gövdede** `lib/rapor/analiz-ozeti.ts`: sayı yalnız VARSAYILANDAN sapanı sayar (Bu ay · tüm kanallar ·
+  TRY sayılmaz; dönem yine de özette yazar); stok ekseninde dönem/kanal yok, kova yalnız stokta.
+- **Bekçi** `urun-analizi:dogrula` 13→14 bölüm, 171 ölçüt · harness **21/21** (+4: varsayılan dönem sayılıyor ·
+  kova her eksende · panel telefonda açık gelir · panel masaüstünde gizli — dördü kırmızı).
+
+### HALİL TEST LİSTESİ (telefon, canlı)
+1. Ürün analizi: sekmeler tek satırda, parmakla yana kayıyor.
+2. Arama kutusu görünüyor; altında «Süzgeçler» düğmesi; HEMEN ardından toplam kutusu ve liste — ilk ürün ilk
+   ekranda.
+3. Hiç süzgeç yokken düğmede «Bu ay» yazar, sayı rozeti YOK.
+4. Düğmeye dokunun → süzgeçler açılır: Sırala · Yön · Satır sayısı üç kutu tek satırda; En az adet · En az ciro
+   tek satırda; dönem ve kanal düğmeleri tek satırda yana kayıyor.
+5. Kanal olarak Trendyol seçin → sayfa yenilenir, panel kapalı gelir; düğmede «Bu ay · Trendyol» ve rozet **1**.
+6. Bir marka işaretleyip Uygula → rozet **2**, özette «Marka: 1».
+7. Bilgisayarda aynı ekran: süzgeçler eskisi gibi açık, «Süzgeçler» düğmesi YOK.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`UrunAnalizi.suzgecler` · `ozetEtiketSayi`) ·
+**kullanıcı kolaylığı: ✓** (İlke #8 · #9 · #10 · #12 · #13)
+
+---
+
 ## 🔴 K292 — ALIMLAR SATIŞLARLA BİREBİR: MASAÜSTÜ TABLO + TELEFON KARTI · 27.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 Kullanıcı (ekran görüntüsü, /alimlar): _«burası düzensiz, satışlar sayfasını referans al — alım sayfasını

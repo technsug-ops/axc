@@ -1,4 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
+import { acikSuzgecSayisi, analizOzetParcalari } from "../src/lib/rapor/analiz-ozeti";
 
 import {
   analizAdresi,
@@ -51,7 +52,7 @@ import {
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 13;
+const BOLUM_SAYISI = 14;
 const kosanBolumler: string[] = [];
 
 let gecen = 0;
@@ -916,6 +917,57 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
     ),
   );
   kosanBolumler.push("kanal-secenekleri-gercek-satis");
+}
+
+/**
+ * K293 — TELEFONDA SÜZGEÇLER KATLANIR (kullanıcı 28.09.2026: «mobilde ürün
+ * analizi filtrelerden dolayı çok verimsiz»). Özet ve sayma kuralı SAF
+ * gövdede — değerle sınanır; düzen (arama dışarıda, geri kalan kapta) kaynakta.
+ */
+{
+  const temel = {
+    eksen: "hacim",
+    pencere: "BU_AY",
+    kanal: null,
+    para: "TRY" as const,
+    kova: null,
+    markaSayisi: 0,
+    kategoriSayisi: 0,
+    minAdet: null,
+    minCiro: null,
+    favori: false,
+    incelenecek: false,
+    sezon: null,
+  };
+  const bos = analizOzetParcalari(temel);
+  dogru("hiçbir süzgeç yokken sayı 0 (varsayılan dönem SAYILMAZ)", acikSuzgecSayisi(bos) === 0);
+  dogru("  ...ama özette dönem YAZIYOR (hangi döneme bakıldığı bilgidir)", bos.length === 1 && bos[0]!.tur === "donem");
+  dogru("dönem varsayılandan saparsa SAYILIR", acikSuzgecSayisi(analizOzetParcalari({ ...temel, pencere: "SON_30_GUN" })) === 1);
+  const cok = analizOzetParcalari({ ...temel, kanal: "TY", para: "EUR", markaSayisi: 2, minAdet: 3, favori: true, sezon: "YAZ" });
+  dogru("kanal · para · marka · en az adet · favori · sezon → 6", acikSuzgecSayisi(cok) === 6);
+  const marka = cok.find((x) => x.tur === "marka");
+  dogru("  ...marka parçası SEÇİLİ SAYIYI taşıyor", marka !== undefined && "sayi" in marka && marka.sayi === 2);
+  const stok = analizOzetParcalari({ ...temel, eksen: "stok", pencere: "SON_30_GUN", kanal: "TY", kova: "90" });
+  dogru("stok ekseninde dönem/kanal YOK (orada çizilmiyorlar), kova VAR", stok.map((x) => x.tur).join(",") === "kova");
+  dogru("mevsim ekseninde kova özete GİRMEZ", analizOzetParcalari({ ...temel, eksen: "mevsim", kova: "90" }).length === 0);
+
+  const suz = kaynakOku("src/app/rapor/urunler/analiz-suzgeci.tsx")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  const iArama = suz.indexOf("<AnalizAramaKutusu");
+  const iKap = suz.indexOf("<TelefonSuzgecKabi");
+  const iKapSon = suz.indexOf("</TelefonSuzgecKabi>");
+  const iSirala = suz.indexOf('id="analiz-sirala"');
+  const iUygula = suz.indexOf('<Button type="submit" className="h-11 max-md:flex-1">');
+  dogru("arama kutusu kabın DIŞINDA (telefonda hep açık)", iArama >= 0 && iKap >= 0 && iArama < iKap);
+  dogru("  ...sıralama ve Uygula kabın İÇİNDE", iSirala > iKap && iUygula > iKap && iKapSon > iUygula);
+  dogru("  ...özet ve sayı saf gövdeden", suz.includes("= analizOzetParcalari({") && suz.includes("acikSayi={acikSayi}") && suz.includes("= acikSuzgecSayisi(ozetParcalari)"));
+  const kap = kaynakOku("src/app/rapor/urunler/telefon-suzgec-kabi.tsx");
+  dogru("kap telefonda varsayılan KAPALI", kap.includes("useState(false)"));
+  dogru("  ...masaüstünde HER ZAMAN açık, düğme yalnız telefonda", kap.includes('${acik ? "block" : "hidden"} space-y-4 md:block') && kap.includes('className="h-11 w-full justify-between md:hidden"'));
+  const sayfa = kaynakOku("src/app/rapor/urunler/page.tsx");
+  dogru("eksen sekmeleri telefonda tek satır kayıyor", sayfa.includes('<div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">\n        {ANALIZ_EKSENLERI.map('));
+  kosanBolumler.push("k293-telefon-suzgec");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

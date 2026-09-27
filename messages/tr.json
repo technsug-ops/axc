@@ -4430,7 +4430,9 @@
     "sezonTemizle": "Mevsim işaretini kaldır",
     "etiketGuncellendi": "Güncellendi",
     "etiketHata": "Kaydedilemedi, tekrar deneyin.",
-    "urunBulunamadi": "Ürün bulunamadı."
+    "urunBulunamadi": "Ürün bulunamadı.",
+    "suzgecler": "Süzgeçler",
+    "ozetEtiketSayi": "{ad}: {sayi}"
   },
   "KalemKaldirma": {
     "kaldir": "Kalemi kaldır",

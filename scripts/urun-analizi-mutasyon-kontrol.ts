@@ -163,6 +163,35 @@ const MUTASYONLAR: Mutasyon[] = [
     yeni: "    if (false) {\n      hesaplanamayanUrun++;\n    }",
     bozdugu: "kârı hiç hesaplanamayan ürün sayısı sessizce sıfır görünür",
   },
+  // ── K293 — telefonda katlanan süzgeçler ─────────────────────────────────
+  {
+    ad: "[yanlış yanma] varsayılan dönem de süzgeç sayılıyor",
+    dosya: "src/lib/rapor/analiz-ozeti.ts",
+    eski: "sayilir: g.pencere !== VARSAYILAN_PENCERE",
+    yeni: "sayilir: true",
+    bozdugu: "hiçbir süzgeç yokken düğme «Süzgeçler (1)» der",
+  },
+  {
+    ad: "[yanlış yanma] raf yaşı kovası her eksende özete giriyor",
+    dosya: "src/lib/rapor/analiz-ozeti.ts",
+    eski: 'if (g.eksen === "stok" && g.kova !== null)',
+    yeni: "if (g.kova !== null)",
+    bozdugu: "mevsim ekseninde çizilmeyen bir süzgeç «açık» görünür",
+  },
+  {
+    ad: "süzgeç paneli telefonda AÇIK geliyor",
+    dosya: "src/app/rapor/urunler/telefon-suzgec-kabi.tsx",
+    eski: "useState(false)",
+    yeni: "useState(true)",
+    bozdugu: "telefonda liste yine süzgeçlerin altında kalır — iş geri döner",
+  },
+  {
+    ad: "süzgeç paneli masaüstünde de GİZLİ",
+    dosya: "src/app/rapor/urunler/telefon-suzgec-kabi.tsx",
+    eski: 'space-y-4 md:block',
+    yeni: "space-y-4",
+    bozdugu: "bilgisayarda süzgeçler kaybolur, düğme de yok",
+  },
 ];
 
 let kirmizi = 0;

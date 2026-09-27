@@ -20,8 +20,14 @@ import {
   type Yon,
 } from "@/lib/rapor/urun-analizi";
 import { YAS_KOVALARI } from "@/lib/yaslanma";
+import { acikSuzgecSayisi, analizOzetParcalari, type OzetParcasi } from "@/lib/rapor/analiz-ozeti";
 import { AnalizAramaKutusu } from "./analiz-arama-kutusu";
 import { OtomatikGonderSecim } from "./otomatik-gonder-secim";
+import { TelefonSuzgecKabi } from "./telefon-suzgec-kabi";
+
+/** K293: telefonda çip satırı TEK SATIR, yatay kayar; masaüstünde eskisi gibi sarar. */
+const KAYAN_SATIR =
+  "flex gap-2 max-md:-mx-3 max-md:overflow-x-auto max-md:px-3 max-md:[scrollbar-width:none] md:flex-wrap";
 
 /**
  * ============================================================================
@@ -115,7 +121,7 @@ export async function AnalizSuzgeci({
 
   /** Tek-tık uygulanan çip görünümü — kova/eksen sekmeleriyle AYNI stil. */
   const chipSinifi = (aktif: boolean) =>
-    "inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
+    "inline-flex h-11 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
     (aktif
       ? "bg-primary text-primary-foreground border-primary"
       : "bg-background hover:bg-muted");
@@ -154,6 +160,51 @@ export async function AnalizSuzgeci({
     if (tasinan.para) q.set("para", tasinan.para);
     return `${ANALIZ_YOLU}?${q.toString()}`;
   })();
+
+  /**
+   * TELEFON ÖZETİ (K293) — katlanan panelin düğmesinde yazar: açık süzgeçler
+   * liste okunurken görünür kalsın. Kural saf gövdede (`lib/rapor/analiz-ozeti`):
+   * sayı yalnız varsayılandan sapanları sayar; burada yalnız metne çevrilir.
+   */
+  const ozetParcalari = analizOzetParcalari({
+    eksen,
+    pencere: guncelPencere,
+    kanal: tasinan.kanal ?? null,
+    para: guncelPara,
+    kova: suzgec.kova,
+    markaSayisi: suzgec.markalar.length,
+    kategoriSayisi: suzgec.kategoriler.length,
+    minAdet: suzgec.minAdet,
+    minCiro: suzgec.minCiro,
+    favori: suzgec.favoriYalniz,
+    incelenecek: suzgec.incelenecekYalniz,
+    sezon: suzgec.sezon,
+  });
+  const parcaMetni = (o: OzetParcasi): string => {
+    switch (o.tur) {
+      case "donem":
+        return tPencere(PENCERE_ANAHTARI[o.deger as PencereTuru]);
+      case "kanal":
+        return kanalSecenekleri.find((k) => k.code === o.deger)?.name ?? o.deger;
+      case "para":
+        return o.deger;
+      case "kova":
+        return tStok(`yasKova${o.deger}`);
+      case "sezon":
+        return o.deger === "YAZ" ? t("sezonYaz") : t("sezonKis");
+      case "marka":
+      case "kategori":
+      case "minAdet":
+      case "minCiro":
+        return t("ozetEtiketSayi", { ad: t(o.tur), sayi: o.sayi });
+      case "favori":
+        return t("favoriYalniz");
+      case "incelenecek":
+        return t("incelenecekYalniz");
+    }
+  };
+  const ozetMetni = ozetParcalari.map(parcaMetni).join(" · ");
+  const acikSayi = acikSuzgecSayisi(ozetParcalari);
 
   return (
     <form
@@ -216,14 +267,19 @@ export async function AnalizSuzgeci({
         />
       </div>
 
+      {/* K293 — arama dışındaki HER ŞEY telefonda «Süzgeçler» düğmesinin
+          arkasında (varsayılan kapalı); masaüstünde her zaman açık. */}
+      <TelefonSuzgecKabi baslik={t("suzgecler")} ozet={ozetMetni} acikSayi={acikSayi}>
+
       {/* ── GÖRÜNÜM (Sırala/Yön/Satır — DEĞİŞİNCE ANINDA uygulanır) +
           EŞİKLER (En az adet/ciro — serbest metin, "Uygula" bekler).
           ⚠ TEK IZGARADA: kullanıcı isteği 11.09.2026 ("daha az tıkla, daha
           kompakt, net gruplama") — beşi de "listede ne var, nasıl sıralı"
           sorusuna cevap verdiği için aynı satırda. */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {/* ── SIRALAMA — anında uygulanır ── */}
-        <div className="space-y-1.5">
+      <div className="grid grid-cols-6 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {/* ── SIRALAMA — anında uygulanır ──
+            K293: telefonda Sırala · Yön · Satır TEK SATIRDA (6'lık ızgarada 2'şer). */}
+        <div className="col-span-2 space-y-1.5 sm:col-span-1">
           <label
             htmlFor="analiz-sirala"
             className="text-muted-foreground text-xs font-medium"
@@ -245,7 +301,7 @@ export async function AnalizSuzgeci({
         </div>
 
         {/* ── YÖN — anında uygulanır ── */}
-        <div className="space-y-1.5">
+        <div className="col-span-2 space-y-1.5 sm:col-span-1">
           <label
             htmlFor="analiz-yon"
             className="text-muted-foreground text-xs font-medium"
@@ -265,7 +321,7 @@ export async function AnalizSuzgeci({
 
         {/* ── SATIR SAYISI — anında uygulanır ──
             Kullanıcı: "50 ürüne kadar listelensin, istekle 100'e çıkabilsin." */}
-        <div className="space-y-1.5">
+        <div className="col-span-2 space-y-1.5 sm:col-span-1">
           <label
             htmlFor="analiz-satir"
             className="text-muted-foreground text-xs font-medium"
@@ -287,8 +343,9 @@ export async function AnalizSuzgeci({
         </div>
 
         {/* ── EN AZ ADET — "Uygula"yı bekler (serbest metin)
-            ⚠ Yer tutucu "örn. 2" — girilmiş DEĞER sanılmasın (İlke #11). */}
-        <div className="space-y-1.5">
+            ⚠ Yer tutucu "örn. 2" — girilmiş DEĞER sanılmasın (İlke #11).
+            K293: telefonda En az adet · En az ciro TEK SATIRDA (3'er). */}
+        <div className="col-span-3 space-y-1.5 sm:col-span-1">
           <label
             htmlFor="analiz-min-adet"
             className="text-muted-foreground text-xs font-medium"
@@ -309,7 +366,7 @@ export async function AnalizSuzgeci({
         </div>
 
         {/* ── EN AZ CİRO — "Uygula"yı bekler ── */}
-        <div className="space-y-1.5">
+        <div className="col-span-3 space-y-1.5 sm:col-span-1">
           <label
             htmlFor="analiz-min-ciro"
             className="text-muted-foreground text-xs font-medium"
@@ -344,7 +401,7 @@ export async function AnalizSuzgeci({
           <span className="text-muted-foreground text-xs font-medium">
             {tStok("yasKovaBaslik")}
           </span>
-          <div className="flex flex-wrap gap-2">
+          <div className={KAYAN_SATIR}>
             {YAS_KOVALARI.map((k) => {
               const aktif = suzgec.kova === k.kod;
               return (
@@ -391,6 +448,10 @@ export async function AnalizSuzgeci({
               {t("donemBaslik")}
             </span>
             <div className="flex flex-wrap items-center gap-2">
+              {/* K293: telefonda dönem çipleri tek satır kayar; «Özel aralık»
+                  kaydırılan satırın DIŞINDA (açılan form kırpılmasın).
+                  Masaüstünde `md:contents` → iç kap yok, eski düzen aynen. */}
+              <div className={`${KAYAN_SATIR} max-md:w-full md:contents`}>
               {RAPOR_PENCERELERI.filter((tur) => tur !== "OZEL").map(
                 (tur) => {
                   const aktif = guncelPencere === tur;
@@ -411,6 +472,7 @@ export async function AnalizSuzgeci({
                   );
                 },
               )}
+              </div>
               {/* ⚠ `<details>` — JAVASCRIPT'SİZ AÇILIR/KAPANIR (native HTML).
                   Kendi KÜÇÜK formu var: ana "Uygula"ya karışırsa `pencere`
                   alanı İKİ KEZ gönderilir (biri bu, biri üstteki taşıyıcı)
@@ -504,7 +566,7 @@ export async function AnalizSuzgeci({
             <span className="text-muted-foreground text-xs font-medium">
               {t("kanalBaslik")}
             </span>
-            <div className="flex flex-wrap gap-2">
+            <div className={KAYAN_SATIR}>
               <Link
                 href={analizAdresi({ ...taban, kanal: undefined })}
                 aria-current={!tasinan.kanal ? "true" : undefined}
@@ -643,14 +705,14 @@ export async function AnalizSuzgeci({
           MARKA/KATEGORİ için gerekli; Sırala/Yön/Satır/Dönem/Kanal/Para/
           Etiketler zaten tek tıkla uygulanmıştı. */}
       <div className="flex flex-wrap items-center gap-3 border-t pt-3">
-        <Button type="submit" className="h-11">
+        <Button type="submit" className="h-11 max-md:flex-1">
           {t("uygula")}
         </Button>
 
         {/* Süzgeç yoksa çizilmez: hiçbir şeyi temizlemeyen bir düğme,
             tıklanabilir görünüp hiçbir şey yapmaz (İlke #2). */}
         {suzgecVarMi ? (
-          <Button asChild variant="ghost" className="h-11">
+          <Button asChild variant="ghost" className="h-11 max-md:flex-1">
             <Link href={temizAdres}>
               <RotateCcw />
               {t("temizle")}
@@ -658,6 +720,7 @@ export async function AnalizSuzgeci({
           </Button>
         ) : null}
       </div>
+      </TelefonSuzgecKabi>
     </form>
   );
 }

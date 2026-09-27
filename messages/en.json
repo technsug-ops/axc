@@ -4430,7 +4430,9 @@
     "sezonTemizle": "",
     "etiketGuncellendi": "",
     "etiketHata": "",
-    "urunBulunamadi": ""
+    "urunBulunamadi": "",
+    "suzgecler": "",
+    "ozetEtiketSayi": ""
   },
   "KalemKaldirma": {
     "kaldir": "",

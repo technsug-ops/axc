@@ -308,8 +308,9 @@ export default async function UrunAnaliziSayfasi({
         </p>
       ) : null}
 
-      {/* ── EKSEN SEKMELERİ — seçim ADRESTE yaşar ── */}
-      <div className="flex flex-wrap gap-2">
+      {/* ── EKSEN SEKMELERİ — seçim ADRESTE yaşar ──
+          K293: telefonda tek satır, yana kayar (panel dönem çipleriyle aynı). */}
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
         {ANALIZ_EKSENLERI.map((e) => {
           const aktif = e === eksen;
           return (
@@ -351,7 +352,7 @@ export default async function UrunAnaliziSayfasi({
               })}
               aria-current={aktif ? "page" : undefined}
               className={
-                "inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
+                "inline-flex h-11 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
                 (aktif
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-background hover:bg-muted")
@@ -368,7 +369,7 @@ export default async function UrunAnaliziSayfasi({
           uygulanır — bir "hangi çeyrek" sorusu bir SÜZGEÇ değil, kovaya
           benzer bir KÜME seçimi. */}
       {eksen === "mevsim" ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
           {CEYREKLER.map((c) => {
             const aktif = c === ceyrek;
             return (
@@ -391,7 +392,7 @@ export default async function UrunAnaliziSayfasi({
                 })}
                 aria-current={aktif ? "true" : undefined}
                 className={
-                  "inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
+                  "inline-flex h-11 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
                   (aktif
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-background hover:bg-muted")
