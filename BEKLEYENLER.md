@@ -204,7 +204,7 @@ satışlara benzet»_ · onay 27.09. Kök: satır kartı (K235/K268) her satırd
 - **Bekçi** `satir-karti:dogrula` K268 ölçütü ESKİDİ → taşındı (tablo + ListeKarti · ürün hücresinde ad/adet/
   kalem/kart · başlık sütunu = satır hücresi ≤ 7 · sagGenis yok) · `urun-gorseli:dogrula` alımlar (1,0)→(1,1).
   Harness 36→**39** (kart bilgisi düştü · başlıksız sütun · telefon kartı kalktı — üçü kırmızı).
-  ⚠ Yolda yine betik kaçışı bozuldu (`` → backspace); `kontrol-karakteri` + bekçi yakaladı, elle düzeltildi.
+  ⚠ Yolda yine betik kaçışı bozuldu (ters bölü + b → backspace; bu satırın kendisi de ilk yazımda bozuldu); `kontrol-karakteri` + bekçi yakaladı, elle düzeltildi.
 
 ### HALİL TEST LİSTESİ (canlı)
 1. Bilgisayarda **Alımlar**: üstte sütun başlıkları (Tarih · Alım kodu · Kanal hesabı · Ürün · Tutar · Durum ·
