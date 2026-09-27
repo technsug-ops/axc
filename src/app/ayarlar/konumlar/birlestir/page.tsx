@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { sayfaIzni } from "@/lib/yetki";
-import { GeriBaglanti } from "@/components/baglanti";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 
@@ -35,7 +35,7 @@ export default async function RafBirlestirSayfasi() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <GeriBaglanti href="/ayarlar/konumlar">{tRaf("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/ayarlar/konumlar">{tRaf("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           {t("aciklamaMetni")}

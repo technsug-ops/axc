@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 
-import { GeriBaglanti } from "@/components/baglanti";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { ETIKET_BOY_MM, ETIKET_EN_MM, rafEtiketiSvg } from "@/lib/depo/etiket";
 import { prisma } from "@/lib/prisma";
 
@@ -73,7 +73,7 @@ export default async function RafEtiketleriSayfasi() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <GeriBaglanti href="/ayarlar/konumlar">{t("baslik")}</GeriBaglanti>
+          <ListeyeDon href="/ayarlar/konumlar">{t("baslik")}</ListeyeDon>
           <h1 className="mt-1 text-2xl font-semibold">
             {t("etiketlerBasligi")}
           </h1>

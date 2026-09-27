@@ -5,6 +5,7 @@ import { Merge, Pencil, QrCode, TriangleAlert } from "lucide-react";
 
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,7 @@ export default async function KonumlarSayfasi({ searchParams }: { searchParams: 
 
   const t = await getTranslations("Raf");
   const ortak = await getTranslations("Ortak");
+  const tBaslik = await getTranslations("Basliklar");
 
   function eylemler(konum: (typeof konumlar)[number]) {
     return (
@@ -73,6 +75,8 @@ export default async function KonumlarSayfasi({ searchParams }: { searchParams: 
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      {/* K289: liste artık ARAMALI — alt sayfalardan aramasıyla geri dönülür (ListeyeDon). */}
+      <ListeyiHatirla temel="/ayarlar/konumlar" etiket={tBaslik("rafKonumlari")} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

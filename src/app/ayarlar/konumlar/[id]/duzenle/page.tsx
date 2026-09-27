@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 
-import { GeriBaglanti } from "@/components/baglanti";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 
@@ -34,7 +34,7 @@ export default async function KonumDuzenleSayfasi({
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <GeriBaglanti href="/ayarlar/konumlar">{t("baslik")}</GeriBaglanti>
+        <ListeyeDon href="/ayarlar/konumlar">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("rafiDuzenle")}</h1>
         <p className="text-muted-foreground text-sm">
           {t("bagliKayitlar", {
