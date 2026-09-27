@@ -54,7 +54,7 @@ export type OkumaKaydi = {
  * hangisine önce baktığıdır. Rastgele bir sıra, aynı okumayı iki koşumda
  * iki farklı alana yazardı.
  */
-const ARAMA_SIRASI = ["barcode", "companySku", "sku", "channelSku"] as const;
+const ARAMA_SIRASI = ["barcode", "companySku", "sku", "channelSku", "eskiKodlar"] as const;
 
 export function bulunanAlan(
   kod: string,
@@ -63,6 +63,8 @@ export function bulunanAlan(
     companySku: string | null;
     barcode: string | null;
     channelSkus: { channelSku: string }[];
+    /** K287 — yeniden kodlamada bırakılan eski kodlar; SON sırada (güncel kod önce). */
+    eskiKodlar?: { kod: string }[];
   },
 ): KodRolu | null {
   const eslesme: Record<(typeof ARAMA_SIRASI)[number], boolean> = {
@@ -70,6 +72,7 @@ export function bulunanAlan(
     companySku: varyant.companySku === kod,
     sku: varyant.sku === kod,
     channelSku: varyant.channelSkus.some((k) => k.channelSku === kod),
+    eskiKodlar: (varyant.eskiKodlar ?? []).some((k) => k.kod === kod),
   };
   return ARAMA_SIRASI.find((rol) => eslesme[rol]) ?? null;
 }

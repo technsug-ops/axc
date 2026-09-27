@@ -226,4 +226,10 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * `supheli-urun` ve `marka-kodu` ile ortak) mutasyona uğratıyor. ⚠ Ölçümle zorlandı.
    */
   "sku-onizleme-mutasyon:kontrol",
+  /**
+   * K287 (27.09.2026) — `eski-kod` ortak kod kuralını (`varyant-arama-kurali.ts`),
+   * ürün formunu, önizleme gövdesini ve yedek listesini mutasyona uğratıyor —
+   * sıralı gruptaki pek çok harness'le ortak dosyalar. ⚠ Ölçümle zorlandı.
+   */
+  "eski-kod-mutasyon:kontrol",
 ];

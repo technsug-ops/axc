@@ -42,6 +42,8 @@ export const VARYANT_SECIMI = {
       channelAccount: { select: { channel: { select: { name: true } } } },
     },
   },
+  /** K287 — okutulan kod ESKİ bir Firma SKU ise «eski koddan bulundu» diyebilmek için. */
+  eskiKodlar: { select: { kod: true } },
 } as const;
 
 export function varyantiOzetle(v: {

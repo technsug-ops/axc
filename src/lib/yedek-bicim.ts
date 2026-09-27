@@ -53,6 +53,8 @@ export const YEDEK_TABLOLARI = [
   "Product",
   "ProductVariant",
   "VariantOption",
+  /** K287 — eski kodlar; `ProductVariant`e bağlı (RESTRICT) → varyantlardan SONRA. */
+  "EskiKod",
   // --- kanal ağacı ---
   "PenaltyTariff",
   "ChannelFee",

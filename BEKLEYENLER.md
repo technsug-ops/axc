@@ -191,6 +191,44 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K287 — ESKİ KOD TABLOSU + ARAMADA ESKİ KOD + YENİ BİÇİMDE «SKU ÖNER» · 27.09.2026 · [KOD + MIGRATION KOŞTU — DEPLOY, SONRA UYGULAMA]
+
+Kullanıcı kararları 26–27.09: yeni kod **Firma SKU**'ya; eski kod **silinmez**, aramada ve okutmada
+çalışır. «Ek alan» yerine **tablo** (onaylı): ikinci bir yeniden kodlamada ilk eski kod kaybolmasın;
+`kod` benzersiz — eski kod başka ürüne yeni kod olamaz.
+
+- **Migration** `20260927090000_eski_kod` (SAF EKLEME, canlıda koştu, yerel diff BOŞ, 58/58):
+  `EskiKod` (variantId · kod UNIQUE · kaynak · createdAt), `ProductVariant` RESTRICT.
+- **Arama/okutma:** `KOD_ROLLERI` + `eskiKodlar` (VARYANT kapsamı) → `kodKosulu` · `kodKosuluToplu`
+  (TY/HB/N11 sipariş ve alış aktarımı) · `aramaKosulu` (tüm listeler) tek kaynaktan. Okutma ekranı
+  «eski kod (önceki Firma SKU)» der; güncel kod önce söylenir. `arama:dogrula` ölçütü «dört ürün
+  rolü» → «beş» (eskidi, gerekçesiyle güncellendi — susturulmadı).
+- **«SKU öner»:** KAT-MRK-NNNN; marka kodu TABLODAN (addan kısaltma YOK), sıra SKU/Firma SKU/eski
+  kodda aranır, çakışma barkod + eski kod dahil; marka tabloda yoksa sebebi + Markalar bağlantısı.
+  Form öneriyi Firma SKU'ya yazar, SKU'yu yalnız BOŞSA (pazaryeri kodu ezilmez). ⚠ «Özdeşlik dalı»
+  (12.08) kaldırıldı; eski gerekçe dosyada. **Bu yol önceden HİÇBİR bekçiyle korunmuyordu.**
+- SKU önizlemesi eski kodu DOLU sayar · yedek `EskiKod` (varyantlardan sonra).
+- **Bekçi** `eski-kod:dogrula` 16 · harness **12/12**.
+
+**SIRA (kural):** önce bu kod CANLIYA çıkar (eski kodu tanıyan arama), SONRA uygulama betiği
+koşar: her varyant için `EskiKod` ← eski Firma SKU, Firma SKU ← önizlemedeki yeni kod; şartlı,
+satır satır, izli (`SKU_YENIDEN_KODLANDI`), anlık görüntülü. Kuru koşum kullanıcıya gösterilir.
+
+### HALİL TEST LİSTESİ (uygulamadan SONRA, canlı)
+1. `/okut`ta rafta duran bir ürünün **eski** etiketini okutun (ör. `axcali1665`) → ürün bulunur,
+   altında «eski kod (önceki Firma SKU) ile eşleşti».
+2. Aynı ürünün **yeni** kodunu okutun (ör. `OYU-LEG-0001`) → «Firma SKU» ile eşleşti.
+3. Stok listesinde eski kodla arayın → ürün çıkar.
+4. Ürünler → Yeni ürün: kategori + tablodaki bir marka seçip «Öner» → Firma SKU'ya `KAT-MRK-NNNN`
+   gelir; SKU alanı doluysa değişmez.
+5. Tabloda olmayan bir marka yazıp «Öner» → «markası tabloda yok» + «Markalar ekranında ekleyin».
+6. SKU önizlemesi: bütün ürünler «Kodu zaten bu».
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`Okuma.alanEskiKod` + 3 `Urunler` anahtarı) ·
+**kullanıcı kolaylığı: ✓** (İlke #5 · #7 · #9 · #10)
+
+---
+
 ## 🔴 K286 — SKU ÖNİZLEMESİ (KAT-MRK-NNNN) · 26.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 Kullanıcı kararları 26.09: model parçası **addan tahmin edilmez** (canlıda «1000W» güç değeri,

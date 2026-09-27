@@ -413,10 +413,17 @@ console.log("");
     "HER rolün kapsamı tanımlı (exhaustive Record eksiksiz)",
     kapsamsiz.length === 0,
   );
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ VE GÜNCELLENDİ (27.09.2026, K287) — SUSTURULMADI.
+   * Eski hâli "dört ürün rolü" idi. Yeniden kodlamada bırakılan ESKİ Firma
+   * SKU'lar (`EskiKod`) beşinci ürün rolü oldu: rafta eski etiketi olan ürün
+   * okutulunca bulunmalı. Ölçüt sayıyı ve ADLARI birlikte sabitler — rol
+   * düşerse de fazladan biri gelirse de kırmızı yanar.
+   */
   kontrol(
-    "  ...dört ürün rolü VARYANT kapsamında",
-    VARYANT_ROLLERI.length === 4 &&
-      ["sku", "companySku", "barcode", "channelSku"].every((r) =>
+    "  ...beş ürün rolü VARYANT kapsamında (K287: + eski kod)",
+    VARYANT_ROLLERI.length === 5 &&
+      ["sku", "companySku", "barcode", "channelSku", "eskiKodlar"].every((r) =>
         (VARYANT_ROLLERI as readonly string[]).includes(r),
       ),
   );

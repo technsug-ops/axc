@@ -79,6 +79,7 @@ export async function yedekUret(
     Product: await istemci.product.findMany(),
     ProductVariant: await istemci.productVariant.findMany(),
     VariantOption: await istemci.variantOption.findMany(),
+    EskiKod: await istemci.eskiKod.findMany(),
     PenaltyTariff: await istemci.penaltyTariff.findMany(),
     ChannelFee: await istemci.channelFee.findMany(),
     CargoTariff: tarifesiz ? [] : await istemci.cargoTariff.findMany(),

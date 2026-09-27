@@ -23,7 +23,7 @@ export type SkuOnizlemeSatiri = {
 };
 
 export async function skuOnizlemeSatirlari(): Promise<SkuOnizlemeSatiri[]> {
-  const [varyantlar, tumKodlar] = await Promise.all([
+  const [varyantlar, tumKodlar, eskiKodlar] = await Promise.all([
     prisma.productVariant.findMany({
       where: { isActive: true, product: { isActive: true } },
       select: {
@@ -45,9 +45,12 @@ export async function skuOnizlemeSatirlari(): Promise<SkuOnizlemeSatiri[]> {
       orderBy: [{ product: { createdAt: "asc" } }, { createdAt: "asc" }, { id: "asc" }],
     }),
     prisma.productVariant.findMany({ select: { sku: true, companySku: true, barcode: true } }),
+    /** K287 — eski kodlar da DOLU sayılır: bir eski kod başka ürüne yeni kod olarak verilemez. */
+    prisma.eskiKod.findMany({ select: { kod: true } }),
   ]);
   const kullanilan = new Set<string>();
   for (const k of tumKodlar) for (const d of [k.sku, k.companySku, k.barcode]) if (d) kullanilan.add(d.trim());
+  for (const e of eskiKodlar) kullanilan.add(e.kod.trim());
 
   const onizleme = skuOnizlemesi(
     varyantlar.map((v) => ({

@@ -14,15 +14,18 @@ import { DURUM_YAZISI } from "@/lib/renkler";
  * ============================================================================
  *  SKU "ÖNER" DÜĞMESİ
  * ----------------------------------------------------------------------------
- *  Basınca İKİ ALANI BİRDEN aynı değerle doldurur: SKU ve Firma SKU.
- *  `F-` öneki YOK — kullanıcı kararı 11.08.2026. Alanlar şemada ayrı kalır,
- *  varsayılan davranış özdeştir; isteyen elle ayırabilir.
+ *  ⚠ K287 (27.09.2026): öneri KAT-MRK-NNNN ve FİRMA SKU'ya yazılır; SKU
+ *  yalnız BOŞSA doldurulur (pazaryeri kodu ezilmez). Marka tabloda yoksa
+ *  sebebi yazar ve Markalar ekranına bağlar.
+ *  Eski hâl (11.08.2026): «İKİ ALANI BİRDEN aynı değerle doldurur, `F-`
+ *  öneki yok» — 26.09 kararıyla Firma SKU pazaryeri kodundan ayrıldı.
  *
  *  Hesap SUNUCUDA yapılır (kategori kodu ve o günkü sıra veritabanından
  *  okunur), o yüzden düğme beklerken kilitlenir.
  *
  *  ÜRETİLEMEZSE SESSİZ KALMAZ (#5): sebebini yazar ve düzeltme yerini
- *  gösterir — kategoriye kod verilmemişse doğrudan kategori ekranına bağlar.
+ *  gösterir — kategoriye kod verilmemişse kategori, marka tabloda yoksa
+ *  Markalar ekranına bağlar.
  * ============================================================================
  */
 export function SkuOnerButonu({
@@ -75,6 +78,14 @@ export function SkuOnerButonu({
         <p className={`text-xs ${DURUM_YAZISI.uyari}`}>
           {hata.hata === "KATEGORI_SECILMEDI" ? t("skuOneriKategoriYok") : null}
           {hata.hata === "KISALTMA_YOK" ? t("skuOneriAdYok") : null}
+          {hata.hata === "MARKA_TABLODA_YOK" ? (
+            <>
+              {hata.ad ? t("skuOneriMarkaTablodaYok", { ad: hata.ad }) : t("skuOneriMarkaYok")}{" "}
+              <Link href="/ayarlar/markalar" target="_blank" rel="noopener" className="underline underline-offset-4">
+                {t("skuOneriMarkaDuzelt")}
+              </Link>
+            </>
+          ) : null}
           {hata.hata === "KATEGORI_KODSUZ" ? (
             <>
               {t("skuOneriKategoriKodsuz", { ad: hata.ad ?? "" })}{" "}

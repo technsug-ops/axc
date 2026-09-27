@@ -45,6 +45,12 @@ export const KOD_ROLLERI = [
   "channelSku",
   "shipmentCode",
   "code",
+  /**
+   * K287 — yeniden kodlamada bırakılan ESKİ Firma SKU'lar (`EskiKod` tablosu).
+   * Rafta eski etiketi olan ürün okutulunca yine bulunur. Varyantın alanı
+   * değil İLİŞKİ (Kanal SKU gibi).
+   */
+  "eskiKodlar",
 ] as const;
 
 export type KodRolu = (typeof KOD_ROLLERI)[number];
@@ -80,6 +86,7 @@ export const ROL_KAPSAMI: Record<KodRolu, RolKapsami> = {
   shipmentCode: "SATIS",
   /** Sipariş numarası — gönderi numarasıyla aynı kapsam, aynı gerekçe. */
   code: "SATIS",
+  eskiKodlar: "VARYANT",
 };
 
 export const VARYANT_ROLLERI = KOD_ROLLERI.filter(
@@ -158,6 +165,11 @@ export function kanalKoduDali(e: string) {
   return { channelSkus: { some: { channelSku: { contains: e } } } };
 }
 
+/** K287 — eski kod dalı (serbest arama); `kanalKoduDali` ile aynı gerekçe ve şekil. */
+export function eskiKodDali(e: string) {
+  return { eskiKodlar: { some: { kod: { contains: e } } } };
+}
+
 export function aramaKosulu(sorgu: string) {
   /**
    * ⚠ EŞDEĞERLER SERBEST METİNDE DE GEÇERLİ — VE BURASI DAHA SİNSİ.
@@ -170,6 +182,7 @@ export function aramaKosulu(sorgu: string) {
     { companySku: { contains: e } },
     { barcode: { contains: e } },
     kanalKoduDali(e),
+    eskiKodDali(e),
     { product: { name: { contains: e } } },
   ]);
 }
@@ -251,6 +264,7 @@ export function kodKosulu(kod: string) {
   return [
     ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: { in: kodlar } })),
     { channelSkus: { some: { channelSku: { in: kodlar } } } },
+    { eskiKodlar: { some: { kod: { in: kodlar } } } },
   ];
 }
 
@@ -282,6 +296,7 @@ export function kodKosuluToplu(kodlar: string[]) {
   return [
     ...VARYANT_KOD_ALANLARI.map((alan) => ({ [alan]: { in: genis } })),
     { channelSkus: { some: { channelSku: { in: genis } } } },
+    { eskiKodlar: { some: { kod: { in: genis } } } },
   ];
 }
 

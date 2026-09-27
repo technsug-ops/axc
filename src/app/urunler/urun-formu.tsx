@@ -458,7 +458,7 @@ export function UrunFormu({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <Label htmlFor={`sku-${sira}`}>{ortak("sku")} *</Label>
-                    {/* Öner İKİ ALANI BİRDEN doldurur: SKU = Firma SKU. */}
+                    {/* K287: Öner Firma SKU'yu doldurur (KAT-MRK-NNNN); SKU'yu yalnız boşsa. */}
                     {hareketliMi ? null : (
                       <SkuOnerButonu
                         kategoriId={kategoriId}
@@ -470,7 +470,11 @@ export function UrunFormu({
                           .map((v) => v.sku)
                           .filter(Boolean)}
                         onOneri={(kod) =>
-                          varyantGuncelle(sira, { sku: kod, companySku: kod })
+                          /* K287: öneri Firma SKU'ya; SKU yalnız BOŞSA doldurulur (pazaryeri kodu ezilmez). */
+                          varyantGuncelle(sira, {
+                            companySku: kod,
+                            ...(varyant.sku.trim() === "" ? { sku: kod } : {}),
+                          })
                         }
                       />
                     )}

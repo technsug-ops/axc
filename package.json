@@ -432,7 +432,9 @@
     "marka-kodu:dogrula": "tsx scripts/marka-kodu-dogrula.ts",
     "marka-kodu-mutasyon:kontrol": "tsx scripts/marka-kodu-mutasyon-kontrol.ts",
     "sku-onizleme:dogrula": "tsx scripts/sku-onizleme-dogrula.ts",
-    "sku-onizleme-mutasyon:kontrol": "tsx scripts/sku-onizleme-mutasyon-kontrol.ts"
+    "sku-onizleme-mutasyon:kontrol": "tsx scripts/sku-onizleme-mutasyon-kontrol.ts",
+    "eski-kod:dogrula": "tsx scripts/eski-kod-dogrula.ts",
+    "eski-kod-mutasyon:kontrol": "tsx scripts/eski-kod-mutasyon-kontrol.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.125.0",

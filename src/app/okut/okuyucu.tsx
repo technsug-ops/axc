@@ -137,6 +137,8 @@ export function Okuyucu() {
      * Rol beyan edilince bu `Record` derlenmedi ve eksik kendini gösterdi.
      */
     code: t("alanCode"),
+    /** K287 — yeniden kodlamada bırakılan eski Firma SKU (rafta eski etiket). */
+    eskiKodlar: t("alanEskiKod"),
   };
 
   const siparisVar = (sonuc?.siparisler.length ?? 0) > 0;

@@ -262,6 +262,9 @@ console.log("\n3) HANGİ ALANDA BULUNDU — SIRA RASTGELE DEĞİL");
   kontrol("sistem SKU'sundan bulundu", bulunanAlan("SKU-1", varyant) === "sku");
   kontrol("Kanal SKU'dan bulundu", bulunanAlan("TY-1", varyant) === "channelSku");
   kontrol("eşleşme yoksa null", bulunanAlan("YOK", varyant) === null);
+  /* K287 — eski kod: SON sırada, güncel kod önce bakılır. */
+  kontrol("eski koddan bulundu", bulunanAlan("ESKI-1", { ...varyant, eskiKodlar: [{ kod: "ESKI-1" }] }) === "eskiKodlar");
+  kontrol("  ...aynı değer güncel alanda da varsa GÜNCEL alan söylenir", bulunanAlan("F-1", { ...varyant, eskiKodlar: [{ kod: "F-1" }] }) === "companySku");
 
   /**
    * ⚠ AYRIMI GÖSTEREN ÖRNEK: aynı değer İKİ rolde birden duruyor. Sıra

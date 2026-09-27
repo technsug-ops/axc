@@ -434,6 +434,23 @@ model Category {
 /// etmiş.» Trendyol kategorisi ÖLÇÜLÜR; bizdeki karşılığı BİR KEZ seçilir ve
 /// burada durur. `categoryId = null` → karşılığı SEÇİLMEDİ: senkron o
 /// kategorideki ürüne kategori YAZMAZ, tahmin etmez; ekran seçim ister.
+/// K287 — ESKİ KOD TABLOSU (kullanıcı onayı 27.09.2026).
+/// Yeniden kodlamada Firma SKU değişince ESKİ değer silinmez, buraya yazılır:
+/// rafta eski etiketi olan ürün okutulunca yine bulunur. `kod` BENZERSİZ —
+/// bir eski kod başka bir ürüne yeni kod olarak verilemez. Alan yerine tablo:
+/// ikinci bir yeniden kodlamada ilk eski kod da kaybolmasın.
+model EskiKod {
+  id        String         @id @default(cuid())
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  kod       String         @unique @db.VarChar(191)
+  /// Hangi alandan geldiği (ör. `FIRMA_SKU`).
+  kaynak    String         @db.VarChar(40)
+  createdAt DateTime       @default(now())
+
+  @@index([variantId])
+}
+
 /// K285 — MARKA KOD TABLOSU (kullanıcı onayı 26.09.2026).
 /// `anahtar` = katlanmış yazım (PHILIPS = Philips) — yazım farkları tek kayda
 /// düşer. `code` = 3 harf, BENZERSİZ: iki markaya aynı kod verilemez
@@ -527,6 +544,8 @@ model ProductVariant {
   donenBildirimler   ReturnNotice[]    @relation("DonenVaryant")
   stockMovements     StockMovement[]
   sayimSatirlari     StokSayimSatiri[]
+  /// K287 — yeniden kodlamada bırakılan ESKİ kodlar; aramada ve okutmada yaşar.
+  eskiKodlar         EskiKod[]
 
   /// SAYIM GECERSIZLESTI — fiziksel sayimdan SONRA, sayim tarihinden ONCEYE
   /// bir hareket yazildiginda damgalanir. O varyantin sayimi artik gecerli
