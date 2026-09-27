@@ -4780,6 +4780,7 @@
     "aciklama": "Ürünü arayın, kaç adet basılacağını girin, Yazdır'a basın. Etikette Firma SKU barkodu, kodun kendisi ve ürün adı yazar. Yazdırma penceresinde yazıcı olarak XP-490B'yi, kağıt ölçüsü olarak seçtiğiniz etiket ölçüsünü seçin.",
     "olcu": "Etiket ölçüsü",
     "olcuAdi": {
+      "40x30": "40×30 mm (karekod)",
       "100x100": "100×100 mm",
       "100x150": "100×150 mm",
       "50x30": "50×30 mm"

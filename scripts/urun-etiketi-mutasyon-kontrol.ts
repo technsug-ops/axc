@@ -34,6 +34,11 @@ const MUTASYONLAR: Mutasyon[] = [
      arkasında kaçıyordu (ölçüldü 27.09). Çift kapı tek kapıya indi; mutasyon asıl kapıyı hedefler. */
   { ad: "AD SATIR SINIRI YOK", yon: "FAZLADAN", dosya: GOVDE,
     bul: "    if (cikti.length === satir) break;\n", koy: "", bozdugu: "uzun ad etiketin disina tasar" },
+  /* K291-② 40×30 karekod. */
+  { ad: "40x30 CIZGI BARKODA DONDU (203 dpi'de guvensiz)", yon: "KALDIRAN", dosya: GOVDE,
+    bul: 'export const KAREKODLU_OLCULER: readonly EtiketOlcusu[] = ["40x30"];', koy: "export const KAREKODLU_OLCULER: readonly EtiketOlcusu[] = [];", bozdugu: "1,6 noktalik cizgiler okunmaz" },
+  { ad: "40x30 KOD YAZISI TASIYOR (sabit boy)", yon: "FAZLADAN", dosya: GOVDE,
+    bul: "  const kodYazi = Math.min(3.2, sagEn / (enUzun * 0.64));", koy: "  const kodYazi = 3.2;", bozdugu: "OYU-LEG sag kenardan kesilir" },
   { ad: "SAYFA KODU FIRMA SKU DEGIL SKU", yon: "FAZLADAN", dosya: SAYFA,
     bul: "urunEtiketiSvg(v.companySku, ad, olcu)", koy: "urunEtiketiSvg(v.id, ad, olcu)", bozdugu: "etikette anlamsiz kimlik basilir" },
   { ad: "BASKI SAYFASI ETIKET OLCUSU DEGIL", yon: "KALDIRAN", dosya: BASICI,

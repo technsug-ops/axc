@@ -44,10 +44,12 @@ export default async function UrunEtiketleriSayfasi({ searchParams }: { searchPa
         take: TAVAN + 1,
       })
     : [];
-  const urunler = bulunan.slice(0, TAVAN).map((v) => {
-    const ad = v.name ? `${v.product.name} — ${v.name}` : v.product.name;
-    return { id: v.id, kod: v.companySku, ad, svg: urunEtiketiSvg(v.companySku, ad, olcu) };
-  });
+  const urunler = await Promise.all(
+    bulunan.slice(0, TAVAN).map(async (v) => {
+      const ad = v.name ? `${v.product.name} — ${v.name}` : v.product.name;
+      return { id: v.id, kod: v.companySku, ad, svg: await urunEtiketiSvg(v.companySku, ad, olcu) };
+    }),
+  );
 
   const olcuAdresi = (o: EtiketOlcusu) => `/urunler/etiketler?olcu=${o}${arama ? `&q=${encodeURIComponent(arama)}` : ""}`;
 

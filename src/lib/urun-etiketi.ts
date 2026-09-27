@@ -1,3 +1,5 @@
+import QRCode from "qrcode";
+
 import { code128B, code128Genisligi, code128Yol } from "@/lib/depo/code128";
 
 /**
@@ -16,12 +18,21 @@ import { code128B, code128Genisligi, code128Yol } from "@/lib/depo/code128";
  */
 
 export const ETIKET_OLCULERI = {
+  /**
+   * K291-② (27.09.2026): kullanıcının ürün etiketi rulosu 40×30. Bu ölçüde
+   * 12–13 karakterlik Code128'in en ince çizgisi 0,20–0,21 mm = 203 dpi'de
+   * ~1,6 nokta (ölçüldü) — termal baskıda güvenli 2 noktanın ALTINDA. USB
+   * okuyucu karekod okuyor (kullanıcı teyidi) → 40×30 KAREKODLU çizilir.
+   */
+  "40x30": { en: 40, boy: 30 },
   "100x100": { en: 100, boy: 100 },
   "100x150": { en: 100, boy: 150 },
   "50x30": { en: 50, boy: 30 },
 } as const;
 export type EtiketOlcusu = keyof typeof ETIKET_OLCULERI;
-export const VARSAYILAN_OLCU: EtiketOlcusu = "100x100";
+export const VARSAYILAN_OLCU: EtiketOlcusu = "40x30";
+/** Karekodla çizilen ölçüler (çizgi barkod bu ölçüde güvenli değil). */
+export const KAREKODLU_OLCULER: readonly EtiketOlcusu[] = ["40x30"];
 
 export function olcuCoz(ham: string | undefined): EtiketOlcusu {
   return ham && ham in ETIKET_OLCULERI ? (ham as EtiketOlcusu) : VARSAYILAN_OLCU;
@@ -59,8 +70,46 @@ export function adSatirlari(ad: string, satirBasiKarakter: number, satir: number
   return cikti;
 }
 
-export function urunEtiketiSvg(kod: string, ad: string, olcu: EtiketOlcusu): string {
+/**
+ * 40×30 — KAREKOD solda (kod dizesinin AYNISI; zengin veri yok), sağda kod
+ * iki satırda (ön ek / sıra no) ve ürün adı. Yazı boyu kodun uzunluğundan
+ * hesaplanır — ilk taslakta «OYU-LEG» sağ kenardan TAŞIYORDU.
+ */
+async function karekodluEtiket(kod: string, ad: string, en: number, boy: number): Promise<string> {
+  const kenar = 1.5;
+  const qrKenar = boy - 2 * kenar - 3;
+  const ham = await QRCode.toString(kod, { type: "svg", errorCorrectionLevel: "M", margin: 0 });
+  const ic = /<svg[^>]*viewBox="([^"]+)"[^>]*>([\s\S]*)<\/svg>/.exec(ham);
+  const sagX = kenar + qrKenar + 1.2;
+  const sagEn = en - sagX - kenar;
+  const ayrac = kod.lastIndexOf("-");
+  const parca = ayrac > 0 ? [kod.slice(0, ayrac), kod.slice(ayrac + 1)] : [kod];
+  const enUzun = Math.max(...parca.map((p) => p.length));
+  /* monospace kalın: karakter ~0,6 em; 0,64 alınır → yuvarlamaya karşı pay kalır. */
+  const kodYazi = Math.min(3.2, sagEn / (enUzun * 0.64));
+  const adYazi = 1.5;
+  const adUst = kenar + kodYazi * parca.length * 1.1 + 1.4;
+  const satirSayisi = Math.max(1, Math.floor((boy - kenar - adUst) / (adYazi * 1.25)));
+  const satirlar = adSatirlari(ad, Math.max(5, Math.floor(sagEn / (adYazi * 0.55))), satirSayisi);
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${en}mm" height="${boy}mm" viewBox="0 0 ${en} ${boy}">`,
+    `<rect width="${en}" height="${boy}" fill="#fff"/>`,
+    `<svg x="${kenar}" y="${((boy - qrKenar) / 2).toFixed(2)}" width="${qrKenar.toFixed(2)}" height="${qrKenar.toFixed(2)}" viewBox="${ic?.[1] ?? "0 0 1 1"}">${ic?.[2] ?? ""}</svg>`,
+    ...parca.map(
+      (p, i) =>
+        `<text x="${sagX.toFixed(2)}" y="${(kenar + kodYazi * 1.1 * (i + 1)).toFixed(2)}" font-family="monospace" font-weight="bold" font-size="${kodYazi.toFixed(2)}" fill="#000">${kacir(p)}</text>`,
+    ),
+    ...satirlar.map(
+      (s, i) =>
+        `<text x="${sagX.toFixed(2)}" y="${(adUst + adYazi * 1.25 * (i + 1)).toFixed(2)}" font-family="sans-serif" font-size="${adYazi}" fill="#000">${kacir(s)}</text>`,
+    ),
+    `</svg>`,
+  ].join("");
+}
+
+export async function urunEtiketiSvg(kod: string, ad: string, olcu: EtiketOlcusu): Promise<string> {
   const { en, boy } = ETIKET_OLCULERI[olcu];
+  if (KAREKODLU_OLCULER.includes(olcu)) return karekodluEtiket(kod, ad, en, boy);
   const barkod = code128B(kod);
   /*
    * SESSİZ BÖLGE: Code128 barkodun iki yanında en az 10 modül boşluk ister;

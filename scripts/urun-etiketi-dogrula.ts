@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 
 import { kaynakOku } from "./kaynak-oku";
 import { code128B, code128Genisligi } from "../src/lib/depo/code128";
-import { adSatirlari, ETIKET_OLCULERI, olcuCoz, urunEtiketiSvg, VARSAYILAN_OLCU, type EtiketOlcusu } from "../src/lib/urun-etiketi";
+import { adSatirlari, ETIKET_OLCULERI, KAREKODLU_OLCULER, olcuCoz, urunEtiketiSvg, VARSAYILAN_OLCU, type EtiketOlcusu } from "../src/lib/urun-etiketi";
 
 /**
  * ============================================================================
@@ -47,12 +47,22 @@ async function main() {
     const zorlu = adSatirlari("a1234567 b1234567 c1234567 d1234567 e1234567", 8, 2);
     kontrol("çok parçalı adda da satır sınırı tutar", zorlu.length === 2 && zorlu[1]!.endsWith("…"), zorlu);
     kontrol("tek kelime satırdan uzunsa kırpılır", adSatirlari("Süperkalifragilistik", 8, 1)[0]!.length <= 8);
-    kontrol("bilinmeyen ölçü → varsayılan (100×100)", olcuCoz("999x1") === VARSAYILAN_OLCU && olcuCoz(undefined) === "100x100");
-    kontrol("Code128 B ile basılamayan kod BOŞ etiket değil «BASILAMADI»", urunEtiketiSvg("ÇÖK-1", "x", "50x30").includes("BASILAMADI"));
-    kontrol("etiket boyutu ölçüyle aynı (mm)", urunEtiketiSvg("A-1", "x", "100x150").includes('width="100mm" height="150mm"'));
-    /* Sessiz bölge: barkodun sol kenarı ≥ 10 modül. */
-    for (const o of Object.keys(ETIKET_OLCULERI) as EtiketOlcusu[]) {
-      const svg = urunEtiketiSvg("KUC-KRC-0112", "x", o);
+    /* Ölçüt güncellendi (K291-②, 27.09.2026): ilk hâlde varsayılan 100×100'dü. Kullanıcının
+       ürün etiketi rulosu 40×30 (kullanıcı beyanı) → varsayılan o oldu. */
+    kontrol("bilinmeyen ölçü → varsayılan (40×30)", olcuCoz("999x1") === VARSAYILAN_OLCU && olcuCoz(undefined) === "40x30");
+    kontrol("Code128 B ile basılamayan kod BOŞ etiket değil «BASILAMADI»", (await urunEtiketiSvg("ÇÖK-1", "x", "50x30")).includes("BASILAMADI"));
+    kontrol("etiket boyutu ölçüyle aynı (mm)", (await urunEtiketiSvg("A-1", "x", "100x150")).includes('width="100mm" height="150mm"'));
+    kontrol("40×30 boyutu ölçüyle aynı (mm)", (await urunEtiketiSvg("A-1", "x", "40x30")).includes('width="40mm" height="30mm"'));
+    /* 40×30 karekodlu: kod yazısı sağ sütuna SIĞAR (ilk taslakta «OYU-LEG» kenardan taşıyordu). */
+    for (const kod of ["OYU-LEG-0001", "KAME-TPL-0031", "UZUNONEKLIKOD-1"]) {
+      const svg = await urunEtiketiSvg(kod, "x", "40x30");
+      const kalin = [...svg.matchAll(/<text x="([\d.]+)"[^>]*font-weight="bold" font-size="([\d.]+)"[^>]*>([^<]*)</g)];
+      const tasma = kalin.map((m) => Number(m[1]) + Number(m[2]) * 0.62 * m[3]!.length).filter((sag) => sag > 40 - 1.5 + 1e-6);
+      kontrol(`40×30 «${kod}» kod yazısı etikete sığıyor`, kalin.length >= 1 && tasma.length === 0, { satir: kalin.length, tasma });
+    }
+    /* Sessiz bölge: barkodun sol kenarı ≥ 10 modül (çizgi barkodlu ölçüler). */
+    for (const o of (Object.keys(ETIKET_OLCULERI) as EtiketOlcusu[]).filter((x) => !KAREKODLU_OLCULER.includes(x))) {
+      const svg = await urunEtiketiSvg("KUC-KRC-0112", "x", o);
       const sol = Number(svg.match(/<g transform="translate\(([\d.]+) /)?.[1]);
       const M = code128Genisligi((code128B("KUC-KRC-0112") as { moduller: number[] }).moduller);
       const en = ETIKET_OLCULERI[o].en;
@@ -69,9 +79,11 @@ async function main() {
     const { readBarcodes } = req("zxing-wasm/reader") as { readBarcodes: (b: Blob, o: object) => Promise<{ text: string; isValid: boolean }[]> };
     for (const o of Object.keys(ETIKET_OLCULERI) as EtiketOlcusu[]) {
       for (const kod of ["OYU-LEG-0001", "KAME-TPL-0031"]) {
-        const png = await sharp(Buffer.from(urunEtiketiSvg(kod, "Deneme ürün adı uzun bir ad", o)), { density: 203 }).flatten({ background: "#fff" }).png().toBuffer();
-        const r = await readBarcodes(new Blob([new Uint8Array(png)]), { formats: ["Code128"], tryHarder: false });
-        kontrol(`${o} «${kod}» okunuyor ve AYNI kodu veriyor`, r.length === 1 && r[0]!.isValid && r[0]!.text === kod, r.map((x) => x.text));
+        const png = await sharp(Buffer.from(await urunEtiketiSvg(kod, "Deneme ürün adı uzun bir ad", o)), { density: 203 }).flatten({ background: "#fff" }).png().toBuffer();
+        /* 40×30 KAREKOD — biçim o ölçü için QRCode'a kilitli: çizgi barkoda dönerse kırmızı. */
+        const bicim = KAREKODLU_OLCULER.includes(o) ? "QRCode" : "Code128";
+        const r = await readBarcodes(new Blob([new Uint8Array(png)]), { formats: [bicim], tryHarder: false });
+        kontrol(`${o} (${bicim}) «${kod}» okunuyor ve AYNI kodu veriyor`, r.length === 1 && r[0]!.isValid && r[0]!.text === kod, r.map((x) => x.text));
       }
     }
   }
