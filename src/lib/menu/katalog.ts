@@ -63,6 +63,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   tedarikciler: "/ayarlar/tedarikciler",
   /** K285 — marka kod tablosu (SKU'nun marka parçası). */
   markalar: "/ayarlar/markalar",
+  /** K290 — gece tam bekçi turu sonuçları (teknik bakım). */
+  geceTuru: "/ayarlar/gece-turu",
   kullanicilar: "/ayarlar/kullanicilar",
   roller: "/ayarlar/roller",
   menuDuzeni: "/ayarlar/menu",
@@ -201,6 +203,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "gecmisEkstre", varsayilanGrup: "grupVeri" },
   { anahtar: "komisyonKapisi", varsayilanGrup: "grupVeri" },
   { anahtar: "kargoTarifesi", varsayilanGrup: "grupVeri" },
+  { anahtar: "geceTuru", varsayilanGrup: "grupVeri" },
 
   // ── AYARLAR — sistemin kendisi ──────────────────────────────────────────
   { anahtar: "kullanicilar", varsayilanGrup: "grupAyarlar" },

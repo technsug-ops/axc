@@ -405,6 +405,25 @@ zorlaştıracak şekilde yazılmıyor.
   ⚠ Bekçi listesi `package.json`dan OKUNUR, elle tutulmaz — yoksa yarın
   eklenen bir bekçi listeye yazılmadığı için sessizce koşulmaz ve aynı hata
   bir kat yukarıda tekrarlanır.
+  ⭐ **KATMANLI TUR — kullanıcı kararı 27.09.2026 (K290).** Push başına
+  **40–45 dk** (171 kontrol) sürdürülemez oldu; ölçüm: bekçiler ~9 dk,
+  süreyi mutasyon denetimleri dolduruyor. Yeni düzen:
+  · **PUSH:** BÜTÜN bekçiler (yukarıdaki kararın özü AYNEN korunur — hiçbir
+    davranış bekçisi atlanmaz) + yalnız push'ta **değişen dosyalara
+    dokunan** mutasyon denetimleri (`scripts/tur-secimi.ts`). Emin
+    olunamayan her durumda HEPSİ koşar (aralık okunamazsa · ortak harness
+    aracı değiştiyse · denetimin bağı çözülemezse).
+  · **GECE (00:30, zamanlayıcı):** TAM tur (`scripts/gece-turu.ts`), canlı
+    sürüm ayrı çalışma ağacında; kırmızıda `git bisect` ile bozan push
+    bulunur; sonuç panelde çan + `/ayarlar/gece-turu`. Tur kaçarsa 36 saat
+    sonra kırmızı yazar.
+  **Bedeli beyan edildi:** dokunulmayan dosyanın mutasyon denetimi bozulursa
+  en geç ertesi sabah görülür. Bu kodun bozulması değil, bir bekçinin
+  dişinin körelmesidir; davranışı koruyan bekçiler her push'ta koşar.
+  ⚠ **SEÇİMİN SÖZÜ BEKÇİYE BAĞLI:** `tur-secimi:dogrula` 46 denetimin her
+  birini, bozduğu HER dosya tek başına değişince seçildiğini GERÇEK veriyle
+  sınar. İlk ölçümde «ortak altyapı» listesi fazla genişti ve son 4 paketin
+  4'ünde seçim «hepsi»ne düşüyordu — daraltıldı, gerekçesi dosyada.
 - Migration, silme, reset gibi geri dönüşsüz işlerde MUTLAKA onay iste
 - Her tamamlanan aşamada commit + push (mesaj formatı: tip: Türkçe açıklama).
   Push öncesi .env sızıntısı kontrolü.

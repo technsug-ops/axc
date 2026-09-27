@@ -68,7 +68,28 @@ import {
 
 import { KILIT, kilitDurumu, sonTurPenceresiniYaz } from "./bekci-kilit";
 import { mutasyonAdiMi, SIRALI_MUTASYON_GRUP } from "./mutasyon-hedefleri";
+import { denetimBagi, mutasyonSecimi } from "./tur-secimi";
 import { spawn, spawnSync } from "node:child_process";
+
+/**
+ * ============================================================================
+ *  PUSH KİPİ — DEĞİŞENE DOKUNAN MUTASYON DENETİMLERİ (K290, 27.09.2026)
+ * ----------------------------------------------------------------------------
+ *  `--taban=<sha>` verilirse: BÜTÜN bekçiler + yalnız `<sha>..HEAD` aralığında
+ *  değişen dosyalara dokunan mutasyon denetimleri (`tur-secimi.ts`). Atlananlar
+ *  SAYILIR ve yazılır — gece turunda koşarlar (`gece-turu.ts`).
+ *  Bayraksız ya da `TAM_TUR=1` → TAM tur (eski davranış). Aralık okunamazsa
+ *  (sıfır sha, bilinmeyen commit) → TAM tur: emin değilsen KOŞ.
+ * ============================================================================
+ */
+function degisenDosyalar(): string[] | null {
+  if (process.env.TAM_TUR === "1") return null;
+  const taban = process.argv.find((a) => a.startsWith("--taban="))?.slice("--taban=".length) ?? "";
+  if (!/^[0-9a-f]{7,40}$/.test(taban) || /^0+$/.test(taban)) return null;
+  const r = spawnSync(`git diff --name-only ${taban}..HEAD`, { encoding: "utf8", shell: true });
+  if (r.status !== 0) return null;
+  return (r.stdout ?? "").split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+}
 
 /**
  * ============================================================================
@@ -272,8 +293,11 @@ async function turuKostur(): Promise<Sonuc[]> {
   kilidiAl();
   const liste = bekciler();
 
-  const mutasyonAdlari = liste.filter(mutasyonAdiMi);
+  const tumMutasyon = liste.filter(mutasyonAdiMi);
   const digerAdlari = liste.filter((ad) => !mutasyonAdiMi(ad));
+  const degisen = degisenDosyalar();
+  const secim = mutasyonSecimi(tumMutasyon.map(denetimBagi), degisen);
+  const mutasyonAdlari = tumMutasyon.filter((ad) => secim.kos.includes(ad));
   const beyanKumesi = new Set(SIRALI_MUTASYON_GRUP);
   const sirali = mutasyonAdlari.filter((ad) => beyanKumesi.has(ad));
   const bagimsiz = mutasyonAdlari.filter((ad) => !beyanKumesi.has(ad));
@@ -284,6 +308,11 @@ async function turuKostur(): Promise<Sonuc[]> {
       `${sirali.length} sıralı-mutasyon + ${bagimsiz.length} paralel-mutasyon)`,
   );
   console.log("=".repeat(70));
+  if (degisen === null || secim.hepsiSebebi) {
+    console.log(`  KİP: TAM TUR${secim.hepsiSebebi ? ` — ${secim.hepsiSebebi}` : ""}`);
+  } else {
+    console.log(`  KİP: PUSH — ${degisen.length} değişen dosya · ${secim.kos.length} mutasyon denetimi koşar · ${secim.atla.length} atlanır (dosyalarına dokunulmadı; GECE turunda koşar)`);
+  }
 
   const sonuclar: Sonuc[] = [];
   for (const ad of digerAdlari) sonuclar.push(senkronKostur(ad));

@@ -29,7 +29,7 @@ import {
  * doluluğu bekçide AYRICA ölçülür — boş küme her koşulu sağlar.
  */
 /** K283: Trendyol kategori eşleşmesi ölçümü de İSTEĞE BAĞLI — aynı gerekçe. */
-type IstegeBagliOlcum = CanaTasinanGorev | "tyKategoriKarsiliksiz";
+type IstegeBagliOlcum = CanaTasinanGorev | "tyKategoriKarsiliksiz" | "geceTuruSorunlu";
 export type UyariOlcumleri = Record<
   Exclude<UyariAnahtari, IstegeBagliOlcum>,
   { sayi: number; tutar?: number | null }

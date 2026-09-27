@@ -68,9 +68,28 @@ fi
 #   koşum sayesinde duvar saati ondan küçük). Eski not 42 bekçilik dönemden
 #   kalmaydı ve yanlış bir süre, turu "takıldı" sanıp KESTİRİR — yani yanlış
 #   gösterge, üstündeki kapıyı da işlevsizleştirir.
-echo "── PUSH KAPISI: bekçi turu koşuyor (133 bekçi, ~25-30 dk) ──────────"
+#
+# ⚠ K290 (27.09.2026, kullanıcı kararı): push'ta BÜTÜN bekçiler + yalnız
+#   DEĞİŞEN dosyalara dokunan mutasyon denetimleri; TAM tur her GECE
+#   (`scripts/gece-turu.ts`). Git bu kapıya stdin'den «yerel_ref yerel_sha
+#   uzak_ref uzak_sha» verir; uzak_sha = son yayımlanan sürüm = aralığın
+#   tabanı. Tek dal değilse ya da taban okunamazsa bayrak VERİLMEZ → TAM tur
+#   (emin değilsen KOŞ). ÖLÇÜLDÜ 27.09.2026: tam tur 171 kontrol, duvar
+#   saati ~40-45 dk; push kipi K285-K288 üzerinde 46 mutasyon denetiminin
+#   12-16'sını seçti.
+TABAN=""
+SATIR=0
+while read yerel_ref yerel_sha uzak_ref uzak_sha; do
+  SATIR=$((SATIR + 1))
+  TABAN="$uzak_sha"
+done
+BAYRAK=""
+if [ "$SATIR" -eq 1 ] && [ -n "$TABAN" ]; then
+  BAYRAK="--taban=$TABAN"
+fi
+echo "── PUSH KAPISI: bekçi turu koşuyor (bekçilerin hepsi + değişene dokunan mutasyon denetimleri) ──"
 
-if ! npm run bekci; then
+if ! npm run bekci -- $BAYRAK; then
   echo ""
   echo "⛔ PUSH DURDURULDU — bekçi kırmızı."
   echo "   Kırmızı yanan kontrolü düzeltin ve tekrar deneyin."

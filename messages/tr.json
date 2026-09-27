@@ -176,7 +176,8 @@
     "gunlukOzet": "Günlük Özet",
     "kanalListeleme": "Kanal Listeleme Durumu",
     "menu": "Menü",
-    "markalar": "Markalar"
+    "markalar": "Markalar",
+    "geceTuru": "Gece bekçi turu"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -893,7 +894,8 @@
     "maliyetYontemi": "Maliyet yöntemi",
     "gunlukOzet": "Günlük Özet",
     "kanalListeleme": "Kanal Listeleme",
-    "markalar": "Markalar"
+    "markalar": "Markalar",
+    "geceTuru": "Gece bekçi turu"
   },
   "GunlukOzet": {
     "baslik": "Günlük Özet",
@@ -3214,7 +3216,9 @@
     "baslik_tarifePenceresi": "Komisyon tarifesi yenilenmeli",
     "eylem_tarifePenceresi": "Haftalık tarife dosyasını indirip yükle — pencere bitiyor ya da bitti",
     "baslik_tyKategoriKarsiliksiz": "{sayi} Trendyol kategorisinin karşılığı seçilmedi",
-    "eylem_tyKategoriKarsiliksiz": "Karşılığını seç — o kategorideki ürünlere kategori yazılmıyor"
+    "eylem_tyKategoriKarsiliksiz": "Karşılığını seç — o kategorideki ürünlere kategori yazılmıyor",
+    "baslik_geceTuruSorunlu": "Gece bekçi turunda {sayi} sorun",
+    "eylem_geceTuruSorunlu": "Ayrıntıya bak — kırmızı denetim ve onu bozan push yazıyor"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",
@@ -4736,5 +4740,29 @@
     "aramaIpucu": "Ürün adı, eski ya da yeni kod ara",
     "aramaSonuc": "«{q}» için {sayi} ürün",
     "aramaListeBaslik": "Arama sonuçları ({sayi})"
+  },
+  "GeceTuru": {
+    "baslik": "Gece bekçi turu",
+    "aciklama": "Her push'ta bekçilerin hepsi ve yalnız değişen dosyalara dokunan mutasyon denetimleri koşar. Tam tur (bütün kontroller) her gece otomatik koşar; kırmızı çıkarsa hangi push'un bozduğunu kendisi bulur.",
+    "izYok": "Henüz gece turu kaydı yok. İlk tur bu gece 00:30'da koşacak; ondan önceki geceler için «kayıt yok» bir sonuç değildir.",
+    "gecikti": "Son gece turu {saat} saat önce koştu — en az bir gece KAÇMIŞ. Bilgisayar gece kapalı mıydı?",
+    "sutunZaman": "Zaman",
+    "sutunSurum": "Sürüm",
+    "sutunSonuc": "Sonuç",
+    "sutunSure": "Süre",
+    "sonuc": {
+      "YESIL": "Yeşil · {yesil}/{toplam}",
+      "KIRMIZI": "Kırmızı · {yesil}/{toplam}",
+      "HAZIRLIK_DUSTU": "Tur koşamadı — hazırlık düştü",
+      "SONUC_OKUNAMADI": "Tur koştu ama sonucu okunamadı",
+      "HATA": "Beklenmeyen hata",
+      "BILINMIYOR": "Kayıt okunamadı"
+    },
+    "sureDk": "{dk} dk",
+    "kirmiziBaslik": "Kırmızı denetimler",
+    "ilkKotu": "İlk kırmızı: {sha} · {tarih} · «{mesaj}»",
+    "ilkKotuYok": "Hangi push'un bozduğu bulunamadı (yeni denetim ya da tarama düştü)",
+    "bekciNotu": "Bekçi (davranış) kırmızısı: bekçiler her push'ta koşuyor — gece kırmızısı ortam kaynaklı olabilir, denetimi elle koşun.",
+    "sebep": "Sebep: {sebep}"
   }
 }

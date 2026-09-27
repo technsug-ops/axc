@@ -191,6 +191,45 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K290 — KATMANLI BEKÇİ TURU: PUSH HIZLI, GECE TAM + GERİYE TARAMA · 27.09.2026 · [KOD YAZILDI — İLK GECE TURU BEKLİYOR]
+
+Kullanıcı: _«her seferinde olunca işlem maliyeti çok uzuyor»_ · _«gün sonunda koşulmamış bekçilerde
+problem varsa geriden süpüremez mi»_ → onay («evet»). Ölçüm: tur 171 kontrol, duvar saati 40–45 dk;
+bekçiler ~9 dk, süreyi 46 mutasyon denetimi dolduruyor. 22.08 kararı («bütün bekçiler») özüyle
+KORUNDU — CLAUDE.md'de eski gerekçe yerinde, yeni katman altında.
+
+- **Push** (`.githooks/pre-push` → `bekci.ts --taban=<uzak sha>`): BÜTÜN bekçiler + yalnız değişen
+  dosyalara DOKUNAN mutasyon denetimleri (`scripts/tur-secimi.ts`: bozduğu dosya · kendi dosyası ·
+  bekçisi · bekçinin içe aktardığı kaynak). Emin değilsen KOŞ: aralık okunamazsa / çok dal /
+  ortak harness aracı değişti / bağ çözülemedi → HEPSİ. `TAM_TUR=1` → tam tur.
+  Ölçüm (K285–K288 üzerinde): 46 denetimin **12–16**'sı seçilirdi. ⚠ İlk hâlde «ortak altyapı»
+  fazla genişti (`package.json` · `mutasyon-hedefleri.ts`) ve 4 paketin 4'ünde «hepsi»ne düşüyordu.
+- **Gece** (`scripts/gece-turu.cmd` → `gece-turu.ts`, 00:30): canlı sürüm (`origin/main`) ayrı
+  çalışma ağacında (`../axcali-gece`, yerel test veritabanı — canlıya dokunmaz), TAM tur; kırmızı
+  mutasyon denetiminde `git bisect run` ile bozan push bulunur (denetim son yeşil gecede yoksa
+  taranmaz — yanlış push suçlanmaz); sonuç canlı `AuditLog` → `GECE_BEKCI_TURU`; hazırlık düşse
+  bile iz yazılır.
+- **Görünürlük:** çan `geceTuruSorunlu` (amber, `ayar.yaz`; kırmızı sayısı · tur düştü · son iz
+  36 saatten eski = KAÇTI) · ekran `/ayarlar/gece-turu` (menü: Veri → Gece bekçi turu; el kitabı).
+- **Bekçi** `tur-secimi:dogrula` 26 — ⭐ **SÖZ GERÇEK VERİYLE:** 46 denetimin her biri, bozduğu HER
+  dosya ve bekçi/kaynağı tek başına değişince SEÇİLİYOR · harness **12/12**.
+
+**AÇIK:** ① zamanlayıcı görevi (`Selliora Gece Bekci Turu`, 00:30) kuruldu mu — kurulum bu paketin
+son adımı · ② **ilk gece turu** ve kaydının ekranda görülmesi · ③ geriye taramanın GERÇEK bir
+kırmızıda ilk koşumu (bugün tetiklenemiyor — tetiklenemeyen yol «geçti» sayılmaz) · ④ sonraki
+adım: kontrolleri GitHub Actions'a taşımak (depo açık → ücretsiz; DB isteyen bekçiler ölçülmeli).
+
+### HALİL TEST LİSTESİ
+1. Bu paketin push'unda tur başında «KİP: PUSH — N değişen dosya · M mutasyon denetimi koşar ·
+   K atlanır» satırı görünür; süre 40–45 dk yerine belirgin kısa.
+2. Yarın sabah: Menü → Veri → **Gece bekçi turu** → bu gecenin satırı: «Yeşil · 17x/17x», sürüm
+   kodu, süre. Çanda gece turu uyarısı YOK.
+3. Bilgisayar bir gece kapalı kalırsa ertesi gün ekranda kırmızı «en az bir gece KAÇMIŞ» kutusu.
+
+**i18n: ✓** (`GeceTuru` + çan + menü) · **kullanıcı kolaylığı: ✓** (İlke #5 · #13 · #16)
+
+---
+
 ## 🔴 K288 — MARKA LİSTESİ GERİ YÜKLEME + ARAMA (İLKE #17) · 27.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 Kullanıcı: _«markalarda olmayanı indirebiliyoruz ama düzeltip yükleyemiyoruz, onu da kurgula»_ ·

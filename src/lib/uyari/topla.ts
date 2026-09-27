@@ -15,6 +15,7 @@ import { iadeSayaciOlcumu } from "./iade-sayaci";
 import { yedekOlcumu } from "./yedek";
 import type { Uyari } from "./turler";
 import { tyKategoriKarsiliksizSayisi } from "@/lib/kategori-eslesme-yaz";
+import { geceTuruSorunSayisi } from "@/lib/gece-turu-veri";
 
 /**
  * ============================================================================
@@ -309,6 +310,8 @@ export async function uyarilariTopla(
     tarifePenceresi: { sayi: tarifeUyarisiVarMi(tarifeKapsam) ? 1 : 0 },
     /** K283 — eşleşme ekranındaki uyarıyla AYNI koşul (`tyKategoriKarsiliksizSayisi`). */
     tyKategoriKarsiliksiz: { sayi: await tyKategoriKarsiliksizSayisi() },
+    /** K290 — gece turu ekranıyla AYNI gövde (`geceTuruSorunSayisi`). */
+    geceTuruSorunlu: { sayi: await geceTuruSorunSayisi() },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:

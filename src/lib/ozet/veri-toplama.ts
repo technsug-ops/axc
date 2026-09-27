@@ -76,6 +76,7 @@ const UYARI_BAGLAMI: Record<UyariAnahtari, string> = {
   oransizKanalSku: "Komisyon oranı tanımsız kanal SKU",
   tarifePenceresi: "Tarife penceresi bitmek üzere ya da bitmiş (bayrak)",
   tyKategoriKarsiliksiz: "Bizdeki karşılığı seçilmemiş Trendyol kategorisi (o ürünlere kategori yazılmıyor)",
+  geceTuruSorunlu: "Gece bekçi turunda kırmızı denetim ya da koşmayan gece (teknik bakım)",
 };
 
 /**

@@ -147,6 +147,9 @@ export const UYARI_ANAHTARLARI = [
   // ── K283 (26.09.2026): Trendyol kategorisinin bizde karşılığı seçilmedi —
   //    o kategorideki ürünlere kategori YAZILMIYOR (tahmin yok). ──
   "tyKategoriKarsiliksiz",
+  // ── K290 (27.09.2026): gece bekçi turu kırmızı / koşmadı — push artık
+  //    mutasyon denetimlerinin yalnız bir kısmını koşuyor, gerisi GECE. ──
+  "geceTuruSorunlu",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -204,6 +207,7 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
    */
   tarifePenceresi: "/ayarlar/komisyon",
   tyKategoriKarsiliksiz: "/ayarlar/kategoriler/trendyol",
+  geceTuruSorunlu: "/ayarlar/gece-turu",
 };
 
 /**
@@ -245,6 +249,8 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   oransizKanalSku: "amber",
   tarifePenceresi: "amber",
   tyKategoriKarsiliksiz: "amber",
+  /* Kod bozulmadı (bekçiler her push'ta koşuyor); bir bekçinin dişi körelmiş ya da tur kaçmış — amber. */
+  geceTuruSorunlu: "amber",
 };
 
 /**
@@ -278,6 +284,8 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   tarifePenceresi: null,
   /* Eşleşme ekranı `ayar.yaz` ister — görüp açamayacağı uyarı gösterilmez. */
   tyKategoriKarsiliksiz: "ayar.yaz",
+  /* Ekran `ayar.yaz` ister — teknik bakım uyarısı, depocuya gösterilmez. */
+  geceTuruSorunlu: "ayar.yaz",
 };
 
 export type Uyari = {

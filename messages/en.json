@@ -176,7 +176,8 @@
     "gunlukOzet": "",
     "kanalListeleme": "",
     "menu": "",
-    "markalar": ""
+    "markalar": "",
+    "geceTuru": ""
   },
   "Ortak": {
     "kapat": "",
@@ -893,7 +894,8 @@
     "maliyetYontemi": "",
     "gunlukOzet": "",
     "kanalListeleme": "",
-    "markalar": ""
+    "markalar": "",
+    "geceTuru": ""
   },
   "GunlukOzet": {
     "baslik": "",
@@ -3214,7 +3216,9 @@
     "baslik_tarifePenceresi": "",
     "eylem_tarifePenceresi": "",
     "baslik_tyKategoriKarsiliksiz": "",
-    "eylem_tyKategoriKarsiliksiz": ""
+    "eylem_tyKategoriKarsiliksiz": "",
+    "baslik_geceTuruSorunlu": "",
+    "eylem_geceTuruSorunlu": ""
   },
   "Talep": {
     "bildirEtiketi": "",
@@ -4736,5 +4740,29 @@
     "aramaIpucu": "",
     "aramaSonuc": "",
     "aramaListeBaslik": ""
+  },
+  "GeceTuru": {
+    "baslik": "",
+    "aciklama": "",
+    "izYok": "",
+    "gecikti": "",
+    "sutunZaman": "",
+    "sutunSurum": "",
+    "sutunSonuc": "",
+    "sutunSure": "",
+    "sonuc": {
+      "YESIL": "",
+      "KIRMIZI": "",
+      "HAZIRLIK_DUSTU": "",
+      "SONUC_OKUNAMADI": "",
+      "HATA": "",
+      "BILINMIYOR": ""
+    },
+    "sureDk": "",
+    "kirmiziBaslik": "",
+    "ilkKotu": "",
+    "ilkKotuYok": "",
+    "bekciNotu": "",
+    "sebep": ""
   }
 }

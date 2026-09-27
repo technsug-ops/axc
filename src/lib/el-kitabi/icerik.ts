@@ -59,6 +59,7 @@ export const BOLUMLER = [
   { kimlik: "kanalHesabi", ad: "Ayarlar — Kanal Hesapları" },
   { kimlik: "tedarikci", ad: "Ayarlar — Tedarikçiler" },
   { kimlik: "marka", ad: "Ayarlar — Markalar" },
+  { kimlik: "geceTuru", ad: "Ayarlar — Gece bekçi turu" },
   { kimlik: "kullanici", ad: "Ayarlar — Kullanıcılar" },
   { kimlik: "rol", ad: "Ayarlar — Roller" },
   { kimlik: "menu", ad: "Ayarlar — Menü düzeni" },
@@ -137,6 +138,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   kanalHesaplari: "kanalHesabi",
   tedarikciler: "tedarikci",
   markalar: "marka",
+  geceTuru: "geceTuru",
   veriAktarimi: "toplu",
   /** Yedek alma ve geri yükleme tek bölümde anlatılıyor. */
   geriYukleme: "yedek",
@@ -1694,6 +1696,24 @@ ${sikHata([
     cozum: "Markası boş ürüne marka kodu verilemez, SKU'sunun marka parçası da olamaz. Ekrandaki «markası boş» listesini indirip doldur.",
   },
 ])}
+</section>
+
+<section id="geceTuru">
+${baslik("geceTuru")}
+<p><strong>Ayarlar → Gece bekçi turu.</strong> Sistemin kendi kendini denetleyen
+kontrolleri iki zamanda koşar: her yayında (push) kodun doğru davrandığını
+sınayan <strong>bekçilerin hepsi</strong> ve yalnız değişen dosyalara dokunan
+denetimler; <strong>her gece</strong> ise bütün kontroller. Bu ekran gece
+turlarının sonucunu gösterir.</p>
+${neZaman("Panelde «Gece bekçi turunda sorun» uyarısı yandığında.")}
+<h3>Kırmızı ne demek</h3>
+<p>Kod bozulmuş demek değildir — kodun doğruluğunu koruyan bekçiler her yayında
+zaten koşuyor. Gece kırmızısı çoğunlukla bir kontrolün <strong>dişinin
+körelmesi</strong>dir: kontrol bir şeyi artık yakalayamıyor. Sistem hangi yayının
+buna yol açtığını kendisi bulur ve ekranda yazar.</p>
+<div class="ek-not dikkat"><div class="etiket">Tur koşmadıysa</div>
+<p>Tur, bilgisayar açıkken gece 00:30'da koşar. Bilgisayar kapalıysa o gece
+kaçar ve ekran bunu kırmızı kutuda söyler — kaçan gece sessiz geçmez.</p></div>
 </section>
 
 <section id="kullanici">
