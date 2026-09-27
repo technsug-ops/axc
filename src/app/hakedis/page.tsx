@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { sayfaIzni } from "@/lib/yetki";
 import Link from "next/link";
 import { CircleCheck, TriangleAlert, Upload } from "lucide-react";
@@ -78,6 +79,19 @@ const HAKEDIS_SENKRON_AKSIYONU: Record<string, string> = {
   Hepsiburada: "HB_HAKEDIS_CEKIM_CALISTI",
 };
 
+/** K289 — parti araması: dosya adı · kanal · hesap adı. Boş → koşul yok. */
+function partiAramaKosulu(pq: string | undefined) {
+  const e = (pq ?? "").trim();
+  if (e === "") return {};
+  return {
+    OR: [
+      { sourceFile: { contains: e } },
+      { channelAccount: { name: { contains: e } } },
+      { channelAccount: { channel: { name: { contains: e } } } },
+    ],
+  };
+}
+
 export default async function HakedisSayfasi({
   searchParams,
 }: {
@@ -86,6 +100,8 @@ export default async function HakedisSayfasi({
     sekme?: string;
     odeme?: string;
     q?: string;
+    /** K289 — parti (yüklenen rapor) araması; `q` ödeme özetinin araması. */
+    pq?: string;
     sayfa?: string;
   }>;
 }) {
@@ -146,7 +162,11 @@ export default async function HakedisSayfasi({
   const [partiler, kalemler, satislar, sonSenkronizasyon, kanalHesaplariVeri] =
     await Promise.all([
       prisma.settlement.findMany({
-        where: kanalKosulu,
+        /*
+         * K289 · İlke #17: parti araması SORGUDA — liste en yeni 50 ile sınırlı,
+         * ekranda süzülseydi 50'nin dışındaki eski parti bulunamazdı.
+         */
+        where: { ...kanalKosulu, ...partiAramaKosulu(sp.pq) },
         include: {
           channelAccount: { include: { channel: { select: { name: true } } } },
           _count: { select: { items: true } },
@@ -1116,6 +1136,12 @@ export default async function HakedisSayfasi({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <KodAramaKutusu temelAdres="/hakedis" baslangic={(sp.pq ?? "").trim()} tasinanlar={sp} parametre="pq" ipucu={t("partiAramaIpucu")} />
+                {(sp.pq ?? "").trim() ? (
+                  <p className="text-muted-foreground text-xs">{t("partiAramaSonuc", { q: (sp.pq ?? "").trim(), sayi: partiler.length })}</p>
+                ) : null}
+              </div>
               {/* ------------------ MASAÜSTÜ: TABLO ------------------- */}
               <div className="hidden overflow-x-auto rounded-lg border md:block">
                 <Table>

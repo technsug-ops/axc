@@ -483,7 +483,10 @@
     "bicimsizMetin": "Bunlar çalışmaya devam eder; standarda çekmek isterseniz Düzenle ile kodu değiştirin. Kod değişirse o rafın etiketini yeniden basmanız gerekir.",
     "birlestir": "Rafları birleştir",
     "kodPasifRaftaVar": "\"{kod}\" kodu PASİF bir rafta kayıtlı ({ad}). Pasif raflar listede solgun görünür; o rafı aktifleştirebilir ya da başka kod seçebilirsiniz.",
-    "etiketOlcusu": "Etiket ölçüsü: {en}×{boy} mm (termal rulo)"
+    "etiketOlcusu": "Etiket ölçüsü: {en}×{boy} mm (termal rulo)",
+    "aramaIpucu": "Raf kodu ya da adı ara (raf etiketini kamerayla okutabilirsiniz)",
+    "aramaSonuc": "«{q}» için {sayi} raf",
+    "aramaBos": "«{q}» aramasına uyan raf yok."
   },
   "KanalHesabi": {
     "kanalSecilmeli": "Kanal seçilmeli",
@@ -1509,7 +1512,9 @@
     "kartSecin": "Kart seçin…",
     "kartHicYok": "Tanımlı aktif kartınız yok. Kartla ödeme işaretleyebilmek için önce Kartlar ekranından bir kart tanımlayın.",
     "sutunOdeme": "Ödeme",
-    "taksitOzet": "{adet} taksit"
+    "taksitOzet": "{adet} taksit",
+    "aramaIpucu": "Açıklama, kategori, şablon ya da kart ara",
+    "aramaSonuc": "«{q}» için {sayi} gider — toplam şeridi aramaya göre"
   },
   "Rapor": {
     "baslik": "Dönem raporu",
@@ -2089,7 +2094,10 @@
     "kaynakIade": "iadeden",
     "kaynakTedarikcisiz": "\"{kod}\" kaydının tedarikçisi bulunamadı; alacak kime yazılacağı belli değil. Bu ürünün alımında tedarikçi seçili olmalı.",
     "karsiTarafYok": "karşı taraf yok",
-    "karsiTarafYokHata": "Bu kalemin tedarikçisi belli değil; talep kime açılacağı bilinmeden kaydedilemez. Alım kaydına tedarikçi girip tekrar deneyin."
+    "karsiTarafYokHata": "Bu kalemin tedarikçisi belli değil; talep kime açılacağı bilinmeden kaydedilemez. Alım kaydına tedarikçi girip tekrar deneyin.",
+    "aramaIpucu": "Ürün, SKU, alım/sipariş no ya da tedarikçi ara",
+    "aramaSonuc": "«{q}» için {bekleyen} bekleyen hasar · {talep} talep (açık alacak özeti tüm talepleri gösterir)",
+    "aramaBos": "«{q}» aramasına uyan kayıt yok."
   },
   "Hakedis": {
     "baslik": "Hakediş",
@@ -2198,7 +2206,9 @@
     "siparisler": "Siparişler ({sayi})",
     "siparisDisiNotu": "Sipariş no'su olmayan kalemler (kargo faturası, platform bedeli, stopaj) yalnız kalem dökümünde görünür.",
     "kontrolSekmesi": "Kontrol",
-    "tumOdemeler": "Tüm ödemeleri gör"
+    "tumOdemeler": "Tüm ödemeleri gör",
+    "partiAramaIpucu": "Rapor dosyası, kanal ya da hesap ara",
+    "partiAramaSonuc": "«{q}» için {sayi} parti"
   },
   "Panel": {
     "baslik": "Panel",
@@ -4764,5 +4774,26 @@
     "ilkKotuYok": "Hangi push'un bozduğu bulunamadı (yeni denetim ya da tarama düştü)",
     "bekciNotu": "Bekçi (davranış) kırmızısı: bekçiler her push'ta koşuyor — gece kırmızısı ortam kaynaklı olabilir, denetimi elle koşun.",
     "sebep": "Sebep: {sebep}"
+  },
+  "UrunEtiketi": {
+    "baslik": "Ürün etiketi bas",
+    "aciklama": "Ürünü arayın, kaç adet basılacağını girin, Yazdır'a basın. Etikette Firma SKU barkodu, kodun kendisi ve ürün adı yazar. Yazdırma penceresinde yazıcı olarak XP-490B'yi, kağıt ölçüsü olarak seçtiğiniz etiket ölçüsünü seçin.",
+    "olcu": "Etiket ölçüsü",
+    "olcuAdi": {
+      "100x100": "100×100 mm",
+      "100x150": "100×150 mm",
+      "50x30": "50×30 mm"
+    },
+    "olcuNotu": "Seçili: {en}×{boy} mm — yazıcıdaki rulo bu ölçüde olmalı, yoksa etiketler kayar.",
+    "aramaIpucu": "Ürün adı, eski ya da yeni kod, barkod ara",
+    "aramaOnce": "Etiket basmak için önce ürünü arayın (ad, kod ya da barkod).",
+    "aramaSonuc": "«{q}» için {sayi} ürün",
+    "aramaFazla": "İlk {sayi} ürün gösteriliyor — aramayı daraltın.",
+    "onizleme": "Önizleme (ilk ürün)",
+    "adetYerTutucu": "örn. 1",
+    "adetEtiketi": "{ad} — kaç etiket",
+    "yazdir": "Yazdır ({sayi} etiket)",
+    "adetGir": "Basılacak ürünün yanına adet yazın.",
+    "baglanti": "Ürün etiketi bas"
   }
 }

@@ -11,6 +11,8 @@ import { getTranslations } from "next-intl/server";
 import { BarChart3, Pencil, Plus, Repeat } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
+import { giderAramaKosulu } from "@/lib/gider-arama";
 import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
@@ -45,11 +47,12 @@ function ayCoz(metin: string): { yil: number; ay: number } | null {
 export default async function GiderlerSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ ay?: string; kategori?: string }>;
+  searchParams: Promise<{ ay?: string; kategori?: string; q?: string }>;
 }) {
   await sayfaIzni("gider.yaz");
 
-  const { ay: ayParam, kategori: kategoriParam } = await searchParams;
+  const { ay: ayParam, kategori: kategoriParam, q } = await searchParams;
+  const arama = (q ?? "").trim();
   const t = await getTranslations("Gider");
   const tBaslik = await getTranslations("Basliklar");
   const ortak = await getTranslations("Ortak");
@@ -86,6 +89,8 @@ export default async function GiderlerSayfasi({
       where: {
         ...(tarihFiltresi ? { spentAt: tarihFiltresi } : {}),
         ...(seciliKategori ? { categoryId: seciliKategori } : {}),
+        /* K289: arama — Excel ile AYNI koşul; toplam şeridi de bu kümeden (İlke #15). */
+        ...giderAramaKosulu(arama),
       },
       include: {
         category: { select: { name: true, isFixed: true } },
@@ -102,7 +107,7 @@ export default async function GiderlerSayfasi({
     }),
   ]);
 
-  const filtreVar = Boolean(seciliAy || seciliKategori);
+  const filtreVar = Boolean(seciliAy || seciliKategori || arama);
 
   /** Her satırın KDV'si ve gerçek net'ten düşen kısmı. */
   function parcala(kayit: (typeof kayitlar)[number]) {
@@ -199,7 +204,7 @@ export default async function GiderlerSayfasi({
         <div className="flex flex-wrap gap-2">
           <ExcelIndir
             liste="giderler"
-            parametreler={{ ay: seciliAy, kategori: seciliKategori }}
+            parametreler={{ ay: seciliAy, kategori: seciliKategori, q: arama }}
           />
           <Button variant="outline" asChild>
             <Link href="/rapor">
@@ -227,7 +232,18 @@ export default async function GiderlerSayfasi({
         kategoriler={kategoriKayitlari.map((k) => ({ id: k.id, ad: k.name }))}
         seciliAy={seciliAy}
         seciliKategori={seciliKategori}
+        arama={arama}
       />
+
+      <div className="space-y-1">
+        <KodAramaKutusu
+          temelAdres="/giderler"
+          baslangic={arama}
+          tasinanlar={{ ay: seciliAy || undefined, kategori: seciliKategori || undefined }}
+          ipucu={t("aramaIpucu")}
+        />
+        {arama ? <p className="text-muted-foreground text-xs">{t("aramaSonuc", { q: arama, sayi: kayitlar.length })}</p> : null}
+      </div>
 
       {/* -------------------------- TOPLAM ŞERİDİ -------------------------- */}
       {serit.length > 0 ? (

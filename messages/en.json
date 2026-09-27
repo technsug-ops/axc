@@ -483,7 +483,10 @@
     "bicimsizMetin": "",
     "birlestir": "",
     "kodPasifRaftaVar": "",
-    "etiketOlcusu": ""
+    "etiketOlcusu": "",
+    "aramaIpucu": "",
+    "aramaSonuc": "",
+    "aramaBos": ""
   },
   "KanalHesabi": {
     "kanalSecilmeli": "",
@@ -1509,7 +1512,9 @@
     "kartSecin": "",
     "kartHicYok": "",
     "sutunOdeme": "",
-    "taksitOzet": ""
+    "taksitOzet": "",
+    "aramaIpucu": "",
+    "aramaSonuc": ""
   },
   "Rapor": {
     "baslik": "",
@@ -2089,7 +2094,10 @@
     "kaynakIade": "",
     "kaynakTedarikcisiz": "",
     "karsiTarafYok": "",
-    "karsiTarafYokHata": ""
+    "karsiTarafYokHata": "",
+    "aramaIpucu": "",
+    "aramaSonuc": "",
+    "aramaBos": ""
   },
   "Hakedis": {
     "baslik": "",
@@ -2198,7 +2206,9 @@
     "siparisler": "",
     "siparisDisiNotu": "",
     "kontrolSekmesi": "",
-    "tumOdemeler": ""
+    "tumOdemeler": "",
+    "partiAramaIpucu": "",
+    "partiAramaSonuc": ""
   },
   "Panel": {
     "baslik": "",
@@ -4764,5 +4774,26 @@
     "ilkKotuYok": "",
     "bekciNotu": "",
     "sebep": ""
+  },
+  "UrunEtiketi": {
+    "baslik": "",
+    "aciklama": "",
+    "olcu": "",
+    "olcuAdi": {
+      "100x100": "",
+      "100x150": "",
+      "50x30": ""
+    },
+    "olcuNotu": "",
+    "aramaIpucu": "",
+    "aramaOnce": "",
+    "aramaSonuc": "",
+    "aramaFazla": "",
+    "onizleme": "",
+    "adetYerTutucu": "",
+    "adetEtiketi": "",
+    "yazdir": "",
+    "adetGir": "",
+    "baglanti": ""
   }
 }

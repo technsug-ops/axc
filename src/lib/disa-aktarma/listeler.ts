@@ -21,6 +21,7 @@ import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { stoguVarMi } from "@/lib/stok-siralama";
 import { supheliSatirlari } from "@/lib/supheli-urun-veri";
 import { markasizUrunler } from "@/lib/marka-kodu-veri";
+import { giderAramaKosulu } from "@/lib/gider-arama";
 import { skuOnizlemeSatirlari } from "@/lib/sku-onizleme-veri";
 
 /**
@@ -749,6 +750,8 @@ async function giderlerSayfasi(p: Parametreler): Promise<Sayfa> {
     where: {
       ...(tarihFiltresi ? { spentAt: tarihFiltresi } : {}),
       ...(kategori ? { categoryId: kategori } : {}),
+      /* K289: ekranla AYNI arama koşulu (sayı = liste). */
+      ...giderAramaKosulu(p.q),
     },
     include: {
       category: { select: { name: true, isFixed: true } },

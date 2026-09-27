@@ -191,6 +191,32 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K291 — ÜRÜN ETİKETİ BASIMI (XP-490B, FİRMA SKU BARKODU) · 27.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: yazıcı **Xprinter XP-490B** (termal, 4 inç); rulo kargo ölçüsünde (100×100 / 100×150);
+içerik kararı «Firma SKU barkodu + kod + ürün adı» (raf YAZILMAZ — ürün taşınırsa etiket yalancı olur).
+
+- **Gövde** `lib/urun-etiketi.ts`: raf etiketiyle AYNI Code128 çizici; ölçü seçilebilir (100×100 ·
+  100×150 · 50×30); **sessiz bölge** denklemden (k = 10·en/(M+20)) — düz %6 kenar 50×30'da 10 modülün
+  ALTINDA kalıyordu; basılamayan kod «BASILAMADI» (boş kâğıt yok); ad kelime sınırında kısalır.
+- **Ekran** `/urunler/etiketler` (Ürünler sayfasında bağlantı, izin `urun.gor`): ortak arama (eski kod
+  da bulur) → adet → Yazdır; her adet AYRI sayfa, `@page` = etiket ölçüsü; ölçü adreste.
+- **Bekçi** `urun-etiketi:dogrula` 22 — ⭐ etiket **203 dpi'de resme çevrilip zxing ile OKUNUYOR** (3 ölçü ×
+  2 kod, «aynı kodu veriyor») · harness **8/8**. Yolda iki kusur: satır sınırı İKİ kapıdaydı (biri
+  ötekinin arkasında mutasyonu gizledi → tek kapı) · örnek ad sınırı hiç zorlamıyordu (veri düzeltildi).
+
+### HALİL TEST LİSTESİ (canlı + gerçek yazıcı)
+1. Ürünler → **Ürün etiketi bas** → ölçü **100×100** seçili.
+2. Aramaya `OYU-LEG-0001` → ürün çıkar, önizlemede barkod + kod + ad.
+3. Adet **1** → **Yazdır (1 etiket)** → yazdırma penceresinde yazıcı **XP-490B**, kâğıt **100×100 mm**,
+   kenar boşluğu **yok**, ölçek **%100** → bas.
+4. Basılan etiketi **Okut** ekranında kamerayla ya da USB okuyucuyla okutun → LEGO Ninjago Zilvar bulunur.
+5. Adet 3 yapıp basın → üç ayrı etiket çıkar (üst üste binmez).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`UrunEtiketi`) · **kullanıcı kolaylığı: ✓** (İlke #5 · #7 · #17)
+
+---
+
 ## 🔴 K290 — KATMANLI BEKÇİ TURU: PUSH HIZLI, GECE TAM + GERİYE TARAMA · 27.09.2026 · [KOD YAZILDI — İLK GECE TURU BEKLİYOR]
 
 Kullanıcı: _«her seferinde olunca işlem maliyeti çok uzuyor»_ · _«gün sonunda koşulmamış bekçilerde
@@ -267,7 +293,7 @@ marka** yazıldı (577 bağlı; FİSHER PRIZE → Fisher Price, LENOVO 600 → L
 
 ---
 
-## 🟡 K289 — İLKE #17 TARAMASI: ARAMASIZ BÜYÜYEN LİSTELER · 27.09.2026 · [ÖLÇÜLDÜ — AÇIK]
+## 🔴 K289 — İLKE #17 TARAMASI: ARAMASIZ BÜYÜYEN LİSTELER · 27.09.2026 · [② KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 Canlı kayıt sayıları (27.09): **Hakediş** partileri **69** · **Raf konumları** **43** · **Giderler**
 **24** · **Tazminat** **21** — hepsi büyüyen listeler, arama kutusu YOK. Küçük ve sabit kalanlar
@@ -275,6 +301,16 @@ Canlı kayıt sayıları (27.09): **Hakediş** partileri **69** · **Raf konumla
 büyüdükçe yeniden ölçülür. ⚠ Tarama kaba: `.map(` + arama deseni yokluğu; detay/form ekranları elle
 elendi. **Açılış:** K288 Halil testinden sonra, dört ekrana `KodAramaKutusu`. İleride desen yasağıyla
 bekçiye bağlanabilir (liste ekranı ⇒ arama zorunlu) — ölçütü önce tasarlanmalı.
+
+─── ② 27.09.2026 — dört ekrana arama (kullanıcı: «sonrasında bunu bitir»):
+**Raflar** (kod/ad; kamerayla raf etiketi okutulur) · **Giderler** (açıklama · kategori · şablon · kart;
+arama SORGUDA → toplam şeridi aramayla değişir, İlke #15; Excel AYNI koşul `lib/gider-arama.ts`; ay/kategori
+süzgeci aramayı artık SİLMİYOR) · **Tazminat** (ürün · SKU · alım/sipariş no · tedarikçi; iki listede; «açık
+alacak» özeti TÜM taleplerden ve bunu yazar; boş arama «hiç kayıt yok» DEMEZ) · **Hakediş** — asıl liste
+(ödeme özeti) ZATEN aranabilirdi; eksik olan **parti** listesiydi → `pq` parametresiyle, SORGUDA (en yeni
+50 tavanı eski partiyi gizlemesin). Bekçi `liste-aramasi:dogrula` 13 · harness **9/9**.
+HALİL: Raflar'da `A1` → tek raf · Giderler'de bir kategori adı → liste VE toplam şeridi değişir, sonra ay
+değiştirin → arama kaybolmaz · Tazminat'ta bir ürün adı · Hakediş → Detay → Partiler'de `Trendyol`.
 
 ---
 

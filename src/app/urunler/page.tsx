@@ -59,6 +59,7 @@ export default async function UrunlerSayfasi({
   const ortak = await getTranslations("Ortak");
   const tSupheli = await getTranslations("SupheliUrun");
   const tSku = await getTranslations("SkuOnizleme");
+  const tEtiket = await getTranslations("UrunEtiketi");
   const tBaslik = await getTranslations("Basliklar");
 
   /**
@@ -248,6 +249,10 @@ export default async function UrunlerSayfasi({
           {/* K286: salt okuma önizleme — ürün görebilen herkese. */}
           <Baglanti href="/urunler/sku-onizleme" className="inline-flex min-h-11 items-center text-sm md:ml-4 md:min-h-0">
             {tSku("baglanti")}
+          </Baglanti>
+          {/* K291: ürün etiketi basımı — ürün görebilen herkese (depocu da basar). */}
+          <Baglanti href="/urunler/etiketler" className="inline-flex min-h-11 items-center text-sm md:ml-4 md:min-h-0">
+            {tEtiket("baglanti")}
           </Baglanti>
         </div>
         <div className="flex flex-wrap gap-2">

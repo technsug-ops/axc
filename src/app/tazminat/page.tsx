@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { sayfaIzni } from "@/lib/yetki";
 import { PackageX, TriangleAlert } from "lucide-react";
 
@@ -27,7 +28,7 @@ export async function generateMetadata() {
   return { title: tBaslik("tazminat") };
 }
 
-export default async function TazminatSayfasi() {
+export default async function TazminatSayfasi({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await sayfaIzni("tazminat.yaz");
 
   const t = await getTranslations("Tazminat");
@@ -197,11 +198,40 @@ export default async function TazminatSayfasi() {
 
   const bugun = tarihGirdisi(new Date());
 
+  /*
+   * K289 · İlke #17: iki listede de ürün · SKU · alım/sipariş no · tedarikçide
+   * arar. «Açık alacak» özeti TÜM taleplerden — bir listenin toplamı değil,
+   * alacağın kendisi (aramayla değişseydi alacak küçülmüş gibi okunurdu).
+   */
+  const { q } = await searchParams;
+  const arama = (q ?? "").trim();
+  const kucuk = (x: string) => x.toLocaleLowerCase("tr");
+  const eslesir = (alanlar: (string | null | undefined)[]) =>
+    !arama || alanlar.some((a) => kucuk(a ?? "").includes(kucuk(arama)));
+  const gorunenBekleyen = tumBekleyenler.filter((h) => eslesir([h.urun, h.sku, h.baglam, h.tedarikci]));
+  const gorunenTalep = talepler.filter((k) =>
+    eslesir([
+      talepUrunu(k),
+      k.purchaseItem?.variant.sku ?? k.returnItem?.variant.sku,
+      k.purchaseItem?.purchase.code ?? k.returnItem?.return.sale.code,
+      k.supplier?.name,
+    ]),
+  );
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>
+      </div>
+
+      <div className="space-y-1">
+        <KodAramaKutusu temelAdres="/tazminat" baslangic={arama} tasinanlar={{}} ipucu={t("aramaIpucu")} />
+        {arama ? (
+          <p className="text-muted-foreground text-xs">
+            {t("aramaSonuc", { q: arama, bekleyen: gorunenBekleyen.length, talep: gorunenTalep.length })}
+          </p>
+        ) : null}
       </div>
 
       {/* ----------------------- AÇIK ALACAK ÖZETİ ---------------------- */}
@@ -231,11 +261,13 @@ export default async function TazminatSayfasi() {
       <Card>
         <CardHeader>
           <CardTitle>
-            {t("talepEdilebilir")} ({tumBekleyenler.length})
+            {t("talepEdilebilir")} ({gorunenBekleyen.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {tumBekleyenler.length === 0 ? (
+          {arama && gorunenBekleyen.length === 0 ? (
+            <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">{t("aramaBos", { q: arama })}</p>
+          ) : gorunenBekleyen.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
               <PackageX className="text-muted-foreground mx-auto size-6" />
               <p className="mt-2 font-medium">{t("hasarBosBaslik")}</p>
@@ -245,7 +277,7 @@ export default async function TazminatSayfasi() {
             </div>
           ) : (
             <SatirListesi>
-              {tumBekleyenler.map((h) => (
+              {gorunenBekleyen.map((h) => (
                 <SatirKarti
                   key={`${h.kaynak}-${h.kalemId}`}
                   baslik={h.urun}
@@ -276,10 +308,12 @@ export default async function TazminatSayfasi() {
       {/* --------------------------- TALEPLER --------------------------- */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("talepler", { sayi: talepler.length })}</CardTitle>
+          <CardTitle>{t("talepler", { sayi: gorunenTalep.length })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {talepler.length === 0 ? (
+          {arama && gorunenTalep.length === 0 ? (
+            <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">{t("aramaBos", { q: arama })}</p>
+          ) : gorunenTalep.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
               <p className="font-medium">{t("bosBaslik")}</p>
               <p className="text-muted-foreground mt-1 text-sm">
@@ -298,7 +332,7 @@ export default async function TazminatSayfasi() {
              * olmasın.
              */
             <SatirListesi>
-              {talepler.map((k) => (
+              {gorunenTalep.map((k) => (
                 <SatirKarti
                   key={k.id}
                   baslik={talepUrunu(k)}

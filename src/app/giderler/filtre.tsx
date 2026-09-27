@@ -31,11 +31,14 @@ export function GiderFiltresi({
   kategoriler,
   seciliAy,
   seciliKategori,
+  arama = "",
 }: {
   aylar: AySecenegi[];
   kategoriler: { id: string; ad: string }[];
   seciliAy: string;
   seciliKategori: string;
+  /** K289: açık arama süzgeç değişince KAYBOLMAZ. */
+  arama?: string;
 }) {
   const t = useTranslations("Gider");
   const ortak = useTranslations("Ortak");
@@ -45,6 +48,7 @@ export function GiderFiltresi({
     const parametreler = new URLSearchParams();
     if (ay) parametreler.set("ay", ay);
     if (kategori) parametreler.set("kategori", kategori);
+    if (arama) parametreler.set("q", arama);
     const sorgu = parametreler.toString();
     router.push(sorgu ? `/giderler?${sorgu}` : "/giderler");
   }

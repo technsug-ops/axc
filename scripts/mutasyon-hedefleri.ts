@@ -237,4 +237,11 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * (`marka-kodu` · `sku-onizleme` ile ortak) mutasyona uğratıyor. ⚠ Ölçümle zorlandı.
    */
   "marka-yukleme-mutasyon:kontrol",
+  /**
+   * K289 (27.09.2026) — `liste-aramasi` hakediş sayfasını (`hakedis-ozeti` ile
+   * ortak) ve dışa aktarma listesini (`listeler.ts`) mutasyona uğratıyor;
+   * `hakedis-ozeti` bu yüzden ilk kez bir çakışma kümesine girdi. ⚠ Ölçümle zorlandı.
+   */
+  "liste-aramasi-mutasyon:kontrol",
+  "hakedis-ozeti-mutasyon:kontrol",
 ];

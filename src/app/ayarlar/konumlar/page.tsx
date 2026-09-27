@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Merge, Pencil, QrCode, TriangleAlert } from "lucide-react";
 
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { Badge } from "@/components/ui/badge";
@@ -31,8 +32,10 @@ export async function generateMetadata() {
   return { title: tBaslik("rafKonumlari") };
 }
 
-export default async function KonumlarSayfasi() {
+export default async function KonumlarSayfasi({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await sayfaIzni("ayar.yaz");
+  const { q } = await searchParams;
+  const arama = (q ?? "").trim();
 
   const konumlar = await prisma.location.findMany({
     orderBy: [{ isActive: "desc" }, { code: "asc" }],
@@ -64,6 +67,9 @@ export default async function KonumlarSayfasi() {
   // zorla düzeltilmez. Ama görünür olur: kod değişirse etiket yeniden basılır,
   // bu yüzden karar kullanıcınındır.
   const bicimsizSayi = konumlar.filter((k) => !rafKoduGecerliMi(k.code)).length;
+  /* K289 · İlke #17: raf kodu ya da adında arar (kamerayla raf etiketi okutulabilir); sayılar TÜM kümeden. */
+  const kucuk = (x: string) => x.toLocaleLowerCase("tr");
+  const gorunen = arama ? konumlar.filter((k) => [k.code, k.name ?? ""].some((a) => kucuk(a).includes(kucuk(arama)))) : konumlar;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -113,7 +119,13 @@ export default async function KonumlarSayfasi() {
         <CardHeader>
           <CardTitle>{t("tanimliRaflar", { sayi: konumlar.length })}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          {konumlar.length > 0 ? (
+            <div className="space-y-1">
+              <KodAramaKutusu temelAdres="/ayarlar/konumlar" baslangic={arama} tasinanlar={{}} ipucu={t("aramaIpucu")} />
+              {arama ? <p className="text-muted-foreground text-xs">{t("aramaSonuc", { q: arama, sayi: gorunen.length })}</p> : null}
+            </div>
+          ) : null}
           {konumlar.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
               <p className="font-medium">{t("bosBaslik")}</p>
@@ -128,7 +140,10 @@ export default async function KonumlarSayfasi() {
              * düzenle/pasife al sağda.
              */
             <SatirListesi>
-              {konumlar.map((konum) => (
+              {arama && gorunen.length === 0 ? (
+                <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">{t("aramaBos", { q: arama })}</p>
+              ) : null}
+              {gorunen.map((konum) => (
                 <SatirKarti
                   key={konum.id}
                   baslik={
