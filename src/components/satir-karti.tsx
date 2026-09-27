@@ -53,7 +53,6 @@ export function SatirKarti({
   baglam,
   sag,
   sagIzgara,
-  sagGenis,
   zemin,
   acilir,
   acikMi = false,
@@ -87,15 +86,14 @@ export function SatirKarti({
    * rakamı kırpar ve kırpılan rakam yanlış okunur.
    */
   sagIzgara?: string;
-  /**
-   * SAĞ BLOK GENİŞ (K268, kullanıcı 24.09.2026): sağ blok satırın kalanını
-   * alır (`sm:flex-[2] sm:min-w-0`) — ızgaranın ilk sütunu `minmax(0,1fr)` ise
-   * bağlam ORTAYA yayılır. Alımlarda ürün/kalem/kart bağlam satırındaydı,
-   * ortada koca bir boşluk vardı; kullanıcı «dikdörtgendeki bilgiler ara
-   * boşluğa geçsin, satışlardaki düzen korunsun» dedi. Verilmezse eski
-   * davranış AYNEN (öteki 7 ekran değişmez).
+  /*
+   * ⛔ `sagGenis` KALDIRILDI (K292, 27.09.2026) — tek kullanıcısı Alımlar'dı ve
+   * Alımlar satışlarla aynı TABLO düzenine döndü. Eski gerekçe: «SAĞ BLOK GENİŞ
+   * (K268, kullanıcı 24.09.2026): sağ blok satırın kalanını alır (`sm:flex-[2]
+   * sm:min-w-0`) — alımlarda ürün/kalem/kart bağlam satırındaydı, ortada koca
+   * bir boşluk vardı.» Kullanıcısı olmayan özellik bırakılmaz (anayasa:
+   * «yazıcısı olmayan alan bağlanır ya da kaldırılır»).
    */
-  sagGenis?: boolean;
   /**
    * Satırın DİKKAT çeken hâli — tabloda satır zemininin boyanmasının
    * karşılığı (ör. kanalda kapalı duran listeleme). Renk sınıfı `lib/renkler`
@@ -143,8 +141,7 @@ export function SatirKarti({
             /* Telefonda sağ blok TAM genişlik: uzun ad taşmaz, eylemler kendi
                satırında ızgara olur (K272). */
             "flex flex-wrap items-center gap-2 max-sm:w-full" +
-            (sagIzgara ? " sm:grid sm:items-center " + sagIzgara : "") +
-            (sagGenis ? " sm:min-w-0 sm:flex-[2]" : "")
+            (sagIzgara ? " sm:grid sm:items-center " + sagIzgara : "")
           }
         >
           {sag}

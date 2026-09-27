@@ -189,6 +189,37 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K292 — ALIMLAR SATIŞLARLA BİREBİR: MASAÜSTÜ TABLO + TELEFON KARTI · 27.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (ekran görüntüsü, /alimlar): _«burası düzensiz, satışlar sayfasını referans al — alım sayfasını
+satışlara benzet»_ · onay 27.09. Kök: satır kartı (K235/K268) her satırda genişliği kendisi hesaplıyordu;
+«Teslim alındı» rozeti ya da uzun tutar ürün sütununu satırdan satıra kaydırıyordu. Tablo tek hiza paylaşır.
+
+- **Masaüstü** 7 sütun (tavan): Tarih (+sipariş no, kopyalanır) · Alım kodu · Kanal/hesap · Ürün (resim +
+  ad → kârlılık kartı + «N adet · N kalem · kart») · Tutar · Durum · Eylemler. İptal satırı üstü çizili/soluk
+  (satışlarla aynı; `iptalliMi` önceden tanımlı ama kullanılmıyordu).
+- **Telefon** `ListeKarti` — satışlardaki kart (resim · başlık ürün · alanlar · eylemler).
+- ⛔ **K235/K268 kararı çevrildi, gerekçesi kodda duruyor.** `SatirKarti.sagGenis` tek kullanıcısını kaybetti →
+  kaldırıldı (eski gerekçe bileşende).
+- **Bekçi** `satir-karti:dogrula` K268 ölçütü ESKİDİ → taşındı (tablo + ListeKarti · ürün hücresinde ad/adet/
+  kalem/kart · başlık sütunu = satır hücresi ≤ 7 · sagGenis yok) · `urun-gorseli:dogrula` alımlar (1,0)→(1,1).
+  Harness 36→**39** (kart bilgisi düştü · başlıksız sütun · telefon kartı kalktı — üçü kırmızı).
+  ⚠ Yolda yine betik kaçışı bozuldu (`` → backspace); `kontrol-karakteri` + bekçi yakaladı, elle düzeltildi.
+
+### HALİL TEST LİSTESİ (canlı)
+1. Bilgisayarda **Alımlar**: üstte sütun başlıkları (Tarih · Alım kodu · Kanal hesabı · Ürün · Tutar · Durum ·
+   Eylemler); bütün satırlarda ürün adı **aynı hizadan** başlıyor, «Teslim alındı» satırı kaymıyor.
+2. Uzun ürün adı hep aynı genişlikte «…» ile kesiliyor; üstüne gelince tam ad.
+3. Ürün adına tıklayınca kârlılık kartı; tarihe tıklayınca alım detayı; sipariş no ve alım kodunun yanında
+   kopyala ikonu.
+4. İptal edilmiş bir alım (süzgeçten «İptal») üstü çizili ve soluk.
+5. Telefonda **Alımlar**: kartlar Satışlar'daki gibi — solda resim, başlık ürün adı, altında eşit kutular
+   (Alım kodu · Sipariş no · Adet · Tutar · Durum · Kanal hesabı · Kart), düğmeler tek satırda.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) · **kullanıcı kolaylığı: ✓** (İlke #3 · #4 · #10 · #12)
+
+---
+
 ## 🟢 K291 — ÜRÜN ETİKETİ BASIMI (XP-490B, FİRMA SKU BARKODU) · 27.09.2026 · [CANLIDA — HALİL TESTİ GEÇTİ 27.09 (40×30 basıldı, kesilme yok, 3 adet ayrı etiket; USB okuyucuyla okundu); MİMAR ONAYI BEKLİYOR]
 
 ─── ② 40×30 KARAKODLU (`c9fb71e`, 27.09): kullanıcının ürün rulosu 40×30; Code128 çizgisi 203 dpi'de

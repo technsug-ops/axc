@@ -280,21 +280,29 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   );
   kosanBolumler.push("kapsam");
 }
-/** K268 — sağ blok GENİŞ: alımlarda ürün/kalem/kart ortaya (satışlar düzeni). */
+/**
+ * K268 → K292 — ÖLÇÜT ESKİDİ, TAŞINDI (susturulmadı).
+ * Eski ölçüt: «alımlar sağ bloğu geniş (sagGenis) ve ilk sütunu esnek; ürün +
+ * adet·kalem·kart ORTA sütunda, bağlamda değil». Kullanıcı 27.09.2026: satır kartı
+ * satırdan satıra hizayı kaydırıyordu («düzensiz») → Alımlar satışlarla BİREBİR
+ * tablo + telefon kartına döndü; `sagGenis` kullanıcısız kalıp kaldırıldı.
+ * Niyet aynı: ürün ve adet·kalem·kart ÜRÜN hücresinde, hiçbir bilgi düşmüyor.
+ */
 {
   const bilesenK = kaynakOku("src/components/satir-karti.tsx").replace(/\/\*[\s\S]*?\*\//g, " ");
-  kontrol(
-    "sagGenis verilince sağ blok satırın kalanını alıyor (sm:flex-[2] sm:min-w-0)",
-    /sagGenis \? " sm:min-w-0 sm:flex-\[2\]" : ""/.test(bilesenK),
-  );
+  kontrol("sagGenis kullanıcısız kalınca kaldırıldı (ölü özellik yok)", !bilesenK.includes("sagGenis"));
   const alimlarK = kaynakOku("src/app/alimlar/page.tsx").replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
-  const sagBasi = alimlarK.indexOf("sag={");
-  const sagBloku = sagBasi >= 0 ? alimlarK.slice(sagBasi, sagBasi + 1600) : "";
-  kontrol("alımlar sağ bloğu geniş ve ilk sütunu esnek (minmax(0,1fr))",
-    /sagGenis\s+sagIzgara="sm:grid-cols-\[minmax\(0,1fr\)_auto_auto_auto\]"/.test(alimlarK));
-  kontrol("  ...ürün (UzunAd) ve adet·kalem·kart ORTA sütunda, bağlamda değil",
-    /<UzunAd/.test(sagBloku) && /toplamAdet/.test(sagBloku) && /creditCard/.test(sagBloku) &&
-      !/baglam=\{\[[\s\S]{0,900}?<UzunAd/.test(alimlarK));
+  kontrol("alımlar satışlarla aynı düzen: masaüstü <Table> + telefon ListeKarti, satır kartı yok",
+    alimlarK.includes("<Table>") && alimlarK.includes("<ListeKarti") && !alimlarK.includes("<SatirKarti"));
+  const govdeBasi = alimlarK.indexOf("<TableBody>");
+  const govde = govdeBasi >= 0 ? alimlarK.slice(govdeBasi, alimlarK.indexOf("</TableBody>", govdeBasi)) : "";
+  kontrol("  ...ürün hücresinde ad + adet·kalem·kart (bilgi düşmedi)",
+    /<UzunAd metin=\{urunOzeti\(alim\)\}/.test(govde) && govde.includes('t("toplamAdet"') && govde.includes('t("kalemSayisi"') && govde.includes("alim.creditCard.last4"));
+  const baslikBasi = alimlarK.indexOf("<TableHeader>");
+  const baslik = baslikBasi >= 0 ? alimlarK.slice(baslikBasi, alimlarK.indexOf("</TableHeader>", baslikBasi)) : "";
+  const sutun = (baslik.match(/<TableHead[\s>]/g) ?? []).length;
+  const hucre = (govde.match(/<TableCell[\s>]/g) ?? []).length;
+  kontrol(`  ...başlık sütunu = satır hücresi (${sutun} = ${hucre}) ve tavan 7`, sutun === hucre && sutun >= 5 && sutun <= 7, { sutun, hucre });
 }
 
 

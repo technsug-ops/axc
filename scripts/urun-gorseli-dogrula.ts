@@ -132,7 +132,9 @@ for (const [yol, masaustu, telefon] of [
   ["src/app/urunler/page.tsx", 1, 1],
   ["src/app/stok/page.tsx", 1, 1],
   ["src/app/satislar/page.tsx", 1, 1],
-  ["src/app/alimlar/page.tsx", 1, 0], /* SatirKarti tek gövde: masaüstü + telefon */
+  /* ölçüt güncellendi (K292, 27.09.2026): alımlar SatirKarti tek gövdesinden (1, 0)
+     satışlarla aynı tablo + telefon kartına döndü → (1, 1). */
+  ["src/app/alimlar/page.tsx", 1, 1],
 ] as const) {
   const m = oku(yol);
   const kartta = adet(m, "gorsel={<UrunGorseli ");

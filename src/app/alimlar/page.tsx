@@ -18,7 +18,16 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { UzunAd } from "@/components/uzun-ad";
 import { UrunGorseli } from "@/components/urun-gorseli";
 import { kartAdresi } from "@/lib/kart-adresi";
-import { SatirKarti, SatirListesi } from "@/components/satir-karti";
+import { IkiSatir } from "@/components/iki-satir";
+import { ListeKarti } from "@/components/liste-karti";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { DurumRozeti } from "@/components/durum-rozeti";
 import { ALIM_DURUM_RENGI } from "@/lib/durum-renkleri";
@@ -505,87 +514,150 @@ export default async function AlimlarSayfasi({
       ) : (
         <>
           {/*
-            SATIR KARTI (K235-②, 22.09.2026). Eski hâl 7 sütunluk tablo +
+            ─── K292 (kullanıcı 27.09.2026): «burası düzensiz, satışlar sayfasını
+            referans al — alım sayfasını satışlara benzet.» Satır kartı her
+            satırda kendi genişliğini hesaplıyordu: «Teslim alındı» rozeti ya da
+            uzun bir tutar ürün sütununu satırdan satıra KAYDIRIYORDU. Tablo tek
+            sütun hizası paylaşır. Düzen artık SATIŞLARLA BİREBİR (İlke #10):
+            masaüstü tablo · telefon ListeKarti. Sütun tavanı 7 (yerlesim).
+
+            ⛔ ESKİ KARAR ÇEVRİLDİ — GEREKÇESİ DURUYOR:
+            «SATIR KARTI (K235-②, 22.09.2026). Eski hâl 7 sütunluk tablo +
             telefon kartıydı; tablo sütun tavanına (7) dayandığı için adet,
             kalem sayısı ve kart ETİKET olarak hücrelere sıkıştırılmıştı.
-            Bağlam satırının sütun bütçesi yok: hepsi kendi adıyla akıyor.
-            ⚠ Hiçbir bilgi düşmedi — alım kodu manşet, sipariş no/tarih/
-            hesap/ürün/adet/kalem/kart bağlam, tutar+durum+eylemler sağda.
-
-            ─── K268 (kullanıcı 24.09.2026): «alımlardaki ara boşluğa
-            dikdörtgendeki bilgiler geçsin; satışlardaki düzen korunsun.»
-            Ürün + adet/kalem + kart bağlamdan ÇIKTI, sağ ızgaranın İLK
-            (esnek) sütununa girdi: satışlar tablosundaki sütun sırası
-            (tarih/kod · hesap · ürün · tutar · durum · eylemler) korunur,
-            gövde yine SatirKarti (K235). Telefonda ızgara çözülür, hepsi
-            akar; hiçbir bilgi düşmedi.
+            Bağlam satırının sütun bütçesi yok: hepsi kendi adıyla akıyor.»
+            «K268 (24.09.2026): ürün + adet/kalem + kart sağ ızgaranın İLK
+            (esnek) sütununa girdi; satışlar tablosundaki sütun sırası korunur.»
+            Niye çevrildi: K235'in sebebi (adet/kalem/kart hücre etiketi) bugün
+            YOK — üçü ürün adının ALTINDA tek satır, satışlardaki adet gibi;
+            sütun bütçesi aşılmıyor. Kalan tek fark hizaydı ve kullanıcı onu
+            «düzensiz» diye okudu. Hiçbir bilgi düşmedi.
           */}
-          <SatirListesi>
-            {alimlar.map((alim) => (
-              <SatirKarti
-                key={alim.id}
-                baslik={
-                  <span className="inline-flex items-center gap-1">
-                    <Baglanti href={alimAdresi(alim.id)}>{alim.code}</Baglanti>
-                    <KopyalanabilirKod
-                      deger={alim.code}
-                      etiket={t("alimKodu")}
-                      sadeceIkon
-                    />
-                  </span>
-                }
-                baglam={[
-                  /* İlke #3, mobil öncelik: sipariş no tarihten ÖNCE — kaydı
-                     bulmak için bakılan ilk şey odur. */
-                  alim.supplierOrderNo ? (
-                    <span key="siparis" className="inline-flex items-center gap-1">
-                      {alim.supplierOrderNo}
-                      <KopyalanabilirKod
-                        deger={alim.supplierOrderNo}
-                        etiket={ortak("siparisNo")}
-                        sadeceIkon
+          {/* ---------------------- MASAÜSTÜ: TABLO ---------------------- */}
+          <div className="hidden overflow-x-auto rounded-lg border md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{ortak("tarih")}</TableHead>
+                  <TableHead>{t("alimKodu")}</TableHead>
+                  <TableHead>{ortak("kanalHesabi")}</TableHead>
+                  <TableHead>{ortak("urun")}</TableHead>
+                  <TableHead className="text-right">{ortak("tutar")}</TableHead>
+                  <TableHead>{ortak("durum")}</TableHead>
+                  <TableHead>{ortak("eylemler")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {alimlar.map((alim) => (
+                  /* İptal edilen alım satışlardaki gibi üstü çizili ve soluk (İlke #10). */
+                  <TableRow key={alim.id} className={iptalliMi(alim) ? "line-through opacity-60" : undefined}>
+                    <TableCell className="whitespace-nowrap">
+                      {/* Tarih üstte (kayda giden bağlantı), sipariş no altta ve
+                          kopyalanabilir — satışlarla aynı hücre (#3, #4). */}
+                      <IkiSatir
+                        ust={<Baglanti href={alimAdresi(alim.id)}>{bicim.tarih(alim.purchasedAt)}</Baglanti>}
+                        alt={
+                          alim.supplierOrderNo ? (
+                            <KopyalanabilirKod deger={alim.supplierOrderNo} etiket={ortak("siparisNo")} />
+                          ) : null
+                        }
+                        altIpucu={alim.supplierOrderNo ?? undefined}
                       />
-                    </span>
-                  ) : null,
-                  bicim.tarih(alim.purchasedAt),
-                  alim.channelAccount
-                    ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}`
-                    : null,
-                ]}
-                /* K268: sağ blok satırın kalanını alır; ilk sütun esnek (ürün). */
-                sagGenis
-                sagIzgara="sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]"
-                sag={
-                  <>
-                    {/* ORTA SÜTUN (K268): ürün → kârlılık kartı (İlke #9, satışlarla
-                        AYNI gövde); altında adet · kalem · kart. Uzun ad kırpılır,
-                        tam hâli ipucunda (`UzunAd`); hücre `min-w-0` ki kırpma işlesin. */}
-                    <div className="flex min-w-0 items-center gap-2.5 max-sm:basis-full">
-                    <UrunGorseli ekleyebilir={resimEkleyebilir} variantId={alim.items[0]?.variantId ?? null} url={alim.items[0]?.variant.gorselUrl ?? null} kaynak={alim.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(alim)} />
-                    <div className="min-w-0">
-                      <UzunAd
-                        metin={urunOzeti(alim)}
-                        href={kartAdresi(alim.items) ?? undefined}
-                        className="max-w-full"
-                      />
-                      <div className="text-muted-foreground text-xs">
-                        {t("toplamAdet", { sayi: toplamAdet(alim) })} · {t("kalemSayisi", { sayi: alim.items.length })}
-                        {alim.creditCard ? ` · ${alim.creditCard.label} ••${alim.creditCard.last4}` : ""}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <KopyalanabilirKod deger={alim.code} etiket={t("alimKodu")} />
+                    </TableCell>
+                    <TableCell>
+                      {alim.channelAccount ? (
+                        <IkiSatir
+                          enGenis="max-w-[8rem]"
+                          ust={alim.channelAccount.channel.name}
+                          ustIpucu={alim.channelAccount.channel.name}
+                          alt={alim.channelAccount.name}
+                          altIpucu={alim.channelAccount.name}
+                        />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    {/* Ürün → kârlılık kartı (İlke #9, satışlarla AYNI gövde); altında
+                        adet · kalem · kart. Uzun ad kırpılır, tam hâli ipucunda. */}
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <UrunGorseli ekleyebilir={resimEkleyebilir} variantId={alim.items[0]?.variantId ?? null} url={alim.items[0]?.variant.gorselUrl ?? null} kaynak={alim.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(alim)} />
+                        <div className="min-w-0">
+                          <UzunAd metin={urunOzeti(alim)} href={kartAdresi(alim.items) ?? undefined} />
+                          <div className="text-muted-foreground text-xs tabular-nums">
+                            {t("toplamAdet", { sayi: toplamAdet(alim) })} · {t("kalemSayisi", { sayi: alim.items.length })}
+                            {alim.creditCard ? ` · ${alim.creditCard.label} ••${alim.creditCard.last4}` : ""}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    </div>
-                    <span className="font-semibold tabular-nums whitespace-nowrap">
+                    </TableCell>
+                    <TableCell className="text-right font-semibold whitespace-nowrap tabular-nums">
                       {toplamMetni(alim)}
-                    </span>
-                    <DurumRozeti durum={ALIM_DURUM_RENGI[alim.status]} isaretsiz>
-                      {durumEtiketleri[alim.status]}
-                    </DurumRozeti>
-                    <SatirEylemleri>{eylemler(alim)}</SatirEylemleri>
-                  </>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <DurumRozeti durum={ALIM_DURUM_RENGI[alim.status]} isaretsiz>
+                        {durumEtiketleri[alim.status]}
+                      </DurumRozeti>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <SatirEylemleri>{eylemler(alim)}</SatirEylemleri>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* ------------------------ TELEFON: KART ---------------------- */}
+          <div className="space-y-3 md:hidden">
+            {alimlar.map((alim) => (
+              <ListeKarti
+                key={alim.id}
+                gorsel={<UrunGorseli ekleyebilir={resimEkleyebilir} variantId={alim.items[0]?.variantId ?? null} url={alim.items[0]?.variant.gorselUrl ?? null} kaynak={alim.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(alim)} boyut={48} />}
+                baslik={
+                  /* Ürün → kârlılık kartı; belirsizken alım detayına düşer (mobilde
+                     satır tıklaması tek erişim yolu — satışlardaki kural). */
+                  <Baglanti href={kartAdresi(alim.items) ?? alimAdresi(alim.id)}>{urunOzeti(alim)}</Baglanti>
                 }
+                altBaslik={bicim.tarih(alim.purchasedAt)}
+                alanlar={[
+                  { etiket: t("alimKodu"), deger: <KopyalanabilirKod deger={alim.code} etiket={t("alimKodu")} /> },
+                  {
+                    etiket: ortak("siparisNo"),
+                    deger: alim.supplierOrderNo ? (
+                      <KopyalanabilirKod deger={alim.supplierOrderNo} etiket={ortak("siparisNo")} />
+                    ) : (
+                      "—"
+                    ),
+                  },
+                  {
+                    etiket: ortak("adet"),
+                    deger: `${t("toplamAdet", { sayi: toplamAdet(alim) })} · ${t("kalemSayisi", { sayi: alim.items.length })}`,
+                  },
+                  { etiket: ortak("tutar"), deger: <span className="font-semibold tabular-nums">{toplamMetni(alim)}</span> },
+                  {
+                    etiket: ortak("durum"),
+                    deger: (
+                      <DurumRozeti durum={ALIM_DURUM_RENGI[alim.status]} isaretsiz>
+                        {durumEtiketleri[alim.status]}
+                      </DurumRozeti>
+                    ),
+                  },
+                  {
+                    etiket: ortak("kanalHesabi"),
+                    deger: alim.channelAccount ? `${alim.channelAccount.channel.name} — ${alim.channelAccount.name}` : "—",
+                  },
+                  ...(alim.creditCard
+                    ? [{ etiket: ortak("kart"), deger: `${alim.creditCard.label} ••${alim.creditCard.last4}` }]
+                    : []),
+                ]}
+                eylemler={eylemler(alim)}
               />
             ))}
-          </SatirListesi>
+          </div>
 
           {/* ⚠ SÜZGEÇLER TAŞINIR: taşınmazsa "2. sayfa" tıklaması süzgeci
               sessizce sıfırlar ve kullanıcı başka bir listeye düşer. */}

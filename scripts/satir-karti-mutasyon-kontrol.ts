@@ -32,6 +32,7 @@ const STOK_SUZGEC = "src/app/stok/sirala-suzgec.tsx";
 const IADE_GECIS = "src/app/iadeler/bildirim-durumu.tsx";
 const KENAR_MENU = "src/components/app-sidebar.tsx";
 const MENU_SAYFASI = "src/app/menu/page.tsx";
+const ALIMLAR = "src/app/alimlar/page.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -43,6 +44,31 @@ type Mutasyon = {
 };
 
 const MUTASYONLAR: Mutasyon[] = [
+  /* K292 — Alımlar satışlarla aynı tablo düzeni (27.09.2026). */
+  {
+    ad: "ALIMLAR URUN HUCRESINDEN KART BILGISI DUSTU",
+    yon: "KALDIRAN",
+    dosya: ALIMLAR,
+    bul: "                            {alim.creditCard ? ` · ${alim.creditCard.label} ••${alim.creditCard.last4}` : \"\"}\n",
+    koy: "",
+    bozdugu: "masaustu tabloda hangi kartla alindigi kaybolur",
+  },
+  {
+    ad: "ALIMLAR TABLOSUNA BASLIKSIZ SUTUN EKLENDI (hiza kayar)",
+    yon: "FAZLADAN",
+    dosya: ALIMLAR,
+    bul: "                    <TableCell className=\"whitespace-nowrap\">\n                      <KopyalanabilirKod deger={alim.code} etiket={t(\"alimKodu\")} />\n                    </TableCell>\n",
+    koy: "                    <TableCell className=\"whitespace-nowrap\">\n                      <KopyalanabilirKod deger={alim.code} etiket={t(\"alimKodu\")} />\n                    </TableCell>\n                    <TableCell>{alim.code}</TableCell>\n",
+    bozdugu: "hucre sayisi basliktan fazla - sutunlar kayar, tavan asilir",
+  },
+  {
+    ad: "ALIMLAR SATIR KARTINA GERI DONDU (telefon karti yok)",
+    yon: "KALDIRAN",
+    dosya: ALIMLAR,
+    bul: "              <ListeKarti\n                key={alim.id}",
+    koy: "              <div\n                key={alim.id}",
+    bozdugu: "telefonda alimlar satislardan farkli cizilir",
+  },
   {
     ad: "ZARARSIZ - yalniz yorum degisti (harness saglamasi)",
     yon: "ZARARSIZ",
