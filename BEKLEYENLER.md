@@ -191,7 +191,7 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
-## 🔴 K291 — ÜRÜN ETİKETİ BASIMI (XP-490B, FİRMA SKU BARKODU) · 27.09.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
+## 🟢 K291 — ÜRÜN ETİKETİ BASIMI (XP-490B, FİRMA SKU BARKODU) · 27.09.2026 · [CANLIDA — HALİL TESTİ GEÇTİ 27.09 (40×30 basıldı, kesilme yok, 3 adet ayrı etiket; USB okuyucuyla okundu); MİMAR ONAYI BEKLİYOR]
 
 ─── ② 40×30 KARAKODLU (`c9fb71e`, 27.09): kullanıcının ürün rulosu 40×30; Code128 çizgisi 203 dpi'de
 ~1,6 nokta (güvensiz) → 40×30 karekod + kod iki satır (ön ek / sıra no), VARSAYILAN ölçü. Bekçi 28,
@@ -321,7 +321,7 @@ değiştirin → arama kaybolmaz · Tazminat'ta bir ürün adı · Hakediş → 
 
 ---
 
-## 🔴 K287 — ESKİ KOD TABLOSU + ARAMADA ESKİ KOD + YENİ BİÇİMDE «SKU ÖNER» · 27.09.2026 · [KOŞTU — UYGULANDI: 1.255 aktif varyant yeni kodda, `SKU_YENIDEN_KODLANDI` izi 1.255, `EskiKod` 1.255; eski kodda kalan 623 kaydın HEPSİ pasif (ölçüldü 27.09) — HALİL TESTİ BEKLİYOR]
+## 🟢 K287 — ESKİ KOD TABLOSU + ARAMADA ESKİ KOD + YENİ BİÇİMDE «SKU ÖNER» · 27.09.2026 · [KOŞTU — UYGULANDI: 1.255 aktif varyant yeni kodda, `SKU_YENIDEN_KODLANDI` izi 1.255, `EskiKod` 1.255; eski kodda kalan 623 kaydın HEPSİ pasif (ölçüldü 27.09) — HALİL TESTİ GEÇTİ 27.09 (yeni etiket «Firma SKU», eski `axcali…` etiket «eski kod» ile bulundu, stokta eski kodla arama, «Öner» KAT-MRK-NNNN); MİMAR ONAYI BEKLİYOR]
 
 Kullanıcı kararları 26–27.09: yeni kod **Firma SKU**'ya; eski kod **silinmez**, aramada ve okutmada
 çalışır. «Ek alan» yerine **tablo** (onaylı): ikinci bir yeniden kodlamada ilk eski kod kaybolmasın;
