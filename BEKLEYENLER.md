@@ -13,8 +13,7 @@
 
 ---
 
-## 🔴 K265 — CİRO ve NET-2 KARTI SEÇİLİ DÖNEME BAĞLI, GÜNLER EKSENDE · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K265 — CİRO ve NET-2 KARTI SEÇİLİ DÖNEME BAĞLI, GÜNLER EKSENDE · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 24.09: _«Paneldeki bu kart filtrelere bağlansın; operasyon ve diğer
 kartlar gibi seçilen tarihe göre grafik güncellensin. Grafiğin altında günler
 belirlensin.»_
@@ -63,8 +62,7 @@ yapıldığı gibi 3/5 için ayrı kadraj sonraki adım) — Halil testinde bak�
 
 ---
 
-## 🔴 K266 — «KOMİSYON ORANI BOŞ» ve «KOMİSYON TARİFESİ» ŞERİTTEN ÇANA · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K266 — «KOMİSYON ORANI BOŞ» ve «KOMİSYON TARİFESİ» ŞERİTTEN ÇANA · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 24.09: _«Bunları bildirimde gösterebilirsin, bugün yapacaklarımda
 olmasına gerek yok: Komisyon oranı boş kanal SKU · Komisyon tarifesi.»_
 
@@ -566,8 +564,7 @@ yazıldı; kategori değişen **0** (1.184 zaten doğru · 18 karşılıksız ·
 
 ---
 
-## 🔴 K281 — MENÜ ROZETLERİNDE SAYI OKUNMUYORDU (TANIMSIZ RENK) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K281 — MENÜ ROZETLERİNDE SAYI OKUNMUYORDU (TANIMSIZ RENK) · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı (telefon menüsü ekran görüntüsü): _«uyarının içindeki numaralar belli olmuyor»_. Rozet
 `text-destructive-foreground` kullanıyordu; bu temada **o renk tanımlı değil** (`globals.css`te
 `--color-destructive-foreground` yok — shadcn'in yeni sürümü kaldırmış). Sınıf SESSİZCE hiçbir şey
@@ -587,8 +584,7 @@ iki yönden). Bugün taranan: 10 farklı renk, 1 tanımsız (bu vaka) → 0. Har
 
 ---
 
-## 🔴 K280 — TELEFON HALKASINDA YÜZDELER %1 · %0 · %0 · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K280 — TELEFON HALKASINDA YÜZDELER %1 · %0 · %0 · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı (telefon ekran görüntüsü, «Bugün»): _«pasta grafikte hâlâ oranlar yanlış»_ —
 Hepsiburada ₺16.010 **%1**, Trendyol ₺12.440 **%0**, Elden ₺3.100 **%0** (doğrusu %51 · %39 · %10).
 Kök K270'teydi: kompakt halka `yuzdeMetni(d.tutar / toplam)` ile 0–1 ORAN veriyordu;
@@ -610,8 +606,7 @@ Bekçi `panel:dogrula` +4 (899). Harness **89/89** (+2: telefon yine oran · gö
 
 ---
 
-## 🔴 K279 — GÖREV KUTUSU «MAL KABUL» → «MAL KABUL BEKLEYEN» · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K279 — GÖREV KUTUSU «MAL KABUL» → «MAL KABUL BEKLEYEN» · 25.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 K277'nin yan bulgusu, kullanıcı kararı («yap»): panelde İKİ «Mal kabul» vardı — huni kutusu
 (bugün stoğa GİREN adet, K277) ve «Bugün ne yapmalıyım» kutusu (teslim alınmayı BEKLEYEN alım).
 Aynı ad iki farklı sayıyı taşıyordu. Görev kısa etiketi `Gorevler.kisa.malKabulBekleyen` →
@@ -1137,8 +1132,7 @@ adla almıştı (yerel kapı) — kaldırıldı. Harness `bekci-kapisi-mutasyon:
 
 ---
 
-## 🔴 K261 — HALKA YAZILARI: OK ETİKETLERİ AYRIK, MERKEZ TOPLAM DELİĞE SIĞAR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K261 — HALKA YAZILARI: OK ETİKETLERİ AYRIK, MERKEZ TOPLAM DELİĞE SIĞAR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 24.09: _"Pasta grafiğin yanındaki yazılar problemli."_ Ekran
 görüntüsü henüz gelmedi; **sebep tahmini, teyit Halil testinde**. K256'nın ok
 uçları dilimin açısından türetiliyordu: iki küçük dilim yan yanaysa oklar aynı
@@ -1192,8 +1186,7 @@ bandının üstüne biniyordu. ① tahmini yanlış hedefti; gövde zararsız, k
 
 ---
 
-## 🔴 K260 — GÜNLÜK OPERASYON YIĞILMIŞ SÜTUN, GÜNÜN TOPLAMI TEPEDE · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K260 — GÜNLÜK OPERASYON YIĞILMIŞ SÜTUN, GÜNÜN TOPLAMI TEPEDE · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 24.09: _"Renklendirmesi güzel fakat hangi gün toplam ne yapıldığı
 belli olmuyor; birbirinin üstüne eklenen bir grafik daha iyi."_ K258'in dört
 çubuğu yan yanaydı; günün toplamı hiçbir yerde okunmuyordu.
@@ -1238,8 +1231,7 @@ kesikli toplam yığılmışken geri geldi (FAZLADAN). Panel harness'i tek baş�
 
 ---
 
-## 🔴 K259 — GÖREV ŞERİDİ: ① TÜRLERE GÖRE SATIRLAR → ② DEMO BİREBİR TEK SATIR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K259 — GÖREV ŞERİDİ: ① TÜRLERE GÖRE SATIRLAR → ② DEMO BİREBİR TEK SATIR · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 24.09: _"Bugün ne yapalım kartı biraz karmaşık; türlerine göre
 düzenlemek gerek."_ K254 iki grubu (sevkiyat · tedarik) **tek satırda** ince
 bir ayraç ve ikonla ayırıyordu; iki emek göz için karışıyordu.
@@ -1307,8 +1299,7 @@ seçildi; toplam rozeti için de **kaldır**.
 **mobil doğrulama kullanıcıda** · **i18n: ✓** (`Gorevler.kisa.*` 7 anahtar tr+en;
 `bekleyen` silindi; 2 değer değişti) · **kullanıcı kolaylığı: ✓** (İlke #2 · #8 · #12)
 
-## 🔴 K258 — PARA ve OPERASYON YAN YANA, OPERASYON SÜTUN (DÖRT SERİ) · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K258 — PARA ve OPERASYON YAN YANA, OPERASYON SÜTUN (DÖRT SERİ) · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Demonun son bloğu: **"Ciro ve NET-2 — son 14 gün"** çizgi (3/5) ile **günlük
 operasyon sütunları** (2/5) aynı satırda. K257'de ikisini de "bilerek
 yapmıyorum" demiştim; kullanıcı _"demoyu sen çizdin, neden yapamıyorsun"_ dedi
@@ -1376,8 +1367,7 @@ iki alt ölçüt de boş dilime bakıp düştü.
 
 ---
 
-## 🔴 K257 — AFİŞ/ÖZET AŞAĞI, CİRO VE NET-2 SON 14 GÜN · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K257 — AFİŞ/ÖZET AŞAĞI, CİRO VE NET-2 SON 14 GÜN · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Demonun kalan sırası: hüküm → görev → pazaryeri + halka → **afiş + özet** →
 **grafikler**. Afiş ("Rafta var, vitrinde yok") ve Günlük özet pazaryeri
 satırının **altına** indi; yeni kart **"Ciro ve NET-2 — son 14 gün"** günlük
@@ -1423,8 +1413,7 @@ göre okunur (kart tam genişlik değil, satırın sol yarısı).
 
 ---
 
-## 🔴 K256 — CİRO KANALA GÖRE: OK ÇİZGİLİ HALKA, KENDİ KARTINDA · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K256 — CİRO KANALA GÖRE: OK ÇİZGİLİ HALKA, KENDİ KARTINDA · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı demo turunda açıkça istemişti: _"yuvarlak olmaz mı, her renkten
 ok'la pazaryeri ismi çıkacak şekilde."_ K247 bunu **mevcut pasta + yan
 liste** ile geçiştirmişti — ok yoktu, isim dilimin yanında değildi; bu kalem
@@ -1465,8 +1454,7 @@ o sarmalayıcının ithali kalktı. K249'un efsane düzeltmesi orada yaşıyor.
 
 ---
 
-## 🔴 K255 — KANAL KARTI DEMO ANATOMİSİ + NET-2'YE GÖRE SIRALAMA · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K255 — KANAL KARTI DEMO ANATOMİSİ + NET-2'YE GÖRE SIRALAMA · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Eski kart aynı bilgiyi beş ayrı rakam satırında dağıtıyordu; hiçbir şey öne
 çıkmıyordu. Demo anatomisi: **renk noktası + ad · marj çipi · NET-2 büyük ·
 gri satırda ciro/satış/iade · iki renkli çubuk · hüküm cümlesi.** Göz sırayla
@@ -1535,8 +1523,7 @@ değişti, tr+en) · **kullanıcı kolaylığı: ✓** (İlke #2 · #5 · #10 ·
     panel-mutasyon:kontrol   57/57 (K255 5 · K256 3 · K257 4 · K258 4 yeni; K247'nin 4'ü taşındı, 1'i yön değiştirdi)
     i18n · lint · kontrol-karakteri · mutasyon-cakisma · tsc   0
 
-## 🔴 K254 — GÖREV ŞERİDİ: İKİ KART → TEK SATIR ÇİP · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K254 — GÖREV ŞERİDİ: İKİ KART → TEK SATIR ÇİP · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Demonun ikinci bloğu. Görevler artık tek satır: **"Bugün ne yapmalıyım · 3
 bekleyen · ⛟ Onay bekleyen 3 · Kargoya verilmemiş 2 · 3 paketlendi · … ·
 📦 Mal kabul 31 · …"**, hüküm kartının hemen altında, tam genişlik.
@@ -1594,8 +1581,7 @@ koşul), ölçüt gevşetilmedi.
 
 ---
 
-## 🔴 K253 — ALTI HÜKÜM KARTI + HUNİ İNCE SATIR · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K253 — ALTI HÜKÜM KARTI + HUNİ İNCE SATIR · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Demonun birinci bloğu. Hüküm ızgarası **Brüt ciro · NET-1 · NET-2 · NET-2
 marjı · Satış adedi · İade** — altı kart, tek sıra. Üç huni sayısı (satın
 alınan · mal kabul · kargoya verilen · kargo bekleyen) ızgaranın **altında
@@ -1655,8 +1641,7 @@ kabul kutusunun kıyas rozeti çipe geçerken düşmüş, `kiyasAlim` ölü kalm
 
 ---
 
-## 🔴 K252 — ÜST KABUK + TEK SATIR SÜZGEÇ (HER EKRANDA) · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K252 — ÜST KABUK + TEK SATIR SÜZGEÇ (HER EKRANDA) · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı canlı panele bakıp **tek bir lira görmeden yedi satır kabuk** saydı:
 açık dönem · N11 çekimi · başlık+aralık · 11 dönem düğmesi · kanal · 3 kıyas
 düğmesi · afiş. Demo: başlık + tek alt satır, sağda çekim rozeti, altında
@@ -1789,8 +1774,7 @@ Push'a gitmedi; düzeltme sonraki commit'te, harness yeniden koştu. _(Anayasa:
 
 **Halil testi:** yok — tur aracı, ekran değil.
 
-## 🔴 K250 — PARA EN ÜSTTE: 14.08 KARARI ÇEVRİLDİ · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K250 — PARA EN ÜSTTE: 14.08 KARARI ÇEVRİLDİ · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı canlı panele bakıp **"dağ fare doğurdu mu demek lazım"** dedi. Haklıydı
 ve sebebi K245–K249'un küçüklüğü değildi: **ekranda tek bir lira görmeden önce
 yedi satır kabuk vardı** — dönem satırı · N11 çekimi · başlık · 11 dönem
@@ -1841,8 +1825,7 @@ yazılır.
 
 ---
 
-## 🔴 K249 — EKRANDAKİ İKİ GÖRÜNÜR KUSUR · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K249 — EKRANDAKİ İKİ GÖRÜNÜR KUSUR · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcının canlı ekran görüntüsünden çıktı; ikisi de **ölçüldü**, tahmin değil.
 
 ### ① HALKA EFSANESİ KIRPILIYORDU
@@ -1900,8 +1883,7 @@ deseni çift kaçırılmıştı ve hedefle eşleşmiyordu; harness bunu yeşil s
 
 ---
 
-## 🔴 K248 — GÖREV KUTUCUĞU ŞERİT BİÇİMİNDE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K248 — GÖREV KUTUCUĞU ŞERİT BİÇİMİNDE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Panel demosunun dördüncü paketi. Eski hâl: **büyük rakam ÜSTTE, 11 px etiket
 ALTTA** — iki satır, ve dar hücrede etiket harf harf sarıyordu
 ("Kargo | ya verilm | emiş"). Bu zaten belgelenmiş bir sorundu. Şimdi
@@ -1957,8 +1939,7 @@ söyleyemezdi; hiçbir göz testi bunu göstermez. Ayrı mutasyonla korunuyor.
 **mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni anahtar yok) ·
 **kullanıcı kolaylığı: ✓** (İlke #2 · #8 · #12)
 
-## 🔴 K247 — CİRO HALKASI PANELDE, KANAL KARTLARIYLA AYNI DÜZLEMDE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K247 — CİRO HALKASI PANELDE, KANAL KARTLARIYLA AYNI DÜZLEMDE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Panel demosunun üçüncü paketi. Kullanıcı kararı: _"pazaryeri performansı ile
 ciroya göre kanal aynı düzlemde olamaz mı"_.
 
@@ -2054,8 +2035,7 @@ dolduruyor)
     K248  görev kutusu şeridi  ✓ (kart İÇİNDE — tam genişlik şerit
           iki kayıtlı kullanıcı kararını çevirirdi, ölçüldü)
 
-## 🔴 K246 — İKİ PAY ÇUBUĞUNUN FARKI ARTIK CÜMLE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K246 — İKİ PAY ÇUBUĞUNUN FARKI ARTIK CÜMLE · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Panel demosunun ikinci paketi. Kullanıcının demoda en çok beğendiği şey
 kanal kartındaki hüküm satırıydı.
 
@@ -2143,8 +2123,7 @@ burada tersi: kapsamı içindeki bir ilkeyi demo uğruna çiğnememek.)_
 
 ---
 
-## 🔴 K245 — NET-2 MARJI KUTUSU: BİR ORANIN DEĞİŞİMİ PUAN, YÜZDE DEĞİL · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🔴 K245 — NET-2 MARJI KUTUSU: BİR ORANIN DEĞİŞİMİ PUAN, YÜZDE DEĞİL · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → 27.09 panel turunda Adım 5 «puan yazmıyor» dendi: test tarifi eksikti (değişim yalnız «Karşılaştır» seçiliyken çizilir, varsayılan kapalı); karşılaştırma açık TEKRAR BEKLİYOR]
 Kullanıcı panel tasarımı için bir demo istedi, demoyu onayladı ve
 _"birebir yapabilir misin"_ dedi. Demo dört pakete bölündü; bu birincisi.
 
@@ -2237,8 +2216,7 @@ senaryolar — ikisi de KIRMIZI yandı.
 
 ---
 
-## 🔴 K244 — PANEL BİR HÜKÜM YERİDİR: DÖKÜM KANAL LİSTELEMEYE TAŞINDI · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K244 — PANEL BİR HÜKÜM YERİDİR: DÖKÜM KANAL LİSTELEMEYE TAŞINDI · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı aynı turda iki bildirim gönderdi; ikisi de panelin İLK EKRANINI
 yiyen kutulardı ve tek satırda çözüldüler.
 
