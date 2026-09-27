@@ -191,6 +191,54 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K288 — MARKA LİSTESİ GERİ YÜKLEME + ARAMA (İLKE #17) · 27.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı: _«markalarda olmayanı indirebiliyoruz ama düzeltip yükleyemiyoruz, onu da kurgula»_ ·
+_«Markalar kısmında arama tuşu yok, aradığım bir markayı bulmak saatler alır»_ · **KURAL:** _«birçok
+verinin olduğu her sayfada mutlaka arama tuşu bulunsun»_ → **CLAUDE.md İlke #17** (kontrol listesi 17 madde).
+
+- **Yükleme** (Markalar ekranı, izin `urun.yaz`): «markası boş ürünler» Excel'i doldurulup yüklenir →
+  ÖNİZLEME (yazmaz) → onay → yazım. Saf plan `lib/marka-yukleme.ts`: kimliğe göre; tablodaki marka
+  TABLONUN adıyla + bağlı; yeni marka kullanıcının yazımıyla, bağsız; DOLU marka EZİLMEZ; hatalı satır
+  sebebiyle, yazılmaz. Yazım şartlı + izli (`MARKA_LISTE_YUKLENDI`). Şüpheli yükleyiciyle aynı düzen.
+- **Arama** (ortak `KodAramaKutusu`, kameralı, adrese yazılır): **Markalar** (ad/yazım/anahtar/kod,
+  büyük-küçük/Türkçe harf farksız) · **SKU önizlemesi** (ad · eski kod · SKU · yeni kod · marka) ·
+  **Trendyol kategori eşleşmesi** (208 satır). Sayılar ve «hepsini ekle» TÜM kümeden.
+- ⚠ **Sözlük denetçisi kusuru bulundu ve düzeltildi:** `i18n-kontrol` noktalı anahtarı
+  (`t("yukleme.baslik")`) çözemiyor, sözlükte VAR olanı «EKSİK» sayıyordu (bugüne kadar sabit iç içe
+  çağrı yazılmamıştı). Yol artık çözülüyor; nesneye düşen çağrı da eksik sayılıyor. İki mutasyon
+  (iç içe anahtarı sil · nesneye düşen çağrı) kırmızı görüldü.
+- **Bekçi** `marka-yukleme:dogrula` 24 · harness **14/14**.
+
+**Bugünkü veri işi:** kullanıcının doldurduğu «Markası boş ürünler.xlsx» (621 satır) → **620 ürüne
+marka** yazıldı (577 bağlı; FİSHER PRIZE → Fisher Price, LENOVO 600 → Lenovo kullanıcı onayıyla;
+44 ürün 33 yeni markada bağsız). 618'i uyuyan PASİF kayıt — kategori yazmaya gerek görülmedi.
+
+### HALİL TEST LİSTESİ (canlı)
+1. Tanımlar → Markalar → arama kutusuna **philips** → yalnız Philips satırı; «"philips" için 1 marka».
+2. Aynı kutuya **KRC** → Karaca çıkar (kodla arama).
+3. Aramadayken üstteki kutular değişmez (Tabloda / Bağlanmayı bekleyen tüm sayı).
+4. «Doldurduğunuz listeyi yükleyin» kartı → dosya seçmeden «Önizle» kapalı; markası boş listeyi
+   indirip 1 satıra marka yazıp yükleyin → önizleme «1 ürüne marka yazılacak» → Uygula → onay → sonuç.
+5. Ürünler → SKU önizlemesi → arama **axcali1665** → tek satır `→ OYU-LEG-0001`; **OYU-LEG-0001**
+   yazınca da aynı ürün.
+6. Ayarlar → Kategoriler → Trendyol eşleşmesi → arama **süpürge** → Dik Süpürge vb. satırlar.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** · **kullanıcı kolaylığı: ✓** (İlke #5 · #6 · #10 · #17)
+
+---
+
+## 🟡 K289 — İLKE #17 TARAMASI: ARAMASIZ BÜYÜYEN LİSTELER · 27.09.2026 · [ÖLÇÜLDÜ — AÇIK]
+
+Canlı kayıt sayıları (27.09): **Hakediş** partileri **69** · **Raf konumları** **43** · **Giderler**
+**24** · **Tazminat** **21** — hepsi büyüyen listeler, arama kutusu YOK. Küçük ve sabit kalanlar
+(tedarikçi 10 · kart 11 · kategori 25 · düzeltme nedeni 11 · kullanıcı 3) şimdilik muaf; kayıt
+büyüdükçe yeniden ölçülür. ⚠ Tarama kaba: `.map(` + arama deseni yokluğu; detay/form ekranları elle
+elendi. **Açılış:** K288 Halil testinden sonra, dört ekrana `KodAramaKutusu`. İleride desen yasağıyla
+bekçiye bağlanabilir (liste ekranı ⇒ arama zorunlu) — ölçütü önce tasarlanmalı.
+
+---
+
 ## 🔴 K287 — ESKİ KOD TABLOSU + ARAMADA ESKİ KOD + YENİ BİÇİMDE «SKU ÖNER» · 27.09.2026 · [KOD + MIGRATION KOŞTU — DEPLOY, SONRA UYGULAMA]
 
 Kullanıcı kararları 26–27.09: yeni kod **Firma SKU**'ya; eski kod **silinmez**, aramada ve okutmada

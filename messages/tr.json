@@ -4549,7 +4549,9 @@
       "KATEGORI_YOK": "Seçilen kategori bulunamadı ya da pasif; sayfayı yenileyin.",
       "ESLESME_YOK": "Bu Trendyol kategorisi bulunamadı; sayfayı yenileyin.",
       "HATA": "Kaydedilemedi. Tekrar deneyin; sürerse yöneticiye bildirin."
-    }
+    },
+    "aramaIpucu": "Trendyol kategorisi ya da bizim kategori ara",
+    "aramaSonuc": "«{q}» için {sayi} kategori"
   },
   "SupheliUrun": {
     "baslik": "Şüpheli ürünler",
@@ -4669,7 +4671,40 @@
     "sutunBarkod": "Barkod",
     "sutunKategori": "Kategori",
     "sutunAktif": "Aktif",
-    "sutunMarka": "Marka (doldurun)"
+    "sutunMarka": "Marka (doldurun)",
+    "aramaIpucu": "Marka adı ya da kod ara",
+    "aramaSonuc": "«{q}» için {sayi} marka",
+    "yukleme": {
+      "baslik": "Doldurduğunuz listeyi yükleyin",
+      "metin": "Yukarıdaki «markası boş ürünler» listesini indirip «Marka (doldurun)» sütununu doldurun, sonra buradan yükleyin. Önce önizleme gösterilir; onayınız olmadan hiçbir şey yazılmaz. Tabloda olan marka tablodaki adıyla yazılır ve koda bağlanır; yeni marka «bağlanmayı bekleyen»e düşer.",
+      "dosyaSec": "Dosya seçin",
+      "onizle": "Önizle",
+      "onizleniyor": "Okunuyor…",
+      "ozetYaz": "{sayi} ürüne marka yazılacak ({bagli} tanesi tablodaki markaya bağlanacak)",
+      "ozetBos": "{sayi} satır boş bırakılmış — atlanacak",
+      "ozetAyni": "{sayi} ürünün markası zaten bu",
+      "ozetHata": "{sayi} satırda hata — bu satırlar yazılmayacak",
+      "hataSatir": "Satır {satir}",
+      "hata": {
+        "BILINMEYEN_URUN": "Bu kimlikte ürün yok (Kimlik sütunu değişmiş olabilir)",
+        "KIMLIK_TEKRAR": "Aynı ürün listede birden çok kez var",
+        "MARKA_DOLU": "Ürünün markası artık dolu («{deger}») — ezilmez",
+        "GECERSIZ_MARKA": "Marka harf ya da rakam içermiyor: «{deger}»"
+      },
+      "yazilacakYok": "Yazılacak satır yok.",
+      "uygula": "Uygula",
+      "uygulaniyor": "Yazılıyor…",
+      "onayBaslik": "Markalar yazılsın mı?",
+      "onayMetni": "{sayi} ürüne marka yazılacak, {bagli} tanesi tablodaki markaya bağlanacak. Her değişiklik kayda geçer.",
+      "sonuc": "{sayi} ürüne marka yazıldı · {bagli} tanesi bağlandı · {atlanan} atlandı (bu arada değişmiş)",
+      "dosyaHata": {
+        "DOSYA_YOK": "Önce bir dosya seçin.",
+        "OKUNAMADI": "Dosya okunamadı — Excel (.xlsx) olduğundan emin olun.",
+        "SAYFA_YOK": "Dosyada «Kimlik» ve «Marka (doldurun)» sütunları bulunamadı. Listeyi bu ekrandan indirip doldurun.",
+        "YETKISIZ": "Bu işlem için ürün düzenleme yetkiniz yok.",
+        "HATA": "Beklenmeyen bir hata oluştu; hiçbir şey yazılmadı."
+      }
+    }
   },
   "SkuOnizleme": {
     "baslik": "SKU önizlemesi",
@@ -4697,6 +4732,9 @@
     "sutunSku": "SKU",
     "sutunYeni": "Önerilen yeni Firma SKU",
     "sutunDurum": "Durum",
-    "baglanti": "SKU önizlemesi"
+    "baglanti": "SKU önizlemesi",
+    "aramaIpucu": "Ürün adı, eski ya da yeni kod ara",
+    "aramaSonuc": "«{q}» için {sayi} ürün",
+    "aramaListeBaslik": "Arama sonuçları ({sayi})"
   }
 }

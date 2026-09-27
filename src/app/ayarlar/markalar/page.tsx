@@ -2,13 +2,16 @@ import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { IstatistikKutusu } from "@/components/istatistik-kutusu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { markaAnahtari } from "@/lib/marka-kodu";
 import { markaDurumu } from "@/lib/marka-kodu-veri";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
-import { sayfaIzni } from "@/lib/yetki";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 import { HepsiniEkle, KodDuzenle, MarkaEkle } from "./marka-eylemleri";
+import { MarkaYukleyici } from "./marka-yukleyici";
 
 /**
  * ============================================================================
@@ -31,14 +34,32 @@ export async function generateMetadata() {
 
 const yazimMetni = (y: [string, number][]) => y.map(([a, n]) => `${a} (${n})`).join(" · ");
 
-export default async function MarkalarSayfasi() {
+/**
+ * K288 · İlke #17 — ARAMA: marka adı, yazımları, anahtarı ve kodu (katlanmış —
+ * «philips» = «PHİLİPS»). Sayılar (kutular) TÜM kümeyi gösterir; aranan küme
+ * listelerde süzülür ve kaç sonuç olduğu yazar.
+ */
+function eslesir(q: string, m: { name?: string; ad?: string; anahtar: string; code?: string; yazimlar: [string, number][] }) {
+  const k = markaAnahtari(q);
+  if (k === "") return true;
+  const alanlar = [m.name ?? m.ad ?? "", m.anahtar, m.code ?? "", ...m.yazimlar.map(([y]) => y)];
+  return alanlar.some((a) => markaAnahtari(a).includes(k));
+}
+
+export default async function MarkalarSayfasi({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await sayfaIzni("ayar.yaz");
   const t = await getTranslations("MarkaKodu");
-  const { tablo, bagsiz, markasiz } = await markaDurumu();
-  const bagsizUrun = bagsiz.reduce((s, m) => s + m.urun, 0);
-  const eklenecek = bagsiz.filter((m) => m.tabloId === null && m.oneri !== null).length;
-  const baglanacak = bagsiz.filter((m) => m.tabloId !== null).length;
-  const kodsuz = bagsiz.filter((m) => m.tabloId === null && m.oneri === null).length;
+  const { q } = await searchParams;
+  const arama = (q ?? "").trim();
+  const yukleyebilir = await izinVarMi("urun.yaz");
+  const { tablo: tumTablo, bagsiz: tumBagsiz, markasiz } = await markaDurumu();
+  const tablo = arama ? tumTablo.filter((m) => eslesir(arama, m)) : tumTablo;
+  const bagsiz = arama ? tumBagsiz.filter((m) => eslesir(arama, m)) : tumBagsiz;
+  const bagsizUrun = tumBagsiz.reduce((s, m) => s + m.urun, 0);
+  /* «Hepsini ekle» TÜM bekleyenlere işler — sayıları da tüm kümeden (aramadan bağımsız). */
+  const eklenecek = tumBagsiz.filter((m) => m.tabloId === null && m.oneri !== null).length;
+  const baglanacak = tumBagsiz.filter((m) => m.tabloId !== null).length;
+  const kodsuz = tumBagsiz.filter((m) => m.tabloId === null && m.oneri === null).length;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -48,8 +69,8 @@ export default async function MarkalarSayfasi() {
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <IstatistikKutusu etiket={t("kutuTablo")} cocuk={tablo.length} />
-        <IstatistikKutusu etiket={t("kutuBagsiz")} cocuk={bagsiz.length} altNot={t("urunSayisi", { sayi: bagsizUrun })} />
+        <IstatistikKutusu etiket={t("kutuTablo")} cocuk={tumTablo.length} />
+        <IstatistikKutusu etiket={t("kutuBagsiz")} cocuk={tumBagsiz.length} altNot={t("urunSayisi", { sayi: bagsizUrun })} />
         <IstatistikKutusu etiket={t("kutuMarkasiz")} cocuk={markasiz} altNot={t("urunBirimi")} />
       </div>
 
@@ -63,6 +84,23 @@ export default async function MarkalarSayfasi() {
           <ExcelIndir liste="markasiz" />
         </div>
       ) : null}
+
+      {yukleyebilir ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("yukleme.baslik")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-muted-foreground text-sm">{t("yukleme.metin")}</p>
+            <MarkaYukleyici />
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <div className="space-y-1">
+        <KodAramaKutusu temelAdres="/ayarlar/markalar" baslangic={arama} tasinanlar={{}} ipucu={t("aramaIpucu")} />
+        {arama ? <p className="text-muted-foreground text-xs">{t("aramaSonuc", { q: arama, sayi: tablo.length + bagsiz.length })}</p> : null}
+      </div>
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">

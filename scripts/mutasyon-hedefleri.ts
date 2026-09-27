@@ -232,4 +232,9 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * sıralı gruptaki pek çok harness'le ortak dosyalar. ⚠ Ölçümle zorlandı.
    */
   "eski-kod-mutasyon:kontrol",
+  /**
+   * K288 (27.09.2026) — `marka-yukleme` Markalar ve SKU önizlemesi ekranlarını
+   * (`marka-kodu` · `sku-onizleme` ile ortak) mutasyona uğratıyor. ⚠ Ölçümle zorlandı.
+   */
+  "marka-yukleme-mutasyon:kontrol",
 ];

@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { ExcelIndir } from "@/components/excel-indir";
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { IstatistikKutusu } from "@/components/istatistik-kutusu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { OnizlemeDurumu } from "@/lib/sku-onizleme";
@@ -27,11 +28,26 @@ export async function generateMetadata() {
 
 const DURUMLAR: OnizlemeDurumu[] = ["HAZIR", "AYNI", "KATEGORI_YOK", "KATEGORI_KODSUZ", "MARKA_YOK", "CAKISMA"];
 const ORNEK_SAYISI = 50;
+/** Aramada gösterilen en çok satır — daha fazlası Excel'de. */
+const ARAMA_TAVANI = 200;
 
-export default async function SkuOnizlemeSayfasi() {
+/**
+ * K288 · İlke #17 — ARAMA: ürün adı · eski Firma SKU · SKU · önerilen yeni kod ·
+ * marka (büyük/küçük harf farksız). Durum kutuları TÜM kümeyi gösterir.
+ */
+const kucuk = (s: string) => s.toLocaleLowerCase("tr");
+
+export default async function SkuOnizlemeSayfasi({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await sayfaIzni("urun.gor");
   const t = await getTranslations("SkuOnizleme");
+  const { q } = await searchParams;
+  const arama = (q ?? "").trim();
   const satirlar = await skuOnizlemeSatirlari();
+  const bulunan = arama
+    ? satirlar.filter((s) =>
+        [s.urunAdi, s.eskiFirmaSku, s.sku, s.yeniKod ?? "", s.marka].some((a) => kucuk(a).includes(kucuk(arama))),
+      )
+    : [];
   const kodlu = satirlar.filter((s) => s.yeniKod !== null);
   const sorunlu = satirlar.filter((s) => s.yeniKod === null);
 
@@ -46,6 +62,33 @@ export default async function SkuOnizlemeSayfasi() {
         </div>
         <ExcelIndir liste="sku-onizleme" />
       </div>
+
+      <div className="space-y-1">
+        <KodAramaKutusu temelAdres="/urunler/sku-onizleme" baslangic={arama} tasinanlar={{}} ipucu={t("aramaIpucu")} />
+        {arama ? <p className="text-muted-foreground text-xs">{t("aramaSonuc", { q: arama, sayi: bulunan.length })}</p> : null}
+      </div>
+
+      {arama ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("aramaListeBaslik", { sayi: bulunan.length })}</CardTitle>
+            {bulunan.length > ARAMA_TAVANI ? <p className="text-muted-foreground text-xs">{t("ornekNot")}</p> : null}
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {bulunan.slice(0, ARAMA_TAVANI).map((s) => (
+                <div key={s.kimlik} className="grid gap-1 px-4 py-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                  <p className="truncate text-sm">{s.urunAdi}</p>
+                  <p className="font-mono text-sm">
+                    <span className="text-muted-foreground">{s.eskiFirmaSku}</span> →{" "}
+                    {s.yeniKod ? <span className="font-semibold">{s.yeniKod}</span> : <span className={DURUM_YAZISI.uyari}>{t(`durum.${s.durum}`)}</span>}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {DURUMLAR.map((d) => (

@@ -179,7 +179,18 @@ tercih değil, zorunluluktur:
     ayrışır. Panelin en temel sözü **"sayı = liste"**dir (İlke #9'un
     kardeşi; bkz. `GOREV_ADRESLERI` deseni).
 
-YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 16 maddeye
+17. ÇOK KAYIT = ARAMA KUTUSU: Satır sayısı veriyle birlikte büyüyen her
+    liste sayfasında **arama kutusu** bulunur. Aradığı kaydı gözle taramak
+    zorunda kalan kullanıcı, o sayfayı kullanamıyor demektir. Arama ortak
+    bileşenle yapılır (`KodAramaKutusu` — kamera dahil, İlke #7 ve #10);
+    arama adrese yazılır; kaç sonuç bulunduğu ekranda yazar. Sayılar ve
+    toplu eylemler aramadan bağımsız TÜM kümeyi gösterir — ya da açıkça
+    «aramadaki N» der (İlke #15'in ruhu: ekrandaki sayının neyi saydığı belli).
+    _Kullanıcı kuralı 27.09.2026: «Markalar kısmında arama tuşu yok; aradığım
+    bir markayı bulmak saatler alır» — 109 markalık ekran ve 1.255 satırlık
+    SKU önizlemesi aramasız yayımlanmıştı._
+
+YENİ EKRAN KONTROL LİSTESİ: Her yeni ekran tesliminde bu 17 maddeye
 uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklenir.
 
 ## İş sabitleri

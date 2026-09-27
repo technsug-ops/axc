@@ -4549,7 +4549,9 @@
       "KATEGORI_YOK": "",
       "ESLESME_YOK": "",
       "HATA": ""
-    }
+    },
+    "aramaIpucu": "",
+    "aramaSonuc": ""
   },
   "SupheliUrun": {
     "baslik": "",
@@ -4669,7 +4671,40 @@
     "sutunBarkod": "",
     "sutunKategori": "",
     "sutunAktif": "",
-    "sutunMarka": ""
+    "sutunMarka": "",
+    "aramaIpucu": "",
+    "aramaSonuc": "",
+    "yukleme": {
+      "baslik": "",
+      "metin": "",
+      "dosyaSec": "",
+      "onizle": "",
+      "onizleniyor": "",
+      "ozetYaz": "",
+      "ozetBos": "",
+      "ozetAyni": "",
+      "ozetHata": "",
+      "hataSatir": "",
+      "hata": {
+        "BILINMEYEN_URUN": "",
+        "KIMLIK_TEKRAR": "",
+        "MARKA_DOLU": "",
+        "GECERSIZ_MARKA": ""
+      },
+      "yazilacakYok": "",
+      "uygula": "",
+      "uygulaniyor": "",
+      "onayBaslik": "",
+      "onayMetni": "",
+      "sonuc": "",
+      "dosyaHata": {
+        "DOSYA_YOK": "",
+        "OKUNAMADI": "",
+        "SAYFA_YOK": "",
+        "YETKISIZ": "",
+        "HATA": ""
+      }
+    }
   },
   "SkuOnizleme": {
     "baslik": "",
@@ -4697,6 +4732,9 @@
     "sutunSku": "",
     "sutunYeni": "",
     "sutunDurum": "",
-    "baglanti": ""
+    "baglanti": "",
+    "aramaIpucu": "",
+    "aramaSonuc": "",
+    "aramaListeBaslik": ""
   }
 }

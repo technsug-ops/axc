@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { Card, CardContent } from "@/components/ui/card";
 import { kategoriKarari } from "@/lib/kategori-eslesme";
 import { prisma } from "@/lib/prisma";
@@ -27,7 +28,7 @@ export async function generateMetadata() {
   return { title: t("baslik") };
 }
 
-export default async function TyKategoriEslesmeSayfasi() {
+export default async function TyKategoriEslesmeSayfasi({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await sayfaIzni("ayar.yaz");
   const t = await getTranslations("KategoriEslesme");
 
@@ -81,6 +82,14 @@ export default async function TyKategoriEslesmeSayfasi() {
         a.tyKategori.localeCompare(b.tyKategori, "tr"),
     );
   const karsiliksiz = satirlar.filter((s) => s.categoryId === null && s.urun > 0).length;
+  /* İlke #17 (K288): Trendyol kategori adında ve seçili karşılığın adında arar; uyarı sayısı TÜM kümeden. */
+  const { q } = await searchParams;
+  const arama = (q ?? "").trim();
+  const kategoriAdi = new Map(kategoriler.map((k) => [k.id, k.name]));
+  const kucuk = (x: string) => x.toLocaleLowerCase("tr");
+  const gorunen = arama
+    ? satirlar.filter((s) => [s.tyKategori, s.categoryId ? kategoriAdi.get(s.categoryId) ?? "" : ""].some((a) => kucuk(a).includes(kucuk(arama))))
+    : satirlar;
   const secenekler = kategoriler.map((k) => ({ id: k.id, ad: k.name, kdv: String(Number(k.vatRate.toString())) }));
 
   return (
@@ -104,13 +113,18 @@ export default async function TyKategoriEslesmeSayfasi() {
         </div>
       ) : null}
 
+      <div className="space-y-1">
+        <KodAramaKutusu temelAdres="/ayarlar/kategoriler/trendyol" baslangic={arama} tasinanlar={{}} ipucu={t("aramaIpucu")} />
+        {arama ? <p className="text-muted-foreground text-xs">{t("aramaSonuc", { q: arama, sayi: gorunen.length })}</p> : null}
+      </div>
+
       <Card>
         <CardContent className="p-0">
-          {satirlar.length === 0 ? (
+          {gorunen.length === 0 ? (
             <p className="text-muted-foreground p-8 text-center text-sm">{t("bos")}</p>
           ) : (
             <div className="divide-y">
-              {satirlar.map((s) => (
+              {gorunen.map((s) => (
                 <div
                   key={s.tyKategori}
                   className="grid items-center gap-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_16rem]"

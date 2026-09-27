@@ -44,7 +44,15 @@ for (const yol of dosyalar("src")) {
     for (const e of kaynak.matchAll(cagri)) {
       const anahtar = e[1];
       kontrolEdilen++;
-      if (tr[adAlani]?.[anahtar] === undefined) {
+      /*
+       * ⚠ NOKTALI YOL ÇÖZÜLÜR (27.09.2026, K288). Eski hâli `tr[adAlani]?.[anahtar]`
+       * idi: yalnız İKİ seviyeye bakıyordu ve `t("yukleme.baslik")` gibi next-intl'in
+       * desteklediği iç içe anahtarı — sözlükte VAR olduğu hâlde — «EKSIK» sayıyordu.
+       * Bugüne kadar sabit iç içe çağrı yazılmadığı için görünmemişti. Yaprak DEĞİL
+       * nesneye düşen yol da eksik sayılır (ekranda metin yerine nesne çıkardı).
+       */
+      const deger = anahtar.split(".").reduce((o, k) => (o == null ? undefined : o[k]), tr[adAlani]);
+      if (deger === undefined || (typeof deger === "object" && deger !== null)) {
         console.log(`EKSIK  ${adAlani}.${anahtar}   (${yol})`);
         eksik++;
       }
