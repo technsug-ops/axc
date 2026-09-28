@@ -266,8 +266,7 @@ Rafta `KUC-BRN-0004` etiketi varsa çalışmaya devam eder; yenisi isteğe bağl
 
 ---
 
-## 🔴 K293 — ÜRÜN ANALİZİ TELEFONDA: SÜZGEÇLER KATLANIR, LİSTE İLK EKRANDA · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
-
+## 🟢 K293 — ÜRÜN ANALİZİ TELEFONDA: SÜZGEÇLER KATLANIR, LİSTE İLK EKRANDA · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (telefon: liste ilk ekranda, kanal düğmeleri sarılı, Trendyol seçilince «Bu ay · Trendyol» + 1); MİMAR ONAYI BEKLİYOR]
 Kullanıcı: _«mobilde ürün analizi filtrelerden dolayı çok verimsiz»_ · onay «başla». Ölçüm (kaynak): telefonda
 listeden önce 9 süzgeç bloğu alt alta (Sırala/Yön/Satır/En az adet/En az ciro beşi TAM genişlik; 11 kanal
 3–4 satır; dönem çipleri sarıyor) → ilk ürün 1,5–2 ekran aşağıda.
@@ -440,8 +439,7 @@ marka** yazıldı (577 bağlı; FİSHER PRIZE → Fisher Price, LENOVO 600 → L
 
 ---
 
-## 🔴 K289 — İLKE #17 TARAMASI: ARAMASIZ BÜYÜYEN LİSTELER · 27.09.2026 · [③ RAF BİREBİR KOD — KOD YAZILDI, RAF TESTİ YENİDEN BEKLİYOR; öteki üç ekran GEÇTİ]
-
+## 🔴 K289 — İLKE #17 TARAMASI: ARAMASIZ BÜYÜYEN LİSTELER · 27.09.2026 · [③ RAF BİREBİR KOD — KOD YAZILDI, RAF TESTİ YENİDEN BEKLİYOR; öteki üç ekran GEÇTİ → ⚠ 28.09 test tarifi DÜZELTİLDİ: Raf Konumları kullanıcının kayıtlı menü düzeninde «Ayarlar» grubunda (kod varsayılanı Tanımlar); tarif kayıtlı düzene bakılmadan yazılmıştı]
 Canlı kayıt sayıları (27.09): **Hakediş** partileri **69** · **Raf konumları** **43** · **Giderler**
 **24** · **Tazminat** **21** — hepsi büyüyen listeler, arama kutusu YOK. Küçük ve sabit kalanlar
 (tedarikçi 10 · kart 11 · kategori 25 · düzeltme nedeni 11 · kullanıcı 3) şimdilik muaf; kayıt
@@ -3079,8 +3077,7 @@ aykırı. **Mekanizma hazır**; sıra kullanıcının hangisini istediğine gör
 
 ---
 
-## 🔴 K234 — "FİYATLANDIRMA VE ANALİZ" GRUBU + TARİFE HESAPLAMA EKRANI · 22.09.2026 · [CANLIDA 835a010 — HALİL TESTİ BEKLİYOR · menü kaydını kullanıcı kendisi taşıdı]
-
+## 🔴 K234 — "FİYATLANDIRMA VE ANALİZ" GRUBU + TARİFE HESAPLAMA EKRANI · 22.09.2026 · [CANLIDA 835a010 — HALİL TESTİ BEKLİYOR · menü kaydını kullanıcı kendisi taşıdı → 28.09 menü grubu GEÇTİ (Ürün analizi · Kârlılık kartı · Hesaplama motoru · Tarife hesaplama); tarife hesaplama ekranı testi BEKLİYOR]
 **KULLANICI İSTEĞİ:** _"Fiyatlandırma ve Analiz isminde bir sekme açalım;
 altına Ürün analizi · Fiyat denemesi · Kârlılık kartı · Tarife hesaplama."_
 Ardından: _"Fiyat denemesi'nin ismi Hesaplama motoru olsun"_ ve tarife
