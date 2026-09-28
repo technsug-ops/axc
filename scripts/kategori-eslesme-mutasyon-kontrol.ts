@@ -21,6 +21,8 @@ const SENKRON = "scripts/canli-kanal-listeleme-yaz.ts";
 const SAYFA = "src/app/ayarlar/kategoriler/trendyol/page.tsx";
 const EYLEM = "src/app/ayarlar/kategoriler/trendyol/eylemler.ts";
 const TOPLA = "src/lib/uyari/topla.ts";
+const SUZGEC = "src/lib/ty-kategori-suzgeci.ts";
+const URUNLER = "src/app/urunler/page.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -53,6 +55,15 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: '    if (!baglam || !baglam.izinler.has("ayar.yaz")) return { hata: "YETKISIZ" };', koy: '    if (!baglam) return { hata: "YETKISIZ" };', bozdugu: "ayar yetkisi olmayan eslesmeyi degistirir" },
   { ad: "CAN UYARISI BASKA SAYACTAN", yon: "KALDIRAN", dosya: TOPLA,
     bul: "    tyKategoriKarsiliksiz: { sayi: await tyKategoriKarsiliksizSayisi() },", koy: "    tyKategoriKarsiliksiz: { sayi: 0 },", bozdugu: "karsiliksiz kategori varken can susar" },
+  /* K295 — «N ürün» → ürün listesi, sayı = liste. */
+  { ad: "LISTE PASIF URUNLERI DE ACIYOR (sayi != liste)", yon: "FAZLADAN", dosya: SUZGEC,
+    bul: "  return { isActive: true, tyKategori };", koy: "  return { tyKategori };", bozdugu: "243 urun yazar, pasiflerle daha uzun liste acilir" },
+  { ad: "KATEGORI ADI KODLANMADAN ADRESE YAZILIYOR", yon: "FAZLADAN", dosya: SUZGEC,
+    bul: "=${encodeURIComponent(tyKategori)}", koy: "=${tyKategori}", bozdugu: "'Lego & Yapi' adresi & isaretinde kesilir, yanlis kategori acilir" },
+  { ad: "URUNLER SUZGECI ARAMAYI EZIYOR (spread)", yon: "FAZLADAN", dosya: URUNLER,
+    bul: "  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}] };", koy: "  const kosul = { ...suzgecArama, ...(tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}) };", bozdugu: "kategori acikken arama koşulu sessizce karisir" },
+  { ad: "SAYFALAMA KATEGORIYI DUSURUYOR", yon: "KALDIRAN", dosya: URUNLER,
+    bul: "            parametreler={{ q: arama, [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined }}", koy: "            parametreler={{ q: arama }}", bozdugu: "2. sayfaya gecince suzgec kaybolur, baska liste acilir" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

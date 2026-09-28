@@ -15,6 +15,7 @@ import { UzunAd } from "@/components/uzun-ad";
 import { UrunGorseli } from "@/components/urun-gorseli";
 import { supheliSayisi } from "@/lib/supheli-urun-veri";
 import { kartAdresi } from "@/lib/kart-adresi";
+import { TY_KATEGORI_PARAMETRESI, tyKategoriCoz, tyKategoriUrunKosulu } from "@/lib/ty-kategori-suzgeci";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +45,7 @@ export async function generateMetadata() {
 export default async function UrunlerSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sayfa?: string }>;
+  searchParams: Promise<{ q?: string; sayfa?: string; tyKategori?: string }>;
 }) {
   await sayfaIzni("urun.gor");
   /* K273-③: resimsiz kutuda "resim ekle" rozeti yalnız ürün düzenleme izniyle. */
@@ -52,8 +53,10 @@ export default async function UrunlerSayfasi({
   /* K284: şüpheli sayısı listeyle AYNI gövdeden; yalnız düzenleme izniyle (ekran urun.yaz ister). */
   const supheli = resimEkleyebilir ? await supheliSayisi() : null;
 
-  const { q, sayfa } = await searchParams;
+  const { q, sayfa, tyKategori: tyHam } = await searchParams;
   const arama = (q ?? "").trim();
+  /* K295: Trendyol kategori eşleşmesindeki «N ürün» buraya getirir — koşul ortak gövdeden. */
+  const tyKategori = tyKategoriCoz(tyHam);
   const bicim = await bicimlendirici();
   const t = await getTranslations("Urunler");
   const ortak = await getTranslations("Ortak");
@@ -127,11 +130,13 @@ export default async function UrunlerSayfasi({
 
   // ÖNCE SAY, SONRA SAYFAYI ÇEK. Sayım olmadan "kaç sayfa var"
   // bilinemez; kullanıcı kararı gereği toplam sayı da ekranda yazıyor.
-  const toplam = await prisma.product.count({ where: suzgecArama });
+  /* ⚠ AND ile eklenir, spread ile değil — arama koşulu ezilmesin. */
+  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}] };
+  const toplam = await prisma.product.count({ where: kosul });
   const sayfalama = sayfaCoz(sayfa, toplam);
 
   const urunler = await prisma.product.findMany({
-    where: suzgecArama,
+    where: kosul,
     skip: sayfalama.atla,
     take: sayfalama.boyut,
     include: {
@@ -234,7 +239,8 @@ export default async function UrunlerSayfasi({
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
           <p className="text-muted-foreground text-sm">
-            {ortak("kayitSayisi", { sayi: urunler.length })}
+            {/* K295: TOPLAM (süzgecin tamamı), sayfadaki satır sayısı değil — sayfalamada 50'de takılıyordu. */}
+            {ortak("kayitSayisi", { sayi: toplam })}
             {arama ? ortak("aramaEki", { arama }) : ""}
           </p>
           {supheli !== null ? (
@@ -256,7 +262,7 @@ export default async function UrunlerSayfasi({
           </Baglanti>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ExcelIndir liste="urunler" parametreler={{ q: arama }} />
+          <ExcelIndir liste="urunler" parametreler={{ q: arama, [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined }} />
           <Button asChild>
             <Link href="/urunler/yeni">
               <Plus />
@@ -269,9 +275,19 @@ export default async function UrunlerSayfasi({
       <KodAramaKutusu
         temelAdres="/urunler"
         baslangic={arama}
-        tasinanlar={{}}
+        tasinanlar={tyKategori ? { [TY_KATEGORI_PARAMETRESI]: tyKategori } : {}}
         ipucu={t("aramaIpucu")}
       />
+
+      {/* K295: süzgeç GÖRÜNÜR ve kaldırılabilir — liste neden kısa, sorusu cevapsız kalmasın (İlke #5). */}
+      {tyKategori ? (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <Badge variant="secondary">{t("tyKategoriSuzgeci", { ad: tyKategori })}</Badge>
+          <Baglanti href={arama ? `/urunler?q=${encodeURIComponent(arama)}` : "/urunler"} className="inline-flex min-h-11 items-center md:min-h-0">
+            {t("suzgeciKaldir")}
+          </Baglanti>
+        </div>
+      ) : null}
 
       {urunler.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">
@@ -506,7 +522,7 @@ export default async function UrunlerSayfasi({
           <SayfalamaCubugu
             sayfalama={sayfalama}
             yol="/urunler"
-            parametreler={{ q: arama }}
+            parametreler={{ q: arama, [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined }}
           />
         </>
       )}

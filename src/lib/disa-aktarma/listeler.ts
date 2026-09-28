@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { alimKosulu, satisKosulu } from "@/lib/liste-suzgeci";
+import { TY_KATEGORI_PARAMETRESI, tyKategoriCoz, tyKategoriUrunKosulu } from "@/lib/ty-kategori-suzgeci";
 import {
   LISTE_PENCERELERI,
   ayKaydir,
@@ -467,13 +468,15 @@ async function envanterDegeriSayfasi(
 // ---------------------------------------------------------------------------
 
 async function urunlerSayfasi(p: Parametreler): Promise<Sayfa> {
+  /* K295: ekrandaki Trendyol kategori süzgeci Excel'e de AYNI koşulla taşınır. */
+  const tyKategori = tyKategoriCoz(p[TY_KATEGORI_PARAMETRESI]);
   const t = await getTranslations("IceAktarma");
   const tBaslik = await getTranslations("Basliklar");
   const ortak = await getTranslations("Ortak");
   const arama = (p.q ?? "").trim();
 
   const urunler = await prisma.product.findMany({
-    where: arama
+    where: { AND: [tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, arama
       ? {
           /**
            * ⚠ EŞDEĞER KODLAR (K100) — EKRANLA AYNI KÜME. Dışa aktarma
@@ -488,7 +491,7 @@ async function urunlerSayfasi(p: Parametreler): Promise<Sayfa> {
             { variants: { some: { barcode: { contains: e } } } },
           ]),
         }
-      : undefined,
+      : {}] },
     include: {
       category: { select: { name: true } },
       variants: {

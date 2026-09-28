@@ -104,8 +104,7 @@ olmasına gerek yok: Komisyon oranı boş kanal SKU · Komisyon tarifesi.»_
 
 ---
 
-## 🔴 K268 — ALIMLAR SATIRI: ÜRÜN/KALEM/KART ORTA SÜTUNA, SATIŞLAR DÜZENİ KORUNDU · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K268 — ALIMLAR SATIRI: ÜRÜN/KALEM/KART ORTA SÜTUNA, SATIŞLAR DÜZENİ KORUNDU · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → KAPANDI 28.09: YERİNE K292 GELDİ (Alımlar satışlarla birebir tabloya döndü; K268'in sagGenis düzeni kaldırıldı, gerekçesi kodda) — bu kalem yeniden açılmaz]
 Kullanıcı 24.09: _«alımlardaki ara boşluğa dikdörtgendeki bilgiler geçsin»_ ve
 satışlar tablosunu göstererek _«buradaki düzeni koruyamaz mıyız»_. K235 alımları
 satır kartına almıştı; ürün/adet/kalem/kart manşetin altındaki bağlam satırında,
@@ -188,6 +187,47 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K295 — TRENDYOL KATEGORİSİ «N ÜRÜN» → ÜRÜN LİSTESİ · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (eşleşme ekranı, «243 ürün» işaretli): _«kategoriye tıkladığı zaman o kategorideki ürünleri
+listelemeli»_ (İlke #16). Süzgeç sözleşmesinin sahibi `lib/ty-kategori-suzgeci.ts`: eşleşme sayımı
+(`TY_KATEGORILI_URUN`), Ürünler listesi ve Excel AYNI koşuldan (yalnız AKTİF ürün — sayım öyle sayıyor;
+Ürünler normalde pasifi de gösterir, süzgeç açıkken göstermez → sayı = liste).
+- Eşleşme: «N ürün» bağlantı (0'da bağlantı yok). Ürünler: `?tyKategori=` · rozet «Trendyol kategorisi: X ·
+  yalnız aktif ürünler» + «Süzgeci kaldır» · arama/sayfalama/Excel taşır · koşul AND ile (arama ezilmez).
+- Yan düzeltme: Ürünler başlığındaki «N kayıt» SAYFANIN satır sayısıydı (≤50) → toplam.
+- ⚠ Ölçülen ama bu pakette dokunulmayan: Ürünler Excel'inin arama koşulu ekranınkinden dar (kanal SKU,
+  eski kod, satış kodu Excel'de aranmıyor) — «sayı = liste» ihlali, ayrı kalem.
+- Bekçi `kategori-eslesme:dogrula` 2→3 bölüm (40) · harness 14→**18** (pasif açılır · adres kodlanmaz ·
+  spread · sayfalama düşürür — dördü kırmızı). `arama:dogrula` «sayım ve liste aynı süzgeç» ölçütü ESKİDİ →
+  `kosul`a taşındı (gerekçe dosyada; eski koşula dönüş mutasyonu kırmızı).
+
+### HALİL TEST LİSTESİ (canlı)
+1. Ayarlar → Kategoriler → Trendyol eşleşmesi: «243 ürün» yazısı bağlantı (altı çizili).
+2. Tıklayın → Ürünler açılır; üstte «Trendyol kategorisi: Lego & Yapı Oyuncakları · yalnız aktif ürünler»;
+   başlıkta **243 kayıt** (eşleşmedeki sayıyla aynı).
+3. 2. sayfaya geçin → rozet durur, başlık yine 243.
+4. Arama kutusuna «Ninjago» → hem kategori hem arama uygulanır; rozet durur.
+5. «Süzgeci kaldır» → bütün ürünler, rozet yok.
+6. Süzgeç açıkken «Excel indir» → dosyada yalnız o kategorinin ürünleri.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`Urunler.tyKategoriSuzgeci` · `suzgeciKaldir`) ·
+**kullanıcı kolaylığı: ✓** (İlke #5 · #9 · #15 · #16)
+
+---
+
+## 🟢 K294 — PHILIPS BHD500 MARKASI BRAUN KAYITLIYDI · 28.09.2026 · [CANLI YAZIM YAPILDI — kullanıcı onayı «önerine katılıyorum»]
+
+K231 testinde görüldü: adı Philips, markası «BRAUN» (ilk SKU `KUC-BR-BHD50-01` önekinden), resmi yok.
+Ölçüldü: adı Philips olup markası Braun olan TEK ürün. Tek kayda kilitli betik (kuru koşum → `--yaz`):
+marka Philips (tablo bağı PHL) · Firma SKU `KUC-BRN-0004` → **`KUC-PHL-0045`** (PHL'de 1–44 dolu; SKU/Firma
+SKU/eski kodda çakışma 0) · eski kod `EskiKod`a (`FIRMA_SKU`) — okutulunca bulunur · resim pasif ikizin
+(`HBCV00000R0H0K`) Trendyol resmi. Şartlı güncelleme, tek işlem, iz `MARKA_DUZELTILDI` (eski/yeni),
+anlık görüntü `veri/ozel/k294-philips-anlik-*.json`. Satış/stok/kâr DEĞİŞMEDİ.
+Rafta `KUC-BRN-0004` etiketi varsa çalışmaya devam eder; yenisi isteğe bağlı.
+
+---
+
 ## 🔴 K293 — ÜRÜN ANALİZİ TELEFONDA: SÜZGEÇLER KATLANIR, LİSTE İLK EKRANDA · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 Kullanıcı: _«mobilde ürün analizi filtrelerden dolayı çok verimsiz»_ · onay «başla». Ölçüm (kaynak): telefonda
@@ -203,6 +243,10 @@ listeden önce 9 süzgeç bloğu alt alta (Sırala/Yön/Satır/En az adet/En az 
   TRY sayılmaz; dönem yine de özette yazar); stok ekseninde dönem/kanal yok, kova yalnız stokta.
 - **Bekçi** `urun-analizi:dogrula` 13→14 bölüm, 171 ölçüt · harness **21/21** (+4: varsayılan dönem sayılıyor ·
   kova her eksende · panel telefonda açık gelir · panel masaüstünde gizli — dördü kırmızı).
+
+─── ② 28.09 (kullanıcı: «telefonda Trendyol yok»): kanal satırı yana KAYIYORDU, kaydırma çubuğu gizliydi;
+alfabetik sırada Trendyol en sonda ekran dışında kaldı → kanal düğmeleri telefonda da SARAR (satışı olan
+5 kanal). Bekçi +1 ölçüt, harness +1 mutasyon (22/22). Canlıda `a350144`.
 
 ### HALİL TEST LİSTESİ (telefon, canlı)
 1. Ürün analizi: sekmeler tek satırda, parmakla yana kayıyor.
@@ -220,8 +264,7 @@ listeden önce 9 süzgeç bloğu alt alta (Sırala/Yön/Satır/En az adet/En az 
 
 ---
 
-## 🔴 K292 — ALIMLAR SATIŞLARLA BİREBİR: MASAÜSTÜ TABLO + TELEFON KARTI · 27.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
-
+## 🟢 K292 — ALIMLAR SATIŞLARLA BİREBİR: MASAÜSTÜ TABLO + TELEFON KARTI · 27.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (bilgisayar tablo hizası + telefon kartı); MİMAR ONAYI BEKLİYOR]
 Kullanıcı (ekran görüntüsü, /alimlar): _«burası düzensiz, satışlar sayfasını referans al — alım sayfasını
 satışlara benzet»_ · onay 27.09. Kök: satır kartı (K235/K268) her satırda genişliği kendisi hesaplıyordu;
 «Teslim alındı» rozeti ya da uzun tutar ürün sütununu satırdan satıra kaydırıyordu. Tablo tek hiza paylaşır.
@@ -284,8 +327,7 @@ içerik kararı «Firma SKU barkodu + kod + ürün adı» (raf YAZILMAZ — ür�
 
 ---
 
-## 🔴 K290 — KATMANLI BEKÇİ TURU: PUSH HIZLI, GECE TAM + GERİYE TARAMA · 27.09.2026 · [KOD YAZILDI — İLK GECE TURU BEKLİYOR]
-
+## 🔴 K290 — KATMANLI BEKÇİ TURU: PUSH HIZLI, GECE TAM + GERİYE TARAMA · 27.09.2026 · [KOD YAZILDI — İLK GECE TURU BEKLİYOR → 28.09 İLK GECE TURU: 174/177, üç harness (sayım · hata · ürün analizi) temiz kopyada CRLF yüzünden «0 kez geçiyor» dedi → desenNormalle'ye bağlandı (CRLF hedeflerle 22/22 · 24/24 · 22/22), mutasyon-capa'ya desen yasağı (iki yönlü). İKİNCİ GECE YEŞİL BEKLENİYOR]
 Kullanıcı: _«her seferinde olunca işlem maliyeti çok uzuyor»_ · _«gün sonunda koşulmamış bekçilerde
 problem varsa geriden süpüremez mi»_ → onay («evet»). Ölçüm: tur 171 kontrol, duvar saati 40–45 dk;
 bekçiler ~9 dk, süreyi 46 mutasyon denetimi dolduruyor. 22.08 kararı («bütün bekçiler») özüyle
@@ -2184,7 +2226,7 @@ burada tersi: kapsamı içindeki bir ilkeyi demo uğruna çiğnememek.)_
 
 ---
 
-## 🔴 K245 — NET-2 MARJI KUTUSU: BİR ORANIN DEĞİŞİMİ PUAN, YÜZDE DEĞİL · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → 27.09 panel turunda Adım 5 «puan yazmıyor» dendi: test tarifi eksikti (değişim yalnız «Karşılaştır» seçiliyken çizilir, varsayılan kapalı); karşılaştırma açık TEKRAR BEKLİYOR]
+## 🟢 K245 — NET-2 MARJI KUTUSU: BİR ORANIN DEĞİŞİMİ PUAN, YÜZDE DEĞİL · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → 27.09 panel turunda Adım 5 «puan yazmıyor» dendi: test tarifi eksikti (değişim yalnız «Karşılaştır» seçiliyken çizilir, varsayılan kapalı); karşılaştırma açık TEKRAR BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 («Son 30 gün» + «Önceki dönem»: kartta «▲ 1,9 puan»)]
 Kullanıcı panel tasarımı için bir demo istedi, demoyu onayladı ve
 _"birebir yapabilir misin"_ dedi. Demo dört pakete bölündü; bu birincisi.
 
@@ -3267,8 +3309,7 @@ ilk satırı 29.09 ₺38.490,82).
 
 ---
 
-## 🔴 K231 — BİR KOD İKİ ÜRÜNE UYUYORDU, SİSTEM SESSİZCE BİRİNİ SEÇİYORDU · 21.09.2026 · [KOD KOŞTU + CANLI YAZIM YAPILDI — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K231 — BİR KOD İKİ ÜRÜNE UYUYORDU, SİSTEM SESSİZCE BİRİNİ SEÇİYORDU · 21.09.2026 · [KOD KOŞTU + CANLI YAZIM YAPILDI — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (Philips'in 21–26.09 dört siparişi stoktan düşülmüş, «Stok yetersiz» yok). ⚠ ÇOK eşleşme uyarısı TETİKLENEMEDİ (bugün çakışma 0) — o yol AÇIK]
 **KULLANICI BİLDİRİMİ:** _"Bu üründen 2 tane stok kaydı var, birinde 4 stok
 var, diğeri sıfır; sipariş geldi, 0 stoktan düşmeye çalışıyor, düşemiyor,
 siparişi kaydedemedim."_ (`HBCV00000R0H0K` · barkod `97393839282`)

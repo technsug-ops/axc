@@ -551,10 +551,16 @@ console.log("");
         kaynak.includes("satisVaryantIdleri.length > 0"),
       );
     }
-    /** ⛔ SAYI = LİSTE: sayım ile listeleme AYNI süzgeci okumalı. */
+    /**
+     * ⛔ SAYI = LİSTE: sayım ile listeleme AYNI süzgeci okumalı.
+     * ÖLÇÜT TAŞINDI (K295, 28.09.2026): eski hâli `where: suzgecArama` deseninin
+     * İKİ kez geçmesini sayıyordu. Trendyol kategori süzgeci eklenince ikisi de
+     * `kosul`u okuyor ve `kosul` aramayı AND ile İÇERİYOR — niyet aynı, şekil yeni.
+     */
     kontrol(
-      "/urunler sayımı ve listesi AYNI süzgeci okuyor",
-      (urunlerKaynak.match(/where: suzgecArama/g) ?? []).length === 2,
+      "/urunler sayımı ve listesi AYNI süzgeci okuyor (arama `kosul`un içinde)",
+      (urunlerKaynak.match(/where: kosul\b/g) ?? []).length === 2 &&
+        urunlerKaynak.includes("const kosul = { AND: [suzgecArama ?? {},"),
     );
   }
 

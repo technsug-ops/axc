@@ -6,6 +6,7 @@ import {
   tyKategoriAnahtari,
   type KategoriKararGirdisi,
 } from "../src/lib/kategori-eslesme";
+import { TY_KATEGORILI_URUN, tyKategoriCoz, tyKategoriListeAdresi, tyKategoriUrunKosulu } from "../src/lib/ty-kategori-suzgeci";
 
 /**
  * ============================================================================
@@ -22,7 +23,7 @@ import {
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 2;
+const BOLUM_SAYISI = 3;
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
     gecen++;
@@ -105,6 +106,33 @@ console.log("\n2) zincir — aynı kurala bağlı mı");
   kontrol("  ...uyarı eşleşme ekranına götürüyor", turler.includes('tyKategoriKarsiliksiz: "/ayarlar/kategoriler/trendyol",'));
 }
 kosanBolumler.push("zincir");
+
+/**
+ * K295 — «N ürün» KAYNAĞINA GÖTÜRÜR (İlke #16; kullanıcı 28.09.2026: «kategoriye
+ * tıkladığı zaman o kategorideki ürünleri listelemeli»). Sayı = liste: sayım ve
+ * liste AYNI dosyadan (`lib/ty-kategori-suzgeci`) koşul alır.
+ */
+console.log("\n3) kategori sayısı → ürün listesi (sayı = liste)");
+{
+  const adres = tyKategoriListeAdresi("Lego & Yapı Oyuncakları");
+  kontrol("adres Ürünler'e, kategori KODLANMIŞ (& ve boşluk bozmaz)", adres === "/urunler?tyKategori=Lego%20%26%20Yap%C4%B1%20Oyuncaklar%C4%B1", adres);
+  kontrol("  ...adresten geri AYNI ad çözülür", tyKategoriCoz(new URLSearchParams(adres.split("?")[1]).get("tyKategori") ?? undefined) === "Lego & Yapı Oyuncakları");
+  kontrol("boş değer süzgeç DEĞİL", tyKategoriCoz("  ") === null && tyKategoriCoz(undefined) === null);
+  kontrol("liste koşulu sayımın tabanıyla aynı (yalnız AKTİF ürün)", tyKategoriUrunKosulu("X").isActive === TY_KATEGORILI_URUN.isActive && tyKategoriUrunKosulu("X").tyKategori === "X");
+
+  const sayfa = oku("src/app/ayarlar/kategoriler/trendyol/page.tsx");
+  kontrol("eşleşme sayımı ortak tabandan", sayfa.includes("where: TY_KATEGORILI_URUN,"));
+  kontrol("  ...«N ürün» bağlantı (sıfırda bağlantı YOK)", /s\.urun > 0 \? \(\s*<Baglanti href=\{tyKategoriListeAdresi\(s\.tyKategori\)\}>/.test(sayfa));
+  const urunler = oku("src/app/urunler/page.tsx");
+  kontrol("Ürünler: süzgeç ortak koşulla, AND ile (arama ezilmez)", urunler.includes("const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}] };"));
+  kontrol("  ...sayım ve liste AYNI koşul", urunler.includes("prisma.product.count({ where: kosul })") && urunler.includes("where: kosul,"));
+  kontrol("  ...süzgeç ekranda yazıyor ve kaldırılabilir", urunler.includes('t("tyKategoriSuzgeci", { ad: tyKategori })') && urunler.includes('t("suzgeciKaldir")'));
+  kontrol("  ...arama, sayfalama ve Excel süzgeci taşıyor", (urunler.match(/\[TY_KATEGORI_PARAMETRESI\]: tyKategori/g) ?? []).length === 3);
+  kontrol("  ...başlıktaki kayıt sayısı TOPLAM (sayfa değil)", urunler.includes('ortak("kayitSayisi", { sayi: toplam })'));
+  const excel = oku("src/lib/disa-aktarma/listeler.ts");
+  kontrol("Excel aynı koşulla", excel.includes("where: { AND: [tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, arama"));
+}
+kosanBolumler.push("sayi-liste");
 
 console.log("\n" + "=".repeat(70));
 if (kosanBolumler.length !== BOLUM_SAYISI) {

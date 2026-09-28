@@ -420,7 +420,9 @@
     "tumVaryantlarPasif": "Varyantları pasif — aramada çıkmaz",
     "bazıVaryantlarPasif": "{adet} varyantı pasif",
     "varyantSayisi": "{sayi} varyant",
-    "alimGir": "Alım gir"
+    "alimGir": "Alım gir",
+    "tyKategoriSuzgeci": "Trendyol kategorisi: {ad} · yalnız aktif ürünler",
+    "suzgeciKaldir": "Süzgeci kaldır"
   },
   "UrunSil": {
     "dugme": "Sil",

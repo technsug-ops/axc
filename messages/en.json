@@ -420,7 +420,9 @@
     "tumVaryantlarPasif": "",
     "bazıVaryantlarPasif": "",
     "varyantSayisi": "",
-    "alimGir": ""
+    "alimGir": "",
+    "tyKategoriSuzgeci": "",
+    "suzgeciKaldir": ""
   },
   "UrunSil": {
     "dugme": "",

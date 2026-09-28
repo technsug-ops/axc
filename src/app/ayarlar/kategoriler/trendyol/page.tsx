@@ -1,12 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 
+import { Baglanti } from "@/components/baglanti";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { Card, CardContent } from "@/components/ui/card";
 import { kategoriKarari } from "@/lib/kategori-eslesme";
 import { prisma } from "@/lib/prisma";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaIzni } from "@/lib/yetki";
+import { TY_KATEGORILI_URUN, tyKategoriListeAdresi } from "@/lib/ty-kategori-suzgeci";
 
 import { EslesmeSecici } from "./eslesme-secici";
 
@@ -42,7 +44,8 @@ export default async function TyKategoriEslesmeSayfasi({ searchParams }: { searc
       orderBy: { name: "asc" },
     }),
     prisma.product.findMany({
-      where: { isActive: true, tyKategori: { not: null } },
+      /* K295: sayım, «N ürün» bağlantısının açtığı listeyle AYNI taban koşuldan. */
+      where: TY_KATEGORILI_URUN,
       select: {
         tyKategori: true,
         categoryId: true,
@@ -134,7 +137,13 @@ export default async function TyKategoriEslesmeSayfasi({ searchParams }: { searc
                       {s.tyKategori}
                     </p>
                     <p className="text-muted-foreground text-xs">
-                      {t("urunSayisi", { sayi: s.urun })}
+                      {/* K295 · İlke #16: sayı kaynağına götürür — o kategorinin ürün listesi.
+                          Sıfırsa bağlantı olmaz (açılacak liste yok). */}
+                      {s.urun > 0 ? (
+                        <Baglanti href={tyKategoriListeAdresi(s.tyKategori)}>{t("urunSayisi", { sayi: s.urun })}</Baglanti>
+                      ) : (
+                        t("urunSayisi", { sayi: s.urun })
+                      )}
                       {s.kdv > 0 ? (
                         <span className={DURUM_YAZISI.uyari}> · {t("kdvBekleyen", { sayi: s.kdv })}</span>
                       ) : null}
