@@ -136,6 +136,7 @@ import {
   nakitTakvimiKur,
   type TakvimSatiri,
 } from "../src/lib/panel/nakit-takvimi";
+import { nakitEtkisi } from "../src/lib/nakit-isaret";
 import {
   ALIM_DURUM_RENGI,
   BILDIRIM_DURUM_RENGI,
@@ -6928,6 +6929,25 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
       /MENU_ADRESLERI\[anahtar\]/.test(menuT) && /MENU_IKONLARI\[anahtar\]/.test(menuT));
   kontrol("  ...rozet yalniz > 0 (sifir bir is degildir)", /rozet > 0 \? \(/.test(menuT));
   kontrol("  ...arama kutusu ORTAK bilesen (kamera, Ilke #7)", /<KodAramaKutusu/.test(menuT) && !/<input/.test(menuT));
+}
+
+/* ═══ K297 — NAKİT TAKVİMİ TEK İŞARET (kullanıcı 28.09.2026: «+-₺4.472,69») ═══
+   Eksi GİRECEK (kesinti/iade mahsubu) kasayı AZALTIR: «−» ve kırmızı, tutar mutlak. */
+{
+  console.log("\nK297 — nakit takvimi tutar işareti");
+  const eksiGirecek = nakitEtkisi("GIRECEK", -4472.69);
+  kontrol("eksi girecek → «−», mutlak tutar, azaltır (çift işaret yok)", eksiGirecek.isaret === "−" && eksiGirecek.mutlak === 4472.69 && eksiGirecek.azaltir);
+  const girecek = nakitEtkisi("GIRECEK", 31511.07);
+  kontrol("artı girecek → «+», artırır", girecek.isaret === "+" && girecek.mutlak === 31511.07 && !girecek.azaltir);
+  const cikacak = nakitEtkisi("CIKACAK", 48697.23);
+  kontrol("çıkacak → «−», azaltır", cikacak.isaret === "−" && cikacak.azaltir);
+  const eksiCikacak = nakitEtkisi("CIKACAK", -120);
+  kontrol("eksi çıkacak (iade) → «+», artırır", eksiCikacak.isaret === "+" && eksiCikacak.mutlak === 120 && !eksiCikacak.azaltir);
+  const takvim = kaynakOku("src/app/nakit-takvimi/page.tsx")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("ekran işareti gövdeden alıyor ve MUTLAK tutarı biçimliyor",
+    takvim.includes("= nakitEtkisi(yon, tutar);") && takvim.includes("{para(mutlak)}") && !takvim.includes("{para(tutar)}"));
 }
 
 console.log("\n" + "=".repeat(70));

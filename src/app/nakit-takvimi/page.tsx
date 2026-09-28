@@ -19,6 +19,7 @@ import {
 } from "@/lib/panel/takvim-verisi";
 import { sayfaIzni } from "@/lib/yetki";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { nakitEtkisi } from "@/lib/nakit-isaret";
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 
@@ -434,13 +435,16 @@ function Tutar({
   tutar: number;
   para: (n: number) => string;
 }) {
-  const cikis = yon === "CIKACAK";
+  /* K297: işaret ve renk kasaya ETKİDEN (eksi girecek = kesinti → «−», kırmızı);
+     tutar mutlak — «+-₺4.472,69» gibi çift işaret çıkmaz. Eski hâl: işaret yalnız
+     yönden, tutar kendi işaretiyle biçimleniyordu. */
+  const { isaret, mutlak, azaltir } = nakitEtkisi(yon, tutar);
   return (
     <span
-      className={`shrink-0 tabular-nums ${cikis ? "text-destructive" : `${DURUM_YAZISI.olumlu}`}`}
+      className={`shrink-0 tabular-nums ${azaltir ? "text-destructive" : `${DURUM_YAZISI.olumlu}`}`}
     >
-      {cikis ? "−" : "+"}
-      {para(tutar)}
+      {isaret}
+      {para(mutlak)}
     </span>
   );
 }

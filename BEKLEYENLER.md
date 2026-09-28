@@ -187,6 +187,23 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K297 — NAKİT TAKVİMİ «+-₺…» ÇİFT İŞARET · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı ekran görüntüsü: `4114618000 +-₺4.472,69` · `4585707015 +-₺15.819,10`. İşaret YALNIZ yönden yazılıyordu,
+tutar kendi işaretiyle biçimleniyordu; eksi GİRECEK (kesinti/iade mahsubu) iki işaret alıyordu. Yürüyen bakiye doğruydu.
+Saf kural `lib/nakit-isaret.ts` (`nakitEtkisi`): kasaya etki = girecekse tutar, çıkacaksa −tutar; işaret ve renk
+etkiden, tutar mutlak. Bekçi `panel:dogrula` +5 (4 değer · ekran gövdeyi çağırıyor), harness 89→**91** (yalnız yön ·
+işaretli tutar — ikisi kırmızı).
+
+### HALİL TEST LİSTESİ
+1. Nakit takvimi → 28.09: `4114618000` satırı **−₺4.472,69** ve kırmızı (artık «+-» yok).
+2. Gecikmiş kutusunda `4585707015` → **−₺15.819,10** kırmızı; yanındaki +₺15.819,10 yeşil kalır.
+3. Günlerin «yürüyen» rakamları öncekiyle AYNI (yalnız gösterim düzeldi).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok) · **kullanıcı kolaylığı: ✓** (İlke #5)
+
+---
+
 ## 🔴 K296 — TELEFONDA «DÜZENLE» VE «PASİFE AL» AYNI KUTUDA (ALTI EKRAN) · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 Kullanıcı (KDV kategorileri, telefon): _«görüntü problemli»_. «Pasife al» ortak eylem kutusundaydı (52 px, ikon
@@ -2656,8 +2673,7 @@ _(Anayasa: "refaktör, çapalı harness'i de taşır".)_
 
 ---
 
-## 🔴 K239 — HB ÖDEMESİ "GEÇMİŞ"E GEÇMEDİ: SEBEP KANALIN KENDİ UCUNDA · VE ÖLÇERKEN BİR GÜN KAYMASI BULUNDU · 23.09.2026 · [KOD KOŞTU]
-
+## 🟢 K239 — HB ÖDEMESİ "GEÇMİŞ"E GEÇMEDİ: SEBEP KANALIN KENDİ UCUNDA · VE ÖLÇERKEN BİR GÜN KAYMASI BULUNDU · 23.09.2026 · [KOD KOŞTU → HALİL TESTİ GEÇTİ 28.09 (22.09 ödemesi ₺84.680,85 «Geçmiş»te, «Ödeme yapıldı»)]
 **KULLANICI BİLDİRİMİ (Halil #5):** _"HB ödeme geçmiş sekmesine GEÇMEMİŞ."_
 HB panelinde 22 Eylül ₺84.680,85 **Ödendi** yazıyor; bizde hâlâ "Gelecek".
 
@@ -2737,8 +2753,7 @@ indirilir" ölçütünde: `21:00` her iki makinede de ayrışır.
 
 ---
 
-## 🔴 K238 — TAZMİNAT TUTARLARI ×10.000 YAZILMIŞ: FORM NOKTAYI ONDALIK, SUNUCU BİNLİK SANIYORDU · 23.09.2026 · [KOD + CANLI ONARIM KOŞTU]
-
+## 🟢 K238 — TAZMİNAT TUTARLARI ×10.000 YAZILMIŞ: FORM NOKTAYI ONDALIK, SUNUCU BİNLİK SANIYORDU · 23.09.2026 · [KOD + CANLI ONARIM KOŞTU → HALİL TESTİ GEÇTİ 28.09 (açık alacak ₺16.015,10, milyonluk tutar yok)]
 **KULLANICI BİLDİRİMİ:** _"Uçuk fiyatlar var tazminatta."_ Ekranda tazminat
 geliri **₺7.999.100** ve GERÇEK NET **₺8.085.623,47**.
 
@@ -3164,8 +3179,7 @@ kullanıcı Ayarlar → Menü düzeni'nden dördünü gruba sürükler.
 
 ---
 
-## 🔴 K232 — HAKEDİŞ "DETAY" PAZARYERİ PANELİ DÜZENİNE ÇEVRİLDİ · 22.09.2026 · [① CANLIDA e5b59ab · ② CANLIDA 9b2ef78 — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K232 — HAKEDİŞ "DETAY" PAZARYERİ PANELİ DÜZENİNE ÇEVRİLDİ · 22.09.2026 · [① CANLIDA e5b59ab · ② CANLIDA 9b2ef78 — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (TY 93 ödeme · ₺7.517.920,14 iki sayfada aynı; ₺52.928,97 kalem dökümü toplamı birebir; sipariş no araması tek ödeme); MİMAR ONAYI BEKLİYOR]
 **KULLANICI BİLDİRİMİ (Halil testi #13):** _"Çok karışık, anlamak mümkün
 değil. Müşteri alışık olduğu arayüzde hakedişlerini görsün. Toplam
 hakedişler zaten özet duruyor, gerekirse ora ile de ilgileniriz."_

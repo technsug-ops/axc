@@ -67,6 +67,23 @@ type Mutasyon = {
 };
 
 const MUTASYONLAR: Mutasyon[] = [
+  /* K297 — nakit takvimi tek işaret. */
+  {
+    ad: "nakit isareti yine YALNIZ yonden (eksi girecek +)",
+    yon: "FAZLADAN",
+    dosya: "src/lib/nakit-isaret.ts",
+    bul: '  const etki = yon === "GIRECEK" ? tutar : -tutar;',
+    koy: '  const etki = yon === "GIRECEK" ? Math.abs(tutar) : -Math.abs(tutar);',
+    bozdugu: "kesinti kalemi yesil + ile yazilir, kasayi artiriyor sanilir",
+  },
+  {
+    ad: "nakit takvimi yine isaretli tutari bicimliyor (+-)",
+    yon: "FAZLADAN",
+    dosya: "src/app/nakit-takvimi/page.tsx",
+    bul: "      {para(mutlak)}",
+    koy: "      {para(tutar)}",
+    bozdugu: "ekranda +-₺4.472,69 gibi cift isaret",
+  },
   {
     ad: "panel yine CIRO sirasina dondu",
     yon: "KALDIRAN",
