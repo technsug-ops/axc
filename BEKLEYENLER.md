@@ -187,8 +187,7 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
-## 🔴 K297 — NAKİT TAKVİMİ «+-₺…» ÇİFT İŞARET · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
-
+## 🟢 K297 — NAKİT TAKVİMİ «+-₺…» ÇİFT İŞARET · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (−₺4.472,69 kırmızı, «+-» yok; yürüyen −33.804,07 · −18.683,33 · 15.942,99 öncekiyle aynı); MİMAR ONAYI BEKLİYOR]
 Kullanıcı ekran görüntüsü: `4114618000 +-₺4.472,69` · `4585707015 +-₺15.819,10`. İşaret YALNIZ yönden yazılıyordu,
 tutar kendi işaretiyle biçimleniyordu; eksi GİRECEK (kesinti/iade mahsubu) iki işaret alıyordu. Yürüyen bakiye doğruydu.
 Saf kural `lib/nakit-isaret.ts` (`nakitEtkisi`): kasaya etki = girecekse tutar, çıkacaksa −tutar; işaret ve renk
