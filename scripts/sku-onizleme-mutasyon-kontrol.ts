@@ -49,6 +49,23 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "{DURUMLAR.map((d) => (", koy: "{DURUMLAR.filter((d) => satirlar.some((s) => s.durum === d)).map((d) => (", bozdugu: "temiz ile olculmemis ayni gorunur" },
   { ad: "EXCEL BASKA GOVDEDEN", yon: "KALDIRAN", dosya: LISTE,
     bul: "(await skuOnizlemeSatirlari()).map(", koy: "([] as Awaited<ReturnType<typeof skuOnizlemeSatirlari>>).map(", bozdugu: "Excel ekranla ayrisir" },
+  /* K301 — doğru biçimdeki kod korunur, sıra harcamaz. */
+  { ad: "DOGRU KOD KORUNMUYOR (ProMix yine Kod alabilir)", yon: "KALDIRAN", dosya: KURAL,
+    bul: '    if (kuyruk.length === SIRA_HANESI && /^[0-9]+$/.test(kuyruk)) return { ...g, yeniKod: g.eskiKod, durum: "AYNI" };\n', koy: "",
+    bozdugu: "elle kod alan urun sirayi kaydirir, dogru kodlar degisecek gorunur" },
+  { ad: "HANE SAYISI SORULMUYOR", yon: "FAZLADAN", dosya: KURAL,
+    bul: "    if (kuyruk.length === SIRA_HANESI && /^[0-9]+$/.test(kuyruk))", koy: "    if (/^[0-9]+$/.test(kuyruk))",
+    bozdugu: "3/5 haneli kod dogru sayilir" },
+  { ad: "RAKAM SORULMUYOR", yon: "FAZLADAN", dosya: KURAL,
+    bul: "    if (kuyruk.length === SIRA_HANESI && /^[0-9]+$/.test(kuyruk))", koy: "    if (kuyruk.length === SIRA_HANESI)",
+    bozdugu: "harfli kuyruk dogru sayilir" },
+  { ad: "ON EK SORULMUYOR", yon: "FAZLADAN", dosya: KURAL,
+    bul: "    const kuyruk = g.eskiKod.startsWith(`${onEk}-`) ? g.eskiKod.slice(onEk.length + 1) : \"\";", koy: "    const kuyruk = g.eskiKod.slice(onEk.length + 1);",
+    bozdugu: "kategori/marka degisen urun eski ön ekte kalir" },
+  { ad: "KORUNAN KOD SIRA HARCIYOR", yon: "FAZLADAN", dosya: KURAL,
+    bul: '    if (kuyruk.length === SIRA_HANESI && /^[0-9]+$/.test(kuyruk)) return { ...g, yeniKod: g.eskiKod, durum: "AYNI" };',
+    koy: '    if (kuyruk.length === SIRA_HANESI && /^[0-9]+$/.test(kuyruk)) { sayac.set(onEk, Number(kuyruk)); return { ...g, yeniKod: g.eskiKod, durum: "AYNI" }; }',
+    bozdugu: "yeni urun numarasi korunan kodun ardina atlar" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

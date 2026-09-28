@@ -51,6 +51,17 @@ export function skuOnizlemesi(girdiler: readonly OnizlemeGirdisi[], kullanilanKo
     if (!g.kategoriKodu) return { ...g, yeniKod: null, durum: "KATEGORI_KODSUZ" };
     if (!g.markaKodu) return { ...g, yeniKod: null, durum: "MARKA_YOK" };
     const onEk = `${g.kategoriKodu}-${g.markaKodu}`;
+    /**
+     * K301 (28.09.2026) — KODU ZATEN DOĞRU BİÇİMDEYSE KORUNUR, sıra HARCAMAZ.
+     * Kullanıcı bulgusu: Philips BHD500 elle `KUC-PHL-0045` alınca (K294) sıra
+     * kaydı; ProMix'in `KUC-PHL-0044`ü önizlemede «Kod alabilir → 0046» çıktı.
+     * Veri doğruydu; kural her koşumda baştan numara veriyordu — ön eki ve
+     * biçimi doğru bir kod «değişecek» görünüyordu. Doğru biçim = bu ön ek +
+     * `-` + tam SIRA_HANESI hane. Ön eki değişmiş (kategori/marka değişti) ya da
+     * biçimi farklı kod korunmaz → yeni kod önerilir.
+     */
+    const kuyruk = g.eskiKod.startsWith(`${onEk}-`) ? g.eskiKod.slice(onEk.length + 1) : "";
+    if (kuyruk.length === SIRA_HANESI && /^[0-9]+$/.test(kuyruk)) return { ...g, yeniKod: g.eskiKod, durum: "AYNI" };
     const dolu = (k: string) => kullanilanKodlar.has(k) && !g.kendiKodlari.includes(k);
     let sira = (sayac.get(onEk) ?? 0) + 1;
     let kod = skuKodu(g.kategoriKodu, g.markaKodu, sira);

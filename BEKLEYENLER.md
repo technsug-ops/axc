@@ -13,7 +13,26 @@
 
 ---
 
-## 🔴 K300 — OKUYUCU KLAVYE DÜZENİ EMNİYETİ (`*`→`-`, `ı`→`i`) · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🔴 K301 — SKU ÖNİZLEMESİ: DOĞRU BİÇİMDEKİ KOD KORUNUR, SIRA HARCAMAZ · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Bulgu (28.09 test turu):** SKU önizlemesinde Philips ProMix `KUC-PHL-0044` «Kod alabilir → 0046» çıkıyordu.
+Veri doğruydu: K294'te BHD500 elle `KUC-PHL-0045` aldı ve önizleme her koşumda numarayı BAŞTAN dağıttığı
+için sıra kaydı. **Kural** (`lib/sku-onizleme.ts`): kodu bu ön ek + `-` + 4 hane olan kayıt kodunu KORUR
+(«Kodu zaten bu») ve sıra numarası harcamaz; ön eki değişmiş ya da biçimi farklı kod korunmaz.
+
+**Ölçüldü:** canlı (salt okuma) 1258 satırın **1258'i AYNI** (ProMix 0044 · BHD500 0045 dahil) ·
+`sku-onizleme:dogrula` +8 ölçüt · eski «kendi kodu» ölçütü TAŞINDI (gerekçe dosyada) · mutasyon **18/18**
+(+5: koruma kaldırıldı · hane · rakam · ön ek · sıra harcıyor).
+
+**Halil test listesi:**
+1. Ürünler → «SKU önizleme» → üstteki «Kod alabilir» kutusu **0** olmalı.
+2. Arama kutusuna `KUC-PHL-0044` → ProMix satırı «Kodu zaten bu» yazmalı.
+
+**mobil doğrulama:** ekran değişikliği yok · **i18n: ✓** (metin yok)
+
+---
+
+## 🟢 K300 — OKUYUCU KLAVYE DÜZENİ EMNİYETİ (`*`→`-`, `ı`→`i`) · 28.09.2026 · [CANLIDA edb0f00 — HALİL TESTİ GEÇTİ 28.09 (`KUC*PHL*0045` /okut ve stok araması · `axcalı2120` /okut); MİMAR ONAYI BEKLİYOR]
 
 **Vaka (K291-②):** `OYU-LEG-0020` etiketi USB okuyucudan `OYU*LEG*0020` geldi — okuyucu ABD düzeni,
 bilgisayar TR-Q. Kullanıcı okuyucuyu ayarlamıştı; kullanıcı kararı 28.09: sistem de emniyet alsın.
@@ -40,7 +59,7 @@ ice-aktarma · sayim-ekran · mutasyon-capa · mutasyon-cakisma · tur-secimi ·
 
 ---
 
-## 🟢 K299 — KOPYA ÜRÜN KAYITLARI BİRLEŞTİ (9 ÇİFT) · 28.09.2026 · [KOŞTU — canlı yazım kullanıcı onayıyla; HALİL TESTİ BEKLİYOR]
+## 🟢 K299 — KOPYA ÜRÜN KAYITLARI BİRLEŞTİ (9 ÇİFT) · 28.09.2026 · [KOŞTU — canlı yazım kullanıcı onayıyla; HALİL TESTİ GEÇTİ 28.09 (salata kurutucu tek kart · eski kod asıl kartı açıyor); MİMAR ONAYI BEKLİYOR]
 
 **Kaynak:** HB EAN taraması (26.09, `hb-ean-taramasi-2026-09-26.xlsx`): HB'nin kendi siparişindeki
 EAN başka bir kartın barkodunda → aynı ürün iki kartta. Satış geçmişi bölünüyordu.

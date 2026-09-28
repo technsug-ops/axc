@@ -63,9 +63,34 @@ console.log("\n1) kural — değerle");
 
   const cak = skuOnizlemesi([g("a"), g("b")], new Set(["OYU-LEG-0001"]));
   kontrol("başka kayıttaki kod ATLANIR, sıradaki verilir", cak[0].yeniKod === "OYU-LEG-0002" && cak[1].yeniKod === "OYU-LEG-0003");
-  const kendi = skuOnizlemesi([g("a", { eskiKod: "OYU-LEG-0001", kendiKodlari: ["OYU-LEG-0001"] })], new Set(["OYU-LEG-0001"]));
-  kontrol("kaydın KENDİ kodu çakışma sayılmaz → AYNI", kendi[0].yeniKod === "OYU-LEG-0001" && kendi[0].durum === "AYNI");
+  /**
+   * ⚠ ÖLÇÜT TAŞINDI (K301, 28.09.2026) — ESKİ GEREKÇE: «kaydın KENDİ kodu
+   * çakışma sayılmaz → AYNI» (Firma SKU'su OYU-LEG-0001 olan kayıt). K301'den
+   * sonra doğru biçimdeki Firma SKU `dolu` kontrolüne HİÇ varmadan korunuyor;
+   * eski örnek bu kuralı artık sınamıyordu (mutasyon kaçardı). Kendi kodu ayrımı
+   * hâlâ gerçek: biçim dışı Firma SKU'lu bir kaydın BARKODU/SKU'su üretilecek
+   * koda eşitse o kod ona verilebilir — başkasınınki gibi atlanmaz.
+   */
+  const kendi = skuOnizlemesi([g("a", { eskiKod: "eski-a", kendiKodlari: ["eski-a", "OYU-LEG-0001"] })], new Set(["OYU-LEG-0001"]));
+  kontrol("kaydın KENDİ kodu (barkod/SKU) çakışma sayılmaz → o kod ona verilir", kendi[0].yeniKod === "OYU-LEG-0001" && kendi[0].durum === "HAZIR", kendi[0]);
   kontrol("çakışan kod hiçbir satıra VERİLMEZ", !skuOnizlemesi([g("a"), g("b"), g("c")], new Set(["OYU-LEG-0002"])).some((x) => x.yeniKod === "OYU-LEG-0002"));
+
+  /* K301 — doğru biçimdeki kod korunur ve sıra harcamaz (ProMix vakası). */
+  const kod = (k: string, eski: string, o: Partial<OnizlemeGirdisi> = {}) => g(k, { eskiKod: eski, kendiKodlari: [eski], ...o });
+  const promix = skuOnizlemesi(
+    [kod("bhd", "KUC-PHL-0045", { kategoriKodu: "KUC", markaKodu: "PHL" }), kod("promix", "KUC-PHL-0044", { kategoriKodu: "KUC", markaKodu: "PHL" })],
+    new Set(["KUC-PHL-0044", "KUC-PHL-0045"]),
+  );
+  kontrol("K301 ProMix: KUC-PHL-0044 kendi kodunu KORUR → AYNI", promix[1].yeniKod === "KUC-PHL-0044" && promix[1].durum === "AYNI", promix[1]);
+  kontrol("K301 BHD500: KUC-PHL-0045 kendi kodunu KORUR → AYNI", promix[0].yeniKod === "KUC-PHL-0045" && promix[0].durum === "AYNI", promix[0]);
+  const harcamaz = skuOnizlemesi([kod("a", "OYU-LEG-0005"), g("b")], new Set(["OYU-LEG-0005"]));
+  kontrol("K301 korunan kod sıra HARCAMAZ: sonraki kodsuz kayıt 0001 alır", harcamaz[1].yeniKod === "OYU-LEG-0001", harcamaz[1]);
+  const onEkDegisti = skuOnizlemesi([kod("a", "OYU-MTL-0003")], new Set(["OYU-MTL-0003"]));
+  kontrol("K301 ön eki DEĞİŞMİŞ kod korunmaz → yeni kod önerilir", onEkDegisti[0].durum === "HAZIR" && onEkDegisti[0].yeniKod === "OYU-LEG-0001", onEkDegisti[0]);
+  for (const [ad, eski] of [["5 hane", "OYU-LEG-00012"], ["3 hane", "OYU-LEG-012"], ["harfli", "OYU-LEG-00A1"], ["ön ek kısmen", "OYU-LEGO-0001"]] as const) {
+    const r = skuOnizlemesi([kod("a", eski)], new Set([eski]));
+    kontrol(`K301 biçimi farklı (${ad}: ${eski}) korunmaz → HAZIR`, r[0].durum === "HAZIR" && r[0].yeniKod === "OYU-LEG-0001", r[0]);
+  }
 }
 kosanBolumler.push("kural");
 
