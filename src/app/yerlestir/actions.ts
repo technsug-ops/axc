@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { TOPLU_TASIMA_EYLEMI, izListesi, tasimaKarari } from "@/lib/depo/tasima";
 import { YERLESTIRME_EYLEMI, yerlestirmeKarari } from "@/lib/depo/yerlestirme";
 import { prisma } from "@/lib/prisma";
-import { kodKosulu } from "@/lib/varyant-arama-kurali";
+import { kodKosulu, okunanKodlar } from "@/lib/varyant-arama-kurali";
 import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 import { yetkiIste } from "@/lib/yetki";
 import { izYaz } from "@/lib/iz";
@@ -54,7 +54,8 @@ export async function rafiSec(kod: string): Promise<RafSonucu> {
   if (!temiz) return { durum: "YOK", kod: temiz };
 
   const raf = await prisma.location.findFirst({
-    where: { code: temiz },
+    /** K300: okuyucu klavye düzeni (`*`→`-`) — tam eşleşme kümesi. */
+    where: { code: { in: okunanKodlar(temiz) } },
     select: {
       id: true,
       code: true,
@@ -144,7 +145,7 @@ export async function koduIsle(
   const raf = varyant
     ? null
     : await prisma.location.findFirst({
-        where: { code: temiz },
+        where: { code: { in: okunanKodlar(temiz) } },
         select: {
           id: true,
           code: true,

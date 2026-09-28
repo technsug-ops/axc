@@ -230,13 +230,62 @@ export function aramaKosulu(sorgu: string) {
  * ============================================================================
  */
 export function kodEsdegerleri(kod: string): string[] {
-  const k = kod.trim();
-  const cikti = new Set<string>([k]);
-  /** EAN-13 → UPC-A: 13 hane ve baştaki hane `0` ise o hane atılır. */
-  if (/^\d{13}$/.test(k) && k.startsWith("0")) cikti.add(k.slice(1));
-  /** UPC-A → EAN-13: 12 hanenin başına `0` eklenir. */
-  if (/^\d{12}$/.test(k)) cikti.add("0" + k);
+  const ham = kod.trim();
+  const cikti = new Set<string>();
+  for (const k of new Set([ham, okuyucuDuzeltmesi(ham)])) {
+    cikti.add(k);
+    /** EAN-13 → UPC-A: 13 hane ve baştaki hane `0` ise o hane atılır. */
+    if (/^\d{13}$/.test(k) && k.startsWith("0")) cikti.add(k.slice(1));
+    /** UPC-A → EAN-13: 12 hanenin başına `0` eklenir. */
+    if (/^\d{12}$/.test(k)) cikti.add("0" + k);
+  }
   return [...cikti];
+}
+
+/**
+ * ============================================================================
+ *  OKUYUCU KLAVYE DÜZENİ EMNİYETİ (K300, 28.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ CANLI VAKA (K291-②, 27.09): 40×30 etiketteki `OYU-LEG-0020` USB
+ *  okuyucudan `OYU*LEG*0020` diye geldi. Etiket doğruydu; okuyucu ABD klavye
+ *  düzenindeydi ve bilgisayar TR-Q: ABD `-` tuşu TR-Q'da `*`, ABD `i` tuşu
+ *  `ı` yazar. Kullanıcı okuyucuyu ayarladı — ama ikinci bir okuyucu ya da
+ *  bilgisayarda aynı belirti yine doğar ve ekran «bulunamadı» der.
+ *
+ *  ── KURAL ÖLÇÜLDÜ (canlı, salt okuma, 28.09.2026) ────────────────────────
+ *      taban 8955 kod (5 rol, 1871 varyant)
+ *      `*` ya da `ı` içeren kod                          0
+ *      okuyucu düzeni bozulunca etkilenen kod        3585   %40,0
+ *      düzeltilince BAŞKA karta düşen kod                0
+ *      etkilenen ama «kod gibi» olmayan kod              0
+ *  Yani düzeltilmiş hâl ölçülmüş bir denkliktir, «benzeyen kod» değil —
+ *  `kodEsdegerleri`nin UPC-A ↔ EAN-13 gerekçesiyle aynı.
+ *
+ *  ⚠ YALNIZ «KOD GİBİ» GİRİŞ DÜZELTİLİR: boşluksuz VE rakam içeren. Serbest
+ *  arama da bu gövdeden geçiyor (`aramaKosulu`); «bıçak» gibi bir ürün adı
+ *  düzeltilseydi ad araması sessizce «biçak»a genişlerdi. Etkilenen 3585
+ *  kodun HEPSİ rakamlı ve boşluksuz — sınır hiçbir kodu dışarıda bırakmıyor.
+ *
+ *  ⚠ BEYAN EDİLEN SINIR: yalnız `*`→`-` ve `ı`→`i`. ABD `.` → TR-Q `ç`,
+ *  ABD `/` → `.` dönüşümleri ÖLÇÜLMEDİ (katalogda `.` içeren 2 kanal kodu
+ *  var); kural onlara dokunmuyor. Açılış şartı: `ç`li bir okuma kaçarsa.
+ * ============================================================================
+ */
+export function okuyucuDuzeltmesi(kod: string): string {
+  if (/\s/.test(kod) || !/\d/.test(kod)) return kod;
+  return kod.replace(/\*/g, "-").replace(/ı/g, "i");
+}
+
+/**
+ * Okutulan kodun kendisi + okuyucu düzeltmesi — ÜRÜN DIŞI kimlikler için (raf
+ * kodu · sipariş/gönderi no). UPC-A ↔ EAN-13 açılımı bunlara UYGULANMAZ; o
+ * denklik barkod içindir. Ölçüldü 28.09.2026: 43 rafın 3'ü, 9174 satış
+ * kimliğinin 64'ü (Amazon sipariş no) `-` taşıyor; düzeltilince başka kayda
+ * düşen 0.
+ */
+export function okunanKodlar(kod: string): string[] {
+  const ham = kod.trim();
+  return [...new Set([ham, okuyucuDuzeltmesi(ham)])];
 }
 
 /**
@@ -317,7 +366,9 @@ export function kodKosuluToplu(kodlar: string[]) {
  *  testlerini anlamsız yapardı.
  */
 export function satisKodKosulu(kod: string) {
-  return [{ shipmentCode: kod }, { code: kod }];
+  /** `in` bir kümeye TAM eşleşmedir — kısmi değil (K300: okuyucu düzeltmesi). */
+  const kodlar = okunanKodlar(kod);
+  return [{ shipmentCode: { in: kodlar } }, { code: { in: kodlar } }];
 }
 
 /**

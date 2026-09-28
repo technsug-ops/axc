@@ -13,6 +13,33 @@
 
 ---
 
+## 🔴 K300 — OKUYUCU KLAVYE DÜZENİ EMNİYETİ (`*`→`-`, `ı`→`i`) · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Vaka (K291-②):** `OYU-LEG-0020` etiketi USB okuyucudan `OYU*LEG*0020` geldi — okuyucu ABD düzeni,
+bilgisayar TR-Q. Kullanıcı okuyucuyu ayarlamıştı; kullanıcı kararı 28.09: sistem de emniyet alsın.
+
+**Ölçüm (canlı, salt okuma):** 8955 kod · `*`/`ı` içeren **0** · okuyucu bozulunca etkilenen **3585 (%40)** ·
+düzeltilince başka karta düşen **0** · rakamsız/boşluklu etkilenen **0** · raf 43 (3'ü `-`), satış kimliği
+9174 (64'ü `-`, Amazon), ikisinde de çakışma 0.
+
+**Kural** `okuyucuDuzeltmesi` (`varyant-arama-kurali.ts`): yalnız «kod gibi» girişte (boşluksuz + rakamlı)
+— ürün adı araması genişlemesin. `kodEsdegerleri` üzerinden: ürün okutma · sayım · içe aktarma · arama kutuları.
+`okunanKodlar` üzerinden: raf okutması (`/okut` · `/yerlestir` ×2) · sipariş/gönderi no · Raf Konumları araması.
+⚠ Beyanlı sınır: ABD `.`→`ç`, `/`→`.` ölçülmedi, kural dokunmuyor — açılış şartı `ç`li bir okuma kaçması.
+
+**Ölçüldü:** `arama:dogrula` +16 ölçüt (140) · `okuyucu-duzeltme-mutasyon` **10/10** (zararsız + kaldıran +
+fazladan: «bıçak» genişlemesin) · arama · kod-cozumu · depo · okuma · paketleme · liste-aramasi · eski-kod ·
+ice-aktarma · sayim-ekran · mutasyon-capa · mutasyon-cakisma · tur-secimi · kontrol-karakteri · lint · tsc.
+
+**Halil test listesi** (okuyucu ayarına dokunmadan, elle yazarak):
+1. `/okut` → kutuya `KUC*PHL*0045` yazıp Enter → «Philips BHD500» kartı açılmalı.
+2. `/okut` → `axcalı2120` yazıp Enter → «Philips OneBlade QP630/51 Yedek Biçak Seti» açılmalı (K299'la birleşen kartın eski kodu).
+3. Stok ekranı arama kutusuna `KUC*PHL*0045` → Philips BHD500 listelenmeli.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok)
+
+---
+
 ## 🟢 K299 — KOPYA ÜRÜN KAYITLARI BİRLEŞTİ (9 ÇİFT) · 28.09.2026 · [KOŞTU — canlı yazım kullanıcı onayıyla; HALİL TESTİ BEKLİYOR]
 
 **Kaynak:** HB EAN taraması (26.09, `hb-ean-taramasi-2026-09-26.xlsx`): HB'nin kendi siparişindeki

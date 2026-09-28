@@ -21,6 +21,7 @@ import {
 } from "@/lib/okuma/kova";
 import {
   kodKosulu,
+  okunanKodlar,
   satisKodKosulu,
   type KodRolu,
 } from "@/lib/varyant-arama-kurali";
@@ -348,7 +349,8 @@ export async function barkoduOkut(kod: string): Promise<OkumaSonucu | null> {
    */
   if (!varyant && !satisKaydi) {
     const raf = await prisma.location.findFirst({
-      where: { code: temiz },
+      /** K300: okuyucu klavye düzeni (`*`→`-`) — tam eşleşme kümesi. */
+      where: { code: { in: okunanKodlar(temiz) } },
       select: {
         code: true,
         name: true,

@@ -16,8 +16,11 @@ import {
   kodEsdegerleri,
   kodKosulu,
   kodKosuluToplu,
+  okunanKodlar,
+  okuyucuDuzeltmesi,
   satisKodKosulu,
 } from "../src/lib/varyant-arama-kurali";
+import { rafAramasi } from "../src/lib/raf-arama";
 import { kaynakOku } from "./kaynak-oku";
 
 /** Yorumları siler — bir yasağı ANLATAN yorum, o yasağı ÇİĞNEMİŞ sayılmaz. */
@@ -1198,6 +1201,44 @@ console.log("");
   );
   if (durumuSifirlamayan.length > 0)
     console.log("        DURUMU SIFIRLAMAYAN: " + durumuSifirlamayan.join(" · "));
+}
+
+/**
+ * ============================================================================
+ *  K300 — OKUYUCU KLAVYE DÜZENİ EMNİYETİ (28.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ABD düzenindeki USB okuyucu TR-Q'da `-`→`*`, `i`→`ı` yazar (K291-② vakası:
+ *  `OYU-LEG-0020` → `OYU*LEG*0020`). Değer testleri SAF gövdeyi çağırır;
+ *  kaynak taraması yalnız raf okutmasının gövdeye BAĞLI olduğunu sınar.
+ *  İKİ YÖN: düzeltme YAPILIYOR mu (kaldıran) · ürün adı GENİŞLEMİYOR mu (fazladan).
+ * ============================================================================
+ */
+console.log("\nK300 — OKUYUCU KLAVYE DÜZENİ");
+kontrol("`*` → `-`: OYU*LEG*0020 eşdeğerlerinde OYU-LEG-0020 var", kodEsdegerleri("OYU*LEG*0020").includes("OYU-LEG-0020"));
+kontrol("`ı` → `i`: axcalı2120 eşdeğerlerinde axcali2120 var", kodEsdegerleri("axcalı2120").includes("axcali2120"));
+kontrol("okutulan hâl de kümede kalıyor (tam eşleşme kaybolmuyor)", kodEsdegerleri("OYU*LEG*0020").includes("OYU*LEG*0020"));
+kontrol("ürün adı DÜZELTİLMİYOR: «bıçak» → «biçak» eklenmiyor (rakamsız)", !kodEsdegerleri("bıçak").includes("biçak"));
+kontrol("boşluklu giriş DÜZELTİLMİYOR: «Makinesı 2 Lt»", !kodEsdegerleri("Makinesı 2 Lt").includes("Makinesi 2 Lt"));
+kontrol("UPC-A ↔ EAN-13 kuralı yerinde (0194644037598 → 194644037598)", kodEsdegerleri("0194644037598").includes("194644037598"));
+kontrol("okuyucuDuzeltmesi düz kodu değiştirmiyor", okuyucuDuzeltmesi("KUC-PHL-0045") === "KUC-PHL-0045");
+kontrol("kodKosulu düzeltilmiş kodu arıyor", JSON.stringify(kodKosulu("KUC*PHL*0045")).includes('"KUC-PHL-0045"'));
+kontrol("kodKosuluToplu düzeltilmiş kodu arıyor (içe aktarma yolu)", JSON.stringify(kodKosuluToplu(["KUC*PHL*0045"])).includes('"KUC-PHL-0045"'));
+kontrol("satisKodKosulu düzeltilmiş sipariş no arıyor (Amazon 403-…)", JSON.stringify(satisKodKosulu("403*4559840*2810710")).includes('"403-4559840-2810710"'));
+kontrol("okunanKodlar raf kodunu düzeltiyor (A1*01 → A1-01)", okunanKodlar("A1*01").includes("A1-01"));
+kontrol("okunanKodlar UPC açılımı YAPMIYOR (barkod denkliği raf/sipariş için değil)", okunanKodlar("194644037598").length === 1);
+{
+  const raflar = [{ code: "A1-01", name: null }, { code: "A1-011", name: null }];
+  const r = rafAramasi(raflar, "A1*01");
+  kontrol("raf listesi araması A1*01 ile A1-01'i BİREBİR buluyor", r.tamEslesme && r.gorunen.length === 1 && r.gorunen[0].code === "A1-01");
+}
+{
+  const okut = yorumsuz(kaynakOku("src/app/okut/actions.ts"));
+  const yerlestir = yorumsuz(kaynakOku("src/app/yerlestir/actions.ts"));
+  const bagli = (m: string) => (m.match(/code:\s*\{\s*in:\s*okunanKodlar\(temiz\)\s*\}/g) ?? []).length;
+  const ciplak = (m: string) => (m.match(/where:\s*\{\s*code:\s*temiz\s*\}/g) ?? []).length;
+  kontrol("/okut raf okutması okunanKodlar'a bağlı (1 yer)", bagli(okut) === 1);
+  kontrol("/yerlestir raf okutması okunanKodlar'a bağlı (2 yer)", bagli(yerlestir) === 2);
+  kontrol("/okut ve /yerlestir'de ÇIPLAK `code: temiz` raf araması yok", ciplak(okut) + ciplak(yerlestir) === 0);
 }
 
 console.log("=".repeat(70));

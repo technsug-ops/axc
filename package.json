@@ -444,6 +444,7 @@
     "urun-etiketi-mutasyon:kontrol": "tsx scripts/urun-etiketi-mutasyon-kontrol.ts",
     "liste-aramasi:dogrula": "tsx scripts/liste-aramasi-dogrula.ts",
     "liste-aramasi-mutasyon:kontrol": "tsx scripts/liste-aramasi-mutasyon-kontrol.ts",
+    "okuyucu-duzeltme-mutasyon:kontrol": "tsx scripts/okuyucu-duzeltme-mutasyon-kontrol.ts",
     "tarife-eslesme-mutasyon:kontrol": "tsx scripts/tarife-eslesme-mutasyon-kontrol.ts"
   },
   "dependencies": {

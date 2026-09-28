@@ -251,4 +251,10 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * taşındı). ⚠ Push kapısında ölçümle zorlandı.
    */
   "tarife-eslesme-mutasyon:kontrol",
+  /**
+   * K300 (28.09.2026) — `okuyucu-duzeltme` arama kuralını, `/okut` ve
+   * `/yerlestir` eylemlerini ve raf aramasını mutasyona uğratıyor; hepsi başka
+   * denetimlerle ortak (`eski-kod` · `paketleme` · `kod-cozumu` · `liste-aramasi`).
+   */
+  "okuyucu-duzeltme-mutasyon:kontrol",
 ];
