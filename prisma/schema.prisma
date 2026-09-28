@@ -26,6 +26,24 @@ enum Currency {
   EUR
 }
 
+/// K304 — FİNANSMAN KAYNAĞI TÜRÜ (kullanıcı kararı 28.09.2026).
+/// Hiçbiri GELİR değildir: ciro · NET-1 · NET-2 · KDV · stopaj hesabına GİRMEZ.
+/// Yalnız banka kredisi taksitindeki FAİZ ve VERGİ gidere düşer (kart faizi deseni).
+enum FinansmanTuru {
+  SERMAYE            // sermaye artırımı — geri ödenmez
+  ORTAK_BORCU        // ortaktan borç — geri ödenir ya da sermayeye mahsup edilir
+  UCUNCU_KISI_BORCU  // dışarıdan kişi/kurumdan borç
+  BANKA_KREDISI      // taksitli, faizli; plan bankanın ödeme planından girilir
+}
+
+/// K304 — FİNANSMAN HAREKETİ. Nakit etkisi: GIRIS (+) · GERI_ODEME (−) ·
+/// SERMAYEYE_MAHSUP (nakit YOK — borç azalır, sermaye artar).
+enum FinansmanHareketTuru {
+  GIRIS
+  GERI_ODEME
+  SERMAYEYE_MAHSUP
+}
+
 enum FeeScope {
   PER_SALE // sipariş başına bir kez alınır (kalem sayısından bağımsız)
   PER_ITEM // her satış kalemi için ayrı alınır
@@ -1136,6 +1154,84 @@ model KartOdeme {
 }
 
 // ============================================================================
+//  FİNANSMAN — SERMAYE · ORTAK BORCU · ÜÇÜNCÜ KİŞİ BORCU · BANKA KREDİSİ (K304)
+// ----------------------------------------------------------------------------
+//  Kullanıcı kararı 28.09.2026. Bir KAYNAK (kim, hangi tür, hangi para birimi)
+//  ve onun HAREKETLERİ (giriş · geri ödeme/taksit · sermayeye mahsup).
+//
+//  ⛔ KÂRA DOKUNMAZ: sermaye, borç girişi ve anapara geri ödemesi gelir/gider
+//  DEĞİLDİR. Kâra düşen TEK kalem, gerçekleşmiş taksitteki `faiz + vergi` —
+//  o da `faizGiderId` ile GİDERLER'e yazılır (KartOdeme.faizGiderId deseni).
+//
+//  ⛔ FAİZ HESAPLANMAZ, GİRİLİR: bankanın ödeme planındaki anapara · faiz ·
+//  vergi (BSMV) taksit başına olduğu gibi yazılır. Bankanın hesabını tahmin
+//  etmek yanlış rakam üretir.
+//
+//  PLAN → GERÇEKLEŞME: hareket `vade` ile PLANLANIR (nakit takvimi okur);
+//  gerçekleşince `gerceklestiAt` BİR KEZ yazılır. Gerçekleşmiş hareket
+//  değiştirilmez — düzeltme ters kayıtla (`isReversal`, stok defteri deseni).
+// ============================================================================
+
+model Finansman {
+  id String @id @default(cuid())
+
+  tur FinansmanTuru
+  /// Kimden — kişi, ortak, kurum ya da banka adı. VERİDİR (yapıya gömülmez).
+  kaynakAdi String   @db.VarChar(191)
+  /// Kaynağın para birimi; hareketler bunu devralır. Kur çevirisi yapılmaz.
+  currency  Currency @default(TRY)
+
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hareketler FinansmanHareketi[]
+
+  @@index([tur])
+}
+
+model FinansmanHareketi {
+  id String @id @default(cuid())
+
+  finansmanId String
+  finansman   Finansman @relation(fields: [finansmanId], references: [id], onDelete: Restrict)
+
+  tur FinansmanHareketTuru
+
+  /// Planlanan gün — nakit takvimi gerçekleşmemiş hareketi bu günde gösterir.
+  vade          DateTime
+  /// Gerçekleşme anı. `null` = PLANLI (henüz olmadı). Bir kez yazılır.
+  gerceklestiAt DateTime?
+
+  /// GIRIS: giren tutar · GERI_ODEME: taksitin ANAPARA kısmı · MAHSUP: çevrilen tutar.
+  anapara Decimal @db.Decimal(18, 4)
+  /// Yalnız GERI_ODEME — bankanın planındaki faiz. Diğer türlerde 0.
+  faiz    Decimal @default(0) @db.Decimal(18, 4)
+  /// Yalnız GERI_ODEME — faize eklenen vergi (BSMV vb.). Diğer türlerde 0.
+  vergi   Decimal @default(0) @db.Decimal(18, 4)
+
+  /// Gerçekleşmiş taksitin faiz + vergisinin yazıldığı gider. Tekil.
+  faizGiderId String?  @unique
+  faizGider   Expense? @relation(fields: [faizGiderId], references: [id], onDelete: SetNull)
+
+  /// DÜZELTME — ters kayıt (gerçekleşmiş hareket silinmez/değiştirilmez).
+  isReversal Boolean            @default(false)
+  reversesId String?            @unique
+  reverses   FinansmanHareketi? @relation("FinansmanHareketiTers", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy FinansmanHareketi? @relation("FinansmanHareketiTers")
+
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([finansmanId])
+  @@index([vade])
+  @@index([gerceklestiAt])
+}
+
+// ============================================================================
 //  ALIM (SATIN ALMA)
 // ----------------------------------------------------------------------------
 //  PARA BİRİMİ KURALI: Her parasal alanın hemen yanında kendi para birimi
@@ -2236,6 +2332,10 @@ model Expense {
   /// Bu gider bir KART GECİKME FAİZİ karşılığıysa, doğduğu ödeme kaydı.
   /// Tekil: bir ödemenin faizi tek bir gidere yazılır.
   kartOdemesi KartOdeme?
+
+  /// K304 — bu gider bir FİNANSMAN TAKSİTİNİN faizi + vergisiyse, doğduğu hareket.
+  /// Tekil: bir taksitin faizi tek bir gidere yazılır (kart faizi deseni).
+  finansmanHareketi FinansmanHareketi?
 
   /**
    * GİDER HANGİ KARTLA ÖDENDİ (25.08.2026).
