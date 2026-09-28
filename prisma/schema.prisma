@@ -36,6 +36,19 @@ enum FinansmanTuru {
   BANKA_KREDISI      // taksitli, faizli; plan bankanın ödeme planından girilir
 }
 
+/// K304-② — BORÇ BİRİMİ (kullanıcı kararı 28.09.2026). Borç KENDİ biriminde
+/// tutulur; TL'ye sabitlenmez («100 gr altın borç» altın yükselince de 100 gr).
+/// ⚠ Sistemin para kuralı (Currency: TRY|EUR) DEĞİŞMEDİ — USD ve altın yalnız
+/// finansman içinde yaşar, satış/alım/gider tarafına sızmaz. USD ve altın,
+/// firma ayarı `Company.finansmanCokBirim` açıkken seçilebilir.
+enum FinansmanBirimi {
+  TRY
+  EUR
+  USD
+  ALTIN_GRAM_24
+  ALTIN_GRAM_22
+}
+
 /// K304 — FİNANSMAN HAREKETİ. Nakit etkisi: GIRIS (+) · GERI_ODEME (−) ·
 /// SERMAYEYE_MAHSUP (nakit YOK — borç azalır, sermaye artar).
 enum FinansmanHareketTuru {
@@ -1178,8 +1191,13 @@ model Finansman {
   tur FinansmanTuru
   /// Kimden — kişi, ortak, kurum ya da banka adı. VERİDİR (yapıya gömülmez).
   kaynakAdi String   @db.VarChar(191)
-  /// Kaynağın para birimi; hareketler bunu devralır. Kur çevirisi yapılmaz.
-  currency  Currency @default(TRY)
+  /// Borcun BİRİMİ; hareketler bunu devralır. Kur çevirisi yapılmaz.
+  birim FinansmanBirimi @default(TRY)
+  /// ⚠ ESKİDİ (K304-②) — `birim` yerine geçti; KOD OKUMAZ, YAZMAZ. Sütun ŞİMDİ
+  /// düşürülmedi: canlıdaki K304 kodu onu okuyor ve migration kod yayından önce
+  /// koşar — düşürülseydi aradaki dakikalarda nakit takvimi/panel 500 verirdi.
+  /// Yeni kod canlıya çıkınca AYRI migration'la kaldırılır (genişlet → daralt).
+  currency Currency @default(TRY)
 
   note String? @db.Text
 
@@ -1229,6 +1247,24 @@ model FinansmanHareketi {
   @@index([finansmanId])
   @@index([vade])
   @@index([gerceklestiAt])
+}
+
+/// K304-② — BİRİM FİYATI (TL). Güncel TL karşılığı için KULLANICININ girdiği
+/// fiyat: «28.09 · gram altın 24 ayar ₺5.150». Tahmin değil beyan; ekran onu
+/// «tahmini · fiyat tarihi» diye gösterir. Asıl borç rakamı buna göre DEĞİŞMEZ.
+/// Geçmiş silinmez — en yeni kayıt okunur (fiyatın nasıl değiştiği bilgidir).
+model FinansmanBirimFiyati {
+  id String @id @default(cuid())
+
+  birim      FinansmanBirimi
+  /// 1 birimin TL fiyatı.
+  fiyat      Decimal  @db.Decimal(18, 4)
+  /// Fiyatın ait olduğu gün.
+  gecerliGun DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([birim, gecerliGun])
 }
 
 // ============================================================================
@@ -2877,6 +2913,12 @@ model Company {
    * gelen seçici sessizce kaybolurdu.
    */
   lotKipi LotKipi @default(HIBRIT)
+
+  /// K304-② — ÖZELLİK ANAHTARI: finansmanda USD ve gram altın borç birimleri.
+  /// Kullanıcı kararı 28.09.2026: «herkesin ihtiyacı olmayabilir» — varsayılan
+  /// KAPALI. Kapalıyken yalnız TRY/EUR seçilir; kapatılsa bile önceden girilmiş
+  /// USD/altın kayıtları GİZLENMEZ (veri saklanmaz, yalnız yeni seçim daralır).
+  finansmanCokBirim Boolean @default(false)
 
   uyelikler UserCompanyRole[]
   auditLogs AuditLog[]

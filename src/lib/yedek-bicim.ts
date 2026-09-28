@@ -95,6 +95,8 @@ export const YEDEK_TABLOLARI = [
    */
   "Finansman",
   "FinansmanHareketi",
+  // K304-② — kullanıcının girdiği birim fiyatları (bağımsız tablo).
+  "FinansmanBirimFiyati",
   // --- alım ---
   "Purchase",
   "PurchaseItem",

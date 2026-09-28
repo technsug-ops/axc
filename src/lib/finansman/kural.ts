@@ -41,6 +41,66 @@ export const IZINLI_HAREKETLER: Readonly<Record<FinansmanTuru, readonly HareketT
   BANKA_KREDISI: ["GIRIS", "GERI_ODEME"],
 };
 
+/**
+ * ============================================================================
+ *  BORÇ BİRİMİ (K304-②, kullanıcı kararı 28.09.2026)
+ * ----------------------------------------------------------------------------
+ *  Borç KENDİ biriminde tutulur, TL'ye sabitlenmez. USD ve gram altın bir
+ *  ÖZELLİKTİR (`Company.finansmanCokBirim`) — kapalıyken yalnız TRY/EUR
+ *  seçilir. ⚠ Kapalıyken önceden girilmiş USD/altın kaydı GİZLENMEZ.
+ * ============================================================================
+ */
+export type FinansmanBirimi = "TRY" | "EUR" | "USD" | "ALTIN_GRAM_24" | "ALTIN_GRAM_22";
+export const TEMEL_BIRIMLER: readonly FinansmanBirimi[] = ["TRY", "EUR"];
+export const EK_BIRIMLER: readonly FinansmanBirimi[] = ["USD", "ALTIN_GRAM_24", "ALTIN_GRAM_22"];
+export const TUM_BIRIMLER: readonly FinansmanBirimi[] = [...TEMEL_BIRIMLER, ...EK_BIRIMLER];
+
+export function secilebilirBirimler(cokBirimAcik: boolean): readonly FinansmanBirimi[] {
+  return cokBirimAcik ? TUM_BIRIMLER : TEMEL_BIRIMLER;
+}
+
+/** Para birimi mi (₺ · € · $ ile yazılır) — altın gram değildir. */
+export function paraBirimiMi(b: FinansmanBirimi): boolean {
+  return b === "TRY" || b === "EUR" || b === "USD";
+}
+
+/**
+ * Faiz gideri DOĞRUDAN yazılabilir mi. Gider defteri TRY/EUR konuşur
+ * (Currency). USD ve altın taksitin faizinde kullanıcı o gün FİİLEN ödediği TL
+ * karşılığını girer — sistem çevirmez, tahmin etmez.
+ */
+export function giderDogrudanMi(b: FinansmanBirimi): boolean {
+  return b === "TRY" || b === "EUR";
+}
+
+/**
+ * GÜNCEL TL KARŞILIĞI — kullanıcının girdiği birim fiyatıyla. TRY'de kendisi;
+ * fiyatı girilmemiş birimde `null` (UYDURULMAZ — ekran «fiyat girilmedi» der).
+ */
+export function tlKarsiligi(miktar: number, birim: FinansmanBirimi, tlFiyati: number | null): number | null {
+  if (birim === "TRY") return miktar;
+  if (tlFiyati === null || !Number.isFinite(tlFiyati) || tlFiyati <= 0) return null;
+  return Math.round(miktar * tlFiyati * 100) / 100;
+}
+
+/**
+ * GİDER KAYDI — gerçekleşmiş taksitin faiz+vergisi Giderler'e NE olarak yazılır.
+ * · TRY/EUR borç → kendi biriminde, olduğu gibi.
+ * · USD/altın borç → kullanıcının o gün FİİLEN ödediği TL karşılığı (girdisi);
+ *   yoksa `GIDER_TL_GEREKLI` — sistem çevirmez, tahmin etmez.
+ * · faiz+vergi sıfırsa `null` (gider doğmaz).
+ */
+export function giderKaydi(
+  birim: FinansmanBirimi,
+  giderBiriminde: number,
+  giderTl: number | null,
+): { tutar: number; paraBirimi: "TRY" | "EUR" } | "GIDER_TL_GEREKLI" | null {
+  if (!(giderBiriminde > 0)) return null;
+  if (birim === "TRY" || birim === "EUR") return { tutar: giderBiriminde, paraBirimi: birim };
+  if (giderTl === null || !Number.isFinite(giderTl) || giderTl <= 0) return "GIDER_TL_GEREKLI";
+  return { tutar: giderTl, paraBirimi: "TRY" };
+}
+
 /** Borç mu — kalan borç yalnız bunlarda anlamlıdır. */
 export function borcMu(tur: FinansmanTuru): boolean {
   return tur !== "SERMAYE";

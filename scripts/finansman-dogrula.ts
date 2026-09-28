@@ -3,8 +3,12 @@ import { join } from "node:path";
 
 import { kaynakOku } from "./kaynak-oku";
 import {
+  giderKaydi,
   giderTutari,
   hareketHatasi,
+  paraBirimiMi,
+  secilebilirBirimler,
+  tlKarsiligi,
   kaynakOzeti,
   nakitEtkisi,
   odemePlaniCoz,
@@ -92,6 +96,19 @@ console.log("\n1) kural — değerle");
   kontrol("sayı: 1.234 (binlik)", turkceSayi("1.234") === 1234);
   kontrol("sayı: 12.5 BELİRSİZ → reddedilir", turkceSayi("12.5") === null);
   kontrol("sayı: harf → reddedilir", turkceSayi("abc") === null);
+  /* K304-② — birim, özellik anahtarı, TL karşılığı, gider kaydı. */
+  kontrol("özellik KAPALI: yalnız TL/EUR", JSON.stringify(secilebilirBirimler(false)) === '["TRY","EUR"]');
+  kontrol("özellik AÇIK: USD ve iki altın da", ["USD", "ALTIN_GRAM_24", "ALTIN_GRAM_22"].every((b) => secilebilirBirimler(true).includes(b as never)));
+  kontrol("altın para birimi DEĞİL (Intl'e para kodu gitmez)", !paraBirimiMi("ALTIN_GRAM_24") && paraBirimiMi("USD"));
+  kontrol("TL karşılığı: TRY kendisi", tlKarsiligi(1500, "TRY", null) === 1500);
+  kontrol("TL karşılığı: fiyat yoksa UYDURULMAZ (null)", tlKarsiligi(10, "ALTIN_GRAM_24", null) === null && tlKarsiligi(10, "USD", 0) === null);
+  kontrol("TL karşılığı: 80 gr × 5.150", tlKarsiligi(80, "ALTIN_GRAM_24", 5150) === 412000);
+  kontrol("gider: TL borçta kendi tutarı, TRY", JSON.stringify(giderKaydi("TRY", 120, null)) === '{"tutar":120,"paraBirimi":"TRY"}');
+  kontrol("gider: EUR borçta EUR (çevrilmez)", JSON.stringify(giderKaydi("EUR", 40, 999)) === '{"tutar":40,"paraBirimi":"EUR"}');
+  kontrol("gider: altın borçta TL karşılığı ZORUNLU", giderKaydi("ALTIN_GRAM_24", 2, null) === "GIDER_TL_GEREKLI");
+  kontrol("gider: altın borçta girilen TL yazılır", JSON.stringify(giderKaydi("ALTIN_GRAM_24", 2, 10300)) === '{"tutar":10300,"paraBirimi":"TRY"}');
+  kontrol("gider: faiz sıfırsa gider DOĞMAZ", giderKaydi("USD", 0, 500) === null);
+
   const plan = odemePlaniCoz("15.10.2026\t8.333,33\t2.450,00\t122,50\n\n15.11.2026;8.333,33;2.310,00\n31.02.2026 1,00 1,00\n15.12.2026 12.5 1,00");
   kontrol("plan: iki geçerli satır okunur (vergisiz satır vergi 0)", plan.satirlar.length === 2 && plan.satirlar[1].vergi === 0 && plan.satirlar[0].vade === "2026-10-15", plan);
   kontrol("plan: 31 Şubat ve belirsiz sayı satır numarasıyla hata", JSON.stringify(plan.hatalar) === "[4,5]", plan.hatalar);
@@ -142,6 +159,20 @@ console.log("\n2) zincir — bağlar");
   kontrol("kaynak sil: gerçekleşmiş ya da ters hareket varsa DURUR", /count\(\{\s*where:\s*\{\s*finansmanId:\s*k\.id,\s*OR:\s*\[\{\s*gerceklestiAt:\s*\{\s*not:\s*null\s*\}\s*\},\s*\{\s*isReversal:\s*true\s*\}\]\s*\}\s*\}\);\s*if \(olmus > 0\) throw new Error\("GERCEKLESMIS_VAR"\);/.test(silme));
   kontrol("kaynak sil: yalnız planlı satırları siler", /deleteMany\(\{\s*where:\s*\{\s*finansmanId:\s*k\.id,\s*gerceklestiAt:\s*null,\s*isReversal:\s*false\s*\}/.test(silme));
   kontrol("gerçekleşmiş hareket GÜNCELLENMEZ (tek update: gerçekleştir)", (eylem.match(/finansmanHareketi\.update(Many)?\(/g) ?? []).length === 1);
+
+  /* K304-② zincir. */
+  kontrol("özellik kapısı SUNUCUDA: kapalıyken USD/altın kaynak reddedilir", /if \(EK_BIRIMLER\.includes\(birim\) && !\(await cokBirimAcikMi\(baglam\.companyId\)\)\) return \{ tamam: false, hata: t\("hata\.BIRIM_KAPALI"\) \};/.test(govde(eylem, "kaynakEkle")));
+  for (const ad of ["hareketEkle", "gerceklestir"]) {
+    kontrol(`${ad}: gider giderKaydi'dan, TL eksikse DURUR`, /giderKaydi\(/.test(govde(eylem, ad)) && /if \(gider === "GIDER_TL_GEREKLI"\) return/.test(govde(eylem, ad)) && /amount: gider\.tutar, currency: gider\.paraBirimi/.test(govde(eylem, ad)));
+  }
+  kontrol("ters kayıt: gider kendi para biriminde terslenir", /currency: h\.faizGider\.currency/.test(govde(eylem, "tersKayit")));
+  const listeGovde = govde(veri, "finansmanListesi");
+  kontrol("liste: fiyatı olmayan birim adıyla söylenir (sessiz değil)", /if \(tl === null\) fiyatsizBirimler\.push\(birim\);/.test(listeGovde));
+  const eskiSutun = ["src/lib/finansman/veri.ts", "src/lib/finansman/kural.ts", "src/app/finansman/eylemler.ts", "src/app/finansman/page.tsx", "src/app/finansman/[id]/page.tsx"]
+    .filter((y) => /\b(kaynak|k|s)\.currency\b|finansman:\s*\{\s*select:\s*\{[^}]*currency/.test(oku(y)));
+  kontrol("ESKİ `Finansman.currency` sütununu hiçbir yer okumaz (genişlet→daralt)", eskiSutun.length === 0, eskiSutun);
+  kontrol("Özellikler sayfası ayar.yaz ister", oku("src/app/ayarlar/ozellikler/page.tsx").includes('await sayfaIzni("ayar.yaz");'));
+  kontrol("özellik eylemi ayar.yaz ister ve firmayı OTURUMDAN alır", /await yetkiIste\("ayar\.yaz"\)[\s\S]*where: \{ id: baglam\.companyId \}/.test(oku("src/app/ayarlar/ozellikler/eylemler.ts")));
 
   for (const y of ["src/app/finansman/page.tsx", "src/app/finansman/[id]/page.tsx"]) {
     kontrol(`${y} sayfaIzni("finansman.yonet")`, oku(y).includes('await sayfaIzni("finansman.yonet");'));

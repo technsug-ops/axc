@@ -46,6 +46,7 @@ export const BOLUMLER = [
   { kimlik: "gider", ad: "Giderler" },
   { kimlik: "kartBorcu", ad: "Kartlar ve kart borcu" },
   { kimlik: "finansman", ad: "Finansman — sermaye, borç ve kredi" },
+  { kimlik: "ozellikler", ad: "Ayarlar — Özellikler" },
   { kimlik: "hakedis", ad: "Hakediş — param ne zaman yatar" },
   { kimlik: "tazminat", ad: "Tazminat" },
   { kimlik: "nakit", ad: "Nakit takvimi" },
@@ -130,6 +131,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   kartlar: "kartBorcu",
   kartBorcu: "kartBorcu",
   finansman: "finansman",
+  ozellikler: "ozellikler",
   tazminat: "tazminat",
   hakedis: "hakedis",
   nakitTakvimi: "nakit",
@@ -1351,6 +1353,19 @@ ${sikHata([
     cozum: "Plan olarak kalan taksit nakit takviminde «çıkacak» görünmeye devam eder ve faizi gidere yazılmaz. Ödediğin gün işaretle.",
   },
 ])}
+</section>
+
+<section id="ozellikler">
+${baslik("ozellikler")}
+<p><strong>Sol menü → Özellikler</strong> (Ayarlar grubunda). Her firmanın ihtiyacı
+olmayan isteğe bağlı özellikler burada açılıp kapanır.</p>
+<h3>Döviz ve altın borç</h3>
+<p>Açıkken Finansman'da yeni kaynak açarken <strong>USD</strong> ve
+<strong>gram altın (24 / 22 ayar)</strong> birimi seçilebilir. Borç kendi
+biriminde tutulur («80 gr · 24 ayar»); TL karşılığı, Finansman sayfasına
+girdiğin son fiyatla <strong>tahmini</strong> olarak ve fiyat tarihiyle
+gösterilir. Kapatınca daha önce girilmiş kayıtlar gizlenmez, yalnız yeni
+kayıtta bu birimler seçilemez.</p>
 </section>
 
 <section id="hakedis">

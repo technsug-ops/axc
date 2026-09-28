@@ -48,6 +48,36 @@ Kalan borç anapara kadar düşer, Giderler'de faiz+vergi satırı · yanlışsa
 **mobil doğrulama kullanıcıda** · **i18n: ✓** · **kullanıcı kolaylığı: ✓** (görünür eylemler · onay diyaloğu · arama ·
 toplam süzgeçle · yer tutucular «örn.»)
 
+─── ② **DÖVİZ VE ALTIN BORÇ — ÖZELLİK OLARAK (28.09.2026)** · [MIGRATION CANLIDA · KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kaynak:** kullanıcının arkadaşının önerisi («borcu TL'ye sabitleme, kendi biriminde tut, TL karşılığını ayrıca göster»).
+Kullanıcı kararı: USD ✓ · gram altın ✓ · **firma bazında aç/kapa özellik** («herkesin ihtiyacı olmayabilir»).
+
+**Şema (`20260928180000_finansman_birim`, yedek alındı+geri okundu):** `Finansman.birim` (TRY·EUR·USD·ALTIN_GRAM_24·
+ALTIN_GRAM_22) · `FinansmanBirimFiyati` (kullanıcının girdiği TL fiyatı) · `Company.finansmanCokBirim` (varsayılan KAPALI).
+⛔ **GENİŞLET → DARALT:** eski `Finansman.currency` DÜŞÜRÜLMEDİ — canlıdaki K304 kodu (nakit takvimi dahil) onu okuyordu ve
+migration kod yayından önce koşar; düşürülseydi aradaki dakikalarda panel 500 verirdi. **AÇIK: bu kod canlıya çıkınca
+`currency` AYRI migration'la kaldırılır** (bekçi: yeni kod onu hiçbir yerde okumuyor).
+**Sistem para kuralı (TRY|EUR) DEĞİŞMEDİ** — USD/altın yalnız finansmanda; gider defteri TL/EUR konuşur.
+
+**Kural:** borç kendi biriminde · TL karşılığı = kalan × SON GİRİLEN fiyat, «tahmini · fiyat tarihi» · fiyatı olmayan birim
+toplama girmez ve ADIYLA yazılır · USD/altın taksit faizinde kullanıcı o gün ödediği TL'yi girer (sistem çevirmez) ·
+özellik kapısı SUNUCUDA · kapatmak veriyi gizlemez. **Yeni ekran:** Ayarlar → Özellikler (`ayar.yaz`).
+
+**Ölçüldü:** `finansman:dogrula` **68** · mutasyon **19/19** (+5) · yedek (3 finansman tablosu) · el kitabı · i18n · tsc · lint.
+
+**Halil test listesi (iz bırakmaz; fiyat kaydı kalır — gerçek fiyat girin):**
+1. Sol menü → **Özellikler** → «Döviz ve altın borç» **Kapalı** → **Aç** → «Özellik açıldı», rozet **Açık**.
+2. **Finansman** → «Birim fiyatları» bölümü görünür → Gram altın (24 ayar) · bugün · bugünkü gerçek fiyat → Fiyatı kaydet →
+   kutuda «Son fiyat ₺… · 28.09.2026».
+3. **Yeni kaynak** → Borç birimi listesinde **USD · Gram altın (24 ayar) · Gram altın (22 ayar)** var → Ortaktan borç ·
+   `DENEME` · Gram altın (24 ayar) → kaydet → başlıkta «Gram altın (24 ayar)» rozeti.
+4. **Hareket ekle** → Giriş · tutar `100` · «gerçekleşti» İŞARETSİZ → satır «Planlı», tutar **100 gr · 24 ayar**.
+5. **Kaynağı sil** → onay → liste boş.
+6. **Özellikler → Kapat** → Finansman → Yeni kaynak → birim listesinde yalnız **TL · EUR**.
+**Gerçek borçta:** giriş «gerçekleşti» → Kalan borç «X gr · 24 ayar» + altında «≈ ₺… (tahmini · fiyat …)»; taksit
+gerçekleşirken «faiz + verginin ödenen TL karşılığı» sorulur, Giderler'e o TL tutarı düşer.
+
 ---
 
 ## 💤 K303 — ÇOK FİRMALI YAPI (MULTI-TENANCY) · 28.09.2026 · [UYUR — kullanıcı kararı 28.09: «henüz program yerine oturmadı»; AŞAMA 0–1 ✓, AŞAMA 2–4 YAZILMADI]

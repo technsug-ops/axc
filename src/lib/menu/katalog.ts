@@ -73,6 +73,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   donemler: "/ayarlar/donemler",
   /** K115 — maliyet motoru ve parti seçim kipi; değişim kuralı döneme bağlı. */
   maliyetYontemi: "/ayarlar/maliyet-yontemi",
+  /** K304-② — firma bazında aç/kapa isteğe bağlı özellikler. */
+  ozellikler: "/ayarlar/ozellikler",
 
   veriAktarimi: "/ayarlar/ice-aktarma",
   veriDisari: "/ayarlar/disa-aktarma",
@@ -229,6 +231,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
    */
   { anahtar: "donemler", varsayilanGrup: "grupAyarlar" },
   { anahtar: "maliyetYontemi", varsayilanGrup: "grupAyarlar" },
+  { anahtar: "ozellikler", varsayilanGrup: "grupAyarlar" },
 ];
 
 /**

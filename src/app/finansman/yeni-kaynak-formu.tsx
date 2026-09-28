@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { FINANSMAN_TURLERI } from "@/lib/finansman/kural";
+import { FINANSMAN_TURLERI, type FinansmanBirimi } from "@/lib/finansman/kural";
 
 import { kaynakEkle, type FinansmanSonucu } from "./eylemler";
 
@@ -19,7 +19,7 @@ const SECIM = "border-input bg-background h-11 w-full rounded-md border px-3 tex
  * formla dolmasın). Kayıt sonrası kaynağın detayına gidilir: ilk iş orada
  * GİRİŞ ya da ödeme planı eklemektir.
  */
-export function YeniKaynakFormu() {
+export function YeniKaynakFormu({ birimler }: { birimler: FinansmanBirimi[] }) {
   const t = useTranslations("Finansman");
   const ortak = useTranslations("Ortak");
   const [acik, setAcik] = useState(false);
@@ -54,10 +54,14 @@ export function YeniKaynakFormu() {
           <Input id="fin-ad" name="kaynakAdi" maxLength={191} placeholder={t("alan.kaynakAdiOrnek")} required className="min-h-11 md:min-h-9" />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="fin-para">{t("alan.paraBirimi")}</Label>
-          <select id="fin-para" name="currency" className={SECIM} defaultValue="TRY">
-            <option value="TRY">TRY</option>
-            <option value="EUR">EUR</option>
+          <Label htmlFor="fin-para">{t("alan.birim")}</Label>
+          {/* K304-②: USD ve gram altın yalnız Ayarlar → Özellikler açıkken listede. */}
+          <select id="fin-para" name="birim" className={SECIM} defaultValue="TRY">
+            {birimler.map((b) => (
+              <option key={b} value={b}>
+                {t(`birim.${b}`)}
+              </option>
+            ))}
           </select>
         </div>
         <div className="space-y-1 sm:col-span-2">

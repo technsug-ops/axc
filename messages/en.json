@@ -178,7 +178,8 @@
     "menu": "",
     "markalar": "",
     "geceTuru": "",
-    "finansman": ""
+    "finansman": "",
+    "ozellikler": ""
   },
   "Ortak": {
     "kapat": "",
@@ -903,7 +904,8 @@
     "kanalListeleme": "",
     "markalar": "",
     "geceTuru": "",
-    "finansman": ""
+    "finansman": "",
+    "ozellikler": ""
   },
   "GunlukOzet": {
     "baslik": "",
@@ -4848,7 +4850,6 @@
       "turSec": "",
       "kaynakAdi": "",
       "kaynakAdiOrnek": "",
-      "paraBirimi": "",
       "not": "",
       "faizKategorisi": "",
       "kategoriSec": "",
@@ -4859,7 +4860,14 @@
       "vergiOrnek": "",
       "gerceklestiMi": "",
       "gerceklestiNot": "",
-      "planliNot": ""
+      "planliNot": "",
+      "birim": "",
+      "fiyatGunu": "",
+      "tlFiyati": "",
+      "fiyatOrnek": "",
+      "giderTl": "",
+      "giderTlOrnek": "",
+      "giderTlNot": ""
     },
     "karaDokunmaz": "",
     "planNotu": "",
@@ -4924,10 +4932,55 @@
       "ZATEN_TERS": "",
       "ZATEN_TERSLENMIS": "",
       "GERCEKLESMIS_SILINMEZ": "",
-      "GERCEKLESMIS_VAR": ""
+      "GERCEKLESMIS_VAR": "",
+      "BIRIM_SECILMEDI": "",
+      "BIRIM_KAPALI": "",
+      "GIDER_TL_GEREKLI": "",
+      "FIYAT_GECERSIZ": ""
     },
     "kaynakSil": "",
     "kaynakSilBaslik": "",
-    "kaynakSilAciklama": ""
+    "kaynakSilAciklama": "",
+    "birim": {
+      "TRY": "",
+      "EUR": "",
+      "USD": "",
+      "ALTIN_GRAM_24": "",
+      "ALTIN_GRAM_22": ""
+    },
+    "birimMiktar": {
+      "TRY": "",
+      "EUR": "",
+      "USD": "",
+      "ALTIN_GRAM_24": "",
+      "ALTIN_GRAM_22": ""
+    },
+    "borcTlBaslik": "",
+    "borcTlNot": "",
+    "borcTlEksik": "",
+    "fiyatBaslik": "",
+    "fiyatAciklama": "",
+    "fiyatSon": "",
+    "fiyatYok": "",
+    "fiyatKaydet": "",
+    "fiyatKaydedildi": "",
+    "tlKarsiligiNot": "",
+    "tlKarsiligiYok": ""
+  },
+  "Ozellikler": {
+    "baslik": "",
+    "aciklama": "",
+    "acik": "",
+    "kapali": "",
+    "ac": "",
+    "kapat": "",
+    "acildi": "",
+    "kapandi": "",
+    "kaydedilemedi": "",
+    "cokBirim": {
+      "baslik": "",
+      "aciklama": "",
+      "not": ""
+    }
   }
 }

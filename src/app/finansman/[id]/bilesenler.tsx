@@ -48,8 +48,23 @@ function KategoriSecimi({ id, kategoriler, deger, degistir }: { id: string; kate
 
 const onerilen = (kategoriler: Kategori[]) => kategoriler.find((k) => k.onerilenMi)?.id ?? "";
 
+/**
+ * K304-② — USD/altın borçta faiz+verginin o gün FİİLEN ödenen TL karşılığı.
+ * Sistem çevirmez: Giderler TL/EUR konuşur, doğru rakamı ödeyen bilir.
+ */
+function GiderTlAlani({ id, deger, degistir }: { id: string; deger: string; degistir: (v: string) => void }) {
+  const t = useTranslations("Finansman");
+  return (
+    <div className="space-y-1">
+      <Label htmlFor={id}>{t("alan.giderTl")}</Label>
+      <Input id={id} inputMode="decimal" value={deger} onChange={(e) => degistir(e.target.value)} placeholder={t("alan.giderTlOrnek")} className="min-h-11 md:min-h-9" />
+      <p className="text-muted-foreground text-xs">{t("alan.giderTlNot")}</p>
+    </div>
+  );
+}
+
 // ------------------------------------------------------------------ HAREKET FORMU
-export function HareketFormu({ finansmanId, izinliTurler, kategoriler }: { finansmanId: string; izinliTurler: HareketTuru[]; kategoriler: Kategori[] }) {
+export function HareketFormu({ finansmanId, izinliTurler, kategoriler, giderTlSorulur }: { finansmanId: string; izinliTurler: HareketTuru[]; kategoriler: Kategori[]; giderTlSorulur: boolean }) {
   const t = useTranslations("Finansman");
   const ortak = useTranslations("Ortak");
   const [acik, setAcik] = useState(false);
@@ -61,6 +76,7 @@ export function HareketFormu({ finansmanId, izinliTurler, kategoriler }: { finan
   const [vergi, setVergi] = useState("");
   const [not, setNot] = useState("");
   const [kategori, setKategori] = useState(onerilen(kategoriler));
+  const [giderTl, setGiderTl] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [basari, setBasari] = useState(false);
   const [bekliyor, basla] = useTransition();
@@ -95,6 +111,7 @@ export function HareketFormu({ finansmanId, izinliTurler, kategoriler }: { finan
             vergi: geriOdeme ? vergi : "",
             note: not,
             faizKategoriId: giderSorulur ? kategori || null : null,
+            giderTl: giderSorulur && giderTlSorulur ? giderTl : "",
           });
           if (r.tamam) {
             setBasari(true);
@@ -102,6 +119,7 @@ export function HareketFormu({ finansmanId, izinliTurler, kategoriler }: { finan
             setFaiz("");
             setVergi("");
             setNot("");
+            setGiderTl("");
           } else setHata(r.hata ?? null);
         });
       }}
@@ -143,8 +161,9 @@ export function HareketFormu({ finansmanId, izinliTurler, kategoriler }: { finan
           {t("alan.gerceklestiMi")}
         </label>
         {giderSorulur ? (
-          <div className="sm:col-span-2">
+          <div className="space-y-3 sm:col-span-2">
             <KategoriSecimi id="hr-kategori" kategoriler={kategoriler} deger={kategori} degistir={setKategori} />
+            {giderTlSorulur ? <GiderTlAlani id="hr-gider-tl" deger={giderTl} degistir={setGiderTl} /> : null}
           </div>
         ) : null}
         <div className="space-y-1 sm:col-span-2">
@@ -237,12 +256,13 @@ export function PlanYapistirFormu({ finansmanId }: { finansmanId: string }) {
 }
 
 // ------------------------------------------------------------------ SATIR EYLEMLERİ
-export function GerceklestirDugmesi({ hareketId, varsayilanTarih, giderVar, kategoriler }: { hareketId: string; varsayilanTarih: string; giderVar: boolean; kategoriler: Kategori[] }) {
+export function GerceklestirDugmesi({ hareketId, varsayilanTarih, giderVar, giderTlSorulur, kategoriler }: { hareketId: string; varsayilanTarih: string; giderVar: boolean; giderTlSorulur: boolean; kategoriler: Kategori[] }) {
   const t = useTranslations("Finansman");
   const ortak = useTranslations("Ortak");
   const [acik, setAcik] = useState(false);
   const [tarih, setTarih] = useState(varsayilanTarih);
   const [kategori, setKategori] = useState(onerilen(kategoriler));
+  const [giderTl, setGiderTl] = useState("");
   const [hata, setHata] = useState<string | null>(null);
   const [bekliyor, basla] = useTransition();
   return (
@@ -260,6 +280,7 @@ export function GerceklestirDugmesi({ hareketId, varsayilanTarih, giderVar, kate
               <Input id={`gr-${hareketId}`} type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} className="min-h-11 md:min-h-9" />
             </div>
             {giderVar ? <KategoriSecimi id={`gk-${hareketId}`} kategoriler={kategoriler} deger={kategori} degistir={setKategori} /> : null}
+            {giderVar && giderTlSorulur ? <GiderTlAlani id={`gt-${hareketId}`} deger={giderTl} degistir={setGiderTl} /> : null}
             {hata ? (
               <p className="text-destructive text-sm" role="alert">
                 {hata}
@@ -274,7 +295,7 @@ export function GerceklestirDugmesi({ hareketId, varsayilanTarih, giderVar, kate
               disabled={bekliyor}
               onClick={() =>
                 basla(async () => {
-                  const r = await gerceklestir(hareketId, tarih, giderVar ? kategori || null : null);
+                  const r = await gerceklestir(hareketId, tarih, giderVar ? kategori || null : null, giderVar && giderTlSorulur ? giderTl : null);
                   if (r.tamam) setAcik(false);
                   else setHata(r.hata ?? null);
                 })

@@ -113,6 +113,7 @@ export async function yedekUret(
     // K304 — sermaye, borç, banka kredisi ve taksitleri (sıra: yedek-bicim.ts).
     Finansman: await istemci.finansman.findMany(),
     FinansmanHareketi: await istemci.finansmanHareketi.findMany(),
+    FinansmanBirimFiyati: await istemci.finansmanBirimFiyati.findMany(),
     Purchase: await istemci.purchase.findMany(),
     PurchaseItem: await istemci.purchaseItem.findMany(),
     Sale: await istemci.sale.findMany(),

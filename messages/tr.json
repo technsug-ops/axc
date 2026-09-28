@@ -178,7 +178,8 @@
     "menu": "Menü",
     "markalar": "Markalar",
     "geceTuru": "Gece bekçi turu",
-    "finansman": "Finansman"
+    "finansman": "Finansman",
+    "ozellikler": "Özellikler"
   },
   "Ortak": {
     "kapat": "Kapat",
@@ -903,7 +904,8 @@
     "kanalListeleme": "Kanal Listeleme",
     "markalar": "Markalar",
     "geceTuru": "Gece bekçi turu",
-    "finansman": "Finansman"
+    "finansman": "Finansman",
+    "ozellikler": "Özellikler"
   },
   "GunlukOzet": {
     "baslik": "Günlük Özet",
@@ -4848,7 +4850,6 @@
       "turSec": "Tür seçin",
       "kaynakAdi": "Kimden",
       "kaynakAdiOrnek": "örn. Ahmet Yılmaz ya da X Bankası",
-      "paraBirimi": "Para birimi",
       "not": "Not",
       "faizKategorisi": "Faiz + vergi hangi gider kategorisine yazılsın",
       "kategoriSec": "Kategori seçin",
@@ -4859,7 +4860,14 @@
       "vergiOrnek": "örn. 206,03",
       "gerceklestiMi": "Bu hareket gerçekleşti (para girdi/çıktı)",
       "gerceklestiNot": "Gerçekleşmiş hareket bakiyelere girer ve sonradan değiştirilmez; düzeltme ters kayıtla yapılır.",
-      "planliNot": "İşaretlemezseniz PLAN olarak yazılır: nakit takviminde görünür, bakiyelere girmez. Olduğu gün «Gerçekleşti» dersiniz."
+      "planliNot": "İşaretlemezseniz PLAN olarak yazılır: nakit takviminde görünür, bakiyelere girmez. Olduğu gün «Gerçekleşti» dersiniz.",
+      "birim": "Borç birimi",
+      "fiyatGunu": "Fiyat günü",
+      "tlFiyati": "1 birimin TL fiyatı",
+      "fiyatOrnek": "örn. 5.150,00",
+      "giderTl": "Faiz + verginin ödenen TL karşılığı",
+      "giderTlOrnek": "örn. 1.250,00",
+      "giderTlNot": "Borç TL/EUR değilse gidere bu TL tutarı yazılır; sistem kur çevirmez."
     },
     "karaDokunmaz": "Sermaye, borç ve anapara kâra dokunmaz. Yalnız ödenmiş taksitin faiz ve vergisi gidere yazılır.",
     "planNotu": "Henüz gerçekleşmemiş; nakit takviminde görünür.",
@@ -4924,10 +4932,55 @@
       "ZATEN_TERS": "Ters kaydın kendisi terslenmez.",
       "ZATEN_TERSLENMIS": "Bu hareket zaten terslenmiş.",
       "GERCEKLESMIS_SILINMEZ": "Gerçekleşmiş hareket silinmez; ters kayıt yapın.",
-      "GERCEKLESMIS_VAR": "Bu kaynağın gerçekleşmiş hareketi var; silinemez. Hareketleri ters kayıtla düzeltin."
+      "GERCEKLESMIS_VAR": "Bu kaynağın gerçekleşmiş hareketi var; silinemez. Hareketleri ters kayıtla düzeltin.",
+      "BIRIM_SECILMEDI": "Borç birimi seçilmedi.",
+      "BIRIM_KAPALI": "USD ve altın birimi kapalı. Ayarlar → Özellikler'den açılabilir.",
+      "GIDER_TL_GEREKLI": "Bu borç TL/EUR değil: faiz + verginin ödenen TL karşılığını girin.",
+      "FIYAT_GECERSIZ": "Fiyat sıfırdan büyük ve geçerli bir sayı olmalı (örn. 5.150,00)."
     },
     "kaynakSil": "Kaynağı sil",
     "kaynakSilBaslik": "Bu kaynak silinsin mi?",
-    "kaynakSilAciklama": "{ozet} — yanlış açılmış kayıt içindir. Varsa planlı satırları da silinir, iz kaydı bırakılır. Gerçekleşmiş hareketi olan kaynak silinemez."
+    "kaynakSilAciklama": "{ozet} — yanlış açılmış kayıt içindir. Varsa planlı satırları da silinir, iz kaydı bırakılır. Gerçekleşmiş hareketi olan kaynak silinemez.",
+    "birim": {
+      "TRY": "TL",
+      "EUR": "EUR",
+      "USD": "USD",
+      "ALTIN_GRAM_24": "Gram altın (24 ayar)",
+      "ALTIN_GRAM_22": "Gram altın (22 ayar)"
+    },
+    "birimMiktar": {
+      "TRY": "{miktar}",
+      "EUR": "{miktar}",
+      "USD": "{miktar}",
+      "ALTIN_GRAM_24": "{miktar} gr · 24 ayar",
+      "ALTIN_GRAM_22": "{miktar} gr · 22 ayar"
+    },
+    "borcTlBaslik": "Toplam kalan borç — TL karşılığı (tahmini)",
+    "borcTlNot": "Döviz ve altın, girdiğin son fiyatlarla çevrildi. Asıl borç kendi biriminde durur.",
+    "borcTlEksik": "Fiyatı girilmemiş birim toplama katılmadı: {birimler}. Aşağıdan fiyat girin.",
+    "fiyatBaslik": "Birim fiyatları (TL karşılığı için)",
+    "fiyatAciklama": "TL karşılığı bu fiyatlarla tahmin edilir; borç rakamı değişmez. Yeni fiyat girdiğinizde eskisi silinmez, en yenisi kullanılır.",
+    "fiyatSon": "Son fiyat {fiyat} · {gun}",
+    "fiyatYok": "Fiyat girilmedi — TL karşılığı gösterilemiyor",
+    "fiyatKaydet": "Fiyatı kaydet",
+    "fiyatKaydedildi": "Fiyat kaydedildi.",
+    "tlKarsiligiNot": "≈ {tl} (tahmini · fiyat {gun})",
+    "tlKarsiligiYok": "TL karşılığı için Finansman sayfasından birim fiyatı girin."
+  },
+  "Ozellikler": {
+    "baslik": "Özellikler",
+    "aciklama": "Her firmanın ihtiyacı olmayan isteğe bağlı özellikler. Açıp kapatmak veriyi silmez.",
+    "acik": "Açık",
+    "kapali": "Kapalı",
+    "ac": "Aç",
+    "kapat": "Kapat",
+    "acildi": "Özellik açıldı.",
+    "kapandi": "Özellik kapatıldı.",
+    "kaydedilemedi": "Kaydedilemedi; hiçbir şey değişmedi.",
+    "cokBirim": {
+      "baslik": "Döviz ve altın borç",
+      "aciklama": "Finansman'da USD ve gram altın (24 / 22 ayar) birimiyle borç kaydı.",
+      "not": "Kapatınca önceden girilmiş USD/altın kayıtları görünmeye devam eder; yalnız yeni kayıtta bu birimler seçilemez."
+    }
   }
 }

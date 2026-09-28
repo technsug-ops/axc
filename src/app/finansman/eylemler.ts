@@ -6,7 +6,10 @@ import { getTranslations } from "next-intl/server";
 
 import { gunMetninden } from "@/lib/donem";
 import {
+  EK_BIRIMLER,
   FINANSMAN_TURLERI,
+  TUM_BIRIMLER,
+  giderKaydi,
   giderTutari,
   hareketHatasi,
   HAREKET_TURLERI,
@@ -16,6 +19,7 @@ import {
 } from "@/lib/finansman/kural";
 import { izYaz } from "@/lib/iz";
 import { prisma } from "@/lib/prisma";
+import { cokBirimAcikMi } from "@/lib/finansman/veri";
 import { yetkiIste } from "@/lib/yetki";
 
 /**
@@ -54,17 +58,20 @@ export async function kaynakEkle(_onceki: FinansmanSonucu, veri: FormData): Prom
 
   const tur = FINANSMAN_TURLERI.find((x) => x === veri.get("tur"));
   const kaynakAdi = String(veri.get("kaynakAdi") ?? "").trim();
-  const currency = veri.get("currency") === "EUR" ? "EUR" : "TRY";
+  const birim = TUM_BIRIMLER.find((x) => x === veri.get("birim")) ?? null;
   const note = String(veri.get("note") ?? "").trim() || null;
   if (!tur) return { tamam: false, hata: t("hata.TUR_SECILMEDI") };
   if (kaynakAdi === "") return { tamam: false, hata: t("hata.KAYNAK_ADI_BOS") };
   if (kaynakAdi.length > 191) return { tamam: false, hata: t("hata.KAYNAK_ADI_UZUN") };
+  if (!birim) return { tamam: false, hata: t("hata.BIRIM_SECILMEDI") };
+  /* ÖZELLİK KAPISI (K304-②): USD/altın yalnız firma ayarı açıkken — istemciye güvenilmez. */
+  if (EK_BIRIMLER.includes(birim) && !(await cokBirimAcikMi(baglam.companyId))) return { tamam: false, hata: t("hata.BIRIM_KAPALI") };
 
   let id: string;
   try {
-    const k = await prisma.finansman.create({ data: { tur, kaynakAdi, currency, note }, select: { id: true } });
+    const k = await prisma.finansman.create({ data: { tur, kaynakAdi, birim, note }, select: { id: true } });
     id = k.id;
-    await izYaz({ action: "FINANSMAN_KAYNAK_EKLE", companyId: baglam.companyId, targetType: "Finansman", targetId: id, detail: JSON.stringify({ tur, kaynakAdi, currency }) });
+    await izYaz({ action: "FINANSMAN_KAYNAK_EKLE", companyId: baglam.companyId, targetType: "Finansman", targetId: id, detail: JSON.stringify({ tur, kaynakAdi, birim }) });
   } catch (e) {
     console.error("[finansman] kaynakEkle", e);
     return { tamam: false, hata: t("hata.KAYDEDILEMEDI") };
@@ -82,7 +89,7 @@ export async function kaynakSil(finansmanId: string): Promise<FinansmanSonucu> {
   const baglam = await yetkiIste("finansman.yonet");
   const t = await getTranslations("Finansman");
 
-  const k = await prisma.finansman.findUnique({ where: { id: finansmanId }, select: { id: true, tur: true, kaynakAdi: true, currency: true } });
+  const k = await prisma.finansman.findUnique({ where: { id: finansmanId }, select: { id: true, tur: true, kaynakAdi: true, birim: true } });
   if (!k) return { tamam: false, hata: t("hata.KAYNAK_YOK") };
   try {
     await prisma.$transaction(async (tx) => {
@@ -90,7 +97,7 @@ export async function kaynakSil(finansmanId: string): Promise<FinansmanSonucu> {
       if (olmus > 0) throw new Error("GERCEKLESMIS_VAR");
       const plan = await tx.finansmanHareketi.deleteMany({ where: { finansmanId: k.id, gerceklestiAt: null, isReversal: false } });
       await tx.finansman.delete({ where: { id: k.id } });
-      await izYaz({ action: "FINANSMAN_KAYNAK_SIL", companyId: baglam.companyId, targetType: "Finansman", targetId: k.id, detail: JSON.stringify({ tur: k.tur, kaynakAdi: k.kaynakAdi, currency: k.currency, silinenPlan: plan.count }) }, tx);
+      await izYaz({ action: "FINANSMAN_KAYNAK_SIL", companyId: baglam.companyId, targetType: "Finansman", targetId: k.id, detail: JSON.stringify({ tur: k.tur, kaynakAdi: k.kaynakAdi, birim: k.birim, silinenPlan: plan.count }) }, tx);
     });
   } catch (e) {
     if (e instanceof Error && e.message === "GERCEKLESMIS_VAR") return { tamam: false, hata: t("hata.GERCEKLESMIS_VAR") };
@@ -113,13 +120,15 @@ export type HareketEkleGirdisi = {
   vergi: string;
   note: string;
   faizKategoriId: string | null;
+  /** USD/altın borçta faiz+verginin o gün ödenen TL karşılığı (K304-②). */
+  giderTl: string;
 };
 
 export async function hareketEkle(g: HareketEkleGirdisi): Promise<FinansmanSonucu> {
   const baglam = await yetkiIste("finansman.yonet");
   const t = await getTranslations("Finansman");
 
-  const kaynak = await prisma.finansman.findUnique({ where: { id: g.finansmanId }, select: { id: true, tur: true, currency: true, kaynakAdi: true } });
+  const kaynak = await prisma.finansman.findUnique({ where: { id: g.finansmanId }, select: { id: true, tur: true, birim: true, kaynakAdi: true } });
   if (!kaynak) return { tamam: false, hata: t("hata.KAYNAK_YOK") };
   const tur = HAREKET_TURLERI.find((x) => x === g.tur) as HareketTuru | undefined;
   if (!tur) return { tamam: false, hata: t("hata.TUR_IZINSIZ") };
@@ -131,9 +140,10 @@ export async function hareketEkle(g: HareketEkleGirdisi): Promise<FinansmanSonuc
   if (hata) return { tamam: false, hata: t(`hata.${hata}`) };
 
   /* Gerçekleşmiş taksitin faizi+vergisi varsa kategori ZORUNLU ve gerçekten var olmalı. */
-  const gider = g.gerceklesti ? giderTutari(h) : 0;
+  const gider = g.gerceklesti ? giderKaydi(kaynak.birim, giderTutari(h), g.giderTl.trim() === "" ? null : sayiOku(g.giderTl)) : null;
+  if (gider === "GIDER_TL_GEREKLI") return { tamam: false, hata: t("hata.GIDER_TL_GEREKLI") };
   let kategoriId: string | null = null;
-  if (gider > 0) {
+  if (gider) {
     if (!g.faizKategoriId) return { tamam: false, hata: t("hata.KATEGORI_SEC") };
     const k = await prisma.expenseCategory.findFirst({ where: { id: g.faizKategoriId, isActive: true }, select: { id: true } });
     if (!k) return { tamam: false, hata: t("hata.KATEGORI_YOK") };
@@ -143,9 +153,9 @@ export async function hareketEkle(g: HareketEkleGirdisi): Promise<FinansmanSonuc
   try {
     await prisma.$transaction(async (tx) => {
       let faizGiderId: string | null = null;
-      if (gider > 0 && kategoriId) {
+      if (gider && kategoriId) {
         const e = await tx.expense.create({
-          data: { spentAt: vade, categoryId: kategoriId, amount: gider, currency: kaynak.currency, vatRate: 0, description: `${kaynak.kaynakAdi} · ${g.vade}` },
+          data: { spentAt: vade, categoryId: kategoriId, amount: gider.tutar, currency: gider.paraBirimi, vatRate: 0, description: `${kaynak.kaynakAdi} · ${g.vade}` },
           select: { id: true },
         });
         faizGiderId = e.id;
@@ -215,7 +225,7 @@ export async function planYapistir(finansmanId: string, metin: string): Promise<
 }
 
 // ---------------------------------------------------------------- GERÇEKLEŞTİR
-export async function gerceklestir(hareketId: string, tarih: string, faizKategoriId: string | null): Promise<FinansmanSonucu> {
+export async function gerceklestir(hareketId: string, tarih: string, faizKategoriId: string | null, giderTlHam: string | null = null): Promise<FinansmanSonucu> {
   const baglam = await yetkiIste("finansman.yonet");
   const t = await getTranslations("Finansman");
 
@@ -223,14 +233,19 @@ export async function gerceklestir(hareketId: string, tarih: string, faizKategor
   if (!gun) return { tamam: false, hata: t("hata.TARIH_GECERSIZ") };
   const h = await prisma.finansmanHareketi.findUnique({
     where: { id: hareketId },
-    select: { id: true, tur: true, anapara: true, faiz: true, vergi: true, gerceklestiAt: true, isReversal: true, finansman: { select: { id: true, kaynakAdi: true, currency: true } } },
+    select: { id: true, tur: true, anapara: true, faiz: true, vergi: true, gerceklestiAt: true, isReversal: true, finansman: { select: { id: true, kaynakAdi: true, birim: true } } },
   });
   if (!h) return { tamam: false, hata: t("hata.HAREKET_YOK") };
   if (h.gerceklestiAt !== null || h.isReversal) return { tamam: false, hata: t("hata.ZATEN_GERCEKLESTI") };
 
-  const gider = giderTutari({ tur: h.tur, anapara: Number(h.anapara.toString()), faiz: Number(h.faiz.toString()), vergi: Number(h.vergi.toString()) });
+  const gider = giderKaydi(
+    h.finansman.birim,
+    giderTutari({ tur: h.tur, anapara: Number(h.anapara.toString()), faiz: Number(h.faiz.toString()), vergi: Number(h.vergi.toString()) }),
+    giderTlHam === null || giderTlHam.trim() === "" ? null : sayiOku(giderTlHam),
+  );
+  if (gider === "GIDER_TL_GEREKLI") return { tamam: false, hata: t("hata.GIDER_TL_GEREKLI") };
   let kategoriId: string | null = null;
-  if (gider > 0) {
+  if (gider) {
     if (!faizKategoriId) return { tamam: false, hata: t("hata.KATEGORI_SEC") };
     const k = await prisma.expenseCategory.findFirst({ where: { id: faizKategoriId, isActive: true }, select: { id: true } });
     if (!k) return { tamam: false, hata: t("hata.KATEGORI_YOK") };
@@ -240,9 +255,9 @@ export async function gerceklestir(hareketId: string, tarih: string, faizKategor
   try {
     await prisma.$transaction(async (tx) => {
       let faizGiderId: string | null = null;
-      if (gider > 0 && kategoriId) {
+      if (gider && kategoriId) {
         const e = await tx.expense.create({
-          data: { spentAt: gun, categoryId: kategoriId, amount: gider, currency: h.finansman.currency, vatRate: 0, description: `${h.finansman.kaynakAdi} · ${tarih}` },
+          data: { spentAt: gun, categoryId: kategoriId, amount: gider.tutar, currency: gider.paraBirimi, vatRate: 0, description: `${h.finansman.kaynakAdi} · ${tarih}` },
           select: { id: true },
         });
         faizGiderId = e.id;
@@ -274,8 +289,8 @@ export async function tersKayit(hareketId: string): Promise<FinansmanSonucu> {
     select: {
       id: true, tur: true, vade: true, anapara: true, faiz: true, vergi: true, gerceklestiAt: true, isReversal: true,
       reversedBy: { select: { id: true } },
-      faizGider: { select: { categoryId: true, amount: true } },
-      finansman: { select: { id: true, kaynakAdi: true, currency: true } },
+      faizGider: { select: { categoryId: true, amount: true, currency: true } },
+      finansman: { select: { id: true, kaynakAdi: true } },
     },
   });
   if (!h) return { tamam: false, hata: t("hata.HAREKET_YOK") };
@@ -289,7 +304,7 @@ export async function tersKayit(hareketId: string): Promise<FinansmanSonucu> {
       let faizGiderId: string | null = null;
       if (h.faizGider) {
         const e = await tx.expense.create({
-          data: { spentAt: bugun, categoryId: h.faizGider.categoryId, amount: -Number(h.faizGider.amount.toString()), currency: h.finansman.currency, vatRate: 0, description: `${h.finansman.kaynakAdi} · ters kayıt` },
+          data: { spentAt: bugun, categoryId: h.faizGider.categoryId, amount: -Number(h.faizGider.amount.toString()), currency: h.faizGider.currency, vatRate: 0, description: `${h.finansman.kaynakAdi} · ters kayıt` },
           select: { id: true },
         });
         faizGiderId = e.id;
@@ -349,5 +364,35 @@ export async function planSil(hareketId: string): Promise<FinansmanSonucu> {
   revalidatePath(`/finansman/${h.finansmanId}`);
   revalidatePath("/finansman");
   revalidatePath("/nakit-takvimi");
+  return { tamam: true };
+}
+
+// ---------------------------------------------------------------- BİRİM FİYATI
+/**
+ * K304-② — kullanıcının girdiği TL fiyatı («28.09 · gram altın ₺5.150»).
+ * Ekranda TL karşılığı «tahmini · fiyat tarihi» diye bununla gösterilir; asıl
+ * borç rakamı DEĞİŞMEZ. Eski fiyat silinmez; en yenisi okunur.
+ */
+export async function fiyatEkle(birimHam: string, gunHam: string, fiyatHam: string): Promise<FinansmanSonucu> {
+  const baglam = await yetkiIste("finansman.yonet");
+  const t = await getTranslations("Finansman");
+
+  const birim = TUM_BIRIMLER.find((x) => x === birimHam);
+  if (!birim || birim === "TRY") return { tamam: false, hata: t("hata.BIRIM_SECILMEDI") };
+  const gun = gunMetninden(gunHam);
+  if (!gun) return { tamam: false, hata: t("hata.TARIH_GECERSIZ") };
+  const fiyat = sayiOku(fiyatHam);
+  if (!Number.isFinite(fiyat) || fiyat <= 0) return { tamam: false, hata: t("hata.FIYAT_GECERSIZ") };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const f = await tx.finansmanBirimFiyati.create({ data: { birim, fiyat, gecerliGun: gun }, select: { id: true } });
+      await izYaz({ action: "FINANSMAN_FIYAT_EKLE", companyId: baglam.companyId, targetType: "FinansmanBirimFiyati", targetId: f.id, detail: JSON.stringify({ birim, gun: gunHam, fiyat }) }, tx);
+    });
+  } catch (e) {
+    console.error("[finansman] fiyatEkle", e);
+    return { tamam: false, hata: t("hata.KAYDEDILEMEDI") };
+  }
+  revalidatePath("/finansman", "layout");
   return { tamam: true };
 }
