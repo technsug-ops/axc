@@ -36,7 +36,7 @@ tsc · lint · meta bekçiler.
 
 ---
 
-## 🟢 K301 — SKU ÖNİZLEMESİ: DOĞRU BİÇİMDEKİ KOD KORUNUR, SIRA HARCAMAZ · 28.09.2026 · [CANLIDA 1095736 — HALİL TESTİ GEÇTİ 28.09 (Kod alabilir 0 · Kodu zaten bu 1258 · ProMix 0044→0044); MİMAR ONAYI BEKLİYOR · ⚠ başlıktaki «1258 kod alabilir» ifadesi kutudaki «Kod alabilir 0» ile çelişiyor — metin netleştirme önerildi]
+## 🟢 K301 — SKU ÖNİZLEMESİ: DOĞRU BİÇİMDEKİ KOD KORUNUR, SIRA HARCAMAZ · 28.09.2026 · [CANLIDA 1095736 — HALİL TESTİ GEÇTİ 28.09 (Kod alabilir 0 · Kodu zaten bu 1258 · ProMix 0044→0044); MİMAR ONAYI BEKLİYOR · başlıktaki «1258 kod alabilir» kutudaki «Kod alabilir 0» ile çelişiyordu → metin «{hazir} ürünün yeni kodu belirlenebiliyor» oldu, 28.09]
 
 **Bulgu (28.09 test turu):** SKU önizlemesinde Philips ProMix `KUC-PHL-0044` «Kod alabilir → 0046» çıkıyordu.
 Veri doğruydu: K294'te BHD500 elle `KUC-PHL-0045` aldı ve önizleme her koşumda numarayı BAŞTAN dağıttığı
@@ -105,6 +105,15 @@ stoklar değişmedi · `canli:defter-ayrismasi` önce 1764/1763 temiz → sonra 
 **AÇIK — kullanıcı kararı «şimdilik ayrı kalsın»:** LEGO 76335 (TY'de iki gerçek ilan) ve Tefal kek
 kalıbı (HB'de iki ilan). `ChannelSku` hesap×varyant TEKİL; birleştirmek eski ilanın bağını koparır.
 ⛔ AÇILIŞ ŞARTI: eski ilan kanaldan kaldırılınca ya da o ilandan sipariş gelmeyeceği ölçülünce.
+
+**KAPANAN SORULAR (28.09):**
+· **Korbell EAN'ı** — kullanıcı kutudan okudu: `6009631456297`, yani aktif kart DOĞRU. HB siparişindeki
+  `8809088141740` yalnız pasif ve boş kayıtta; değişiklik YOK.
+· **LEGO 76424 desi 0** — birleştirmeden geldi (asıl `null`, kopya `0`; betik boş alanı doldurdu).
+  Kargo hesabında FARK YOK: `desiSecimi` 0'ı «bozuk kayıt» sayar ve `null` gibi küresel ortancaya (3)
+  düşer. Excel'de «0» görünür; gerçek desi ürün kartından girilince düzelir (A4Tech ve salata kurutucuda
+  0 birleştirmeden ÖNCE de vardı). ⚠ Betiğin kuralı «boşsa doldur» `0`ı değer sandı — ders: ürün
+  alanı taşınırken `0` da boş sayılmalıydı (tek seferlik betik, tekrar koşmaz).
 
 **Halil test listesi:**
 1. Ürünler → `KOZ-PHL-0029` arayın → tek kart açılmalı: «Philips OneBlade QP630/51 Yedek Biçak Seti».

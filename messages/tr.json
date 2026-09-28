@@ -4730,7 +4730,7 @@
     "baslik": "SKU önizlemesi",
     "aciklama": "Yeni Firma SKU biçimi: KATEGORİ-MARKA-SIRA (örn. OYU-LEG-0001). Bu ekran HİÇBİR ŞEY DEĞİŞTİRMEZ — yalnız her ürünün hangi kodu alacağını gösterir.",
     "kural": "Sıra numarası ürünün sisteme giriş sırasına göre verilir; başka bir kayıtta kullanılan kod atlanır. Kod alamayan ürünün nedeni yazar.",
-    "sayac": "{toplam} aktif ürün · {hazir} kod alabilir",
+    "sayac": "{toplam} aktif ürün · {hazir} ürünün yeni kodu belirlenebiliyor",
     "durum": {
       "HAZIR": "Kod alabilir",
       "AYNI": "Kodu zaten bu",
