@@ -445,6 +445,8 @@
     "liste-aramasi:dogrula": "tsx scripts/liste-aramasi-dogrula.ts",
     "liste-aramasi-mutasyon:kontrol": "tsx scripts/liste-aramasi-mutasyon-kontrol.ts",
     "okuyucu-duzeltme-mutasyon:kontrol": "tsx scripts/okuyucu-duzeltme-mutasyon-kontrol.ts",
+    "finansman:dogrula": "tsx scripts/finansman-dogrula.ts",
+    "finansman-mutasyon:kontrol": "tsx scripts/finansman-mutasyon-kontrol.ts",
     "urun-arama-mutasyon:kontrol": "tsx scripts/urun-arama-mutasyon-kontrol.ts",
     "tarife-eslesme-mutasyon:kontrol": "tsx scripts/tarife-eslesme-mutasyon-kontrol.ts"
   },

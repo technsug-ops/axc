@@ -263,4 +263,9 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * (`liste-aramasi` · `sku-onizleme` ile ortak) mutasyona uğratıyor.
    */
   "urun-arama-mutasyon:kontrol",
+  /**
+   * K304 (28.09.2026) — `finansman` nakit takvimi verisini (`panel` ile ortak)
+   * ve yetki tohumunu mutasyona uğratıyor.
+   */
+  "finansman-mutasyon:kontrol",
 ];

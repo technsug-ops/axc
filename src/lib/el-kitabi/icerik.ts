@@ -45,6 +45,7 @@ export const BOLUMLER = [
   { kimlik: "kart", ad: "Kârlılık kartı" },
   { kimlik: "gider", ad: "Giderler" },
   { kimlik: "kartBorcu", ad: "Kartlar ve kart borcu" },
+  { kimlik: "finansman", ad: "Finansman — sermaye, borç ve kredi" },
   { kimlik: "hakedis", ad: "Hakediş — param ne zaman yatar" },
   { kimlik: "tazminat", ad: "Tazminat" },
   { kimlik: "nakit", ad: "Nakit takvimi" },
@@ -128,6 +129,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   /** İki menü öğesi, tek bölüm: kart tanımı ile kart borcu aynı konudur. */
   kartlar: "kartBorcu",
   kartBorcu: "kartBorcu",
+  finansman: "finansman",
   tazminat: "tazminat",
   hakedis: "hakedis",
   nakitTakvimi: "nakit",
@@ -1306,6 +1308,47 @@ ${sikHata([
   {
     hata: "Kesim günü girilmemiş kart",
     cozum: "Kesim günü olmadan borcun hangi aya düştüğü BİLİNEMEZ. Sistem sıfır göstermez, “hesaplanamıyor” der ve sebebini yazar. Kartlar → Düzenle'den kesim gününü gir.",
+  },
+])}
+</section>
+
+<section id="finansman">
+${baslik("finansman")}
+<p><strong>Sol menü → Finansman.</strong> Firmaya giren ve geri ödenecek parayı
+tutar: <strong>sermaye artırımı · ortaktan borç · üçüncü kişiden borç · banka
+kredisi.</strong> Her kaynağın altında hareketleri durur: giriş, geri
+ödeme/taksit ve (yalnız ortak borcunda) sermayeye mahsup.</p>
+${neZaman(
+  "Firmaya sermaye ya da borç para girdiğinde, bir kredi çektiğinde ve her taksit ödendiğinde.",
+)}
+<div class="ek-not dikkat"><div class="etiket">Bu para gelir DEĞİLDİR</div>
+<p>Sermaye, borç ve kredinin kendisi ciroya ve kâra <strong>girmez</strong>.
+Kâra düşen tek kalem, ödenmiş taksitteki <strong>faiz ve vergi</strong>dir —
+«Gerçekleşti» dediğinde seçtiğin gider kategorisine yazılır ve NET-2'den
+düşer.</p></div>
+<h3>Plan ve gerçekleşme</h3>
+<p>Henüz olmamış bir hareket <strong>plan</strong> olarak yazılır: nakit
+takviminde görünür ama kalan borca girmez. Para girdiği ya da taksit ödendiği
+gün satırdaki <strong>«Gerçekleşti»</strong> düğmesine basarsın. Gerçekleşmiş
+hareket değiştirilmez; yanlışsa <strong>«Ters kayıt»</strong> yaparsın.</p>
+<h3>Banka ödeme planı</h3>
+<p>Faizi sistem hesaplamaz. Bankanın ödeme planındaki satırları kopyalayıp
+<strong>«Ödeme planını yapıştır»</strong> kutusuna yapıştırırsın: her satır
+tarih, anapara, faiz ve (varsa) vergi. Tek satır okunamazsa hiçbiri yazılmaz
+ve hangi satır olduğu söylenir.</p>
+${ekranSemasi("Finansman", [
+  { no: 1, ad: "Toplam kutuları", aciklama: "Sermaye · ortaklara, üçüncü kişilere ve bankaya kalan borç · ödenen faiz. Süzgeçle birlikte değişir.", genis: true, vurgulu: true },
+  { no: 2, ad: "Kaynak listesi", aciklama: "Kimden, tür, giren, geri ödenen, kalan borç." },
+  { no: 3, ad: "Kaynak detayı", aciklama: "Hareketler; her satırda Gerçekleşti · Ters kayıt · Planı sil." },
+])}
+${sikHata([
+  {
+    hata: "Kredinin kendisini gelir sanmak",
+    cozum: "Kredi girişi kasayı artırır ama kâr değildir. Finansman ekranına girilir, satış ya da gider olarak girilmez.",
+  },
+  {
+    hata: "Taksiti ödeyip «Gerçekleşti» dememek",
+    cozum: "Plan olarak kalan taksit nakit takviminde «çıkacak» görünmeye devam eder ve faizi gidere yazılmaz. Ödediğin gün işaretle.",
   },
 ])}
 </section>

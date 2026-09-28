@@ -106,6 +106,8 @@ export async function yetkiSeed(prisma: PrismaClient) {
      */
     // 22.09.2026 — K234: /tarife (tarife hesaplama) okuma ekranı.
     "tarife.gor",
+    // 28.09.2026 — K304: /finansman (sermaye · borç · banka kredisi).
+    "finansman.yonet",
   ];
 
   /**

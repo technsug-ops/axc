@@ -13,6 +13,43 @@
 
 ---
 
+## 🔴 K304 — FİNANSMAN: SERMAYE · ORTAK/ÜÇÜNCÜ KİŞİ BORCU · BANKA KREDİSİ · 28.09.2026 · [MIGRATION CANLIDA · KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı isteği 28.09:** «firmaya sermaye artırımı olarak borç girecek, nerede gösteririz» → üç tür + banka kredisi
+(faizli). Görmek istenen: toplam borç/sermaye listesi + nakit takviminde giriş/çıkış.
+
+**Şema (canlıda, `20260928120000_finansman`, yedek alındı+geri okundu):** `Finansman` (tür · kimden · para birimi) +
+`FinansmanHareketi` (giriş · geri ödeme/taksit · sermayeye mahsup; vade · gerçekleşme · anapara · faiz · vergi ·
+faiz gideri bağı · ters kayıt). SAF EKLEME.
+
+**Kural** (`lib/finansman/kural.ts`, saf): ⛔ kâra dokunmaz — yalnız gerçekleşmiş taksitin faiz+vergisi GİDER olur
+(kart faizi deseni). Planlı hareket bakiyeye girmez, takvimde görünür. Sermaye geri ödenmez; mahsup yalnız ortak
+borcunda. Faiz HESAPLANMAZ — bankanın planı yapıştırılır (belirsiz sayı reddedilir, tek bozuk satırda hiçbiri yazılmaz).
+Gerçekleşmiş hareket değiştirilmez → ters kayıt (faizi de terslenir). Kaynak yalnız hiç gerçekleşmiş hareketi yoksa silinir.
+**Nakit takvimi:** ikinci giriş kaynağı `FINANSMAN` — «tek giriş kaynağı» kararının kapsamı DARALTILDI (gerekçesi
+satıştan tahmin idi; bu kullanıcı beyanı), çevrilmedi. **Yetki:** yeni `finansman.yonet` (SONRADAN_DOGAN).
+
+**Ölçüldü:** `finansman:dogrula` **49** (değer testleri + kâr motoru finansman tablosunu OKUMAZ desen yasağı, 200+ dosya) ·
+`finansman-mutasyon` **14/14** · el-kitabı bölümü · i18n · tsc · lint · yetki · panel · satir-karti · yerlesim ·
+liste-aramasi · mutasyon-cakisma (SIRALI beyanı).
+
+**Halil test listesi — A) iz bırakmayan deneme (şimdi):**
+1. Sol menü → Para → **Finansman** açılır; açıklamada «Buradaki hiçbir tutar gelir değildir» yazar.
+2. **Yeni kaynak** → Tür: Banka kredisi · Kimden: `DENEME` · TRY → Kaynağı kaydet → kaynak sayfası açılır.
+3. **Ödeme planını yapıştır** → iki satır:
+   `15.10.2026 8.333,33 2.450,00 122,50` ve `15.11.2026 8.333,33 2.310,00 115,50` → «2 taksit okundu» → Planı kaydet.
+   Plan kutusu: **+₺0,00 · −₺21.664,66**; iki satır «Planlı».
+4. **Nakit takvimi → 30 gün** → **15.10**'da «Finansman · DENEME» **₺10.905,83** çıkacak.
+5. Kaynak sayfasında **Kaynağı sil** → onay → Finansman listesi boş; nakit takviminde satır kalmaz.
+
+**B) gerçek para girince:** Giriş «gerçekleşti» → Kalan borç = giren · ilk taksitte **Gerçekleşti** + gider kategorisi →
+Kalan borç anapara kadar düşer, Giderler'de faiz+vergi satırı · yanlışsa **Ters kayıt** → eksi gider satırı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** · **kullanıcı kolaylığı: ✓** (görünür eylemler · onay diyaloğu · arama ·
+toplam süzgeçle · yer tutucular «örn.»)
+
+---
+
 ## 💤 K303 — ÇOK FİRMALI YAPI (MULTI-TENANCY) · 28.09.2026 · [UYUR — kullanıcı kararı 28.09: «henüz program yerine oturmadı»; AŞAMA 0–1 ✓, AŞAMA 2–4 YAZILMADI]
 
 ⏪ **AYNI GÜN GERİ BIRAKILDI.** 13.08 sırası yeniden geçerli (önce tek firma kanıtlanır). Hiçbir şema/migration

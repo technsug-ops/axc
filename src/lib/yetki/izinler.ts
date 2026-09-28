@@ -109,6 +109,13 @@ export const IZINLER = [
    */
   { anahtar: "tarife.gor", grup: "para" },
   /**
+   * K304 (28.09.2026) — `/finansman`: sermaye, ortak/üçüncü kişi borcu, banka
+   * kredisi. TEK izin (sayfa-bazlı model): görmek ve yazmak aynı kişinin işi;
+   * taksit faizini Giderler'e yazdığı için `gider.yaz`dan AYRI tutuldu — gider
+   * giren her kişi şirketin borç/sermaye yapısını görmemeli.
+   */
+  { anahtar: "finansman.yonet", grup: "para" },
+  /**
    * K-OZET (11.09.2026) — GÜNLÜK ÖZET: nakit/kâr/tazminat/kart borcu
    * sinyallerini tek anlatıda birleştiren sayfa. Bu izin TEK BAŞINA
    * kapıdır — sayfa-bazlı model bunu böyle ister (bkz. dosya başlığı:

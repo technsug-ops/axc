@@ -44,8 +44,18 @@ export type TakvimKaynagi =
    * Pazaryeri hakediş kalemi — vade ve tutar KANAL BELGESİNDEN. Ölçülmüş.
    *
    * ⚠ TEK GİRİŞ KAYNAĞI BUDUR (mimar kararı 24.08.2026).
+   * ⚠ KAPSAMI DARALTILDI, ÇEVRİLMEDİ (K304, 28.09.2026): kararın gerekçesi
+   * «satış defterinden TAHMİN üretilmez» idi. `FINANSMAN` bir tahmin değil,
+   * kullanıcının BEYAN ettiği planlı para hareketidir — ikinci giriş kaynağı
+   * olarak yazılır. Satıştan türetilen giriş hâlâ YASAK.
    */
-  | "HAKEDIS_RAPOR";
+  | "HAKEDIS_RAPOR"
+  /**
+   * K304 — sermaye · ortak/üçüncü kişi borcu · banka kredisi: gerçekleşmemiş
+   * GİRİŞ (girecek) ve GERİ ÖDEME/taksit (çıkacak; anapara + faiz + vergi).
+   * Sermayeye mahsup nakit değildir, takvime girmez.
+   */
+  | "FINANSMAN";
 
 /**
  * ============================================================================

@@ -2,6 +2,7 @@ import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
 import { giderleriBorcaCevir } from "@/lib/kart-gideri";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
+import { finansmanTakvimHareketleri } from "@/lib/finansman/veri";
 
 import {
   type TakvimSatiri,
@@ -291,6 +292,15 @@ export async function takvimSatirlariniTopla(
    *  `raporluSiparisNolari` kümeleri artık kullanılmıyor.
    * ══════════════════════════════════════════════════════════════════════
    */
+
+  /**
+   * K304 — FİNANSMAN: planlı giriş (sermaye/borç/kredi girişi) ve planlı
+   * geri ödeme/taksit. Kullanıcının BEYANI, tahmin değil; hakedişle aynı
+   * parayı taşımaz (çift sayım yok). Gövde `lib/finansman/veri.ts`te.
+   */
+  for (const f of await finansmanTakvimHareketleri()) {
+    satirlar.push({ ...f, kaynak: "FINANSMAN" });
+  }
 
   return satirlar;
 }
