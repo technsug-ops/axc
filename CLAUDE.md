@@ -34,6 +34,11 @@ bilerek SONRAYA bırakıldı. Yukarıdaki 13.08 gerekçesi SİLİNMEDİ: kanıtl
 paketlerin üstüne kurulan çok-firma katmanında bir hatanın kaynağını ayırmak
 zorlaşır — bu risk kabul edilerek sıra değişti. SaaS'a özel iş (kayıt sayfası,
 faturalama, plan) hâlâ AÇILMAZ. Tasarım: `docs/cok-firma-tasarimi.md`.
+⏪ **AYNI GÜN GERİ ALINDI — kullanıcı kararı 28.09.2026:** _«Henüz program
+yerine oturmadı.»_ 13.08 sırası YENİDEN geçerli: önce tek firma tamamlanır ve
+kanıtlanır. K303 UYUR; tasarım belgesi ve kararlar (otomatik süzgeç · ortak
+veri · roller · firma seçici · deneme ortamı şartı) hazır bekler, yeniden
+tartışılmaz. Hiçbir şema/migration yazılmadı.
 
 Bu nedenle hiçbir firma/marka adı sistemin YAPISINA gömülmez.
 
@@ -251,11 +256,10 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
     kanal başına AYRI düğmeyle)_
   · barkod ✓ (`/okut` · `/paketle` · `/yerlestir` + kamera)
   · yetki (RBAC) ✓ (`lib/yetki`, rol+izin, `canli:yetki` bekçisi)
-- **Çok-firma veri katmanı (ŞİMDİ — K303, 28.09.2026):** kullanıcı kararıyla
-  Faz 4 kapanmadan öne alındı (bkz. Adlandırma standardı → SIRA ÇEVRİLDİ).
-  Aşama 0 ✓ karar kaydı · Aşama 1 tasarım (`docs/cok-firma-tasarimi.md`,
-  onay bekliyor) · Aşama 2 şema+geçiş · Aşama 3 firma istemcisi+bekçi ·
-  Aşama 4 izolasyon testi.
+- **Çok-firma veri katmanı (K303) — 💤 UYUR (28.09.2026, aynı gün öne alınıp
+  geri bırakıldı).** Aşama 0 ✓ · Aşama 1 tasarım ✓ (`docs/cok-firma-tasarimi.md`,
+  kararlar kayıtlı) · Aşama 2–4 yazılmadı. Açılış şartı: Faz 4 kapanır ve
+  tek firma kendi işinde oturur (kullanıcı söyler).
 Bir faza ait olmayan özelliği o fazda EKLEME.
 
 ⚠ **FAZ GÖSTERGESİ BİR VERİDİR VE BAYATLAYABİLİR — 09.09.2026'da bayattı.**

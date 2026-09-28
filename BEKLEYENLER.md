@@ -13,7 +13,12 @@
 
 ---
 
-## 🔴 K303 — ÇOK FİRMALI YAPI (MULTI-TENANCY) · 28.09.2026 · [AŞAMA 0 ✓ · AŞAMA 1 TASARIM YAZILDI — KULLANICI ONAYI BEKLİYOR]
+## 💤 K303 — ÇOK FİRMALI YAPI (MULTI-TENANCY) · 28.09.2026 · [UYUR — kullanıcı kararı 28.09: «henüz program yerine oturmadı»; AŞAMA 0–1 ✓, AŞAMA 2–4 YAZILMADI]
+
+⏪ **AYNI GÜN GERİ BIRAKILDI.** 13.08 sırası yeniden geçerli (önce tek firma kanıtlanır). Hiçbir şema/migration
+yazılmadı; tasarım + kararlar hazır bekler ve **yeniden tartışılmaz**, yalnız açılır. **Açılış şartı:** Faz 4
+kapanır (HB yazma) ve kullanıcı «program oturdu» der. Açılınca ilk iş deneme ortamı (aşağıda).
+
 
 **Kullanıcı kararı 28.09.2026:** çok-firma veri katmanına ŞİMDİ geçilir; 13.08 sırası çevrildi (gerekçesi
 `CLAUDE.md`de, eskisi silinmeden). HB yazma ve testi bekleyen K222–K230 · K264 bilerek sonraya kaldı.
