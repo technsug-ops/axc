@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { dayanikliYaz } from "./mutasyon-deseni";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
@@ -209,8 +209,12 @@ console.log("=".repeat(74));
 console.log("  ÜRÜN ANALİZİ — MUTASYON TURU");
 console.log("=".repeat(74));
 
-for (const m of MUTASYONLAR) {
-  const asil = readFileSync(m.dosya, "utf8");
+for (const m0 of MUTASYONLAR) {
+  const asil = readFileSync(m0.dosya, "utf8");
+  /* SATIR SONU KAPISI (K290 gece turu bulgusu, 28.09.2026): temiz bir kopyada dosyalar CRLF
+     açılıyor; çok satırlı desen normalleştirilmeden aranınca «0 kez geçiyor» deniyordu —
+     mutasyon HİÇ DENENMEDEN. Ortak kapı: `desenNormalle` (47 harness zaten kullanıyor). */
+  const m = { ...m0, eski: desenNormalle(asil, m0.eski), yeni: desenNormalle(asil, m0.yeni) };
 
   /** ⛔ MUTASYONUN UYGULANDIĞI DOĞRULANIR — bulunamayan desen "yeşil" değil HATA. */
   if (!asil.includes(m.eski)) {

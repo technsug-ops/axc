@@ -253,6 +253,29 @@ for (const h of harnessler) {
   }
 }
 
+/**
+ * ⛔ SATIR SONU KAPISI HARNESS'İN KENDİSİNDE DE ŞART (K290 gece turu bulgusu,
+ * 28.09.2026). Bu bekçi çapayı `desenAdedi` ile NORMALLEŞTİREREK sayıyor; üç
+ * harness ise deseni HAM arıyordu. Çalışma kopyasında dosyalar LF olduğu için
+ * ikisi aynı sonucu verdi ve bekçi yeşil yandı — temiz kopyada (CRLF) üç harness
+ * «0 kez geçiyor» dedi, 10 mutasyon hiç denenmedi. Ölçüt DESENDEN: deseni
+ * `m.bul`/`m.eski` ile arayan her harness `desenNormalle(` çağırmak zorunda.
+ */
+const normalsiz = harnessler.filter((h) => {
+  const k = kaynakOku(h)
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+  const desenArar = /\.(split|replace|includes)\(\s*m\.(bul|eski)[\s,)]/.test(k);
+  return desenArar && !k.includes("desenNormalle(");
+});
+for (const h of normalsiz) {
+  sapan.push(
+    h.replace("scripts/", "") +
+      "\n       deseni satır sonu kapısından (desenNormalle) GEÇİRMEDEN arıyor" +
+      " — CRLF açılan kopyada «0 kez geçiyor» der, mutasyon hiç denenmez",
+  );
+}
+
 console.log("  harness            " + harnessler.length);
 console.log("  incelenen çapa     " + incelenen);
 console.log("  temiz              " + temiz);

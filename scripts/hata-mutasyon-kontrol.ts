@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { dayanikliYaz } from "./mutasyon-deseni";
+import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
@@ -335,8 +335,12 @@ let yakalanan = 0;
 const kacan: string[] = [];
 const bozuk: string[] = [];
 
-for (const m of MUTASYONLAR) {
-  const asil = readFileSync(m.dosya, "utf8");
+for (const m0 of MUTASYONLAR) {
+  const asil = readFileSync(m0.dosya, "utf8");
+  /* SATIR SONU KAPISI (K290 gece turu bulgusu, 28.09.2026): temiz bir kopyada dosyalar CRLF
+     açılıyor; çok satırlı desen normalleştirilmeden aranınca «0 kez geçiyor» deniyordu —
+     mutasyon HİÇ DENENMEDEN. Ortak kapı: `desenNormalle` (47 harness zaten kullanıyor). */
+  const m = { ...m0, bul: desenNormalle(asil, m0.bul), koy: desenNormalle(asil, m0.koy) };
 
   // ── Kapı 1: desen TAM BİR KEZ geçmeli ────────────────────────────────────
   const adet = asil.split(m.bul).length - 1;
