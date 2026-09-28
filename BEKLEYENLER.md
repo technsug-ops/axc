@@ -13,6 +13,39 @@
 
 ---
 
+## 🟢 K299 — KOPYA ÜRÜN KAYITLARI BİRLEŞTİ (9 ÇİFT) · 28.09.2026 · [KOŞTU — canlı yazım kullanıcı onayıyla; HALİL TESTİ BEKLİYOR]
+
+**Kaynak:** HB EAN taraması (26.09, `hb-ean-taramasi-2026-09-26.xlsx`): HB'nin kendi siparişindeki
+EAN başka bir kartın barkodunda → aynı ürün iki kartta. Satış geçmişi bölünüyordu.
+⚠ **«13» RAKAMI YANLIŞTI:** Hatır Hüp iki kez sayılmıştı; gerçek 11 tarama satırı + Robochop = 12.
+
+**Ölçüm (salt okuma):** bütün kopyaların stoğu **0**. Korbell (tarama 1. satır) kopya DEĞİL —
+EAN'lı kart pasif ve BOŞ; açık tek soru hangi EAN doğru (HB `8809088141740` ↔ kart `6009631456297`).
+
+**Yazım — `npm run canli:kopya-birlestir -- --uygula`** (TEK_SEFERLIK, sku'ya kilitli, çift başına tek işlem):
+9 çift birleşti — Hatır Hüp Bronze · Philips QP630 · A4Tech FB2535C · Coffee Art · salata kurutucu ·
+Tefal 3'lü bıçak · Jumbo rende · LEGO 76424 · Robochop (pasif kaldı, kullanıcı kararı).
+Hareket/satış/iade/kanal kodu asıl karta; tarih·adet·tutar·maliyet DEĞİŞMEDİ. Kopyanın kodları asıl
+kartın eski kodu oldu; boş kopya silindi. Görüntü `veri/ozel/kopya-birlestirme-2026-09-28T13-45-04-897Z.json`,
+iz `KOPYA_BIRLESTIRME` (çift başına, taşınan satır kimlikleriyle).
+
+**Doğrulandı (veri, iz değil):** asıl kart hareket sayıları = önce toplamı (ör. Philips 40+22=62) ·
+stoklar değişmedi · `canli:defter-ayrismasi` önce 1764/1763 temiz → sonra 1755/1754 (tek sapma
+`axcali2783`, ÖNCEDEN vardı) · ikinci koşum «zaten birleşmiş» · 11 eski kod `kodlaVaryantCoz` ile TEK → asıl kart.
+
+**AÇIK — kullanıcı kararı «şimdilik ayrı kalsın»:** LEGO 76335 (TY'de iki gerçek ilan) ve Tefal kek
+kalıbı (HB'de iki ilan). `ChannelSku` hesap×varyant TEKİL; birleştirmek eski ilanın bağını koparır.
+⛔ AÇILIŞ ŞARTI: eski ilan kanaldan kaldırılınca ya da o ilandan sipariş gelmeyeceği ölçülünce.
+
+**Halil test listesi:**
+1. Ürünler → `KOZ-PHL-0029` arayın → tek kart açılmalı: «Philips OneBlade QP630/51 Yedek Biçak Seti».
+2. Ürünler → «Salata Kurutucu» arayın → **tek** kart kalmalı (eskiden iki).
+3. `/okut` ekranında `HBV000018X1AO` okutun → «Hazneli Rende» açılmalı.
+
+**mobil doğrulama:** ekran değişikliği yok · **i18n: ✓** (metin yok)
+
+---
+
 ## 🟢 K265 — CİRO ve NET-2 KARTI SEÇİLİ DÖNEME BAĞLI, GÜNLER EKSENDE · 24.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 27.09 (bilgisayar panel turu 19 adım); MİMAR ONAYI BEKLİYOR]
 Kullanıcı 24.09: _«Paneldeki bu kart filtrelere bağlansın; operasyon ve diğer
 kartlar gibi seçilen tarihe göre grafik güncellensin. Grafiğin altında günler
@@ -187,7 +220,7 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
-## 🔴 K298 — TARİFE EKRANI BAĞSIZ SATIRI BUGÜNKÜ KATALOGLA EŞLEŞTİRİR (YAZMADAN) · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🟢 K298 — TARİFE EKRANI BAĞSIZ SATIRI BUGÜNKÜ KATALOGLA EŞLEŞTİRİR (YAZMADAN) · 28.09.2026 · [CANLIDA f941c59 — HALİL TESTİ GEÇTİ 28.09 (Philips BHD500 katalogda, dilimler %11,8·%9,5·%7,8; Test 24 NET dilim oranıyla); MİMAR ONAYI BEKLİYOR]
 
 Kullanıcı (Tarife hesaplama, HB): Philips BHD500 `HBCV00000R0H0K` → «Bu ürün kataloğunuzda yok». Ölçüldü: pencere
 23.09 00:07'de yüklendi, kodun aktif Philips'e kanal kodu olarak bağlanması 07:28 — satırın `variantId`si yükleme
@@ -475,7 +508,7 @@ marka** yazıldı (577 bağlı; FİSHER PRIZE → Fisher Price, LENOVO 600 → L
 
 ---
 
-## 🔴 K289 — İLKE #17 TARAMASI: ARAMASIZ BÜYÜYEN LİSTELER · 27.09.2026 · [③ RAF BİREBİR KOD — KOD YAZILDI, RAF TESTİ YENİDEN BEKLİYOR; öteki üç ekran GEÇTİ → ⚠ 28.09 test tarifi DÜZELTİLDİ: Raf Konumları kullanıcının kayıtlı menü düzeninde «Ayarlar» grubunda (kod varsayılanı Tanımlar); tarif kayıtlı düzene bakılmadan yazılmıştı]
+## 🟢 K289 — İLKE #17 TARAMASI: ARAMASIZ BÜYÜYEN LİSTELER · 27.09.2026 · [HALİL TESTİ GEÇTİ 28.09 (dört ekran, raf araması dahil); MİMAR ONAYI BEKLİYOR · geçmiş: ③ RAF BİREBİR KOD; öteki üç ekran GEÇTİ → ⚠ 28.09 test tarifi DÜZELTİLDİ: Raf Konumları kullanıcının kayıtlı menü düzeninde «Ayarlar» grubunda (kod varsayılanı Tanımlar); tarif kayıtlı düzene bakılmadan yazılmıştı]
 Canlı kayıt sayıları (27.09): **Hakediş** partileri **69** · **Raf konumları** **43** · **Giderler**
 **24** · **Tazminat** **21** — hepsi büyüyen listeler, arama kutusu YOK. Küçük ve sabit kalanlar
 (tedarikçi 10 · kart 11 · kategori 25 · düzeltme nedeni 11 · kullanıcı 3) şimdilik muaf; kayıt
@@ -635,7 +668,7 @@ kolaylığı: ✓** (İlke #5 · #6 · #8 · #11 · #12 · #16)
 
 ---
 
-## 🔴 K284 — ŞÜPHELİ ÜRÜN LİSTESİ: İNDİR · DOLDUR · GERİ YÜKLE · 26.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🟢 K284 — ŞÜPHELİ ÜRÜN LİSTESİ: İNDİR · DOLDUR · GERİ YÜKLE · 26.09.2026 · [CANLIDA — HALİL TESTİ GEÇTİ 28.09 (şüpheli önizleme ekranı); MİMAR ONAYI BEKLİYOR]
 
 Kullanıcı: _«EAN ile çekebildiklerinin haricindeki hepsi şüpheli»_ · _«sistemimizi kuralım, bu ürünlerin
 EAN'ları gelince doğru yere kaydolur»_. K283'ün devamı: şüpheli listesinin ekrandan indirilip
@@ -2494,7 +2527,7 @@ K243'te eklenen kapı, eklendiğinin ertesi paketinde gerçek bir vakada
 
 ---
 
-## 🔴 K243 — DESİ VE KANAL KARGO FİRMASI DEFTERDE VARDI, EKRAN GÖSTERMİYORDU · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+## 🟢 K243 — DESİ VE KANAL KARGO FİRMASI DEFTERDE VARDI, EKRAN GÖSTERMİYORDU · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ GEÇTİ 28.09; MİMAR ONAYI BEKLİYOR]
 
 **KULLANICI:** HB siparişi `4328856038` detayının ekran görüntüsü —
 _"burada ürünün desisi ve kargo firması da çıkmalı; bunları API'den alıyor
@@ -2622,7 +2655,7 @@ harness, kapısız harness'ten kötüdür. Doğru şekil kapıyı **ortak gövde
 
 ---
 
-## 🔴 K242 — BİR BAĞLAMIN DEĞERİ ÖTEKİNE SIZIYORDU: İKİ EKRAN, TEK KÖK · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+## 🟢 K242 — BİR BAĞLAMIN DEĞERİ ÖTEKİNE SIZIYORDU: İKİ EKRAN, TEK KÖK · 23.09.2026 · [KOD KOŞTU — HALİL TESTİ GEÇTİ 28.09 (tarife alanları yeni üründe boş; stok Temizle kutuyu boşaltıyor, «Adet» sıralaması kalıyor); MİMAR ONAYI BEKLİYOR]
 
 Kullanıcı aynı turda iki ayrı ekran bildirdi; ikisi de **aynı sınıf**:
 bir bağlama ait değer, bağlam değiştikten sonra ekranda kalıyor.
@@ -2856,7 +2889,7 @@ göründü (`xl:grid` → `grid`). Geri alındı, harness 30/30 yeşil.
 
 ---
 
-## 🔴 K235 — SATIR KARTI: LİSTE ANATOMİSİ TEK GÖVDEYE ÇIKTI · 22.09.2026 · [① CANLIDA 9079642 · ② KOŞTU (7 ekran daha) · ③ SAĞ SÜTUNLAR SABİTLENDİ — HALİL TESTİ BEKLİYOR]
+## 🟢 K235 — SATIR KARTI: LİSTE ANATOMİSİ TEK GÖVDEYE ÇIKTI · 22.09.2026 · [① CANLIDA 9079642 · ② KOŞTU (7 ekran daha) · ③ SAĞ SÜTUNLAR SABİTLENDİ — HALİL TESTİ GEÇTİ 28.09; MİMAR ONAYI BEKLİYOR]
 
 **KULLANICI KARARI:** _"Bu sayfalar ve diğer sayfalardaki kart yapısını yeni
 yaptığın hakedişler sayfasındaki kart yapısına göre tekrar tasarla. Tüm
