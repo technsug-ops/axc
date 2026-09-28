@@ -179,6 +179,13 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu: "mevsim ekseninde çizilmeyen bir süzgeç «açık» görünür",
   },
   {
+    ad: "kanal düğmeleri yine YANA KAYIYOR (Trendyol ekran dışında)",
+    dosya: "src/app/rapor/urunler/analiz-suzgeci.tsx",
+    eski: '<div className="flex flex-wrap gap-2" aria-label={t("kanalBaslik")}>',
+    yeni: '<div className={KAYAN_SATIR} aria-label={t("kanalBaslik")}>',
+    bozdugu: "telefonda son kanallar görünmez, kaydırılabildiği de anlaşılmaz",
+  },
+  {
     ad: "süzgeç paneli telefonda AÇIK geliyor",
     dosya: "src/app/rapor/urunler/telefon-suzgec-kabi.tsx",
     eski: "useState(false)",

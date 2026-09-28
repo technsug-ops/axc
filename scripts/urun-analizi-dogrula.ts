@@ -962,6 +962,13 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
   dogru("arama kutusu kabın DIŞINDA (telefonda hep açık)", iArama >= 0 && iKap >= 0 && iArama < iKap);
   dogru("  ...sıralama ve Uygula kabın İÇİNDE", iSirala > iKap && iUygula > iKap && iKapSon > iUygula);
   dogru("  ...özet ve sayı saf gövdeden", suz.includes("= analizOzetParcalari({") && suz.includes("acikSayi={acikSayi}") && suz.includes("= acikSuzgecSayisi(ozetParcalari)"));
+  /* K293-② — kanal satırı SARAR, kaymaz: kayan satırda Trendyol ekran dışında kaldı
+     ve kaydırılabildiği görünmüyordu (kullanıcı 28.09.2026: «telefonda Trendyol yok»). */
+  const iKanal = suz.indexOf('{t("kanalBaslik")}');
+  const iPara = suz.indexOf('{t("paraBaslik")}');
+  const kanalBloku = iKanal >= 0 && iPara > iKanal ? suz.slice(iKanal, iPara) : "";
+  dogru("kanal düğmeleri telefonda da SARIYOR (hepsi görünür, gizli kaydırma yok)",
+    kanalBloku.includes('<div className="flex flex-wrap gap-2" aria-label={t("kanalBaslik")}>') && !kanalBloku.includes("KAYAN_SATIR"));
   const kap = kaynakOku("src/app/rapor/urunler/telefon-suzgec-kabi.tsx");
   dogru("kap telefonda varsayılan KAPALI", kap.includes("useState(false)"));
   dogru("  ...masaüstünde HER ZAMAN açık, düğme yalnız telefonda", kap.includes('${acik ? "block" : "hidden"} space-y-4 md:block') && kap.includes('className="h-11 w-full justify-between md:hidden"'));

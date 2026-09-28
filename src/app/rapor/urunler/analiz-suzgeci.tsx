@@ -561,12 +561,18 @@ export async function AnalizSuzgeci({
             </div>
           </div>
 
-          {/* ── KANAL ── */}
+          {/* ── KANAL ──
+              ⛔ K293-② (kullanıcı 28.09.2026: «telefonda Trendyol yok»): kanal
+              satırı ilk hâlde YANA KAYIYORDU ve kaydırma çubuğu gizliydi — sıra
+              alfabetik, Trendyol en sonda, ekranın dışında kaldı ve kaydırılabildiği
+              hiçbir yerde görünmüyordu. Kanal seçenekleri satışı olan kanallarla
+              sınırlı (bugün 5) → telefonda da SARAR, hepsi aynı anda görünür.
+              Dönem çipleri kaymaya devam eder (panelle aynı, sabit ve kısa küme). */}
           <div className="space-y-1.5">
             <span className="text-muted-foreground text-xs font-medium">
               {t("kanalBaslik")}
             </span>
-            <div className={KAYAN_SATIR}>
+            <div className="flex flex-wrap gap-2" aria-label={t("kanalBaslik")}>
               <Link
                 href={analizAdresi({ ...taban, kanal: undefined })}
                 aria-current={!tasinan.kanal ? "true" : undefined}
