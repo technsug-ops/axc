@@ -81,6 +81,28 @@ export function tarifeDizinleriKur(g: DizinGirdisi): TarifeDizinleri {
   return { kanalDizini, kimlikDizini };
 }
 
+/**
+ * BİR VARYANTIN TARİFE SATIRLARI — TEK SEÇİM KURALI (K298-②, 28.09.2026).
+ *
+ * Kullanıcı Test 24: Philips'te NET «komisyon %15» dedi, dilimler %11,8 · %9,5 ·
+ * %7,8'di. Fiyat denemesi zemini ve satış kaydının oranı dilimi kayıtlı bağdan
+ * (`variantId`) arıyordu; bağ boşken dilim bulunmuyor, tek orana düşülüyordu.
+ * Kural (kullanıcı: «yanılgı istemiyorum, en doğrusu olsun»):
+ *  · o varyanta BAĞLI satırlar varsa yalnız onlar (kayıt önce gelir);
+ *  · yoksa BAĞSIZ satırlardan kodu bugünkü katalogla bu varyanta çözülenler;
+ *  · hiçbir şey YAZILMAZ — seçim okuma anında yapılır.
+ * Çözücü çağırandan gelir (dizin pahalı; yalnız bağsız aday varsa kurulur).
+ */
+export function varyantKalemleriniSec<T extends { barkod: string; variantId: string | null }>(
+  adaylar: readonly T[],
+  variantId: string,
+  coz: (kod: string) => string | null,
+): T[] {
+  const bagli = adaylar.filter((k) => k.variantId === variantId);
+  if (bagli.length > 0) return bagli;
+  return adaylar.filter((k) => k.variantId === null && coz(k.barkod) === variantId);
+}
+
 /** Tek kod: önce kanal, sonra kimlik dizini (`tarifePlaniKur` ile aynı sıra). */
 export function tarifeKodunuCoz(kod: string, d: TarifeDizinleri): string | null {
   const k = kod.trim();

@@ -203,6 +203,17 @@ kanal kodlarıyla, 2'si HB kodlarıyla; 13'ü de ADLA doğrulandı — doğru ü
   `teklif-tanima-mutasyon`un 3 çapası refaktörle koptu → yeni yerlerine taşındı (34/34), silinmedi.
 - 21.09 pano notu «kalan 11 kod gerçekten kataloğumuzda yok» ESKİDİ: 22.09 N11 senkronuyla hepsi katalogda.
 
+─── ② 28.09 — HALİL TESTİ 23 · 24 · 25 GEÇTİ (Philips notu + NET hesapla; N11 «0 eşleşmedi») AMA Test 24 bir
+KUSUR gösterdi: Philips NET satırlarının HEPSİ «komisyon %15», dilimler %11,8 · %9,5 · %7,8. Kök: dilimi okuyan İKİ
+yer (fiyat denemesi zemini `simulasyonZeminleri` · satış kaydının oranı `satisTarihiTarifesi`) yalnız KAYITLI bağa
+bakıyordu; ① yalnız «katalogda» işaretini düzeltmişti. Kullanıcı: «yanılgı istemiyorum, en doğrusu olsun» → ikisi de
+ortak seçim kuralına bağlandı (`varyantKalemleriniSec`: bağlı satır önce, yoksa bağsız satır bugünkü katalogla;
+YAZMAZ). Canlı salt okuma: HB dilimleri 15 · 11,8 · 9,5 · 7,8 bulunuyor; bağlı Grundig değişmedi.
+Ölçüldü (geçmiş): bağsız satır yüzünden tek oranla kaydedilmiş satış kalemi **1** (HB 4711041918, ₺2.848 en üst
+dilim → %15 zaten doğru) — düzeltilecek geçmiş YOK, mekanizma kuruldu. Bekçi +5, harness 5→**9/9**.
+HALİL (yeniden): Tarife hesaplama → HB 23.09 → Philips → NET hesapla → kargo 110 → Göster: ₺2.708 satırı
+«komisyon %11,8», ₺2.572 «%9,5», ₺2.437 «%7,8»; şu anki fiyat ₺2.649 → «%11,8».
+
 ### HALİL TEST LİSTESİ (canlı)
 1. Fiyatlandırma ve Analiz → Tarife hesaplama → pencere «Hepsiburada · 23.09.2026 – 30.09.2026»: üstteki kutu
    «**0** ürün kataloğunuzla eşleşmedi»; Philips BHD500 kartında «Tarife yüklenirken eşleşmemişti; bugünkü kataloğa

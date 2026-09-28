@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { varyantinTarifeKalemleri } from "@/lib/komisyon/tarife-eslesme-veri";
+import type { TarifeDizinleri } from "@/lib/komisyon/tarife-eslesme";
 import { VARSAYILAN_KDV_ORANI } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import type { TarifeDilimi } from "@/lib/komisyon/tarife-okuyucu";
@@ -59,27 +61,38 @@ export async function simulasyonZeminleri(
   if (eslemeler.length === 0) return [];
 
   const zeminler: SimulasyonZemini[] = [];
+  /** K298-②: hesap başına eşleşme dizini bir kez kurulur (birden çok pencere denenir). */
+  const dizinOnbellegi = new Map<string, TarifeDizinleri>();
 
   for (const e of eslemeler) {
     /**
      * EN GÜNCEL TARİFE — bu hesapta, bu varyant için kalemi olan en yeni
      * pencere. `orderBy pencereBaslangic desc` + ilk kayıt.
      */
-    const tarife = await prisma.komisyonTarifesi.findFirst({
+    /*
+     * ⛔ K298-② (28.09.2026): eski hâl «bu varyanta BAĞLI kalemi olan en yeni
+     * pencere»ydi (`kalemler: { some: { variantId } }`). Bağ yükleme anının
+     * fotoğrafı: tarifeden SONRA kurulan kanal kodu bağsız kalıyor, dilim hiç
+     * bulunmuyor ve deneme ürünün TEK oranına düşüyordu (Philips HB: «%15»,
+     * dilimler %11,8 · %9,5 · %7,8). Artık aday pencereler bağlı YA DA bağsız
+     * kalemi olanlar; seçim ortak kuraldan (`varyantinTarifeKalemleri`), yazmaz.
+     */
+    const pencereler = await prisma.komisyonTarifesi.findMany({
       where: {
         channelAccountId: e.channelAccountId,
-        kalemler: { some: { variantId } },
+        kalemler: { some: { OR: [{ variantId }, { variantId: null }] } },
       },
       orderBy: { pencereBaslangic: "desc" },
-      select: {
-        pencereBitis: true,
-        kalemler: {
-          where: { variantId },
-          orderBy: { dilimSirasi: "asc" },
-          select: { dilimSirasi: true, altLimit: true, ustLimit: true, oran: true },
-        },
-      },
+      select: { id: true, pencereBitis: true },
     });
+    let tarife: { pencereBitis: Date; kalemler: Awaited<ReturnType<typeof varyantinTarifeKalemleri>> } | null = null;
+    for (const p of pencereler) {
+      const kalemler = await varyantinTarifeKalemleri(p.id, e.channelAccountId, variantId, dizinOnbellegi);
+      if (kalemler.length > 0) {
+        tarife = { pencereBitis: p.pencereBitis, kalemler };
+        break;
+      }
+    }
 
     const dilimler: TarifeDilimi[] | null =
       tarife === null || tarife.kalemler.length === 0
@@ -229,11 +242,14 @@ export async function satisTarihiTarifesi(
   if (!tarife) return { dilimler: null, tarifeTabani: null };
 
   const [kalemler, taban] = await Promise.all([
-    prisma.komisyonTarifeKalemi.findMany({
-      where: { tarifeId: tarife.id, variantId },
-      orderBy: { dilimSirasi: "asc" },
-      select: { dilimSirasi: true, altLimit: true, ustLimit: true, oran: true },
-    }),
+    /*
+     * ⛔ K298-②: satış kaydının oranı da ORTAK kuraldan — bağsız satır bugünkü
+     * katalogla çözülür (satış anında «bugün» = satış günü). Eski hâl yalnız
+     * kayıtlı bağa bakıyordu; bağ yoksa dilim bulunmuyor, tek oran yazılıyordu.
+     * Ölçüldü 28.09: geçmişte etkilenen 1 kalem (HB 4711041918, ₺2.848 en üst
+     * dilim → %15 zaten doğru) — düzeltilecek geçmiş yok, mekanizma kuruldu.
+     */
+    varyantinTarifeKalemleri(tarife.id, channelAccountId, variantId),
     /** ⚠ TABAN O PENCEREDEN — bütün tarifelerin en düşüğünden DEĞİL. */
     prisma.komisyonTarifeKalemi.aggregate({
       where: { tarifeId: tarife.id },

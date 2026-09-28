@@ -18,6 +18,7 @@ const BEKCI = "scripts/tarife-dogrula.ts";
 const BEKCI_BASLIGI = "TARIFE ESLESME KAPSAMI";
 const KURAL = "src/lib/komisyon/tarife-eslesme.ts";
 const EKRAN = "src/app/tarife/page.tsx";
+const KART = "src/lib/fiyatlama/kart-verisi.ts";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -34,6 +35,20 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "    const dizinler = await bugunkuTarifeDizinleri(tarife.channelAccountId);\n",
     koy: "    const dizinler = await bugunkuTarifeDizinleri(tarife.channelAccountId);\n    await prisma.komisyonTarifeKalemi.updateMany({ where: { tarifeId: tarife.id, variantId: null }, data: {} });\n",
     bozdugu: "yukleme aninin fotografi ekran acilinca degisir - denetim bozulur" },
+  /* K298-② — dilimi okuyan iki yer. */
+  { ad: "SECIM BAGSIZ SATIRI HIC COZMUYOR", yon: "KALDIRAN", dosya: KURAL,
+    bul: "  return adaylar.filter((k) => k.variantId === null && coz(k.barkod) === variantId);", koy: "  return [];",
+    bozdugu: "Philips NET'i yine tek oranla (%15) hesaplanir" },
+  { ad: "SECIM BAGLIYI ATLAYIP HEP COZUYOR", yon: "FAZLADAN", dosya: KURAL,
+    bul: "  if (bagli.length > 0) return bagli;\n", koy: "",
+    bozdugu: "kayitli bag yok sayilir, bugunku katalog kaydi ezer" },
+  { ad: "FIYAT DENEMESI ESKI SORGUYA DONDU (yalniz bagli)", yon: "KALDIRAN", dosya: KART,
+    bul: "        kalemler: { some: { OR: [{ variantId }, { variantId: null }] } },", koy: "        kalemler: { some: { variantId } },",
+    bozdugu: "bagsiz pencere aday bile olmaz, dilim bulunmaz" },
+  { ad: "SATIS KAYDI ESKI SORGUYA DONDU (yalniz bagli)", yon: "KALDIRAN", dosya: KART,
+    bul: "    varyantinTarifeKalemleri(tarife.id, channelAccountId, variantId),",
+    koy: "    prisma.komisyonTarifeKalemi.findMany({ where: { tarifeId: tarife.id, variantId }, orderBy: { dilimSirasi: \"asc\" }, select: { dilimSirasi: true, altLimit: true, ustLimit: true, oran: true } }),",
+    bozdugu: "satisa dilim yerine tek oran yazilir" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

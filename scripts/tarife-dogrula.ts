@@ -1,5 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
-import { tarifeDizinleriKur, tarifeKodunuCoz } from "../src/lib/komisyon/tarife-eslesme";
+import { tarifeDizinleriKur, tarifeKodunuCoz, varyantKalemleriniSec } from "../src/lib/komisyon/tarife-eslesme";
 
 import {
   DILIMLI_TARIFE_OKUYUCUSU_OLAN,
@@ -1630,6 +1630,32 @@ console.log("");
     /if \(!g\.katalogda && tarifeKodunuCoz\(g\.kod, dizinler\) !== null\) {\s*g\.katalogda = true;\s*g\.bugunEslesti = true;/.test(ekran));
   kontrol("  ...ekran HICBIR SEY YAZMIYOR (fotograf dokunulmaz)",
     !/prisma\.\w+\.(update|updateMany|create|createMany|upsert|delete)/.test(ekran));
+  /*
+   * K298-② — DİLİMİ OKUYAN İKİ YER DE AYNI SEÇİM KURALINDAN. Kullanıcı Test 24:
+   * Philips'te NET «komisyon %15» dedi, dilimler %11,8 · %9,5 · %7,8'di (fiyat
+   * denemesi zemini ve satış kaydı yalnız kayıtlı bağa bakıyordu).
+   */
+  const adaylar = [
+    { barkod: "BAGLI-A", variantId: "A", oran: 1 },
+    { barkod: "BAGSIZ-B", variantId: null, oran: 2 },
+    { barkod: "BAGSIZ-A", variantId: null, oran: 3 },
+  ];
+  const coz = (k: string) => (k === "BAGSIZ-A" ? "A" : k === "BAGSIZ-B" ? "B" : null);
+  kontrol("secim: BAGLI satir varsa YALNIZ o (kayit once gelir)",
+    varyantKalemleriniSec(adaylar, "A", coz).map((k) => k.oran).join(",") === "1");
+  kontrol("  ...bagli yoksa BAGSIZ satir bugunku katalogla cozulur",
+    varyantKalemleriniSec(adaylar, "B", coz).map((k) => k.oran).join(",") === "2");
+  kontrol("  ...baska varyanta cozulen ya da cozulemeyen satir ALINMAZ",
+    varyantKalemleriniSec(adaylar, "C", coz).length === 0);
+  const kart = yorumsuzOku("src/lib/fiyatlama/kart-verisi.ts");
+  kontrol("fiyat denemesi zemini ortak kuraldan (bagli YA DA bagsiz aday pencere)",
+    kart.includes("kalemler: { some: { OR: [{ variantId }, { variantId: null }] } },") &&
+      kart.includes("await varyantinTarifeKalemleri(p.id, e.channelAccountId, variantId, dizinOnbellegi)") &&
+      !kart.includes("kalemler: { some: { variantId } },"));
+  kontrol("  ...satis kaydinin orani da ortak kuraldan",
+    kart.includes("varyantinTarifeKalemleri(tarife.id, channelAccountId, variantId),") &&
+      !kart.includes("where: { tarifeId: tarife.id, variantId },"));
+
   const aynaK = yorumsuzOku("src/app/ayarlar/tarife/[id]/ayna.tsx");
   kontrol("  ...kaynagi ekranda yaziyor («bugunku kataloga gore eslesti»)",
     /satir\.bugunEslesti \? \(\s*<p[^>]*>\{t\("bugunEslesti"\)\}<\/p>/.test(aynaK));
