@@ -8,6 +8,8 @@ import { SuzgecCubugu, type SuzgecTanimi } from "@/components/suzgec-cubugu";
 import { bicimlendirici } from "@/lib/bicim";
 import { aynaSatirlariniSuz, guncelPencereSec } from "@/lib/komisyon/pencere-secimi";
 import { prisma } from "@/lib/prisma";
+import { tarifeKodunuCoz } from "@/lib/komisyon/tarife-eslesme";
+import { bugunkuTarifeDizinleri } from "@/lib/komisyon/tarife-eslesme-veri";
 import { sayfaIzni } from "@/lib/yetki";
 import { Ayna, type AynaSatiri } from "@/app/ayarlar/tarife/[id]/ayna";
 
@@ -53,6 +55,7 @@ export default async function TarifeHesaplamaSayfasi({
       pencereBaslangic: true,
       pencereBitis: true,
       yuklendiAt: true,
+      channelAccountId: true,
       channelAccount: {
         select: { name: true, channel: { select: { name: true, code: true } } },
       },
@@ -110,8 +113,25 @@ export default async function TarifeHesaplamaSayfasi({
         kod: k.barkod,
         urunAdi: k.urunAdi,
         katalogda: k.variantId !== null,
+        bugunEslesti: false,
         dilimler: [dilim],
       });
+    }
+  }
+  /**
+   * K298 — BOŞ KALMIŞ EŞLEŞME OKUMA ANINDA BUGÜNKÜ KATALOGLA ÇÖZÜLÜR, YAZILMAZ.
+   * Satırın `variantId`si yükleme anının fotoğrafı (denetim için doğru, dokunulmaz).
+   * Bu ekran «bugün bu fiyattan satarsam» diye soruyor: HB penceresi 23.09 00:07'de
+   * yüklenmiş, Philips'in kanal kodu 07:28'de bağlanmıştı → ekran bir hafta «katalogda
+   * yok» diyecekti. Kural yükleyiciyle AYNI gövdeden (`tarife-eslesme`).
+   */
+  if ([...gruplar.values()].some((g) => !g.katalogda)) {
+    const dizinler = await bugunkuTarifeDizinleri(tarife.channelAccountId);
+    for (const g of gruplar.values()) {
+      if (!g.katalogda && tarifeKodunuCoz(g.kod, dizinler) !== null) {
+        g.katalogda = true;
+        g.bugunEslesti = true;
+      }
     }
   }
   const satirlar = [...gruplar.values()];

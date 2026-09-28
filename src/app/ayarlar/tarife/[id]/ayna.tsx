@@ -40,6 +40,11 @@ export type AynaSatiri = {
   urunAdi: string | null;
   /** Kataloğumuzda karşılığı var mı — yoksa NET hesaplanamaz. */
   katalogda: boolean;
+  /**
+   * K298: yükleme anında karşılığı YOKTU, bugünkü katalogla eşleşti (okuma anında,
+   * hiçbir şey yazılmadan). Ekran bunu söyler — eşleşmenin kaynağı görünür kalsın.
+   */
+  bugunEslesti: boolean;
   dilimler: AynaDilimi[];
 };
 
@@ -116,6 +121,9 @@ export function Ayna({
                 {satir.urunAdi ?? satir.kod}
               </CardTitle>
               <p className="text-muted-foreground text-sm">{satir.kod}</p>
+              {satir.bugunEslesti ? (
+                <p className={`text-xs ${DURUM_YAZISI.bilgi}`}>{t("bugunEslesti")}</p>
+              ) : null}
             </CardHeader>
 
             <CardContent className="space-y-3">

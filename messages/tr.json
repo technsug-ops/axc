@@ -3921,7 +3921,8 @@
     "sonSatisTarihli": "(son satış: {tarih})",
     "oneri": "Fiyatı {fiyat} yaparsanız NET-2 {fark} artar.",
     "oneriEnIyi": "Şu anki fiyat en yüksek NET-2'yi veriyor.",
-    "guncelYok": "Şu anki fiyat bilinmiyor — bu kanalda satış yok; fiyatı yazın."
+    "guncelYok": "Şu anki fiyat bilinmiyor — bu kanalda satış yok; fiyatı yazın.",
+    "bugunEslesti": "Tarife yüklenirken eşleşmemişti; bugünkü kataloğa göre eşleşti."
   },
   "KomisyonKapisi": {
     "baslik": "Komisyon yükleme",

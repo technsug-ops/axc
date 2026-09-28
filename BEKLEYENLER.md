@@ -187,6 +187,34 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K298 — TARİFE EKRANI BAĞSIZ SATIRI BUGÜNKÜ KATALOGLA EŞLEŞTİRİR (YAZMADAN) · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (Tarife hesaplama, HB): Philips BHD500 `HBCV00000R0H0K` → «Bu ürün kataloğunuzda yok». Ölçüldü: pencere
+23.09 00:07'de yüklendi, kodun aktif Philips'e kanal kodu olarak bağlanması 07:28 — satırın `variantId`si yükleme
+anının fotoğrafı. Aynı durum N11 21.09 penceresinde **13 ürün** (11'i N11 listeleme senkronunun 22.09'da kurduğu
+kanal kodlarıyla, 2'si HB kodlarıyla; 13'ü de ADLA doğrulandı — doğru ürünler).
+- ⛔ **21.09 KARARI DARALTILDI, ÇEVRİLMEDİ:** «geçmiş penceredeki bağsız kalem fotoğraftır» DENETİM için geçerli ve
+  dokunulmadı. Tarife ekranı «bugün bu fiyattan satarsam» diye soruyor → bağsız satırı OKUMA ANINDA bugünkü katalogla
+  çözer, **hiçbir şey yazmaz**, satırda «Tarife yüklenirken eşleşmemişti; bugünkü kataloğa göre eşleşti» yazar.
+- Kural TEK gövde `lib/komisyon/tarife-eslesme.ts` (+ `-veri.ts`): yükleyici ve ekran aynı kuralı çağırır (dört rol,
+  bütün kanallar, çakışan kod bağlanmaz, kanal önce). `tarife-yaz.ts` davranışı değişmedi; gerekçe yorumları yerinde.
+- Bekçi `tarife:dogrula` «dört rol» bölümü kaynak taramasından DEĞER testine taşındı (+ ekran 3 ölçüt: yalnız bağsızı
+  çözer · hiçbir şey yazmaz · kaynağı yazar). Yeni harness `tarife-eslesme-mutasyon` **5/5** (zararsız dahil).
+  `teklif-tanima-mutasyon`un 3 çapası refaktörle koptu → yeni yerlerine taşındı (34/34), silinmedi.
+- 21.09 pano notu «kalan 11 kod gerçekten kataloğumuzda yok» ESKİDİ: 22.09 N11 senkronuyla hepsi katalogda.
+
+### HALİL TEST LİSTESİ (canlı)
+1. Fiyatlandırma ve Analiz → Tarife hesaplama → pencere «Hepsiburada · 23.09.2026 – 30.09.2026»: üstteki kutu
+   «**0** ürün kataloğunuzla eşleşmedi»; Philips BHD500 kartında «Tarife yüklenirken eşleşmemişti; bugünkü kataloğa
+   göre eşleşti» ve **NET hesapla** düğmesi var.
+2. Philips'te NET hesapla → kargo `110` → Göster → dilim satırları gelir.
+3. Pencere «N11 · 21.09 – 04.10»: «0 ürün eşleşmedi»; LEGO 42221 Artemis kartında aynı not ve NET hesapla.
+4. Trendyol penceresi: hiçbir kartta bu not yok (hepsi yüklemede eşleşmişti).
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (`TarifeAynasi.bugunEslesti`) · **kullanıcı kolaylığı: ✓** (İlke #5 · #9)
+
+---
+
 ## 🟢 K297 — NAKİT TAKVİMİ «+-₺…» ÇİFT İŞARET · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (−₺4.472,69 kırmızı, «+-» yok; yürüyen −33.804,07 · −18.683,33 · 15.942,99 öncekiyle aynı); MİMAR ONAYI BEKLİYOR]
 Kullanıcı ekran görüntüsü: `4114618000 +-₺4.472,69` · `4585707015 +-₺15.819,10`. İşaret YALNIZ yönden yazılıyordu,
 tutar kendi işaretiyle biçimleniyordu; eksi GİRECEK (kesinti/iade mahsubu) iki işaret alıyordu. Yürüyen bakiye doğruydu.

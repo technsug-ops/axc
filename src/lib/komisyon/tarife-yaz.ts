@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { tabloOku } from "@/lib/tablo/tablo-oku";
 
+import { bugunkuTarifeDizinleri } from "./tarife-eslesme-veri";
 import { tarifeOku, type TarifeOkumasi } from "./tarife-okuyucu";
 import { teklifTarifesiOku, teklifTarifesiTani } from "./teklif-tarifesi";
 import { kanalPlatformu } from "./yukle";
@@ -212,14 +213,10 @@ export async function tarifeDenetle(
    *  onu KAPSIYOR, iptal etmiyor — bu hesabın kodları hâlâ birincil.
    * ============================================================================
    */
-  const varyantlar = await prisma.productVariant.findMany({
-    where: { isActive: true },
-    select: { id: true, barcode: true, sku: true, companySku: true },
-  });
-  const kanalKodlari = await prisma.channelSku.findMany({
-    where: { isActive: true, variant: { isActive: true } },
-    select: { channelSku: true, variantId: true, channelAccountId: true },
-  });
+  /* K298 (28.09.2026): kural ORTAK gövdeye taşındı (`tarife-eslesme.ts`) — tarife
+     ekranları boş kalmış satırı okuma anında AYNI kuralla çözüyor. Aşağıdaki
+     gerekçe yorumları kuralın kendisine aittir, yerinde bırakıldı. */
+  const { kanalDizini, kimlikDizini } = await bugunkuTarifeDizinleri(channelAccountId);
 
   /**
    * ⛔ ÇAKIŞAN KOD BAĞLANMAZ — YENİ BİR SESSİZ SEÇİM ÜRETİLMEZ.
@@ -230,24 +227,6 @@ export async function tarifeDenetle(
    * Çakışan kod kümeden ATILIR ve kalem bağsız kalır: bağsız bir kalem
    * görünür, yanlış bağlanmış bir kalem görünmez.
    */
-  const cakisan = new Set<string>();
-  const tekil = (
-    girdiler: { kod: string | null; variantId: string }[],
-  ): Map<string, string> => {
-    const harita = new Map<string, string>();
-    for (const g of girdiler) {
-      const kod = (g.kod ?? "").trim();
-      if (kod === "") continue;
-      const mevcut = harita.get(kod);
-      if (mevcut !== undefined && mevcut !== g.variantId) {
-        cakisan.add(kod);
-        continue;
-      }
-      harita.set(kod, g.variantId);
-    }
-    for (const kod of cakisan) harita.delete(kod);
-    return harita;
-  };
 
   /**
    * ⚠ SIRA KORUNUYOR: bu hesabın kodları ÖNCE. `tarifePlaniKur` kanal
@@ -255,20 +234,6 @@ export async function tarifeDenetle(
    * başına koymak, aynı kodu taşıyan iki kayıttan doğru olanın kazanmasını
    * sağlar (çakışma zaten yukarıda eleniyor, bu ikinci emniyet).
    */
-  const kanalDizini = tekil([
-    ...kanalKodlari
-      .filter((k) => k.channelAccountId === channelAccountId)
-      .map((k) => ({ kod: k.channelSku, variantId: k.variantId })),
-    ...kanalKodlari
-      .filter((k) => k.channelAccountId !== channelAccountId)
-      .map((k) => ({ kod: k.channelSku, variantId: k.variantId })),
-  ]);
-
-  const kimlikDizini = tekil([
-    ...varyantlar.map((v) => ({ kod: v.barcode, variantId: v.id })),
-    ...varyantlar.map((v) => ({ kod: v.sku, variantId: v.id })),
-    ...varyantlar.map((v) => ({ kod: v.companySku, variantId: v.id })),
-  ]);
 
   /**
    * ⛔ İKİ DİZİN ARASINDAKİ ÇAKIŞMA DA SESSİZ ÇÖZÜLMEZ. Bir kod, A
@@ -282,14 +247,6 @@ export async function tarifeDenetle(
    * yollarda; toplu içe aktarma henüz geçmiyor (panoda açık kalem). Yani
    * bu kontrol bugün boş, yarın dolabilir.
    */
-  for (const [kod, variantId] of kimlikDizini) {
-    const kanalSahibi = kanalDizini.get(kod);
-    if (kanalSahibi !== undefined && kanalSahibi !== variantId) {
-      kanalDizini.delete(kod);
-      kimlikDizini.delete(kod);
-    }
-  }
-
   const plan = tarifePlaniKur(
     okuma,
     [...kimlikDizini].map(([barkod, id]) => ({ id, barkod })),

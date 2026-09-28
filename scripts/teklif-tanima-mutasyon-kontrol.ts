@@ -27,7 +27,8 @@ const BEKCI = "scripts/tarife-dogrula.ts";
 const BEKCI_BASLIGI = "KOMİSYON TARİFESİ — DOĞRULAMA";
 
 const OKUYUCU = "src/lib/komisyon/tarife-okuyucu.ts";
-const TARIFE_YAZ = "src/lib/komisyon/tarife-yaz.ts";
+const TARIFE_ESLESME = "src/lib/komisyon/tarife-eslesme.ts";
+const TARIFE_ESLESME_VERI = "src/lib/komisyon/tarife-eslesme-veri.ts";
 const YETENEK = "src/lib/komisyon/kanal-yetenegi.ts";
 
 type Mutasyon = {
@@ -303,28 +304,30 @@ const MUTASYONLAR: Mutasyon[] = [
    * urunleri bagsiz birakiyordu. Uc yon: daraltma, sessiz secim, capraz.
    */
   {
+    /* ÇAPA TAŞINDI (K298, 28.09.2026): eşleşme kuralı tarife-yaz.ts'ten ortak
+       gövdeye çıktı — niyet aynı, şekil yeni yerde. */
     ad: "KAPSAM YINE DARALDI - kimlik yalniz barkoda dustu",
     yon: "KALDIRAN",
-    dosya: TARIFE_YAZ,
-    bul: "    select: { id: true, barcode: true, sku: true, companySku: true },",
-    koy: "    select: { id: true, barcode: true },",
+    dosya: TARIFE_ESLESME_VERI,
+    bul: "      select: { id: true, barcode: true, sku: true, companySku: true },",
+    koy: "      select: { id: true, barcode: true },",
     bozdugu:
       "sku/firmaSku ile taninan urunler bagsiz kalir; fiyat denemesi o urunlerde dilim veremez",
   },
   {
     ad: "KANAL KODLARI YINE HESABA DARALDI",
     yon: "KALDIRAN",
-    dosya: TARIFE_YAZ,
-    bul: "    where: { isActive: true, variant: { isActive: true } },",
-    koy: "    where: { channelAccountId, isActive: true },",
+    dosya: TARIFE_ESLESME_VERI,
+    bul: "      where: { isActive: true, variant: { isActive: true } },",
+    koy: "      where: { channelAccountId, isActive: true },",
     bozdugu:
       "N11 dosyasindaki HB kodlari yine bagsiz kalir - olculdu: 3 urun, yurulukteki pencerede",
   },
   {
     ad: "CAKISAN KOD YINE SESSIZCE SECILIYOR",
     yon: "FAZLADAN",
-    dosya: TARIFE_YAZ,
-    bul: "      if (mevcut !== undefined && mevcut !== g.variantId) {",
+    dosya: TARIFE_ESLESME,
+    bul: "      if (mevcut !== undefined && mevcut !== x.variantId) {",
     koy: "      if (false) {",
     bozdugu:
       "bir kod iki varyanta cozulunce son gelen kazanir - 21.09'da kapatilan arizanin kilik degistirmis hali",

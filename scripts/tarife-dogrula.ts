@@ -1,4 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
+import { tarifeDizinleriKur, tarifeKodunuCoz } from "../src/lib/komisyon/tarife-eslesme";
 
 import {
   DILIMLI_TARIFE_OKUYUCUSU_OLAN,
@@ -1561,6 +1562,15 @@ console.log("");
 {
   console.log("");
   console.log("TARIFE ESLESME KAPSAMI - dort rol, butun kanallar");
+  /*
+   * ⛔ ÖLÇÜT TAŞINDI (K298, 28.09.2026): kural `tarife-yaz.ts`ten ORTAK gövdeye
+   * (`tarife-eslesme.ts`) çıktı — tarife ekranları boş kalmış satırı okuma
+   * anında AYNI kuralla çözüyor. Eski ölçütler yükleyicinin KAYNAĞINDA desen
+   * arıyordu; kural artık saf bir fonksiyon, bu yüzden DEĞERLE sınanıyor
+   * (anayasa: «saf hesap katmanı desen tarayan bekçiye muhtaç olmaz»).
+   * Aşağıdaki gerekçeler kurala aittir, olduğu gibi duruyor.
+   */
+  const veri = yorumsuzOku("src/lib/komisyon/tarife-eslesme-veri.ts");
   const yaz = yorumsuzOku("src/lib/komisyon/tarife-yaz.ts");
 
   /*
@@ -1569,42 +1579,60 @@ console.log("");
    * "pazaryerinin kendi kodunu" TASIMIYOR. Dar kapsam, sistemde ZATEN VAR olan
    * urunleri bagsiz birakiyordu: 17 bagsiz koddan 6'si genis olcutle bulundu.
    */
-  kontrol(
-    "kimlik dizini UC rolu birden kapsiyor (barkod + sku + firmaSku)",
-    /barcode: true, sku: true, companySku: true/.test(yaz),
-  );
-  kontrol(
-    "  ...ve kanal kodlari HESABA GORE DARALTILMIYOR",
-    /channelSku\.findMany\({[\s\S]{0,160}?where: { isActive: true, variant: { isActive: true } }/.test(yaz),
-  );
+  const v = (id: string, barcode: string | null, sku: string | null, companySku: string | null) => ({ id, barcode, sku, companySku });
+  const kk = (channelSku: string, variantId: string, channelAccountId: string) => ({ channelSku, variantId, channelAccountId });
+  const d1 = tarifeDizinleriKur({
+    varyantlar: [v("A", "869001", "SKU-A", "KUC-A-0001"), v("B", "869002", null, null)],
+    kanalKodlari: [kk("HBCV-A", "A", "hb"), kk("TY-B", "B", "ty")],
+    channelAccountId: "hb",
+  });
+  kontrol("kimlik dizini UC rolu birden kapsiyor (barkod + sku + firmaSku)",
+    tarifeKodunuCoz("869001", d1) === "A" && tarifeKodunuCoz("SKU-A", d1) === "A" && tarifeKodunuCoz("KUC-A-0001", d1) === "A");
+  kontrol("  ...ve kanal kodlari HESABA GORE DARALTILMIYOR (baska hesabin kodu da cozulur)",
+    tarifeKodunuCoz("TY-B", d1) === "B" && tarifeKodunuCoz(" HBCV-A ", d1) === "A");
+  kontrol("  ...veri kapsami AKTIF varyant + AKTIF kanal kodu (yukleyici ve ekran ayni govde)",
+    /productVariant\.findMany\({\s*where: { isActive: true },\s*select: { id: true, barcode: true, sku: true, companySku: true }/.test(veri) &&
+      /channelSku\.findMany\({\s*where: { isActive: true, variant: { isActive: true } }/.test(veri));
   /*
    * ⛔ GENISLEYEN KAPSAM YENI BIR SESSIZ SECIM URETMEZ. Bir kod iki varyanta
    * cozuluyorsa BAGLANMAZ: bagsiz bir kalem GORUNUR, yanlis baglanmis bir
    * kalem GORUNMEZ.
    */
-  /*
-   * ⛔ KOSUL VE SONUC AYNI DESENDE. Ilk yazimda ikisi AYRI araniyordu ve
-   * mutasyon KACTI: kosul `if (false)` yapildi, `cakisan.add(kod)` dosyada
-   * kaldi, olcut yesil yandi. Bu deponun en sik tekrarlayan korlugu.
-   */
-  kontrol(
-    "cakisan kod kumeden ATILIYOR (sessiz secim yok)",
-    /mevcut !== undefined && mevcut !== g\.variantId\) {[\s\S]{0,80}?cakisan\.add\(kod\)/.test(
-      yaz,
-    ) && /for \(const kod of cakisan\) harita\.delete\(kod\)/.test(yaz),
-  );
-  kontrol(
-    "  ...ve KANAL/KIMLIK dizinleri ARASINDAKI cakisma da eleniyor",
-    /kanalSahibi !== undefined && kanalSahibi !== variantId[\s\S]{0,120}?kimlikDizini\.delete\(kod\)/.test(yaz),
-  );
+  const d2 = tarifeDizinleriKur({
+    varyantlar: [v("A", "ORTAK", null, null), v("B", "ORTAK", null, null), v("C", "C-BARKOD", null, null)],
+    kanalKodlari: [kk("KAN", "A", "hb"), kk("KAN", "B", "ty"), kk("C-BARKOD", "A", "hb")],
+    channelAccountId: "hb",
+  });
+  kontrol("cakisan kod kumeden ATILIYOR (sessiz secim yok)",
+    tarifeKodunuCoz("ORTAK", d2) === null && tarifeKodunuCoz("KAN", d2) === null);
+  kontrol("  ...ve KANAL/KIMLIK dizinleri ARASINDAKI cakisma da eleniyor",
+    tarifeKodunuCoz("C-BARKOD", d2) === null);
   /*
    * ESKI GEREKCE IPTAL EDILMEDI, KAPSANDI: hesap bazli kapsam 19.08.2026'da
    * gercek bir sorunu cozmustu (3 bagsizin biri). Bu hesabin kodlari hala ONCE.
    */
-  kontrol(
-    "bu hesabin kodlari listenin BASINDA (eski gerekce korundu)",
-    /filter\(\(k\) => k\.channelAccountId === channelAccountId\)[\s\S]{0,200}?filter\(\(k\) => k\.channelAccountId !== channelAccountId\)/.test(yaz),
-  );
+  const d3 = tarifeDizinleriKur({
+    varyantlar: [v("A", "869001", null, null)],
+    kanalKodlari: [kk("KOD-1", "A", "hb")],
+    channelAccountId: "hb",
+  });
+  kontrol("kanal kodu kimlikten ONCE cozulur (tarifePlaniKur ile ayni sira)", tarifeKodunuCoz("KOD-1", d3) === "A" && tarifeKodunuCoz("YOK", d3) === null);
+  kontrol("yukleyici ORTAK govdeyi cagiriyor (iki yerde iki kural yok)",
+    yaz.includes("= await bugunkuTarifeDizinleri(channelAccountId);") && !yaz.includes("const tekil ="));
+
+  /*
+   * K298 — EKRAN BOS KALMIS ESLESMEYI OKUMA ANINDA COZER, YAZMAZ. Kullanici
+   * bulgusu 28.09.2026: Philips BHD500 «katalogda yok» — HB penceresi 23.09
+   * 00:07'de yuklenmis, kanal kodu 07:28'de baglanmis.
+   */
+  const ekran = yorumsuzOku("src/app/tarife/page.tsx");
+  kontrol("ekran: yalniz BAGSIZ satiri bugunku katalogla cozuyor ve isaretliyor",
+    /if \(!g\.katalogda && tarifeKodunuCoz\(g\.kod, dizinler\) !== null\) {\s*g\.katalogda = true;\s*g\.bugunEslesti = true;/.test(ekran));
+  kontrol("  ...ekran HICBIR SEY YAZMIYOR (fotograf dokunulmaz)",
+    !/prisma\.\w+\.(update|updateMany|create|createMany|upsert|delete)/.test(ekran));
+  const aynaK = yorumsuzOku("src/app/ayarlar/tarife/[id]/ayna.tsx");
+  kontrol("  ...kaynagi ekranda yaziyor («bugunku kataloga gore eslesti»)",
+    /satir\.bugunEslesti \? \(\s*<p[^>]*>\{t\("bugunEslesti"\)\}<\/p>/.test(aynaK));
 }
 
 console.log("");
