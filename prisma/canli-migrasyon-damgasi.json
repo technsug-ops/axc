@@ -62,6 +62,7 @@
     "20260927090000_eski_kod",
     "20260928120000_finansman",
     "20260928180000_finansman_birim",
-    "20260929090000_finansman_adet_altin"
+    "20260929090000_finansman_adet_altin",
+    "20260929120000_finansman_currency_dusur"
   ]
 }
