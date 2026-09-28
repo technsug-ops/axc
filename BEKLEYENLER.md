@@ -78,8 +78,8 @@ toplama girmez ve ADIYLA yazılır · USD/altın taksit faizinde kullanıcı o g
 ─── ③ **ADETLİ ALTIN (29.09.2026)** · [MIGRATION CANLIDA `20260929090000_finansman_adet_altin` · KOD YAZILDI — DEPLOY BEKLİYOR]
 Kullanıcı listesi: **Çeyrek · Yarım · Tam · Cumhuriyet · Ata lira** (adet) + gram 24/22. Gremse listeden ÇIKARILDI.
 Adetli altın grama çevrilmez («5 adet çeyrek»), fiyat adet başına. ENUM değerleri SONA eklendi (sıra korunur).
-⚠ Eski `Finansman.currency` ŞEMADAN çıkarıldı (kod artık seçmez); **sütunu düşüren migration bu kod canlıya çıktıktan
-SONRA, onayla** — ters sırada Finansman sayfası yeni kod gelene kadar 500 verirdi. Bekçi 73 · mutasyon 19/19.
+✅ Eski `Finansman.currency`: ① şemadan çıktı (aa549e1 canlıda) → ② sütun düşürüldü **29.09** (`20260929120000_finansman_currency_dusur`,
+yedek alındı; kullanıcı onayı; canlıda 0 kayıt; düşürme sonrası canlı liste+takvim sorgusu hatasız). Genişlet→daralt KAPANDI. Bekçi 73 · mutasyon 19/19.
 Test ek adımı: 3. adımda birim listesinde beş adetli altın da görünür.
 
 **Gerçek borçta:** giriş «gerçekleşti» → Kalan borç «X gr · 24 ayar» + altında «≈ ₺… (tahmini · fiyat …)»; taksit
