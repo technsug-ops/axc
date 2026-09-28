@@ -179,6 +179,15 @@ tabloda `companyId IS NULL` sayısı **0**.
 ⚠ Tablo adları migration'da şemadaki model adıyla HARF HARF (`migration:kontrol`
 — Windows `sale` üretir, canlı `Sale` ister).
 
+## 6b. Deneme ortamı (kullanıcı kararı 28.09.2026)
+
+Aşama 2–4 önce canlının KOPYASI üzerinde, ayrı dalda (`k303-cok-firma`) ve
+Vercel önizleme adresinde yapılır. Deneme ortamında pazaryeri kimliği ve
+zamanlanmış çekim YOKTUR — kopya kimlik gerçek mağazaya stok/fiyat
+gönderebilir. Vercel'de `DATABASE_URL` Production ve Preview için AYRI
+tanımlanır; aksi hâlde önizleme canlı veritabanına bağlanır. Canlıya geçiş,
+her aşama denemede kanıtlandıktan sonra yedekle ve onayla yapılır.
+
 ## 7. Aşamalar ve teslim ölçütleri
 
 | Aşama | İş | Kapanış |
@@ -189,7 +198,12 @@ tabloda `companyId IS NULL` sayısı **0**.
 | 3 | Firma istemcisi + desen yasağı + ham SQL + cron döngüsü + kimlik taşıma | bekçi + mutasyon; canlıda tek firma olarak Halil testi |
 | 4 | İkinci deneme firması + izolasyon testi | iki yönlü izolasyon bekçisi; gerçek cihazda iki firmayla deneme |
 
-## 8. Açık sorular (Aşama 2'den önce)
+## 8. Kararlar (kullanıcı, 28.09.2026 — önceden «açık sorular»)
+
+✅ ① roller firmaya ait, yeni firmaya üç rolün kopyası · ② üst çubukta firma seçici
+(tek üyelikte görünmez) · ③ sistem nedenleri ve varsayılanlar firma açılışında kopyalanır.
+
+_Soruların ilk hâli:_
 
 1. **Roller firmaya mı ait, şablon mu?** Öneri: her firma kendi rollerini
    taşır; yeni firma açılınca bugünkü üç rolün kopyası kurulur.

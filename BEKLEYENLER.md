@@ -28,9 +28,16 @@ prisma kullanan dosya 233 · ham SQL 5 dosya · cron 7 · kimlikler `.env`de tek
 ⛔ **BULGU:** `AuditLog.companyId` **76.310/76.310 BOŞ** — alan var, yazıcı geçirmiyor («şemadaki alan da bir
 iddiadır»). Aşama 2'de geçmiş `AXC`ye bağlanır, Aşama 3'te bağlamdan OTOMATİK dolar.
 
-**AÇIK — Aşama 2'den önce kullanıcı kararı:** ① roller firmaya mı ait (öneri: evet, yeni firmaya üç rolün
-kopyası) · ② çok üyeli kullanıcıda aktif firma seçici (öneri: üst çubuk) · ③ sistem nedenleri yeni firmaya
-tohum (öneri: evet).
+**KARARLAR (kullanıcı, 28.09.2026):** ① roller firmaya ait, yeni firmaya üç rolün kopyası · ② üst çubukta
+firma seçici · ③ sistem nedenleri firma açılışında kopyalanır. **Sıradaki: Aşama 2 — şema + geçiş (migration onayı).**
+
+⭐ **DENEME ORTAMI ŞART — kullanıcı kararı 28.09.2026 («best practice takip edelim»).** Aşama 2–4 ÖNCE ayrı
+ortamda: ① KAS'ta ikinci veritabanı (canlının kopyası) · ② ayrı dal `k303-cok-firma` + Vercel önizleme ·
+③ deneme ortamında pazaryeri kimlikleri YOK, cron YOK (kopya kimlikle gerçek stok/fiyat gidebilir) ·
+④ Vercel'de `DATABASE_URL` Preview kapsamı denemeye bağlanır (yoksa önizleme CANLI veritabanına bağlanır).
+Gerekçe: asıl risk veri kaybı değil İŞİN DURMASI (Aşama 3'te süzgeç hatası ekranları boşaltır / kaydı engeller).
+**BEKLİYOR — kullanıcı:** KAS veritabanı · Vercel değişken kapsamları · `.env.deneme`.
+⛔ İlk şema düzenleme denemesi (2-A betiği) Claude Code izin denetimince reddedildi — deneme dalında, onayla yeniden.
 
 ---
 
