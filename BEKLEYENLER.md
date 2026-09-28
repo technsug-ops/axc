@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K302 — ÜRÜNLER EXCEL'İ EKRANLA AYNI ARAMAYI YAPAR · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🟢 K302 — ÜRÜNLER EXCEL'İ EKRANLA AYNI ARAMAYI YAPAR · 28.09.2026 · [CANLIDA a2926c8 — HALİL TESTİ GEÇTİ 28.09 (`HBCV00005YA7X6` ekranda 1 kayıt, Excel'de aynı 1 satır); MİMAR ONAYI BEKLİYOR]
 
 **Kusur (K289'da ölçülmüş, dokunulmamıştı):** `/urunler` ürünü kanal SKU'su, eski kod (K287) ve
 sipariş/gönderi numarasıyla da buluyordu; Excel dışa aktarması kendi dar koşulunu yazıyordu (ad · marka ·
@@ -36,7 +36,7 @@ tsc · lint · meta bekçiler.
 
 ---
 
-## 🔴 K301 — SKU ÖNİZLEMESİ: DOĞRU BİÇİMDEKİ KOD KORUNUR, SIRA HARCAMAZ · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🟢 K301 — SKU ÖNİZLEMESİ: DOĞRU BİÇİMDEKİ KOD KORUNUR, SIRA HARCAMAZ · 28.09.2026 · [CANLIDA 1095736 — HALİL TESTİ GEÇTİ 28.09 (Kod alabilir 0 · Kodu zaten bu 1258 · ProMix 0044→0044); MİMAR ONAYI BEKLİYOR · ⚠ başlıktaki «1258 kod alabilir» ifadesi kutudaki «Kod alabilir 0» ile çelişiyor — metin netleştirme önerildi]
 
 **Bulgu (28.09 test turu):** SKU önizlemesinde Philips ProMix `KUC-PHL-0044` «Kod alabilir → 0046» çıkıyordu.
 Veri doğruydu: K294'te BHD500 elle `KUC-PHL-0045` aldı ve önizleme her koşumda numarayı BAŞTAN dağıttığı
