@@ -88,6 +88,13 @@ export const YEDEK_TABLOLARI = [
   "KartOdeme",
   // Geçmiş beyan ekstreleri — karta bağlı, KartOdeme ile aynı seviyede.
   "GecmisEkstre",
+  /**
+   * K304 — finansman: kaynak ÖNCE, hareket SONRA; hareket `Expense`e (faiz
+   * gideri) bağlı olduğu için giderden de sonra. Ters kayıt kendi tablosuna
+   * işaret eder — geri yüklemede FK denetimi kapalı olduğu için sıra sorunu yok.
+   */
+  "Finansman",
+  "FinansmanHareketi",
   // --- alım ---
   "Purchase",
   "PurchaseItem",
