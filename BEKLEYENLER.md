@@ -231,8 +231,7 @@ işaretli tutar — ikisi kırmızı).
 
 ---
 
-## 🔴 K296 — TELEFONDA «DÜZENLE» VE «PASİFE AL» AYNI KUTUDA (ALTI EKRAN) · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
-
+## 🟢 K296 — TELEFONDA «DÜZENLE» VE «PASİFE AL» AYNI KUTUDA (ALTI EKRAN) · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (telefon: KDV kategorileri · düzeltme nedenleri · tedarikçiler · raf konumları)]
 Kullanıcı (KDV kategorileri, telefon): _«görüntü problemli»_. «Pasife al» ortak eylem kutusundaydı (52 px, ikon
 üstte), «Düzenle» düz yatay düğme — iki komşu iki biçim, eşit ızgara yok. Tarama aynı karışıklığı ALTI ekranda
 buldu: KDV kategorileri · düzeltme nedenleri · tedarikçiler · raflar · kart detayı · kanal hesapları (sil düğmesi).
@@ -252,8 +251,7 @@ buldu: KDV kategorileri · düzeltme nedenleri · tedarikçiler · raflar · kar
 
 ---
 
-## 🔴 K295 — TRENDYOL KATEGORİSİ «N ÜRÜN» → ÜRÜN LİSTESİ · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
-
+## 🟢 K295 — TRENDYOL KATEGORİSİ «N ÜRÜN» → ÜRÜN LİSTESİ · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (243 ürün → 243 kayıt, 2. sayfada süzgeç duruyor, «Süzgeci kaldır»)]
 Kullanıcı (eşleşme ekranı, «243 ürün» işaretli): _«kategoriye tıkladığı zaman o kategorideki ürünleri
 listelemeli»_ (İlke #16). Süzgeç sözleşmesinin sahibi `lib/ty-kategori-suzgeci.ts`: eşleşme sayımı
 (`TY_KATEGORILI_URUN`), Ürünler listesi ve Excel AYNI koşuldan (yalnız AKTİF ürün — sayım öyle sayıyor;
@@ -526,8 +524,7 @@ satır satır, izli (`SKU_YENIDEN_KODLANDI`), anlık görüntülü. Kuru koşum 
 
 ---
 
-## 🔴 K286 — SKU ÖNİZLEMESİ (KAT-MRK-NNNN) · 26.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
-
+## 🟢 K286 — SKU ÖNİZLEMESİ (KAT-MRK-NNNN) · 26.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (1.256 «Kodu zaten bu»). ⚠ GÖRÜNTÜ KUSURU: 1 ürün «Kod alabilir» (Philips ProMix HR2520 KUC-PHL-0044 → 0046) — K294 BHD500'ü Philips sırasına sokunca önizleme baştan saymayı kaydırdı; veri doğru, hiçbir şey uygulanmıyor. ÖNERİ (onay bekliyor): kodu zaten kendi öneki ile doğru biçimde olan ürün «Kodu zaten bu» sayılsın, yeniden sayılmasın]
 Kullanıcı kararları 26.09: model parçası **addan tahmin edilmez** (canlıda «1000W» güç değeri,
 «KX» marka harfleri model sanıldı) → **sıra no**; yeni kod **Firma SKU**'ya; eski kod silinmez,
 aramada çalışmaya devam eder (uygulama AYRI paket).
@@ -673,8 +670,7 @@ Hızlı turda iki kör nokta yakalandı: sözlük denetçisi dosyada tek `t` gö
 
 ---
 
-## 🔴 K283 — ÜRÜN KATEGORİSİ TRENDYOL'UN KENDİ KATEGORİSİNDEN (EŞLEŞME TABLOSU) · 26.09.2026 · [KOD + MIGRATION + BAŞLANGIÇ VERİSİ KOŞTU — HALİL TESTİ BEKLİYOR]
-
+## 🟢 K283 — ÜRÜN KATEGORİSİ TRENDYOL'UN KENDİ KATEGORİSİNDEN (EŞLEŞME TABLOSU) · 26.09.2026 · [KOD + MIGRATION + BAŞLANGIÇ VERİSİ KOŞTU — HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (eşleşme ekranı + karşılık seçme)]
 Kullanıcı: _«ürün isminden karar vermemiz saçma, pazaryerleri ürünleri zaten kategorize etmiş»_ ·
 _«kesinlikle tahmin istemiyorum; bilmiyorsak liste yap dolduralım»_ · _«sistemimizi kuralım, EAN'lar
 gelince doğru yere kaydolur»_. Bağlam: SKU sistematiği (KAT-MRK-MODEL-NN) için kategori doğru
@@ -3104,7 +3100,7 @@ aykırı. **Mekanizma hazır**; sıra kullanıcının hangisini istediğine gör
 
 ---
 
-## 🔴 K234 — "FİYATLANDIRMA VE ANALİZ" GRUBU + TARİFE HESAPLAMA EKRANI · 22.09.2026 · [CANLIDA 835a010 — HALİL TESTİ BEKLİYOR · menü kaydını kullanıcı kendisi taşıdı → 28.09 menü grubu GEÇTİ (Ürün analizi · Kârlılık kartı · Hesaplama motoru · Tarife hesaplama); tarife hesaplama ekranı testi BEKLİYOR]
+## 🟢 K234 — "FİYATLANDIRMA VE ANALİZ" GRUBU + TARİFE HESAPLAMA EKRANI · 22.09.2026 · [CANLIDA 835a010 — HALİL TESTİ BEKLİYOR · menü kaydını kullanıcı kendisi taşıdı → 28.09 menü grubu GEÇTİ (Ürün analizi · Kârlılık kartı · Hesaplama motoru · Tarife hesaplama); tarife hesaplama ekranı testi BEKLİYOR → HALİL TESTİ GEÇTİ 28.09 (tarife: pencere başlığı · barkod/xyz araması · NET hesapla (kargo ile) · alanlar yeni üründe boş)]
 **KULLANICI İSTEĞİ:** _"Fiyatlandırma ve Analiz isminde bir sekme açalım;
 altına Ürün analizi · Fiyat denemesi · Kârlılık kartı · Tarife hesaplama."_
 Ardından: _"Fiyat denemesi'nin ismi Hesaplama motoru olsun"_ ve tarife
