@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Merge, Pencil, QrCode, TriangleAlert } from "lucide-react";
 
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
+import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -50,19 +51,15 @@ export default async function KonumlarSayfasi({ searchParams }: { searchParams: 
 
   function eylemler(konum: (typeof konumlar)[number]) {
     return (
-      <>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/ayarlar/konumlar/${konum.id}/duzenle`}>
-            <Pencil />
-            {ortak("duzenle")}
-          </Link>
-        </Button>
+      /* K296: iki eylem AYNI kutuda, eşit ızgarada. */
+      <SatirEylemleri>
+        <SatirEylemi href={`/ayarlar/konumlar/${konum.id}/duzenle`} ikon={Pencil} etiket={ortak("duzenle")} />
         <DurumDegistirButonu
           kayitId={konum.id}
           aktifMi={konum.isActive}
           action={konumDurumDegistir}
         />
-      </>
+      </SatirEylemleri>
     );
   }
 

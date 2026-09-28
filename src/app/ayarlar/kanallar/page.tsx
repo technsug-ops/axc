@@ -8,6 +8,7 @@
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
+import { SatirEylemleri } from "@/components/satir-eylemi";
 import { TriangleAlert } from "lucide-react";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
@@ -231,7 +232,8 @@ export default async function KanalHesaplariSayfasi() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex flex-wrap items-start justify-end gap-2">
+                        {/* K296: eylemler AYNI kutuda, eşit ızgarada. */}
+                        <SatirEylemleri>
                           <DurumDegistirButonu
                             kayitId={hesap.id}
                             aktifMi={hesap.isActive}
@@ -248,7 +250,7 @@ export default async function KanalHesaplariSayfasi() {
                               hesap._count.settlements
                             }
                           />
-                        </div>
+                        </SatirEylemleri>
                       </TableCell>
                     </TableRow>
                   ))}

@@ -15,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { EYLEM_SINIFI, EylemEtiketi } from "@/components/satir-eylemi";
 
 import { kanalHesabiSil, type KanalHesabiDurumu } from "./actions";
 
@@ -45,9 +46,9 @@ export function HesapSilButonu({
 
   if (kayitSayisi > 0) {
     return (
-      <Button variant="outline" size="sm" disabled title={t("silNotu")}>
+      <Button variant="outline" size="sm" disabled title={t("silNotu")} aria-label={t("sil")} className={EYLEM_SINIFI}>
         <Trash2 />
-        {t("sil")}
+        <EylemEtiketi>{t("sil")}</EylemEtiketi>
       </Button>
     );
   }
@@ -56,9 +57,10 @@ export function HesapSilButonu({
     <div className="space-y-1">
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" size="sm">
+          {/* K296: komşu eylemlerle AYNI kutu (telefonda 52 px, masaüstünde ikon). */}
+          <Button variant="outline" size="sm" title={t("sil")} aria-label={t("sil")} className={EYLEM_SINIFI}>
             <Trash2 />
-            {t("sil")}
+            <EylemEtiketi>{t("sil")}</EylemEtiketi>
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>

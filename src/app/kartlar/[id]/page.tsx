@@ -1,12 +1,11 @@
-import Link from "next/link";
 import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 
 import { Baglanti, GeriBaglanti } from "@/components/baglanti";
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
+import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -76,19 +75,15 @@ export default async function KartDetaySayfasi({
               {kart.holderName ? ` · ${kart.holderName}` : ""}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild>
-              <Link href={`/kartlar/${kart.id}/duzenle`}>
-                <Pencil />
-                {ortak("duzenle")}
-              </Link>
-            </Button>
+          {/* K296: iki eylem AYNI kutuda, eşit ızgarada. */}
+          <SatirEylemleri>
+            <SatirEylemi href={`/kartlar/${kart.id}/duzenle`} ikon={Pencil} etiket={ortak("duzenle")} />
             <DurumDegistirButonu
               kayitId={kart.id}
               aktifMi={kart.isActive}
               action={kartDurumDegistir}
             />
-          </div>
+          </SatirEylemleri>
         </div>
       </div>
 

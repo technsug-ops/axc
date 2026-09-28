@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Check, Pencil, X } from "lucide-react";
 
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
+import { SatirEylemDugmesi, SatirEylemleri } from "@/components/satir-eylemi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,21 +88,15 @@ export function KategoriSatiri({
             {t("urunSayisi")}: {kategori.urunSayisi}
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setDuzenleniyor(true)}
-          >
-            <Pencil />
-            {ortak("duzenle")}
-          </Button>
+        {/* K296: iki eylem AYNI kutuda, eşit ızgarada (telefonda 52 px, masaüstünde ikon). */}
+        <SatirEylemleri>
+          <SatirEylemDugmesi ikon={Pencil} etiket={ortak("duzenle")} onClick={() => setDuzenleniyor(true)} />
           <DurumDegistirButonu
             kayitId={kategori.id}
             aktifMi={kategori.isActive}
             action={kategoriDurumDegistir}
           />
-        </div>
+        </SatirEylemleri>
       </div>
     );
   }

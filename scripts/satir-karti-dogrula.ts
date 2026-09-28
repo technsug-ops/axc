@@ -464,6 +464,37 @@ console.log("\n2) KAPSAM — aynı listeyi İKİ KEZ çizen ekranlar");
   kosanBolumler.push("K281 renk tanımı");
 }
 
+/* ────────────────────────────────────────────────────────────────────────
+   K296 — DURUM DÜĞMESİNİN KOMŞULARI AYNI KUTUDA (kullanıcı 28.09.2026, KDV
+   kategorileri telefon görüntüsü: «görüntü problemli»). «Pasife al» ortak
+   kutuda (52 px, ikon üstte), «Düzenle» düz yatay düğmeydi — altı ekranda.
+   DESEN YASAĞI, dosya listesi değil: `<DurumDegistirButonu` çizen her
+   dosya eşit ızgarayı (`<SatirEylemleri`) kullanır ve kalem ikonunu ÇIPLAK
+   JSX olarak çizmez (düzenle eylemi SatirEylemi/SatirEylemDugmesi'ye prop).
+   ──────────────────────────────────────────────────────────────────────── */
+{
+  console.log("\nK296 — durum düğmesinin komşuları aynı kutuda");
+  const tum: string[] = [];
+  const gez = (d: string) => {
+    for (const g of readdirSync(d, { withFileTypes: true })) {
+      const y = `${d}/${g.name}`;
+      if (g.isDirectory()) gez(y);
+      else if (g.name.endsWith(".tsx")) tum.push(y);
+    }
+  };
+  gez("src/app");
+  const yorumsuzK = (k: string) => k.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const kullananlar = tum.filter((y) => yorumsuzK(kaynakOku(y)).includes("<DurumDegistirButonu"));
+  kontrol(`durum düğmesi kullanan ekran tabanı DOLU (${kullananlar.length})`, kullananlar.length >= 6, kullananlar);
+  const kapsiz = kullananlar.filter((y) => !yorumsuzK(kaynakOku(y)).includes("<SatirEylemleri"));
+  kontrol("hepsi eşit ızgarada (<SatirEylemleri>)", kapsiz.length === 0, kapsiz);
+  const ciplakKalem = kullananlar.filter((y) => yorumsuzK(kaynakOku(y)).includes("<Pencil"));
+  kontrol("hiçbirinde çıplak kalem ikonlu düğme yok (düzenle ortak kutuda)", ciplakKalem.length === 0, ciplakKalem);
+  const eylem = kaynakOku("src/components/satir-eylemi.tsx");
+  const dugme = eylem.slice(eylem.indexOf("export function SatirEylemDugmesi"), eylem.indexOf("export function SatirEylemi("));
+  kontrol("SatirEylemDugmesi ortak kutu sınıfını kullanıyor", dugme.includes("className={EYLEM_SINIFI}") && dugme.includes("<EylemEtiketi>{etiket}</EylemEtiketi>"));
+}
+
 console.log("\n" + "=".repeat(70));
 if (kosanBolumler.length !== BOLUM_SAYISI) {
   console.log(`KOŞUM YARIM KALDI — sonuç GEÇERSİZ (${kosanBolumler.length}/${BOLUM_SAYISI})`);

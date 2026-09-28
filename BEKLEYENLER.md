@@ -187,6 +187,27 @@ ilk boş çekim damgası kaçarsa aynı dal oraya da yazılır.
 
 ---
 
+## 🔴 K296 — TELEFONDA «DÜZENLE» VE «PASİFE AL» AYNI KUTUDA (ALTI EKRAN) · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+Kullanıcı (KDV kategorileri, telefon): _«görüntü problemli»_. «Pasife al» ortak eylem kutusundaydı (52 px, ikon
+üstte), «Düzenle» düz yatay düğme — iki komşu iki biçim, eşit ızgara yok. Tarama aynı karışıklığı ALTI ekranda
+buldu: KDV kategorileri · düzeltme nedenleri · tedarikçiler · raflar · kart detayı · kanal hesapları (sil düğmesi).
+- Ortak bileşene `SatirEylemDugmesi` (tıklamayla düzenleme kipini açan eylem, `SatirEylemi` ile AYNI kutu);
+  altı ekran `SatirEylemleri` eşit ızgarasına bağlandı. Masaüstünde düzenle de ikon (ötekilerle aynı, İlke #10).
+- **Desen yasağı** (`satir-karti:dogrula`, dosya listesi yok): `<DurumDegistirButonu` çizen her dosya
+  `<SatirEylemleri` kullanır ve çıplak `<Pencil` çizmez; taban ≥ 6 (bugün 7). Harness 39→**42** (düz düğmeye dönüş ·
+  ızgaradan çıkma · ortak sınıfın kalkması — üçü kırmızı).
+
+### HALİL TEST LİSTESİ (telefon, canlı)
+1. Tanımlar → KDV Kategorileri: her satırda «Düzenle» ve «Pasife al» **aynı boyda**, yan yana iki eşit kutu.
+2. «Düzenle»ye dokunun → satır düzenleme kipine geçer (davranış aynı).
+3. Aynı görünüm: Düzeltme nedenleri · Tedarikçiler · Raf Konumları · bir kartın detayı · Kanal hesapları.
+4. Bilgisayarda: bu ekranlarda Düzenle artık ikon (üstüne gelince «Düzenle» yazar), Pasife al'ın yanında.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (yeni metin yok) · **kullanıcı kolaylığı: ✓** (İlke #8 · #10)
+
+---
+
 ## 🔴 K295 — TRENDYOL KATEGORİSİ «N ÜRÜN» → ÜRÜN LİSTESİ · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 Kullanıcı (eşleşme ekranı, «243 ürün» işaretli): _«kategoriye tıkladığı zaman o kategorideki ürünleri

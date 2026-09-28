@@ -44,6 +44,31 @@ type Mutasyon = {
 };
 
 const MUTASYONLAR: Mutasyon[] = [
+  /* K296 — durum düğmesinin komşuları aynı kutuda (28.09.2026). */
+  {
+    ad: "KDV KATEGORISINDE DUZENLE YINE DUZ DUGME",
+    yon: "FAZLADAN",
+    dosya: "src/app/ayarlar/kategoriler/kategori-satiri.tsx",
+    bul: "          <SatirEylemDugmesi ikon={Pencil} etiket={ortak(\"duzenle\")} onClick={() => setDuzenleniyor(true)} />",
+    koy: "          <Button variant=\"outline\" size=\"sm\" onClick={() => setDuzenleniyor(true)}><Pencil />{ortak(\"duzenle\")}</Button>",
+    bozdugu: "telefonda Duzenle yatay, Pasife al 52 px kutu - iki komsu iki bicim",
+  },
+  {
+    ad: "TEDARIKCI EYLEMLERI ESIT IZGARADAN CIKTI",
+    yon: "KALDIRAN",
+    dosya: "src/app/ayarlar/tedarikciler/tedarikci-satiri.tsx",
+    bul: "        <SatirEylemleri>\n          <SatirEylemDugmesi",
+    koy: "        <div>\n          <SatirEylemDugmesi",
+    bozdugu: "kutular esit genislikte dizilmez, biri tasar",
+  },
+  {
+    ad: "TIKLAMALI EYLEM ORTAK KUTU SINIFINI KULLANMIYOR",
+    yon: "KALDIRAN",
+    dosya: EYLEM,
+    bul: "onClick={onClick} title={etiket} aria-label={etiket} className={EYLEM_SINIFI}>",
+    koy: "onClick={onClick} title={etiket} aria-label={etiket}>",
+    bozdugu: "Duzenle yine kendi boyunda kalir",
+  },
   /* K292 — Alımlar satışlarla aynı tablo düzeni (27.09.2026). */
   {
     ad: "ALIMLAR URUN HUCRESINDEN KART BILGISI DUSTU",

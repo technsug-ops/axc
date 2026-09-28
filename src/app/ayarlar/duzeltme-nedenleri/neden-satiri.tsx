@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Check, Pencil, X } from "lucide-react";
 
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";
+import { SatirEylemDugmesi, SatirEylemleri } from "@/components/satir-eylemi";
 import { HataOzeti } from "@/components/hata-ozeti";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,23 +97,16 @@ export function NedenSatiri({ neden }: { neden: NedenSatiriVerisi }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-11 md:h-9"
-            onClick={() => setDuzenleniyor(true)}
-          >
-            <Pencil />
-            {ortak("duzenle")}
-          </Button>
+        {/* K296: iki eylem AYNI kutuda, eşit ızgarada. */}
+        <SatirEylemleri>
+          <SatirEylemDugmesi ikon={Pencil} etiket={ortak("duzenle")} onClick={() => setDuzenleniyor(true)} />
           {/* SİLME YOK: geçmiş hareketler nedensiz kalmasın. */}
           <DurumDegistirButonu
             kayitId={neden.id}
             aktifMi={neden.isActive}
             action={nedenDurumDegistir}
           />
-        </div>
+        </SatirEylemleri>
       </div>
     );
   }

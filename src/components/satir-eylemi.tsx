@@ -77,6 +77,29 @@ export function SatirEylemleri({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * TIKLAMAYLA ÇALIŞAN SATIR EYLEMİ (K296, kullanıcı 28.09.2026: telefonda «görüntü
+ * problemli» — KDV kategorilerinde «Düzenle» düz yatay düğme, «Pasife al» ise 52 px
+ * ikon-üstte kutu; iki komşu eylem iki farklı biçimde duruyordu). Satırı yerinde
+ * düzenleme kipine alan eylemler bunu kullanır — `SatirEylemi` ile AYNI kutu.
+ */
+export function SatirEylemDugmesi({
+  ikon: Ikon,
+  etiket,
+  onClick,
+}: {
+  ikon: LucideIcon;
+  etiket: string;
+  onClick: () => void;
+}) {
+  return (
+    <Button type="button" variant="outline" size="sm" onClick={onClick} title={etiket} aria-label={etiket} className={EYLEM_SINIFI}>
+      <Ikon />
+      <EylemEtiketi>{etiket}</EylemEtiketi>
+    </Button>
+  );
+}
+
 /** Bir yere götüren satır eylemi (detay, düzenle, mal kabul...). */
 export function SatirEylemi({
   href,
