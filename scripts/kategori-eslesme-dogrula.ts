@@ -130,7 +130,10 @@ console.log("\n3) kategori sayısı → ürün listesi (sayı = liste)");
   kontrol("  ...arama, sayfalama ve Excel süzgeci taşıyor", (urunler.match(/\[TY_KATEGORI_PARAMETRESI\]: tyKategori/g) ?? []).length === 3);
   kontrol("  ...başlıktaki kayıt sayısı TOPLAM (sayfa değil)", urunler.includes('ortak("kayitSayisi", { sayi: toplam })'));
   const excel = oku("src/lib/disa-aktarma/listeler.ts");
-  kontrol("Excel aynı koşulla", excel.includes("where: { AND: [tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, arama"));
+  /* ⚠ ÇAPA TAŞINDI (K302, 28.09.2026): Excel'in arama kısmı ortak gövdeye (`urunAramaKosulu`)
+   * bağlandı; eski çapa `…: {}, arama` satırın o kısmını da içeriyordu. Kategori koşulu AYNEN
+   * yerinde — ölçüt aynı şeyi (kategori süzgeci AND ile, aramayla birlikte) arıyor. */
+  kontrol("Excel aynı koşulla", excel.includes("where: { AND: [tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, (await urunAramaKosulu(arama)) ?? {}] },"));
 }
 kosanBolumler.push("sayi-liste");
 

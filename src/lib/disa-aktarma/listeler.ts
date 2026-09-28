@@ -19,6 +19,7 @@ import { prisma } from "@/lib/prisma";
 
 import type { Sayfa } from "./xlsx";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
+import { urunAramaKosulu } from "@/lib/urun-arama";
 import { stoguVarMi } from "@/lib/stok-siralama";
 import { supheliSatirlari } from "@/lib/supheli-urun-veri";
 import { markasizUrunler } from "@/lib/marka-kodu-veri";
@@ -476,22 +477,14 @@ async function urunlerSayfasi(p: Parametreler): Promise<Sayfa> {
   const arama = (p.q ?? "").trim();
 
   const urunler = await prisma.product.findMany({
-    where: { AND: [tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, arama
-      ? {
-          /**
-           * ⚠ EŞDEĞER KODLAR (K100) — EKRANLA AYNI KÜME. Dışa aktarma
-           * ekranın süzgecini birebir taşımak zorunda: biri barkodu bulup
-           * öteki bulamazsa Excel ekrandan farklı bir liste üretir.
-           */
-          OR: kodEsdegerleri(arama).flatMap((e) => [
-            { name: { contains: e } },
-            { brand: { contains: e } },
-            { variants: { some: { sku: { contains: e } } } },
-            { variants: { some: { companySku: { contains: e } } } },
-            { variants: { some: { barcode: { contains: e } } } },
-          ]),
-        }
-      : {}] },
+    /**
+     * ⭐ EKRANLA AYNI GÖVDE (K302, 28.09.2026) — `urunAramaKosulu`. Eski hâl
+     * kendi koşulunu yazıyordu (ad · marka · SKU · Firma SKU · barkod) ve
+     * kanal SKU'su, eski kod, sipariş/gönderi numarasıyla aranan ürün
+     * Excel'e DÜŞMÜYORDU. «Eşdeğer kodlar ekranla aynı küme» gerekçesi
+     * (K100) gövdede yaşamaya devam ediyor.
+     */
+    where: { AND: [tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, (await urunAramaKosulu(arama)) ?? {}] },
     include: {
       category: { select: { name: true } },
       variants: {

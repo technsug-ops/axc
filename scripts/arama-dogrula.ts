@@ -21,6 +21,7 @@ import {
   satisKodKosulu,
 } from "../src/lib/varyant-arama-kurali";
 import { rafAramasi } from "../src/lib/raf-arama";
+import { urunAramaSuzgeci } from "../src/lib/urun-arama";
 import { kaynakOku } from "./kaynak-oku";
 
 /** Yorumları siler — bir yasağı ANLATAN yorum, o yasağı ÇİĞNEMİŞ sayılmaz. */
@@ -533,12 +534,19 @@ console.log("");
     const urunlerKaynak = yorumsuz(
       kaynakOku("src/app/urunler/page.tsx"),
     );
+    /**
+     * ⚠ ÖLÇÜT TAŞINDI (K302, 28.09.2026): `/urunler`in arama koşulu ortak
+     * gövdeye (`lib/urun-arama.ts`) çıktı — Excel de aynı gövdeyi çağırsın
+     * diye. Üç ölçüt artık o gövdeye bakıyor; ekranın ve Excel'in gövdeye
+     * BAĞLI olduğu ayrıca ölçülüyor (aşağıda). Niyet aynı, yer yeni.
+     */
+    const urunAramaKaynak = yorumsuz(kaynakOku("src/lib/urun-arama.ts"));
     for (const [ad, kaynak, dal] of [
       ["/stok", stokKaynak, "{ id: { in: satisVaryantIdleri } }"],
       [
         "/urunler",
-        urunlerKaynak,
-        "{ variants: { some: { id: { in: satisVaryantIdleri } } } }",
+        urunAramaKaynak,
+        "{ variants: { some: { id: { in: [...satisVaryantIdleri] } } } }",
       ],
     ] as const) {
       kontrol(
@@ -565,6 +573,21 @@ console.log("");
       (urunlerKaynak.match(/where: kosul\b/g) ?? []).length === 2 &&
         urunlerKaynak.includes("const kosul = { AND: [suzgecArama ?? {},"),
     );
+
+    /* K302 — ekran ve Excel AYNI gövdeden; gövde doğru dalları üretiyor. */
+    kontrol("K302 /urunler aramayı ortak gövdeden alıyor", urunlerKaynak.includes("const suzgecArama = await urunAramaKosulu(arama);"));
+    kontrol("K302 /urunler kendi arama koşulunu KURMUYOR", !/aramaKosulu\(arama\)|kodEsdegerleri\(arama\)/.test(urunlerKaynak));
+    const listeKaynak = yorumsuz(kaynakOku("src/lib/disa-aktarma/listeler.ts"));
+    const urunlerExcel = listeKaynak.slice(listeKaynak.indexOf("async function urunlerSayfasi("), listeKaynak.indexOf("async function urunlerSayfasi(") + 1500);
+    kontrol("K302 Ürünler Excel'i AYNI gövdeyi çağırıyor", listeKaynak.indexOf("async function urunlerSayfasi(") >= 0 && urunlerExcel.includes("(await urunAramaKosulu(arama)) ?? {}"));
+    kontrol("K302 Ürünler Excel'i kendi dar koşulunu KURMUYOR", !/companySku: \{ contains: e \}|kodEsdegerleri\(arama\)/.test(urunlerExcel));
+    const deger = JSON.stringify(urunAramaSuzgeci("HBCV00004IA2P8", []));
+    kontrol("K302 gövde kanal SKU'sunu arıyor", deger.includes('"channelSkus"'));
+    kontrol("K302 gövde eski kodu arıyor (K287)", deger.includes('"eskiKodlar"'));
+    kontrol("K302 gövde ad ve markayı ürün düzeyinde arıyor", deger.includes('{"name":{"contains":"HBCV00004IA2P8"}}') && deger.includes('{"brand":{"contains":"HBCV00004IA2P8"}}'));
+    kontrol("K302 satış kimliğinden gelen varyant süzgece giriyor", JSON.stringify(urunAramaSuzgeci("403-1", ["v1"])).includes('{"id":{"in":["v1"]}}'));
+    kontrol("K302 boş satış kümesinde id dalı YOK", !JSON.stringify(urunAramaSuzgeci("x1", [])).includes('"id":{"in"'));
+    kontrol("K302 boş arama → süzgeç yok", urunAramaSuzgeci("", ["v1"]) === undefined);
   }
 
   // ── ŞEMA: BENZERSİZ ──────────────────────────────────────────────────

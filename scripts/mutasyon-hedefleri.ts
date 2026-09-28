@@ -257,4 +257,10 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * denetimlerle ortak (`eski-kod` · `paketleme` · `kod-cozumu` · `liste-aramasi`).
    */
   "okuyucu-duzeltme-mutasyon:kontrol",
+  /**
+   * K302 (28.09.2026) — `urun-arama` Ürünler ekranını (`kategori-eslesme` ·
+   * `supheli-urun` · `kod-cozumu` ile ortak) ve dışa aktarma listesini
+   * (`liste-aramasi` · `sku-onizleme` ile ortak) mutasyona uğratıyor.
+   */
+  "urun-arama-mutasyon:kontrol",
 ];

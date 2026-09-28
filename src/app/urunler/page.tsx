@@ -30,8 +30,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaCoz } from "@/lib/sayfalama";
-import { satisKodundanVaryantIdleri } from "@/lib/satis-kodundan-varyant";
-import { aramaKosulu, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
+import { urunAramaKosulu } from "@/lib/urun-arama";
 import { urunStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
@@ -66,67 +65,13 @@ export default async function UrunlerSayfasi({
   const tBaslik = await getTranslations("Basliklar");
 
   /**
-   * ⛔ SİPARİŞ / GÖNDERİ NUMARASI DA ARANIR (08.09.2026) — `/stok` ile AYNI
-   * GÖVDEDEN. Kullanıcı isteği `/stok` içindi; buraya da uygulandı çünkü bu
-   * iki ekranın ayrışması bu depoda ZATEN yaşandı: kanal SKU'su 12.08'de
-   * `/urunler`de düzeltilip `/stok`ta unutulmuştu ve kullanıcı buldu.
-   * Yalnız `/stok`a eklemek aynı hatayı ayna simetrisiyle tekrarlardı.
-   * _(İlke #10: aynı kod her ekranda aynı sonucu verir.)_
+   * ⭐ ARAMA KOŞULU ORTAK GÖVDEDE (K302, 28.09.2026) — `lib/urun-arama.ts`.
+   * Excel dışa aktarması AYNI gövdeyi çağırır; önceki hâl (koşul burada,
+   * Excel kendi dar koşuluyla) ekranda bulunan ürünü Excel'de düşürüyordu.
+   * Gerekçeler (satış kimliği · eşdeğer kodlar · pasif dahil · ad/marka
+   * doğrudan) gövdeye taşındı, silinmedi.
    */
-  const satisVaryantIdleri = arama
-    ? await satisKodundanVaryantIdleri(prisma, arama)
-    : [];
-
-  const suzgec = arama
-    ? {
-        /**
-         * ⚠ EŞDEĞER KODLAR AÇILIR (K100) — UPC-A ↔ EAN-13. Rol kümesi
-         * DEĞİŞMEDİ; yalnız aynı kodun ikinci yazılışı da aranıyor.
-         */
-        /**
-         * ⛔ PASİF DAHİL: bu ekran `isActive` SÜZMÜYOR ve bu bilinçli — ürün
-         * YÖNETİM ekranıdır; pasif ürün listede DURUR ve satırında pasif
-         * rozetiyle gösterilir (bkz. aşağıda `!urun.isActive` dalı). Süzmek,
-         * pasife alınan ürünü yönetilemez hâle getirirdi.
-         *
-         * ⭐ VARYANT DALLARI ORTAK GÖVDEDEN, SARMALANARAK (K121c, 08.09.2026).
-         *
-         * Bu ekran ÜRÜN sorguluyor, ortak gövde ise VARYANT koşulu üretiyor;
-         * bu yüzden her dal `variants: { some: ... }` ile sarmalanıyor.
-         * Ölçüldü (66 kod · 6 kod türü, marka dahil): inline dal ile bu
-         * ifade **FARK 0**.
-         *
-         * ⛔ `name` ve `brand` DOĞRUDAN KALIYOR — VE BU ÖLÇÜLMÜŞ BİR KARAR:
-         * ikisi ÜRÜNÜN alanı, varyantın değil. Sarmalanmış bir ad araması
-         * varyantı OLMAYAN bir ürünü sessizce düşürürdü. Bugün öyle ürün YOK
-         * (ölçüldü: 1837 üründe 0), ama bir OR dalı ucuz bir emniyettir ve
-         * yokluğu bugünün ölçümüne bağlamak yarını garanti etmez.
-         *
-         * ⚠ ESKİ GEREKÇE SİLİNMİYOR (12.08.2026): pazaryeri panelinden
-         * kopyalanan kod (HBCV00004IA2P8) doğrudan yapıştırılıp bulunabilsin;
-         * bu dal olmadan o kod HİÇ bulunmuyordu. Süreye etkisi ölçülmüştü
-         * (55 → 63 ms).
-         */
-        OR: [
-          ...kodEsdegerleri(arama).flatMap((e) => [
-            { name: { contains: e } },
-            { brand: { contains: e } },
-          ]),
-          ...aramaKosulu(arama).map((k) => ({ variants: { some: k } })),
-        ],
-      }
-    : undefined;
-
-  /**
-   * ⚠ SATIŞ KİMLİĞİ `kodEsdegerleri` DÖNGÜSÜNE GİRMEZ: eşdeğer açılımı
-   * barkodun iki yazılışı içindir (UPC-A ↔ EAN-13); sipariş numarasının
-   * ikinci bir yazılışı yoktur. Küme boşsa dal HİÇ eklenmez — arama sonucu
-   * sessizce genişleyemez.
-   */
-  const suzgecArama =
-    suzgec && satisVaryantIdleri.length > 0
-      ? { OR: [...suzgec.OR, { variants: { some: { id: { in: satisVaryantIdleri } } } }] }
-      : suzgec;
+  const suzgecArama = await urunAramaKosulu(arama);
 
   // ÖNCE SAY, SONRA SAYFAYI ÇEK. Sayım olmadan "kaç sayfa var"
   // bilinemez; kullanıcı kararı gereği toplam sayı da ekranda yazıyor.

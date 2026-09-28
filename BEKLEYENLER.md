@@ -13,6 +13,29 @@
 
 ---
 
+## 🔴 K302 — ÜRÜNLER EXCEL'İ EKRANLA AYNI ARAMAYI YAPAR · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kusur (K289'da ölçülmüş, dokunulmamıştı):** `/urunler` ürünü kanal SKU'su, eski kod (K287) ve
+sipariş/gönderi numarasıyla da buluyordu; Excel dışa aktarması kendi dar koşulunu yazıyordu (ad · marka ·
+SKU · Firma SKU · barkod). Ekranda bulunan ürün indirilen dosyada ÇIKMIYORDU — «sayı = liste» ihlali.
+
+**Çare:** koşul ortak gövdeye (`lib/urun-arama.ts` · `urunAramaKosulu`); ekran ve Excel ikisi de onu
+çağırıyor. Gerekçeler (pasif dahil · ad/marka ürün düzeyinde · satış kimliği · eşdeğer kodlar) gövdeye
+taşındı, silinmedi.
+
+**Ölçüldü:** `arama:dogrula` +10 ölçüt (150) · 3 ölçüt TAŞINDI (sayfadan gövdeye; gerekçe dosyada) ·
+`kategori-eslesme:dogrula` çapası taşındı · yeni `urun-arama-mutasyon` **8/8** · kategori-eslesme-mutasyon 18/18 ·
+tsc · lint · meta bekçiler.
+
+**Halil test listesi:**
+1. Ürünler → arama kutusuna `HBCV00005YA7X6` (Hepsiburada kodu) → «LEGO Harry Potter Uçan Ford Anglia 76424» listelenmeli.
+2. Aynı aramada «Excel indir» → dosyada **aynı ürün** olmalı (eskiden boş gelirdi — kanal kodu Excel'de aranmıyordu).
+3. Arama kutusuna `KOZ-PHL-0029` (K299 eski kodu) → Excel'de Philips QP630 satırı olmalı.
+
+**mobil doğrulama:** ekran değişikliği yok · **i18n: ✓** (metin yok)
+
+---
+
 ## 🔴 K301 — SKU ÖNİZLEMESİ: DOĞRU BİÇİMDEKİ KOD KORUNUR, SIRA HARCAMAZ · 28.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Bulgu (28.09 test turu):** SKU önizlemesinde Philips ProMix `KUC-PHL-0044` «Kod alabilir → 0046» çıkıyordu.
@@ -349,7 +372,7 @@ listelemeli»_ (İlke #16). Süzgeç sözleşmesinin sahibi `lib/ty-kategori-suz
 - Eşleşme: «N ürün» bağlantı (0'da bağlantı yok). Ürünler: `?tyKategori=` · rozet «Trendyol kategorisi: X ·
   yalnız aktif ürünler» + «Süzgeci kaldır» · arama/sayfalama/Excel taşır · koşul AND ile (arama ezilmez).
 - Yan düzeltme: Ürünler başlığındaki «N kayıt» SAYFANIN satır sayısıydı (≤50) → toplam.
-- ⚠ Ölçülen ama bu pakette dokunulmayan: Ürünler Excel'inin arama koşulu ekranınkinden dar (kanal SKU,
+- ⚠ Ölçülen ama bu pakette dokunulmayan: Ürünler Excel'inin arama koşulu ekranınkinden dar [→ KAPANDI 28.09: K302 — ekran ve Excel tek gövdeden] (kanal SKU,
   eski kod, satış kodu Excel'de aranmıyor) — «sayı = liste» ihlali, ayrı kalem.
 - Bekçi `kategori-eslesme:dogrula` 2→3 bölüm (40) · harness 14→**18** (pasif açılır · adres kodlanmaz ·
   spread · sayfalama düşürür — dördü kırmızı). `arama:dogrula` «sayım ve liste aynı süzgeç» ölçütü ESKİDİ →
