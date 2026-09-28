@@ -4863,7 +4863,7 @@
       "planliNot": "İşaretlemezseniz PLAN olarak yazılır: nakit takviminde görünür, bakiyelere girmez. Olduğu gün «Gerçekleşti» dersiniz.",
       "birim": "Borç birimi",
       "fiyatGunu": "Fiyat günü",
-      "tlFiyati": "1 birimin TL fiyatı",
+      "tlFiyati": "1 birimin TL fiyatı (gramda 1 gr, adetli altında 1 adet)",
       "fiyatOrnek": "örn. 5.150,00",
       "giderTl": "Faiz + verginin ödenen TL karşılığı",
       "giderTlOrnek": "örn. 1.250,00",
@@ -4946,14 +4946,24 @@
       "EUR": "EUR",
       "USD": "USD",
       "ALTIN_GRAM_24": "Gram altın (24 ayar)",
-      "ALTIN_GRAM_22": "Gram altın (22 ayar)"
+      "ALTIN_GRAM_22": "Gram altın (22 ayar)",
+      "CEYREK_ALTIN": "Çeyrek altın (adet)",
+      "YARIM_ALTIN": "Yarım altın (adet)",
+      "TAM_ALTIN": "Tam altın (adet)",
+      "CUMHURIYET_ALTINI": "Cumhuriyet altını (adet)",
+      "ATA_LIRA_ALTINI": "Ata lira altını (adet)"
     },
     "birimMiktar": {
       "TRY": "{miktar}",
       "EUR": "{miktar}",
       "USD": "{miktar}",
       "ALTIN_GRAM_24": "{miktar} gr · 24 ayar",
-      "ALTIN_GRAM_22": "{miktar} gr · 22 ayar"
+      "ALTIN_GRAM_22": "{miktar} gr · 22 ayar",
+      "CEYREK_ALTIN": "{miktar} adet çeyrek",
+      "YARIM_ALTIN": "{miktar} adet yarım",
+      "TAM_ALTIN": "{miktar} adet tam",
+      "CUMHURIYET_ALTINI": "{miktar} adet Cumhuriyet",
+      "ATA_LIRA_ALTINI": "{miktar} adet Ata lira"
     },
     "borcTlBaslik": "Toplam kalan borç — TL karşılığı (tahmini)",
     "borcTlNot": "Döviz ve altın, girdiğin son fiyatlarla çevrildi. Asıl borç kendi biriminde durur.",
@@ -4979,7 +4989,7 @@
     "kaydedilemedi": "Kaydedilemedi; hiçbir şey değişmedi.",
     "cokBirim": {
       "baslik": "Döviz ve altın borç",
-      "aciklama": "Finansman'da USD ve gram altın (24 / 22 ayar) birimiyle borç kaydı.",
+      "aciklama": "Finansman'da USD, gram altın (24 / 22 ayar) ve adetle sayılan altın (çeyrek, yarım, tam, Cumhuriyet, Ata lira) birimiyle borç kaydı.",
       "not": "Kapatınca önceden girilmiş USD/altın kayıtları görünmeye devam eder; yalnız yeni kayıtta bu birimler seçilemez."
     }
   }

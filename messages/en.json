@@ -4946,14 +4946,24 @@
       "EUR": "",
       "USD": "",
       "ALTIN_GRAM_24": "",
-      "ALTIN_GRAM_22": ""
+      "ALTIN_GRAM_22": "",
+      "CEYREK_ALTIN": "",
+      "YARIM_ALTIN": "",
+      "TAM_ALTIN": "",
+      "CUMHURIYET_ALTINI": "",
+      "ATA_LIRA_ALTINI": ""
     },
     "birimMiktar": {
       "TRY": "",
       "EUR": "",
       "USD": "",
       "ALTIN_GRAM_24": "",
-      "ALTIN_GRAM_22": ""
+      "ALTIN_GRAM_22": "",
+      "CEYREK_ALTIN": "",
+      "YARIM_ALTIN": "",
+      "TAM_ALTIN": "",
+      "CUMHURIYET_ALTINI": "",
+      "ATA_LIRA_ALTINI": ""
     },
     "borcTlBaslik": "",
     "borcTlNot": "",

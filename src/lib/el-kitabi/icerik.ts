@@ -1361,7 +1361,7 @@ ${baslik("ozellikler")}
 olmayan isteğe bağlı özellikler burada açılıp kapanır.</p>
 <h3>Döviz ve altın borç</h3>
 <p>Açıkken Finansman'da yeni kaynak açarken <strong>USD</strong> ve
-<strong>gram altın (24 / 22 ayar)</strong> birimi seçilebilir. Borç kendi
+<strong>gram altın (24 / 22 ayar)</strong> ve adetle sayılan altın (<strong>çeyrek · yarım · tam · Cumhuriyet · Ata lira</strong>) birimi seçilebilir. Adetli altın grama çevrilmez; «5 adet çeyrek» olarak tutulur, fiyatı adet başına girilir. Borç kendi
 biriminde tutulur («80 gr · 24 ayar»); TL karşılığı, Finansman sayfasına
 girdiğin son fiyatla <strong>tahmini</strong> olarak ve fiyat tarihiyle
 gösterilir. Kapatınca daha önce girilmiş kayıtlar gizlenmez, yalnız yeni

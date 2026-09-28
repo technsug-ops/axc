@@ -47,6 +47,16 @@ enum FinansmanBirimi {
   USD
   ALTIN_GRAM_24
   ALTIN_GRAM_22
+  /// K304-③ (kullanıcı kararı 29.09.2026) — ADETLE sayılan altınlar. Borç
+  /// «5 çeyrek» olarak tutulur, grama ÇEVRİLMEZ (geri ödeme de çeyrekle;
+  /// çeyreğin fiyatı gramdan farklı işler). Gramaj hesaba GİRMEZ.
+  /// ⚠ SONA EKLENDİ — MySQL ENUM sıralıdır, araya eklemek sırayı bozar.
+  CEYREK_ALTIN
+  YARIM_ALTIN
+  TAM_ALTIN
+  CUMHURIYET_ALTINI
+  /// Kullanıcı listesinde Cumhuriyet'ten AYRI yazıldı (29.09.2026) — ayrı tutulur.
+  ATA_LIRA_ALTINI
 }
 
 /// K304 — FİNANSMAN HAREKETİ. Nakit etkisi: GIRIS (+) · GERI_ODEME (−) ·
@@ -1193,11 +1203,14 @@ model Finansman {
   kaynakAdi String   @db.VarChar(191)
   /// Borcun BİRİMİ; hareketler bunu devralır. Kur çevirisi yapılmaz.
   birim FinansmanBirimi @default(TRY)
-  /// ⚠ ESKİDİ (K304-②) — `birim` yerine geçti; KOD OKUMAZ, YAZMAZ. Sütun ŞİMDİ
-  /// düşürülmedi: canlıdaki K304 kodu onu okuyor ve migration kod yayından önce
-  /// koşar — düşürülseydi aradaki dakikalarda nakit takvimi/panel 500 verirdi.
-  /// Yeni kod canlıya çıkınca AYRI migration'la kaldırılır (genişlet → daralt).
-  currency Currency @default(TRY)
+  /*
+   * ⚠ ESKİ `currency` ALANI ŞEMADAN ÇIKARILDI (K304-③, 29.09.2026) — SÜTUN
+   * VERİTABANINDA HÂLÂ DURUYOR (NOT NULL DEFAULT 'TRY', yeni kayıt onsuz
+   * yazılabilir). Sıra: ① alan şemadan çıkar, kod yayına girer (Prisma artık
+   * o sütunu SEÇMEZ) → ② sütun ayrı migration'la düşürülür. Ters sıra: şemada
+   * alan varken sütun düşerse, çalışan kod her `findMany`de onu otomatik
+   * seçer ve Finansman sayfası yeni kod yayına girene kadar 500 verirdi.
+   */
 
   note String? @db.Text
 

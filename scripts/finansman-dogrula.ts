@@ -108,6 +108,13 @@ console.log("\n1) kural — değerle");
   kontrol("gider: altın borçta TL karşılığı ZORUNLU", giderKaydi("ALTIN_GRAM_24", 2, null) === "GIDER_TL_GEREKLI");
   kontrol("gider: altın borçta girilen TL yazılır", JSON.stringify(giderKaydi("ALTIN_GRAM_24", 2, 10300)) === '{"tutar":10300,"paraBirimi":"TRY"}');
   kontrol("gider: faiz sıfırsa gider DOĞMAZ", giderKaydi("USD", 0, 500) === null);
+  /* K304-③ — adetli altın (kullanıcı listesi 29.09.2026). */
+  const adetli = ["CEYREK_ALTIN", "YARIM_ALTIN", "TAM_ALTIN", "CUMHURIYET_ALTINI", "ATA_LIRA_ALTINI"] as const;
+  kontrol("özellik AÇIK: beş adetli altın da seçilebilir", adetli.every((b) => secilebilirBirimler(true).includes(b)));
+  kontrol("özellik KAPALI: adetli altın SEÇİLEMEZ", adetli.every((b) => !secilebilirBirimler(false).includes(b)));
+  kontrol("adetli altın para birimi DEĞİL", adetli.every((b) => !paraBirimiMi(b)));
+  kontrol("TL karşılığı: 5 çeyrek × 8.700 (adet başına fiyat)", tlKarsiligi(5, "CEYREK_ALTIN", 8700) === 43500);
+  kontrol("gider: çeyrek borçta TL karşılığı ZORUNLU", giderKaydi("CEYREK_ALTIN", 1, null) === "GIDER_TL_GEREKLI");
 
   const plan = odemePlaniCoz("15.10.2026\t8.333,33\t2.450,00\t122,50\n\n15.11.2026;8.333,33;2.310,00\n31.02.2026 1,00 1,00\n15.12.2026 12.5 1,00");
   kontrol("plan: iki geçerli satır okunur (vergisiz satır vergi 0)", plan.satirlar.length === 2 && plan.satirlar[1].vergi === 0 && plan.satirlar[0].vade === "2026-10-15", plan);

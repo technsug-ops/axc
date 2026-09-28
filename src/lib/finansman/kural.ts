@@ -50,9 +50,16 @@ export const IZINLI_HAREKETLER: Readonly<Record<FinansmanTuru, readonly HareketT
  *  seçilir. ⚠ Kapalıyken önceden girilmiş USD/altın kaydı GİZLENMEZ.
  * ============================================================================
  */
-export type FinansmanBirimi = "TRY" | "EUR" | "USD" | "ALTIN_GRAM_24" | "ALTIN_GRAM_22";
+export type FinansmanBirimi =
+  | "TRY" | "EUR" | "USD"
+  | "ALTIN_GRAM_24" | "ALTIN_GRAM_22"
+  /** K304-③ — ADETLE sayılan altın; grama çevrilmez, fiyatı adet başına girilir. */
+  | "CEYREK_ALTIN" | "YARIM_ALTIN" | "TAM_ALTIN" | "CUMHURIYET_ALTINI" | "ATA_LIRA_ALTINI";
 export const TEMEL_BIRIMLER: readonly FinansmanBirimi[] = ["TRY", "EUR"];
-export const EK_BIRIMLER: readonly FinansmanBirimi[] = ["USD", "ALTIN_GRAM_24", "ALTIN_GRAM_22"];
+export const EK_BIRIMLER: readonly FinansmanBirimi[] = [
+  "USD", "ALTIN_GRAM_24", "ALTIN_GRAM_22",
+  "CEYREK_ALTIN", "YARIM_ALTIN", "TAM_ALTIN", "CUMHURIYET_ALTINI", "ATA_LIRA_ALTINI",
+];
 export const TUM_BIRIMLER: readonly FinansmanBirimi[] = [...TEMEL_BIRIMLER, ...EK_BIRIMLER];
 
 export function secilebilirBirimler(cokBirimAcik: boolean): readonly FinansmanBirimi[] {
