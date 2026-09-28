@@ -244,4 +244,11 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    */
   "liste-aramasi-mutasyon:kontrol",
   "hakedis-ozeti-mutasyon:kontrol",
+  /**
+   * K298 (28.09.2026) — `tarife-eslesme` ve `teklif-tanima` İKİSİ DE
+   * `src/lib/komisyon/tarife-eslesme.ts`i mutasyona uğratıyor (eşleşme kuralı
+   * `tarife-yaz.ts`ten ortak gövdeye çıkınca `teklif-tanima`nın çapaları da oraya
+   * taşındı). ⚠ Push kapısında ölçümle zorlandı.
+   */
+  "tarife-eslesme-mutasyon:kontrol",
 ];
