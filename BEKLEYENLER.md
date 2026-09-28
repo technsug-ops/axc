@@ -13,6 +13,27 @@
 
 ---
 
+## 🔴 K303 — ÇOK FİRMALI YAPI (MULTI-TENANCY) · 28.09.2026 · [AŞAMA 0 ✓ · AŞAMA 1 TASARIM YAZILDI — KULLANICI ONAYI BEKLİYOR]
+
+**Kullanıcı kararı 28.09.2026:** çok-firma veri katmanına ŞİMDİ geçilir; 13.08 sırası çevrildi (gerekçesi
+`CLAUDE.md`de, eskisi silinmeden). HB yazma ve testi bekleyen K222–K230 · K264 bilerek sonraya kaldı.
+Seçimler: **otomatik firma süzgeci + desen yasağı bekçisi** · **ortak veri = kanal tanımları + izinler +
+kargo firmaları/tarifeleri**, gerisi firmaya ait.
+
+**Tasarım:** `docs/cok-firma-tasarimi.md` — sınıflandırma (51 model), tekillik çevrimi (~25 alan), mekanizma,
+cron/kimlik, 3 adımlı geçiş, 4 aşama.
+
+**Canlı prova (salt okuma):** firma 1 (`AXC`) · üyelik 3/3 `AXC` · `companyId` taşıyan model 3/51 ·
+prisma kullanan dosya 233 · ham SQL 5 dosya · cron 7 · kimlikler `.env`de tek takım.
+⛔ **BULGU:** `AuditLog.companyId` **76.310/76.310 BOŞ** — alan var, yazıcı geçirmiyor («şemadaki alan da bir
+iddiadır»). Aşama 2'de geçmiş `AXC`ye bağlanır, Aşama 3'te bağlamdan OTOMATİK dolar.
+
+**AÇIK — Aşama 2'den önce kullanıcı kararı:** ① roller firmaya mı ait (öneri: evet, yeni firmaya üç rolün
+kopyası) · ② çok üyeli kullanıcıda aktif firma seçici (öneri: üst çubuk) · ③ sistem nedenleri yeni firmaya
+tohum (öneri: evet).
+
+---
+
 ## 🟢 K302 — ÜRÜNLER EXCEL'İ EKRANLA AYNI ARAMAYI YAPAR · 28.09.2026 · [CANLIDA a2926c8 — HALİL TESTİ GEÇTİ 28.09 (`HBCV00005YA7X6` ekranda 1 kayıt, Excel'de aynı 1 satır); MİMAR ONAYI BEKLİYOR]
 
 **Kusur (K289'da ölçülmüş, dokunulmamıştı):** `/urunler` ürünü kanal SKU'su, eski kod (K287) ve

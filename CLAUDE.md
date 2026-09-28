@@ -27,6 +27,13 @@ Bu sistem ileride satılabilir bir SaaS olacak. **SIRA NET (karar 13.08.2026):**
 sonra çok-firma veri katmanı; SaaS EN SON. Mimari kararlar SaaS-uyumlu
 alınmaya devam eder ama **SaaS'a özel iş AÇILMAZ** (bkz. BEKLEYENLER →
 Büyüme sırası).
+⭐ **SIRA ÇEVRİLDİ — kullanıcı kararı 28.09.2026 (K303):** çok-firma veri
+katmanına ŞİMDİ geçildi. Tek firma tarafında açık kalanlar (Hepsiburada
+yazma — Faz 4'ün son maddesi; Halil testi bekleyen K222–K230 · K264)
+bilerek SONRAYA bırakıldı. Yukarıdaki 13.08 gerekçesi SİLİNMEDİ: kanıtlanmamış
+paketlerin üstüne kurulan çok-firma katmanında bir hatanın kaynağını ayırmak
+zorlaşır — bu risk kabul edilerek sıra değişti. SaaS'a özel iş (kayıt sayfası,
+faturalama, plan) hâlâ AÇILMAZ. Tasarım: `docs/cok-firma-tasarimi.md`.
 
 Bu nedenle hiçbir firma/marka adı sistemin YAPISINA gömülmez.
 
@@ -244,6 +251,11 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
     kanal başına AYRI düğmeyle)_
   · barkod ✓ (`/okut` · `/paketle` · `/yerlestir` + kamera)
   · yetki (RBAC) ✓ (`lib/yetki`, rol+izin, `canli:yetki` bekçisi)
+- **Çok-firma veri katmanı (ŞİMDİ — K303, 28.09.2026):** kullanıcı kararıyla
+  Faz 4 kapanmadan öne alındı (bkz. Adlandırma standardı → SIRA ÇEVRİLDİ).
+  Aşama 0 ✓ karar kaydı · Aşama 1 tasarım (`docs/cok-firma-tasarimi.md`,
+  onay bekliyor) · Aşama 2 şema+geçiş · Aşama 3 firma istemcisi+bekçi ·
+  Aşama 4 izolasyon testi.
 Bir faza ait olmayan özelliği o fazda EKLEME.
 
 ⚠ **FAZ GÖSTERGESİ BİR VERİDİR VE BAYATLAYABİLİR — 09.09.2026'da bayattı.**
