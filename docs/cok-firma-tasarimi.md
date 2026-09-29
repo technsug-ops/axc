@@ -211,3 +211,37 @@ _Soruların ilk hâli:_
    üst çubukta firma seçici; seçim oturuma yazılır.
 3. **Sistem nedenleri** (`StockAdjustmentReason.systemKey`) her yeni firmaya
    tohum olarak kopyalanır mı? Öneri: evet, firma açılışında.
+
+## 9. Sağlayıcı düzlemi — «süper admin» (kullanıcı kararı 30.09.2026)
+
+Paketleri tanımlamak ve firmaya paket atamak (bkz. `docs/saas-paketleri.md`)
+**müşteri firmanın işi değildir** — yapabilseydi firma yöneticisi kendine
+Premium açardı. Bu işler ürünü SAĞLAYANIN düzlemindedir.
+
+**Bugün var olan temel:** `src/lib/yetki/izinler.ts` → `saglayici: true`
+işaretli izinler (`SAGLAYICI_IZINLERI`) firma rollerine otomatik DAĞITILMAZ.
+Tek örneği `destek.yonet`. Tek firmada iki şapka aynı kişide: CEO rolü
+«31/31 + SAĞLAYICI» (`canli:yetki` çıktısı).
+
+**Çok firmada doğan iki şey:**
+
+1. ⛔ **ROL KOPYASI DELİĞİ.** §8 ① «yeni firmaya bugünkü rollerin kopyası»
+   diyor. Bugünkü CEO rolü sağlayıcı izni TAŞIYOR; olduğu gibi kopyalanırsa
+   her yeni müşteri firmanın yöneticisi destek taleplerini çözer ve (paket
+   izni eklendiğinde) kendi paketini değiştirir. **Kural:** rol kopyası
+   `SAGLAYICI_IZINLERI`ni SÜZEREK yapılır; bekçi «sağlayıcı olmayan firmada
+   sağlayıcı izni taşıyan rol» görürse kırmızı yanar (mutasyonla sınanır:
+   süzgeci kaldıran kopya kırmızı yanmalı).
+2. **Sağlayıcı yetkisi nerede yaşar?** Bugün firma rolünde; oysa sağlayıcı
+   BÜTÜN firmaları görür, tek firmanın rolü bunu taşıyamaz. Karar (kullanıcı «tamam kabul», 30.09.2026): yetki
+   **kişiye** bağlanır (küresel), firma rolüne değil — `User` üzerinde
+   sağlayıcı işareti ya da ayrı sağlayıcı üyelik tablosu. Seçim Aşama 2'de
+   şema yazılırken verilir; ⚠ o güne kadar `destek.yonet` firma rolünde
+   kalır ve bu bilerek yazılmıştır.
+
+**Sağlayıcı ekranları için kurallar (açıldıklarında):**
+- İzni olmayan istek **404** alır («yetkiniz yok» demek ekranın varlığını sızdırır).
+- Sağlayıcı ekranı firma süzgecinin DIŞINDA okur (bütün firmalar) — bu,
+  §4-3 desen yasağının **beyanlı istisnasıdır** (`SISTEM:` gerekçesiyle);
+  beyansız her çıplak okuma yine kırmızıdır.
+- Her paket ataması/değişikliği `AuditLog`a: hangi firma, eski paket, yeni paket, kim.

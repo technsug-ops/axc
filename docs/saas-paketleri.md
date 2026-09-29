@@ -59,3 +59,17 @@ ve **esnek paket** kararı aldı — bonus da artık bir veri seçimidir (bir
 
 - Üyeliksiz, ücretsiz web aracı (hesaplama motorunun sade hâli, müşteri
   çekmek için): SaaS aşamasına not. Bugün açılmaz.
+
+## 5. Kim yönetir — sağlayıcı düzlemi (kullanıcı kararı 30.09.2026)
+
+Paket tanımlama ve firmaya paket atama **yalnız sağlayıcının** işidir; firma
+rollerine hiçbir koşulda dağıtılmaz.
+
+- İzin: `paket.yonet`, `saglayici: true` işaretiyle (mekanizma bugün var:
+  `SAGLAYICI_IZINLERI`, otomatik dağıtımı engeller). Yetkinin iki bacağı
+  geçerli: anahtar `izinler.ts` + `seed-yetki` → `SONRADAN_DOGAN`, deploy
+  sonrası `canli:yetki`.
+- Firma yöneticisi kendi paketini **görür** (ne var, ne yok, neyi açmak için
+  hangi paket gerekir), **değiştiremez**.
+- Ayrıntı ve çok-firma tarafı (rol kopyası deliği, yetkinin kişiye bağlanması):
+  `docs/cok-firma-tasarimi.md` §9.
