@@ -109,7 +109,11 @@ console.log("\n2) zincir — tek gövde, şartlı ve izli yazım, izin, yedek");
   kontrol("ürün güncellemesi bağı YENİDEN hesaplıyor (marka değişince eski bağ kalmaz)", urunEylem.includes("const markaBagi = await markaBagiBul(veri.marka);") && urunEylem.includes("brandId: markaBagi,"));
 
   const eylem = oku("src/app/ayarlar/markalar/eylemler.ts");
-  kontrol("üç eylem de izni KENDİ gövdesinde soruyor (ayar.yaz)", adet(eylem, 'if (!(await izinVarMi("ayar.yaz"))) return { tamam: false, hata: "YETKISIZ" };') === 3);
+  /* ⚠ ÖLÇÜT TAŞINDI (K306): eskisi «üç eylem» diye SABİT 3 sayıyordu; dördüncü
+     eylem (yeniMarkaEkle) eklenince kırmızı yandı. Sayı artık kaynaktan: HER
+     dışa açık eylem izni kendi gövdesinde sorar. */
+  const eylemSayisi = (eylem.match(/export async function \w+\(/g) ?? []).length;
+  kontrol(`her eylem izni KENDİ gövdesinde soruyor (ayar.yaz) — ${eylemSayisi} eylem`, eylemSayisi >= 4 && adet(eylem, 'if (!(await izinVarMi("ayar.yaz"))) return { tamam: false, hata: "YETKISIZ" };') === eylemSayisi);
   const toplu = eylem.slice(eylem.indexOf("export async function hepsiniEkle"), eylem.indexOf("export async function markaKoduKaydet"));
   kontrol("toplu ekleme kodsuz markayı ATLIYOR ve SAYIYOR", toplu.includes("if (m.tabloId === null && m.oneri === null) {\n        kodsuz++;\n        continue;"));
   kontrol("  ...aynı çekirdekten yazıyor", adet(toplu, "await markaEkleVeBagla(m.anahtar, m.oneri ?? undefined)") === 1);
@@ -121,6 +125,16 @@ console.log("\n2) zincir — tek gövde, şartlı ve izli yazım, izin, yedek");
   const iBrand = yedek.indexOf('"Brand",');
   const iProduct = yedek.indexOf('"Product",');
   kontrol("yedek tabloyu taşıyor ve ürünlerden ÖNCE geri yüklüyor", iBrand >= 0 && iProduct >= 0 && iBrand < iProduct);
+
+  /* K306 — ürün beklemeden yeni marka (çıkmaz: Firma SKU kodu marka tablosundan). */
+  const yazK306 = oku("src/lib/marka-kodu-yaz.ts");
+  const adla = yazK306.slice(yazK306.indexOf("export async function markaAdlaEkle("), yazK306.indexOf("export async function markaEkleVeBagla("));
+  kontrol("K306 yeni marka gövdesi var", adla.length > 100);
+  kontrol("K306 aynı anahtar tabloda varsa YENİ KAYIT AÇMAZ", /if \(mevcut\) return \{ durum: "ZATEN_VAR"/.test(adla) && adla.indexOf("ZATEN_VAR") < adla.indexOf("prisma.brand.create("));
+  kontrol("K306 ürün BEKLEMEZ (URUN_YOK kapısı bu gövdede yok)", !adla.includes('return { durum: "URUN_YOK" }'));
+  kontrol("K306 kod denetimi atlanmaz", /const hata = kodDenetle\(secilen, kodlar\);\s*if \(hata\) return/.test(adla));
+  kontrol("K306 eylem izin sorar", /export async function yeniMarkaEkle[\s\S]{0,200}izinVarMi\("ayar\.yaz"\)/.test(oku("src/app/ayarlar/markalar/eylemler.ts")));
+  kontrol("K306 Markalar ekranında «Yeni marka ekle» kutusu ÇİZİLİYOR", sayfa.includes("<YeniMarkaFormu />"));
 }
 kosanBolumler.push("zincir");
 

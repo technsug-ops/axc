@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { KodHatasi } from "@/lib/marka-kodu";
 import { markaDurumu } from "@/lib/marka-kodu-veri";
-import { markaEkleVeBagla, markaKoduDegistir } from "@/lib/marka-kodu-yaz";
+import { markaAdlaEkle, markaEkleVeBagla, markaKoduDegistir } from "@/lib/marka-kodu-yaz";
 import { izinVarMi } from "@/lib/yetki";
 
 /**
@@ -38,6 +38,30 @@ export async function markaEkle(anahtar: string, kod: string | null): Promise<Ey
     return { tamam: true, kod: s.kod, baglanan: s.baglanan };
   } catch (e) {
     console.error("[markaEkle] beklenmeyen hata:", anahtar, e);
+    return { tamam: false, hata: "HATA" };
+  }
+}
+
+/**
+ * K306 — ÜRÜN BEKLEMEDEN yeni marka (adla). Kod boşsa öneri; aynı marka
+ * (yazım farkı dahil) tabloda varsa YENİ KAYIT AÇILMAZ, var olan söylenir.
+ */
+export type YeniMarkaSonucu =
+  | { tamam: true; kod: string; zatenVardi: boolean; ad: string }
+  | { tamam: false; hata: "YETKISIZ" | "AD_BOS" | "KODSUZ" | "HATA" | KodHatasi };
+
+export async function yeniMarkaEkle(ad: string, kod: string): Promise<YeniMarkaSonucu> {
+  try {
+    if (!(await izinVarMi("ayar.yaz"))) return { tamam: false, hata: "YETKISIZ" };
+    const s = await markaAdlaEkle(ad, kod.trim() === "" ? undefined : kod.trim().toUpperCase());
+    if (s.durum === "AD_BOS") return { tamam: false, hata: "AD_BOS" };
+    if (s.durum === "ZATEN_VAR") return { tamam: true, kod: s.kod, zatenVardi: true, ad: s.ad };
+    if (s.durum === "KOD_HATASI") return { tamam: false, hata: s.hata };
+    if (s.durum !== "EKLENDI" && s.durum !== "BAGLANDI") return { tamam: false, hata: "KODSUZ" };
+    yenile();
+    return { tamam: true, kod: s.kod, zatenVardi: false, ad: ad.trim() };
+  } catch (e) {
+    console.error("[yeniMarkaEkle] beklenmeyen hata:", ad, e);
     return { tamam: false, hata: "HATA" };
   }
 }

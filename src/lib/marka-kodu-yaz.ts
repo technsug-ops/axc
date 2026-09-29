@@ -37,6 +37,48 @@ async function bagsizUrunler(anahtar: string) {
  * Anahtarı tabloya ekler (yoksa) ve bağsız ürünlerini bağlar.
  * `kod` verilirse o denenir (biçim + benzersizlik), verilmezse öneri.
  */
+/**
+ * ============================================================================
+ *  ÜRÜN BEKLEMEDEN MARKA AÇMA (K306, kullanıcı bulgusu 29.09.2026)
+ * ----------------------------------------------------------------------------
+ *  «Yeni ürün yükleyeceğim, marka yok diye yüklemiyor.» ÇIKMAZ: Firma SKU
+ *  zorunlu ve kodu marka tablosundan üretiliyor; tabloya marka ise yalnız o
+ *  markayla KAYITLI ÜRÜN varsa (`markaEkleVeBagla` → `URUN_YOK`) ya da Excel
+ *  listesiyle giriyordu. Yeni markanın ilk ürünü hiç açılamıyordu. (Anayasa:
+ *  «kullanıcıya şunu tanımla diyorsam, onu tanımlayacak ekran VAR MI».)
+ *  Bu gövde adla açar; aynı anahtar (yazım farkı) zaten varsa YENİ KAYIT AÇMAZ,
+ *  var olanı döndürür. Bekleyen (bağsız) ürün varsa onları da bağlar.
+ * ============================================================================
+ */
+export async function markaAdlaEkle(ad: string, kod?: string): Promise<EkleSonucu | { durum: "AD_BOS" } | { durum: "ZATEN_VAR"; kod: string; ad: string }> {
+  const temizAd = ad.trim().replace(/\s+/g, " ");
+  const anahtar = markaAnahtari(temizAd);
+  if (!anahtar) return { durum: "AD_BOS" };
+  const mevcut = await prisma.brand.findUnique({ where: { anahtar }, select: { code: true, name: true } });
+  if (mevcut) return { durum: "ZATEN_VAR", kod: mevcut.code, ad: mevcut.name };
+  const urunler = await bagsizUrunler(anahtar);
+  if (urunler.length > 0) return markaEkleVeBagla(anahtar, kod);
+  const kodlar = new Set((await prisma.brand.findMany({ select: { code: true } })).map((m) => m.code));
+  const secilen = kod ?? kodOner(anahtar, kodlar);
+  if (!secilen) return { durum: "KODSUZ" };
+  const hata = kodDenetle(secilen, kodlar);
+  if (hata) return { durum: "KOD_HATASI", hata };
+  let marka: { id: string; code: string };
+  try {
+    marka = await prisma.brand.create({ data: { anahtar, name: temizAd, code: secilen }, select: { id: true, code: true } });
+  } catch (e) {
+    if (benzersizlikHatasi(e)) return { durum: "KOD_HATASI", hata: "KULLANIMDA" };
+    throw e;
+  }
+  await izYaz({
+    action: "MARKA_EKLENDI",
+    targetType: "Brand",
+    targetId: marka.id,
+    detail: JSON.stringify({ anahtar, ad: temizAd, kod: secilen, oneriMi: kod === undefined, urunsuz: true }),
+  });
+  return { durum: "EKLENDI", brandId: marka.id, kod: marka.code, baglanan: 0 };
+}
+
 export async function markaEkleVeBagla(anahtar: string, kod?: string): Promise<EkleSonucu> {
   const urunler = await bagsizUrunler(anahtar);
   let marka = await prisma.brand.findUnique({ where: { anahtar }, select: { id: true, code: true } });

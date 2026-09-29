@@ -1575,15 +1575,15 @@
     "fireZarari": "Fire / hasar / kayıp",
     "fireKazanci": "Fazla çıkan mal",
     "sayimKazanci": "Sayımda fazla çıkan",
-    "duzeltmeToplamNotu": "kayıp − kazanç",
+    "duzeltmeToplamNotu": "fire · hasar · kayıp — gerçek kayıp",
     "sayimZarari": "Sayım farkı",
-    "duzeltmeToplam": "Düzeltme zararı",
-    "duzeltmeNotu": "Stok defterinden türetilir; gider tablosuna YAZILMAZ, çift kayıt olmaz. GERÇEK NET'ten düşer.",
+    "duzeltmeToplam": "Fire etkisi (GERÇEK NET'ten düşen)",
+    "duzeltmeNotu": "Stok defterinden türetilir; gider tablosuna YAZILMAZ. Fire/hasar/kayıp GERÇEK NET'ten düşer. Sayım farkı ve fazla çıkan mal bir VERİ DÜZELTMESİDİR (çoğunlukla girilmemiş alım ya da hatalı kayıt) — işletme kârı değildir, GERÇEK NET'e girmez.",
     "duzeltmeAdet": "{sayi} adet",
     "duzeltmeBilinmeyen": "{sayi} adet düzeltmenin maliyeti bilinmiyor — paraya çevrilemedi, toplama girmedi.",
     "tazminatGeliriBaslik": "Tazminat geliri",
     "tazminatTalepleriGor": "Talepleri gör",
-    "tazminatGeliriNotu": "Tedarikçiden tahsil edilmiş {sayi} talep. GERÇEK NET'e eklenir.",
+    "tazminatGeliriNotu": "Tahsil edilmiş {sayi} tazminat (satış iadesi / kargo). GERÇEK NET'e eklenir.",
     "tazminatUrunBilinmiyor": "Ürün bilinmiyor",
     "kiyasBaslik": "Karşılaştır:",
     "kiyas_onceki": "Önceki dönem",
@@ -1597,7 +1597,11 @@
     "giderKiyasNotu": "aylık sabit giderler belirli güne düşer, eşit gün kıyası bunu tam yakalamayabilir",
     "devredenBaslik": "Devreden KDV",
     "devredenNot": "iade nedeniyle ödenecek KDV negatife düştü — gelecek döneme mahsup, kâra karışmaz",
-    "kiyasOncekiKisa": "önceki"
+    "kiyasOncekiKisa": "önceki",
+    "veriDuzeltmesi": "Veri düzeltmesi (GERÇEK NET'e girmez)",
+    "veriDuzeltmesiNotu": "sayım fazlası − sayım eksiği + fazla çıkan mal",
+    "alimIadesiNotu": "Ayrıca {sayi} alım iadesi ({tutar}): mal kabulde hasarlı gelen, stoğa hiç girmemiş ürünün parası karta döndü. Gelir DEĞİLDİR, GERÇEK NET'e girmez; alımın kartının borcundan düşer.",
+    "alimIadesiEtiketi": "alım iadesi · karta döndü"
   },
   "KarSorunu": {
     "baslik": "Nasıl düzeltilir?",
@@ -4686,7 +4690,8 @@
       "DEGISMIS": "Kod bu arada başka biri tarafından değiştirilmiş; sayfayı yenileyip tekrar deneyin.",
       "BICIM": "Kod tam 3 karakter olmalı: harf (A-Z) ya da rakam.",
       "KULLANIMDA": "Bu kod başka bir markada kullanılıyor — iki markaya aynı kod verilemez.",
-      "HATA": "Beklenmeyen bir hata oluştu; kayıt yapılmadı."
+      "HATA": "Beklenmeyen bir hata oluştu; kayıt yapılmadı.",
+      "AD_BOS": "Marka adı boş olamaz."
     },
     "evet": "Evet",
     "hayir": "Hayır",
@@ -4731,6 +4736,16 @@
         "YETKISIZ": "Bu işlem için ürün düzenleme yetkiniz yok.",
         "HATA": "Beklenmeyen bir hata oluştu; hiçbir şey yazılmadı."
       }
+    },
+    "yeniMarka": {
+      "baslik": "Yeni marka ekle",
+      "adEtiketi": "Marka adı",
+      "adOrnek": "örn. Philips",
+      "kodEtiketi": "Kod (3 harf)",
+      "ekle": "Markayı ekle",
+      "not": "Kod boş bırakılırsa sistem önerir. Aynı markanın farklı yazımı tabloda varsa yeni kayıt açılmaz. Eklenince yeni ürünün Firma SKU'su bu kodla üretilebilir.",
+      "eklendi": "«{ad}» eklendi, kodu {kod}. Artık ürün formunda «SKU öner» bu kodu kullanır.",
+      "zatenVar": "«{ad}» zaten tabloda (kod {kod}); yeni kayıt açılmadı."
     }
   },
   "SkuOnizleme": {

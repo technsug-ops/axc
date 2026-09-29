@@ -13,6 +13,39 @@
 
 ---
 
+## 🔴 K306 — MARKALAR: ÜRÜN BEKLEMEDEN «YENİ MARKA EKLE» · 29.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı bulgusu:** «Yeni ürün yükleyeceğim, marka yok diye yüklemiyor.» ÇIKMAZ: Firma SKU zorunlu, kodu marka
+tablosundan; tabloya marka yalnız o markayla KAYITLI ürün varsa ya da Excel listesiyle giriyordu — yeni markanın İLK ürünü
+açılamıyordu (anayasa: «şunu tanımla diyorsam, tanımlayacak ekran var mı»). **Çare:** Markalar'da «Yeni marka ekle»
+(ad + 3 harf kod, boşsa öneri). Aynı marka (yazım farkı dahil) tabloda varsa yeni kayıt AÇILMAZ. İzin `ayar.yaz`.
+**Ölçüldü:** `marka-kodu:dogrula` 43 (eskiyen «üç eylem» ölçütü kaynaktan sayıya taşındı) · mutasyon 20/20.
+**Halil testi:** Ayarlar → Markalar → «Yeni marka ekle» → yeni markanızın adı → kod boş → Markayı ekle → «… eklendi, kodu XXX»
+→ Ürünler → Yeni ürün → marka alanına aynı adı yazın → «SKU öner» → XXX'li kod gelir → kaydet.
+
+---
+
+## 🔴 K305 — RAPOR: SAYIM FARKI KÂR DEĞİL · ALIM İADESİ GELİR DEĞİL, KART BORCUNDAN DÜŞER · 29.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı bulgusu (eylül raporu):** GERÇEK NET'e **+₺34.398,61** (sayım/düzeltme) ve **+₺799,91** (tazminat) eklenmiş.
+**Ölçüldü:** eylül düzeltme kazancı ₺54.047,97 (8 satır: Shark ×3 ₺26.997 · Anker ×5 ₺11.995 …) − kayıp ₺19.649,36.
+Kek kalıbı: 6 sipariş, -16'nın hasarlı 1 adedi stoğa HİÇ girmedi (5 giriş = 5 satış) — maliyeti kâra yansımadığı hâlde
+iadesi gelir sayıldı. Alım kalemine bağlı tahsil edilmiş tazminat: **5 kayıt · ₺13.001,61**, hepsi aynı durumda.
+**Kullanıcı kararı:** fire/hasar/kayıp GERÇEK NET'ten düşer; sayım farkı + fazla çıkan mal «veri düzeltmesi» — AYRI satır,
+GERÇEK NET'e girmez. Alım iadesi gelir değil; alımın ORİJİNAL kartının borcundan düşer (11.09 kararıyla uyumlu: seçim yok).
+**Kod:** `rapor.ts` (eski gerekçe silinmedi, çevrildi) · `lib/kart-iadesi(.ts|-veri.ts)` · kart borcu ekranı ×2 · panel özeti ·
+nakit takvimi (desen: gider ekleyen her gövde iadeyi de ekler). Eskiyen ölçütler gerekçesiyle taşındı (düzeltme ×2, rapor).
+**Ölçüldü:** `kart-iadesi:dogrula` 13 · `rapor:dogrula` 98 · `duzeltme:dogrula` 97 · mutasyon **9/9** (3 bekçi) · 20 bekçi yeşil.
+⚠ **YAN BULGU (dokunulmadı):** kart borcunu kuran gövdeler alım tutarını FARKLI hesaplıyor — panel özeti kargo+vergiyi
+ekliyor, nakit takvimi eklemiyor. Ayrı kalem.
+**Halil testi:**
+1. Rapor → Bu ay → GERÇEK NET formülünde **+₺34.398,61 ve +₺799,91 YOK**; yalnız «− fire» (₺4.047,00) düşer.
+2. «Fire ve düzeltme» kutusunda «Veri düzeltmesi (GERÇEK NET'e girmez)» = **+₺38.445,61** (6.212 + 47.835,97 − 15.602,36).
+3. Tazminat kutusunda Tefal Delibake satırı «alım iadesi · karta döndü», altında «1 alım iadesi (₺799,91) … GERÇEK NET'e girmez».
+4. Kart borcu → S.ahmet Garanti → 19.09'u kapsayan ekstrede «ALM-HB-260911-16 · iade» satırı **−₺799,91**.
+
+---
+
 ## 🔴 K304 — FİNANSMAN: SERMAYE · ORTAK/ÜÇÜNCÜ KİŞİ BORCU · BANKA KREDİSİ · 28.09.2026 · [MIGRATION CANLIDA · KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı isteği 28.09:** «firmaya sermaye artırımı olarak borç girecek, nerede gösteririz» → üç tür + banka kredisi

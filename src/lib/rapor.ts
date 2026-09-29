@@ -127,6 +127,15 @@ export type RaporTazminat = {
   /** Ekranda "kimden" göstermek için — adsız satır yazılmaz (İlke #14). */
   karsiTaraf: string | null;
   urunAdi: string | null;
+  /**
+   * K305 (kullanıcı kararı 29.09.2026) — ALIM İADESİ mi. Alım kalemine bağlı
+   * tazminat, mal kabulde HASARLI gelip STOĞA HİÇ GİRMEMİŞ adedin parasının
+   * karta dönmesidir. O adedin maliyeti kâra hiç yansımadı; iadesini gelir
+   * saymak kârı şişirir (ölçüldü: 5 kayıt · ₺13.001,61). Bu yüzden GERÇEK
+   * NET'e GİRMEZ, alımın kartının borcundan düşer. Satış iadesine/kargoya bağlı
+   * tazminat GELİRDİR (orada maliyet kâra yansımış).
+   */
+  alimIadesi: boolean;
 };
 
 export type RaporGirdisi = {
@@ -225,7 +234,16 @@ export type ParaBirimiRaporu = {
   sayimAdedi: number;
   sayimKazanci: number;
   sayimKazancAdedi: number;
+  /**
+   * GERÇEK NET'ten düşen düzeltme — K305'ten beri YALNIZ FİRE KAYBI
+   * (fire/hasar/kayıp). Ad korunur ki okuyanlar kırılmasın; anlamı daraldı.
+   */
   duzeltmeZarari: number;
+  /**
+   * K305 — VERİ DÜZELTMESİ ETKİSİ (sayım fazlası − sayım eksiği + fazla çıkan
+   * mal). Pozitif = kazanç yönü. GERÇEK NET'e GİRMEZ; ayrı satırda yazar.
+   */
+  veriDuzeltmeEtkisi: number;
   /** Maliyeti bilinmedigi icin paraya cevrilemeyen adet. Sifir sayilmaz. */
   duzeltmeBilinmeyenAdet: number;
   sabitGiderNetDusen: number;
@@ -235,6 +253,9 @@ export type ParaBirimiRaporu = {
   // --- TAZMİNAT GELİRİ (tedarikçiden tahsil edilen, K209) ---
   tazminatAdedi: number;
   tazminatGeliri: number;
+  /** K305 — karta dönen alım iadeleri; GERÇEK NET'e GİRMEZ (bilgi satırı). */
+  alimIadesiAdedi: number;
+  alimIadesiTutari: number;
   /** Eskiden yeniye — `hesaplanamayanSatislar` ile AYNI sıralama kuralı. */
   tazminatKalemleri: RaporTazminat[];
 
@@ -288,12 +309,15 @@ function bosRapor(paraBirimi: Currency): ParaBirimiRaporu {
     sayimKazanci: 0,
     sayimKazancAdedi: 0,
     duzeltmeZarari: 0,
+    veriDuzeltmeEtkisi: 0,
     duzeltmeBilinmeyenAdet: 0,
     sabitGiderNetDusen: 0,
     degiskenGiderNetDusen: 0,
     kategoriler: [],
     tazminatAdedi: 0,
     tazminatGeliri: 0,
+    alimIadesiAdedi: 0,
+    alimIadesiTutari: 0,
     tazminatKalemleri: [],
     gercekNet: 0,
     satisBasinaOrtGider: null,
@@ -460,9 +484,15 @@ export function raporHesapla(
     if (!pencerede(pencere, tz.tarih)) continue;
 
     const b = blok(tz.paraBirimi);
+    b.tazminatKalemleri.push(tz);
+    /* K305: alım iadesi gelir DEĞİL — ayrı sayılır, GERÇEK NET'e girmez. */
+    if (tz.alimIadesi) {
+      b.alimIadesiAdedi++;
+      b.alimIadesiTutari += tz.tutar;
+      continue;
+    }
     b.tazminatAdedi++;
     b.tazminatGeliri += tz.tutar;
-    b.tazminatKalemleri.push(tz);
   }
 
   // -------------------------------- TOPLAMA --------------------------------
@@ -476,11 +506,19 @@ export function raporHesapla(
       b.devreden = kn.devreden;
     }
     /**
-     * NET ETKİ = KAYIP − KAZANÇ. Ayrıştırma yalnız GÖRÜNÜRLÜK içindir;
-     * GERÇEK NET'e giren rakam değişmez.
+     * ══ K305 — KULLANICI KARARI 29.09.2026: FİRE DÜŞER, SAYIM FARKI AYRI ══
+     * ESKİ HÂLİ (silinmedi, çevrildi): «NET ETKİ = KAYIP − KAZANÇ; ayrıştırma
+     * yalnız görünürlük içindir, GERÇEK NET'e giren rakam değişmez» — yani
+     * sayım fazlası da KÂR sayılıyordu. Eylül raporunda sayım/fazla çıkan mal
+     * ₺54.047,97 kazanç, kayıplarla netleşince GERÇEK NET'e +₺34.398,61 ekledi.
+     * Kullanıcı: bu gerçek kazanç değil. Sayım fazlası çoğunlukla girilmemiş
+     * bir alımın ya da hatalı kaydın DÜZELTMESİDİR — işletme kârı değil.
+     * YENİ: fire/hasar/kayıp (gerçek kayıp) GERÇEK NET'ten düşer; sayım
+     * fazlası/eksiği ve «fazla çıkan mal» VERİ DÜZELTMESİDİR, ayrı satırda
+     * yazar, GERÇEK NET'e girmez.
      */
-    b.duzeltmeZarari =
-      b.fireZarari + b.sayimZarari - b.fireKazanci - b.sayimKazanci;
+    b.duzeltmeZarari = b.fireZarari;
+    b.veriDuzeltmeEtkisi = b.fireKazanci + b.sayimKazanci - b.sayimZarari;
     b.gercekNet =
       b.brutNet2 - b.giderNetDusen - b.duzeltmeZarari + b.tazminatGeliri;
 

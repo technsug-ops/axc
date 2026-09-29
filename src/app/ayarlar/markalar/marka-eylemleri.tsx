@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DURUM_YAZISI } from "@/lib/renkler";
 
-import { hepsiniEkle, markaEkle, markaKoduKaydet, type EylemSonucu } from "./eylemler";
+import { hepsiniEkle, markaEkle, markaKoduKaydet, yeniMarkaEkle, type EylemSonucu } from "./eylemler";
 
 /**
  * Marka kod tablosu satır eylemleri (K285). Her sonuç satırın altında
@@ -186,6 +186,54 @@ export function HepsiniEkle({ eklenecek, baglanacak, kodsuz }: { eklenecek: numb
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <MesajSatiri mesaj={mesaj} />
+    </div>
+  );
+}
+
+/**
+ * K306 — ÜRÜN BEKLEMEDEN YENİ MARKA. Yeni markanın ilk ürünü açılabilsin diye
+ * (Firma SKU kodu marka tablosundan gelir). Kod boşsa sistem önerir.
+ */
+export function YeniMarkaFormu() {
+  const t = useTranslations("MarkaKodu");
+  const router = useRouter();
+  const [ad, setAd] = useState("");
+  const [kod, setKod] = useState("");
+  const [mesaj, setMesaj] = useState<Mesaj>(null);
+  const [bekliyor, basla] = useTransition();
+  const ekle = () => {
+    setMesaj(null);
+    basla(async () => {
+      const s = await yeniMarkaEkle(ad, kod);
+      if (!s.tamam) {
+        setMesaj({ tur: "olumsuz", metin: t(`hata.${s.hata}`) });
+        return;
+      }
+      setMesaj({ tur: "olumlu", metin: s.zatenVardi ? t("yeniMarka.zatenVar", { ad: s.ad, kod: s.kod }) : t("yeniMarka.eklendi", { ad: s.ad, kod: s.kod }) });
+      if (!s.zatenVardi) {
+        setAd("");
+        setKod("");
+      }
+      router.refresh();
+    });
+  };
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="min-w-0 flex-1 space-y-1">
+          <label htmlFor="yeni-marka-ad" className="text-sm">{t("yeniMarka.adEtiketi")}</label>
+          <Input id="yeni-marka-ad" value={ad} maxLength={191} disabled={bekliyor} placeholder={t("yeniMarka.adOrnek")} onChange={(e) => setAd(e.target.value)} className="h-11 md:h-9" />
+        </div>
+        <div className="space-y-1">
+          <span className="text-sm">{t("yeniMarka.kodEtiketi")}</span>
+          <KodKutusu deger={kod} setDeger={setKod} etiket={t("yeniMarka.kodEtiketi")} bekliyor={bekliyor} />
+        </div>
+        <Button type="button" className="h-11 md:h-9" disabled={bekliyor || ad.trim() === ""} onClick={ekle}>
+          {t("yeniMarka.ekle")}
+        </Button>
+      </div>
+      <p className="text-muted-foreground text-xs">{t("yeniMarka.not")}</p>
       <MesajSatiri mesaj={mesaj} />
     </div>
   );

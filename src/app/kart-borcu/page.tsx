@@ -22,6 +22,8 @@ import {
   type BorcAlimi,
 } from "@/lib/kart-borcu";
 import { giderleriBorcaCevir } from "@/lib/kart-gideri";
+import { alimIadeleriniBorcaCevir } from "@/lib/kart-iadesi";
+import { kartaDonenAlimIadeleri } from "@/lib/kart-iadesi-veri";
 import {
   birlesikToplamlar,
   ekstreleriBirlestir,
@@ -245,6 +247,9 @@ export default async function KartBorcuSayfasi({
         odenenAnaBorc: Number(o.odenenAnaBorc.toString()),
       }));
 
+  /** K305 — karta dönen alım iadeleri (hasarlı gelen, stoğa girmemiş mal). */
+  const kartIadeleri = await kartaDonenAlimIadeleri();
+
   const kartHesaplari = kartlar.map((kart) => {
     const borclar: BorcAlimi[] = [];
     for (const a of alimlar.filter((x) => x.creditCardId === kart.id)) {
@@ -262,6 +267,8 @@ export default async function KartBorcuSayfasi({
     borclar.push(
       ...giderleriBorcaCevir(kartGiderleri, kart.id, kart.currency).borclar,
     );
+    /** K305: karta dönen alım iadesi borçtan DÜŞER (eksi tutarlı kalem). */
+    borclar.push(...alimIadeleriniBorcaCevir(kartIadeleri, kart.id, kart.currency));
     const limit =
       kart.creditLimitCurrency === kart.currency
         ? sayi(kart.creditLimitAmount)
@@ -606,6 +613,8 @@ export default async function KartBorcuSayfasi({
               borcAlimlari.push(...giderSonuc.borclar);
               farkliParaBirimiSayisi += giderSonuc.farkliParaBirimi;
             }
+            /* K305: karta dönen alım iadesi — üstteki hesapla AYNI (İlke #10). */
+            borcAlimlari.push(...alimIadeleriniBorcaCevir(kartIadeleri, kart.id, kart.currency));
 
             const sonuc = kartBorcuHesapla(
               borcAlimlari,

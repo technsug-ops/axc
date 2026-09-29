@@ -12,6 +12,7 @@ import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 import { HepsiniEkle, KodDuzenle, MarkaEkle } from "./marka-eylemleri";
 import { MarkaYukleyici } from "./marka-yukleyici";
+import { YeniMarkaFormu } from "./marka-eylemleri";
 
 /**
  * ============================================================================
@@ -83,6 +84,17 @@ export default async function MarkalarSayfasi({ searchParams }: { searchParams: 
           <p className={`text-sm ${DURUM_YAZISI.uyari}`}>{t("markasizMetin")}</p>
           <ExcelIndir liste="markasiz" />
         </div>
+      ) : null}
+
+      {yukleyebilir ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("yeniMarka.baslik")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <YeniMarkaFormu />
+          </CardContent>
+        </Card>
       ) : null}
 
       {yukleyebilir ? (

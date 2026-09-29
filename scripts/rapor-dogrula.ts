@@ -575,10 +575,12 @@ console.log("\n6) TAZMİNAT GELİRİ (K209) — GERÇEK NET'e EKLENİR");
    * tahsilat tarihini taşır) → AĞUSTOS PENCERESİ DIŞINDA, sayılmaz.
    */
   const tazminatlar: RaporTazminat[] = [
-    { id: "T1", tarih: gun("2026-08-10"), tutar: 3000, paraBirimi: "TRY", karsiTaraf: "Hepsiburada", urunAdi: "Karcher SC4" },
-    { id: "T2", tarih: gun("2026-07-25"), tutar: 5000, paraBirimi: "TRY", karsiTaraf: "Trendyol Tedarik", urunAdi: "Örnek Ürün" },
+    { id: "T1", tarih: gun("2026-08-10"), tutar: 3000, paraBirimi: "TRY", karsiTaraf: "Hepsiburada", urunAdi: "Karcher SC4", alimIadesi: false },
+    /* K305: ALIM İADESİ — mal kabulde hasarlı, stoğa girmemiş adedin karta dönen parası. GELİR DEĞİL. */
+    { id: "T4", tarih: gun("2026-08-12"), tutar: 799.91, paraBirimi: "TRY", karsiTaraf: "Hepsiburada", urunAdi: "Tefal Delibake", alimIadesi: true },
+    { id: "T2", tarih: gun("2026-07-25"), tutar: 5000, paraBirimi: "TRY", karsiTaraf: "Trendyol Tedarik", urunAdi: "Örnek Ürün", alimIadesi: false },
     // Ayrı para birimi — TRY toplamına KARIŞMAZ.
-    { id: "T3", tarih: gun("2026-08-15"), tutar: 100, paraBirimi: "EUR", karsiTaraf: "Amazon", urunAdi: "Örnek EUR Ürün" },
+    { id: "T3", tarih: gun("2026-08-15"), tutar: 100, paraBirimi: "EUR", karsiTaraf: "Amazon", urunAdi: "Örnek EUR Ürün", alimIadesi: false },
   ];
 
   const girdi: RaporGirdisi = { satislar: [], iadeler: [], giderler, tazminatlar };
@@ -590,7 +592,7 @@ console.log("\n6) TAZMİNAT GELİRİ (K209) — GERÇEK NET'e EKLENİR");
   yakin("pencere içi tahsilat toplanır (T1)", tl.tazminatGeliri, 3000);
   kontrol(
     "kalem listesi kaynak veriyi taşır (İlke #16)",
-    tl.tazminatKalemleri.length === 1 &&
+    tl.tazminatKalemleri.length === 2 &&
       tl.tazminatKalemleri[0]?.id === "T1" &&
       tl.tazminatKalemleri[0]?.karsiTaraf === "Hepsiburada",
   );
@@ -601,6 +603,10 @@ console.log("\n6) TAZMİNAT GELİRİ (K209) — GERÇEK NET'e EKLENİR");
    * 3000 TL tazminat üstüne EKLENİYOR.
    */
   yakin("GERÇEK NET = −gider + tazminat", tl.gercekNet, -10000 + 3000);
+  /* K305 — alım iadesi gelir DEĞİL: GERÇEK NET'e girmez, ayrı sayılır (kaynak satırı listede kalır). */
+  kontrol("K305 alım iadesi tazminat GELİRİNE girmez", tl.tazminatAdedi === 1 && Math.abs(tl.tazminatGeliri - 3000) < 0.005);
+  kontrol("K305 alım iadesi ayrı sayılır (adet 1 · ₺799,91)", tl.alimIadesiAdedi === 1 && Math.abs(tl.alimIadesiTutari - 799.91) < 0.005);
+  kontrol("K305 alım iadesi kalem listesinde GÖRÜNÜR (gizlenmez)", tl.tazminatKalemleri.some((k) => k.id === "T4" && k.alimIadesi));
 
   kontrol("EUR bloğu TRY'den AYRI (para birimleri toplanmaz)", eur.tazminatAdedi === 1);
   yakin("EUR tazminat geliri", eur.tazminatGeliri, 100);

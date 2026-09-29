@@ -426,6 +426,9 @@ export default async function RaporSayfasi({
       k.purchaseItem?.variant.product.name ??
       k.returnItem?.variant.product.name ??
       null,
+    /* K305: alım kalemine bağlı = mal kabulde hasarlı, stoğa girmemiş adedin
+       karta dönen parası — gelir DEĞİL (bkz. `RaporTazminat.alimIadesi`). */
+    alimIadesi: k.purchaseItem !== null,
   }));
 
   const girdi = { satislar, iadeler, giderler, duzeltmeler, tazminatlar };
@@ -712,6 +715,12 @@ export default async function RaporSayfasi({
                 para(b.duzeltmeZarari),
                 t("duzeltmeToplamNotu"),
               )}
+              {/* K305: sayım farkı + fazla çıkan mal — VERİ DÜZELTMESİ, GERÇEK NET'e girmez. */}
+              {kart(
+                t("veriDuzeltmesi"),
+                `${b.veriDuzeltmeEtkisi > 0 ? "+" : ""}${para(b.veriDuzeltmeEtkisi)}`,
+                t("veriDuzeltmesiNotu"),
+              )}
             </div>
             {b.duzeltmeBilinmeyenAdet > 0 ? (
               <p className={`text-sm ${DURUM_YAZISI.uyari}`}>
@@ -809,7 +818,7 @@ export default async function RaporSayfasi({
         {/* ------------------------ TAZMİNAT GELİRİ (K209) ------------------------
             Tedarikçiden tahsil edilmiş tazminat — GERÇEK NET'e eklenir.
             Boş kutu bilgi taşımaz (İlke #13); yalnız tahsilat varsa çizilir. */}
-        {b.tazminatAdedi > 0 ? (
+        {b.tazminatAdedi > 0 || b.alimIadesiAdedi > 0 ? (
           <div className="space-y-2 rounded-lg border p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm font-medium">
@@ -825,6 +834,11 @@ export default async function RaporSayfasi({
             <p className="text-muted-foreground text-xs">
               {t("tazminatGeliriNotu", { sayi: b.tazminatAdedi })}
             </p>
+            {b.alimIadesiAdedi > 0 ? (
+              <p className="text-muted-foreground text-xs">
+                {t("alimIadesiNotu", { sayi: b.alimIadesiAdedi, tutar: para(b.alimIadesiTutari) })}
+              </p>
+            ) : null}
             {/* KAYNAK VERİ SATIR SATIR GÖRÜNÜR (İlke #16) — tıklanacak bir
                 detay sayfası yok (/tazminat kalem bazlı bağlantı vermiyor),
                 bu yüzden liste doğrudan burada açık duruyor. */}
@@ -837,6 +851,7 @@ export default async function RaporSayfasi({
                   <span className="min-w-0 flex-1 truncate">
                     {tz.urunAdi ?? t("tazminatUrunBilinmiyor")}
                     {tz.karsiTaraf ? ` · ${tz.karsiTaraf}` : ""}
+                    {tz.alimIadesi ? ` · ${t("alimIadesiEtiketi")}` : ""}
                   </span>
                   <span className="text-muted-foreground shrink-0 text-xs whitespace-nowrap">
                     {bicim.tarih(tz.tarih)}

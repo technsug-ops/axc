@@ -1597,7 +1597,11 @@
     "giderKiyasNotu": "",
     "devredenBaslik": "",
     "devredenNot": "",
-    "kiyasOncekiKisa": ""
+    "kiyasOncekiKisa": "",
+    "veriDuzeltmesi": "",
+    "veriDuzeltmesiNotu": "",
+    "alimIadesiNotu": "",
+    "alimIadesiEtiketi": ""
   },
   "KarSorunu": {
     "baslik": "",
@@ -4686,7 +4690,8 @@
       "DEGISMIS": "",
       "BICIM": "",
       "KULLANIMDA": "",
-      "HATA": ""
+      "HATA": "",
+      "AD_BOS": ""
     },
     "evet": "",
     "hayir": "",
@@ -4731,6 +4736,16 @@
         "YETKISIZ": "",
         "HATA": ""
       }
+    },
+    "yeniMarka": {
+      "baslik": "",
+      "adEtiketi": "",
+      "adOrnek": "",
+      "kodEtiketi": "",
+      "ekle": "",
+      "not": "",
+      "eklendi": "",
+      "zatenVar": ""
     }
   },
   "SkuOnizleme": {

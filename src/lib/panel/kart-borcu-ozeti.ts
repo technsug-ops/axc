@@ -5,6 +5,8 @@ import {
   type BorcAlimi,
 } from "@/lib/kart-borcu";
 import { giderleriBorcaCevir } from "@/lib/kart-gideri";
+import { alimIadeleriniBorcaCevir } from "@/lib/kart-iadesi";
+import { kartaDonenAlimIadeleri } from "@/lib/kart-iadesi-veri";
 import { ekstreleriBirlestir, birlesikToplamlar } from "@/lib/gecmis/birlesik";
 import { sonOdemeTarihi } from "@/lib/kart-borcu";
 
@@ -95,6 +97,8 @@ export async function acikKartBorcuOzetiGetir(
       }));
 
   const perKart: { paraBirimi: string; acikToplam: number }[] = [];
+  /** K305 — karta dönen alım iadeleri. */
+  const kartIadeleri = await kartaDonenAlimIadeleri();
 
   for (const kart of kartlar) {
     const borclar: BorcAlimi[] = [];
@@ -122,6 +126,8 @@ export async function acikKartBorcuOzetiGetir(
     borclar.push(
       ...giderleriBorcaCevir(kartGiderleri, kart.id, kart.currency).borclar,
     );
+    /* K305: karta dönen alım iadesi borçtan DÜŞER. */
+    borclar.push(...alimIadeleriniBorcaCevir(kartIadeleri, kart.id, kart.currency));
 
     const sonuc = kartBorcuHesapla(
       borclar,

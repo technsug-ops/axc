@@ -62,6 +62,13 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "Promise<EylemSonucu> {\n  try {\n    const s = await markaKoduDegistir", bozdugu: "yetkisiz kullanici marka kodunu degistirir" },
   { ad: "TOPLU EKLEME KODSUZU ATLAMIYOR", yon: "FAZLADAN", dosya: EYLEM,
     bul: "      if (m.tabloId === null && m.oneri === null) {\n        kodsuz++;\n        continue;\n      }\n", koy: "", bozdugu: "elle girilmesi gereken kodsuz marka sayidan kaybolur" },
+  /* K306 */
+  { ad: "YENI MARKA AYNI MARKAYI TEKRAR ACIYOR", yon: "FAZLADAN", dosya: YAZ,
+    bul: '  if (mevcut) return { durum: "ZATEN_VAR", kod: mevcut.code, ad: mevcut.name };', koy: "",
+    bozdugu: "Anker ve ANKER iki ayri marka olur" },
+  { ad: "YENI MARKA KUTUSU EKRANDA YOK", yon: "KALDIRAN", dosya: "src/app/ayarlar/markalar/page.tsx",
+    bul: "            <YeniMarkaFormu />", koy: "",
+    bozdugu: "yeni markanin ilk urunu yine acilamaz" },
   { ad: "YEDEK MARKA TABLOSUNU TASIMIYOR", yon: "KALDIRAN", dosya: YEDEK,
     bul: '  "Brand",\n', koy: "", bozdugu: "geri yuklemede marka kodlari kaybolur" },
 ];

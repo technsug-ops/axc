@@ -1,5 +1,7 @@
 import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
 import { giderleriBorcaCevir } from "@/lib/kart-gideri";
+import { alimIadeleriniBorcaCevir } from "@/lib/kart-iadesi";
+import { kartaDonenAlimIadeleri } from "@/lib/kart-iadesi-veri";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
 import { finansmanTakvimHareketleri } from "@/lib/finansman/veri";
@@ -124,6 +126,9 @@ export async function takvimSatirlariniTopla(
     }),
   ]);
 
+  /** K305 — karta dönen alım iadeleri. */
+  const kartIadeleri = await kartaDonenAlimIadeleri();
+
   for (const kart of kartlar) {
     const borcAlimlari: BorcAlimi[] = [];
     for (const a of kartAlimlari) {
@@ -153,6 +158,8 @@ export async function takvimSatirlariniTopla(
     borcAlimlari.push(
       ...giderleriBorcaCevir(kartGiderleri, kart.id, kart.currency).borclar,
     );
+    /* K305: karta dönen alım iadesi borçtan DÜŞER. */
+    borcAlimlari.push(...alimIadeleriniBorcaCevir(kartIadeleri, kart.id, kart.currency));
 
     const sonuc = kartBorcuHesapla(
       borcAlimlari,

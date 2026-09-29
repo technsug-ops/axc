@@ -268,4 +268,9 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * ve yetki tohumunu mutasyona uğratıyor.
    */
   "finansman-mutasyon:kontrol",
+  /**
+   * K305 (29.09.2026) — `kart-iadesi` nakit takvimi verisini, panel kart
+   * özetini ve rapor gövdesini mutasyona uğratıyor (panel · finansman ile ortak).
+   */
+  "kart-iadesi-mutasyon:kontrol",
 ];

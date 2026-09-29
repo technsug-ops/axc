@@ -349,11 +349,16 @@ console.log("\n3) RAPORA ETKİSİ — GERÇEK NET'ten düşer, NET-2'ye KARIŞMA
     "kayıp ve kazanç birbirini GİZLEMİYOR (ikisi de sıfırdan büyük)",
     kayipKazanc.fireZarari > 0 && kayipKazanc.fireKazanci > 0,
   );
-  yakin(
-    "net etki DEĞİŞMEDİ (kayıp − kazanç = 500 − 500 + 60 − 20)",
-    kayipKazanc.duzeltmeZarari,
-    40,
-  );
+  /**
+   * ⚠ ÖLÇÜT TAŞINDI (K305, kullanıcı kararı 29.09.2026). ESKİ hâli (silinmedi):
+   * «net etki DEĞİŞMEDİ (kayıp − kazanç = 500 − 500 + 60 − 20) = 40» — yani
+   * fazla çıkan mal ve sayım fazlası GERÇEK NET'i ARTIRIYORDU. Kullanıcı: sayım
+   * fazlası kâr değil, veri düzeltmesidir (eylülde +₺34.398,61 şişirdi).
+   * YENİ: GERÇEK NET'ten düşen = YALNIZ fire kaybı (500); sayım farkı ve fazla
+   * çıkan mal «veri düzeltmesi» olarak AYRI: +500 (fazla çıkan) +20 −60 = +460.
+   */
+  yakin("K305 GERÇEK NET'ten düşen = YALNIZ fire kaybı", kayipKazanc.duzeltmeZarari, 500);
+  yakin("K305 veri düzeltmesi AYRI (fazla çıkan + sayım fazlası − sayım eksiği)", kayipKazanc.veriDuzeltmeEtkisi, 460);
 
   /** Tam denkleşen dönemde bile olaylar kaybolmaz. */
   const denk = raporHesapla(pencere, {
@@ -363,7 +368,10 @@ console.log("\n3) RAPORA ETKİSİ — GERÇEK NET'ten düşer, NET-2'ye KARIŞMA
       { tarih: gun(2026, 8, 7), miktar: 5, birimMaliyet: 100, paraBirimi: "TRY", tip: "ADJUSTMENT", iadeKaynakliMi: false },
     ],
   }).paraBirimleri[0];
-  yakin("denk dönemde net sıfır", denk.duzeltmeZarari, 0);
+  /* ⚠ TAŞINDI (K305) — eski: «denk dönemde net sıfır». Artık fire kaybı düşer,
+     fazla çıkan mal onu TELAFİ ETMEZ (veri düzeltmesi, GERÇEK NET dışında). */
+  yakin("K305 denk dönemde bile fire düşer (fazla çıkan telafi etmez)", denk.duzeltmeZarari, 500);
+  yakin("K305  ...fazla çıkan mal veri düzeltmesinde", denk.veriDuzeltmeEtkisi, 500);
   kontrol(
     "  ...ama olaylar HÂLÂ kayıtlı (ekran kutusu çizilir)",
     denk.fireZarari === 500 && denk.fireKazanci === 500,
