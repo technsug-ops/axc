@@ -117,3 +117,34 @@ export function desiSecimi(satis: {
 export function kargoTahminiMi(s: KargoSecimi): boolean {
   return s.kaynak === "TAHMINI";
 }
+
+/**
+ * ============================================================================
+ *  EKRANDAKİ KARGO SATIRI NE DİYOR — DÜŞÜLMEDİ · TAHMİNİ · GERÇEKLEŞEN (K307)
+ * ----------------------------------------------------------------------------
+ *  _Kullanıcı bulgusu 29.09.2026, satış 11653860726:_ sipariş kesintilerinde
+ *  `Kargo −106,75` DÜŞÜLMÜŞ duruyordu ve AYNI kutu «Kargo girilmedi — kâr
+ *  kargo DÜŞÜLMEDEN hesaplandı» diyordu. Eski ölçüt `cargoAmount === null`
+ *  idi; oysa o sütun yalnız GERÇEKLEŞENİ tutar — tahmin (`tahminiKargo`,
+ *  tarife × kanal tartımı) NET'e girdiği hâlde uyarı yanıyordu.
+ *  _(Anayasa: "metin, sahip olmadığı anlamı iddia etmez".)_
+ *
+ *  ⭐ ÖLÇÜT DAVRANIŞA BAĞLI: «düşülmedi» cümlesi ancak kâr kaydında KARGO
+ *  kesintisi YOKSA doğrudur. Kesinti varsa ve gerçekleşen yoksa tahmindir
+ *  ve ekranda öyle etiketlenir (bir sayı etiketiyle taşınır).
+ *
+ *  📏 TABAN (ölçüldü 29.09.2026): KARGO kesintisi KDV DAHİLDİR. TY kargo
+ *  faturası KDV dahil gelir (15 satış, desi 1 Aras: 106,76), defter ÷1,20
+ *  saklar (88,9667), motor ×1,20 geri çevirir. Tarife 88,96 (KDV hariç)
+ *  × 1,20 = 106,75 — kanalın kestiğiyle 1 kuruş (yuvarlama). ÇİFT KDV YOK.
+ * ============================================================================
+ */
+export type KargoKesintiDurumu = "DUSULMEDI" | "TAHMINI" | "GERCEKLESEN";
+
+export function kargoKesintiDurumu(
+  siparisKesintileri: { code: string }[],
+  cargoAmount: number | null,
+): KargoKesintiDurumu {
+  if (!siparisKesintileri.some((k) => k.code === "KARGO")) return "DUSULMEDI";
+  return cargoAmount === null ? "TAHMINI" : "GERCEKLESEN";
+}

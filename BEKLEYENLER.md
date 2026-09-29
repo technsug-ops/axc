@@ -13,6 +13,32 @@
 
 ---
 
+## 🔴 K308 — KART BORCU: ALIM TUTARI TEK GÖVDE, KARGO/VERGİ EKLENMEZ · 29.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Bulgu (ölçüm):** kart borcunu kuran dört yerin ikisi (kart borcu ekranı · panel özeti) alım tutarına `shippingAmount` +
+`taxAmount` ekliyor, ikisi (nakit takvimi · geçmiş ekstre) eklemiyordu. **Kullanıcı beyanı:** «alımda sadece alım tutarı
+var; kargo, vergi hepsi o tutarın içinde, kargo bedava zaten.» **Çare:** `src/lib/kart-alim-tutari.ts` — tutar = Σ birim ×
+adet, kargo/vergi EKLENMEZ; dört kurucu da onu çağırıyor. **Ölçüldü (canlı):** kartlı 625 alımın 625'inde iki alan BOŞ,
+hiçbir kod yazmıyor → bugün HİÇBİR rakam değişmez; ileride doğacak çift sayım kapandı.
+**Bekçi:** `kart-iadesi:dogrula` 4. bölüm (kurucu kümesi TARANIR, elle çarpma ve kargo/vergi okuma yasak) · mutasyon 13/13.
+**Halil testi:** Kart borcu ekranı ve Panel → kart borcu kutusu: rakamlar deploy ÖNCESİYLE birebir aynı olmalı (değişirse test düşer).
+
+---
+
+## 🔴 K307 — SATIŞ DETAYI: «KARGO GİRİLMEDİ» YANLIŞ UYARISI · KARGO SATIRINA TABAN + TAHMİNİ ETİKETİ · 29.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı bulgusu:** satış `11653860726` — «Kargo −106,75» düşülmüş dururken aynı kutu «Kargo girilmedi, kâr kargo
+DÜŞÜLMEDEN hesaplandı» diyordu. Ölçüt `cargoAmount === null` idi; o sütun yalnız GERÇEKLEŞENİ tutar, tahmin NET'e girdiği
+hâlde uyarı yanıyordu. **KDV sorusu ölçüldü — ÇİFT KDV YOK:** TY kargo faturası KDV DAHİL gelir (desi 1 Aras, 15 satış:
+106,76), defter ÷1,20 saklar (88,9667), motor ×1,20 geri çevirir. Tarife 88,96 (KDV hariç) × 1,20 = **106,75** — kanalın
+kestiğiyle 1 kuruş (yuvarlama). **Çare:** `kargoKesintiDurumu` (kâr kaydında KARGO kesintisi yoksa «düşülmedi»; varsa
+gerçekleşen/tahmini) · kargo satırı «(KDV dahil · tahmini — kanal faturası gelince kesinleşir)».
+**Bekçi:** `kargo-kaynagi:dogrula` 37 (eski tek adlı import ölçütü gerekçesiyle genişletildi) · mutasyon 14/14 + zararsız yeşil.
+**Halil testi:** Satışlar → `11653860726` → Kâr kutusu: sarı «Kargo girilmedi» kutusu YOK · Sipariş kesintileri «Kargo (KDV dahil
+· tahmini — …) −₺106,75» · NET-1 ₺128,64 (değişmez). Kanal faturası gelmiş eski bir TY satışında «tahmini» yazmaz.
+
+---
+
 ## 🔴 K306 — MARKALAR: ÜRÜN BEKLEMEDEN «YENİ MARKA EKLE» · 29.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı bulgusu:** «Yeni ürün yükleyeceğim, marka yok diye yüklemiyor.» ÇIKMAZ: Firma SKU zorunlu, kodu marka

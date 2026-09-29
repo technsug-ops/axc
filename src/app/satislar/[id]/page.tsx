@@ -23,7 +23,7 @@ import { IptalFormu } from "./iptal-formu";
 import { GeriAlFormu } from "./geri-al-formu";
 import { satisIzleri } from "@/lib/satis-duzenleme-veri";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
-import { desiSecimi } from "@/lib/kargo-kaynagi";
+import { desiSecimi, kargoKesintiDurumu } from "@/lib/kargo-kaynagi";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { Badge } from "@/components/ui/badge";
@@ -321,8 +321,15 @@ export default async function SatisDetaySayfasi({
     varsayilanKdvKullanildi: gecerliKalemler.some(
       (k) => sayi(k.vatRate) === 20 && k.variant.product.categoryId === null,
     ),
-    // Kargo hiç girilmemişse kâr kargo düşülmeden hesaplanmıştır.
-    kargoGirilmedi: satis.cargoAmount === null,
+    /**
+     * ⛔ K307: ölçüt `cargoAmount === null` DEĞİL — o sütun yalnız
+     * GERÇEKLEŞENİ tutar; tahmin NET'e girdiği hâlde «düşülmedi» yazıyordu.
+     * Durum kâr kaydındaki KARGO kesintisinden okunur (`kargoKesintiDurumu`).
+     */
+    kargoDurumu: kargoKesintiDurumu(
+      satis.fees,
+      satis.cargoAmount === null ? null : Number(satis.cargoAmount.toString()),
+    ),
   };
 
   /**

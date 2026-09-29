@@ -30,6 +30,7 @@ const VERI = "src/lib/kart-iadesi-veri.ts";
 const TAKVIM = "src/lib/panel/takvim-verisi.ts";
 const OZET = "src/lib/panel/kart-borcu-ozeti.ts";
 const RAPOR = "src/lib/rapor.ts";
+const ALIM_TUTARI = "src/lib/kart-alim-tutari.ts";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bekci: string; bul: string; koy: string; bozdugu: string };
 
@@ -58,6 +59,19 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "VERI DUZELTMESI HESAPLANMIYOR", yon: "KALDIRAN", dosya: RAPOR, bekci: DUZELTME_BEKCI,
     bul: "    b.veriDuzeltmeEtkisi = b.fireKazanci + b.sayimKazanci - b.sayimZarari;", koy: "    b.veriDuzeltmeEtkisi = 0;",
     bozdugu: "sayim farki ekrandan kaybolur" },
+  /* K308 - alim tutari tek govde; kargo/vergi alim tutarinin ICINDE (kullanici beyani 29.09). */
+  { ad: "K308 GOVDE TUTARI SISIRIYOR", yon: "FAZLADAN", dosya: ALIM_TUTARI, bekci: BEKCI,
+    bul: "    tutar += Number(k.unitCostAmount.toString()) * k.quantity;", koy: "    tutar += Number(k.unitCostAmount.toString()) * k.quantity * 1.2;",
+    bozdugu: "fiyatin icindeki KDV ikinci kez karta yazilir" },
+  { ad: "K308 FARKLI PARA BIRIMI SESSIZ DUSUYOR", yon: "KALDIRAN", dosya: ALIM_TUTARI, bekci: BEKCI,
+    bul: "      farkliVar = true;\n", koy: "",
+    bozdugu: "kur cevrilmeyen kalem borctan sessizce duser, ekran uyarmaz" },
+  { ad: "K308 TAKVIM YINE ELLE HESAPLIYOR", yon: "KALDIRAN", dosya: TAKVIM, bekci: BEKCI,
+    bul: "      const { tutar } = kartAlimTutari(a.items, kart.currency);", koy: "      const tutar = a.items.reduce((t, k) => t + Number(k.unitCostAmount.toString()) * k.quantity, 0);",
+    bozdugu: "iki ekran iki ayri olcutle borc kurar; biri degisince ayrisir" },
+  { ad: "K308 PANEL KARGOYU YINE EKLIYOR", yon: "FAZLADAN", dosya: OZET, bekci: BEKCI,
+    bul: "      const { tutar } = kartAlimTutari(a.items, kart.currency);", koy: "      const tutar = kartAlimTutari(a.items, kart.currency).tutar + Number((a as { shippingAmount?: number }).shippingAmount ?? 0);",
+    bozdugu: "alim tutarinin icindeki kargo panelde ikinci kez borca yazilir" },
 ];
 
 function bekciyiKostur(bekci: string): { kod: number; ciktiVar: boolean } {

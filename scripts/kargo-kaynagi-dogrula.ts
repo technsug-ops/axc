@@ -3,6 +3,7 @@ import { readdirSync } from "node:fs";
 import {
   desiSecimi,
   kargoSecimi,
+  kargoKesintiDurumu,
   kargoTahminiMi,
   KURESEL_DESI_ORTANCASI,
 } from "../src/lib/kargo-kaynagi";
@@ -251,7 +252,10 @@ kontrol("tahmini kargo yazan içe aktarma VAR (bugün 1 — N11)", tahminYazan =
   const sayfa = kaynakOku("src/app/satislar/[id]/page.tsx");
   kontrol(
     "satış detayı desiSecimi'yi İTHAL EDİYOR",
-    /import \{ desiSecimi \} from "@\/lib\/kargo-kaynagi";/.test(sayfa),
+    /* K307: ölçüt ESKİDİ, gevşemedi — sayfa aynı modülden ikinci bir ad
+       (`kargoKesintiDurumu`) da ithal etti; soru hâlâ "desiSecimi bu
+       modülden mi geliyor". Eski biçim tek adlıydı: import { desiSecimi }. */
+    /import \{[^}]*\bdesiSecimi\b[^}]*\} from "@\/lib\/kargo-kaynagi";/.test(sayfa),
   );
   /** ⚠ ANAHTAR ADI TEK BAŞINA YETMEZ — KAYNAK ALANI DA aranır. Yalnız
    *  `kanalKargoDesi:` anahtarını arayan bir ölçüt, değeri `null`e ya da
@@ -322,6 +326,53 @@ kontrol("tahmini kargo yazan içe aktarma VAR (bugün 1 — N11)", tahminYazan =
         typeof sozluk[a] === "string" && sozluk[a].length > 3,
       );
     }
+  }
+}
+
+/* ═══ K307 — EKRANDAKİ KARGO SATIRI NE DİYOR ══════════════════════════ */
+/**
+ * ⛔ VAKA (29.09.2026, satış 11653860726): kutuda `Kargo −106,75` DÜŞÜLMÜŞ
+ * dururken üstünde «Kargo girilmedi — kâr kargo DÜŞÜLMEDEN hesaplandı»
+ * yazıyordu. Ölçüt `cargoAmount === null` idi; o sütun yalnız GERÇEKLEŞENİ
+ * tutar. Örnekler ayrımın İKİ YAKASINI gösterir: kesinti var/yok ×
+ * gerçekleşen var/yok.
+ */
+console.log("  ── K307: kargo satırının durumu");
+kontrol(
+  "KARGO kesintisi var, gerçekleşen yok → TAHMİNİ (uyarı YOK)",
+  kargoKesintiDurumu([{ code: "SABIT_GIDER" }, { code: "KARGO" }], null) === "TAHMINI",
+);
+kontrol(
+  "KARGO kesintisi var, gerçekleşen var → GERÇEKLEŞEN",
+  kargoKesintiDurumu([{ code: "KARGO" }], 88.97) === "GERCEKLESEN",
+);
+kontrol(
+  "KARGO kesintisi YOK → DÜŞÜLMEDİ (gerçekleşen boş)",
+  kargoKesintiDurumu([{ code: "SABIT_GIDER" }], null) === "DUSULMEDI",
+);
+kontrol(
+  "KARGO kesintisi YOK → DÜŞÜLMEDİ (gerçekleşen dolu olsa bile — cümle kâr kaydını anlatır)",
+  kargoKesintiDurumu([{ code: "SABIT_GIDER" }], 88.97) === "DUSULMEDI",
+);
+{
+  const sayfa = kaynakOku("src/app/satislar/[id]/page.tsx");
+  const blok = kaynakOku("src/components/kar-blogu.tsx");
+  kontrol(
+    "satış detayı durumu GÖVDEDEN alıyor (çıplak `cargoAmount === null` ölçütü yok)",
+    /kargoDurumu: kargoKesintiDurumu\(\s*satis\.fees,/.test(sayfa) &&
+      !/kargoGirilmedi: satis\.cargoAmount === null/.test(sayfa),
+  );
+  kontrol(
+    "uyarı YALNIZ «düşülmedi» durumunda çiziliyor",
+    /\{veri\.kargoDurumu === "DUSULMEDI" \? \(\s*<div[\s\S]{0,200}t\("kargoGirilmedi"\)/.test(blok),
+  );
+  kontrol(
+    "kargo satırı KDV tabanını ve tahmini etiketini taşıyor",
+    /k\.code === "KARGO" \?[\s\S]{0,200}t\("kargoKdvDahilEki"\)[\s\S]{0,120}veri\.kargoDurumu === "TAHMINI" \? [^:]*t\("kargoTahminiEki"\)/.test(blok),
+  );
+  const sozluk = (JSON.parse(kaynakOku("messages/tr.json")) as { Satis: Record<string, string> }).Satis;
+  for (const a of ["kargoKdvDahilEki", "kargoTahminiEki"]) {
+    kontrol(`  ${a} sözlükte ve dolu`, typeof sozluk[a] === "string" && sozluk[a].length > 3);
   }
 }
 

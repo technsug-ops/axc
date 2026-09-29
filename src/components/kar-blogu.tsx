@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { bicimlendirici } from "@/lib/bicim";
 
 import type { Currency, ProfitStatus } from "@/generated/prisma/enums";
+import type { KargoKesintiDurumu } from "@/lib/kargo-kaynagi";
 import { DURUM_KUTUSU } from "@/lib/renkler";
 
 /**
@@ -40,8 +41,9 @@ export type KarBloguVerisi = {
   siparisKesintileri: { code: string; tutar: number }[];
   /** Kalemlerden biri varsayılan %20'ye düştüyse uyarı gösterilir. */
   varsayilanKdvKullanildi: boolean;
-  /** Kargo hiç girilmemişse kâr, kargo gideri düşülmeden hesaplanmıştır. */
-  kargoGirilmedi: boolean;
+  /** K307 — KARGO kesintisi yoksa «düşülmedi» uyarısı; varsa gerçekleşen mi
+   *  tahmini mi (`kargoKesintiDurumu`). */
+  kargoDurumu: KargoKesintiDurumu;
 };
 
 export async function KarBlogu({ veri }: { veri: KarBloguVerisi }) {
@@ -96,7 +98,7 @@ export async function KarBlogu({ veri }: { veri: KarBloguVerisi }) {
         ) : null}
 
         {/* Kargo eksikse kâr olduğundan YÜKSEK görünür — sessiz kalmaz. */}
-        {veri.kargoGirilmedi ? (
+        {veri.kargoDurumu === "DUSULMEDI" ? (
           <div
             role="status"
             className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}
@@ -162,6 +164,14 @@ export async function KarBlogu({ veri }: { veri: KarBloguVerisi }) {
                 <div key={i} className="flex justify-between gap-4">
                   <dt className="text-muted-foreground">
                     {kesintiAdi(k.code)}
+                    {/* K307: tutarın TABANI ve KAYNAĞI yanında (para rakamı tabanıyla yazılır). */}
+                    {k.code === "KARGO" ? (
+                      <span className="text-xs">
+                        {" "}
+                        ({t("kargoKdvDahilEki")}
+                        {veri.kargoDurumu === "TAHMINI" ? ` · ${t("kargoTahminiEki")}` : ""})
+                      </span>
+                    ) : null}
                   </dt>
                   <dd className="text-destructive whitespace-nowrap">
                     −{para(k.tutar)}

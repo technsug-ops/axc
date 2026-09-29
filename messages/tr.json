@@ -1047,6 +1047,8 @@
     "kargoTutariIpucu": "örn. 107,00",
     "kargoGirilmedi": "Kargo girilmedi",
     "kargoGirilmediNotu": "Bu satışta kargo firması veya tutarı girilmemiş; kâr rakamları kargo gideri DÜŞÜLMEDEN hesaplandı. Kargoyu ekleyip yeniden hesaplayın.",
+    "kargoKdvDahilEki": "KDV dahil",
+    "kargoTahminiEki": "tahmini — kanal faturası gelince kesinleşir",
     "netKar": "NET-2 (net kâr)",
     "karHesaplanmadi": "hesaplanmadı",
     "durumKisaNoCost": "maliyet yok",

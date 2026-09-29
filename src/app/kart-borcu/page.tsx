@@ -33,6 +33,7 @@ import { OdemeFormu } from "./odeme-formu";
 import { OdemeSatiri } from "./odeme-satiri";
 import { IstatistikKutusu } from "@/components/istatistik-kutusu";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
+import { kartAlimTutari } from "@/lib/kart-alim-tutari";
 import { prisma } from "@/lib/prisma";
 
 import type { Currency } from "@/generated/prisma/enums";
@@ -194,27 +195,16 @@ export default async function KartBorcuSayfasi({
   /**
    * Bir alımın KARTIN para birimindeki tutarı.
    * Kalemler gerçeğin kaynağıdır; `goodsAmount` karma para biriminde boş
-   * kalabiliyor. Kargo ve vergi yalnız para birimi tutuyorsa eklenir.
+   * kalabiliyor.
+   * ⛔ K308: eskiden kargo ve vergi alanları da EKLENİYORDU (öteki iki
+   * kurucu eklemiyordu). Kullanıcı beyanı: alım tutarı kargo ve vergiyi
+   * İÇERİR — gövde ortak, kural orada.
    */
   function kartTutari(
     alim: (typeof alimlar)[number],
     paraBirimi: Currency,
   ): { tutar: number; farkliVar: boolean } {
-    let tutar = 0;
-    let farkliVar = false;
-
-    for (const k of alim.items) {
-      const satir = Number(k.unitCostAmount.toString()) * k.quantity;
-      if (k.unitCostCurrency === paraBirimi) tutar += satir;
-      else farkliVar = true;
-    }
-    if (alim.shippingAmount && alim.shippingCurrency === paraBirimi) {
-      tutar += Number(alim.shippingAmount.toString());
-    }
-    if (alim.taxAmount && alim.taxCurrency === paraBirimi) {
-      tutar += Number(alim.taxAmount.toString());
-    }
-    return { tutar, farkliVar };
+    return kartAlimTutari(alim.items, paraBirimi);
   }
 
   /**

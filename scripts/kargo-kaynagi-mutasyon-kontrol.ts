@@ -138,6 +138,41 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "kanal bir sey soylemedigi halde bos satir cizilir; okuyan bizim bakmadigimizi saniyor",
   },
+  /* K307, 29.09.2026 - satis 11653860726: Kargo -106,75 dusulmus dururken
+     "Kargo girilmedi - dusulmeden hesaplandi" yaziyordu. */
+  {
+    ad: "K307 ESKI OLCUT GERI GELDI - tahmin varken 'dusulmedi' diyor",
+    yon: "FAZLADAN",
+    dosya: GOVDE,
+    bul: '  if (!siparisKesintileri.some((k) => k.code === "KARGO")) return "DUSULMEDI";',
+    koy: '  if (cargoAmount === null) return "DUSULMEDI";',
+    bozdugu:
+      "kargo NET'ten dusulmus dururken ekran 'dusulmeden hesaplandi' der - kullanicinin bildirdigi ariza",
+  },
+  {
+    ad: "K307 TAHMINI AYRIMI KALKTI - tahmin gerceklesen gibi gorunur",
+    yon: "KALDIRAN",
+    dosya: GOVDE,
+    bul: '  return cargoAmount === null ? "TAHMINI" : "GERCEKLESEN";',
+    koy: '  return "GERCEKLESEN";',
+    bozdugu: "tarife tahmini kanalin kestigi tutar gibi etiketsiz gorunur",
+  },
+  {
+    ad: "K307 UYARI HIC CIKMIYOR",
+    yon: "KALDIRAN",
+    dosya: "src/components/kar-blogu.tsx",
+    bul: '        {veri.kargoDurumu === "DUSULMEDI" ? (',
+    koy: "        {false ? (",
+    bozdugu: "kargo gercekten dusulmemisken kar oldugundan YUKSEK gorunur ve ekran susar",
+  },
+  {
+    ad: "K307 KDV TABANI ETIKETI DUSTU",
+    yon: "KALDIRAN",
+    dosya: "src/components/kar-blogu.tsx",
+    bul: '                        ({t("kargoKdvDahilEki")}',
+    koy: "                        (",
+    bozdugu: "kargo rakami tabansiz kalir; KDV dahil mi haric mi sorusu yeniden dogar",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { kaynakOku } from "./kaynak-oku";
 import { kartBorcuHesapla } from "../src/lib/kart-borcu";
+import { kartAlimTutari } from "../src/lib/kart-alim-tutari";
 import { alimIadeleriniBorcaCevir, type KartIadesi } from "../src/lib/kart-iadesi";
 
 /**
@@ -20,7 +21,7 @@ import { alimIadeleriniBorcaCevir, type KartIadesi } from "../src/lib/kart-iades
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 3;
+const BOLUM_SAYISI = 4;
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
     gecen++;
@@ -92,6 +93,44 @@ console.log("\n3) veri — tahsil günü rapor ile aynı kuraldan");
   kontrol("rapor aynı ölçütle alım iadesini ayırıyor (alım kalemine bağlı)", rapor.includes("alimIadesi: k.purchaseItem !== null,"));
 }
 kosanBolumler.push("veri");
+
+// ── 4) ALIM TUTARI (K308) ────────────────────────────────────────────────
+/**
+ * ⛔ VAKA (29.09.2026): dört kurucunun ikisi alım tutarına kargo+vergi
+ * alanlarını EKLİYOR, ikisi eklemiyordu. Kullanıcı beyanı: alım tutarı kargo
+ * ve vergiyi İÇERİR. Kurucu kümesi TARANIR (`kartBorcuHesapla(` çağıran her
+ * dosya); liste tutulmaz.
+ */
+console.log("\n4) alım tutarı — tek gövde, kargo/vergi eklenmez");
+{
+  const k = (quantity: number, tutar: number, unitCostCurrency = "TRY") => ({ quantity, unitCostAmount: tutar, unitCostCurrency });
+  const a = kartAlimTutari([k(2, 1069.49), k(1, 100)], "TRY");
+  kontrol("kalemler birim × adet toplanır", Math.abs(a.tutar - 2238.98) < 0.005 && !a.farkliVar, a);
+  const b = kartAlimTutari([k(1, 100), k(1, 50, "EUR")], "TRY");
+  kontrol("kartın para biriminde olmayan kalem GİRMEZ ve söylenir", b.tutar === 100 && b.farkliVar, b);
+
+  const tum: string[] = [];
+  const gez = (d: string) => {
+    for (const ad of readdirSync(d)) {
+      const y = join(d, ad);
+      if (statSync(y).isDirectory()) {
+        if (ad !== "generated") gez(y);
+      } else if (/\.(ts|tsx)$/.test(ad)) tum.push(y.split(String.fromCharCode(92)).join("/"));
+    }
+  };
+  gez("src");
+  const kurucular = tum.filter((y) => y !== "src/lib/kart-borcu.ts" && /kartBorcuHesapla\(/.test(yorumsuz(kaynakOku(y))));
+  kontrol(`kart borcu kurucu tabanı DOLU (${kurucular.length} dosya)`, kurucular.length >= 4, kurucular);
+  const ortaksiz = kurucular.filter((y) => !/kartAlimTutari\(/.test(yorumsuz(kaynakOku(y))));
+  kontrol("HER kurucu tutarı ORTAK gövdeden alıyor", ortaksiz.length === 0, ortaksiz);
+  const elle = kurucular.filter((y) => /unitCostAmount\.toString\(\)\)\s*\*/.test(yorumsuz(kaynakOku(y))));
+  kontrol("hiçbir kurucu kalem tutarını ELLE çarpmıyor", elle.length === 0, elle);
+  const ekleyen = kurucular.filter((y) => /\b(shippingAmount|taxAmount)\b/.test(yorumsuz(kaynakOku(y))));
+  kontrol("hiçbir kurucu kargo/vergi alanını okumuyor (tutarın İÇİNDE)", ekleyen.length === 0, ekleyen);
+  const govde = yorumsuz(kaynakOku("src/lib/kart-alim-tutari.ts"));
+  kontrol("gövde kargo/vergi alanına dokunmuyor", !/\b(shippingAmount|taxAmount)\b/.test(govde));
+}
+kosanBolumler.push("alım tutarı");
 
 console.log("\n" + "=".repeat(70));
 if (kosanBolumler.length !== BOLUM_SAYISI) {
