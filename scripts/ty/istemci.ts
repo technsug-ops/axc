@@ -146,22 +146,60 @@ export async function apiGet(
  * kayıt var" der ve eksik olduğunu bilmezdik — "boş sonuç ile temiz
  * sonucu ayırt edemeyen denetim" ailesinin sayfalama hâli.
  */
+/**
+ * ============================================================================
+ *  GEÇİCİ HATADA AYNI SAYFA YENİDEN DENENİR (K112b, 30.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ VAKA: TY tam taraması ÜÇÜNCÜ kez yarım kaldı ve «SAYFA TAVANINA
+ *  ÇARPILDI» dedi. Tavan 60'tı, liste 17 sayfaydı — tavana çarpılmamıştı.
+ *  Ölçüldü (salt okuma, 30.09): onaylı uç aynı dakika içinde sayfa 0'da
+ *  `HTTP 500`, sayfa 1–2'de veri verdi (1623 kayıt, 17 sayfa). Yani uç
+ *  ARADA BİR geçici 500 dönüyor; gezici ilk hatada duruyor ve yarım listeyi
+ *  «tavan» diye raporluyordu — hata SEBEBİ ekrana hiç çıkmıyordu.
+ *  _(Anayasa: "hata mesajını kısaltan her işlem teşhisi kısaltır".)_
+ *
+ *  · Yeniden denenen yalnız GEÇİCİ olan: `ULASILAMADI` (5xx · 429 · ağ).
+ *    401/403/400/404 kalıcıdır; tekrar sormak cevabı değiştirmez.
+ *  · Kesilme SEBEBİYLE döner (`kesilme`): TAVAN ile HATA ayrı şeylerdir ve
+ *    çağıran ikisini ayrı yazar. `kesildiMi` geriye uyumlu kalır.
+ *  · Ağ çağrısı ve bekleme DIŞARIDAN verilebilir — bekçi gerçek uca gitmeden
+ *    değerle sınar (`ty-sayfa-gezici:dogrula`).
+ * ============================================================================
+ */
+export const GECICI_HATA_DENEME = 4;
+
+export type SayfaKesilmesi =
+  | { tur: "TAVAN" }
+  | { tur: "HATA"; sayfa: number; sonuc: OkumaSonucu };
+
 export async function tumSayfalar(
   yolKur: (sayfa: number) => string,
   baslik: Record<string, string>,
   tavanSayfa = 50,
+  arac: {
+    getir?: (yol: string, baslik: Record<string, string>) => Promise<OkumaSonucu>;
+    bekle?: (ms: number) => Promise<void>;
+  } = {},
 ): Promise<
-  | { tur: "TAMAM"; kayitlar: unknown[]; sayfa: number; kesildiMi: boolean }
+  | { tur: "TAMAM"; kayitlar: unknown[]; sayfa: number; kesildiMi: boolean; kesilme: SayfaKesilmesi | null; tekrar: number }
   | { tur: "HATA"; sonuc: OkumaSonucu }
 > {
+  const getir = arac.getir ?? apiGet;
+  const bekle = arac.bekle ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const kayitlar: unknown[] = [];
   let sayfa = 0;
+  let tekrar = 0;
   for (; sayfa < tavanSayfa; sayfa++) {
-    const s = await apiGet(yolKur(sayfa), baslik);
+    let s = await getir(yolKur(sayfa), baslik);
+    for (let deneme = 1; s.tur === "ULASILAMADI" && deneme < GECICI_HATA_DENEME; deneme++) {
+      tekrar++;
+      await bekle(1000 * 2 ** (deneme - 1));
+      s = await getir(yolKur(sayfa), baslik);
+    }
     if (s.tur !== "VERI") {
       /** İlk sayfa hata verdiyse hüküm yok; sonrakiler kısmi sonuç. */
       if (sayfa === 0) return { tur: "HATA", sonuc: s };
-      return { tur: "TAMAM", kayitlar, sayfa, kesildiMi: true };
+      return { tur: "TAMAM", kayitlar, sayfa, kesildiMi: true, kesilme: { tur: "HATA", sayfa, sonuc: s }, tekrar };
     }
     const govde = s.govde as Record<string, unknown>;
     const dizi =
@@ -177,12 +215,22 @@ export async function tumSayfalar(
       break;
     }
   }
+  const tavandaMi = sayfa >= tavanSayfa;
   return {
     tur: "TAMAM",
     kayitlar,
     sayfa,
-    kesildiMi: sayfa >= tavanSayfa,
+    kesildiMi: tavandaMi,
+    kesilme: tavandaMi ? { tur: "TAVAN" } : null,
+    tekrar,
   };
+}
+
+/** Kesilmeyi okunur cümleye çevirir — «tavan» ile «hata» AYRI yazılır. */
+export function kesilmeMetni(k: SayfaKesilmesi | null): string {
+  if (k === null) return "";
+  if (k.tur === "TAVAN") return "sayfa tavanına çarpıldı";
+  return `sayfa ${k.sayfa} okunamadı (${GECICI_HATA_DENEME} deneme): ${JSON.stringify(k.sonuc)}`;
 }
 
 // ---------------------------------------------------------------------------

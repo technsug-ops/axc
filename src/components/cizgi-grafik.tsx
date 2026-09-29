@@ -6,6 +6,8 @@ import {
   xKonumu,
   yKonumu,
 } from "./grafik-olcek";
+import { GrafikNoktaPenceresi } from "./grafik-nokta-penceresi";
+import { NoktaSeritleri } from "./grafik-nokta-seritleri";
 
 /**
  * ============================================================================
@@ -118,8 +120,19 @@ export function CizgiGrafik({
   const isaretler = eksenIsaretleri(y);
   const etiketAtla = etiketAtlamasi(noktalar.length, etiketTavani);
 
+  /** K109 — dokunulan noktanın penceresi; metinler SUNUCUDA biçimlenir. */
+  const pencereler = noktalar.map((n) => ({
+    baslik: n.tamEtiket,
+    satirlar: net2Goster
+      ? [
+          { ad: gelirAdi, deger: bicimle(n.gelir) },
+          { ad: net2Adi, deger: bicimle(n.net2) },
+        ]
+      : [{ ad: gelirAdi, deger: bicimle(n.gelir) }],
+  }));
+
   return (
-    <div className="overflow-x-auto">
+    <GrafikNoktaPenceresi pencereler={pencereler}>
       <svg
         viewBox={`0 0 ${G.genislik} ${G.yukseklik}`}
         className="h-auto max-h-[260px] w-full min-w-[560px]"
@@ -307,6 +320,9 @@ export function CizgiGrafik({
             ) : null,
           )}
         </g>
+
+        {/* --- K109: dokunma şeritleri — EN ÜSTTE, yoksa çizimin altında kalır --- */}
+        <NoktaSeritleri noktalar={noktalar.map((n, i) => ({ x: x(i), y: yKonum(anaSeri(n)) }))} />
       </svg>
 
       {/* --- gösterge --- */}
@@ -334,6 +350,6 @@ export function CizgiGrafik({
           </span>
         ) : null}
       </div>
-    </div>
+    </GrafikNoktaPenceresi>
   );
 }

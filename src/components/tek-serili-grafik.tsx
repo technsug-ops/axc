@@ -6,6 +6,8 @@ import {
   xKonumu,
   yKonumu,
 } from "./grafik-olcek";
+import { GrafikNoktaPenceresi } from "./grafik-nokta-penceresi";
+import { NoktaSeritleri } from "./grafik-nokta-seritleri";
 
 /**
  * ============================================================================
@@ -43,8 +45,11 @@ export function TekSeriliGrafik({
   bicimle,
   bicimleKisa,
   bosMesaj,
+  seriAdi,
 }: {
   noktalar: TekNokta[];
+  /** K109 — dokunulan noktanın penceresinde rakamın adı ("Envanter değeri"). */
+  seriAdi: string;
   /** Eksen etiketleri — dil altyapısından gelir. */
   bicimle: (deger: number) => string;
   /** Nokta üstündeki kısa rakam. Verilmezse nokta rakamı çizilmez. */
@@ -80,8 +85,13 @@ export function TekSeriliGrafik({
 
   const sifirY = yk(0);
 
+  /** K109 — dokunulan noktanın penceresi; boş ay pencere AÇMAZ (hüküm yok). */
+  const pencereler = noktalar.map((n) =>
+    n.deger === null ? null : { baslik: n.tamEtiket, satirlar: [{ ad: seriAdi, deger: bicimle(n.deger) }] },
+  );
+
   return (
-    <div className="overflow-x-auto">
+    <GrafikNoktaPenceresi pencereler={pencereler}>
       <svg
         viewBox={`0 0 ${G.genislik} ${G.yukseklik}`}
         className="h-auto max-h-[260px] w-full min-w-[560px]"
@@ -188,7 +198,12 @@ export function TekSeriliGrafik({
             ) : null,
           )}
         </g>
+
+        {/* --- K109: dokunma şeritleri — EN ÜSTTE --- */}
+        <NoktaSeritleri
+          noktalar={noktalar.map((n, i) => (n.deger === null ? null : { x: x(i), y: yk(n.deger) }))}
+        />
       </svg>
-    </div>
+    </GrafikNoktaPenceresi>
   );
 }

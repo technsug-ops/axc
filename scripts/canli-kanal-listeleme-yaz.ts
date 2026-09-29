@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
-import { kimlikOku, baslikKur, tumSayfalar, UCLAR } from "./ty/istemci";
+import { kimlikOku, baslikKur, kesilmeMetni, tumSayfalar, UCLAR } from "./ty/istemci";
 import { v2KayitlariniNormallestir } from "./ty/urun-v2";
 
 /**
@@ -91,7 +91,8 @@ async function taramaAl(): Promise<
        */
       return {
         tamam: false,
-        hata: `Sayfa tavanına çarpıldı (${ad}) — liste EKSİK, yazım yapılmaz.`,
+        /* K112b: sebep YAZILIR — «tavan» ile geçici hata ayrı şeylerdir. */
+        hata: `Liste EKSİK (${ad}): ${kesilmeMetni(s2.kesilme)} — yazım yapılmaz.`,
       };
     }
     cekilen.push(s2.kayitlar as Record<string, unknown>[]);

@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
-import { kimlikOku, baslikKur, tumSayfalar, UCLAR } from "./ty/istemci";
+import { kimlikOku, baslikKur, kesilmeMetni, tumSayfalar, UCLAR } from "./ty/istemci";
 import { v2KayitlariniNormallestir, type NormalUrun } from "./ty/urun-v2";
 import { listelemeDurumu } from "../src/lib/kanal-listeleme";
 
@@ -143,7 +143,8 @@ async function main() {
       await prisma.$disconnect();
       return;
     }
-    console.log(`   ${ad.padEnd(8)} ${s2.sayfa} sayfa · ${s2.kayitlar.length} kayıt`);
+    console.log(`   ${ad.padEnd(8)} ${s2.sayfa} sayfa · ${s2.kayitlar.length} kayıt${s2.tekrar ? ` · geçici hata ${s2.tekrar} kez yeniden denendi` : ""}`);
+    if (s2.kesildiMi) console.log(`   ⚠ ${ad}: ${kesilmeMetni(s2.kesilme)}`);
     cekilen.push(s2.kayitlar as Record<string, unknown>[]);
     sayfaToplam += s2.sayfa;
     kesildi = kesildi || s2.kesildiMi;
@@ -167,7 +168,7 @@ async function main() {
      * _(Anayasa: "bir kaynağın listesi kendi tamlığını kanıtlayamaz" —
      * tavana çarpan liste bir ALT SINIRDIR.)_
      */
-    console.log("   ⚠ SAYFA TAVANINA ÇARPILDI — bu liste bir ALT SINIRDIR.");
+    console.log("   ⚠ LİSTE EKSİK (sebep yukarıda) — bu liste bir ALT SINIRDIR.");
   }
 
   /* ═══ ② SINIFLAMA — ORTAK GÖVDEDEN ══════════════════════════════ */

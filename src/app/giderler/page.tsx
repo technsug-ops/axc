@@ -1,5 +1,5 @@
 /**
- * SUTUN TAVANI ISTISNASI: 8 — 4 sutun saga yasli SAYI, govdede 2 rozet; piksel genisligi OLCULMEDI. K43 · gercek cihazda bakilacak 01.09.2026.
+ * K43 (30.09.2026) — ESKI BEYAN DUSTU: ekran satir kartina gecti (K235-2); sayfada tablo YOK. Eski metin (gecmis icin): «8 sutun istisnasi — 4 sutun saga yasli SAYI, govdede 2 rozet; piksel genisligi OLCULMEDI. K43 · gercek cihazda bakilacak 01.09.2026.»
  *
  * Tavan (7) UC metin agirlikli ekranin icerik genisligine gore olculmustu;
  * bu ekran o kumenin disinda. Istisna SAYIYLA birlikte okunuyor: sutun

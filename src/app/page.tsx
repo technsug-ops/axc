@@ -4090,6 +4090,7 @@ export default async function AnaSayfa({
                   {t("envanterGrafikNotu")}
                 </p>
                 <TekSeriliGrafik
+                  seriAdi={t("grafikSekmeEnvanter")}
                   noktalar={envanterNoktalari}
                   bicimle={(deger) => bicim.para(deger, "TRY")}
                   bicimleKisa={(deger) => bicim.paraKisa(deger, "TRY")}
@@ -4266,6 +4267,7 @@ export default async function AnaSayfa({
                   {t("marjGrafikNotu")}
                 </p>
                 <TekSeriliGrafik
+                  seriAdi={t("grafikSekmeMarj")}
                   noktalar={marjNoktalari}
                   bicimle={(deger) => bicim.yuzde(deger)}
                   bicimleKisa={(deger) => bicim.yuzde(deger)}

@@ -243,6 +243,24 @@ console.log("\n3) SÜTUN BÜTÇESİ — liste tabloları tek ekrana sığıyor m
   );
 
   /**
+   * ⛔ K43 (30.09.2026) — İSTİSNASI KALMAYAN BEYAN DE BAYATTIR. `kartlar` ve
+   * `giderler` satır kartına geçti, sayfalarında tablo KALMADI; «8 sütun
+   * istisnası» beyanları ise duruyordu. Yukarıdaki döngü yalnız TABLOLU ve
+   * TAVANI AŞAN ekranlara baktığı için bu beyanları hiç görmüyordu —
+   * okuyan «bu ekran hâlâ geniş tablo» sanırdı.
+   */
+  const gerekceli = new Set(beyanlilar.map((b) => b.replace(/ \(\d+\)$/, "")));
+  const istisnasizBeyan = ekranlar
+    .filter((yol) => /SUTUN TAVANI ISTISNASI:\s*\d+/.test(kaynakOku(yol)))
+    .map((yol) => yol.replace("src/app/", "").replace("/page.tsx", ""))
+    .filter((kisa) => !gerekceli.has(kisa) && !bayatBeyanlar.some((b) => b.startsWith(`${kisa}:`)));
+  kontrol(
+    `istisnası KALMAMIŞ ekranda beyan YOK (${istisnasizBeyan.length})`,
+    istisnasizBeyan.length === 0,
+    istisnasizBeyan,
+  );
+
+  /**
    * ⚠ TUTANAK — GÖREV DEĞİL, KAYIT. Bu satırlar bugün kapatılamaz: piksel
    * ölçümü gerçek cihaz ister. Ama KAYBOLMAZLAR da; her koşumda sayılır.
    */

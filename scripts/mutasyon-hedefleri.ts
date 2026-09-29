@@ -273,4 +273,10 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * özetini ve rapor gövdesini mutasyona uğratıyor (panel · finansman ile ortak).
    */
   "kart-iadesi-mutasyon:kontrol",
+  /**
+   * K112b (30.09.2026) — `ty-sayfa-gezici` TY sipariş içe aktarmasını
+   * (`canli-ty-ice-aktar.ts`, içe aktarma harness'leriyle ortak) ve ortak
+   * TY istemcisini mutasyona uğratıyor.
+   */
+  "ty-sayfa-gezici-mutasyon:kontrol",
 ];

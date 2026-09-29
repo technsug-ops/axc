@@ -288,6 +288,9 @@ export async function tyCekimKos(ayar: {
       dilimHata++;
       continue;
     }
+    /* K112b: ortadaki bir sayfa düşerse dilim YARIM okunmuştur — bulunan
+       paketler işlenir (ekleyici), ama koşum eksik okuduğunu SÖYLER. */
+    if (d.kesildiMi) dilimHata++;
     for (const p of d.kayitlar as Record<string, unknown>[]) {
       paketler.set(Number(p.shipmentPackageId), p);
     }
