@@ -3529,7 +3529,13 @@
     "tavsiyeYetersizVeri": "",
     "tavsiyeUyari": "",
     "tavsiyeYedekOnsozu": "",
-    "tavsiyeHata": ""
+    "tavsiyeHata": "",
+    "deneKuponAlan": "",
+    "deneKuponIpucu": "",
+    "deneKuponNotu": "",
+    "deneKuponlu": "",
+    "deneKuponFarki": "",
+    "deneKuponDilimDegisti": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",

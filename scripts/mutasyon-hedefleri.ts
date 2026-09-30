@@ -285,4 +285,9 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    */
   "iade-duzenle-mutasyon:kontrol",
   "iade-gecerli-mutasyon:kontrol",
+  /**
+   * K19-② (30.09.2026) — `kupon` sözlüğü (`messages/tr.json`, birçok
+   * harness'le ortak) ve fiyat deneme ekranını mutasyona uğratıyor.
+   */
+  "kupon-mutasyon:kontrol",
 ];

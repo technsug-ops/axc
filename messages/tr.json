@@ -3529,7 +3529,13 @@
     "tavsiyeYetersizVeri": "Bu ürün için güvenilir bir tavsiye verecek kadar satış geçmişi yok.",
     "tavsiyeUyari": "Bu bir yapay zekâ önerisidir, otomatik bir karar değildir — nihai karar size aittir.",
     "tavsiyeYedekOnsozu": "Yapay zekâ değerlendirmesi üretilemedi; aynı verilerden kaynaklı rakamlar aşağıda.",
-    "tavsiyeHata": "Tavsiye şu an üretilemedi. Lütfen tekrar deneyin."
+    "tavsiyeHata": "Tavsiye şu an üretilemedi. Lütfen tekrar deneyin.",
+    "deneKuponAlan": "Takipçi kuponu (isteğe bağlı)",
+    "deneKuponIpucu": "örn. 15",
+    "deneKuponNotu": "Mağazanı takip eden müşterinin tek seferlik indirimi; kuponu sen ödersin. Doldurursan kuponlu satışın NET-2si ayrıca gösterilir.",
+    "deneKuponlu": "Kuponlu satışta ({kupon} kupon) NET-2:",
+    "deneKuponFarki": "(kuponsuza göre {fark})",
+    "deneKuponDilimDegisti": "Kupon fiyatı başka bir komisyon dilimine indiriyor; hesap kuponlu fiyatın dilimini kullandı. Pazaryerinin dilimi hangi fiyata göre seçtiği ölçülmedi."
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

@@ -23,6 +23,7 @@ import {
   type Beyan,
   type SimulasyonGirdisi,
 } from "@/lib/fiyatlama/simulasyon";
+import { kuponluSimulasyon } from "@/lib/fiyatlama/kupon";
 import type { TarifeDilimi } from "@/lib/komisyon/tarife-okuyucu";
 
 /**
@@ -113,6 +114,15 @@ export function FiyatDene({
 
   const sayi = Number(fiyat.replace(",", "."));
   const gecerli = fiyat.trim() !== "" && Number.isFinite(sayi) && sayi > 0;
+
+  /**
+   * K19-② — TAKİPÇİ KUPONU. Boş bırakılırsa hiçbir şey değişmez; doluysa her
+   * kanal kutusu «kuponlu satışta NET-2»yi AYRICA gösterir. Kuponsuz rakam
+   * yerinde kalır: satışların çoğu kuponsuz, kupon bir ihtimaldir.
+   */
+  const [kupon, setKupon] = useState("");
+  const kuponHam = Number(kupon.replace(",", "."));
+  const kuponSayi = kupon.trim() !== "" && Number.isFinite(kuponHam) ? kuponHam : null;
 
   /**
    * ⚠ TÜKETİCİ EŞLEME — her beyan türü ADIYLA karşılanır.
@@ -233,6 +243,19 @@ export function FiyatDene({
         />
       </label>
 
+      <label className="block max-w-xs">
+        <Label htmlFor="dene-kupon">{t("deneKuponAlan")}</Label>
+        <Input
+          id="dene-kupon"
+          value={kupon}
+          inputMode="decimal"
+          placeholder={t("deneKuponIpucu")}
+          onChange={(e) => setKupon(e.target.value)}
+          className="h-11"
+        />
+        <span className="text-muted-foreground mt-1 block text-xs">{t("deneKuponNotu")}</span>
+      </label>
+
       {/* ---------- STOKTA BEKLEME — ÇIKIŞ KARARININ İKİNCİ YARISI ----------
           ⚠ KANAL KUTUSUNUN İÇİNE KONMADI. Yaş ürünün özelliği, kanalın
           değil: her kanal kutusunda tekrarlasaydık aynı rakam üç kez
@@ -277,6 +300,8 @@ export function FiyatDene({
         };
 
         const s = gecerli ? simulasyonKur(girdi) : null;
+        /** K19-② — kuponlu satış AYNI motordan, «fiyat − kupon» ile (lib/fiyatlama/kupon). */
+        const kuponlu = s === null ? null : kuponluSimulasyon(girdi, s, kuponSayi);
 
         /**
          * ---- BAŞABAŞ, KANAL BAŞINA ----
@@ -380,6 +405,26 @@ export function FiyatDene({
                     </span>
                   </div>
                 </div>
+
+                {kuponlu !== null ? (
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">
+                      {t("deneKuponlu", { kupon: bicim.para(kuponlu.kupon, paraBirimi) })}{" "}
+                    </span>
+                    <span className={`font-medium tabular-nums ${DURUM_YAZISI[karZararRengi(kuponlu.sonuc.net2)]}`}>
+                      {netMetni(kuponlu.sonuc.net2)}
+                    </span>
+                    {kuponlu.net2Farki !== null ? (
+                      <span className="text-muted-foreground tabular-nums">
+                        {" "}
+                        {t("deneKuponFarki", { fark: bicim.para(kuponlu.net2Farki, paraBirimi) })}
+                      </span>
+                    ) : null}
+                    {kuponlu.dilimDegisti ? (
+                      <span className={`block text-xs ${DURUM_YAZISI.uyari}`}>{t("deneKuponDilimDegisti")}</span>
+                    ) : null}
+                  </p>
+                ) : null}
 
                 {/* ---------- BAŞABAŞ NOKTASI ----------
                     Ekranda NET-1 ₺0,04 / NET-2 −₺1,53 görünüyordu:
