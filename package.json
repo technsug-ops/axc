@@ -157,6 +157,8 @@
     "ty-sayfa-gezici-mutasyon:kontrol": "tsx scripts/ty-sayfa-gezici-mutasyon-kontrol.ts",
     "grafik-nokta:dogrula": "tsx scripts/grafik-nokta-dogrula.ts",
     "grafik-nokta-mutasyon:kontrol": "tsx scripts/grafik-nokta-mutasyon-kontrol.ts",
+    "iade-duzenle:dogrula": "tsx scripts/iade-duzenle-dogrula.ts",
+    "iade-duzenle-mutasyon:kontrol": "tsx scripts/iade-duzenle-mutasyon-kontrol.ts",
     "gunluk-ozet:dogrula": "tsx scripts/gunluk-ozet-dogrula.ts",
     "gunluk-ozet-mutasyon:kontrol": "tsx scripts/gunluk-ozet-mutasyon-kontrol.ts",
     "tavsiye:dogrula": "tsx scripts/tavsiye-dogrula.ts",

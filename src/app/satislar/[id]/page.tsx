@@ -1002,6 +1002,8 @@ export default async function SatisDetaySayfasi({
         orijinalNet1={sayi(satis.net1Amount)}
         orijinalNet2={sayi(satis.net2Amount)}
         bekleyenHasar={bekleyenHasar}
+        saleId={satis.id}
+        duzenlenebilir={await izinVarMi("iade.yaz")}
       />
 
       {/* ══════════════ DÜZENLEME ══════════════

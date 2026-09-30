@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,14 +96,21 @@ export async function IadeBlogu({
   orijinalNet1,
   orijinalNet2,
   bekleyenHasar,
+  saleId,
+  duzenlenebilir,
 }: {
   iadeler: IadeGorunumu[];
+  /** K44 — düzenleme adresi bu satıştan kurulur. */
+  saleId: string;
+  /** K44 — `iade.yaz` izni yoksa düğme çizilmez (sayfa zaten 404 verirdi). */
+  duzenlenebilir: boolean;
   paraBirimi: Currency;
   bekleyenHasar?: BekleyenHasar | null;
   orijinalNet1: number | null;
   orijinalNet2: number | null;
 }) {
   const t = await getTranslations("Iade");
+  const tDuzenle = await getTranslations("IadeDuzenle");
   const tKesinti = await getTranslations("Kesinti");
   const bicim = await bicimlendirici();
   const turler = await iadeTuruEtiketleri();
@@ -225,6 +232,16 @@ export async function IadeBlogu({
                   <span className="text-muted-foreground font-mono text-xs">
                     {iade.code}
                   </span>
+                ) : null}
+                {/* K44 — GÖRÜNÜR EYLEM (İlke #1): iade kaydedildikten sonra
+                    düzeltilebilsin. Stoğa dokunan alanlar orada salt okunur. */}
+                {duzenlenebilir ? (
+                  <Button asChild size="sm" variant="outline" className="h-11 md:h-8">
+                    <Link href={`/satislar/${saleId}/iade/${iade.id}/duzenle`}>
+                      <Pencil />
+                      {tDuzenle("duzenle")}
+                    </Link>
+                  </Button>
                 ) : null}
               </div>
               {/* ⛔ K170-①: NET-1 ETKİSİ DE YAZILIR — TEK BAŞINA NET-2 YALAN

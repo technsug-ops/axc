@@ -192,6 +192,68 @@ export function fifoMaliyeti(
   );
 }
 
+// ---------------------------------------------------------------------------
+//  İADE GENELİ PARA SATIRLARI — TEK GÖVDE (K44, 30.09.2026)
+// ---------------------------------------------------------------------------
+
+/** Düzenleme ekranının dokunduğu üç kod — kalem satırlarına ve tazminata DOKUNULMAZ. */
+export const IADE_PARA_KODLARI = ["IADE_KARGO", "YENIDEN_GONDERIM_KARGO", "CEZA"] as const;
+
+export type IadeParaAlanlari = {
+  iadeKargosu: number | null;
+  yenidenGonderimKargosu: number | null;
+  ceza: number | null;
+};
+
+/**
+ * Kargo ve ceza satırları. ⭐ KALEMLERDEN BAĞIMSIZ ve TOPLANARAK girer —
+ * `iadeEtkisiHesapla` de bunu çağırır, düzenleme de; iki yerde iki kural
+ * olmaz. Kargo KDV DAHİL girilir, KDV'si ödenecek KDV'den indirilir; ceza
+ * pazaryeri kesintisidir, KDV'li hizmet değildir.
+ */
+export function iadeParaSatirlari(g: IadeParaAlanlari): {
+  satirlar: IadeSatiri[];
+  net1: number;
+  kargoKdvIndirimi: number;
+} {
+  const satirlar: IadeSatiri[] = [];
+  let kargoKdvIndirimi = 0;
+  if (g.iadeKargosu !== null && g.iadeKargosu > 0) {
+    satirlar.push({ code: "IADE_KARGO", tutar: -g.iadeKargosu });
+    kargoKdvIndirimi += kdvAyir(g.iadeKargosu, GENEL_KDV_ORANI);
+  }
+  if (g.yenidenGonderimKargosu !== null && g.yenidenGonderimKargosu > 0) {
+    satirlar.push({ code: "YENIDEN_GONDERIM_KARGO", tutar: -g.yenidenGonderimKargosu });
+    kargoKdvIndirimi += kdvAyir(g.yenidenGonderimKargosu, GENEL_KDV_ORANI);
+  }
+  if (g.ceza !== null && g.ceza > 0) {
+    satirlar.push({ code: "CEZA", tutar: -g.ceza });
+  }
+  return { satirlar, net1: satirlar.reduce((t, s) => t + s.tutar, 0), kargoKdvIndirimi };
+}
+
+/**
+ * DÜZENLEMENİN KÂRA ETKİSİ — yalnız FARK. Kalem satırları (ciro, komisyon,
+ * maliyet) değişmediği için iade baştan hesaplanmaz; baştan hesaplamak,
+ * satışın o günden bu yana değişmiş hareketlerini (ör. değişim çıkışı)
+ * iadenin snapshot'ına sızdırırdı.
+ *   ΔNET-1 = yeni satırlar − eski satırlar
+ *   ΔNET-2 = ΔNET-1 + Δkargo KDV indirimi  (NET-2 = NET-1 − ödenecek KDV)
+ */
+export function iadeParaFarki(
+  eski: IadeParaAlanlari,
+  yeni: IadeParaAlanlari,
+): { net1Farki: number; net2Farki: number; yeniSatirlar: IadeSatiri[] } {
+  const e = iadeParaSatirlari(eski);
+  const y = iadeParaSatirlari(yeni);
+  const net1Farki = y.net1 - e.net1;
+  return {
+    net1Farki,
+    net2Farki: net1Farki + (y.kargoKdvIndirimi - e.kargoKdvIndirimi),
+    yeniSatirlar: y.satirlar,
+  };
+}
+
 export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
   // İtiraz kabul edilmişse satış ayakta: gelir ve kesintiler geri gelmez.
   const geriGelir = girdi.returnType !== "DISPUTED";
@@ -348,24 +410,13 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
   // ------------------------- İADE GENELİ -------------------------
   const genelSatirlar: IadeSatiri[] = [];
 
-  if (girdi.iadeKargosu !== null && girdi.iadeKargosu > 0) {
-    genelSatirlar.push({ code: "IADE_KARGO", tutar: -girdi.iadeKargosu });
-    kargoKdvIndirimi += kdvAyir(girdi.iadeKargosu, GENEL_KDV_ORANI);
-  }
-  if (
-    girdi.yenidenGonderimKargosu !== null &&
-    girdi.yenidenGonderimKargosu > 0
-  ) {
-    genelSatirlar.push({
-      code: "YENIDEN_GONDERIM_KARGO",
-      tutar: -girdi.yenidenGonderimKargosu,
-    });
-    kargoKdvIndirimi += kdvAyir(girdi.yenidenGonderimKargosu, GENEL_KDV_ORANI);
-  }
-  // Ceza pazaryeri kesintisidir; KDV'li bir hizmet bedeli değildir.
-  if (girdi.ceza !== null && girdi.ceza > 0) {
-    genelSatirlar.push({ code: "CEZA", tutar: -girdi.ceza });
-  }
+  /**
+   * ⭐ KARGO VE CEZA — ORTAK GÖVDE (K44). İade düzenleme ekranı aynı gövdeyle
+   * FARK hesaplıyor; burada ayrı yazılsaydı iki yerde iki kural olurdu.
+   */
+  const para = iadeParaSatirlari(girdi);
+  genelSatirlar.push(...para.satirlar);
+  kargoKdvIndirimi += para.kargoKdvIndirimi;
   /** ⭐ TAZMİNAT TAHSİLATI — faturalı gelir; ödenecek KDV'yi ARTIRIR. */
   let tazminatKdv = 0;
   if (girdi.tazminatTahsilati && girdi.tazminatTahsilati.tutar > 0) {
