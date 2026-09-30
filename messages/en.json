@@ -2065,7 +2065,9 @@
     "kartlarBaslik": "",
     "kartlarNotu": "",
     "beyanRozeti": "",
-    "hamDonem": ""
+    "hamDonem": "",
+    "tarihsizIadeBaslik": "",
+    "tarihsizIadeNotu": ""
   },
   "Tedarikci": {
     "baslik": "",
@@ -2195,7 +2197,17 @@
     "karsiTarafYokHata": "",
     "aramaIpucu": "",
     "aramaSonuc": "",
-    "aramaBos": ""
+    "aramaBos": "",
+    "tahsilGunuEtiketi": "",
+    "tahsilGunuGirilmedi": "",
+    "tahsilGunuDegeri": "",
+    "tahsilGunuIpucu": "",
+    "tahsilGunuGecersiz": "",
+    "tahsilGunuGelecek": "",
+    "tahsilGunuYalnizKapanan": "",
+    "tahsilGunuTalepOncesi": "",
+    "tahsilGunuYazilamadi": "",
+    "tahsilGunuKaydedildi": ""
   },
   "Hakedis": {
     "baslik": "",

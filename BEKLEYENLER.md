@@ -105,6 +105,20 @@ ekliyor, nakit takvimi eklemiyor. Ayrı kalem.
 3. Tazminat kutusunda Tefal Delibake satırı «alım iadesi · karta döndü», altında «1 alım iadesi (₺799,91) … GERÇEK NET'e girmez».
 4. Kart borcu → S.ahmet Garanti → 19.09'u kapsayan ekstrede «ALM-HB-260911-16 · iade» satırı **−₺799,91**.
 
+─── ② **30.09.2026 — TEST 5 BULGUSU: İADE TAKSİTLİ DÖNÜYOR + 4 İADE BORÇTAN HİÇ DÜŞMÜYORDU** · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+- **Kullanıcı ekstresi:** ₺799,91 iade **3 taksitle** dönüyor (ilk taksit 266,65). Sistem tek çekim düşüyordu. → İade artık **alımın taksit sayısına** bölünüyor; eksi tutar alımın aynası bölünüyor (−799,91 → −266,63 · −266,63 · −266,65).
+  ⚠ **AÇIK SORU 1:** «alımın taksit sayısı» mı «kalan taksit sayısı» mı? Tek vakada ikisi aynı (iade ilk ekstreden önce geldi); ayıran vaka gelince ölçülür.
+  ⚠ **AÇIK SORU 2 (kuruş):** banka artan kuruşu İLK taksite koymuş (266,65 + 266,63 + 266,63); sistem SON taksite koyuyor. Kullanıcıya soruldu: aynı ekstrede ALIMIN kendi 1. taksiti 266,65 mi 266,63 mü? Cevaba göre `taksitlereBol` bütünüyle bankaya uydurulacak.
+- **Ölçüldü (canlı, salt okuma):** kartla ödenmiş 5 alım iadesinin **4'ünün tahsil izi YOK** (K209'dan önce kapatılmışlar) → `continue` ile **sessizce** kart borcundan düşmüyordu: ALM-HB-260811-01 ₺1.111 (Hasan Akbank, 1 taksit) · ALM-HB-260817-03 ₺759,90 ve -04 ₺1.519,80 (S.ahmet Vakıf, 3 taksit) · ALM-AMZ-260904-01 ₺8.811 (Murat Garanti, 9 taksit) = **₺12.201,70**. Daha önce raporlanan «5 kayıt · ₺13.001,61» TALEP sayısıydı, borca ulaşan değil.
+- **Kullanıcı kararı:** kart sahiplerinin ekstresine bakmak yerine **pazaryerinin «iade edildi» bildirim tarihi** tahsil günü sayılır (para ~2 gün içinde düşer). Tazminat ekranında kapanmış her talebin satırında «Tahsil: gg.aa.yyyy» / «Tahsil günü girilmedi» alanı; gün İZİN İÇİNE yazılır (`tahsilGunu`), sıra hâlâ iz anıyla (geçmiş güne düzeltme de kazanır). Kart borcu ve rapor AYNI günü okur. Kart borcu ekranında «N alım iadesinin tahsil günü girilmedi» kutusu, satır tazminat kaydına götürür.
+  ⚠ Bilinen sapma: bildirim kesim gününe 2 günden yakınsa iade bir sonraki ekstreye kayabilir — tarih kaydırılmadı (tahmin yok).
+- Bekçiler: `kart-iadesi:dogrula` 35 (iki eskiyen ölçüt gerekçesiyle güncellendi) · `tazminat:dogrula` 84 · mutasyon kart-iadesi 17/17, tazminat 11/11.
+**Halil testi:**
+1. Kart borcu → üstte «4 alım iadesinin tahsil günü girilmedi» kutusu, dört satır yukarıdaki tutarlarla.
+2. Satıra tıkla → tazminat ekranı o alımla süzülü → satırda turuncu «Tahsil günü girilmedi» → tıkla → pazaryeri e-postasındaki tarihi seç → Kaydet → «Tahsil: …» yazar.
+3. Kart borcu → kutu 3'e iner; o kartın ekstrelerinde «… · iade» satırları taksit taksit görünür (Murat Garanti ₺8.811 / 9 ≈ ₺979 her ay).
+4. S.ahmet Garanti → 7 Ekim ekstresinde «ALM-HB-260911-16 · iade» **−266,63** (banka 266,65 diyor — kuruş sorusu açık), sonraki iki ekstrede de birer taksit.
+
 ---
 
 ## 🟢 K304 — FİNANSMAN: SERMAYE · ORTAK/ÜÇÜNCÜ KİŞİ BORCU · BANKA KREDİSİ · 28.09.2026 · [MIGRATION CANLIDA · KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 30.09.2026; MİMAR ONAYI BEKLİYOR]

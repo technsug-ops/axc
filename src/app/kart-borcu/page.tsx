@@ -24,7 +24,7 @@ import {
 } from "@/lib/kart-borcu";
 import { giderleriBorcaCevir } from "@/lib/kart-gideri";
 import { alimIadeleriniBorcaCevir } from "@/lib/kart-iadesi";
-import { kartaDonenAlimIadeleri } from "@/lib/kart-iadesi-veri";
+import { kartIadesiDurumu } from "@/lib/kart-iadesi-veri";
 import {
   birlesikToplamlar,
   ekstreleriBirlestir,
@@ -239,7 +239,7 @@ export default async function KartBorcuSayfasi({
       }));
 
   /** K305 — karta dönen alım iadeleri (hasarlı gelen, stoğa girmemiş mal). */
-  const kartIadeleri = await kartaDonenAlimIadeleri();
+  const { iadeler: kartIadeleri, tarihsiz: tarihsizIadeler } = await kartIadesiDurumu();
 
   const kartHesaplari = kartlar.map((kart) => {
     const borclar: BorcAlimi[] = [];
@@ -430,6 +430,27 @@ export default async function KartBorcuSayfasi({
           </Link>
         </Button>
       </div>
+
+      {/* TAHSİL GÜNÜ GİRİLMEMİŞ İADE — borçtan DÜŞÜLMEDİ ve bu SÖYLENİR (İlke #5).
+          Satır, günün girileceği tazminat kaydına götürür (İlke #16). */}
+      {tarihsizIadeler.length > 0 ? (
+        <div className={`max-w-3xl space-y-2 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`flex items-center gap-2 text-sm font-medium ${DURUM_YAZISI.uyari}`}>
+            <TriangleAlert className="size-4 shrink-0" />
+            {t("tarihsizIadeBaslik", { sayi: tarihsizIadeler.length })}
+          </p>
+          <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("tarihsizIadeNotu")}</p>
+          <ul className="space-y-1 text-sm">
+            {tarihsizIadeler.map((i) => (
+              <li key={i.id} className="flex flex-wrap items-center gap-x-3">
+                <Baglanti href={`/tazminat?q=${encodeURIComponent(i.alimKodu)}`}>{i.alimKodu}</Baglanti>
+                <span>{kartlar.find((k) => k.id === i.kartId)?.label ?? "—"}</span>
+                <span className="tabular-nums">{bicim.para(i.tutar, i.paraBirimi)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {kartlar.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center">

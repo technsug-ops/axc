@@ -2065,7 +2065,9 @@
     "kartlarBaslik": "Kartlar",
     "kartlarNotu": "Kartlar bekleyen tutara göre sıralı — en borçlu başta. Sekme etiketinde o kartın bekleyen toplamı yazıyor; seçim adreste kalır.",
     "beyanRozeti": "geçmiş beyan",
-    "hamDonem": "Excel'de: {metin}"
+    "hamDonem": "Excel'de: {metin}",
+    "tarihsizIadeBaslik": "{sayi} alım iadesinin tahsil günü girilmedi — kart borcundan düşülmedi",
+    "tarihsizIadeNotu": "Pazaryerinin «iade edildi» bildiriminin tarihini tazminat ekranında girin; iade o günden itibaren alımın taksitlerine bölünerek borçtan düşer."
   },
   "Tedarikci": {
     "baslik": "Tedarikçiler",
@@ -2195,7 +2197,17 @@
     "karsiTarafYokHata": "Bu kalemin tedarikçisi belli değil; talep kime açılacağı bilinmeden kaydedilemez. Alım kaydına tedarikçi girip tekrar deneyin.",
     "aramaIpucu": "Ürün, SKU, alım/sipariş no ya da tedarikçi ara",
     "aramaSonuc": "«{q}» için {bekleyen} bekleyen hasar · {talep} talep (açık alacak özeti tüm talepleri gösterir)",
-    "aramaBos": "«{q}» aramasına uyan kayıt yok."
+    "aramaBos": "«{q}» aramasına uyan kayıt yok.",
+    "tahsilGunuEtiketi": "Tahsil günü (pazaryerinin iade/ödeme bildirimi tarihi)",
+    "tahsilGunuGirilmedi": "Tahsil günü girilmedi — kart borcuna yansımadı",
+    "tahsilGunuDegeri": "Tahsil: {gun}",
+    "tahsilGunuIpucu": "Pazaryerinin «iade edildi» bildiriminin tarihi. Para genelde 2 gün içinde karta düşer.",
+    "tahsilGunuGecersiz": "Tarih okunamadı. Takvimden bir gün seçin.",
+    "tahsilGunuGelecek": "Tahsil günü bugünden sonra olamaz.",
+    "tahsilGunuYalnizKapanan": "Tahsil günü yalnız «Kapandı» durumundaki talebe girilir.",
+    "tahsilGunuTalepOncesi": "Tahsil günü, talebin açıldığı günden önce olamaz.",
+    "tahsilGunuYazilamadi": "Tahsil günü kaydedilemedi. Tekrar deneyin; sürerse bildirin.",
+    "tahsilGunuKaydedildi": "Tahsil günü kaydedildi."
   },
   "Hakedis": {
     "baslik": "Hakediş",

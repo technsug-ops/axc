@@ -40,6 +40,8 @@ import {
   karsiTarafGecerliMi,
   talepTutariniCoz,
   varsayilanTalepTutari,
+  izdekiTahsilGunu,
+  TAHSIL_GUNU_ALANI,
   tazminatTahsilTarihi,
   tazminatTahsilTarihleri,
   TAZMINAT_TAHSIL_EDILDI_EYLEMI,
@@ -49,7 +51,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -511,6 +513,65 @@ console.log("\n5) TAHSİLAT İZİ — PAKETLEME İZİYLE AYNI DESEN (K209)");
   );
 
   kosanBolumler.push("tahsilat-izi");
+}
+
+// ===========================================================================
+// 6) TAHSİL GÜNÜ — PAZARYERİ BİLDİRİMİ (30.09.2026)
+// ===========================================================================
+console.log("\n6) TAHSİL GÜNÜ İZİN İÇİNDEN — pazaryeri bildirimi tarihi");
+{
+  const T = TAZMINAT_TAHSIL_EDILDI_EYLEMI;
+  const G = TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI;
+  const an = (gun: number) => new Date(Date.UTC(2026, 8, gun, 9, 0));
+  const gunlu = (g: string) => JSON.stringify({ tutar: "1", paraBirimi: "TRY", [TAHSIL_GUNU_ALANI]: g });
+
+  kontrol(
+    "izde gün varsa tahsil günü ODUR (iz anı değil)",
+    tazminatTahsilTarihi([{ action: T, createdAt: an(30), targetId: "a", detail: gunlu("2026-09-19") }])?.getTime() === Date.UTC(2026, 8, 19),
+  );
+  kontrol(
+    "gün yoksa iz anına düşer (eski izler)",
+    tazminatTahsilTarihi([{ action: T, createdAt: an(30), targetId: "a", detail: JSON.stringify({ tutar: "1" }) }])?.getTime() === an(30).getTime(),
+  );
+  kontrol(
+    "bozuk detay iz anına düşer (hata fırlatmaz)",
+    tazminatTahsilTarihi([{ action: T, createdAt: an(30), targetId: "a", detail: "{bozuk" }])?.getTime() === an(30).getTime(),
+  );
+  kontrol("geçersiz gün (31 Şubat) tahsil günü sayılmaz", izdekiTahsilGunu(gunlu("2026-02-31")) === null);
+  /* Ayrımın iki yakası: GEÇMİŞ bir gün girilen YENİ iz, eski izi yenmeli. */
+  kontrol(
+    "düzeltme izi geçmiş gün taşısa da EN YENİ olduğu için kazanır",
+    tazminatTahsilTarihi([
+      { action: T, createdAt: an(19), targetId: "a", detail: JSON.stringify({ tutar: "1" }) },
+      { action: T, createdAt: an(30), targetId: "a", detail: gunlu("2026-09-17") },
+    ])?.getTime() === Date.UTC(2026, 8, 17),
+  );
+  kontrol(
+    "günlü iz sonradan geri alınırsa tahsil yok",
+    tazminatTahsilTarihi([
+      { action: T, createdAt: an(20), targetId: "a", detail: gunlu("2026-09-17") },
+      { action: G, createdAt: an(21), targetId: "a" },
+    ]) === null,
+  );
+
+  const yorumsuzla = (m: string) => m.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+  const eylem = yorumsuzla(kaynakOku("src/app/tazminat/actions.ts"));
+  const govde = eylem.slice(eylem.indexOf("export async function tazminatTahsilGunuKaydet("), eylem.indexOf("export async function tazminatNotGuncelle("));
+  kontrol("eylem gövdesi bulundu", govde.length > 200, govde.length);
+  kontrol("yalnız KAPANMIŞ talebe girilir", govde.includes('if (kayit.status !== "SETTLED") return { hatalar: [t("tahsilGunuYalnizKapanan")] };'));
+  kontrol("gelecek gün reddedilir", /if \(gun\.getTime\(\) > gunDegeri\(isTakvimGunu\(new Date\(\)\)\)\.getTime\(\)\) \{\s*return \{ hatalar: \[t\("tahsilGunuGelecek"\)\] \};/.test(govde));
+  kontrol("gün izin İÇİNE yazılır", /action: TAZMINAT_TAHSIL_EDILDI_EYLEMI,[\s\S]{0,200}\[TAHSIL_GUNU_ALANI\]: gunMetni,/.test(govde));
+  kontrol("kart borcu da tazelenir", govde.includes('revalidatePath("/kart-borcu");'));
+
+  const sayfa = yorumsuzla(kaynakOku("src/app/tazminat/page.tsx"));
+  kontrol("ekran izi detayla okur (kart borcu ve raporla aynı gün)", sayfa.includes("select: { action: true, createdAt: true, targetId: true, detail: true },") && sayfa.includes("const tahsilGunleri = tazminatTahsilTarihleri(tahsilIzleri);"));
+  kontrol("alan yalnız kapanmış satırda çizilir", /k\.status === "SETTLED" \? \(\s*<TahsilGunuAlani/.test(sayfa));
+
+  const veri = yorumsuzla(kaynakOku("src/lib/kart-iadesi-veri.ts"));
+  kontrol("günü olmayan KAPANMIŞ iade ayrı döner (sessiz düşmez)", /if \(!tarih\) \{\s*if \(t\.status === "SETTLED"\) \{\s*tarihsiz\.push\(/.test(veri));
+  const borc = yorumsuzla(kaynakOku("src/app/kart-borcu/page.tsx"));
+  kontrol("kart borcu ekranı tarihsiz iadeyi ÇİZER", /\{tarihsizIadeler\.length > 0 \? \([\s\S]{0,300}t\("tarihsizIadeBaslik"/.test(borc));
+  kosanBolumler.push("tahsil-gunu");
 }
 
 // ===========================================================================

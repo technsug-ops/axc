@@ -1,3 +1,4 @@
+import { gunMetninden } from "@/lib/donem";
 import { sayiCoz } from "@/lib/tablo/hucre";
 import type { CompensationStatus, Currency } from "@/generated/prisma/enums";
 
@@ -211,7 +212,51 @@ export type TazminatTahsilatIzi = {
   action: string;
   createdAt: Date;
   targetId: string | null;
+  /**
+   * İzin JSON detayı. `tahsilGunu` ("YYYY-MM-DD") taşıyorsa tahsil günü ODUR;
+   * yoksa izin anı (eski davranış). İsteğe bağlı: seçmeyen okuyucu eski
+   * davranışa düşer — bu yüzden iki okuyucu da (`rapor` · `kart-iadesi-veri`)
+   * bekçiyle SEÇMEK zorunda (`tazminat:dogrula`).
+   */
+  detail?: string | null;
 };
+
+/**
+ * ============================================================================
+ *  TAHSİL GÜNÜ İZİN İÇİNDEN (30.09.2026, kullanıcı kararı)
+ * ----------------------------------------------------------------------------
+ *  _«Kendi kartlarımdan bakarım ama diğer kart sahipleri bakamaz … aldığım
+ *  ürünün parası iade edildiğinde pazaryerinden bildirim geliyor ve takip
+ *  eden 2 gün içinde iade gerçekleşiyor; o bildirim tarihini esas kabul
+ *  edebiliriz.»_
+ *
+ *  Tahsil günü eskiden izin ANIYDI — yani durumu «Kapandı»ya çevirdiğin gün.
+ *  Bildirimi 3 gün sonra işleyen, parayı 3 gün geç tahsil etmiş görünüyordu;
+ *  ve iz doğmadan (K209) kapatılmış 4 alım iadesinin HİÇ günü yoktu → kart
+ *  borcundan sessizce düşmüyorlardı (ölçüldü: ₺12.201,70).
+ *
+ *  ⚠ SIRA HÂLÂ İZİN ANIYLA: «en yeni iz kazanır» değişmedi. Tarih düzeltmesi
+ *  YENİ bir iz yazar (silme yok) ve geçmişe dönük gün girilse bile en yeni
+ *  olduğu için kazanır. Günü izin anına yazsaydık, geçmiş bir gün eski izin
+ *  GERİSİNE düşer ve düzeltme hiç görünmezdi.
+ *  ⚠ ÇÖZÜLEMEYEN DETAY iz anına düşer (eski izler `{tutar,paraBirimi}` taşır).
+ * ============================================================================
+ */
+export const TAHSIL_GUNU_ALANI = "tahsilGunu";
+
+export function izdekiTahsilGunu(detail: string | null | undefined): Date | null {
+  if (!detail) return null;
+  let veri: unknown;
+  try {
+    veri = JSON.parse(detail);
+  } catch {
+    /* Bozuk iz tahsil günü taşımaz; iz anına düşülür — yukarıdaki not. */
+    return null;
+  }
+  if (veri === null || typeof veri !== "object") return null;
+  const gun = (veri as Record<string, unknown>)[TAHSIL_GUNU_ALANI];
+  return typeof gun === "string" ? gunMetninden(gun) : null;
+}
 
 /**
  * BİR TALEP TAHSİL EDİLMİŞ Mİ — EN YENİ İZ KAZANIR.
@@ -250,9 +295,8 @@ export function tazminatTahsilTarihi(
       enYeni = iz;
     }
   }
-  return enYeni?.action === TAZMINAT_TAHSIL_EDILDI_EYLEMI
-    ? enYeni.createdAt
-    : null;
+  if (enYeni?.action !== TAZMINAT_TAHSIL_EDILDI_EYLEMI) return null;
+  return izdekiTahsilGunu(enYeni.detail) ?? enYeni.createdAt;
 }
 
 /**

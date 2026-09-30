@@ -29,10 +29,19 @@ export type KartIadesi = {
   paraBirimi: string;
   /** Tahsil günü (iz kaydından). */
   tarih: Date;
+  /**
+   * ALIMIN taksit sayısı — iade de o kadar taksite bölünür.
+   * ⛔ ESKİDEN TEK ÇEKİMDİ: ₺799,91 7 Ekim ekstresinden tek kalemde düşüyordu;
+   * banka ise 3 taksite böldü (kullanıcı ekstresi 30.09.2026: ilk taksit 266,65).
+   * ⚠ AÇIK SORU: «alımın taksit sayısı» mı «kalan taksit sayısı» mı? Tek vakada
+   * ikisi aynı (iade ilk ekstreden önce geldi). Ayırt eden vaka gelene kadar
+   * alımın sayısı — panoda yazılı.
+   */
+  taksitSayisi: number;
 };
 
 export function alimIadeleriniBorcaCevir(iadeler: readonly KartIadesi[], kartId: string, paraBirimi: string): BorcAlimi[] {
   return iadeler
     .filter((i) => i.kartId === kartId && i.paraBirimi === paraBirimi && i.tutar > 0)
-    .map((i) => ({ id: `iade-${i.id}`, kod: `${i.alimKodu} · iade`, tarih: i.tarih, tutar: -i.tutar, taksitSayisi: 1 }));
+    .map((i) => ({ id: `iade-${i.id}`, kod: `${i.alimKodu} · iade`, tarih: i.tarih, tutar: -i.tutar, taksitSayisi: Math.max(1, i.taksitSayisi) }));
 }

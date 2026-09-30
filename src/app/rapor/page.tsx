@@ -323,7 +323,8 @@ export default async function RaporSayfasi({
           action: { in: [...TAZMINAT_TAHSILAT_EYLEMLERI] },
           targetType: "Compensation",
         },
-        select: { action: true, createdAt: true, targetId: true },
+        /* `detail` ŞART: tahsil günü (pazaryeri bildirimi) izin içinde durur. */
+        select: { action: true, createdAt: true, targetId: true, detail: true },
       }),
     ]);
 

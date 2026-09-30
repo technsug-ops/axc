@@ -301,4 +301,9 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * mutasyona uğratıyor.
    */
   "kdv-uyusmazligi-mutasyon:kontrol",
+  /**
+   * 30.09.2026 — `tazminat` artık kart iadesi veri gövdesini
+   * (`kart-iadesi-veri.ts`, kart-iadesi harness'iyle ortak) de mutasyona uğratıyor.
+   */
+  "tazminat-mutasyon:kontrol",
 ];

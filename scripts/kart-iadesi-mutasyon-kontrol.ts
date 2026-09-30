@@ -77,6 +77,16 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "K308 PANEL KARGOYU YINE EKLIYOR", yon: "FAZLADAN", dosya: OZET, bekci: BEKCI,
     bul: "      const { tutar } = kartAlimTutari(a, a.items, kart.currency);", koy: "      const tutar = kartAlimTutari(a, a.items, kart.currency).tutar + Number(a.shippingAmount?.toString() ?? 0);",
     bozdugu: "alim tutarinin icindeki kargo panelde ikinci kez borca yazilir" },
+  /* 30.09.2026 - banka iadeyi alimin taksitlerine boluyor (kullanici ekstresi). */
+  { ad: "IADE YINE TEK CEKIM", yon: "KALDIRAN", dosya: KURAL, bekci: BEKCI,
+    bul: "taksitSayisi: Math.max(1, i.taksitSayisi) }", koy: "taksitSayisi: 1 }",
+    bozdugu: "taksitli alimin iadesi tek ekstreden duser, borc yanlis" },
+  { ad: "EKSI TUTAR AYNA BOLUNMUYOR", yon: "KALDIRAN", dosya: "src/lib/kart-borcu.ts", bekci: BEKCI,
+    bul: "  if (tutar < 0) return taksitlereBol(-tutar, taksitSayisi).map((p) => (p === 0 ? 0 : -p));\n", koy: "",
+    bozdugu: "iade taksitleri alim taksitleriyle kurusuna kapanmaz" },
+  { ad: "VERI TAKSIT SAYISINI TASIMIYOR", yon: "KALDIRAN", dosya: VERI, bekci: BEKCI,
+    bul: "      taksitSayisi: t.purchaseItem!.purchase.installmentCount,", koy: "      taksitSayisi: 1,",
+    bozdugu: "kural dogru, veri tek cekim verir" },
 ];
 
 function bekciyiKostur(bekci: string): { kod: number; ciktiVar: boolean } {

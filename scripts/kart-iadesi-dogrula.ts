@@ -2,7 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { kaynakOku } from "./kaynak-oku";
-import { ekstreSatirAdresi, kartBorcuHesapla } from "../src/lib/kart-borcu";
+import { ekstreSatirAdresi, kartBorcuHesapla, taksitlereBol } from "../src/lib/kart-borcu";
 import { giderleriBorcaCevir } from "../src/lib/kart-gideri";
 import { kartAlimTutari } from "../src/lib/kart-alim-tutari";
 import { alimIadeleriniBorcaCevir, type KartIadesi } from "../src/lib/kart-iadesi";
@@ -43,9 +43,18 @@ console.log("=".repeat(70));
 console.log("\n1) kural — değerle");
 {
   const gun = (y: number, a: number, g: number) => new Date(Date.UTC(y, a - 1, g));
-  const iade = (o: Partial<KartIadesi> = {}): KartIadesi => ({ id: "t1", kartId: "K1", alimKodu: "ALM-1", tutar: 799.91, paraBirimi: "TRY", tarih: gun(2026, 9, 14), ...o });
+  const iade = (o: Partial<KartIadesi> = {}): KartIadesi => ({ id: "t1", kartId: "K1", alimKodu: "ALM-1", tutar: 799.91, paraBirimi: "TRY", tarih: gun(2026, 9, 14), taksitSayisi: 1, ...o });
   const c = alimIadeleriniBorcaCevir([iade(), iade({ id: "t2", kartId: "K2" }), iade({ id: "t3", paraBirimi: "EUR" }), iade({ id: "t4", tutar: 0 })], "K1", "TRY");
-  kontrol("iade EKSİ tutarlı tek çekim kalem", c.length === 1 && c[0].tutar === -799.91 && c[0].taksitSayisi === 1, c);
+  /* ⚠ ÖLÇÜT ESKİDİ (30.09.2026): burada «iade tek çekim» sabitleniyordu. Kullanıcının
+     Garanti ekstresi iadenin ALIMIN TAKSİTLERİNE bölündüğünü gösterdi (₺799,91 → 3 ×
+     ~266,6). Tek çekim davranışı artık yalnız tek taksitli alımda doğru. */
+  kontrol("tek taksitli alımın iadesi EKSİ tutarlı tek kalem", c.length === 1 && c[0].tutar === -799.91 && c[0].taksitSayisi === 1, c);
+  const t3 = alimIadeleriniBorcaCevir([iade({ taksitSayisi: 3 })], "K1", "TRY");
+  kontrol("3 taksitli alımın iadesi 3 taksite bölünür", t3.length === 1 && t3[0].taksitSayisi === 3 && t3[0].tutar === -799.91, t3);
+  kontrol("taksit sayısı 0 gelirse tek çekim (bölme hatası yok)", alimIadeleriniBorcaCevir([iade({ taksitSayisi: 0 })], "K1", "TRY")[0]?.taksitSayisi === 1);
+  const arti = taksitlereBol(799.91, 3);
+  const eksi = taksitlereBol(-799.91, 3);
+  kontrol("eksi tutar alımın AYNASI bölünür", JSON.stringify(eksi) === JSON.stringify(arti.map((x) => -x)), { arti, eksi });
   kontrol("başka kartın iadesi GİRMEZ", !c.some((x) => x.id === "iade-t2"));
   kontrol("başka para biriminin iadesi GİRMEZ (kur çevrilmez)", !c.some((x) => x.id === "iade-t3"));
   kontrol("sıfır iade kalem üretmez", !c.some((x) => x.id === "iade-t4"));
@@ -55,6 +64,9 @@ console.log("\n1) kural — değerle");
   const alim = { id: "a", kod: "ALM-1", tarih: gun(2026, 9, 11), tutar: 1599.82, taksitSayisi: 1 };
   const ayni = kartBorcuHesapla([alim, ...c], kart, gun(2026, 9, 1), []);
   kontrol("aynı ekstrede iade borcu düşürür (1.599,82 − 799,91)", Math.abs(ayni.acikToplam - 799.91) < 0.005, ayni.acikToplam);
+  const alim3 = { id: "a3", kod: "ALM-3", tarih: gun(2026, 9, 11), tutar: 799.91, taksitSayisi: 3 };
+  const ayna = kartBorcuHesapla([alim3, ...t3], kart, gun(2026, 9, 1), []);
+  kontrol("aynı taksitli alım + iade: her ekstre sıfırlanır", ayna.acikToplam === 0 && ayna.ekstreler.every((e) => Math.abs(e.toplam) < 0.005), ayna.ekstreler.map((e) => e.toplam));
   const yalniz = kartBorcuHesapla(alimIadeleriniBorcaCevir([iade({ tarih: gun(2026, 10, 25) })], "K1", "TRY"), kart, gun(2026, 9, 1), []);
   kontrol("yalnız iade olan ekstre borcu EKSİYE indirmez", yalniz.acikToplam >= 0, yalniz.acikToplam);
 }
@@ -88,10 +100,16 @@ console.log("\n3) veri — tahsil günü rapor ile aynı kuraldan");
 {
   const v = yorumsuz(kaynakOku("src/lib/kart-iadesi-veri.ts"));
   kontrol("yalnız alım kalemine bağlı + kartla ödenmiş talep", v.includes("where: { purchaseItem: { purchase: { creditCardId: { not: null } } } }"));
-  kontrol("tahsil günü ORTAK kuraldan (en yeni iz; geri alınan düşer)", v.includes("const tarihler = tazminatTahsilTarihleri(izler);") && v.includes("if (!tarih || !kartId) continue;"));
+  /* ⚠ ÖLÇÜT ESKİDİ (30.09.2026): `if (!tarih || !kartId) continue;` günü olmayan
+     iadeyi SESSİZCE düşürüyordu (4 iade, ₺12.201,70). Artık günü olmayan kapanmış
+     iade ayrı listelenir; ölçüt «günsüz iade BORCA girmez» sözünü korur. */
+  kontrol("tahsil günü ORTAK kuraldan (en yeni iz; geri alınan düşer)", v.includes("const tarihler = tazminatTahsilTarihleri(izler);") && /if \(!kartId\) continue;\s*if \(!tarih\) \{[\s\S]{0,300}continue;\s*\}/.test(v));
   kontrol("tarih İSTANBUL gününe çevrilir", v.includes("tarih: gunDegeri(isTakvimGunu(tarih)),"));
+  kontrol("iade ALIMIN taksit sayısını taşır", v.includes("taksitSayisi: t.purchaseItem!.purchase.installmentCount,"));
+  kontrol("iz detayı seçilir (tahsil günü bildirim tarihinden)", /auditLog\.findMany\(\{[\s\S]{0,300}select: \{ action: true, createdAt: true, targetId: true, detail: true \}/.test(v));
   const rapor = yorumsuz(kaynakOku("src/app/rapor/page.tsx"));
   kontrol("rapor aynı ölçütle alım iadesini ayırıyor (alım kalemine bağlı)", rapor.includes("alimIadesi: k.purchaseItem !== null,"));
+  kontrol("rapor da iz detayını seçer (iki okuyucu aynı günü görür)", rapor.includes("select: { action: true, createdAt: true, targetId: true, detail: true },"));
 }
 kosanBolumler.push("veri");
 

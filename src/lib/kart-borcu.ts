@@ -150,6 +150,13 @@ export function sonOdemeTarihi(kesimTarihi: Date, sonOdemeGunu: number): Date {
  * Kuruş artığı SON taksite eklenir; toplam her zaman tam tutarı verir.
  */
 export function taksitlereBol(tutar: number, taksitSayisi: number): number[] {
+  /**
+   * ⚠ EKSİ TUTAR (karta dönen iade) AYNA GİBİ BÖLÜNÜR: mutlak değer bölünür,
+   * işaret sonra konur. `Math.floor` eksi sayıda aşağı yuvarladığı için
+   * doğrudan bölmek −799,91'i [−266,64 · −266,64 · −266,63] yapar —
+   * alımın [266,63 · 266,63 · 266,65] bölmesinin aynası DEĞİL.
+   */
+  if (tutar < 0) return taksitlereBol(-tutar, taksitSayisi).map((p) => (p === 0 ? 0 : -p));
   const adet = Math.max(1, Math.floor(taksitSayisi));
   const kurus = Math.round(tutar * 100);
   const taban = Math.floor(kurus / adet);

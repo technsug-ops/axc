@@ -6,12 +6,13 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import type { CompensationStatus, Currency } from "@/generated/prisma/enums";
-import { gunMetninden } from "@/lib/donem";
+import { gunDegeri, gunMetninden, isTakvimGunu } from "@/lib/donem";
 import { izYaz } from "@/lib/iz";
 import { prisma } from "@/lib/prisma";
 import {
   kalanTalepEdilebilirAdet,
   karsiTarafGecerliMi,
+  TAHSIL_GUNU_ALANI,
   TAZMINAT_TAHSIL_EDILDI_EYLEMI,
   TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI,
   talepTutariniCoz,
@@ -318,6 +319,68 @@ export async function tazminatDurumDegistir(
 
   tazele();
   return { basari: t("durumDegisti", { durum: tDurum(yeni) }) };
+}
+
+/**
+ * ============================================================================
+ *  TAHSİL GÜNÜ — PAZARYERİ BİLDİRİMİ TARİHİ (30.09.2026, kullanıcı kararı)
+ * ----------------------------------------------------------------------------
+ *  _«Kendi kartlarımdan bakarım ama diğer kart sahipleri bakamaz … iade
+ *  bildirimi gelir, takip eden 2 gün içinde iade gerçekleşir; bildirim
+ *  tarihini esas kabul edebiliriz.»_
+ *
+ *  Yalnız KAPANMIŞ (SETTLED) talebe girilir. YENİ bir tahsil izi yazar
+ *  (silme yok); «en yeni iz kazanır» kuralı değişmediği için geçmiş bir gün
+ *  girilse bile bu iz geçerli olur — gün izin İÇİNDE taşınır
+ *  (`TAHSIL_GUNU_ALANI`), izin anında değil.
+ *  Kart borcu ve GERÇEK NET raporu AYNI günü okur.
+ * ============================================================================
+ */
+export async function tazminatTahsilGunuKaydet(
+  _oncekiDurum: TazminatDurumu,
+  formData: FormData,
+): Promise<TazminatDurumu> {
+  await yetkiIste("tazminat.yaz");
+  const t = await getTranslations("Tazminat");
+
+  const id = String(formData.get("id") ?? "");
+  const gunMetni = String(formData.get("gun") ?? "");
+  if (!id) return { hatalar: [t("kimlikBulunamadi")] };
+  const gun = gunMetninden(gunMetni);
+  if (gun === null) return { hatalar: [t("tahsilGunuGecersiz")] };
+  if (gun.getTime() > gunDegeri(isTakvimGunu(new Date())).getTime()) {
+    return { hatalar: [t("tahsilGunuGelecek")] };
+  }
+
+  try {
+    const kayit = await prisma.compensation.findUnique({
+      where: { id },
+      select: { status: true, amount: true, currency: true, occurredAt: true },
+    });
+    if (!kayit) return { hatalar: [t("bulunamadi")] };
+    if (kayit.status !== "SETTLED") return { hatalar: [t("tahsilGunuYalnizKapanan")] };
+    if (gun.getTime() < gunDegeri(isTakvimGunu(kayit.occurredAt)).getTime()) {
+      return { hatalar: [t("tahsilGunuTalepOncesi")] };
+    }
+    await izYaz({
+      action: TAZMINAT_TAHSIL_EDILDI_EYLEMI,
+      targetType: "Compensation",
+      targetId: id,
+      detail: JSON.stringify({
+        tutar: kayit.amount.toString(),
+        paraBirimi: kayit.currency,
+        [TAHSIL_GUNU_ALANI]: gunMetni,
+        kaynak: "PAZARYERI_BILDIRIMI",
+      }),
+    });
+  } catch (e) {
+    console.error("[tazminat] tahsil günü yazılamadı:", e);
+    return { hatalar: [t("tahsilGunuYazilamadi")] };
+  }
+
+  tazele();
+  revalidatePath("/kart-borcu");
+  return { basari: t("tahsilGunuKaydedildi") };
 }
 
 /**

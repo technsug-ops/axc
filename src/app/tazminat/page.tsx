@@ -15,10 +15,13 @@ import {
   kalanTalepEdilebilirAdet,
   varsayilanTalepTutari,
   karsiTarafAdi,
+  TAZMINAT_TAHSILAT_EYLEMLERI,
+  tazminatTahsilTarihleri,
 } from "@/lib/tazminat";
 
 import { DurumSecici } from "./durum-secici";
 import { NotAlani } from "./not-alani";
+import { TahsilGunuAlani } from "./tahsil-gunu-alani";
 import { TalepFormu, type HasarKalemi } from "./talep-formu";
 import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
@@ -199,6 +202,19 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
 
   const bugun = tarihGirdisi(new Date());
 
+  /**
+   * TAHSİL GÜNÜ (30.09.2026) — kart borcu ve rapor ile AYNI kural
+   * (`tazminatTahsilTarihleri`, `detail` dahil). Yalnız kapanmış talepler.
+   */
+  const kapananlar = talepler.filter((k) => k.status === "SETTLED").map((k) => k.id);
+  const tahsilIzleri = kapananlar.length
+    ? await prisma.auditLog.findMany({
+        where: { targetId: { in: kapananlar }, action: { in: [...TAZMINAT_TAHSILAT_EYLEMLERI] } },
+        select: { action: true, createdAt: true, targetId: true, detail: true },
+      })
+    : [];
+  const tahsilGunleri = tazminatTahsilTarihleri(tahsilIzleri);
+
   /*
    * K289 · İlke #17: iki listede de ürün · SKU · alım/sipariş no · tedarikçide
    * arar. «Açık alacak» özeti TÜM taleplerden — bir listenin toplamı değil,
@@ -355,6 +371,14 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
                       </span>
                     ) : null,
                     `${ortak("adet")}: ${k.quantity}`,
+                    k.status === "SETTLED" ? (
+                      <TahsilGunuAlani
+                        key="tahsil"
+                        kayitId={k.id}
+                        gun={tahsilGunleri.has(k.id) ? tarihGirdisi(tahsilGunleri.get(k.id)!) : null}
+                        bugun={bugun}
+                      />
+                    ) : null,
                   ]}
                   /*
                     ⛔ SÜTUNLAR SABİT (K235-③): tutar ve not satırdan satıra

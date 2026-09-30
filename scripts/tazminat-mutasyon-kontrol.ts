@@ -76,6 +76,25 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "iki yerde iki cozucu olur; biri duzeltilip oteki unutulur - K238'in kok sebebi",
   },
+  /* 30.09.2026 - tahsil gunu pazaryeri bildiriminden (izin icinden). */
+  { ad: "IZDEKI GUN OKUNMUYOR", yon: "KALDIRAN", dosya: GOVDE,
+    bul: "  return izdekiTahsilGunu(enYeni.detail) ?? enYeni.createdAt;", koy: "  return enYeni.createdAt;",
+    bozdugu: "bildirim tarihi girilse de durumu degistirdigin gun sayilir" },
+  { ad: "GUN SIRAYI BELIRLIYOR", yon: "FAZLADAN", dosya: GOVDE,
+    bul: "    if (iz.createdAt.getTime() > enYeni.createdAt.getTime()) {", koy: "    if ((izdekiTahsilGunu(iz.detail) ?? iz.createdAt).getTime() > (izdekiTahsilGunu(enYeni.detail) ?? enYeni.createdAt).getTime()) {",
+    bozdugu: "gecmis gune duzeltme eski izin arkasina duser, hic gorunmez" },
+  { ad: "KAPANMAMIS TALEBE GUN GIRILIYOR", yon: "FAZLADAN", dosya: EYLEM,
+    bul: "    if (kayit.status !== \"SETTLED\") return { hatalar: [t(\"tahsilGunuYalnizKapanan\")] };\n", koy: "",
+    bozdugu: "acik talep tahsil edilmis gibi karta ve rapora yazilir" },
+  { ad: "GELECEK GUN KABUL", yon: "FAZLADAN", dosya: EYLEM,
+    bul: "  if (gun.getTime() > gunDegeri(isTakvimGunu(new Date())).getTime()) {", koy: "  if (false) {",
+    bozdugu: "henuz gelmemis para bugun borctan duser" },
+  { ad: "GUN IZE YAZILMIYOR", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "        [TAHSIL_GUNU_ALANI]: gunMetni,\n", koy: "",
+    bozdugu: "kaydedildi der, tarih degismez" },
+  { ad: "TARIHSIZ IADE YINE SESSIZ", yon: "KALDIRAN", dosya: "src/lib/kart-iadesi-veri.ts",
+    bul: "        tarihsiz.push({", koy: "        void ({",
+    bozdugu: "gunu olmayan iade borctan dusmez ve hicbir yerde gorunmez" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
