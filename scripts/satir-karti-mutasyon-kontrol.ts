@@ -143,7 +143,8 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "CIFT RENDER GERI GELDI - ayni liste iki kez cizilir",
     yon: "FAZLADAN",
     dosya: EKRAN,
-    bul: "                  sag={<TalepFormu hasar={h} bugun={bugun} />}",
+    /* 30.09.2026: çapa karşı taraf seçenekleriyle taşındı (niyet aynı). */
+    bul: "                  sag={<TalepFormu hasar={h} bugun={bugun} secenekler={karsiTarafSecenekleri} />}",
     koy: "                  sag={<Table><ListeKarti /></Table>}",
     bozdugu:
       "masaustu tablo + telefon karti ikilisi geri doner; biri duzeltilip oteki unutulur (Ilke #10)",
