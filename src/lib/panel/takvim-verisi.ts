@@ -224,6 +224,7 @@ export async function takvimSatirlariniTopla(
       orderNo: true,
       sale: { select: { code: true } },
       settlement: { select: { id: true, currency: true } },
+      channelAccount: { select: { channel: { select: { name: true } } } },
     },
   });
 
@@ -272,6 +273,7 @@ export async function takvimSatirlariniTopla(
       tutar,
       paraBirimi: k.settlement.currency,
       baslik: k.sale?.code ?? "—",
+      kanal: k.channelAccount.channel.name,
       adres: `/hakedis`,
     });
   }

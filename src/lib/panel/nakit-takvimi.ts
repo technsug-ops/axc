@@ -87,6 +87,12 @@ export type TakvimSatiri = {
   paraBirimi: string;
   /** Ekranda yazan ad — kart etiketi ya da sipariş no. */
   baslik: string;
+  /**
+   * Hakediş kaleminin KANALI (30.09.2026, kullanıcı: «girecek miktarlarda hangi
+   * pazaryeri yazmıyor»). Satır yalnız sipariş numarasını taşıyordu. Kart ve
+   * finansman satırlarında yoktur (`null`/boş).
+   */
+  kanal?: string | null;
   /** Tıklanınca gidilecek yer; satır kaynağına ulaşmalı. */
   adres: string;
 };

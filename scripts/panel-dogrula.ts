@@ -2465,6 +2465,20 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     gunSatirSayisi(tasanDokum) === 9,
   );
 
+  // ------------------- KANAL AYRI ÖBEK (30.09.2026, kullanıcı bulgusu) -------------------
+  /* «Nakit takviminde girecek miktarlarda hangi pazaryeri yazmıyor.» Satır yalnız sipariş
+     no taşıyordu; öbek de yön+kaynağa göre kurulduğu için TY ve HB parası tek «N kalem»de
+     karışıyordu. Ayrımın iki yakası: aynı kanal → tek öbek, farklı kanal → iki öbek. */
+  const kanalli = (tutar: number, kanal: string): TakvimSatiri => ({ ...adliKalem(tutar, 0), baslik: "—", kanal });
+  const kanalDokum = gunuDokumle([kanalli(100, "Trendyol"), kanalli(50, "Trendyol"), kanalli(70, "Hepsiburada")]);
+  kontrol("farklı kanalın adsız kalemi AYRI öbek", kanalDokum.obekler.length === 2, kanalDokum.obekler.map((o) => o.kanal));
+  yakin("Trendyol öbeği yalnız kendi parası", kanalDokum.obekler.find((o) => o.kanal === "Trendyol")?.tutar ?? -1, 150);
+  const veri = kaynakOku("src/lib/panel/takvim-verisi.ts");
+  kontrol("hakediş satırı kanal adını taşıyor", veri.includes("kanal: k.channelAccount.channel.name,"));
+  const ekran = kaynakOku("src/app/nakit-takvimi/page.tsx");
+  kontrol("tek satır kanalı yazıyor", ekran.includes("{s.kanal ? `${s.kanal} · ${s.baslik}` : s.baslik}"));
+  kontrol("öbek adı kanalı yazıyor", ekran.includes("{obekAdi(o.kaynak, o.adet, o.kanal)}"));
+
   // ------------------- EKRAN: SINIR VE BAĞIMSIZLIK YAZILI MI -------------------
   const takvimSayfasi = kaynakOku("src/app/nakit-takvimi/page.tsx");
   const nakitOzeti = kaynakOku("src/app/nakit-ozeti.tsx");

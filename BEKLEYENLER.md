@@ -4972,6 +4972,8 @@ N11 ödeme günü YÖNÜ de ölçülmedi (kodda beyanlı: varsayılan İLERİ).
 
 ---
 
+─── ③ **30.09.2026 — HALİL TESTİ (kısmen):** ① 21.09 ödemesi TY'nin kendi dökümüyle DOĞRULANDI — `OdemeDetay_TR_2026-09-21_870249_77398614.xlsx` (md5 `a88bf8aa…`, 49 satır) «Satıcı Hakediş» toplamı **₺90.739,15**, defterle kuruşuna aynı. ⚠ **Bulgu:** nakit takviminde girecek hakediş satırları HANGİ PAZARYERİNDEN olduğunu yazmıyordu (satır yalnız sipariş no taşıyordu; öbek yön+kaynakla kurulduğu için TY ve HB parası tek «N kalem»de karışıyordu). Düzeltildi: satır «Trendyol · 11552654933», öbek «Trendyol · Hakediş · N kalem»; kanal ayrı öbek. `panel:dogrula` +5 (909), mutasyon: anahtardan kanal kalkınca · veri kanal taşımayınca kırmızı, zararsız yeşil. Kalan: banka tutarı (kullanıcıda) ve ②③ adımları.
+
 ## 💤 K212-② — ÜRÜN ANALİZİNDE OTOMATİK MEVSİM ÖNERİSİ · 11.09.2026 · [UYUR — açılış şartlı]
 
 K212'nin ana kısmı (arama, favori/incelenecek, mevsim sekmesi, filtre paneli)

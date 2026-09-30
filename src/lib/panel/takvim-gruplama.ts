@@ -25,6 +25,8 @@ import type { TakvimSatiri, TakvimYonu } from "./nakit-takvimi";
 export type TakvimObegi = {
   yon: TakvimYonu;
   kaynak: TakvimSatiri["kaynak"];
+  /** Kanal ayrı öbek olur — farklı pazaryerlerinin parası tek «N kalem»de karışmaz. */
+  kanal: string | null;
   adet: number;
   tutar: number;
   adres: string;
@@ -80,7 +82,7 @@ export function gunuDokumle(satirlar: TakvimSatiri[]): GunDokumu {
 
   const harita = new Map<string, TakvimObegi>();
   for (const s of [...adsiz, ...tasanlar]) {
-    const anahtar = `${s.yon}|${s.kaynak}`;
+    const anahtar = `${s.yon}|${s.kaynak}|${s.kanal ?? ""}`;
     const mevcut = harita.get(anahtar);
     if (mevcut) {
       mevcut.adet += 1;
@@ -89,6 +91,7 @@ export function gunuDokumle(satirlar: TakvimSatiri[]): GunDokumu {
       harita.set(anahtar, {
         yon: s.yon,
         kaynak: s.kaynak,
+        kanal: s.kanal ?? null,
         adet: 1,
         tutar: s.tutar,
         adres: s.adres,

@@ -95,8 +95,8 @@ export default async function NakitTakvimiSayfasi({
   const doluGunler = takvim.gunler.filter((g) => g.satirlar.length > 0);
 
   /** Öbek satırının metni: "Hakediş (rapor) · 23 kalem". */
-  const obekAdi = (kaynak: string, adet: number) =>
-    `${t(`kaynak_${kaynak}`)} · ${t("kalemSayisi", { sayi: adet })}`;
+  const obekAdi = (kaynak: string, adet: number, kanal: string | null) =>
+    `${kanal ? `${kanal} · ` : ""}${t(`kaynak_${kaynak}`)} · ${t("kalemSayisi", { sayi: adet })}`;
 
   return (
     <div className="min-w-0 space-y-6">
@@ -374,7 +374,7 @@ function Dokum({
 }: {
   satirlar: Parameters<typeof gunuDokumle>[0];
   para: (n: number) => string;
-  obekAdi: (kaynak: string, adet: number) => string;
+  obekAdi: (kaynak: string, adet: number, kanal: string | null) => string;
   tutarGizle?: boolean;
 }) {
   const dokum = gunuDokumle(satirlar);
@@ -391,7 +391,7 @@ function Dokum({
             className="bg-muted/60 hover:bg-muted inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
           >
             <span className="truncate underline underline-offset-2">
-              {s.baslik}
+              {s.kanal ? `${s.kanal} · ${s.baslik}` : s.baslik}
             </span>
             {/* TUTARI BİLİNMEYEN LİSTEDE SÜTUN HİÇ ÇİZİLMEZ — "?" hiçbir şey
                 söylemiyordu, başlığın altındaki not zaten aynısını söylüyordu. */}
@@ -408,7 +408,7 @@ function Dokum({
             className="bg-muted/60 hover:bg-muted inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
           >
             <span className="underline underline-offset-2">
-              {obekAdi(o.kaynak, o.adet)}
+              {obekAdi(o.kaynak, o.adet, o.kanal)}
             </span>
             {tutarGizle ? null : (
               <Tutar yon={o.yon} tutar={o.tutar} para={para} />
