@@ -61,6 +61,10 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "    b.veriDuzeltmeEtkisi = b.fireKazanci + b.sayimKazanci - b.sayimZarari;", koy: "    b.veriDuzeltmeEtkisi = 0;",
     bozdugu: "sayim farki ekrandan kaybolur" },
   /* K308 - alim tutari tek govde; kargo/vergi alim tutarinin ICINDE (kullanici beyani 29.09). */
+  /* K305 bulgusu 30.09 - ekstre satiri gider/iadeyi olmayan alim sayfasina gonderiyordu. */
+  { ad: "EKSTRE GIDER SATIRI YINE ALIMA GIDIYOR", yon: "KALDIRAN", dosya: "src/lib/kart-borcu.ts", bekci: BEKCI,
+    bul: "  if (kimlik.startsWith(\"gider-\")) return `/giderler/${kimlik.slice(\"gider-\".length)}/duzenle`;\n", koy: "",
+    bozdugu: "gider satirinin baglantisi olmayan bir sayfaya gider" },
   { ad: "K308 GOVDE TUTARI SISIRIYOR", yon: "FAZLADAN", dosya: ALIM_TUTARI, bekci: BEKCI,
     bul: "    tutar += k.birim * k.adet;", koy: "    tutar += k.birim * k.adet * 1.2;",
     bozdugu: "fiyatin icindeki KDV ikinci kez karta yazilir" },

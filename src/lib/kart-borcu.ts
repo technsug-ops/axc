@@ -333,3 +333,18 @@ export function kartBorcuHesapla(
     kalanLimit: kart.limit === null ? null : kart.limit - acikToplam,
   };
 }
+
+/**
+ * EKSTRE SATIRININ GİDECEĞİ SAYFA (K305 bulgusu, 30.09.2026). Ekstrede üç tür
+ * satır var ve üçü farklı sayfaya gider; önek türü taşır:
+ *   `gider-<id>` → giderin düzenleme sayfası · `iade-<id>` → Tazminat ·
+ *   önek yok → alım detayı.
+ * ⛔ Eskiden HEPSİ `/alimlar/<id>`e gidiyordu: gider ve iade satırları var
+ * olmayan bir sayfaya götürüyordu (anayasa: «gösterdiğim link var olan bir
+ * ekrana mı gidiyor»).
+ */
+export function ekstreSatirAdresi(kimlik: string): string {
+  if (kimlik.startsWith("gider-")) return `/giderler/${kimlik.slice("gider-".length)}/duzenle`;
+  if (kimlik.startsWith("iade-")) return "/tazminat";
+  return `/alimlar/${kimlik}`;
+}

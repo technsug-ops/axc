@@ -73,7 +73,8 @@ export function giderleriBorcaCevir(
     if (!Number.isFinite(tutar) || tutar <= 0) continue;
 
     borclar.push({
-      id: g.id,
+      /** Önek satırın TÜRÜNÜ taşır — ekstre bağlantısı onu okur (`ekstreSatirAdresi`). */
+      id: `gider-${g.id}`,
       /**
        * ⚠ KOD YERİNE OKUNABİLİR ETİKET. Giderin alım gibi bir kodu yok ve
        * bu etiket ekranda taksit satırında GÖRÜNÜYOR — "cuid" göstermek

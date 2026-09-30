@@ -17,6 +17,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import {
   donemAnahtari,
+  ekstreSatirAdresi,
   kartBorcuHesapla,
   sonOdemeTarihi,
   type BorcAlimi,
@@ -887,7 +888,7 @@ export default async function KartBorcuSayfasi({
                                 >
                                   <dt className="text-muted-foreground">
                                     <Baglanti
-                                      href={`/alimlar/${taksit.alimId}`}
+                                      href={ekstreSatirAdresi(taksit.alimId)}
                                       className="font-mono text-xs"
                                     >
                                       {taksit.alimKodu}

@@ -2,7 +2,8 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { kaynakOku } from "./kaynak-oku";
-import { kartBorcuHesapla } from "../src/lib/kart-borcu";
+import { ekstreSatirAdresi, kartBorcuHesapla } from "../src/lib/kart-borcu";
+import { giderleriBorcaCevir } from "../src/lib/kart-gideri";
 import { kartAlimTutari } from "../src/lib/kart-alim-tutari";
 import { alimIadeleriniBorcaCevir, type KartIadesi } from "../src/lib/kart-iadesi";
 
@@ -120,6 +121,19 @@ console.log("\n4) alım tutarı — tek gövde; kargo/vergi yalnız AYRIYSA ekle
   kontrol("kargo AYRI alımda kargo karta eklenir", kg.tutar === 1060, kg);
   const gm = kartAlimTutari({ ...dahil, fiyatKdvDahil: false, kargoDahil: false }, [k(1, 1000)], "TRY");
   kontrol("gümrük karta YAZILMAZ (gümrükte ayrıca ödenir)", gm.tutar === 1260, gm);
+
+  /* K305 bulgusu (30.09): ekstredeki gider ve iade satırları /alimlar/<id>'e,
+     yani VAR OLMAYAN bir sayfaya gidiyordu. Önek türü taşır. */
+  kontrol("ekstre satırı: gider → gider düzenleme", ekstreSatirAdresi("gider-g1") === "/giderler/g1/duzenle");
+  kontrol("ekstre satırı: iade → Tazminat", ekstreSatirAdresi("iade-t1") === "/tazminat");
+  kontrol("ekstre satırı: alım → alım detayı", ekstreSatirAdresi("a1") === "/alimlar/a1");
+  const gb = giderleriBorcaCevir(
+    [{ id: "g9", creditCardId: "K1", currency: "TRY", amount: 100, spentAt: new Date("2026-09-01T00:00:00Z"), installmentCount: 1, description: null, category: { name: "Kira" } } as never],
+    "K1",
+    "TRY",
+  );
+  kontrol("  ...gider borç kalemi önekli kimlik taşır", gb.borclar[0]?.id === "gider-g9", gb.borclar);
+  kontrol("  ...kart borcu ekranı bağlantıyı bu gövdeden kurar", /href=\{ekstreSatirAdresi\(taksit\.alimId\)\}/.test(yorumsuz(kaynakOku("src/app/kart-borcu/page.tsx"))));
 
   const tum: string[] = [];
   const gez = (d: string) => {
