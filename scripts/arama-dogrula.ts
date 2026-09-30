@@ -246,9 +246,14 @@ console.log("\nKANAL KODLARI EKRANI — KİMLİK VE ORAN LİSTEDE");
    * yorumsuz metinde 1868 karakter; pencere 2400'e kuruldu. Gövde büyürse dar
    * pencere SESSİZCE körelir — sayı bu yüzden gerekçesiyle burada.
    */
+  /* ⚠ PENCERE SABİT SAYIDAN ÇAPAYA ÇEVRİLDİ (30.09.2026): satıra KDV uyuşmazlığı
+     rozeti eklenince gövde 2400'ü aştı ve komisyon ölçütü pencereden TAŞTI — bekçi
+     «oran listede değil» dedi, oran yerindeydi. Sabit sayı her büyümede yeniden
+     körelir; son çapa satır listesinin KAPANIŞI (`</SatirListesi>`). */
   const satirBasi = ekranKod.indexOf("<SatirKarti");
-  kontrol("satır bloğu kesilebildi", satirBasi >= 0);
-  const govde = satirBasi >= 0 ? ekranKod.slice(satirBasi, satirBasi + 2400) : "";
+  const satirSonu = satirBasi >= 0 ? ekranKod.indexOf("</SatirListesi>", satirBasi) : -1;
+  kontrol("satır bloğu kesilebildi", satirBasi >= 0 && satirSonu > satirBasi);
+  const govde = satirSonu > satirBasi ? ekranKod.slice(satirBasi, satirSonu) : "";
 
   kontrol("kanal kodu DEĞERİ basılıyor", /deger=\{kayit\.channelSku\}/.test(govde));
   /** Kimlik kodu tek tıkla kopyalanır (İlke #4). */

@@ -229,9 +229,13 @@ console.log("\n5) pazaryerine yazma yolu YOK");
   const yazilanAlanlar = kanalYazimlari.flatMap((m) =>
     [...m[1]!.matchAll(/(\w+):/g)].map((x) => x[1]!),
   );
-  const izinli = new Set(["listelemeDurumu", "kanalAdet", "kanalOlcumAt"]);
+  /* ⚠ ÖLÇÜT GENİŞLEDİ (30.09.2026): `kanalKdvOrani` da kanalın İLANDA söylediği bir
+     ölçüm (TY `vatRate`) — öteki üçüyle aynı sınıf: kanaldan OKUNUR, deftere yazılır,
+     pazaryerine hiçbir şey yazmaz. Yasak olan hâlâ BİZİM alanlarımıza (oran, fiyat,
+     kod) dokunmak. Bkz. `kdv-uyusmazligi.ts`. */
+  const izinli = new Set(["listelemeDurumu", "kanalAdet", "kanalOlcumAt", "kanalKdvOrani"]);
   const fazla = [...new Set(yazilanAlanlar)].filter((a) => !izinli.has(a));
-  yakin("ChannelSku'ya yalnız üç alan yazılıyor", fazla, []);
+  yakin("ChannelSku'ya yalnız kanal ölçüm alanları yazılıyor", fazla, []);
 }
 kosanBolumler.push("yazma yok");
 
@@ -531,7 +535,8 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
   const tyYazici = yorumsuz2(kaynakOku("src/lib/kanal-listeleme-yaz.ts"));
   dogru(
     "TY yazıcı DEĞİŞMEYEN satıra dokunmuyor",
-    /if \(s\.listelemeDurumu !== k\.durum \|\| s\.kanalAdet !== k\.adet\)/.test(tyYazici),
+    /* ⚠ 30.09.2026: koşula KDV oranı da girdi — «değişmeyene dokunma» sözü aynen duruyor. */
+    /if \(s\.listelemeDurumu !== k\.durum \|\| s\.kanalAdet !== k\.adet \|\| kayitliKdv !== k\.kdv\)/.test(tyYazici),
   );
   dogru(
     "TY yazıcı KONTROL EDİLENİ toplu damgalıyor",
