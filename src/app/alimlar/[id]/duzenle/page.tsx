@@ -63,7 +63,7 @@ export default async function AlimDuzenleSayfasi({
       }),
       prisma.supplier.findMany({
         where: { isActive: true, NOT: { code: null } },
-        select: { id: true, name: true, code: true },
+        select: { id: true, name: true, code: true, fiyatKdvDahil: true, kargoDahil: true },
         orderBy: { name: "asc" },
       }),
     ]);
@@ -107,6 +107,14 @@ export default async function AlimDuzenleSayfasi({
       "",
     supplierOrderNo: alim.supplierOrderNo ?? "",
     note: alim.note ?? "",
+    /** K309 — alımın KENDİ fatura yapısı (tedarikçinin bugünkü ayarı değil). */
+    fatura: {
+      fiyatKdvDahil: alim.fiyatKdvDahil,
+      kargoDahil: alim.kargoDahil,
+      kdv: alim.taxAmount === null ? "" : alim.taxAmount.toString().replace(".", ","),
+      kargo: alim.shippingAmount === null ? "" : alim.shippingAmount.toString().replace(".", ","),
+      gumruk: alim.customsAmount === null ? "" : alim.customsAmount.toString().replace(".", ","),
+    },
     malKabulVar,
     kalemler: alim.items.map((k) => ({
       variantId: k.variantId,
@@ -148,6 +156,8 @@ export default async function AlimDuzenleSayfasi({
           id: s2.id,
           ad: s2.name,
           kod: s2.code!,
+          fiyatKdvDahil: s2.fiyatKdvDahil,
+          kargoDahil: s2.kargoDahil,
         }))}
         hesaplar={hesapListesi.map((h) => ({
           id: h.id,

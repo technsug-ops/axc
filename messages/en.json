@@ -761,7 +761,24 @@
     "promosyonKutusu": "",
     "promosyonMaliyetSifir": "",
     "maliyetSifirPromosyonIsaretle": "",
-    "promosyonEtiketi": ""
+    "promosyonEtiketi": "",
+    "tutarEksiOlamaz": "",
+    "kdvTutariZorunlu": "",
+    "kargoTutariZorunlu": "",
+    "karisikParadaEkOlmaz": "",
+    "faturaBaslik": "",
+    "faturaKdvTutari": "",
+    "faturaKdvIpucu": "",
+    "faturaKargoTutari": "",
+    "faturaKargoIpucu": "",
+    "faturaGumruk": "",
+    "faturaGumrukIpucu": "",
+    "faturaNotu": "",
+    "faturaTutarOkunamadi": "",
+    "faturaKarisikPara": "",
+    "faturaToplami": "",
+    "faturaKartaYazilan": "",
+    "faturaInisBaslik": ""
   },
   "MalKabul": {
     "saglamSayiOlmali": "",
@@ -2075,7 +2092,14 @@
     "alimSayisi": "",
     "listeNotu": "",
     "kodsuzBaslik": "",
-    "kodsuzMetin": ""
+    "kodsuzMetin": "",
+    "faturaYapisiNotu": "",
+    "kdvHaricRozeti": "",
+    "kargoAyriRozeti": ""
+  },
+  "FaturaYapisi": {
+    "fiyatKdvDahil": "",
+    "kargoDahil": ""
   },
   "RafBirlestir": {
     "baslik": "",

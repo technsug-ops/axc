@@ -13,6 +13,32 @@
 
 ---
 
+## 🔴 K309 — ALIMIN FATURA YAPISI: KDV HARİÇ · KARGO AYRI · GÜMRÜK (MALİYETE DAĞITILIR) · 30.09.2026 · [MIGRATION CANLIDA · KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı kararı:** «Hep bu şekilde olmaz mal alışları — toptan alımda KDV ve kargo ayrı yazılabilir, yurtdışında gümrük
+olur, sistem şimdiden hazır olmalı.» Seçimler (üçü de önerilen): ayar **tedarikçide varsayılan, alımda değişir** · ayrı
+kargo+gümrük **kalemlere tutar oranında dağıtılır, ürün maliyetine girer** · KDV tutarı **faturadan**.
+**Şema** `20260930150000_alim_kdv_kargo` (canlıda, yalnız alan): `Supplier/Purchase.fiyatKdvDahil` · `kargoDahil`
+(varsayılan true = BUGÜNKÜ davranış) · `Purchase.customsAmount/Currency`; boş duran `shippingAmount`/`taxAmount` kullanıma girdi.
+**Tek gövde** `lib/alim-maliyeti.ts`: iniş maliyeti (maliyet KDV DAHİL kuralı korunur — hariç alımda KDV birim maliyete eklenir),
+kart eki (KDV+kargo, gümrük YOK), indirilecek KDV (hariçte faturadaki, ayrı kargonun KDV'si eklenir, gümrük KDV değildir),
+fatura toplamı. Bağlananlar: mal kabul PURCHASE_IN · alım düzenlemede defter damgası (ölçüt artık «iniş maliyeti değişti mi») ·
+4 kart kurucusu (K308 «asla ekleme» → «AYRIYSA ekle», eski gerekçe dosyada) · panel alım KDV'si/tutarı · alım listesi toplamı.
+**Varsayılanda hiçbir rakam değişmez** (bekçi değerle sınıyor). Karışık TL/EUR alıma ek YAZILAMAZ (form söyler).
+⚠ İşaretsiz kutu tuzağı: değer gizli alanla hep gider; alan yoksa güncellemede DOKUNULMAZ (`lib/alim-fatura.ts`).
+**Bekçi** `alim-maliyeti:dogrula` 26 · mutasyon 9/9 · `kart-iadesi:dogrula` ölçütleri çevrildi (23) · harness 13/13.
+**AÇIK:** fatura KDV'sinin kategori oranıyla KONTROLÜ (uyarı) henüz yok — formda oran bilgisi yok; ayrı iş.
+**Halil testi:**
+1. Ayarlar → Tedarikçiler → bir tedarikçide Düzenle → «Fiyatlar KDV dahil» işaretini kaldır → kaydet → satırda «KDV hariç fiyat» rozeti.
+2. Alımlar → Yeni alım → o tedarikçiyi seç → «Fatura yapısı»nda KDV kutusu İŞARETSİZ gelir, «KDV tutarı (faturadan) *» alanı açılır.
+3. Kalem: 1 adet · birim 1.000 → KDV tutarı 200 → «Kargo fiyata dahil»i kaldır → kargo 60 → toplam kutusunda
+   **Fatura toplamı ₺1.260,00 · Karta yazılacak ₺1.260,00 · stoğa yazılacak birim maliyet ₺1.260,00**.
+4. Gümrük 30 yaz → fatura toplamı **₺1.290,00**, karta yazılacak **₺1.260,00** (gümrük karta yazılmaz), birim maliyet **₺1.290,00**.
+5. KDV alanını boşaltıp kaydet → «faturadaki KDV tutarını girin» hatası. (Gerçek alım değilse kaydetme; tedarikçiyi eski ayarına döndür.)
+6. Eski bir alımı aç → Düzenle → kutular işaretli, alanlar boş gelir; hiçbir rakam değişmez.
+
+---
+
 ## 🔴 K308 — KART BORCU: ALIM TUTARI TEK GÖVDE, KARGO/VERGİ EKLENMEZ · 29.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Bulgu (ölçüm):** kart borcunu kuran dört yerin ikisi (kart borcu ekranı · panel özeti) alım tutarına `shippingAmount` +

@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { ALIM_FATURA_SECIMI, alimEkleri, faturaOku } from "@/lib/alim-maliyeti";
 import { toplamlariBirlestir, type ParaToplami } from "@/lib/tutar";
 import type { SuzgecToplamSonucu } from "@/lib/liste-toplami";
 
@@ -50,6 +51,20 @@ async function tutarParaBirimine(
   for (const k of kalemler) {
     const tutar = Number(k.unitCostAmount.toString()) * k.quantity;
     harita.set(k.unitCostCurrency, (harita.get(k.unitCostCurrency) ?? 0) + tutar);
+  }
+  /**
+   * K309 — ALIM TOPLAMI = ÖDENEN (fatura) TOPLAMI: ayrı KDV · kargo · gümrük
+   * de eklenir (alımın tek para biriminde). Varsayılan alımda ek 0 — rakam
+   * değişmez. Karışık para birimli alıma ek yazılamıyor (form reddeder).
+   */
+  const ekler = await prisma.purchase.findMany({
+    where: { AND: [kosul, { OR: [{ fiyatKdvDahil: false }, { kargoDahil: false }, { NOT: { customsAmount: null } }] }] },
+    select: { ...ALIM_FATURA_SECIMI, items: { select: { unitCostCurrency: true }, take: 1 } },
+  });
+  for (const a of ekler) {
+    const ek = alimEkleri(faturaOku(a)).maliyetEki;
+    const pb = a.items[0]?.unitCostCurrency;
+    if (ek > 0 && pb) harita.set(pb, (harita.get(pb) ?? 0) + ek);
   }
   return toplamlariBirlestir([
     [...harita.entries()].map(([paraBirimi, tutar]) => ({ paraBirimi, tutar })),

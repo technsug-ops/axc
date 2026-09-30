@@ -12,6 +12,7 @@ import {
 } from "@/lib/panel/tarife-penceresi";
 import { kabulHareketKosulu, kabulKosulu } from "@/lib/panel/kabul-sayimi";
 import { prisma } from "@/lib/prisma";
+import { ALIM_FATURA_SECIMI, alimFaturaToplami, alimIndirilecekKdv, faturaOku } from "@/lib/alim-maliyeti";
 
 import type { CanaTasinanGorev, GorevAnahtari } from "./bugun-ne-yapmaliyim";
 import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
@@ -131,6 +132,7 @@ export async function donemAlimi(pencere: {
     select: {
       status: true,
       receivedAt: true,
+      ...ALIM_FATURA_SECIMI,
       items: {
         select: {
           quantity: true,
@@ -232,21 +234,31 @@ export async function donemAlimi(pencere: {
          * yapılsaydı grafik yanlış güne nokta koyar ve kimse görmezdi.
          */
         tarih: a.receivedAt!,
-        tutar:
-          kalemToplamlari(a.items).find((x) => x.paraBirimi === "TRY")?.tutar ??
-          0,
         /**
-         * ⚠ TUTARLAR KDV DAHİLDİR (bkz. `lib/kar.ts`), o yüzden içindeki
-         * vergi ÇIKARILARAK bulunur: kdv = tutar − tutar/(1+oran).
-         * Oranla ÇARPMAK yanlış olurdu — %20 için %20 değil %16,67 çıkar.
+         * K309 — ÖDENEN (fatura) toplamı: mal bedeli + ayrı KDV/kargo/gümrük.
+         * Varsayılan alımda (dahil/dahil/ek yok) mal bedelinin kendisi.
          */
-        kdv: a.items
-          .filter((k) => k.unitCostCurrency === "TRY")
-          .reduce((t, k) => {
-            const satir = Number(k.unitCostAmount.toString()) * k.quantity;
-            const oran = kdvOraniniCoz(k.variant.product).oran;
-            return t + (satir - satir / (1 + oran / 100));
-          }, 0),
+        tutar: (() => {
+          const mal = kalemToplamlari(a.items).find((x) => x.paraBirimi === "TRY")?.tutar ?? 0;
+          const tekTl = a.items.every((k) => k.unitCostCurrency === "TRY");
+          return tekTl ? alimFaturaToplami(faturaOku(a), mal) : mal;
+        })(),
+        /**
+         * ⚠ DAHİL alımda tutarın İÇİNDEKİ vergi ÇIKARILARAK bulunur:
+         * kdv = tutar × oran/(100+oran) — oranla ÇARPMAK yanlış olurdu
+         * (%20 için %20 değil %16,67). K309: HARİÇ alımda faturadaki KDV
+         * tutarı, ayrı kargoda kargonun KDV'si de — tek gövde.
+         */
+        kdv: alimIndirilecekKdv(
+          faturaOku(a),
+          a.items.map((k) => ({
+            birim: Number(k.unitCostAmount.toString()),
+            adet: k.quantity,
+            oran: kdvOraniniCoz(k.variant.product).oran,
+            paraBirimi: k.unitCostCurrency,
+          })),
+          "TRY",
+        ),
       })),
   };
 }

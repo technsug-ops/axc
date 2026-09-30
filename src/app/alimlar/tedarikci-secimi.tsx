@@ -31,7 +31,8 @@ import {
   type TedarikciDurumu,
 } from "../ayarlar/tedarikciler/actions";
 
-export type TedarikciSecenegi = { id: string; ad: string; kod: string };
+/** K309 — fatura yapısı varsayılanları; akış içinde yeni eklenen tedarikçide yok (= dahil). */
+export type TedarikciSecenegi = { id: string; ad: string; kod: string; fiyatKdvDahil?: boolean; kargoDahil?: boolean };
 
 /**
  * ============================================================================

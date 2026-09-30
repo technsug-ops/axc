@@ -64,6 +64,7 @@
     "20260928180000_finansman_birim",
     "20260929090000_finansman_adet_altin",
     "20260929120000_finansman_currency_dusur",
-    "20260930100000_iade_geri_alma"
+    "20260930100000_iade_geri_alma",
+    "20260930150000_alim_kdv_kargo"
   ]
 }

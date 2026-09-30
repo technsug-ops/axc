@@ -51,6 +51,8 @@ export default async function TedarikcilerSayfasi() {
     iletisim: s.contact,
     aktif: s.isActive,
     alimSayisi: s._count.purchases,
+    fiyatKdvDahil: s.fiyatKdvDahil,
+    kargoDahil: s.kargoDahil,
     acikAlacak: acikAlacakToplami(
       s.compensations.map((c) => ({
         durum: c.status,

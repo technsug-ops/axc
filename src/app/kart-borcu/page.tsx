@@ -204,7 +204,7 @@ export default async function KartBorcuSayfasi({
     alim: (typeof alimlar)[number],
     paraBirimi: Currency,
   ): { tutar: number; farkliVar: boolean } {
-    return kartAlimTutari(alim.items, paraBirimi);
+    return kartAlimTutari(alim, alim.items, paraBirimi);
   }
 
   /**

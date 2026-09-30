@@ -51,7 +51,7 @@ export default async function YeniAlimSayfasi({
     // üretiliyor, kodsuz seçim sessiz hataya dönerdi.
       prisma.supplier.findMany({
         where: { isActive: true, NOT: { code: null } },
-        select: { id: true, name: true, code: true },
+        select: { id: true, name: true, code: true, fiyatKdvDahil: true, kargoDahil: true },
         orderBy: { name: "asc" },
       }),
       /**
@@ -86,6 +86,8 @@ export default async function YeniAlimSayfasi({
     id: s.id,
     ad: s.name,
     kod: s.code!,
+    fiyatKdvDahil: s.fiyatKdvDahil,
+    kargoDahil: s.kargoDahil,
   }));
 
   return (

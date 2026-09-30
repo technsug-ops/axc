@@ -1,4 +1,5 @@
 import { kartAlimTutari } from "@/lib/kart-alim-tutari";
+import { ALIM_FATURA_SECIMI } from "@/lib/alim-maliyeti";
 import { prisma } from "@/lib/prisma";
 import {
   kartBorcuHesapla,
@@ -40,6 +41,7 @@ export async function acikKartBorcuOzetiGetir(
           purchasedAt: true,
           creditCardId: true,
           installmentCount: true,
+          ...ALIM_FATURA_SECIMI,
           items: {
             select: { quantity: true, unitCostAmount: true, unitCostCurrency: true },
           },
@@ -101,7 +103,7 @@ export async function acikKartBorcuOzetiGetir(
     const borclar: BorcAlimi[] = [];
     for (const a of alimlar.filter((x) => x.creditCardId === kart.id)) {
       /* K308: tutar ORTAK gövdeden — kargo/vergi alım tutarının içinde. */
-      const { tutar } = kartAlimTutari(a.items, kart.currency);
+      const { tutar } = kartAlimTutari(a, a.items, kart.currency);
       if (tutar <= 0) continue;
       borclar.push({
         id: a.id,

@@ -761,7 +761,24 @@
     "promosyonKutusu": "Promosyon (bedava geldi — maliyet 0)",
     "promosyonMaliyetSifir": "Promosyon işaretliyken maliyet 0 olmalı.",
     "maliyetSifirPromosyonIsaretle": "Maliyet 0 girildi — bedava/promosyon ise \"Promosyon\" kutusunu işaretleyin, değilse gerçek maliyeti yazın.",
-    "promosyonEtiketi": "Promosyon (₺0)"
+    "promosyonEtiketi": "Promosyon (₺0)",
+    "tutarEksiOlamaz": "Tutar eksi olamaz.",
+    "kdvTutariZorunlu": "Fiyatlar KDV hariç işaretli: faturadaki KDV tutarını girin.",
+    "kargoTutariZorunlu": "Kargo ayrı işaretli: kargo tutarını girin (ücretsizse 0 yazın).",
+    "karisikParadaEkOlmaz": "TL ve EUR kalemli alımda KDV, kargo ya da gümrük kalemlere dağıtılamaz (kur çevrilmez). Alımı para birimine göre ayırın.",
+    "faturaBaslik": "Fatura yapısı",
+    "faturaKdvTutari": "KDV tutarı (faturadan)",
+    "faturaKdvIpucu": "örn. 1.250,00",
+    "faturaKargoTutari": "Kargo tutarı (KDV dahil)",
+    "faturaKargoIpucu": "örn. 89,90",
+    "faturaGumruk": "Gümrük ve ithalat masrafı (isteğe bağlı)",
+    "faturaGumrukIpucu": "örn. 450,00",
+    "faturaNotu": "Varsayılan tedarikçiden gelir. Ayrı ödenen KDV, kargo ve gümrük ürün maliyetine kalemlerin tutarı oranında dağıtılır. Yurtdışı alımda gümrükte ödenen KDV «KDV tutarı»na, gümrük vergisi ve masraflar «gümrük» alanına yazılır. Gümrük karta yazılmaz.",
+    "faturaTutarOkunamadi": "Fatura tutarlarından biri okunamadı. Sayıyı örn. 120,50 biçiminde yazın.",
+    "faturaKarisikPara": "TL ve EUR kalemler bir arada: ek tutar dağıtılamaz, kayıt yapılamaz. Alımı para birimine göre ayırın.",
+    "faturaToplami": "Fatura toplamı",
+    "faturaKartaYazilan": "Karta yazılacak",
+    "faturaInisBaslik": "Stoğa yazılacak birim maliyet (payı dağıtılmış)"
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",
@@ -2075,7 +2092,14 @@
     "alimSayisi": "Alım",
     "listeNotu": "Tedarikçiler silinmez, pasife alınır — geçmiş alımlar onlara bağlıdır. Pasif tedarikçi yeni alım formunda çıkmaz ama eski alımlarda görünmeye devam eder.",
     "kodsuzBaslik": "{sayi} tedarikçide kod girilmemiş",
-    "kodsuzMetin": "Alım numarası tedarikçi kodundan üretilir. Kodu olmayan tedarikçiyle yeni alım girilemez — aşağıdan Düzenle ile girin."
+    "kodsuzMetin": "Alım numarası tedarikçi kodundan üretilir. Kodu olmayan tedarikçiyle yeni alım girilemez — aşağıdan Düzenle ile girin.",
+    "faturaYapisiNotu": "Bu tedarikçiden alım girerken formun varsayılanı olur; her alımda değiştirilebilir.",
+    "kdvHaricRozeti": "KDV hariç fiyat",
+    "kargoAyriRozeti": "Kargo ayrı"
+  },
+  "FaturaYapisi": {
+    "fiyatKdvDahil": "Fiyatlar KDV dahil",
+    "kargoDahil": "Kargo fiyata dahil"
   },
   "RafBirlestir": {
     "baslik": "Rafları birleştir",

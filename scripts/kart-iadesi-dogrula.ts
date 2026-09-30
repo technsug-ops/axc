@@ -101,13 +101,25 @@ kosanBolumler.push("veri");
  * ve vergiyi İÇERİR. Kurucu kümesi TARANIR (`kartBorcuHesapla(` çağıran her
  * dosya); liste tutulmaz.
  */
-console.log("\n4) alım tutarı — tek gövde, kargo/vergi eklenmez");
+console.log("\n4) alım tutarı — tek gövde; kargo/vergi yalnız AYRIYSA eklenir");
 {
+  /**
+   * ⛔ K308 (29.09) «kargo/vergi ASLA eklenmez» → K309 (30.09) «AYRI yazılmışsa
+   * ekle». Ölçütler ÇEVRİLDİ, gevşemedi: dahil alımda (bütün eski alımlar)
+   * tutar hâlâ Σ birim × adet — K308'in koruduğu çift sayım imkânsız kalır.
+   */
   const k = (quantity: number, tutar: number, unitCostCurrency = "TRY") => ({ quantity, unitCostAmount: tutar, unitCostCurrency });
-  const a = kartAlimTutari([k(2, 1069.49), k(1, 100)], "TRY");
-  kontrol("kalemler birim × adet toplanır", Math.abs(a.tutar - 2238.98) < 0.005 && !a.farkliVar, a);
-  const b = kartAlimTutari([k(1, 100), k(1, 50, "EUR")], "TRY");
+  const dahil = { fiyatKdvDahil: true, kargoDahil: true, taxAmount: 200, shippingAmount: 60, customsAmount: 30 };
+  const a = kartAlimTutari(dahil, [k(2, 1069.49), k(1, 100)], "TRY");
+  kontrol("DAHİL alımda yalnız kalemler (alanlar dolu olsa bile EKLENMEZ — çift sayım yok)", Math.abs(a.tutar - 2238.98) < 0.005 && !a.farkliVar, a);
+  const b = kartAlimTutari(dahil, [k(1, 100), k(1, 50, "EUR")], "TRY");
   kontrol("kartın para biriminde olmayan kalem GİRMEZ ve söylenir", b.tutar === 100 && b.farkliVar, b);
+  const h = kartAlimTutari({ ...dahil, fiyatKdvDahil: false }, [k(1, 1000)], "TRY");
+  kontrol("KDV hariç alımda faturadaki KDV karta eklenir", h.tutar === 1200, h);
+  const kg = kartAlimTutari({ ...dahil, kargoDahil: false }, [k(1, 1000)], "TRY");
+  kontrol("kargo AYRI alımda kargo karta eklenir", kg.tutar === 1060, kg);
+  const gm = kartAlimTutari({ ...dahil, fiyatKdvDahil: false, kargoDahil: false }, [k(1, 1000)], "TRY");
+  kontrol("gümrük karta YAZILMAZ (gümrükte ayrıca ödenir)", gm.tutar === 1260, gm);
 
   const tum: string[] = [];
   const gez = (d: string) => {
@@ -125,10 +137,17 @@ console.log("\n4) alım tutarı — tek gövde, kargo/vergi eklenmez");
   kontrol("HER kurucu tutarı ORTAK gövdeden alıyor", ortaksiz.length === 0, ortaksiz);
   const elle = kurucular.filter((y) => /unitCostAmount\.toString\(\)\)\s*\*/.test(yorumsuz(kaynakOku(y))));
   kontrol("hiçbir kurucu kalem tutarını ELLE çarpmıyor", elle.length === 0, elle);
-  const ekleyen = kurucular.filter((y) => /\b(shippingAmount|taxAmount)\b/.test(yorumsuz(kaynakOku(y))));
-  kontrol("hiçbir kurucu kargo/vergi alanını okumuyor (tutarın İÇİNDE)", ekleyen.length === 0, ekleyen);
-  const govde = yorumsuz(kaynakOku("src/lib/kart-alim-tutari.ts"));
-  kontrol("gövde kargo/vergi alanına dokunmuyor", !/\b(shippingAmount|taxAmount)\b/.test(govde));
+  /* K309: eski ölçüt «alanı OKUMUYOR» idi; artık alan gövdeye GİDİYOR ama
+     kurucu onunla ELLE hesap yapmıyor — ekleme kuralı yalnız gövdede. */
+  const ekleyen = kurucular.filter((y) => /\b(shippingAmount|taxAmount|customsAmount)\b[\s\S]{0,30}\.toString\(\)/.test(yorumsuz(kaynakOku(y))));
+  kontrol("hiçbir kurucu kargo/vergi/gümrükle ELLE hesap yapmıyor", ekleyen.length === 0, ekleyen);
+  const secimsiz = kurucular.filter((y) => {
+    const m = yorumsuz(kaynakOku(y));
+    /* Yalnız ÜST seviye `select` — `include` bütün alanları getirir; içteki
+       `items: { select }` ölçüte takılmamalı (ilk yazım takılıyordu). */
+    return /purchase\.findMany\(\{\s*where: \{[^\n]*\},\s*select:/.test(m) && !/\.\.\.ALIM_FATURA_SECIMI/.test(m);
+  });
+  kontrol("select kullanan kurucu fatura alanlarını seçiyor (yoksa ek sessizce 0 olurdu)", secimsiz.length === 0, secimsiz);
 }
 kosanBolumler.push("alım tutarı");
 

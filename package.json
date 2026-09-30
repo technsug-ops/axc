@@ -163,6 +163,8 @@
     "iade-gecerli-mutasyon:kontrol": "tsx scripts/iade-gecerli-mutasyon-kontrol.ts",
     "kupon:dogrula": "tsx scripts/kupon-dogrula.ts",
     "kupon-mutasyon:kontrol": "tsx scripts/kupon-mutasyon-kontrol.ts",
+    "alim-maliyeti:dogrula": "tsx scripts/alim-maliyeti-dogrula.ts",
+    "alim-maliyeti-mutasyon:kontrol": "tsx scripts/alim-maliyeti-mutasyon-kontrol.ts",
     "gunluk-ozet:dogrula": "tsx scripts/gunluk-ozet-dogrula.ts",
     "gunluk-ozet-mutasyon:kontrol": "tsx scripts/gunluk-ozet-mutasyon-kontrol.ts",
     "tavsiye:dogrula": "tsx scripts/tavsiye-dogrula.ts",

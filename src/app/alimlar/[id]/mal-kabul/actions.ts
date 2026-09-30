@@ -15,6 +15,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { faturaOku, inisMaliyetleri } from "@/lib/alim-maliyeti";
 import { sonSayimTarihleri, sayimGecersizlestir } from "@/lib/sayim-damgasi";
 import {
   israrGecerliMi,
@@ -144,6 +145,21 @@ export async function malKabulEt(
 
   // Girilen satırlar gerçekten bu alıma mı ait?
   const kalemHaritasi = new Map(alim.items.map((k) => [k.id, k]));
+
+  /**
+   * K309 — STOĞA YAZILAN MALİYET İNİŞ MALİYETİDİR: fatura fiyatı + kalemin
+   * payına düşen KDV (hariç alımda) · ayrı kargo · gümrük. Varsayılan alımda
+   * (dahil/dahil/ek yok) iniş = fatura fiyatı — eski davranış AYNEN; ondalık
+   * bile kaymasın diye o durumda kalemin kendi Decimal değeri yazılır.
+   */
+  const inis = inisMaliyetleri(
+    faturaOku(alim),
+    alim.items.map((k) => ({ anahtar: k.id, adet: k.quantity, birim: Number(k.unitCostAmount.toString()), paraBirimi: k.unitCostCurrency })),
+  ).birim;
+  const hareketMaliyeti = (k: (typeof alim.items)[number]) => {
+    const b = inis.get(k.id);
+    return b === undefined || b === Number(k.unitCostAmount.toString()) ? k.unitCostAmount : String(b);
+  };
   for (const satir of veri.satirlar) {
     if (!kalemHaritasi.has(satir.purchaseItemId)) {
       return { hatalar: [t("kalemBuAlimaAitDegil")] };
@@ -348,7 +364,8 @@ export async function malKabulEt(
               purchaseItemId: kalem.id,
               locationId: raf,
               // Giriş anındaki maliyet ileride stok değerlemesinde kullanılacak.
-              unitCostAmount: kalem.unitCostAmount,
+              // K309: İNİŞ maliyeti (dağıtılmış KDV/kargo/gümrük payıyla).
+              unitCostAmount: hareketMaliyeti(kalem),
               unitCostCurrency: kalem.unitCostCurrency,
               note: `Mal kabul — ${alim.code}`,
             },

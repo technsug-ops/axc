@@ -17,6 +17,7 @@ import {
   tedarikciGuncelle,
   type TedarikciDurumu,
 } from "./actions";
+import { FaturaYapisiKutulari } from "@/components/fatura-yapisi";
 import { TedarikciKodAlani } from "./kod-alani";
 import { DURUM_YAZISI } from "@/lib/renkler";
 
@@ -27,6 +28,9 @@ export type TedarikciSatiriVerisi = {
   iletisim: string | null;
   aktif: boolean;
   alimSayisi: number;
+  /** K309 — fatura yapısı varsayılanları. */
+  fiyatKdvDahil: boolean;
+  kargoDahil: boolean;
   /** Para birimi başına biçimlendirilmiş açık alacak; boşsa alacak yok. */
   acikAlacak: string[];
 };
@@ -53,6 +57,7 @@ export function TedarikciSatiri({
   // Kod önerisi ada bakarak üretilir; ad da denetimli alan olmalı.
   const [ad, setAd] = useState(tedarikci.ad);
   const [kod, setKod] = useState(tedarikci.kod ?? "");
+  const [fatura, setFatura] = useState({ fiyatKdvDahil: tedarikci.fiyatKdvDahil, kargoDahil: tedarikci.kargoDahil });
 
   const [sonDurum, setSonDurum] = useState(durum);
   if (sonDurum !== durum) {
@@ -81,6 +86,9 @@ export function TedarikciSatiri({
             {tedarikci.aktif ? null : (
               <Badge variant="outline">{ortak("pasif")}</Badge>
             )}
+            {/* K309 — varsayılandan farklıysa GÖRÜNÜR: alım formu bunu getirecek. */}
+            {tedarikci.fiyatKdvDahil ? null : <Badge variant="outline">{t("kdvHaricRozeti")}</Badge>}
+            {tedarikci.kargoDahil ? null : <Badge variant="outline">{t("kargoAyriRozeti")}</Badge>}
           </div>
           <div className="text-muted-foreground text-xs">
             {t("alimSayisi")}: {tedarikci.alimSayisi}
@@ -160,6 +168,14 @@ export function TedarikciSatiri({
             name="contact"
             defaultValue={tedarikci.iletisim ?? ""}
             autoComplete="off"
+          />
+        </div>
+        <div className="basis-full">
+          <FaturaYapisiKutulari
+            kimlik={`ted-${tedarikci.id}`}
+            fiyatKdvDahil={fatura.fiyatKdvDahil}
+            kargoDahil={fatura.kargoDahil}
+            onDegisim={setFatura}
           />
         </div>
         <Button type="submit" size="sm" disabled={bekliyor}>

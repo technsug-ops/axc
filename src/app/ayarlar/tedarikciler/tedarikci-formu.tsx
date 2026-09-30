@@ -8,13 +8,14 @@ import { HataOzeti } from "@/components/hata-ozeti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FaturaYapisiKutulari } from "@/components/fatura-yapisi";
 import { formGonderimi } from "@/lib/form-gonderimi";
 
 import { tedarikciEkle, type TedarikciDurumu } from "./actions";
 import { TedarikciKodAlani } from "./kod-alani";
 import { DURUM_KUTUSU } from "@/lib/renkler";
 
-const BOS = { name: "", code: "", contact: "" };
+const BOS = { name: "", code: "", contact: "", fiyatKdvDahil: true, kargoDahil: true };
 
 export function TedarikciFormu() {
   const [durum, formAction, bekliyor] = useActionState<
@@ -74,6 +75,17 @@ export function TedarikciFormu() {
             autoComplete="off"
           />
         </div>
+      </div>
+
+      {/* K309 — fatura yapısı: bu tedarikçiden alımda formun varsayılanı. */}
+      <div className="space-y-1">
+        <FaturaYapisiKutulari
+          kimlik="ted-yeni"
+          fiyatKdvDahil={alanlar.fiyatKdvDahil}
+          kargoDahil={alanlar.kargoDahil}
+          onDegisim={(d) => setAlanlar((o) => ({ ...o, ...d }))}
+        />
+        <p className="text-muted-foreground text-xs">{t("faturaYapisiNotu")}</p>
       </div>
 
       <HataOzeti hatalar={durum.hatalar} />

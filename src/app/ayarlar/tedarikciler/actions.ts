@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
+import { faturaBayraklariniOku } from "@/lib/alim-fatura";
 import { harfleriKatla } from "@/lib/kimlik";
 import { prisma } from "@/lib/prisma";
 
@@ -119,12 +120,16 @@ export async function tedarikciEkle(
   if (hatalar.length) return { hatalar };
 
   try {
+    /** K309 — alan gelmediyse bugünkü davranış: KDV ve kargo DAHİL. */
+    const bayrak = faturaBayraklariniOku(formData);
     const yeni = await prisma.supplier.create({
       data: {
         name: veri.name,
         code: kod,
         contact: veri.contact || null,
         note: veri.note || null,
+        fiyatKdvDahil: bayrak.fiyatKdvDahil ?? true,
+        kargoDahil: bayrak.kargoDahil ?? true,
       },
       select: { id: true },
     });
@@ -161,6 +166,8 @@ export async function tedarikciGuncelle(
   if (hatalar.length) return { hatalar };
 
   try {
+    /** K309 — bayrak alanı gelmediyse DOKUNULMAZ (undefined = değiştirme). */
+    const bayrak = faturaBayraklariniOku(formData);
     await prisma.supplier.update({
       where: { id },
       data: {
@@ -168,6 +175,8 @@ export async function tedarikciGuncelle(
         code: kod,
         contact: veri.contact || null,
         note: veri.note || null,
+        fiyatKdvDahil: bayrak.fiyatKdvDahil,
+        kargoDahil: bayrak.kargoDahil,
       },
     });
   } catch (e) {

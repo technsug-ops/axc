@@ -1,4 +1,5 @@
 import { kartAlimTutari } from "@/lib/kart-alim-tutari";
+import { ALIM_FATURA_SECIMI } from "@/lib/alim-maliyeti";
 import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
 import { giderleriBorcaCevir } from "@/lib/kart-gideri";
 import { alimIadeleriniBorcaCevir } from "@/lib/kart-iadesi";
@@ -88,6 +89,7 @@ export async function takvimSatirlariniTopla(
         purchasedAt: true,
         installmentCount: true,
         creditCardId: true,
+        ...ALIM_FATURA_SECIMI,
         items: {
           select: {
             quantity: true,
@@ -135,7 +137,7 @@ export async function takvimSatirlariniTopla(
     for (const a of kartAlimlari) {
       if (a.creditCardId !== kart.id) continue;
       // Kartın para birimindeki kalemler; kur çevrilmez. K308: ORTAK gövde.
-      const { tutar } = kartAlimTutari(a.items, kart.currency);
+      const { tutar } = kartAlimTutari(a, a.items, kart.currency);
       if (tutar <= 0) continue;
       borcAlimlari.push({
         id: a.id,

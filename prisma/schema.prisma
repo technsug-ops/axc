@@ -1360,11 +1360,34 @@ model Purchase {
   goodsAmount   Decimal?  @db.Decimal(18, 4)
   goodsCurrency Currency?
 
+  /// ═══ K309 — ALIMIN FATURA YAPISI (kullanıcı kararı 30.09.2026) ═══
+  /// «Hep bu şekilde olmaz mal alışları — toptan alımda KDV ve kargo ayrı
+  /// yazılabilir, yurtdışında gümrük olur.» Varsayılanlar (true · true · boş)
+  /// BUGÜNKÜ davranıştır: fiyat KDV ve kargo dahil — 30.09 öncesi hiçbir
+  /// alımın rakamı değişmez. Değer tedarikçiden gelir, alımda değişebilir
+  /// (snapshot: tedarikçi ayarı sonradan değişse eski alım kaymaz).
+  /// ⭐ Kargo · gümrük · (hariç alımda) KDV kalemlere TUTAR ORANINDA dağıtılır
+  /// ve ürün maliyetine girer — ayrı sütun açılmadı, alımdan TÜRETİLİR
+  /// (`lib/alim-maliyeti.ts`) ve mal kabulde stok hareketine yazılır.
+  fiyatKdvDahil Boolean @default(true)
+  kargoDahil    Boolean @default(true)
+
+  /// Ayrı faturalanan kargo — KDV DAHİL tutar. Yalnız `kargoDahil = false`
+  /// iken anlamlıdır. (Alan 30.09'a kadar hiç yazılmadı; 625/625 boştu.)
   shippingAmount   Decimal?  @db.Decimal(18, 4)
   shippingCurrency Currency?
 
+  /// Faturadaki (ya da gümrükte ödenen) KDV TUTARI — yalnız
+  /// `fiyatKdvDahil = false` iken. İndirilecek KDV'dir; kaynağı FATURA,
+  /// sistem kategori oranıyla yalnız KONTROL eder.
   taxAmount   Decimal?  @db.Decimal(18, 4)
   taxCurrency Currency?
+
+  /// Gümrük vergisi ve ithalat masrafları (KDV HARİÇ — ithalat KDV'si
+  /// `taxAmount`a yazılır). Ürün maliyetine girer. Karta varsayılan olarak
+  /// YAZILMAZ: genelde gümrükte ayrıca ödenir.
+  customsAmount   Decimal?  @db.Decimal(18, 4)
+  customsCurrency Currency?
 
   note String? @db.Text
 
@@ -2547,6 +2570,11 @@ model Supplier {
 
   /// SİLİNMEZ, pasife alınır — geçmiş alımlar tedarikçisiz kalmasın.
   isActive Boolean @default(true)
+
+  /// K309 — bu tedarikçinin fiyatları KDV dahil mi, kargo fiyata dahil mi.
+  /// Alım formunun VARSAYILANI; alım kendi değerini taşır (bkz. Purchase).
+  fiyatKdvDahil Boolean @default(true)
+  kargoDahil    Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

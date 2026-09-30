@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
 import { kartAlimTutari } from "@/lib/kart-alim-tutari";
+import { ALIM_FATURA_SECIMI } from "@/lib/alim-maliyeti";
 import { donemAnahtari } from "@/lib/kart-borcu";
 import { prisma } from "@/lib/prisma";
 import { tabloOku } from "@/lib/tablo/tablo-oku";
@@ -146,6 +147,7 @@ async function mevcutDonemleriTopla(): Promise<MevcutDonem[]> {
         purchasedAt: true,
         installmentCount: true,
         creditCardId: true,
+        ...ALIM_FATURA_SECIMI,
         items: {
           select: {
             quantity: true,
@@ -172,7 +174,7 @@ async function mevcutDonemleriTopla(): Promise<MevcutDonem[]> {
     for (const a of alimlar) {
       if (a.creditCardId !== kart.id) continue;
       /* K308: tutar ORTAK gövdeden (kart borcu ekranıyla aynı). */
-      const { tutar } = kartAlimTutari(a.items, kart.currency);
+      const { tutar } = kartAlimTutari(a, a.items, kart.currency);
       if (tutar > 0) {
         borc.push({
           id: a.id,

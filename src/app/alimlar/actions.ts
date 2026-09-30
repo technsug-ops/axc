@@ -10,6 +10,7 @@ import { z } from "zod";
 import { ALIM_NO_DENEME, alimNoOlustur } from "@/lib/alim-no";
 import { prisma } from "@/lib/prisma";
 import { izYaz } from "@/lib/iz";
+import { alimEkleri, inisMaliyetleri, type AlimFaturasi } from "@/lib/alim-maliyeti";
 
 export type AlimDurumu = {
   hatalar?: string[];
@@ -87,7 +88,54 @@ function alimSemasiKur(t: Ceviri) {
     supplierOrderNo: z.string().trim().max(191),
     note: z.string().trim(),
     kalemler: z.array(kalemSemasi).min(1, t("enAzBirKalem")),
+    /**
+     * K309 — FATURA YAPISI. Alan gelmezse bugünkü davranış (dahil · dahil ·
+     * ek yok) — eski istemci ya da içe aktarma hiçbir şeyi değiştirmez.
+     */
+    fiyatKdvDahil: z.boolean().optional().default(true),
+    kargoDahil: z.boolean().optional().default(true),
+    kdv: z.number().nonnegative(t("tutarEksiOlamaz")).nullable().optional().default(null),
+    kargo: z.number().nonnegative(t("tutarEksiOlamaz")).nullable().optional().default(null),
+    gumruk: z.number().nonnegative(t("tutarEksiOlamaz")).nullable().optional().default(null),
   });
+}
+
+type AlimVerisi = z.infer<ReturnType<typeof alimSemasiKur>>;
+
+/** K309 — formdaki fatura yapısı, gövdenin diliyle. */
+function faturaFormdan(veri: AlimVerisi): AlimFaturasi {
+  return { fiyatKdvDahil: veri.fiyatKdvDahil, kargoDahil: veri.kargoDahil, kdv: veri.kdv, kargo: veri.kargo, gumruk: veri.gumruk };
+}
+
+/**
+ * K309 — fatura yapısı tutarlı mı. Hariç alımda KDV TUTARI (faturadan) ve
+ * ayrı kargoda KARGO TUTARI zorunlu: boş bırakılsaydı ek sessizce 0 sayılır,
+ * maliyet ve kart borcu eksik yazılırdı. Karışık para birimli alımda ek
+ * DAĞITILAMAZ (kur çevrilmez) — kaydetmek yerine söylenir.
+ */
+function faturaHatalari(veri: AlimVerisi, tekParaBirimi: string | null, t: Ceviri): string[] {
+  const h: string[] = [];
+  if (!veri.fiyatKdvDahil && veri.kdv === null) h.push(t("kdvTutariZorunlu"));
+  if (!veri.kargoDahil && veri.kargo === null) h.push(t("kargoTutariZorunlu"));
+  if (tekParaBirimi === null && alimEkleri(faturaFormdan(veri)).maliyetEki > 0) h.push(t("karisikParadaEkOlmaz"));
+  return h;
+}
+
+/** K309 — Purchase'a yazılacak fatura alanları (ek tutarlar alımın para biriminde). */
+function faturaAlanlari(veri: AlimVerisi, tekParaBirimi: string | null) {
+  const pb = (tekParaBirimi ?? "TRY") as "TRY" | "EUR";
+  const kdv = veri.fiyatKdvDahil ? null : veri.kdv;
+  const kargo = veri.kargoDahil ? null : veri.kargo;
+  return {
+    fiyatKdvDahil: veri.fiyatKdvDahil,
+    kargoDahil: veri.kargoDahil,
+    taxAmount: kdv === null ? null : String(kdv),
+    taxCurrency: kdv === null ? null : pb,
+    shippingAmount: kargo === null ? null : String(kargo),
+    shippingCurrency: kargo === null ? null : pb,
+    customsAmount: veri.gumruk === null || veri.gumruk === 0 ? null : String(veri.gumruk),
+    customsCurrency: veri.gumruk === null || veri.gumruk === 0 ? null : pb,
+  };
 }
 
 function hataMesaji(yol: PropertyKey[], mesaj: string, t: Ceviri): string {
@@ -162,6 +210,9 @@ export async function alimOlustur(
       )
     : null;
 
+  const faturaHata = faturaHatalari(veri, tekParaBirimi, t);
+  if (faturaHata.length) return { hatalar: faturaHata };
+
   /**
    * Numara üretimi ile yazma arasında başkası aynı numarayı alırsa
    * `code` benzersizlik kısıtı (P2002) tetiklenir; sıra yeniden okunarak
@@ -189,6 +240,7 @@ export async function alimOlustur(
           creditCardId: veri.creditCardId || null,
           goodsAmount: malToplami,
           goodsCurrency: tekParaBirimi,
+          ...faturaAlanlari(veri, tekParaBirimi),
           items: {
             create: veri.kalemler.map((k) => ({
               variantId: k.variantId,
@@ -351,11 +403,27 @@ export async function alimGuncelle(
       )
     : null;
 
+  const faturaHata = faturaHatalari(veri, tekParaBirimi, t);
+  if (faturaHata.length) return { hatalar: faturaHata };
+
+  /**
+   * K309 — İNİŞ MALİYETİ, DÜZENLEMEDEN SONRAKİ hâlle. Anahtar varyant (bir
+   * alımda her varyant bir kalem). Mal kabulde stoğa yazılan maliyet budur;
+   * KDV · kargo · gümrük ya da bir kalemin fiyatı değişince HER kabul edilmiş
+   * kalemin maliyeti değişebilir — bu yüzden ölçüt «fiyat değişti mi» değil
+   * «iniş maliyeti değişti mi».
+   */
+  const yeniInis = inisMaliyetleri(
+    faturaFormdan(veri),
+    veri.kalemler.map((k) => ({ anahtar: k.variantId, adet: k.quantity, birim: k.unitCostAmount, paraBirimi: k.unitCostCurrency })),
+  ).birim;
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.purchase.update({
         where: { id },
         data: {
+          ...faturaAlanlari(veri, tekParaBirimi),
 
           purchasedAt: tarih,
           supplierId: tedarikci.id,
@@ -392,9 +460,22 @@ export async function alimGuncelle(
           continue;
         }
 
+        /**
+         * K309 — ölçüt İNİŞ maliyeti: defterdeki PURCHASE_IN damgası
+         * (kabul edilmişse) yeni iniş maliyetinden farklı mı. Eski ölçüt
+         * yalnız fatura fiyatına bakıyordu; KDV/kargo/gümrük düzeltmesini
+         * görmezdi. Varsayılanda iniş = fiyat, yani eski davranış aynen.
+         */
+        const yeniMaliyet = yeniInis.get(yeni.variantId) ?? yeni.unitCostAmount;
+        const defterdeki = await tx.stockMovement.findFirst({
+          where: { purchaseItemId: eski.id, type: "PURCHASE_IN" },
+          select: { unitCostAmount: true, unitCostCurrency: true },
+        });
         const maliyetDegisti =
-          Number(eski.unitCostAmount.toString()) !== yeni.unitCostAmount ||
-          eski.unitCostCurrency !== yeni.unitCostCurrency;
+          defterdeki !== null &&
+          (defterdeki.unitCostAmount === null ||
+            Number(defterdeki.unitCostAmount.toString()) !== yeniMaliyet ||
+            defterdeki.unitCostCurrency !== yeni.unitCostCurrency);
 
         await tx.purchaseItem.update({
           where: { id: eski.id },
@@ -411,7 +492,8 @@ export async function alimGuncelle(
           const guncellenen = await tx.stockMovement.updateMany({
             where: { purchaseItemId: eski.id },
             data: {
-              unitCostAmount: String(yeni.unitCostAmount),
+              /** K309 — iniş maliyeti (fiyat + dağıtılan KDV/kargo/gümrük payı). */
+              unitCostAmount: String(yeniMaliyet),
               unitCostCurrency: yeni.unitCostCurrency,
             },
           });
@@ -434,9 +516,11 @@ export async function alimGuncelle(
               targetType: "PurchaseItem",
               targetId: eski.id,
               detail: JSON.stringify({
-                eskiMaliyet: eski.unitCostAmount.toString(),
+                eskiMaliyet: defterdeki?.unitCostAmount?.toString() ?? null,
+                eskiFaturaFiyati: eski.unitCostAmount.toString(),
                 eskiParaBirimi: eski.unitCostCurrency,
-                yeniMaliyet: String(yeni.unitCostAmount),
+                yeniMaliyet: String(yeniMaliyet),
+                yeniFaturaFiyati: String(yeni.unitCostAmount),
                 yeniParaBirimi: yeni.unitCostCurrency,
                 guncellenenHareket: guncellenen.count,
                 sinir:
@@ -470,7 +554,13 @@ export async function alimGuncelle(
                 : "PARTIALLY_RECEIVED",
         },
       });
-    });
+    },
+    /**
+     * K309 — kalem başına bir defter okuması eklendi (iniş maliyeti ölçütü).
+     * Tavan AÇIKÇA: canlıya gidiş-dönüş ~30–40 ms (ölçüldü 01.09); 40 kalemli
+     * bir alım ~3 sn eder, varsayılan 5 sn'ye dayanmasın.
+     */
+    { timeout: 30_000 });
   } catch (e) {
     console.error("[alim] guncellenemedi:", e);
     return { hatalar: [t("guncellenemedi")] };

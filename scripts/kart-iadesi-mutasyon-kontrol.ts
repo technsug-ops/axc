@@ -30,7 +30,8 @@ const VERI = "src/lib/kart-iadesi-veri.ts";
 const TAKVIM = "src/lib/panel/takvim-verisi.ts";
 const OZET = "src/lib/panel/kart-borcu-ozeti.ts";
 const RAPOR = "src/lib/rapor.ts";
-const ALIM_TUTARI = "src/lib/kart-alim-tutari.ts";
+/** K309: kart tutarının hesabı `alim-maliyeti.ts`e taşındı (kart-alim-tutari artık kapı). */
+const ALIM_TUTARI = "src/lib/alim-maliyeti.ts";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bekci: string; bul: string; koy: string; bozdugu: string };
 
@@ -61,16 +62,16 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu: "sayim farki ekrandan kaybolur" },
   /* K308 - alim tutari tek govde; kargo/vergi alim tutarinin ICINDE (kullanici beyani 29.09). */
   { ad: "K308 GOVDE TUTARI SISIRIYOR", yon: "FAZLADAN", dosya: ALIM_TUTARI, bekci: BEKCI,
-    bul: "    tutar += Number(k.unitCostAmount.toString()) * k.quantity;", koy: "    tutar += Number(k.unitCostAmount.toString()) * k.quantity * 1.2;",
+    bul: "    tutar += k.birim * k.adet;", koy: "    tutar += k.birim * k.adet * 1.2;",
     bozdugu: "fiyatin icindeki KDV ikinci kez karta yazilir" },
   { ad: "K308 FARKLI PARA BIRIMI SESSIZ DUSUYOR", yon: "KALDIRAN", dosya: ALIM_TUTARI, bekci: BEKCI,
-    bul: "      farkliVar = true;\n", koy: "",
+    bul: "      farkliVar = true;\n      continue;", koy: "      continue;",
     bozdugu: "kur cevrilmeyen kalem borctan sessizce duser, ekran uyarmaz" },
   { ad: "K308 TAKVIM YINE ELLE HESAPLIYOR", yon: "KALDIRAN", dosya: TAKVIM, bekci: BEKCI,
-    bul: "      const { tutar } = kartAlimTutari(a.items, kart.currency);", koy: "      const tutar = a.items.reduce((t, k) => t + Number(k.unitCostAmount.toString()) * k.quantity, 0);",
+    bul: "      const { tutar } = kartAlimTutari(a, a.items, kart.currency);", koy: "      const tutar = a.items.reduce((t, k) => t + Number(k.unitCostAmount.toString()) * k.quantity, 0);",
     bozdugu: "iki ekran iki ayri olcutle borc kurar; biri degisince ayrisir" },
   { ad: "K308 PANEL KARGOYU YINE EKLIYOR", yon: "FAZLADAN", dosya: OZET, bekci: BEKCI,
-    bul: "      const { tutar } = kartAlimTutari(a.items, kart.currency);", koy: "      const tutar = kartAlimTutari(a.items, kart.currency).tutar + Number((a as { shippingAmount?: number }).shippingAmount ?? 0);",
+    bul: "      const { tutar } = kartAlimTutari(a, a.items, kart.currency);", koy: "      const tutar = kartAlimTutari(a, a.items, kart.currency).tutar + Number(a.shippingAmount?.toString() ?? 0);",
     bozdugu: "alim tutarinin icindeki kargo panelde ikinci kez borca yazilir" },
 ];
 

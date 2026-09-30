@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useBicim } from "@/lib/bicim-istemci";
+import { FaturaYapisiKutulari } from "@/components/fatura-yapisi";
+import { alimEkleri, inisMaliyetleri } from "@/lib/alim-maliyeti";
 
 import {
   varyantAra,
@@ -70,7 +72,21 @@ export type AlimBaslangici = {
   kalemler: Kalem[];
   /** Herhangi bir kalemde mal kabul yapılmış mı? */
   malKabulVar: boolean;
+  /** K309 — alımın fatura yapısı (tutarlar formdaki metin hâliyle). */
+  fatura?: FaturaFormu;
 };
+
+/** K309 — formdaki fatura yapısı. Tutarlar METİN: yazılırken yarım hâller yaşar. */
+type FaturaFormu = { fiyatKdvDahil: boolean; kargoDahil: boolean; kdv: string; kargo: string; gumruk: string };
+const FATURA_VARSAYILANI: FaturaFormu = { fiyatKdvDahil: true, kargoDahil: true, kdv: "", kargo: "", gumruk: "" };
+
+/** Boş → null · sayı → sayı · okunamayan → NaN (form onu gönderMEZ, yanında hata yazar). */
+function tutarOku(metin: string): number | null {
+  const m = metin.trim();
+  if (m === "") return null;
+  const n = Number(m.replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? n : Number.NaN;
+}
 
 const SECIM_YOK = "__yok__";
 
@@ -132,6 +148,12 @@ export function AlimFormu({
   // Akış içi eklenen tedarikçi listeye burada katılır; sayfa yenilenmez.
   const [tedarikciListesi, setTedarikciListesi] = useState(tedarikciler);
   const [note, setNote] = useState(baslangic?.note ?? "");
+  /** K309 — yeni alımda tedarikçi seçilince onun varsayılanı gelir. */
+  const [fatura, setFatura] = useState<FaturaFormu>(baslangic?.fatura ?? FATURA_VARSAYILANI);
+  const kdvSayi = tutarOku(fatura.kdv);
+  const kargoSayi = tutarOku(fatura.kargo);
+  const gumrukSayi = tutarOku(fatura.gumruk);
+  const faturaOkunamadi = [kdvSayi, kargoSayi, gumrukSayi].some((x) => x !== null && Number.isNaN(x));
 
   // --- Kalemler ---
   const [kalemler, setKalemler] = useState<Kalem[]>(() => {
@@ -290,6 +312,12 @@ export function AlimFormu({
     supplierId,
     supplierOrderNo,
     note,
+    /** K309 — fatura yapısı; gizli tutarlar gönderilmez (dahil iken null). */
+    fiyatKdvDahil: fatura.fiyatKdvDahil,
+    kargoDahil: fatura.kargoDahil,
+    kdv: fatura.fiyatKdvDahil ? null : kdvSayi,
+    kargo: fatura.kargoDahil ? null : kargoSayi,
+    gumruk: gumrukSayi,
     kalemler: kalemler.map((k) => {
       const sayi = Number(k.unitCostAmount.replace(",", "."));
       return {
@@ -450,7 +478,12 @@ export function AlimFormu({
             <TedarikciSecimi
               secenekler={tedarikciListesi}
               secili={supplierId}
-              onSecim={setSupplierId}
+              onSecim={(yeniId) => {
+                setSupplierId(yeniId);
+                /** K309 — tedarikçinin fatura varsayılanı; tutarlar SİLİNMEZ (kullanıcı yazdıysa kalsın). */
+                const secilen = tedarikciListesi.find((x) => x.id === yeniId);
+                setFatura((f) => ({ ...f, fiyatKdvDahil: secilen?.fiyatKdvDahil ?? true, kargoDahil: secilen?.kargoDahil ?? true }));
+              }}
               onYeni={(yeni) =>
                 setTedarikciListesi((o) =>
                   [...o, yeni].sort((a, b) => a.ad.localeCompare(b.ad, "tr")),
@@ -468,6 +501,40 @@ export function AlimFormu({
               rows={2}
               placeholder={ortak("istegeBagli")}
             />
+          </div>
+
+          {/* ---------- K309 — FATURA YAPISI ----------
+              Varsayılan (işaretli · işaretli · boş) bugünkü davranıştır.
+              Hariç/ayrı işaretlenince tutar alanı AÇILIR ve ZORUNLUDUR:
+              boş kalsaydı ek sessizce 0 sayılır, maliyet eksik yazılırdı. */}
+          <div className="space-y-3 rounded-lg border p-3">
+            <div className="text-sm font-medium">{t("faturaBaslik")}</div>
+            <FaturaYapisiKutulari
+              kimlik="alim"
+              fiyatKdvDahil={fatura.fiyatKdvDahil}
+              kargoDahil={fatura.kargoDahil}
+              onDegisim={(d) => setFatura((f) => ({ ...f, ...d }))}
+            />
+            <div className="grid gap-3 sm:grid-cols-3">
+              {fatura.fiyatKdvDahil ? null : (
+                <div className="space-y-1">
+                  <Label htmlFor="alim-kdv">{t("faturaKdvTutari")} *</Label>
+                  <Input id="alim-kdv" value={fatura.kdv} inputMode="decimal" placeholder={t("faturaKdvIpucu")} onChange={(ev) => setFatura((f) => ({ ...f, kdv: ev.target.value }))} className="h-11 md:h-9" />
+                </div>
+              )}
+              {fatura.kargoDahil ? null : (
+                <div className="space-y-1">
+                  <Label htmlFor="alim-kargo">{t("faturaKargoTutari")} *</Label>
+                  <Input id="alim-kargo" value={fatura.kargo} inputMode="decimal" placeholder={t("faturaKargoIpucu")} onChange={(ev) => setFatura((f) => ({ ...f, kargo: ev.target.value }))} className="h-11 md:h-9" />
+                </div>
+              )}
+              <div className="space-y-1">
+                <Label htmlFor="alim-gumruk">{t("faturaGumruk")}</Label>
+                <Input id="alim-gumruk" value={fatura.gumruk} inputMode="decimal" placeholder={t("faturaGumrukIpucu")} onChange={(ev) => setFatura((f) => ({ ...f, gumruk: ev.target.value }))} className="h-11 md:h-9" />
+              </div>
+            </div>
+            <p className="text-muted-foreground text-xs">{t("faturaNotu")}</p>
+            {faturaOkunamadi ? <p role="alert" className="text-destructive text-sm">{t("faturaTutarOkunamadi")}</p> : null}
           </div>
         </CardContent>
       </Card>
@@ -699,6 +766,57 @@ export function AlimFormu({
                 ))}
               </div>
               <p className="text-muted-foreground text-xs">{t("toplamNotu")}</p>
+              {(() => {
+                /**
+                 * K309 — EK VARSA NE OLACAĞI KAYITTAN ÖNCE GÖRÜNÜR: fatura
+                 * toplamı, karta yazılacak tutar ve her kalemin STOĞA yazılacak
+                 * birim maliyeti. Hesap mal kabulün kullandığı AYNI gövdeden.
+                 */
+                const f = {
+                  fiyatKdvDahil: fatura.fiyatKdvDahil,
+                  kargoDahil: fatura.kargoDahil,
+                  kdv: kdvSayi !== null && !Number.isNaN(kdvSayi) ? kdvSayi : null,
+                  kargo: kargoSayi !== null && !Number.isNaN(kargoSayi) ? kargoSayi : null,
+                  gumruk: gumrukSayi !== null && !Number.isNaN(gumrukSayi) ? gumrukSayi : null,
+                };
+                const ek = alimEkleri(f);
+                if (ek.maliyetEki === 0) return null;
+                const girdiler = kalemler.map((k) => ({
+                  anahtar: k.variantId,
+                  adet: k.quantity,
+                  birim: k.promosyon ? 0 : Number(k.unitCostAmount.replace(",", ".")) || 0,
+                  paraBirimi: k.unitCostCurrency,
+                }));
+                const inis = inisMaliyetleri(f, girdiler);
+                if (inis.durum === "KARISIK_PARA") {
+                  return <p className="text-destructive text-sm">{t("faturaKarisikPara")}</p>;
+                }
+                const pb = kalemler[0]?.unitCostCurrency ?? "TRY";
+                const mal = girdiler.reduce((t2, g) => t2 + g.birim * g.adet, 0);
+                return (
+                  <div className="space-y-2 border-t pt-2 text-sm">
+                    <div className="flex flex-wrap gap-x-6 gap-y-1">
+                      <span>
+                        {t("faturaToplami")}: <span className="font-semibold tabular-nums">{bicim.para(mal + ek.maliyetEki, pb)}</span>
+                      </span>
+                      <span>
+                        {t("faturaKartaYazilan")}: <span className="font-semibold tabular-nums">{bicim.para(mal + ek.kartEki, pb)}</span>
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground text-xs">{t("faturaInisBaslik")}</div>
+                    <ul className="space-y-0.5 text-xs">
+                      {kalemler.map((k) => (
+                        <li key={k.variantId} className="flex justify-between gap-4">
+                          <span className="truncate">{k.etiket}</span>
+                          <span className="tabular-nums whitespace-nowrap">
+                            {bicim.para(inis.birim.get(k.variantId) ?? 0, k.unitCostCurrency)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
             </div>
           ) : null}
         </CardContent>
@@ -707,7 +825,7 @@ export function AlimFormu({
       <HataOzeti hatalar={durum.hatalar} />
 
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={bekliyor || kalemler.length === 0}>
+        <Button type="submit" disabled={bekliyor || kalemler.length === 0 || faturaOkunamadi}>
           {bekliyor
             ? ortak("kaydediliyor")
             : duzenleme
