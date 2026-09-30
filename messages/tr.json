@@ -778,7 +778,8 @@
     "faturaKarisikPara": "TL ve EUR kalemler bir arada: ek tutar dağıtılamaz, kayıt yapılamaz. Alımı para birimine göre ayırın.",
     "faturaToplami": "Fatura toplamı",
     "faturaKartaYazilan": "Karta yazılacak",
-    "faturaInisBaslik": "Stoğa yazılacak birim maliyet (payı dağıtılmış)"
+    "faturaInisBaslik": "Stoğa yazılacak birim maliyet (payı dağıtılmış)",
+    "faturaKdvUyusmuyor": "Faturadaki KDV {girilen}, ürünlerin KDV oranlarına göre beklenen {beklenen}. Faturayı ya da ürünün KDV oranını kontrol edin. Kayıt yine yapılır; esas olan faturadaki tutardır."
   },
   "MalKabul": {
     "saglamSayiOlmali": "sağlam adet sayı olmalı",

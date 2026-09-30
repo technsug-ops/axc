@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { alimGuncelle } from "../../actions";
 import { AlimFormu, type AlimBaslangici } from "../../alim-formu";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { kdvOraniniCoz } from "@/lib/kdv";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,15 @@ export default async function AlimDuzenleSayfasi({
           items: {
             include: {
               variant: {
-                include: { product: { select: { name: true } } },
+                include: {
+                  product: {
+                    select: {
+                      name: true,
+                      vatRateOverride: true,
+                      category: { select: { name: true, vatRate: true } },
+                    },
+                  },
+                },
               },
               // Kabul edilmiş adet ledger'dan türetilir; kolon yok.
               stockMovements: { select: { quantityDelta: true } },
@@ -126,6 +135,7 @@ export default async function AlimDuzenleSayfasi({
       unitCostAmount: String(Number(k.unitCostAmount.toString())),
       unitCostCurrency: k.unitCostCurrency,
       promosyon: k.promosyon,
+      kdvOrani: kdvOraniniCoz(k.variant.product).oran,
       gelen: k.stockMovements.reduce((t2, h) => t2 + h.quantityDelta, 0),
     })),
   };

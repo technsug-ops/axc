@@ -21,6 +21,7 @@ const GOVDE = "src/lib/alim-maliyeti.ts";
 const FATURA = "src/lib/alim-fatura.ts";
 const MALKABUL = "src/app/alimlar/[id]/mal-kabul/actions.ts";
 const ALIM = "src/app/alimlar/actions.ts";
+const FORM = "src/app/alimlar/alim-formu.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -52,6 +53,31 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "DUZENLEMEDE INIS MALIYETI YAZILMIYOR", yon: "KALDIRAN", dosya: ALIM,
     bul: "              unitCostAmount: String(yeniMaliyet),", koy: "              unitCostAmount: String(yeni.unitCostAmount),",
     bozdugu: "sonradan girilen kargo/KDV stoktaki maliyete ulasmaz" },
+  /* Fatura KDV kontrolu (30.09.2026) - uyari, engel degil. */
+  { ad: "KDV TOLERANSI SIFIR", yon: "FAZLADAN", dosya: GOVDE,
+    bul: "tolerans: Math.max(0.01, 0.005 * adet)", koy: "tolerans: 0",
+    bozdugu: "kurus yuvarlamasi her faturada yalanci uyari uretir" },
+  { ad: "KDV KALEM ORANI YOK SAYILIYOR", yon: "KALDIRAN", dosya: GOVDE,
+    bul: "    beklenen += (k.birim * k.adet * k.oran) / 100;", koy: "    beklenen += (k.birim * k.adet * 20) / 100;",
+    bozdugu: "%10 urunlu fatura dogruyken uyari verir" },
+  { ad: "KDV ADET YOK SAYILIYOR", yon: "KALDIRAN", dosya: GOVDE,
+    bul: "    beklenen += (k.birim * k.adet * k.oran) / 100;", koy: "    beklenen += (k.birim * k.oran) / 100;",
+    bozdugu: "cok adetli kalemde beklenen KDV eksik cikar" },
+  { ad: "KDV KARISIK PARADA HUKUM VERIYOR", yon: "FAZLADAN", dosya: GOVDE,
+    bul: "  if (new Set(kalemler.map((k) => k.paraBirimi)).size > 1) return { durum: \"KARISIK_PARA\" };\n", koy: "",
+    bozdugu: "TRY ve EUR kalem toplanip anlamsiz KDV kiyaslanir" },
+  { ad: "KDV UYARISI DAHIL FATURADA DA", yon: "FAZLADAN", dosya: FORM,
+    bul: "const kdvUyusmuyor = !fatura.fiyatKdvDahil && faturaKdvUyusmuyor(", koy: "const kdvUyusmuyor = faturaKdvUyusmuyor(",
+    bozdugu: "gizli KDV alaninin eski degeriyle dahil faturada uyari cikar" },
+  { ad: "KDV UYARISI CIZILMIYOR", yon: "KALDIRAN", dosya: FORM,
+    bul: "{kdvUyusmuyor && kdvKontrolu.durum", koy: "{false && kdvKontrolu.durum",
+    bozdugu: "kontrol hesaplanir, kullanici hic gormez" },
+  { ad: "KDV UYARISI KAYDI ENGELLIYOR", yon: "FAZLADAN", dosya: FORM,
+    bul: "disabled={bekliyor || kalemler.length === 0 || faturaOkunamadi}", koy: "disabled={bekliyor || kalemler.length === 0 || faturaOkunamadi || kdvUyusmuyor}",
+    bozdugu: "esas olan fatura oldugu halde kayit kilitlenir" },
+  { ad: "VARYANT ORANI SABIT 20", yon: "KALDIRAN", dosya: "src/lib/varyant-ozet.ts",
+    bul: "    kdvOrani: kdvOraniniCoz(v.product).oran,", koy: "    kdvOrani: 20,",
+    bozdugu: "%10 urunler hep uyari verir" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

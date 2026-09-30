@@ -37,6 +37,15 @@ fatura toplamı. Bağlananlar: mal kabul PURCHASE_IN · alım düzenlemede defte
 5. KDV alanını boşaltıp kaydet → «faturadaki KDV tutarını girin» hatası. (Gerçek alım değilse kaydetme; tedarikçiyi eski ayarına döndür.)
 6. Eski bir alımı aç → Düzenle → kutular işaretli, alanlar boş gelir; hiçbir rakam değişmez.
 
+─── ② FATURA KDV KONTROLÜ (30.09.2026, kullanıcı isteği) · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+«KDV hariç» faturada girilen KDV, kalemlerin ürün oranıyla (istisna > kategori > %20) beklenenle kıyaslanır:
+beklenen = Σ birim × adet × oran/100. Tolerans uydurulmadı: birim başına kuruş yuvarlaması → 0,005 × toplam adet
+(en az 1 kuruş). Aşarsa sarı uyarı; **kayıt ENGELLENMEZ** (esas olan fatura). İki para birimi / oranı bilinmeyen /
+fiyatı boş kalem varsa hüküm verilmez. Bekçi `alim-maliyeti:dogrula` +19 ölçüt; mutasyon 17/17 (8 yeni).
+**Halil testi:** yeni alım → KDV hariç tedarikçi → %20'lik üründen 1 adet ₺1.000 → KDV **200** yaz → uyarı YOK;
+**210** yaz → «Faturadaki KDV ₺210,00, ürünlerin KDV oranlarına göre beklenen ₺200,00» çıkar ve Kaydet düğmesi yine
+basılabilir. %10'luk bir diş fırçası eklenince beklenen ona göre artar (ör. ₺500 fırça → beklenen ₺250,00).
+
 ---
 
 ## 🟢 K308 — KART BORCU: ALIM TUTARI TEK GÖVDE, KARGO/VERGİ EKLENMEZ · 29.09.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR → HALİL TESTİ GEÇTİ 30.09.2026; MİMAR ONAYI BEKLİYOR]

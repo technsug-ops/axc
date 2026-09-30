@@ -7,6 +7,8 @@ import {
   alimFaturaToplami,
   alimIndirilecekKdv,
   alimKartTutari,
+  beklenenFaturaKdv,
+  faturaKdvUyusmuyor,
   inisMaliyetleri,
   type AlimFaturasi,
 } from "../src/lib/alim-maliyeti";
@@ -28,7 +30,7 @@ import { kaynakOku } from "./kaynak-oku";
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 3;
+const BOLUM_SAYISI = 4;
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
     gecen++;
@@ -125,6 +127,49 @@ console.log("\n3) desen — stoğa alım maliyeti yazan her yer iniş maliyetind
   kontrol("alım düzenlemede defter damgası İNİŞ maliyetiyle kıyaslanır ve onunla yazılır", /Number\(defterdeki\.unitCostAmount\.toString\(\)\) !== yeniMaliyet/.test(srv) && /unitCostAmount: String\(yeniMaliyet\),/.test(srv));
 }
 kosanBolumler.push("desen");
+
+/* ---------------------------------------------------------------------------
+ *  FATURA KDV KONTROLÜ (30.09.2026) — «KDV hariç» faturada girilen KDV, ürün
+ *  oranlarından beklenenle kıyaslanır. UYARI; kaydı engellemez.
+ *  Örnek veri iki FARKLI oran (20 · 10) ve adet 2 taşır: tek oranla ya da
+ *  adet 1 ile «oranı yok say» / «adedi yok say» mutasyonları görünmezdi.
+ * ------------------------------------------------------------------------- */
+{
+  console.log("\n— FATURA KDV KONTROLÜ —");
+  const k = beklenenFaturaKdv([
+    { birim: 100, adet: 2, oran: 20, paraBirimi: "TRY" },
+    { birim: 50, adet: 1, oran: 10, paraBirimi: "TRY" },
+  ]);
+  kontrol("beklenen KDV kalem başına kendi oranıyla: 40 + 5 = 45", k.durum === "TAMAM" && Math.abs(k.beklenen - 45) < 1e-9, k);
+  kontrol("tolerans yuvarlamadan türer: 3 adet × yarım kuruş = 0,015", k.durum === "TAMAM" && Math.abs(k.tolerans - 0.015) < 1e-9, k);
+  kontrol("tolerans içindeki fark (45,01) uyarı DEĞİL", !faturaKdvUyusmuyor(k, 45.01));
+  kontrol("toleransı aşan fark (45,02) uyarı", faturaKdvUyusmuyor(k, 45.02));
+  kontrol("eksik yönde fark (44,98) da uyarı", faturaKdvUyusmuyor(k, 44.98));
+  kontrol("tek kalemde tolerans en az 1 kuruş", (() => { const t = beklenenFaturaKdv([{ birim: 10, adet: 1, oran: 20, paraBirimi: "TRY" }]); return t.durum === "TAMAM" && t.tolerans === 0.01; })());
+  const karisik = beklenenFaturaKdv([
+    { birim: 100, adet: 1, oran: 20, paraBirimi: "TRY" },
+    { birim: 100, adet: 1, oran: 20, paraBirimi: "EUR" },
+  ]);
+  kontrol("iki para birimi → hüküm YOK (KARISIK_PARA)", karisik.durum === "KARISIK_PARA", karisik);
+  kontrol("oranı bilinmeyen kalem → hüküm YOK (ORAN_YOK)", beklenenFaturaKdv([{ birim: 100, adet: 1, oran: null, paraBirimi: "TRY" }]).durum === "ORAN_YOK");
+  kontrol("fiyatı girilmemiş kalem → hüküm YOK (DEGER_YOK)", beklenenFaturaKdv([{ birim: null, adet: 1, oran: 20, paraBirimi: "TRY" }]).durum === "DEGER_YOK");
+  kontrol("kalem yok → hüküm YOK", beklenenFaturaKdv([]).durum === "DEGER_YOK");
+  kontrol("hüküm yoksa uyarı da yok", !faturaKdvUyusmuyor(karisik, 999));
+  kontrol("girilen KDV yoksa uyarı yok", !faturaKdvUyusmuyor(k, null));
+
+  const form = yorumsuz(kaynakOku("src/app/alimlar/alim-formu.tsx"));
+  kontrol("uyarı yalnız «KDV hariç» faturada hesaplanır", /const kdvUyusmuyor = !fatura\.fiyatKdvDahil && faturaKdvUyusmuyor\(kdvKontrolu, kdvSayi\);/.test(form));
+  kontrol("uyarı ekrana ÇİZİLİYOR (koşul + metin aynı dalda)", /\{kdvUyusmuyor && kdvKontrolu\.durum === "TAMAM"[\s\S]{0,400}t\("faturaKdvUyusmuyor"/.test(form));
+  const gonder = form.match(/<Button type="submit" disabled=\{[^}]*\}/)?.[0] ?? "";
+  kontrol("gönder düğmesi bulundu", gonder !== "", gonder);
+  kontrol("uyarı kaydı ENGELLEMEZ (esas olan fatura)", gonder !== "" && !/kdvUyusmuyor/.test(gonder), gonder);
+  kontrol("eklenen kalem ürünün KDV oranını taşır", /promosyon: false,\s*kdvOrani: varyant\.kdvOrani,/.test(form));
+  const ozet = yorumsuz(kaynakOku("src/lib/varyant-ozet.ts"));
+  kontrol("varyant özeti oranı tek çözücüden alır (istisna > kategori > %20)", /kdvOrani: kdvOraniniCoz\(v\.product\)\.oran,/.test(ozet));
+  const duz = yorumsuz(kaynakOku("src/app/alimlar/[id]/duzenle/page.tsx"));
+  kontrol("düzenlemede açılan kalemler de oranı taşır", /kdvOrani: kdvOraniniCoz\(k\.variant\.product\)\.oran,/.test(duz));
+}
+kosanBolumler.push("fatura kdv kontrolü");
 
 console.log("\n" + "=".repeat(70));
 if (kosanBolumler.length !== BOLUM_SAYISI) {

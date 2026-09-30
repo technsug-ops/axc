@@ -23,7 +23,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useBicim } from "@/lib/bicim-istemci";
 import { FaturaYapisiKutulari } from "@/components/fatura-yapisi";
-import { alimEkleri, inisMaliyetleri } from "@/lib/alim-maliyeti";
+import { alimEkleri, beklenenFaturaKdv, faturaKdvUyusmuyor, inisMaliyetleri } from "@/lib/alim-maliyeti";
 
 import {
   varyantAra,
@@ -53,6 +53,8 @@ type Kalem = {
   unitCostCurrency: "TRY" | "EUR";
   /** K171: promosyon (bedava) — işaretliyse maliyet 0. */
   promosyon: boolean;
+  /** Ürünün KDV oranı — «KDV hariç» faturada girilen KDV bununla kıyaslanır. */
+  kdvOrani?: number;
   /** Bu kalemden KABUL EDİLMİŞ adet. Düzenlemede adet bunun altına inemez. */
   gelen?: number;
 };
@@ -170,6 +172,7 @@ export function AlimFormu({
         unitCostAmount: "",
         unitCostCurrency: "TRY",
         promosyon: false,
+        kdvOrani: hazirVaryant.kdvOrani,
       },
     ];
   });
@@ -235,6 +238,7 @@ export function AlimFormu({
           unitCostAmount: "",
           unitCostCurrency: varsayilanParaBirimi,
           promosyon: false,
+          kdvOrani: varyant.kdvOrani,
         },
       ];
     });
@@ -303,6 +307,27 @@ export function AlimFormu({
     }
     return [...harita.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [kalemler]);
+
+  /**
+   * FATURA KDV KONTROLÜ — yalnız «KDV hariç» faturada. Uyarıdır, kaydı
+   * engellemez (esas olan fatura). Promosyon kalemi 0 TL'dir, KDV'si de 0.
+   */
+  const kdvKontrolu = useMemo(
+    () =>
+      beklenenFaturaKdv(
+        kalemler.map((k) => {
+          const sayi = Number(k.unitCostAmount.replace(",", "."));
+          return {
+            birim: k.promosyon ? 0 : k.unitCostAmount.trim() !== "" && Number.isFinite(sayi) ? sayi : null,
+            adet: k.quantity,
+            oran: k.kdvOrani ?? null,
+            paraBirimi: k.unitCostCurrency,
+          };
+        }),
+      ),
+    [kalemler],
+  );
+  const kdvUyusmuyor = !fatura.fiyatKdvDahil && faturaKdvUyusmuyor(kdvKontrolu, kdvSayi);
 
   const gonderilecek = {
     purchasedAt,
@@ -535,6 +560,14 @@ export function AlimFormu({
             </div>
             <p className="text-muted-foreground text-xs">{t("faturaNotu")}</p>
             {faturaOkunamadi ? <p role="alert" className="text-destructive text-sm">{t("faturaTutarOkunamadi")}</p> : null}
+            {kdvUyusmuyor && kdvKontrolu.durum === "TAMAM" && kdvSayi !== null ? (
+              <p role="status" className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
+                {t("faturaKdvUyusmuyor", {
+                  girilen: bicim.para(kdvSayi, kalemler[0]?.unitCostCurrency ?? "TRY"),
+                  beklenen: bicim.para(kdvKontrolu.beklenen, kalemler[0]?.unitCostCurrency ?? "TRY"),
+                })}
+              </p>
+            ) : null}
           </div>
         </CardContent>
       </Card>

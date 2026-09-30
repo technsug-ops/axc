@@ -10,6 +10,8 @@
  * ============================================================================
  */
 
+import { kdvOraniniCoz } from "@/lib/kdv";
+
 /** Formlarda ve barkod aramasında kullanılan hafif varyant özeti. */
 export type VaryantSonucu = {
   id: string;
@@ -21,6 +23,8 @@ export type VaryantSonucu = {
   barcode: string | null;
   /** Eşleştirilmiş pazaryeri kodları — hangi kanalda hangi kodla satılıyor. */
   kanalKodlari: { kanal: string; kod: string }[];
+  /** Ürünün çözülmüş KDV oranı (istisna > kategori > %20) — alım formu fatura KDV'sini bununla kıyaslar. */
+  kdvOrani: number;
 };
 
 /**
@@ -34,7 +38,14 @@ export const VARYANT_SECIMI = {
   companySku: true,
   barcode: true,
   name: true,
-  product: { select: { name: true, brand: true } },
+  product: {
+    select: {
+      name: true,
+      brand: true,
+      vatRateOverride: true,
+      category: { select: { name: true, vatRate: true } },
+    },
+  },
   channelSkus: {
     where: { isActive: true },
     select: {
@@ -52,7 +63,12 @@ export function varyantiOzetle(v: {
   companySku: string;
   barcode: string | null;
   name: string | null;
-  product: { name: string; brand: string | null };
+  product: {
+    name: string;
+    brand: string | null;
+    vatRateOverride: { toString(): string } | null;
+    category: { name: string; vatRate: { toString(): string } } | null;
+  };
   channelSkus: {
     channelSku: string;
     channelAccount: { channel: { name: string } };
@@ -70,6 +86,7 @@ export function varyantiOzetle(v: {
       kanal: k.channelAccount.channel.name,
       kod: k.channelSku,
     })),
+    kdvOrani: kdvOraniniCoz(v.product).oran,
   };
 }
 

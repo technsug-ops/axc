@@ -173,6 +173,7 @@ const ornek = {
     { kanal: "Hepsiburada", kod: "HBCV00009C3LML" },
     { kanal: "Trendyol", kod: "TY-42" },
   ],
+  kdvOrani: 20,
 };
 const dizi = kodDizisi(ornek);
 kontrol("sonuç satırı kanal kodunu yazıyor", dizi.includes("HBCV00009C3LML"));

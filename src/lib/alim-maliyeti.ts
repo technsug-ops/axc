@@ -187,3 +187,50 @@ export function alimIndirilecekKdv(
 export function alimFaturaToplami(f: AlimFaturasi, malBedeli: number): number {
   return malBedeli + alimEkleri(f).maliyetEki;
 }
+
+/**
+ * ============================================================================
+ *  FATURA KDV KONTROLÜ — BEKLENEN KDV (30.09.2026)
+ * ----------------------------------------------------------------------------
+ *  «KDV hariç» faturada girilen KDV tutarı, kalemlerin ürün oranlarıyla
+ *  kıyaslanır: beklenen = Σ (birim × adet × oran / 100).
+ *
+ *  ⚠ YALNIZ UYARI — ESAS OLAN FATURADIR (kullanıcı kararı K309). Kayıt
+ *  engellenmez; uyarı ya faturayı ya ürünün KDV oranını baktırır.
+ *
+ *  TOLERANS UYDURULMAZ, YUVARLAMADAN TÜRER: fatura KDV'yi en kötü ihtimalle
+ *  BİRİM başına kuruşa yuvarlar; her yuvarlama en çok yarım kuruş kaydırır.
+ *  → tolerans = 0,005 × toplam adet (en az 1 kuruş). Bunun üstündeki fark
+ *  yuvarlamayla açıklanamaz.
+ *
+ *  HÜKÜM VERİLEMEYEN HÂLLER AYRI DÖNER (sessiz «tutuyor» değil):
+ *    KARISIK_PARA — iki para birimi var, tek KDV tutarı hangisinin belli değil
+ *    ORAN_YOK     — oranı bilinmeyen kalem var
+ *    DEGER_YOK    — fiyatı girilmemiş kalem var ya da kalem yok
+ * ============================================================================
+ */
+export type FaturaKdvKontrolu =
+  | { durum: "TAMAM"; beklenen: number; tolerans: number }
+  | { durum: "KARISIK_PARA" | "ORAN_YOK" | "DEGER_YOK" };
+
+export function beklenenFaturaKdv(
+  kalemler: { birim: number | null; adet: number; oran: number | null; paraBirimi: string }[],
+): FaturaKdvKontrolu {
+  if (kalemler.length === 0) return { durum: "DEGER_YOK" };
+  if (new Set(kalemler.map((k) => k.paraBirimi)).size > 1) return { durum: "KARISIK_PARA" };
+  let beklenen = 0;
+  let adet = 0;
+  for (const k of kalemler) {
+    if (k.birim === null || !Number.isFinite(k.birim)) return { durum: "DEGER_YOK" };
+    if (k.oran === null || !Number.isFinite(k.oran)) return { durum: "ORAN_YOK" };
+    beklenen += (k.birim * k.adet * k.oran) / 100;
+    adet += k.adet;
+  }
+  return { durum: "TAMAM", beklenen, tolerans: Math.max(0.01, 0.005 * adet) };
+}
+
+/** Girilen KDV beklenenden toleransı aşacak kadar farklı mı? Hüküm yoksa `false`. */
+export function faturaKdvUyusmuyor(k: FaturaKdvKontrolu, girilen: number | null): boolean {
+  if (k.durum !== "TAMAM" || girilen === null || !Number.isFinite(girilen)) return false;
+  return Math.abs(girilen - k.beklenen) > k.tolerans;
+}
