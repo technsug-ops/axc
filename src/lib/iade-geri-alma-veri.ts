@@ -179,7 +179,13 @@ export async function iadeyiGeriAl(girdi: {
         );
       }
 
-      /** ⛔ ŞARTLI — başka bir sekme aynı anda geri aldıysa ikinci kez yazılmaz. */
+      /**
+       * ⛔ ŞARTLI — başka bir sekme aynı anda geri aldıysa ikinci kez yazılmaz.
+       * SAYIM KORUMASI YOK: ters hareketler İŞLEM ANINA (`an`) yazılır, geçmişe
+       * dönük değil — son sayım damgasının ÖNÜNE düşemezler, sayılmış rafı
+       * sessizce ezmezler (anayasa: «fiziksel sayım son sözdür» yalnız
+       * geriye dönük yazımı durdurur).
+       */
       const an = new Date();
       const r = await tx.return.updateMany({
         where: { id: o.id, geriAlindiAt: null },

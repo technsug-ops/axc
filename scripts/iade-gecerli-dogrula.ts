@@ -91,7 +91,11 @@ console.log("\n1) kural — değerle");
   );
 
   /** Tasarım iddiası: değişim çıkışı + ters giriş kapanır, satışın asıl çıkışı AÇIK kalır. */
-  const kalemHareketleri = [{ quantityDelta: -1 }, { quantityDelta: -1 }, { quantityDelta: 1 }];
+  const kalemHareketleri = [
+    { quantityDelta: -1, birimMaliyet: "100", birimMaliyetParaBirimi: null },
+    { quantityDelta: -1, birimMaliyet: "90", birimMaliyetParaBirimi: null },
+    { quantityDelta: 1, birimMaliyet: "90", birimMaliyetParaBirimi: null },
+  ];
   const acik = acikCikislar(kalemHareketleri);
   kontrol("değişim geri alınınca satışın ASIL çıkışı açık kalır (sonraki iade doğru)", acik.length === 1 && acik[0].adet === 1 && acik[0] === acik.find((x) => x.quantityDelta === -1), acik);
 }
