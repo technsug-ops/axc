@@ -440,6 +440,8 @@
     "uyari-cron-mutasyon:kontrol": "tsx scripts/uyari-cron-mutasyon-kontrol.ts",
     "kategori-eslesme:dogrula": "tsx scripts/kategori-eslesme-dogrula.ts",
     "kategori-eslesme-mutasyon:kontrol": "tsx scripts/kategori-eslesme-mutasyon-kontrol.ts",
+    "kdv-uyusmazligi:dogrula": "tsx scripts/kdv-uyusmazligi-dogrula.ts",
+    "kdv-uyusmazligi-mutasyon:kontrol": "tsx scripts/kdv-uyusmazligi-mutasyon-kontrol.ts",
     "supheli-urun:dogrula": "tsx scripts/supheli-urun-dogrula.ts",
     "supheli-urun-mutasyon:kontrol": "tsx scripts/supheli-urun-mutasyon-kontrol.ts",
     "marka-kodu:dogrula": "tsx scripts/marka-kodu-dogrula.ts",

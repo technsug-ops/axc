@@ -24,6 +24,7 @@
  */
 
 import type { Izin } from "@/lib/yetki/izinler";
+import { KDV_UYUSMAZLIGI_ADRESI } from "@/lib/kdv-uyusmazligi-kurali";
 
 export const UYARI_SEVIYELERI = ["kirmizi", "amber", "notr"] as const;
 export type UyariSeviyesi = (typeof UYARI_SEVIYELERI)[number];
@@ -150,6 +151,9 @@ export const UYARI_ANAHTARLARI = [
   // ── K290 (27.09.2026): gece bekçi turu kırmızı / koşmadı — push artık
   //    mutasyon denetimlerinin yalnız bir kısmını koşuyor, gerisi GECE. ──
   "geceTuruSorunlu",
+  // ── 30.09.2026: Trendyol ilanındaki KDV oranı bizim oranımızla ayrışıyor —
+  //    hangisinin yanlış olduğuna karar VERMEZ, baktırır (`kdv-uyusmazligi.ts`). ──
+  "kdvOraniUyusmuyor",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -208,6 +212,8 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
   tarifePenceresi: "/ayarlar/komisyon",
   tyKategoriKarsiliksiz: "/ayarlar/kategoriler/trendyol",
   geceTuruSorunlu: "/ayarlar/gece-turu",
+  /** İlke #16: adres SAHİBİNDEN — süzgeç sözleşmesi `kdv-uyusmazligi.ts`te. */
+  kdvOraniUyusmuyor: KDV_UYUSMAZLIGI_ADRESI,
 };
 
 /**
@@ -251,6 +257,8 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   tyKategoriKarsiliksiz: "amber",
   /* Kod bozulmadı (bekçiler her push'ta koşuyor); bir bekçinin dişi körelmiş ya da tur kaçmış — amber. */
   geceTuruSorunlu: "amber",
+  /* Veri güvenilirliği: yanlış oran KDV ve stopaj hesabını sessizce kaydırır — amber. */
+  kdvOraniUyusmuyor: "amber",
 };
 
 /**
@@ -286,6 +294,8 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   tyKategoriKarsiliksiz: "ayar.yaz",
   /* Ekran `ayar.yaz` ister — teknik bakım uyarısı, depocuya gösterilmez. */
   geceTuruSorunlu: "ayar.yaz",
+  /* Liste ekranı (`/kanal-sku`) `kanalsku.yaz` ister — açamayacağı uyarı gösterilmez. */
+  kdvOraniUyusmuyor: "kanalsku.yaz",
 };
 
 export type Uyari = {

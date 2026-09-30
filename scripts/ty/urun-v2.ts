@@ -63,6 +63,13 @@ export type NormalUrun = KanalUrunu & {
   kategori: string;
   satisFiyati: string;
   urunUrl: string;
+  /**
+   * Kanalın ilanda tuttuğu KDV oranı (`variants[].vatRate`, 30.09.2026).
+   * ⚠ YALNIZ ONAYLI UÇTAN — onaysız uçta ölçülmedi, `undefined` kalır
+   * («uç vermedi» ile «oran yok» aynı görünmesin; uydurulmaz).
+   * Ölçüldü 30.09.2026: onaylı uçta 20 → 1585 · 10 → 81 · 0 → 1.
+   */
+  kdvOrani?: number;
 };
 
 /** İç nesneden ad alanı — `category`/`brand` ikisi de `{id,name}`. */
@@ -147,6 +154,7 @@ export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUru
       /** ⚠ FİYAT VARYANTTA — aynı içeriğin varyantları farklı fiyatlı olabilir. */
       satisFiyati: dize(fiyat.salePrice),
       urunUrl: dize(v.productUrl),
+      kdvOrani: sayiVeyaYok(v.vatRate),
     };
   });
 }

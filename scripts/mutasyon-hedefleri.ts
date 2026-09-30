@@ -295,4 +295,10 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * (içe aktarma · mal kabul harness'leriyle ortak) mutasyona uğratıyor.
    */
   "alim-maliyeti-mutasyon:kontrol",
+  /**
+   * 30.09.2026 — `kdv-uyusmazligi` çan toplayıcısını (`uyari/topla.ts`, uyarı
+   * harness'leriyle ortak), listeleme yazıcısını ve kanal SKU ekranını
+   * mutasyona uğratıyor.
+   */
+  "kdv-uyusmazligi-mutasyon:kontrol",
 ];

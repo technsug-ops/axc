@@ -16,6 +16,7 @@ import { yedekOlcumu } from "./yedek";
 import type { Uyari } from "./turler";
 import { tyKategoriKarsiliksizSayisi } from "@/lib/kategori-eslesme-yaz";
 import { geceTuruSorunSayisi } from "@/lib/gece-turu-veri";
+import { kdvUyusmayanKanalSkulari } from "@/lib/kdv-uyusmazligi";
 
 /**
  * ============================================================================
@@ -312,6 +313,8 @@ export async function uyarilariTopla(
     tyKategoriKarsiliksiz: { sayi: await tyKategoriKarsiliksizSayisi() },
     /** K290 — gece turu ekranıyla AYNI gövde (`geceTuruSorunSayisi`). */
     geceTuruSorunlu: { sayi: await geceTuruSorunSayisi() },
+    /** 30.09.2026 — `/kanal-sku?kdv=uyusmuyor` süzgeciyle AYNI gövde (sayı = liste). */
+    kdvOraniUyusmuyor: { sayi: (await kdvUyusmayanKanalSkulari()).kimlikler.length },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:

@@ -156,11 +156,13 @@ export async function listelemeDurumunuYaz(
     };
   }
 
-  /** Kimlik → { durum, adet } — TEKİL listeleme başına. */
-  const kanal = new Map<string, { durum: ReturnType<typeof listelemeDurumu>; adet: number | null }>();
+  /** Kimlik → { durum, adet, kdv } — TEKİL listeleme başına. */
+  const kanal = new Map<string, { durum: ReturnType<typeof listelemeDurumu>; adet: number | null; kdv: number | null }>();
   for (const u of tarama.urunler) {
     const durum = listelemeDurumu(u);
     const adet = kanalAdedi(u.quantity);
+    /** KDV oranı da «yok» ile «sıfır»ı ayırır — %0 gerçek bir orandır (ölçüldü: 1 ilan). */
+    const kdv = kanalAdedi(u.kdvOrani);
     for (const k of kimlikleri(u)) {
       const mevcut = kanal.get(k);
       /**
@@ -168,14 +170,16 @@ export async function listelemeDurumunuYaz(
        * adet TOPLANIR. Ölçüldü — bugün böyle bir vaka YOK (1629 barkodun
        * 1629'u tekil), ama yarın doğarsa sessizce yanlış olmasın.
        */
-      if (mevcut === undefined) kanal.set(k, { durum, adet });
+      if (mevcut === undefined) kanal.set(k, { durum, adet, kdv });
       else {
         const enIyi = SIRA[durum] < SIRA[mevcut.durum] ? durum : mevcut.durum;
         const toplam =
           mevcut.adet === null && adet === null
             ? null
             : (mevcut.adet ?? 0) + (adet ?? 0);
-        kanal.set(k, { durum: enIyi, adet: toplam });
+        /** ⚠ İki ilan FARKLI oran söylüyorsa hüküm yok — biri seçilip yazılmaz. */
+        const ortakKdv = mevcut.kdv === kdv ? kdv : null;
+        kanal.set(k, { durum: enIyi, adet: toplam, kdv: ortakKdv });
       }
     }
   }
@@ -196,6 +200,7 @@ export async function listelemeDurumunuYaz(
       variantId: true,
       listelemeDurumu: true,
       kanalAdet: true,
+      kanalKdvOrani: true,
       variant: { select: { barcode: true } },
     },
   });
@@ -233,22 +238,25 @@ export async function listelemeDurumunuYaz(
 
     const k = kanal.get(bk);
     if (k === undefined) {
-      if (s.listelemeDurumu !== "YOK" || s.kanalAdet !== null) {
+      if (s.listelemeDurumu !== "YOK" || s.kanalAdet !== null || s.kanalKdvOrani !== null) {
         await prisma.channelSku.update({
           where: { id: s.id },
-          data: { listelemeDurumu: "YOK", kanalAdet: null, kanalOlcumAt: an },
+          /* İlan yoksa oranı da yok — eski oran «bugün böyle» diye okunmasın. */
+          data: { listelemeDurumu: "YOK", kanalAdet: null, kanalKdvOrani: null, kanalOlcumAt: an },
         });
       }
       sonuc.yokIsaretlenen += 1;
       continue;
     }
     /** ⚠ DEĞİŞMEYEN SATIRA DOKUNULMAZ — damgası toplu sorguda tazelenecek. */
-    if (s.listelemeDurumu !== k.durum || s.kanalAdet !== k.adet) {
+    const kayitliKdv = s.kanalKdvOrani === null ? null : Number(s.kanalKdvOrani.toString());
+    if (s.listelemeDurumu !== k.durum || s.kanalAdet !== k.adet || kayitliKdv !== k.kdv) {
       await prisma.channelSku.update({
         where: { id: s.id },
         data: {
           listelemeDurumu: k.durum,
           kanalAdet: k.adet,
+          kanalKdvOrani: k.kdv,
           kanalOlcumAt: an,
         },
       });

@@ -1880,7 +1880,11 @@
     "bantIpucu": "Bu hesapta tipik oran %{medyan}.",
     "bantDisi": "Alışılmadık: bu hesapta oranlar genelde %{alt} – %{ust} arasında. Yine de kaydedebilirsiniz.",
     "oranAlisHesabinda": "alış hesabı — komisyon yok",
-    "duzenle": "Düzenle"
+    "duzenle": "Düzenle",
+    "kdvSuzgeciBaslik": "KDV oranı uyuşmayan {sayi} ilan ({olculen} ilanın oranı ölçüldü)",
+    "kdvSuzgeciNotu": "Sistem hangisinin yanlış olduğunu bilemez. İlan yanlışsa pazaryerinde düzelt; ürün kartı yanlışsa rozete tıklayıp KDV istisnasını ya da kategoriyi düzelt. Oranı ölçülmeyen ilan (Hepsiburada, onay bekleyen) sayılmaz.",
+    "kdvSuzgeciKaldir": "Süzgeci kaldır",
+    "kdvAyrisimRozeti": "KDV: ilanda %{kanal} · bizde %{bizim}"
   },
   "Komisyon": {
     "baslik": "Komisyon oranı içe aktarma",
@@ -3325,7 +3329,9 @@
     "baslik_tyKategoriKarsiliksiz": "{sayi} Trendyol kategorisinin karşılığı seçilmedi",
     "eylem_tyKategoriKarsiliksiz": "Karşılığını seç — o kategorideki ürünlere kategori yazılmıyor",
     "baslik_geceTuruSorunlu": "Gece bekçi turunda {sayi} sorun",
-    "eylem_geceTuruSorunlu": "Ayrıntıya bak — kırmızı denetim ve onu bozan push yazıyor"
+    "eylem_geceTuruSorunlu": "Ayrıntıya bak — kırmızı denetim ve onu bozan push yazıyor",
+    "baslik_kdvOraniUyusmuyor": "{sayi} ilanda KDV oranı uyuşmuyor",
+    "eylem_kdvOraniUyusmuyor": "Trendyol ilanı ile ürün kartının KDV oranı farklı — hangisi yanlışsa onu düzelt"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",

@@ -1880,7 +1880,11 @@
     "bantIpucu": "",
     "bantDisi": "",
     "oranAlisHesabinda": "",
-    "duzenle": ""
+    "duzenle": "",
+    "kdvSuzgeciBaslik": "",
+    "kdvSuzgeciNotu": "",
+    "kdvSuzgeciKaldir": "",
+    "kdvAyrisimRozeti": ""
   },
   "Komisyon": {
     "baslik": "",
@@ -3325,7 +3329,9 @@
     "baslik_tyKategoriKarsiliksiz": "",
     "eylem_tyKategoriKarsiliksiz": "",
     "baslik_geceTuruSorunlu": "",
-    "eylem_geceTuruSorunlu": ""
+    "eylem_geceTuruSorunlu": "",
+    "baslik_kdvOraniUyusmuyor": "",
+    "eylem_kdvOraniUyusmuyor": ""
   },
   "Talep": {
     "bildirEtiketi": "",

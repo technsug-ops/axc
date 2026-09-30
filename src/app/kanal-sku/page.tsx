@@ -13,6 +13,8 @@ import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
 import { VARYANT_SECIMI, varyantiOzetle } from "@/lib/varyant-ozet";
 import { komisyonBandi } from "@/lib/komisyon-bandi";
 import { prisma } from "@/lib/prisma";
+import { kdvOraniniCoz } from "@/lib/kdv";
+import { KDV_SUZGEC_DEGERI, kdvUyusmayanKanalSkulari, kdvUyusmuyorMu } from "@/lib/kdv-uyusmazligi";
 
 import { KanalSkuFiltresi } from "./filtre";
 import { SayfalamaCubugu } from "@/components/sayfalama";
@@ -38,11 +40,13 @@ export default async function KanalSkuSayfasi({
     sayfa?: string;
     /** K112a — mal kabul ekranındaki "Kod yok" rozetinden gelen varyant. */
     ekle?: string;
+    /** Çan uyarısı «KDV oranı uyuşmuyor»dan gelinir (`kdv-uyusmazligi.ts`). */
+    kdv?: string;
   }>;
 }) {
   await sayfaIzni("kanalsku.yaz");
 
-  const { hesap, q, eksik, sayfa, ekle } = await searchParams;
+  const { hesap, q, eksik, sayfa, ekle, kdv } = await searchParams;
   const seciliHesap = hesap ?? "";
 
   /**
@@ -59,6 +63,13 @@ export default async function KanalSkuSayfasi({
   const onDoluVaryant = onDoluKayit ? varyantiOzetle(onDoluKayit) : null;
   const arama = (q ?? "").trim();
   const eksikOran = eksik === "1";
+  /**
+   * ⚠ SAYI = LİSTE: çan sayısı da bu süzgeç de AYNI gövdeden. Oran zinciri
+   * (istisna > kategori > %20) veritabanında ifade edilemediği için süzgeç
+   * kimlik listesiyle kurulur.
+   */
+  const kdvSuzgeci = kdv === KDV_SUZGEC_DEGERI;
+  const kdvUyusmazligi = kdvSuzgeci ? await kdvUyusmayanKanalSkulari() : null;
 
   const t = await getTranslations("KanalSku");
 
@@ -74,6 +85,7 @@ export default async function KanalSkuSayfasi({
     ...(eksikOran
       ? { commissionRate: null, channelAccount: { satisIcin: true } }
       : {}),
+    ...(kdvUyusmazligi ? { id: { in: kdvUyusmazligi.kimlikler } } : {}),
     ...(arama
       ? {
           OR: [
@@ -116,7 +128,14 @@ export default async function KanalSkuSayfasi({
           select: {
             sku: true,
             name: true,
-            product: { select: { name: true } },
+            product: {
+              select: {
+                id: true,
+                name: true,
+                vatRateOverride: true,
+                category: { select: { name: true, vatRate: true } },
+              },
+            },
           },
         },
         channelAccount: {
@@ -150,7 +169,14 @@ export default async function KanalSkuSayfasi({
     satisIcin: h.satisIcin,
   }));
 
-  const filtreVar = Boolean(seciliHesap || arama || eksikOran);
+  const filtreVar = Boolean(seciliHesap || arama || eksikOran || kdvSuzgeci);
+
+  /** Kanal oranı biliniyor ve bizimkiyle ayrışıyorsa iki oran; değilse null. */
+  function kdvAyrisimi(kayit: (typeof kayitlar)[number]) {
+    const kanal = kayit.kanalKdvOrani === null ? null : Number(kayit.kanalKdvOrani.toString());
+    const bizim = kdvOraniniCoz(kayit.variant.product).oran;
+    return kdvUyusmuyorMu(kanal, bizim) === true ? { kanal: kanal as number, bizim } : null;
+  }
 
   function urunAdi(kayit: (typeof kayitlar)[number]) {
     const v = kayit.variant;
@@ -314,6 +340,18 @@ export default async function KanalSkuSayfasi({
         </CardContent>
       </Card>
 
+      {kdvUyusmazligi ? (
+        <div className={`space-y-1 rounded-md p-3 ${DURUM_KUTUSU.uyari}`}>
+          <p className={`text-sm font-medium ${DURUM_YAZISI.uyari}`}>
+            {t("kdvSuzgeciBaslik", { sayi: kdvUyusmazligi.kimlikler.length, olculen: kdvUyusmazligi.olculen })}
+          </p>
+          <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("kdvSuzgeciNotu")}</p>
+          <Link href="/kanal-sku" className="text-sm underline underline-offset-4">
+            {t("kdvSuzgeciKaldir")}
+          </Link>
+        </div>
+      ) : null}
+
       <KanalSkuFiltresi
         hesaplar={hesaplar}
         seciliHesap={seciliHesap}
@@ -374,6 +412,18 @@ export default async function KanalSkuSayfasi({
                     {!kayit.isActive ? (
                       <Badge variant="secondary">{ortak("pasif")}</Badge>
                     ) : null}
+                    {(() => {
+                      const a = kdvAyrisimi(kayit);
+                      /* Hangisi yanlış sistem bilemez — ürün kartına götürür; ilan yanlışsa pazaryerinde düzeltilir. */
+                      return a ? (
+                        <Link
+                          href={`/urunler/${kayit.variant.product.id}/duzenle`}
+                          className={`inline-flex min-h-11 items-center text-xs underline underline-offset-4 sm:min-h-0 ${DURUM_YAZISI.uyari}`}
+                        >
+                          {t("kdvAyrisimRozeti", { kanal: bicim.sayi(a.kanal, a.kanal % 1 === 0 ? 0 : 2), bizim: bicim.sayi(a.bizim, a.bizim % 1 === 0 ? 0 : 2) })}
+                        </Link>
+                      ) : null;
+                    })()}
                   </span>
                 }
                 baglam={[
@@ -412,7 +462,7 @@ export default async function KanalSkuSayfasi({
           <SayfalamaCubugu
             sayfalama={sayfalama}
             yol="/kanal-sku"
-            parametreler={{ hesap: seciliHesap, q: arama, eksik: eksikOran ? "1" : undefined }}
+            parametreler={{ hesap: seciliHesap, q: arama, eksik: eksikOran ? "1" : undefined, kdv: kdvSuzgeci ? KDV_SUZGEC_DEGERI : undefined }}
           />
         </>
       )}
