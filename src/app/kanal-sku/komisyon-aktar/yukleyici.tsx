@@ -124,6 +124,8 @@ export function Yukleyici({
 }) {
   const t = useTranslations("Komisyon");
   const ortak = useTranslations("Ortak");
+  /* Kutu adı kartın başlığıyla AYNI anahtardan (K227 yeniden adlandırması metinde geride kalmıştı). */
+  const tKapi = useTranslations("KomisyonKapisi");
   const bicim = useBicim();
   const router = useRouter();
 
@@ -222,7 +224,7 @@ export function Yukleyici({
             {kip === "KAMPANYA_ORANI" ? t("kampanyaAciklama") : t("yukleAciklama")}
           </p>
           <p className="text-muted-foreground text-sm">
-            {kip === "KAMPANYA_ORANI" ? t("kampanyaNeOkunur") : t("nasilIndirilir")}
+            {kip === "KAMPANYA_ORANI" ? t("kampanyaNeOkunur", { kutu: tKapi("turGuncelOran") }) : t("nasilIndirilir")}
           </p>
 
           <div className={sabitHesap ? "space-y-4" : "grid gap-4 sm:grid-cols-2"}>

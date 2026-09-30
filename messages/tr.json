@@ -1895,7 +1895,7 @@
     "nasilIndirilir": "Nereden indirilir: Trendyol satıcı panelinde Ürünler → Ürünlerim → Excel'e aktar · Hepsiburada satıcı panelinde Listelerim → İndir · N11 satıcı panelinde toplu ürün dökümü (“Ürün Bilgileri Güncelle” sayfası, “Komisyon Oranı” sütunlu).",
     "kampanyaBaslik": "Kampanya dosyasından güncel oranları al",
     "kampanyaAciklama": "Pazaryerinin “Avantajlı Teklifler” / “Ürün Komisyon Teklifleri” dosyasını buraya bırakın. Teklif kolonları OKUNMAZ — yalnız dosyadaki “Mevcut Komisyon” sütunu alınır, yani kanalın bugünkü gerçek oranı.",
-    "kampanyaNeOkunur": "Okunan tek sütun: “Mevcut Komisyon”. Teklif üst/alt limitleri ve teklif komisyonları KOŞULLUDUR (ancak fiyatı düşürürseniz geçerli olur) ve bu yüzden hiç okunmaz. Kampanya dosyası kataloğunuzun bir BÖLÜMÜNÜ kapsar; tamamı için “Güncel komisyon oranı listesi” kutusunu kullanın.",
+    "kampanyaNeOkunur": "Okunan tek sütun: “Mevcut Komisyon”. Teklif üst/alt limitleri ve teklif komisyonları KOŞULLUDUR (ancak fiyatı düşürürseniz geçerli olur) ve bu yüzden hiç okunmaz. Kampanya dosyası kataloğunuzun bir BÖLÜMÜNÜ kapsar; tamamı için “{kutu}” kutusunu kullanın.",
     "hesapSec": "Hangi mağazanın listesi?",
     "hesapSecin": "Kanal hesabı seçin",
     "dosyaSec": "Dosya",
@@ -3996,7 +3996,7 @@
     "hataDosyaSecilmedi": "Dosya seçilmedi.",
     "hataHesapSecilmedi": "Kanal hesabı seçilmedi.",
     "yukleniyor": "Okunuyor…",
-    "hataSutunEksik": "Bu dosyada dilimli tarife sütunları yok. Bu kutu yalnız pazaryerinin fiyat dilimi/limit sütunlu komisyon tarifesini okur. Elinizdeki dosya ürün başına TEK güncel oran taşıyorsa, aynı kartın altındaki “Güncel komisyon oranı listesi” kutusuna yükleyin.",
+    "hataSutunEksik": "Bu dosyada dilimli tarife sütunları yok. Bu kutu yalnız pazaryerinin fiyat dilimi/limit sütunlu komisyon tarifesini okur. Elinizdeki dosya ürün başına TEK güncel oran taşıyorsa, aynı kartın altındaki “{kutu}” kutusuna yükleyin.",
     "hataSutunEksikListe": "Bulunamayan sütunlar: {sutunlar}",
     "hataPencereYok": "Dosyada geçerlilik penceresi (tarih aralığı) yok. Hangi aralığa ait olduğu bilinmeyen bir tarife yazılamaz — sonradan \"güncel mi bayat mı\" sorusu cevaplanamaz.",
     "hataSatirYok": "Dosyada okunacak ürün satırı yok.",
@@ -4008,7 +4008,7 @@
     "boslukSatir": "{kanal} · {baslangic} → {bitis} arası KAPSAMSIZ ({saat} saat · {gun} tam gün) — bu aralıkta {satis} satış var, tarifesi yok.",
     "boslukGizlenen": "{adet} boşluk daha var ama listelenen pencerelerin dışında kalıyor. Özetteki sayı hepsini kapsar.",
     "boslukGorusSiniri": "Bu aralık, sistemin ilk tarife kaydından ({ilk}) ÖNCEDİR — kaçırılmış bir indirme değil, sistemin görüş alanının başlangıç sınırı. Rutin kurulduğundan beri kaçan pencere yok.",
-    "hataTeklifDosyasi": "Bu bir kampanya/teklif dosyası — tarife DEĞİL. (Hepsiburada'da “Avantajlı Teklifler”, N11'de “Ürün Komisyon Teklifleri”.) Koşullu tekliftir: oran ancak teklifi kabul edip fiyatı düşürürsen geçerli olur. Tarife olarak yüklenirse sistem senin BUGÜNKÜ fiyatına indirimli oranı uygular; komisyon olduğundan düşük, kâr olduğundan yüksek görünür. Kanalın güncel oranlarını yüklemek için aynı kartın altındaki “Güncel komisyon oranı listesi” kutusunu kullanın."
+    "hataTeklifDosyasi": "Bu bir kampanya/teklif dosyası — tarife DEĞİL. (Hepsiburada'da “Avantajlı Teklifler”, N11'de “Ürün Komisyon Teklifleri”.) Koşullu tekliftir: oran ancak teklifi kabul edip fiyatı düşürürsen geçerli olur. Tarife olarak yüklenirse sistem senin BUGÜNKÜ fiyatına indirimli oranı uygular; komisyon olduğundan düşük, kâr olduğundan yüksek görünür. Kanalın güncel oranlarını yüklemek için aynı kartın altındaki “{kutu}” kutusunu kullanın."
   },
   "TarifeAynasi": {
     "baslik": "{kanal} tarife hesaplama",

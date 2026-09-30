@@ -1911,7 +1911,7 @@ düşürürsen komisyon %7"</em>. <strong>Üç kanalda da vardır</strong>, sade
 adları farklıdır — Trendyol'da "komisyon tarifesi", Hepsiburada'da
 <strong>"Avantajlı Teklifler"</strong>, N11'de <strong>"Ürün Komisyon
 Teklifleri"</strong>. Fiyat denemesini ve oran denetimini besler.</p></div>
-<div class="ek-not"><div class="etiket">Güncel komisyon oranı listesi</div>
+<div class="ek-not"><div class="etiket">Haftalık komisyon oranı (ürün dökümü)</div>
 <p>Ürün başına TEK güncel oran taşıyan döküm. <strong>Kâr hesabını</strong>
 besler — satış anında kayda işlenen oran budur. Üç kanalda da vardır.</p></div>
 
@@ -1920,8 +1920,7 @@ besler — satış anında kayda işlenen oran budur. Üç kanalda da vardır.</
 <strong>"Avantajlı Teklifler" / "Ürün Komisyon Teklifleri"</strong> dosyasından
 <strong>yalnız "Mevcut Komisyon" sütunu</strong> alınır. Teklif kolonlarına
 <strong>dokunulmaz</strong> — onlar koşulludur. Kampanya dosyası kataloğunuzun
-bir <strong>bölümünü</strong> kapsar; tamamı için "Güncel komisyon oranı
-listesi" kutusunu kullanın.</p></div>
+bir <strong>bölümünü</strong> kapsar; tamamı için "Haftalık komisyon oranı (ürün dökümü)" kutusunu kullanın.</p></div>
 
 <div class="ek-not"><div class="etiket">Teklif oranı KOŞULLUDUR — ama tablo bunu bilir</div>
 <p>Teklifte yazan düşük oran, ancak fiyatı o aralığa <strong>indirirseniz</strong>
@@ -1996,7 +1995,7 @@ Bu yüzden boşluk satırı tarihi saatiyle birlikte yazar.</p>
 ${sikHata([
   {
     hata: "Kampanya (“Avantajlı Teklif”) dosyasını tarife sanıp yüklemeye çalışmak",
-    cozum: "O dosya koşulludur ve reddedilir. Kanalın güncel oranları için aynı karttaki “Güncel komisyon oranı listesi” kutusunu kullanın.",
+    cozum: "O dosya koşulludur ve reddedilir. Kanalın güncel oranları için aynı karttaki “Haftalık komisyon oranı (ürün dökümü)” kutusunu kullanın.",
   },
   {
     hata: "Dosya seçicide N11 dosyasını görememek",

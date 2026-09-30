@@ -61,7 +61,7 @@ import { KANAL_SIRASI } from "../src/lib/kanal-sirasi";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 10;
+const BOLUM_SAYISI = 11;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1458,6 +1458,37 @@ console.log("\nORAN UYARISI (satış formu)");
   kontrol("istege bagli alanlar verilmeden de plan kurulur", p5.yaratilacaklar.length === 1, p5.sayim);
 
   kosanBolumler.push("kimlik kapisi");
+}
+
+// ===========================================================================
+// KUTU ADI TEK ANAHTARDAN (30.09.2026)
+// ===========================================================================
+/* ⛔ VAKA: K227'de «Güncel komisyon oranı listesi» kutusu «Haftalık komisyon oranı
+   (ürün dökümü)» oldu; üç hata/açıklama metni eski adı ELLE taşıdığı için kullanıcıyı
+   var olmayan bir kutuya yolluyordu. Ad artık `{kutu}` parametresiyle
+   `KomisyonKapisi.turGuncelOran`dan gelir; hiçbir metin onu elle yazamaz. */
+console.log("\nKUTU ADI — metinler adı elle yazmaz");
+{
+  const sozluk = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, unknown>>;
+  const ad = String(sozluk.KomisyonKapisi?.turGuncelOran ?? "");
+  kontrol("kutu adı sözlükte bulundu", ad.length > 5, ad);
+  const elle: string[] = [];
+  for (const [ns, grup] of Object.entries(sozluk)) {
+    if (!grup || typeof grup !== "object") continue;
+    for (const [k, v] of Object.entries(grup)) {
+      if (ns === "KomisyonKapisi" && k === "turGuncelOran") continue;
+      if (typeof v === "string" && ad && v.includes(ad)) elle.push(`${ns}.${k}`);
+    }
+  }
+  kontrol("hiçbir metin kutu adını ELLE yazmıyor", elle.length === 0, elle);
+  const eski = Object.entries(sozluk).flatMap(([ns, g]) => Object.entries(g ?? {}).filter(([, v]) => typeof v === "string" && v.includes("Güncel komisyon oranı listesi")).map(([k]) => `${ns}.${k}`));
+  kontrol("eski kutu adı hiçbir metinde kalmadı", eski.length === 0, eski);
+  kontrol("metinler adı parametreyle alıyor", String(sozluk.Tarife?.hataSutunEksik ?? "").includes("{kutu}") && String(sozluk.Komisyon?.kampanyaNeOkunur ?? "").includes("{kutu}"));
+  const eylem = kaynakOku("src/app/ayarlar/tarife/eylemler.ts");
+  kontrol("tarife engel metni kutu adını geçiriyor", eylem.includes("return t(ENGEL_ANAHTARI[engel.kod] as Parameters<Ceviri>[0], { kutu });"));
+  const yuk = kaynakOku("src/app/kanal-sku/komisyon-aktar/yukleyici.tsx");
+  kontrol("kampanya açıklaması kutu adını geçiriyor", yuk.includes('t("kampanyaNeOkunur", { kutu: tKapi("turGuncelOran") })'));
+  kosanBolumler.push("kutu adi");
 }
 
 // ===========================================================================

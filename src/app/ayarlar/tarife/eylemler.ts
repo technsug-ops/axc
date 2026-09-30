@@ -44,7 +44,7 @@ export async function tarifeOnizle(form: FormData) {
   const bayt = Buffer.from(await dosya.arrayBuffer());
   /** ⚠ Dosya adı tanımaya geçer — "Önce göster" ile "Yaz" aynı cevabı versin. */
   const sonuc = await tarifeDenetle(bayt, hesapId, bugunku(), dosya.name);
-  return ozetle(sonuc, t);
+  return ozetle(sonuc, t, await guncelOranKutusu());
 }
 
 /** Adım 2 — yazma. Kullanıcı planı GÖRDÜKTEN sonra. */
@@ -112,7 +112,7 @@ export async function tarifeyiYaz(form: FormData) {
     revalidatePath("/");
   }
 
-  return { ...ozetle(sonuc, t), arsiv };
+  return { ...ozetle(sonuc, t, await guncelOranKutusu()), arsiv };
 }
 
 /**
@@ -146,15 +146,24 @@ type Ceviri = Awaited<ReturnType<typeof getTranslations<"Tarife">>>;
 function engelMetni(
   engel: Extract<Awaited<ReturnType<typeof tarifeDenetle>>, { durum: "HATA" }>,
   t: Ceviri,
+  kutu: string,
 ): string {
-  /* Eşleme `lib/komisyon/tarife-engeli.ts`te — bekçi oradan sınıyor. */
-  return t(ENGEL_ANAHTARI[engel.kod] as Parameters<Ceviri>[0]);
+  /* Eşleme `lib/komisyon/tarife-engeli.ts`te — bekçi oradan sınıyor.
+     ⚠ `kutu`: metinler başka bir kutunun ADINI anıyor; ad elle yazılınca K227'deki
+     yeniden adlandırmada geride kaldı (30.09.2026). Ad TEK anahtardan gelir. */
+  return t(ENGEL_ANAHTARI[engel.kod] as Parameters<Ceviri>[0], { kutu });
 }
 
 /** Sunucu tipini istemciye taşınabilir düz veriye indirger. */
+/** «Haftalık komisyon oranı» kutusunun adı — kartta çizilen başlıkla AYNI anahtar. */
+async function guncelOranKutusu(): Promise<string> {
+  return (await getTranslations("KomisyonKapisi"))("turGuncelOran");
+}
+
 function ozetle(
   sonuc: Awaited<ReturnType<typeof tarifeDenetle>>,
   t: Ceviri,
+  kutu: string,
 ):
   | { durum: "HATA"; engel: string; eksikler?: string[] }
   | {
@@ -190,7 +199,7 @@ function ozetle(
        ki kullanıcı "hangi sütun" sorusunu ekrandan cevaplayabilsin. */
     return {
       durum: "HATA",
-      engel: engelMetni(sonuc, t),
+      engel: engelMetni(sonuc, t, kutu),
       eksikler: sonuc.eksikler,
     };
   }

@@ -4617,6 +4617,8 @@ kapılandı. _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez".)
 
 ---
 
+─── ⑤ **30.09.2026 — TEST LİSTESİ DERLENİRKEN BULUNDU:** üç metin (`Tarife.hataSutunEksik` · `Tarife.hataTeklifDosyasi` · `Komisyon.kampanyaNeOkunur`) K227'de adı «Haftalık komisyon oranı (ürün dökümü)» olan kutuyu hâlâ «Güncel komisyon oranı listesi» diye anıyordu — kullanıcı var olmayan bir kutuyu arardı; el kitabında da iki yerde. Düzeltme: metinler adı `{kutu}` parametresiyle `KomisyonKapisi.turGuncelOran`dan alır; el kitabı güncellendi. Bekçi `komisyon:dogrula` «kutu adı» bölümü (216) — elle ad / eksik parametre kırmızı, zararsız yeşil görüldü.
+
 ## 🔶 K225 — LİSTELEME SENKRONU ZAMANLANDI · 21.09.2026 · [KOŞTU — İLK OTOMATİK KOŞUM BEKLENİYOR]
 
 K224'ün açık bıraktığı madde kapandı: _"senkron zamanlanmış değil; bugün elle
