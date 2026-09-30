@@ -24,6 +24,12 @@ import { ayKaydir, gunDegeri, type TakvimGunu } from "@/lib/donem";
  *  ama BANKA DAVRANIŞINA GÖRE DOĞRULANACAK: canlıda ilk gerçek ekstre geldiğinde
  *  sistemin hesabıyla karşılaştırılıp teyit edilecek. Fark çıkarsa ikisi de tek
  *  satırlık düzeltmedir — bu yüzden varsayım gizlenmiyor, yazılı duruyor.
+ *
+ *  ⭐ 2. MADDE BANKAYLA ÖLÇÜLDÜ VE ÇEVRİLDİ (30.09.2026, kullanıcı: «bankaya
+ *  uysun»): S.ahmet Garanti ekstresi ₺799,91'lik 3 taksitli iadenin İLK
+ *  taksitini **266,65** gösterdi → banka artan kuruşu İLK taksite koyuyor
+ *  (266,65 + 266,63 + 266,63). Kuruş artık ilk taksitte; yukarıdaki «SON
+ *  taksite» cümlesi ESKİ varsayımdır, kanıt olarak bırakıldı.
  * ============================================================================
  */
 
@@ -147,14 +153,15 @@ export function sonOdemeTarihi(kesimTarihi: Date, sonOdemeGunu: number): Date {
 
 /**
  * Tutarı taksitlere böler.
- * Kuruş artığı SON taksite eklenir; toplam her zaman tam tutarı verir.
+ * Kuruş artığı İLK taksite eklenir (bankayla ölçüldü 30.09.2026 — başlıktaki
+ * not); toplam her zaman tam tutarı verir.
  */
 export function taksitlereBol(tutar: number, taksitSayisi: number): number[] {
   /**
    * ⚠ EKSİ TUTAR (karta dönen iade) AYNA GİBİ BÖLÜNÜR: mutlak değer bölünür,
    * işaret sonra konur. `Math.floor` eksi sayıda aşağı yuvarladığı için
    * doğrudan bölmek −799,91'i [−266,64 · −266,64 · −266,63] yapar —
-   * alımın [266,63 · 266,63 · 266,65] bölmesinin aynası DEĞİL.
+   * alımın [266,65 · 266,63 · 266,63] bölmesinin aynası DEĞİL.
    */
   if (tutar < 0) return taksitlereBol(-tutar, taksitSayisi).map((p) => (p === 0 ? 0 : -p));
   const adet = Math.max(1, Math.floor(taksitSayisi));
@@ -163,7 +170,7 @@ export function taksitlereBol(tutar: number, taksitSayisi: number): number[] {
   const artik = kurus - taban * adet;
 
   return Array.from({ length: adet }, (_, sira) =>
-    sira === adet - 1 ? (taban + artik) / 100 : taban / 100,
+    sira === 0 ? (taban + artik) / 100 : taban / 100,
   );
 }
 

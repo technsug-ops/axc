@@ -127,10 +127,18 @@ console.log("\n3) TAKSİT BÖLME — kuruş kaybolmaz");
 // ===========================================================================
 {
   const uce = taksitlereBol(1000, 3);
+  /* ⚠ ÖLÇÜT ÇEVRİLDİ (30.09.2026): kuruş eskiden SON taksite gidiyordu (varsayım,
+     10.08). Garanti ekstresi İLK taksite koyduğunu gösterdi — kullanıcı «bankaya uysun». */
   kontrol(
     `1000 / 3 = ${uce.join(" + ")}`,
-    uce.length === 3 && uce[0] === 333.33 && uce[2] === 333.34,
+    uce.length === 3 && uce[0] === 333.34 && uce[2] === 333.33,
     uce,
+  );
+  const garanti = taksitlereBol(799.91, 3);
+  kontrol(
+    `bankanın kendi ekstresi: 799,91 / 3 = 266,65 + 266,63 + 266,63 (${garanti.join(" + ")})`,
+    garanti[0] === 266.65 && garanti[1] === 266.63 && garanti[2] === 266.63,
+    garanti,
   );
   kontrol(
     "toplam tam tutarı verir",
@@ -142,9 +150,9 @@ console.log("\n3) TAKSİT BÖLME — kuruş kaybolmaz");
 
   const alti = taksitlereBol(100, 6);
   kontrol(
-    `100 / 6 son taksit farkı yutar (${alti[0]} ... ${alti[5]})`,
+    `100 / 6 İLK taksit farkı yutar (${alti[0]} ... ${alti[5]})`,
     Math.abs(alti.reduce((t, p) => t + p, 0) - 100) < 0.0001 &&
-      alti[5] > alti[0],
+      alti[0] > alti[5],
     alti,
   );
 

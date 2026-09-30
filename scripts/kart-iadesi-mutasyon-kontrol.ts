@@ -18,12 +18,14 @@ import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 const BEKCI = "scripts/kart-iadesi-dogrula.ts";
 const RAPOR_BEKCI = "scripts/rapor-dogrula.ts";
 const DUZELTME_BEKCI = "scripts/duzeltme-dogrula.ts";
+const KART_BEKCI = "scripts/kart-dogrula.ts";
 const BASLIK: Record<string, string> = {
   /* ⚠ Düzenli ifade: parantez KAÇIRILIR — ilk koşumda `(K305)` grup sayıldı, başlık
      hiç eşleşmedi ve 6 mutasyon «bekçi çöktü» raporlandı (harness kusuru, bekçi sağlamdı). */
   [BEKCI]: "KARTA DÖNEN ALIM İADESİ \\(K305\\)",
   [RAPOR_BEKCI]: "TÜM KONTROLLER GEÇTİ|KONTROL BAŞARISIZ",
   [DUZELTME_BEKCI]: "TÜM KONTROLLER GEÇTİ|KONTROL BAŞARISIZ",
+  [KART_BEKCI]: "TÜM KONTROLLER GEÇTİ|KONTROL BAŞARISIZ",
 };
 const KURAL = "src/lib/kart-iadesi.ts";
 const VERI = "src/lib/kart-iadesi-veri.ts";
@@ -87,6 +89,10 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "VERI TAKSIT SAYISINI TASIMIYOR", yon: "KALDIRAN", dosya: VERI, bekci: BEKCI,
     bul: "      taksitSayisi: t.purchaseItem!.purchase.installmentCount,", koy: "      taksitSayisi: 1,",
     bozdugu: "kural dogru, veri tek cekim verir" },
+  /* 30.09.2026 - Garanti ekstresi: artan kurus ILK taksitte (kullanici: bankaya uysun). */
+  { ad: "KURUS YINE SON TAKSITE", yon: "KALDIRAN", dosya: "src/lib/kart-borcu.ts", bekci: KART_BEKCI,
+    bul: "    sira === 0 ? (taban + artik) / 100 : taban / 100,", koy: "    sira === adet - 1 ? (taban + artik) / 100 : taban / 100,",
+    bozdugu: "ekstre taksiti bankadan 1-2 kurus sapar" },
 ];
 
 function bekciyiKostur(bekci: string): { kod: number; ciktiVar: boolean } {
