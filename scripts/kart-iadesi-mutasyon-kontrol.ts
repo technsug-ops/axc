@@ -93,6 +93,13 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "KURUS YINE SON TAKSITE", yon: "KALDIRAN", dosya: "src/lib/kart-borcu.ts", bekci: KART_BEKCI,
     bul: "    sira === 0 ? (taban + artik) / 100 : taban / 100,", koy: "    sira === adet - 1 ? (taban + artik) / 100 : taban / 100,",
     bozdugu: "ekstre taksiti bankadan 1-2 kurus sapar" },
+  /* 30.09.2026 - tam odenmis ekstre kapalidir (kurus kaymasi eski ekstreyi acmaz). */
+  { ad: "TAM ODEME KAPISI KALKTI", yon: "KALDIRAN", dosya: "src/lib/kart-borcu.ts", bekci: KART_BEKCI,
+    bul: "    ekstre.kalan = tamOdendi ? 0 : Math.max(0, kurusaYuvarla(ekstre.toplam - ekstre.odenen));", koy: "    ekstre.kalan = Math.max(0, kurusaYuvarla(ekstre.toplam - ekstre.odenen));",
+    bozdugu: "30 odenmis ekstre kurus artigiyla gecikmis gorunur" },
+  { ad: "SIFIR ODEME DE KAPATIYOR", yon: "FAZLADAN", dosya: "src/lib/kart-borcu.ts", bekci: KART_BEKCI,
+    bul: "      ekstre.odenen > 0 &&", koy: "      true &&",
+    bozdugu: "sifir odeme kaydi sonradan dogan borcu gizler" },
 ];
 
 function bekciyiKostur(bekci: string): { kod: number; ciktiVar: boolean } {

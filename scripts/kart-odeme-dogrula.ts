@@ -469,7 +469,7 @@ console.log("=".repeat(70));
     ],
     { kesimGunu: 24, sonOdemeGunu: 3, limit: null },
     new Date("2026-06-01T00:00:00.000Z"),
-    [{ donem: new Date("2026-01-01T00:00:00.000Z"), odenenAnaBorc: 1007.93 }],
+    [{ donem: new Date("2026-01-01T00:00:00.000Z"), odenenAnaBorc: 1007.93, ekstreBorcu: null }],
   );
   kontrol(
     "senaryo geçerli: ekstre toplamı kayan noktada ARTI artık bırakıyor",
@@ -501,7 +501,7 @@ console.log("=".repeat(70));
     [{ id: "x", kod: "K", tarih: new Date("2026-01-05T00:00:00.000Z"), tutar: 1000, taksitSayisi: 1 }],
     { kesimGunu: 24, sonOdemeGunu: 3, limit: null },
     new Date("2026-06-01T00:00:00.000Z"),
-    [{ donem: new Date("2026-01-01T00:00:00.000Z"), odenenAnaBorc: 999.99 }],
+    [{ donem: new Date("2026-01-01T00:00:00.000Z"), odenenAnaBorc: 999.99, ekstreBorcu: null }],
   );
   /**
    * ════════════════════════════════════════════════════════════════════
@@ -524,6 +524,7 @@ console.log("=".repeat(70));
     [583.33, 300, 283.33, 50, -583.33, -50, -283.33, -300].map((tutar) => ({
       donem: new Date("2026-01-01T00:00:00.000Z"),
       odenenAnaBorc: tutar,
+      ekstreBorcu: null,
     })),
   );
   kontrol(

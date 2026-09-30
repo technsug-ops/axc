@@ -1,6 +1,6 @@
 import { kartAlimTutari } from "@/lib/kart-alim-tutari";
 import { ALIM_FATURA_SECIMI } from "@/lib/alim-maliyeti";
-import { kartBorcuHesapla, type BorcAlimi } from "@/lib/kart-borcu";
+import { KART_ODEME_SECIMI, kartBorcuHesapla, kartinEkstreOdemeleri, type BorcAlimi } from "@/lib/kart-borcu";
 import { giderleriBorcaCevir } from "@/lib/kart-gideri";
 import { alimIadeleriniBorcaCevir } from "@/lib/kart-iadesi";
 import { kartaDonenAlimIadeleri } from "@/lib/kart-iadesi-veri";
@@ -106,7 +106,7 @@ export async function takvimSatirlariniTopla(
      * doğru neti verir; `isReversal` süzmek düzeltmeyi görünmez kılardı.
      */
     prisma.kartOdeme.findMany({
-      select: { cardId: true, donem: true, odenenAnaBorc: true },
+      select: KART_ODEME_SECIMI,
     }),
     /**
      * KARTLA ÖDENEN GİDERLER (25.08.2026).
@@ -167,12 +167,7 @@ export async function takvimSatirlariniTopla(
         limit: null,
       },
       bugun,
-      kartOdemeleri
-        .filter((o) => o.cardId === kart.id)
-        .map((o) => ({
-          donem: o.donem,
-          odenenAnaBorc: Number(o.odenenAnaBorc.toString()),
-        })),
+      kartinEkstreOdemeleri(kartOdemeleri, kart.id),
     );
 
     /**

@@ -19,6 +19,7 @@ import {
   donemAnahtari,
   ekstreSatirAdresi,
   kartBorcuHesapla,
+  kartinEkstreOdemeleri,
   sonOdemeTarihi,
   type BorcAlimi,
 } from "@/lib/kart-borcu";
@@ -230,13 +231,7 @@ export default async function KartBorcuSayfasi({
       }));
 
   /** Bir kartın ödeme kayıtları, saf hesabın beklediği biçimde. */
-  const kartinOdemeleri = (kartId: string) =>
-    odemeler
-      .filter((o) => o.cardId === kartId)
-      .map((o) => ({
-        donem: o.donem,
-        odenenAnaBorc: Number(o.odenenAnaBorc.toString()),
-      }));
+  const kartinOdemeleri = (kartId: string) => kartinEkstreOdemeleri(odemeler, kartId);
 
   /** K305 — karta dönen alım iadeleri (hasarlı gelen, stoğa girmemiş mal). */
   const { iadeler: kartIadeleri, tarihsiz: tarihsizIadeler } = await kartIadesiDurumu();

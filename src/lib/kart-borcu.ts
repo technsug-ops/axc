@@ -83,7 +83,36 @@ export type Ekstre = {
  * (bkz. `donemAnahtari`). Gün tutmuyoruz çünkü aynı ekstreye farklı günlerde
  * birden çok ödeme yapılabilir ve hepsi aynı döneme yazılmalıdır.
  */
-export type EkstreOdemesi = { donem: Date; odenenAnaBorc: number };
+export type EkstreOdemesi = {
+  donem: Date;
+  odenenAnaBorc: number;
+  /**
+   * Ödeme kaydedildiği an sistemin hesapladığı ekstre borcu (`KartOdeme.ekstreBorcu`
+   * snapshot'ı). ZORUNLU ANAHTAR — unutan çağıran derlenmez; bilinmiyorsa `null`.
+   * «Tam ödendi» kararı buna bakar (aşağıdaki not).
+   */
+  ekstreBorcu: number | null;
+};
+
+/**
+ * `KartOdeme` satırlarından bir kartın ekstre ödemeleri — TEK GÖVDE (30.09.2026).
+ * Bu dönüşüm dört yerde ayrı ayrı yazılmıştı; `ekstreBorcu` eklenince biri geride
+ * kalsaydı o ekran tam ödenmiş ekstreyi yine «ödenmemiş» gösterirdi.
+ */
+type Sayisal = { toString(): string };
+export const KART_ODEME_SECIMI = { cardId: true, donem: true, odenenAnaBorc: true, ekstreBorcu: true } as const;
+export function kartinEkstreOdemeleri(
+  odemeler: readonly { cardId: string; donem: Date; odenenAnaBorc: Sayisal; ekstreBorcu: Sayisal | null }[],
+  kartId: string,
+): EkstreOdemesi[] {
+  return odemeler
+    .filter((o) => o.cardId === kartId)
+    .map((o) => ({
+      donem: o.donem,
+      odenenAnaBorc: Number(o.odenenAnaBorc.toString()),
+      ekstreBorcu: o.ekstreBorcu === null ? null : Number(o.ekstreBorcu.toString()),
+    }));
+}
 
 /** Ekstre dönemi anahtarı — kesim tarihinin ayı (ISO, ayın 1'i). */
 export function donemAnahtari(kesim: Date): string {
@@ -300,9 +329,14 @@ export function kartBorcuHesapla(
    * ════════════════════════════════════════════════════════════════════
    */
   const odemeToplami = new Map<string, number>();
+  /** Dönemin ödeme kayıtlarındaki EN BÜYÜK borç snapshot'ı — «o gün ne kadar borç vardı». */
+  const odemeAnindakiBorc = new Map<string, number>();
   for (const o of odemeler) {
     const k = donemAnahtari(o.donem);
     odemeToplami.set(k, (odemeToplami.get(k) ?? 0) + o.odenenAnaBorc);
+    if (o.ekstreBorcu !== null) {
+      odemeAnindakiBorc.set(k, Math.max(odemeAnindakiBorc.get(k) ?? 0, o.ekstreBorcu));
+    }
   }
 
   let gecikmisToplam = 0;
@@ -332,7 +366,30 @@ export function kartBorcuHesapla(
      * ekstre kırmızı "ödenmedi" listesinde durur, kullanıcı ödediği hâlde
      * ödenmemiş görür ve tekrar öder. Kuruşun altında para yoktur.
      */
-    ekstre.kalan = Math.max(0, kurusaYuvarla(ekstre.toplam - ekstre.odenen));
+    /**
+     * ⭐ TAM ÖDENMİŞ EKSTRE KAPALIDIR (kullanıcı kararı 30.09.2026).
+     *
+     * ⛔ VAKA: taksit bölmesinde artan kuruş son taksitten İLK taksite taşındı
+     * (Garanti ekstresiyle ölçüldü). Geçmiş ödemeler eski bölmenin toplamıyla
+     * kaydedilmişti; yeniden hesap 30 kapalı ekstrede ₺0,01–₺0,30 «ödenmemiş»
+     * bıraktı (toplam ₺1,66) ve nakit takviminde «gecikmiş» göründü. Eski
+     * kuralla aynı ölçüm 0 artık veriyordu — artığı hesap değişikliği üretti,
+     * borç değil.
+     *
+     * KURAL: ödeme kaydı, KAYDEDİLDİĞİ ANDAKİ borcun (`ekstreBorcu`) tamamını
+     * karşılıyorsa ekstre kapalıdır; sonradan yeniden hesap borcu kaydırsa da
+     * yeniden açılmaz. Gerekçe: banka o ekstreyi o gün tahsil etti.
+     * ⚠ BEDELİ BEYAN EDİLDİ: tam ödenmiş bir ekstreye sonradan unutulmuş bir
+     * alım eklenirse o da borç görünmez — banka onu da o gün tahsil etmişti.
+     * ⚠ KISMİ ödeme ve ters kayıt bu kapıdan geçmez: toplam ödenen, snapshot'ın
+     * altındaysa kalan her zamanki gibi hesaplanır.
+     */
+    const anindakiBorc = odemeAnindakiBorc.get(donemAnahtari(ekstre.kesimTarihi));
+    const tamOdendi =
+      anindakiBorc !== undefined &&
+      ekstre.odenen > 0 &&
+      ekstre.odenen >= kurusaYuvarla(anindakiBorc);
+    ekstre.kalan = tamOdendi ? 0 : Math.max(0, kurusaYuvarla(ekstre.toplam - ekstre.odenen));
     if (ekstre.gecmisMi) gecikmisToplam += ekstre.kalan;
     else bekleyenToplam += ekstre.kalan;
   }

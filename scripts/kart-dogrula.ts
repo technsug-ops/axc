@@ -1,3 +1,6 @@
+import { readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { kaynakOku } from "./kaynak-oku";
 /**
  * ============================================================================
  *  KART BORCU DOĞRULAMA
@@ -263,7 +266,7 @@ console.log("\n4) EKSTRE DAĞILIMI");
 
   // Aynı an, ama Ağustos ekstresi ÖDENMİŞ kaydıyla.
   const odenmis = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
-    { donem: gun("2026-08-01"), odenenAnaBorc: 2000 },
+    { donem: gun("2026-08-01"), odenenAnaBorc: 2000, ekstreBorcu: null },
   ]);
   kontrol("ödenen geçmiş ekstre gecikmişe girmez", odenmis.gecikmisToplam === 0);
   kontrol(
@@ -279,7 +282,7 @@ console.log("\n4) EKSTRE DAĞILIMI");
 
   // Kısmi ödeme: kalan kadarı gecikmiş sayılır, tamamı değil.
   const kismi = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
-    { donem: gun("2026-08-20"), odenenAnaBorc: 800 },
+    { donem: gun("2026-08-20"), odenenAnaBorc: 800, ekstreBorcu: null },
   ]);
   kontrol(
     "kısmi ödemede yalnız KALAN gecikmiş sayılır",
@@ -293,9 +296,9 @@ console.log("\n4) EKSTRE DAĞILIMI");
 
   // Aynı ekstreye birden çok ödeme toplanır; ters kayıt negatif olarak girer.
   const cokluOdeme = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
-    { donem: gun("2026-08-01"), odenenAnaBorc: 1500 },
-    { donem: gun("2026-08-01"), odenenAnaBorc: 800 },
-    { donem: gun("2026-08-01"), odenenAnaBorc: -800 },
+    { donem: gun("2026-08-01"), odenenAnaBorc: 1500, ekstreBorcu: null },
+    { donem: gun("2026-08-01"), odenenAnaBorc: 800, ekstreBorcu: null },
+    { donem: gun("2026-08-01"), odenenAnaBorc: -800, ekstreBorcu: null },
   ]);
   kontrol(
     "aynı döneme çok ödeme toplanır, ters kayıt düşer",
@@ -310,7 +313,7 @@ console.log("\n4) EKSTRE DAĞILIMI");
 
   // Fazla ödeme kalanı EKSİYE indirmez — başka ekstreyi kapatmaz.
   const fazla = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
-    { donem: gun("2026-08-01"), odenenAnaBorc: 5000 },
+    { donem: gun("2026-08-01"), odenenAnaBorc: 5000, ekstreBorcu: null },
   ]);
   kontrol("fazla ödemede kalan eksiye inmez", fazla.ekstreler[0]?.kalan === 0);
   kontrol(
@@ -321,13 +324,46 @@ console.log("\n4) EKSTRE DAĞILIMI");
 
   // Başka kartın/dönemin ödemesi bu ekstreyi kapatmaz.
   const yanlisDonem = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [
-    { donem: gun("2026-06-01"), odenenAnaBorc: 2000 },
+    { donem: gun("2026-06-01"), odenenAnaBorc: 2000, ekstreBorcu: null },
   ]);
   kontrol(
     "başka dönemin ödemesi bu ekstreyi kapatmaz",
     Math.abs(yanlisDonem.gecikmisToplam - 2000) < 0.005,
     yanlisDonem.gecikmisToplam,
   );
+
+  /* ⭐ TAM ÖDENMİŞ EKSTRE KAPALIDIR (30.09.2026). Kuruş kuralı değişince eski ödemeler
+     ₺0,01–0,30 artık bırakmıştı (30 ekstre, ₺1,66). Ayrımın iki yakası: ödeme, KAYIT
+     ANINDAKİ borcun tamamıysa kapalı; kısmi, ters kayıtla sıfırlanmış ya da snapshot'ı
+     olmayan ödeme ise eski hesapla. */
+  /* DESEN YASAĞI: KartOdeme → EkstreOdemesi dönüşümü yalnız `kartinEkstreOdemeleri`nde.
+     Dört kopya vardı; yeni alan birine eklenmeseydi o ekran tam ödenmiş ekstreyi açık gösterirdi. */
+  {
+    const tum: string[] = [];
+    const gez = (d: string) => {
+      for (const a of readdirSync(d)) {
+        const y = join(d, a);
+        if (statSync(y).isDirectory()) { if (a !== "generated") gez(y); }
+        else if (/\.(ts|tsx)$/.test(a)) tum.push(y.split(String.fromCharCode(92)).join("/"));
+      }
+    };
+    gez("src");
+    const yorumsuzKod = (m: string) => m.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+    const kopya = tum.filter((y) => y !== "src/lib/kart-borcu.ts" && /odenenAnaBorc: Number\(o\.odenenAnaBorc\.toString\(\)\)/.test(yorumsuzKod(kaynakOku(y))));
+    kontrol(`taranan dosya tabanı DOLU (${tum.length})`, tum.length > 100);
+    kontrol("ödeme dönüşümünün çıplak kopyası YOK (tek gövde)", kopya.length === 0, kopya);
+  }
+  const snap = (odenen: number, borc: number | null) => ({ donem: gun("2026-08-01"), odenenAnaBorc: odenen, ekstreBorcu: borc });
+  const kurusKaymis = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [snap(1999.97, 1999.97)]);
+  kontrol("o günkü borcun tamamı ödendiyse kuruş kayması ekstreyi AÇMAZ", kurusKaymis.ekstreler[0]?.kalan === 0 && kurusKaymis.gecikmisToplam === 0, kurusKaymis.ekstreler[0]?.kalan);
+  const snapsiz = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [snap(1999.97, null)]);
+  kontrol("  ...snapshot'ı olmayan ödemede eski hesap (0,03 kalır)", Math.abs((snapsiz.ekstreler[0]?.kalan ?? 0) - 0.03) < 0.005, snapsiz.ekstreler[0]?.kalan);
+  const kismiSnap = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [snap(800, 2000)]);
+  kontrol("  ...kısmi ödeme kapatmaz (kalan 1200)", Math.abs(kismiSnap.gecikmisToplam - 1200) < 0.005, kismiSnap.gecikmisToplam);
+  const tersSnap = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [snap(1999.97, 1999.97), snap(-1999.97, 1999.97)]);
+  kontrol("  ...ters kayıtla sıfırlanan ödeme kapatmaz (kalan 2000)", Math.abs(tersSnap.gecikmisToplam - 2000) < 0.005, tersSnap.gecikmisToplam);
+  const sifirSnap = kartBorcuHesapla(alimlar, KART, gun("2026-09-01"), [snap(0, 0)]);
+  kontrol("  ...sıfır borca sıfır ödeme, sonradan doğan borcu kapatmaz", Math.abs(sifirSnap.gecikmisToplam - 2000) < 0.005, sifirSnap.gecikmisToplam);
 
   // Kesim günü tanımsız kart: SESSİZ SIFIR YOK.
   const eksikKart = kartBorcuHesapla(alimlar, {

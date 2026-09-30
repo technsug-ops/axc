@@ -10,7 +10,7 @@ import { giderleriBorcaCevir } from "@/lib/kart-gideri";
 import { alimIadeleriniBorcaCevir } from "@/lib/kart-iadesi";
 import { kartaDonenAlimIadeleri } from "@/lib/kart-iadesi-veri";
 import { ekstreleriBirlestir, birlesikToplamlar } from "@/lib/gecmis/birlesik";
-import { sonOdemeTarihi } from "@/lib/kart-borcu";
+import { KART_ODEME_SECIMI, kartinEkstreOdemeleri, sonOdemeTarihi } from "@/lib/kart-borcu";
 
 /**
  * ============================================================================
@@ -61,7 +61,7 @@ export async function acikKartBorcuOzetiGetir(
         },
       }),
       prisma.kartOdeme.findMany({
-        select: { cardId: true, donem: true, odenenAnaBorc: true },
+        select: KART_ODEME_SECIMI,
       }),
       prisma.gecmisEkstre.findMany({
         select: {
@@ -75,13 +75,7 @@ export async function acikKartBorcuOzetiGetir(
       }),
     ]);
 
-  const kartinOdemeleri = (kartId: string) =>
-    odemeler
-      .filter((o) => o.cardId === kartId)
-      .map((o) => ({
-        donem: o.donem,
-        odenenAnaBorc: Number(o.odenenAnaBorc.toString()),
-      }));
+  const kartinOdemeleri = (kartId: string) => kartinEkstreOdemeleri(odemeler, kartId);
 
   const kartinBeyanlari = (kartId: string) =>
     beyanKayitlari

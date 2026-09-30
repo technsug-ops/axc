@@ -5,7 +5,7 @@ import { getTranslations } from "next-intl/server";
 
 import { kartAlimTutari } from "@/lib/kart-alim-tutari";
 import { ALIM_FATURA_SECIMI } from "@/lib/alim-maliyeti";
-import { donemAnahtari } from "@/lib/kart-borcu";
+import { donemAnahtari, KART_ODEME_SECIMI, kartinEkstreOdemeleri } from "@/lib/kart-borcu";
 import { prisma } from "@/lib/prisma";
 import { tabloOku } from "@/lib/tablo/tablo-oku";
 import { eslesmeOnerileri, type EslesmeOnerisi } from "@/lib/gecmis/kart-eslesme";
@@ -158,7 +158,7 @@ async function mevcutDonemleriTopla(): Promise<MevcutDonem[]> {
       },
     }),
     prisma.kartOdeme.findMany({
-      select: { cardId: true, donem: true, odenenAnaBorc: true },
+      select: KART_ODEME_SECIMI,
     }),
     prisma.gecmisEkstre.findMany({ select: { cardId: true, donem: true } }),
   ]);
@@ -193,12 +193,7 @@ async function mevcutDonemleriTopla(): Promise<MevcutDonem[]> {
         limit: null,
       },
       new Date(),
-      odemeler
-        .filter((o) => o.cardId === kart.id)
-        .map((o) => ({
-          donem: o.donem,
-          odenenAnaBorc: Number(o.odenenAnaBorc.toString()),
-        })),
+      kartinEkstreOdemeleri(odemeler, kart.id),
     );
     if (!hesap.hesaplanabilir) continue;
     for (const e of hesap.ekstreler) {
