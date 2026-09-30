@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useBicim } from "@/lib/bicim-istemci";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { FaturaYapisiKutulari } from "@/components/fatura-yapisi";
 import { alimEkleri, beklenenFaturaKdv, faturaKdvUyusmuyor, inisMaliyetleri } from "@/lib/alim-maliyeti";
 
@@ -561,7 +562,7 @@ export function AlimFormu({
             <p className="text-muted-foreground text-xs">{t("faturaNotu")}</p>
             {faturaOkunamadi ? <p role="alert" className="text-destructive text-sm">{t("faturaTutarOkunamadi")}</p> : null}
             {kdvUyusmuyor && kdvKontrolu.durum === "TAMAM" && kdvSayi !== null ? (
-              <p role="status" className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
+              <p role="status" className={`rounded-md p-2 text-sm ${DURUM_KUTUSU.uyari} ${DURUM_YAZISI.uyari}`}>
                 {t("faturaKdvUyusmuyor", {
                   girilen: bicim.para(kdvSayi, kalemler[0]?.unitCostCurrency ?? "TRY"),
                   beklenen: bicim.para(kdvKontrolu.beklenen, kalemler[0]?.unitCostCurrency ?? "TRY"),
