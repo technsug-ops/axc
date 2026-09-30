@@ -290,4 +290,9 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * harness'le ortak) ve fiyat deneme ekranını mutasyona uğratıyor.
    */
   "kupon-mutasyon:kontrol",
+  /**
+   * K309 (30.09.2026) — `alim-maliyeti` alım eylemlerini ve mal kabulü
+   * (içe aktarma · mal kabul harness'leriyle ortak) mutasyona uğratıyor.
+   */
+  "alim-maliyeti-mutasyon:kontrol",
 ];
