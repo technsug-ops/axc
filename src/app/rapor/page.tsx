@@ -39,6 +39,8 @@ import {
   type PencereTuru,
 } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
+import { kargosuzParametreleri, satisKosulu } from "@/lib/liste-suzgeci";
+import { suzgecAdresi } from "@/lib/suzgec";
 import {
   raporHesapla,
   type ParaBirimiRaporu,
@@ -179,6 +181,20 @@ export default async function RaporSayfasi({
   }
 
   const aralik = { gte: pencere.baslangic, lt: pencere.bitisHaric };
+
+  /**
+   * K141 — KARGOSU DÜŞÜLMEMİŞ KÂR, BU DÖNEM. Satış listesinin süzgeç gövdesiyle
+   * (`satisKosulu`) ve aynı parametrelerle sayılır; tıklanınca aynı küme açılır.
+   * Bozuk aralık «bu ay»a düştüyse bağlantı da «bu ay»ı taşır — ekranla aynı dönem.
+   */
+  const kargosuzParam = kargosuzParametreleri({
+    pencere: pencereHatasi ? "BU_AY" : tur,
+    baslangic: parametreler.baslangic,
+    bitis: parametreler.bitis,
+  });
+  const kargosuzSayisi = karGorunur
+    ? await prisma.sale.count({ where: satisKosulu(kargosuzParam, an).kosul })
+    : 0;
 
   /**
    * Kıyas seçimi adreste yaşar; DÖNEM SEÇİMİ KORUNUR. Aynı düğmeye tekrar
@@ -1114,6 +1130,17 @@ export default async function RaporSayfasi({
       <p className="text-muted-foreground text-sm">
         {bicim.tarih(pencere.baslangic)} — {bicim.tarih(pencere.sonGun)}
       </p>
+
+      {/* K141: kârı kargo düşülmeden hesaplanan satışlar — rakamların ÜSTÜNDE, listeye götürür. */}
+      {kargosuzSayisi > 0 ? (
+        <Link
+          href={suzgecAdresi("/satislar", kargosuzParam, {})}
+          className={`inline-flex min-h-11 items-center gap-1.5 text-sm underline underline-offset-4 sm:min-h-0 ${DURUM_YAZISI.uyari}`}
+        >
+          <TriangleAlert className="size-4 shrink-0" aria-hidden />
+          {t("kargosuzNotu", { sayi: kargosuzSayisi })}
+        </Link>
+      ) : null}
 
       {sonuc.bos ? (
         <div className="rounded-lg border border-dashed p-10 text-center">

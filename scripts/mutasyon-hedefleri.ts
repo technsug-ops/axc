@@ -306,4 +306,9 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * (`kart-iadesi-veri.ts`, kart-iadesi harness'iyle ortak) de mutasyona uğratıyor.
    */
   "tazminat-mutasyon:kontrol",
+  /**
+   * K141 (30.09.2026) — `kargosuz` paneli, raporu, satış listesini ve süzgeç
+   * gövdesini mutasyona uğratıyor (panel · süzgeç harness'leriyle ortak).
+   */
+  "kargosuz-mutasyon:kontrol",
 ];

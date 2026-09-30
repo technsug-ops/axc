@@ -64,7 +64,9 @@ import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
 import {
   karEksikAyAdresi,
   karEksikKanalAdresi,
+  kargosuzParametreleri,
   pencereCoz,
+  satisKosulu,
 } from "@/lib/liste-suzgeci";
 import {
   aylikMarj,
@@ -820,6 +822,23 @@ export default async function AnaSayfa({
    * direkt panelde görünsün" dediğinde ortaya çıktı: kanal seçilince üstteki
    * rakamlar değişmiyordu, yani süzgeç yarım çalışıyordu.
    */
+  /**
+   * K141 — KARGOSU DÜŞÜLMEMİŞ KÂR, BU DÖNEM. Sayı, tıklanınca açılan listenin
+   * SÜZGEÇ GÖVDESİYLE (`satisKosulu`) ve AYNI parametrelerle sayılır: sayı = liste.
+   * ⚠ Para birimine bölünmedi — liste para birimi süzmüyor; bölseydik ayrışırdı.
+   * Kâr bilgisi taşıdığı için yalnız `satis.kar.gor` iznine çizilir.
+   */
+  const kargosuzParam = kargosuzParametreleri({
+    pencere: donemTuru,
+    baslangic: parametreler.baslangic,
+    bitis: parametreler.bitis,
+    kanal: seciliKanal || undefined,
+  });
+  const kargosuzSayisi = karGorunur
+    ? await prisma.sale.count({ where: satisKosulu(kargosuzParam, an).kosul })
+    : 0;
+  const kargosuzAdresi = suzgecAdresi("/satislar", kargosuzParam, {});
+
   const donemSatislari = seciliKanal
     ? satislar.filter((s) => s.kanalKodu === seciliKanal)
     : satislar;
@@ -2633,6 +2652,15 @@ export default async function AnaSayfa({
               suzgecDugmesi(para, paraAdresi(para), para === seciliPara),
             )}
           </div>
+        ) : null}
+
+        {/* K141: kârı kargo düşülmeden hesaplanan satışlar — NET rakamlarının ÜSTÜNDE,
+            tıklanınca aynı dönemle süzülmüş liste. Sıfırsa çizilmez: sayı yoksa söz de yok. */}
+        {kargosuzSayisi > 0 ? (
+          <Link href={kargosuzAdresi} className={`inline-flex min-h-11 items-center gap-1.5 text-sm underline underline-offset-4 sm:min-h-0 ${DURUM_YAZISI.uyari}`}>
+            <TriangleAlert className="size-4 shrink-0" aria-hidden />
+            {t("kargosuzNotu", { sayi: kargosuzSayisi })}
+          </Link>
         ) : null}
 
         {/* ==================== DÖNEM — KANAL BAZINDA ==================== */}

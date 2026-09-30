@@ -1257,7 +1257,9 @@
     "onaySecenekMaliyetsiz": "{tarih} partisi · {kalan} adet · maliyet kaydı yok",
     "onayOnerilen": "önerilen (FIFO)",
     "kargolanacak": "Kargolanacak",
-    "kargoyaVerildiIsaretle": "Kargoya verildi olarak işaretle"
+    "kargoyaVerildiIsaretle": "Kargoya verildi olarak işaretle",
+    "karSuzgeciKargosuz": "Kargo düşülmeden hesaplananlar",
+    "kargoDusulmediRozeti": "kargo düşülmedi"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
@@ -1677,7 +1679,8 @@
     "veriDuzeltmesi": "Veri düzeltmesi (GERÇEK NET'e girmez)",
     "veriDuzeltmesiNotu": "sayım fazlası − sayım eksiği + fazla çıkan mal",
     "alimIadesiNotu": "Ayrıca {sayi} alım iadesi ({tutar}): mal kabulde hasarlı gelen, stoğa hiç girmemiş ürünün parası karta döndü. Gelir DEĞİLDİR, GERÇEK NET'e girmez; alımın kartının borcundan düşer.",
-    "alimIadesiEtiketi": "alım iadesi · karta döndü"
+    "alimIadesiEtiketi": "alım iadesi · karta döndü",
+    "kargosuzNotu": "{sayi} satışın kârı kargo düşülmeden hesaplandı — NET o kadar iyimser. Listeyi aç"
   },
   "KarSorunu": {
     "baslik": "Nasıl düzeltilir?",
@@ -2528,7 +2531,8 @@
     "halkaDipnot": "En küçük {sayi} kanal tek dilimde toplandı",
     "halkaAciklama": "Ciro dağılımı: {liste}",
     "ciroNetBaslik": "Ciro ve NET-2 — {pencere}",
-    "hizliIslemler": "Hızlı işlemler"
+    "hizliIslemler": "Hızlı işlemler",
+    "kargosuzNotu": "{sayi} satışın kârı kargo düşülmeden hesaplandı — NET o kadar iyimser. Listeyi aç"
   },
   "Envanter": {
     "baslik": "Envanter değeri",

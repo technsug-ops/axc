@@ -29,9 +29,11 @@ import {
   ALIM_BEKLEYEN_KODU,
   ALIM_DURUM_KODLARI,
   alimKosulu,
+  kargosuzParametreleri,
   pencereCoz,
   satisKosulu,
 } from "../src/lib/liste-suzgeci";
+import { KARGO_DUSULMEMIS, kargoKesintiDurumu } from "../src/lib/kargo-kaynagi";
 import { GOREV_ADRESLERI } from "../src/lib/panel/bugun-ne-yapmaliyim";
 import { kaynakOku } from "./kaynak-oku";
 
@@ -69,7 +71,7 @@ let calisan = 0;
 const istGun = (d: Date): string =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(d);
 
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -728,6 +730,39 @@ async function alimBolumu() {
     GOREV_ADRESLERI.iadeBildirimi,
   );
   kosanBolumler.push("alım");
+}
+
+// ===========================================================================
+// K141 — KARGOSU DÜŞÜLMEMİŞ KÂR: SÜZGEÇ · ROZET · PANEL/RAPOR NOTU (30.09.2026)
+// ===========================================================================
+console.log("\nK141) kargosu düşülmemiş kâr — tek ölçüt, sayı = liste");
+{
+  kontrol("koşul kargoKesintiDurumu ile aynı: hesaplanmış + sipariş düzeyinde KARGO yok",
+    JSON.stringify(KARGO_DUSULMEMIS) === JSON.stringify({ profitStatus: "CALCULATED", fees: { none: { code: "KARGO", saleItemId: null } } }), KARGO_DUSULMEMIS);
+  kontrol("  ...detay ekranının kuralı da «KARGO yoksa düşülmedi»", kargoKesintiDurumu([], null) === "DUSULMEDI" && kargoKesintiDurumu([{ code: "KARGO" }], null) === "TAHMINI");
+  const k = satisKosulu({ kar: "kargosuz" }).kosul;
+  kontrol("kar=kargosuz süzgeci ortak koşulu AND'e koyuyor", JSON.stringify(k.AND ?? []).includes(JSON.stringify(KARGO_DUSULMEMIS)), k.AND);
+  const bos = satisKosulu({}).kosul;
+  kontrol("  ...süzgeç kapalıyken koşul YOK (başka listeleri daraltmaz)", !JSON.stringify(bos).includes('"none":{"code":"KARGO"'), bos.AND);
+  const ozel = kargosuzParametreleri({ pencere: "OZEL", baslangic: "2026-09-01", bitis: "2026-09-30", kanal: "TY" });
+  kontrol("bağlantı parametreleri özel aralığı ve kanalı taşıyor", ozel.pencere === "OZEL" && ozel.baslangic === "2026-09-01" && ozel.bitis === "2026-09-30" && ozel.kanal === "TY" && ozel.kar === "kargosuz", ozel);
+  const hazir = kargosuzParametreleri({ pencere: "BUGUN", baslangic: "2026-09-01", bitis: "2026-09-30" });
+  kontrol("  ...hazır pencerede eski aralık TAŞINMAZ (liste başka dönemi açmasın)", hazir.pencere === "BUGUN" && hazir.baslangic === undefined && hazir.bitis === undefined, hazir);
+
+  const yorumsuzla = (m: string) => m.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+  const liste = yorumsuzla(kaynakOku("src/app/satislar/page.tsx"));
+  kontrol("satış listesi satır başına KARGO kesintisini aynı ölçütle sayıyor", liste.includes('_count: { select: { fees: { where: { code: "KARGO", saleItemId: null } } } },'));
+  kontrol("rozet masaüstü VE telefon satırında (2 yer)", (liste.match(/kargoDusulmedi=\{satis\._count\.fees === 0\}/g) ?? []).length === 2);
+  kontrol("süzgeç seçeneği listede", liste.includes('{ deger: "kargosuz", etiket: t("karSuzgeciKargosuz") },'));
+  const netKar = yorumsuzla(kaynakOku("src/components/net-kar.tsx"));
+  kontrol("rozet kâr rakamının iki çiziminde de (nötr + renkli)", (netKar.match(/\{kargoRozeti\}/g) ?? []).length === 2);
+  for (const [ad, yol] of [["panel", "src/app/page.tsx"], ["rapor", "src/app/rapor/page.tsx"]] as const) {
+    const m = yorumsuzla(kaynakOku(yol));
+    kontrol(`${ad}: sayı listenin süzgeç gövdesiyle sayılıyor`, /karGorunur\s*\?\s*await prisma\.sale\.count\(\{ where: satisKosulu\(kargosuzParam, an\)\.kosul \}\)/.test(m));
+    kontrol(`${ad}: not aynı parametrelerle listeye götürüyor`, m.includes('suzgecAdresi("/satislar", kargosuzParam, {})'));
+    kontrol(`${ad}: not ÇİZİLİYOR (koşul + metin aynı dalda)`, /\{kargosuzSayisi > 0 \? \([\s\S]{0,400}t\("kargosuzNotu"/.test(m));
+  }
+  kosanBolumler.push("kargosuz");
 }
 
 // ===========================================================================

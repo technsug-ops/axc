@@ -270,6 +270,11 @@ export default async function SatislarSayfasi({
        * kesintisi çekilir; YENİ HESAP YOK, mevcut snapshot okunur.
        */
       fees: { where: { code: "MALIYET" }, select: { amount: true } },
+      /**
+       * K141 — sipariş düzeyinde KARGO kesintisi var mı. Ölçüt `KARGO_DUSULMEMIS`
+       * ile AYNI (`kargo-kaynagi.ts`); rozet ile süzgeç aynı kümeyi görür.
+       */
+      _count: { select: { fees: { where: { code: "KARGO", saleItemId: null } } } },
     },
     orderBy: { soldAt: "desc" },
   });
@@ -415,6 +420,8 @@ export default async function SatislarSayfasi({
         { deger: "tam", etiket: t("karSuzgeciTam") },
         // 2b: panelin "N satış zararda" sayacı buraya bağlanır.
         { deger: "zarar", etiket: t("karSuzgeciZarar") },
+        // K141: kârı kargo düşülmeden hesaplanmış satışlar.
+        { deger: "kargosuz", etiket: t("karSuzgeciKargosuz") },
       ],
     },
     {
@@ -941,6 +948,7 @@ export default async function SatislarSayfasi({
                           tutar={satis.net2Amount}
                           paraBirimi={satis.profitCurrency}
                           durum={satis.profitStatus}
+                          kargoDusulmedi={satis._count.fees === 0}
                         />
                       </TableCell>
                     ) : null}
@@ -1044,6 +1052,7 @@ export default async function SatislarSayfasi({
                               tutar={satis.net2Amount}
                               paraBirimi={satis.profitCurrency}
                               durum={satis.profitStatus}
+                              kargoDusulmedi={satis._count.fees === 0}
                             />
                           ),
                         },

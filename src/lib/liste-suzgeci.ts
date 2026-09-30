@@ -14,6 +14,7 @@ import {
 import type { Prisma } from "@/generated/prisma/client";
 import { MARJ_PARAM } from "@/lib/ice-aktarma-serhi";
 import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
+import { KARGO_DUSULMEMIS } from "@/lib/kargo-kaynagi";
 import { teslimKovasiKosulu } from "@/lib/teslim-durumu";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { IADE_GECERLI } from "@/lib/iade-geri-alma";
@@ -113,7 +114,7 @@ const temiz = (deger: string | undefined) => (deger ?? "").trim();
 export const VERI_SUZGECLERI = ["supheli"] as const;
 
 /** Kâr süzgecinin tanıdığı değerler. */
-export const KAR_SUZGECLERI = ["eksik", "tam", "zarar"] as const;
+export const KAR_SUZGECLERI = ["eksik", "tam", "zarar", "kargosuz"] as const;
 /** İade süzgecinin tanıdığı değerler. */
 export const IADE_SUZGECLERI = ["var", "yok"] as const;
 /**
@@ -191,6 +192,8 @@ export function satisKosulu(
    */
   const veKosullari: Prisma.SaleWhereInput[] = [];
   if (kargo === "bekleyen") veKosullari.push(KARGO_BEKLEYEN);
+  /** K141 — kârı kargo düşülmeden hesaplanmış satışlar (koşul `kargo-kaynagi.ts`te). */
+  if (kar === "kargosuz") veKosullari.push(KARGO_DUSULMEMIS);
   /**
    * ⛔ ÇIPLAK KOŞUL YAZILMAZ — küme `teslim-durumu.ts` gövdesinden gelir.
    * Elle `{ shippedAt: { not: null }, deliveredAt: null }` yazmak 313
@@ -559,6 +562,21 @@ export function karEksikAyAdresi(yil: number, ay: number): string {
     `&baslangic=${yil}-${iki(ay)}-01` +
     `&bitis=${yil}-${iki(ay)}-${iki(son)}`
   );
+}
+
+/**
+ * K141 — kargosu düşülmemiş satışların listesi, panelin DÖNEMİYLE.
+ * ⚠ Panel varsayılan pencereyle açılır, liste «tüm zamanlar»la — pencere
+ * AÇIKÇA taşınır, yoksa panel 3 derken liste 1.319 gösterirdi.
+ * Döndürdüğü `parametreler`, sayımda da KULLANILIR (sayı = liste).
+ */
+export function kargosuzParametreleri(p: { pencere: string; baslangic?: string; bitis?: string; kanal?: string }): SuzgecParametreleri {
+  return {
+    kar: "kargosuz",
+    pencere: p.pencere,
+    ...(p.pencere === "OZEL" ? { baslangic: p.baslangic, bitis: p.bitis } : {}),
+    ...(p.kanal ? { kanal: p.kanal } : {}),
+  };
 }
 
 /** BİR KANALIN kârı hesaplanamayan satışları. */

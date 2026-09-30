@@ -1257,7 +1257,9 @@
     "onaySecenekMaliyetsiz": "",
     "onayOnerilen": "",
     "kargolanacak": "",
-    "kargoyaVerildiIsaretle": ""
+    "kargoyaVerildiIsaretle": "",
+    "karSuzgeciKargosuz": "",
+    "kargoDusulmediRozeti": ""
   },
   "Kategori": {
     "adZorunlu": "",
@@ -1677,7 +1679,8 @@
     "veriDuzeltmesi": "",
     "veriDuzeltmesiNotu": "",
     "alimIadesiNotu": "",
-    "alimIadesiEtiketi": ""
+    "alimIadesiEtiketi": "",
+    "kargosuzNotu": ""
   },
   "KarSorunu": {
     "baslik": "",
@@ -2528,7 +2531,8 @@
     "halkaDipnot": "",
     "halkaAciklama": "",
     "ciroNetBaslik": "",
-    "hizliIslemler": ""
+    "hizliIslemler": "",
+    "kargosuzNotu": ""
   },
   "Envanter": {
     "baslik": "",

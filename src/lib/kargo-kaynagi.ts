@@ -1,3 +1,5 @@
+import type { Prisma } from "@/generated/prisma/client";
+
 /**
  * ============================================================================
  *  KARGO TUTARI HANGİ SÜTUNDAN OKUNUR — TEK GÖVDE (K201, 09.09.2026)
@@ -148,3 +150,28 @@ export function kargoKesintiDurumu(
   if (!siparisKesintileri.some((k) => k.code === "KARGO")) return "DUSULMEDI";
   return cargoAmount === null ? "TAHMINI" : "GERCEKLESEN";
 }
+
+/**
+ * ============================================================================
+ *  KARGOSU DÜŞÜLMEMİŞ KÂR — SORGU KOŞULU (K141, 30.09.2026)
+ * ----------------------------------------------------------------------------
+ *  `CALCULATED` = «motor çalıştı», «her maliyet girdi» DEĞİL. Kâr kaydında
+ *  sipariş düzeyinde KARGO kesintisi yoksa NET-2 kargo kadar İYİMSERDİR ve
+ *  bu satış listede kargolu olandan ayırt edilemiyordu.
+ *
+ *  ⭐ `kargoKesintiDurumu` ile AYNI ÖLÇÜT: «DUSULMEDI» = sipariş kesintilerinde
+ *  (`saleItemId: null`) KARGO yok. Detay ekranı ile liste/panel aynı kümeyi
+ *  görür; iki ölçüt olsaydı biri ötekinin saydığını göremezdi.
+ *  ⚠ YALNIZ `CALCULATED`: kârı hesaplanamamış satış zaten «kâr eksik»
+ *  süzgecinde; iki kümeye birden girmesi sayıları şişirirdi.
+ *
+ *  📏 ÖLÇÜLDÜ (canlı, 30.09.2026): 1.319 satış — 1.307'si 2024–2025 içe
+ *  aktarımı (o dönemin kargo bilgisi YOK, düzeltilemez, geçmişe kargo
+ *  uydurulmaz), 12'si güncel (taşıyıcısı henüz seçilmemiş; seçilince tahmin
+ *  kendiliğinden dolar). Bu yüzden ÇANA KONMADI (kapatılamayan madde).
+ * ============================================================================
+ */
+export const KARGO_DUSULMEMIS = {
+  profitStatus: "CALCULATED",
+  fees: { none: { code: "KARGO", saleItemId: null } },
+} satisfies Prisma.SaleWhereInput;

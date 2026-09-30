@@ -6344,6 +6344,14 @@ kapısını körleştir).
   "her maliyet girdi" değil. 19 satış kargosuz ve ekranda kargolu olandan
   ayırt edilemiyor. Bu ayrı bir iş; bugün açılmadı.
 
+─── ② **30.09.2026 — KARGO ROZETİ YAZILDI (kullanıcı onayı «Hadi yap») · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]**
+📏 Ölçüldü (canlı, salt okuma): kârı `CALCULATED`, sipariş düzeyinde KARGO kesintisi YOK → **1.319 satış**; 1.307'si 2024–2025 içe aktarımı (kargo bilgisi yok, düzeltilemez, geçmişe kargo uydurulmaz), 12'si güncel (taşıyıcı seçilmemiş; seçilince tahmin dolar). **Çana KONMADI** (kapatılamayan madde).
+· Tek ölçüt `KARGO_DUSULMEMIS` (`kargo-kaynagi.ts`) — detay ekranındaki `kargoKesintiDurumu` ile aynı kural.
+· `/satislar?kar=kargosuz` süzgeci + kâr rakamının yanında «kargo düşülmedi» rozeti (masaüstü + telefon).
+· Panel ve Rapor: «N satışın kârı kargo düşülmeden hesaplandı» — sayı listenin süzgeç gövdesiyle (`satisKosulu`) AYNI parametrelerle sayılıyor, bağlantı dönemi taşıyor (panel varsayılan «Bugün», liste «tüm zamanlar» — pencere açıkça taşınmasa ayrışırdı). Yalnız `satis.kar.gor`.
+· Bekçi `suzgec:dogrula` +16 (152) · mutasyon `kargosuz-mutasyon:kontrol` 9/9.
+**Halil testi (01.10 ölçümüyle):** ① Panel «Bugün» → NET kutularının üstünde «1 satışın kârı kargo düşülmeden…» → tıkla → satış listesi 1 kayıt, kâr rakamının yanında «kargo düşülmedi». ② Panelde «Son 30 gün» → **10** · «Son 3 ay» → **12**; tıklayınca liste aynı sayıyı gösterir. ③ Satışlar → Kâr süzgeci «Kargo düşülmeden hesaplananlar», dönem yok → **1.319**. ④ Rapor «Bu ay» → aynı not, sayı **1**. ⑤ Sayılar gün geçtikçe değişir (taşıyıcı seçildikçe düşer) — önemli olan not ile listenin aynı sayı olması.
+
 ---
 
 ## ✅ K136c — SAĞLAM ADET ÖLÇÜM YOLU · 02.09.2026 · [ÖLÇÜLDÜ · YAZIM YOK]

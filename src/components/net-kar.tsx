@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { DurumRozeti } from "@/components/durum-rozeti";
 import { bicimlendirici } from "@/lib/bicim";
-import { karDurumu } from "@/lib/renkler";
+import { DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 
 import type { Currency, ProfitStatus } from "@/generated/prisma/enums";
 import type { GostergeSonucu } from "@/lib/marj-gosterge";
@@ -21,6 +21,7 @@ export async function NetKar({
   paraBirimi,
   durum,
   gosterge,
+  kargoDusulmedi,
 }: {
   tutar: { toString(): string } | null;
   paraBirimi: Currency | null;
@@ -31,6 +32,12 @@ export async function NetKar({
    * yalnız çizer. Verilmezse gösterge çıkmaz — eski çağrılar bozulmaz.
    */
   gosterge?: GostergeSonucu;
+  /**
+   * K141 — kâr kaydında sipariş düzeyinde KARGO kesintisi YOK. Yalnız hesaplanmış
+   * kârda anlamlı: NET kargo kadar iyimserdir ve bu rakamın YANINDA söylenir.
+   * Verilmezse rozet çıkmaz — eski çağrılar bozulmaz.
+   */
+  kargoDusulmedi?: boolean;
 }) {
   const t = await getTranslations("Satis");
   const bicim = await bicimlendirici();
@@ -57,6 +64,10 @@ export async function NetKar({
 
   const sayi = Number(tutar.toString());
   const renk = karDurumu(sayi);
+  /* K141: rozet rakamın YANINDA — ayrı sütun açılmadı, bilgi kâr rakamına ait. */
+  const kargoRozeti = kargoDusulmedi ? (
+    <span className={`ml-1 text-xs whitespace-nowrap ${DURUM_YAZISI.uyari}`}>{t("kargoDusulmediRozeti")}</span>
+  ) : null;
 
   /**
    * RAKAM VE KELİME TEK PARÇA, PASTEL ZEMİN ÜSTÜNDE (15.08.2026 düzeltmesi).
@@ -76,11 +87,13 @@ export async function NetKar({
         {gosterge && gosterge.tur === "DEGER" ? (
           <span className="text-muted-foreground ml-1">{gosterge.metin}</span>
         ) : null}
+        {kargoRozeti}
       </span>
     );
   }
 
   return (
+    <span className="inline-flex flex-wrap items-center">
     <DurumRozeti durum={renk} isaretsiz>
       <span className="font-semibold tabular-nums">
         {bicim.para(sayi, paraBirimi ?? "TRY")}
@@ -97,5 +110,7 @@ export async function NetKar({
         </span>
       )}
     </DurumRozeti>
+    {kargoRozeti}
+    </span>
   );
 }
