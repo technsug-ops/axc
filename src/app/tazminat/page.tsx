@@ -20,6 +20,7 @@ import {
 import { DurumSecici } from "./durum-secici";
 import { NotAlani } from "./not-alani";
 import { TalepFormu, type HasarKalemi } from "./talep-formu";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
     }),
     // İKİNCİ KAYNAK: müşteriden hasarlı dönen iade kalemleri.
     prisma.returnItem.findMany({
-      where: { damagedQuantity: { gt: 0 } },
+      where: { damagedQuantity: { gt: 0 }, return: IADE_GECERLI },
       select: {
         id: true,
         damagedQuantity: true,

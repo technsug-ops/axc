@@ -24,6 +24,8 @@ export async function urunHareketliMi(urunId: string): Promise<boolean> {
     prisma.stockMovement.count({ where: { variant: { productId: urunId } } }),
     prisma.purchaseItem.count({ where: { variant: { productId: urunId } } }),
     prisma.saleItem.count({ where: { variant: { productId: urunId } } }),
+    /* IADE_SUZGECI MUAF: soru «bu ürünün HİÇ hareketi oldu mu» — geri alınmış
+       iade de defterde iz bıraktı, kod kilidi onu da saymalı. */
     prisma.returnItem.count({ where: { variant: { productId: urunId } } }),
     prisma.returnItem.count({
       where: { exchangeVariant: { productId: urunId } },

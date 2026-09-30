@@ -48,7 +48,7 @@ export default async function IadeDuzenleSayfasi({
     },
   });
   /** Adresteki satış bu iadenin satışı değilse iade YOK sayılır. */
-  if (!iade || iade.saleId !== id) notFound();
+  if (!iade || iade.saleId !== id || iade.geriAlindiAt !== null) notFound();
 
   const degisimVar = iade.items.some((k) => k.exchangeVariantId !== null);
 

@@ -40,6 +40,7 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { gunMetni } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 import { KargoDurumu } from "../kargo-durumu";
 import { kalemDusumleri, kalemGeriDonusleri, type Dusum } from "@/lib/satis";
 import { onayaUygunMu, onayDurumuAnahtari } from "@/lib/onay-kuyrugu";
@@ -134,13 +135,16 @@ export default async function SatisDetaySayfasi({
             },
           },
           fees: { orderBy: { createdAt: "asc" } },
-          returnItems: { select: { quantity: true } },
+          /** K44 ② — geri alınmış iadenin adedi «iade edildi» sayılmaz. */
+          returnItems: { where: { return: IADE_GECERLI }, select: { quantity: true } },
         },
       },
       // Sipariş başına kesintiler: saleItemId BOŞ olanlar.
       fees: { where: { saleItemId: null }, orderBy: { createdAt: "asc" } },
       cargoCarrier: { select: { name: true } },
       returns: {
+        /** K44 ② — geri alınmış iade toplamlara ve uyarılara GİRMEZ. */
+        where: { ...IADE_GECERLI },
         orderBy: { occurredAt: "asc" },
         include: {
           fees: { orderBy: { createdAt: "asc" } },
@@ -222,6 +226,17 @@ export default async function SatisDetaySayfasi({
   const iadeKalanVar = gecerliKalemler.some((k) => {
     const iadeEdilen = k.returnItems.reduce((t2, r) => t2 + r.quantity, 0);
     return k.quantity - iadeEdilen > 0;
+  });
+
+  /**
+   * K44 ② — GERİ ALINAN İADELER, yalnız İZ için.
+   * IADE_SUZGECI MUAF: bu sorgu geri alınmışları GÖSTERMEK için var; toplamlara
+   * girmiyor (kart onları ayrı, soluk bir listede yazar).
+   */
+  const geriAlinanIadeler = await prisma.return.findMany({
+    where: { saleId: satis.id, geriAlindiAt: { not: null } },
+    orderBy: { geriAlindiAt: "asc" },
+    select: { id: true, code: true, occurredAt: true, geriAlindiAt: true, geriAlmaNedeni: true, geriAlmaNotu: true },
   });
 
   const iadeler: IadeGorunumu[] = satis.returns.map((i) => ({
@@ -1004,6 +1019,14 @@ export default async function SatisDetaySayfasi({
         bekleyenHasar={bekleyenHasar}
         saleId={satis.id}
         duzenlenebilir={await izinVarMi("iade.yaz")}
+        geriAlinanlar={geriAlinanIadeler.map((g) => ({
+          id: g.id,
+          code: g.code,
+          occurredAt: g.occurredAt,
+          geriAlindiAt: g.geriAlindiAt!,
+          neden: g.geriAlmaNedeni,
+          not: g.geriAlmaNotu,
+        }))}
       />
 
       {/* ══════════════ DÜZENLEME ══════════════

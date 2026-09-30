@@ -71,6 +71,7 @@ export async function iadeDuzenle(girdi: IadeDuzenlemeGirdisi): Promise<IadeDuze
       select: {
         saleId: true,
         updatedAt: true,
+        geriAlindiAt: true,
         occurredAt: true,
         code: true,
         note: true,
@@ -85,7 +86,8 @@ export async function iadeDuzenle(girdi: IadeDuzenlemeGirdisi): Promise<IadeDuze
         items: { select: { id: true, damagedQuantity: true, damageNote: true, exchangeVariantId: true } },
       },
     });
-    if (!iade) return { durum: "YOK" as const };
+    /** K44 ② — geri alınmış iade düzenlenmez: toplamlara girmiyor, düzeltmesi yeniden giriştir. */
+    if (!iade || iade.geriAlindiAt !== null) return { durum: "YOK" as const };
     if (iade.updatedAt.toISOString() !== girdi.beklenenGuncelleme) return { durum: "DEGISMIS" as const };
 
     const degisimVar = iade.items.some((k) => k.exchangeVariantId !== null);

@@ -16,6 +16,7 @@ import {
   TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI,
   talepTutariniCoz,
 } from "@/lib/tazminat";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 export type TazminatDurumu = {
   hatalar?: string[];
@@ -110,8 +111,9 @@ async function hasariCoz(
     };
   }
 
-  const k = await prisma.returnItem.findUnique({
-    where: { id: kalemId },
+  /** K44 ② — geri alınmış iadenin kalemine talep AÇILMAZ: «bulunamadı» sayılır. */
+  const k = await prisma.returnItem.findFirst({
+    where: { id: kalemId, return: IADE_GECERLI },
     select: {
       id: true,
       damagedQuantity: true,

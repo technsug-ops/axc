@@ -12,6 +12,8 @@ import { donemNet2 } from "@/lib/net-devreden";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { IadeGeriAl } from "@/components/iade-geri-al";
+import type { IadeGeriAlmaNedeni } from "@/generated/prisma/enums";
 
 /**
  * ============================================================================
@@ -98,7 +100,14 @@ export async function IadeBlogu({
   bekleyenHasar,
   saleId,
   duzenlenebilir,
+  geriAlinanlar = [],
 }: {
+  /**
+   * K44 ② — GERİ ALINMIŞ İADELER. Toplama GİRMEZ (`iadeler` zaten
+   * `IADE_GECERLI` ile süzülü gelir) ama İZ olarak kartın altında durur:
+   * «bu satışa bir iade girilmişti, geri alındı» hikâyesi kaybolmaz.
+   */
+  geriAlinanlar?: { id: string; code: string | null; occurredAt: Date; geriAlindiAt: Date; neden: IadeGeriAlmaNedeni | null; not: string | null }[];
   iadeler: IadeGorunumu[];
   /** K44 — düzenleme adresi bu satıştan kurulur. */
   saleId: string;
@@ -111,11 +120,12 @@ export async function IadeBlogu({
 }) {
   const t = await getTranslations("Iade");
   const tDuzenle = await getTranslations("IadeDuzenle");
+  const tGeri = await getTranslations("IadeGeriAl");
   const tKesinti = await getTranslations("Kesinti");
   const bicim = await bicimlendirici();
   const turler = await iadeTuruEtiketleri();
 
-  if (iadeler.length === 0) return null;
+  if (iadeler.length === 0 && geriAlinanlar.length === 0) return null;
 
   const para = (n: number) => bicim.para(n, paraBirimi);
 
@@ -243,6 +253,8 @@ export async function IadeBlogu({
                     </Link>
                   </Button>
                 ) : null}
+                {/* K44 ② — adet/tür/ürün yanlışsa yol: geri al, doğru bilgiyle yeniden gir. */}
+                {duzenlenebilir ? <IadeGeriAl returnId={iade.id} /> : null}
               </div>
               {/* ⛔ K170-①: NET-1 ETKİSİ DE YAZILIR — TEK BAŞINA NET-2 YALAN
                   SÖYLÜYORDU. Ölçüldü 06.09.2026 (canlı, 222 iade): 216'sında
@@ -426,6 +438,28 @@ export async function IadeBlogu({
         </div>
 
         <p className="text-muted-foreground text-xs">{t("kdvVarsayimNotu")}</p>
+
+        {/* K44 ② — geri alınan iadeler: İZ, toplam değil. Sıfırsa çizilmez. */}
+        {geriAlinanlar.length > 0 ? (
+          <div className="space-y-1 border-t pt-3">
+            <p className="text-muted-foreground text-sm font-medium">
+              {tGeri("geriAlinanlarBaslik", { sayi: geriAlinanlar.length })}
+            </p>
+            <ul className="text-muted-foreground space-y-1 text-sm">
+              {geriAlinanlar.map((g) => (
+                <li key={g.id}>
+                  {tGeri("geriAlinanSatiri", {
+                    iadeTarihi: bicim.tarih(g.occurredAt),
+                    kod: g.code ?? "—",
+                    geriAlmaTarihi: bicim.tarih(g.geriAlindiAt),
+                    neden: g.neden ? tGeri(`neden_${g.neden}`) : "—",
+                  })}
+                  {g.not ? ` · ${g.not}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

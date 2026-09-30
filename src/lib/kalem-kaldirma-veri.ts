@@ -13,6 +13,7 @@ import { satisKarTazele } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
 import { acikPartilerToplu } from "@/lib/stok";
 import type { SatisKalemKaldirmaSebebi } from "@/generated/prisma/enums";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * SAYIM KORUMASI YOK: bu yol hareketin İŞ TARİHİNİ **ŞU AN** yazıyor
@@ -60,7 +61,7 @@ async function planKur(
       net2Amount: true,
       kaldirildiAt: true,
       variant: { select: { product: { select: { name: true } } } },
-      returnItems: { select: { quantity: true } },
+      returnItems: { where: { return: IADE_GECERLI }, select: { quantity: true } },
       /**
        * SÜZGEÇ YOK — kaleme bağlı TÜM hareketler. Stoğa dönecek mal
        * `acikCikislar` ile çözülür; ham `SALE_OUT` listesi, adedi düşürülmüş

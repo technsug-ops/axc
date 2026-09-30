@@ -16,6 +16,7 @@ import {
   type KonumSecenegi,
   type VaryantSecenegi,
 } from "./iade-formu";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 export async function generateMetadata() {
   const t = await getTranslations("Iade");
@@ -50,7 +51,8 @@ export default async function IadeSayfasi({
             include: { product: { select: { name: true } } },
           },
           // Daha önce iade edilen adetler düşülecek.
-          returnItems: { select: { quantity: true } },
+          // K44 ② — geri alınmış iade kalan adedi azaltmaz; yeniden girilebilir.
+          returnItems: { where: { return: IADE_GECERLI }, select: { quantity: true } },
         },
       },
     },

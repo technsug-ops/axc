@@ -23,6 +23,7 @@ import type {
   ReturnReason,
   StockMovementType,
 } from "@/generated/prisma/enums";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * ============================================================================
@@ -316,7 +317,7 @@ export async function kartVerisiniTopla(
      * daha çok şey söyler — "beğenmedi" ile "çalışmıyor" aynı ürün değildir.
      */
     prisma.returnItem.findMany({
-      where: { variantId },
+      where: { variantId, return: IADE_GECERLI },
       select: {
         quantity: true,
         returnId: true,

@@ -66,6 +66,7 @@ import { PencereSecici } from "./pencere-secici";
 
 import type { Currency } from "@/generated/prisma/enums";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * ============================================================================
@@ -267,7 +268,7 @@ export default async function RaporSayfasi({
        * İki atıf gerekçeli ayrışır; fark ekranda yazılı.
        */
       prisma.return.findMany({
-        where: { sale: ikiAralik("soldAt") },
+        where: { sale: ikiAralik("soldAt"), ...IADE_GECERLI },
         select: {
           id: true,
           saleId: true,

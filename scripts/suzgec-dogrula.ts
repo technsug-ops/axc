@@ -384,12 +384,14 @@ console.log("\n3) SATIŞ KOŞULU");
   kontrol(
     "iade var: some",
     JSON.stringify(satisKosulu({ iade: "var" }, AN).kosul.returns) ===
-      JSON.stringify({ some: {} }),
+      /* K44 ②: ölçüt ESKİDİ — «iadesi var» artık GEÇERLİ iadeye bakar (geri alınan sayılmaz). Eski: { some: {} } */
+      JSON.stringify({ some: { geriAlindiAt: null } }),
   );
   kontrol(
     "iade yok: none",
     JSON.stringify(satisKosulu({ iade: "yok" }, AN).kosul.returns) ===
-      JSON.stringify({ none: {} }),
+      /* K44 ②: eski: { none: {} } */
+      JSON.stringify({ none: { geriAlindiAt: null } }),
   );
 
   /**

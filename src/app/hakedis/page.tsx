@@ -53,6 +53,7 @@ import {
   KANAL_RENKLERI,
   type DurumRengi,
 } from "@/lib/renkler";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 export const dynamic = "force-dynamic";
 
@@ -199,7 +200,8 @@ export default async function HakedisSayfasi({
            * hiçbir şey yok. Bu satışların hakediş takibi `/iadeler`
            * ekranındadır; burada yalnız YANLIŞ ALARM üretirler.
            */
-          returns: { none: {} },
+          /** K44 ② — geri alınmış iade «iadesi var» sayılmaz. */
+          returns: { none: IADE_GECERLI },
           ...kanalKosulu,
         },
         include: {

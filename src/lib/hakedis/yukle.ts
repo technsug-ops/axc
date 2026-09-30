@@ -16,6 +16,7 @@ import {
   turkiyeDisiMi,
 } from "./okuyucu";
 import { tabloOku } from "@/lib/tablo/tablo-oku";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * ============================================================================
@@ -159,7 +160,7 @@ export async function hakedisDenetle(
       // teslim tarihinden sayılır. En SON teslim kazanır — birden çok
       // değişim olduysa saat en son gidenden işler.
       returns: {
-        where: { exchangeDeliveredAt: { not: null } },
+        where: { exchangeDeliveredAt: { not: null }, ...IADE_GECERLI },
         select: { exchangeDeliveredAt: true },
         orderBy: { exchangeDeliveredAt: "desc" },
         take: 1,

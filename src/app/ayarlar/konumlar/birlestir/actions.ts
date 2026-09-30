@@ -71,6 +71,7 @@ export async function birlestirmeOnizle(
   const [tasinacakVaryant, kalanHareket, kalanIade] = await Promise.all([
     prisma.productVariant.count({ where: { locationId: kaynakId } }),
     prisma.stockMovement.count({ where: { locationId: kaynakId } }),
+    /* IADE_SUZGECI MUAF: yapısal sayım — rafı gösteren HER kayıt taşınır. */
     prisma.returnItem.count({ where: { locationId: kaynakId } }),
   ]);
 

@@ -6592,7 +6592,9 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
    */
   kontrol(
     "panel: iade PENCERESİ de satışın gününden",
-    panel3.includes("where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } } }"),
+    /* K44 ②: ölçüt ESKİDİ, gevşemedi — pencere aynı, sonuna geçerli iade
+       süzgeci eklendi. Eski metin: where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } } } */
+    panel3.includes("where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } }, ...IADE_GECERLI }"),
   );
   kontrol(
     "panel: iade sorgusunda ÇIPLAK occurredAt penceresi YOK",
@@ -6601,7 +6603,8 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("rapor: iade ATFI satışın gününden", rapor3.includes("tarih: iade.sale.soldAt"));
   kontrol(
     "rapor: iade PENCERESİ de satışın gününden",
-    rapor3.includes('where: { sale: ikiAralik("soldAt") }'),
+    /* K44 ②: aynı — eski metin: where: { sale: ikiAralik("soldAt") } */
+    rapor3.includes('where: { sale: ikiAralik("soldAt"), ...IADE_GECERLI }'),
   );
   kontrol(
     "rapor: eski `ikiAralik(\"occurredAt\")` iade penceresi YOK",
@@ -6616,7 +6619,8 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
    */
   kontrol(
     "muhasebe dönem raporu iadeyi OLAY tarihinde sayıyor (bilerek ayrı)",
-    donem3.includes("where: { return: { occurredAt: { gte: bas, lt: bit } } }"),
+    /* K44 ②: aynı — eski metin: where: { return: { occurredAt: { gte: bas, lt: bit } } } */
+    donem3.includes("where: { return: { occurredAt: { gte: bas, lt: bit }, ...IADE_GECERLI } }"),
   );
   kontrol(
     "  ...ve satışın gününe ÇEVRİLMEMİŞ",

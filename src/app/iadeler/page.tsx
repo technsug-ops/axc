@@ -82,6 +82,7 @@ import {
   type AskidaSatir,
   type KargolanacakSatir,
 } from "./kargolanacak-kutusu";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * BİLDİRİMİ EKRANIN ANLAYACAĞI ŞEKLE ÇEVİRİR.
@@ -269,11 +270,11 @@ export default async function IadelerSayfasi({
       : {}),
   };
 
-  const toplamKayit = await prisma.return.count({ where: kosul });
+  const toplamKayit = await prisma.return.count({ where: { AND: [IADE_GECERLI, kosul] } });
   const sayfalama = sayfaCoz(p.sayfa, toplamKayit);
 
   const iadeler = await prisma.return.findMany({
-    where: kosul,
+    where: { AND: [IADE_GECERLI, kosul] },
     skip: sayfalama.atla,
     take: sayfalama.boyut,
     orderBy: { occurredAt: "desc" },
@@ -325,7 +326,7 @@ export default async function IadelerSayfasi({
    * toplam için gerekmiyor.
    */
   const ozetKayitlari = await prisma.return.findMany({
-    where: kosul,
+    where: { AND: [IADE_GECERLI, kosul] },
     select: {
       id: true,
       returnType: true,
@@ -366,7 +367,7 @@ export default async function IadelerSayfasi({
    */
   const [tumIadeler, donemSatislari, hesapKanallari] = await Promise.all([
     prisma.return.findMany({
-      where: { occurredAt: aralik },
+      where: { occurredAt: aralik, ...IADE_GECERLI },
       select: {
         net2Amount: true,
         penaltyAmount: true,

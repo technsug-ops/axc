@@ -25,6 +25,7 @@ import { supheliSatirlari } from "@/lib/supheli-urun-veri";
 import { markasizUrunler } from "@/lib/marka-kodu-veri";
 import { giderAramaKosulu } from "@/lib/gider-arama";
 import { skuOnizlemeSatirlari } from "@/lib/sku-onizleme-veri";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * ============================================================================
@@ -140,6 +141,7 @@ async function iadelerSayfasi(p: Parametreler): Promise<Sayfa> {
 
   const iadeler = await prisma.return.findMany({
     where: {
+      ...IADE_GECERLI,
       occurredAt: { gte: pencere.baslangic, lt: pencere.bitisHaric },
       ...(kanal
         ? { sale: { channelAccount: { channel: { code: kanal } } } }

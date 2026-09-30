@@ -115,6 +115,13 @@ enum ProfitStatus {
   RULE_MISSING // komisyon oranı veya kargo tarifesi bulunamadı
 }
 
+/// K44 ② — iade neden geri alındı. Kapalı küme; DIGER açıklama ister.
+enum IadeGeriAlmaNedeni {
+  YANLIS_GIRIS // adet · ürün · tür · sağlam/hasarlı yanlış girildi
+  MUSTERI_VAZGECTI // müşteri iadeyi geri çekti, ürün gelmedi
+  DIGER
+}
+
 /// İade türü — operasyonun üç gerçek senaryosu.
 enum ReturnType {
   UNDELIVERED // teslim edilemeden döndü; gidiş kargosu zaten yandı
@@ -2040,7 +2047,10 @@ model Return {
   /// en çok gerektiği yerde iz kalmıyordu. "Bu 1.799 TL'lik hasarı kim
   /// işaretledi" sorusunun cevabı olmalı.
   userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  /// ⚠ İLİŞKİ ADI (K44 ②): `Return`→`User` ikinci bir ilişki kazandı
+  /// (`geriAlan`); Prisma iki ilişkiye de ad istiyor. Ad veritabanında
+  /// hiçbir şeyi değiştirmez (yabancı anahtar adı alan adından gelir).
+  user   User?   @relation("IadeGiren", fields: [userId], references: [id], onDelete: Restrict)
 
   /// İade SONRASI net — orijinal snapshot'a dokunmadan hesaplanır.
   net1Amount     Decimal?      @db.Decimal(18, 4)
@@ -2053,6 +2063,18 @@ model Return {
   profitCurrency Currency?
   profitStatus   ProfitStatus?
   calculatedAt   DateTime?
+
+  /// K44 ② — İADE GERİ ALINDI (kullanıcı onayı 30.09.2026). «Geri alındı
+  /// mı» sorusunun TEK kaynağı `geriAlindiAt` (Sale.iptalTarihi deseni —
+  /// ayrı boolean iki gerçek demekti). Geri alınan iade SİLİNMEZ: stok
+  /// hareketleri ters kayıtla çevrilir, kayıt iz olarak durur; okuyucular
+  /// `IADE_GECERLI` süzgeciyle onu SAYMAZ (`lib/iade-geri-alma.ts`).
+  geriAlindiAt   DateTime?
+  geriAlmaNedeni IadeGeriAlmaNedeni?
+  geriAlmaNotu   String?             @db.Text
+  /// Kim geri aldı. Kullanıcı silinmez (pasife alınır) — Restrict.
+  geriAlanId     String?
+  geriAlan       User?               @relation("IadeGeriAlan", fields: [geriAlanId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2067,6 +2089,8 @@ model Return {
   @@index([saleId])
   @@index([occurredAt])
   @@index([userId])
+  @@index([geriAlindiAt])
+  @@index([geriAlanId])
 }
 
 /// ============================================================================
@@ -2485,7 +2509,9 @@ model User {
   /// acmaz, yabanci anahtar `MuhasebeDonemi` tarafinda. `User` tablosu
   /// DEGISMEZ — migration yalnizca yeni tabloyu yaratmali.
   kapattigiDonemler   MuhasebeDonemi[]  @relation("DonemKapatan")
-  iadeler             Return[]
+  iadeler             Return[]          @relation("IadeGiren")
+  /// K44 ② — geri aldığı iadeler. TERS İLİŞKİ: `User` tablosu DEĞİŞMEZ.
+  iadeGeriAlmalari    Return[]          @relation("IadeGeriAlan")
   iadeBildirimleri    ReturnNotice[]
   ekler               Attachment[]
   userCompanyRoles    UserCompanyRole[]

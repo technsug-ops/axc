@@ -16,6 +16,7 @@ import { MARJ_PARAM } from "@/lib/ice-aktarma-serhi";
 import { KARGO_BEKLEYEN } from "@/lib/kargo-bekleyen";
 import { teslimKovasiKosulu } from "@/lib/teslim-durumu";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * ============================================================================
@@ -317,8 +318,9 @@ export function satisKosulu(
       ? { profitStatus: "CALCULATED", net2Amount: { lt: 0 } }
       : {}),
     // İadesi olan / olmayan satışlar.
-    ...(iade === "var" ? { returns: { some: {} } } : {}),
-    ...(iade === "yok" ? { returns: { none: {} } } : {}),
+    /** K44 ② — «iadesi var» GEÇERLİ iadeye bakar; geri alınmış iade sayılmaz. */
+    ...(iade === "var" ? { returns: { some: IADE_GECERLI } } : {}),
+    ...(iade === "yok" ? { returns: { none: IADE_GECERLI } } : {}),
     /**
      * ═══════════════════════════════════════════════════════════════════
      *  İPTAL SÜZGECİ — TEK KAYNAK (mimar şartı 17.08.2026)

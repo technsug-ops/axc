@@ -14,6 +14,7 @@ import {
   type DuzenlemeNedeni,
   type DuzenlemePlani,
 } from "@/lib/satis-duzenleme";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * SAYIM KORUMASI YOK: bu yol hareketin İŞ TARİHİNİ **ŞU AN** yazıyor
@@ -98,7 +99,7 @@ async function planKur(
           variantId: true,
           variant: { select: { product: { select: { name: true } } } },
           /** İade edilen adet — adet bunun ALTINA inemez. */
-          returnItems: { select: { quantity: true } },
+          returnItems: { where: { return: IADE_GECERLI }, select: { quantity: true } },
           /**
            * Mevcut hareketler — adet azalırsa ayna girişin maliyet kaynağı.
            * SÜZGEÇ YOK: ikinci kez azaltmada, ilk azaltmayla geri dönmüş

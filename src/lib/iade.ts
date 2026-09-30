@@ -20,6 +20,7 @@ import {
   DONEM_ISTISNA_EYLEMI,
 } from "@/lib/donem-kapisi";
 import type { DonemIsrari } from "@/lib/donem-korumasi";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * ============================================================================
@@ -671,7 +672,8 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
           where: { ...KALEM_GECERLI },
           include: {
             fees: true,
-            returnItems: { select: { quantity: true } },
+            /** K44 ② — geri alınmış iadenin adedi «önceki iade» sayılmaz; yeniden girilebilsin. */
+            returnItems: { where: { return: IADE_GECERLI }, select: { quantity: true } },
             /**
              * SÜZGEÇ YOK — kaleme bağlı TÜM hareketler. Maliyet işaretli
              * toplamdan, stoğa dönecek mal `acikCikislar`tan çözülür.

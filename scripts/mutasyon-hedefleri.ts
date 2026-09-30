@@ -279,4 +279,10 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * TY istemcisini mutasyona uğratıyor.
    */
   "ty-sayfa-gezici-mutasyon:kontrol",
+  /**
+   * K44 (30.09.2026) — `iade-duzenle` ve `iade-gecerli` İKİSİ DE
+   * `src/lib/iade.ts`i mutasyona uğratıyor (para gövdesi · önceki iade süzgeci).
+   */
+  "iade-duzenle-mutasyon:kontrol",
+  "iade-gecerli-mutasyon:kontrol",
 ];

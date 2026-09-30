@@ -90,7 +90,11 @@ console.log("\n3) ekran");
   const s = yorumsuz(kaynakOku("src/app/satislar/[id]/page.tsx"));
   kontrol("satış detayı düzenleme iznini İZİNDEN okuyor", /duzenlenebilir=\{await izinVarMi\("iade\.yaz"\)\}/.test(s));
   const sayfa = yorumsuz(kaynakOku("src/app/satislar/[id]/iade/[iadeId]/duzenle/page.tsx"));
-  kontrol("düzenleme sayfası izinle korunuyor ve başka satışın iadesini açmıyor", /await sayfaIzni\("iade\.yaz"\)/.test(sayfa) && /if \(!iade \|\| iade\.saleId !== id\) notFound\(\);/.test(sayfa));
+  const g2 = yorumsuz(kaynakOku("src/lib/iade-duzenle.ts"));
+  /* K44 ②: ölçüt ESKİDİ, gevşemedi — kapı geri alınmış iadeyi de kapatıyor.
+     Eski biçim: if (!iade || iade.saleId !== id) notFound(); */
+  kontrol("düzenleme sayfası izinle korunuyor, başka satışın ve GERİ ALINMIŞ iadeyi açmıyor", /await sayfaIzni\("iade\.yaz"\)/.test(sayfa) && /if \(!iade \|\| iade\.saleId !== id \|\| iade\.geriAlindiAt !== null\) notFound\(\);/.test(sayfa));
+  kontrol("  ...gövde de geri alınmış iadeyi düzenlemiyor", /if \(!iade \|\| iade\.geriAlindiAt !== null\) return \{ durum: "YOK" as const \};/.test(g2));
 }
 kosanBolumler.push("ekran");
 

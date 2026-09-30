@@ -74,6 +74,7 @@ import {
   satirGostergesi,
   type MarjOlcusu,
 } from "@/lib/marj-gosterge";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -258,12 +259,12 @@ export default async function SatislarSayfasi({
           variant: {
             include: { product: { select: { name: true } } },
           },
-          returnItems: { select: { quantity: true } },
+          returnItems: { where: { return: IADE_GECERLI }, select: { quantity: true } },
         },
       },
       channelAccount: { include: { channel: { select: { name: true } } } },
       // Rozet ve satır eylemi için: iade var mı, kalan var mı?
-      returns: { select: { id: true } },
+      returns: { where: { ...IADE_GECERLI }, select: { id: true } },
       /**
        * SERMAYE VERİMİNİN PAYDASI — satışın maliyeti. Yalnız MALIYET
        * kesintisi çekilir; YENİ HESAP YOK, mevcut snapshot okunur.

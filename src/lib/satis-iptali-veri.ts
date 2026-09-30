@@ -10,6 +10,7 @@ import {
   type IptalPlani,
 } from "@/lib/satis-iptali";
 import type { SatisIptalSebebi } from "@/generated/prisma/enums";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * SAYIM KORUMASI YOK: bu yol hareketin İŞ TARİHİNİ **ŞU AN** yazıyor
@@ -97,7 +98,8 @@ async function planKur(
           },
         },
       },
-      returns: { select: { id: true, code: true } },
+      /** K44 ② — geri alınmış iade iptali ENGELLEMEZ: stok zaten iade öncesine döndü. */
+      returns: { where: { ...IADE_GECERLI }, select: { id: true, code: true } },
       /** Hakediş eşleşmesi: iptal beklenen tahsilatı da düşürür mü. */
       settlementItems: { select: { id: true }, take: 1 },
     },

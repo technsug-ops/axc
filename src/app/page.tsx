@@ -170,6 +170,7 @@ import {
   tumKanallarAdresi,
 } from "@/lib/kanal-sirasi";
 import { KanalSiraCubugu } from "./kanal-sira-cubugu";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * ============================================================================
@@ -434,7 +435,7 @@ export default async function AnaSayfa({
      * dönemde yapılır. İki atıf gerekçeli ayrışır ve fark EKRANDA yazar.
      */
     prisma.return.findMany({
-      where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } } },
+      where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } }, ...IADE_GECERLI },
       select: {
         /**
          * ⛔ `occurredAt` SEÇİLMİYOR — atıf satışın gününe geçince kimse

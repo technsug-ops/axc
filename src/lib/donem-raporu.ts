@@ -5,6 +5,7 @@ import { DONEM_ISTISNA_EYLEMI } from "@/lib/donem-kapisi";
 import { donemAnahtari, type DonemAnahtari } from "@/lib/donem-korumasi";
 import { donemNet2 } from "@/lib/net-devreden";
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 /**
  * ============================================================================
@@ -126,7 +127,7 @@ export async function donemRaporu(
      * ⚠ VE FARK EKRANDA DA SÖYLENİR (İlke #10) — panel notunda yazıyor.
      */
     prisma.returnItem.findMany({
-      where: { return: { occurredAt: { gte: bas, lt: bit } } },
+      where: { return: { occurredAt: { gte: bas, lt: bit }, ...IADE_GECERLI } },
       select: {
         quantity: true,
         saleItem: { select: { unitPriceAmount: true } },

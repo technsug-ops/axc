@@ -119,6 +119,7 @@ export async function yedekUret(
     Sale: await istemci.sale.findMany(),
     SaleItem: await istemci.saleItem.findMany(),
     SaleFee: await istemci.saleFee.findMany(),
+    /* IADE_SUZGECI MUAF: yedek HER kaydı alır — geri alınmış iade de verinin parçası. */
     Return: await istemci.return.findMany(),
     ReturnItem: await istemci.returnItem.findMany(),
     ReturnFee: await istemci.returnFee.findMany(),
