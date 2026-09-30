@@ -168,6 +168,36 @@ export function karsiTarafGecerliMi(girdi: {
 }
 
 /**
+ * ============================================================================
+ *  KARŞI TARAF SEÇİMİ — FORM DEĞERİ (30.09.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ VAKA: iadeden açılan talepte karşı taraf «varyantın son alımının
+ *  tedarikçisi»ne SABİTLENİYORDU ve form bunu seçtirmiyordu. Hepsiburada'nın
+ *  ödediği ütü tazmini (₺5.134,28, EFA2026000000055) «Amazon» diye yazıldı.
+ *  Eylemin kendi yorumu «form tedarikçiyi DEĞİŞTİRİLEBİLİR gösterir» diyordu —
+ *  kod bunu hiç yapmıyordu. Tazmini çoğu zaman satıcıya PAZARYERİ öder.
+ *
+ *  Tek alan iki tabloyu taşır: `S:<supplierId>` ya da `C:<carrierId>`.
+ *  Çözülemeyen değer `null` döner — sessizce bir tarafa düşmez.
+ * ============================================================================
+ */
+/** Karşı taraf düzeltmesinin izi — eski ve yeni değer detayda. */
+export const TAZMINAT_KARSI_TARAF_EYLEMI = "TAZMINAT_KARSI_TARAF_DEGISTI";
+
+export function karsiTarafDegeri(girdi: { supplierId?: string | null; carrierId?: string | null }): string | null {
+  if (girdi.supplierId) return `S:${girdi.supplierId}`;
+  if (girdi.carrierId) return `C:${girdi.carrierId}`;
+  return null;
+}
+
+export function karsiTarafCoz(deger: string | null | undefined): { supplierId: string | null; carrierId: string | null } | null {
+  if (!deger) return null;
+  const m = /^([SC]):(\S+)$/.exec(deger.trim());
+  if (!m) return null;
+  return m[1] === "S" ? { supplierId: m[2], carrierId: null } : { supplierId: null, carrierId: m[2] };
+}
+
+/**
  * Karşı tarafın ekranda görünen adı.
  *
  * ⚠ "—" DÖNMEZ, HANGİSİ OLDUĞUNU SÖYLER. Adsız satır yazılmaz (İlke #14);

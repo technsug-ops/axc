@@ -95,6 +95,22 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "TARIHSIZ IADE YINE SESSIZ", yon: "KALDIRAN", dosya: "src/lib/kart-iadesi-veri.ts",
     bul: "        tarihsiz.push({", koy: "        void ({",
     bozdugu: "gunu olmayan iade borctan dusmez ve hicbir yerde gorunmez" },
+  /* 30.09.2026 - karsi taraf formda secilir, satirda duzeltilir (utu vakasi). */
+  { ad: "SECILEN KARSI TARAF YOK SAYILIYOR", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "        supplierId: karsi.supplierId,\n        carrierId: karsi.carrierId,", koy: "        supplierId: kalem.tedarikciId,\n        carrierId: null,",
+    bozdugu: "HB secilse de talep Amazon'a yazilir" },
+  { ad: "SECILEN KIMLIK DOGRULANMIYOR", yon: "FAZLADAN", dosya: EYLEM,
+    bul: "    if (!cozulen || !(await karsiTarafVarMi(cozulen))) return { hatalar: [t(\"karsiTarafGecersiz\")] };", koy: "    if (!cozulen) return { hatalar: [t(\"karsiTarafGecersiz\")] };",
+    bozdugu: "olmayan kimlik yazilmaya calisilir, yabanci anahtar hatasi" },
+  { ad: "DUZELTME TUTARI DA YAZIYOR", yon: "FAZLADAN", dosya: EYLEM,
+    bul: "data: { supplierId: yeni.supplierId, carrierId: yeni.carrierId } });", koy: "data: { supplierId: yeni.supplierId, carrierId: yeni.carrierId, amount: \"0\" } });",
+    bozdugu: "karsi taraf duzeltmesi alacagi sifirlar" },
+  { ad: "DUZELTME IZ BIRAKMIYOR", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "detail: JSON.stringify({ eski, yeni: karsiTarafDegeri(yeni) })", koy: "detail: null",
+    bozdugu: "kimden alacakli oldugumuz iz birakmadan degisir" },
+  { ad: "TANINMAYAN ONEK TEDARIKCI SAYILIYOR", yon: "FAZLADAN", dosya: GOVDE,
+    bul: "  const m = /^([SC]):(\\S+)$/.exec(deger.trim());", koy: "  const m = /^([A-Z]):(\\S+)$/.exec(deger.trim());",
+    bozdugu: "bozuk deger sessizce bir tarafa duser" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

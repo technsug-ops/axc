@@ -2207,7 +2207,15 @@
     "tahsilGunuYalnizKapanan": "",
     "tahsilGunuTalepOncesi": "",
     "tahsilGunuYazilamadi": "",
-    "tahsilGunuKaydedildi": ""
+    "tahsilGunuKaydedildi": "",
+    "karsiTarafEtiketi": "",
+    "karsiTarafSec": "",
+    "karsiTarafKargo": "",
+    "karsiTarafIadeIpucu": "",
+    "karsiTarafGecersiz": "",
+    "karsiTarafAyni": "",
+    "karsiTarafYazilamadi": "",
+    "karsiTarafDegisti": ""
   },
   "Hakedis": {
     "baslik": "",

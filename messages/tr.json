@@ -2207,7 +2207,15 @@
     "tahsilGunuYalnizKapanan": "Tahsil günü yalnız «Kapandı» durumundaki talebe girilir.",
     "tahsilGunuTalepOncesi": "Tahsil günü, talebin açıldığı günden önce olamaz.",
     "tahsilGunuYazilamadi": "Tahsil günü kaydedilemedi. Tekrar deneyin; sürerse bildirin.",
-    "tahsilGunuKaydedildi": "Tahsil günü kaydedildi."
+    "tahsilGunuKaydedildi": "Tahsil günü kaydedildi.",
+    "karsiTarafEtiketi": "Karşı taraf (tazmini kim ödüyor)",
+    "karsiTarafSec": "Karşı tarafı seçin",
+    "karsiTarafKargo": "{ad} (kargo)",
+    "karsiTarafIadeIpucu": "Müşteri iadesinde tazmini çoğu zaman pazaryeri öder — öyleyse pazaryerini seçin. Önerilen, ürünün son alındığı tedarikçidir.",
+    "karsiTarafGecersiz": "Seçilen karşı taraf bulunamadı. Listeden yeniden seçin.",
+    "karsiTarafAyni": "Karşı taraf zaten bu — değişiklik yapılmadı.",
+    "karsiTarafYazilamadi": "Karşı taraf değiştirilemedi. Tekrar deneyin; sürerse bildirin.",
+    "karsiTarafDegisti": "Karşı taraf değiştirildi."
   },
   "Hakedis": {
     "baslik": "Hakediş",

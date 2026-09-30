@@ -35,6 +35,8 @@ export type HasarKalemi = {
   /** Alım kodu ya da satış/sipariş no — hangi kayıttan geldiği. */
   baglam: string;
   tedarikci: string;
+  /** Önerilen karşı taraf (`S:<id>`) — iadede son alımın tedarikçisi; değiştirilebilir. */
+  onerilenKarsiTaraf: string | null;
   urun: string;
   sku: string;
   hasarliAdet: number;
@@ -44,6 +46,9 @@ export type HasarKalemi = {
   paraBirimi: string;
   hasarNotu: string | null;
 };
+
+/** Karşı taraf seçeneği — tedarikçi (pazaryerleri dahil) ya da kargo firması. */
+export type KarsiTarafSecenegi = { deger: string; ad: string; tur: "tedarikci" | "kargo" };
 
 /** Kullanıcının seçebileceği başlangıç durumları. */
 const BASLANGIC_DURUMLARI = ["OPEN", "CLAIMED"] as const;
@@ -58,10 +63,12 @@ const BASLANGIC_DURUMLARI = ["OPEN", "CLAIMED"] as const;
 export function TalepFormu({
   hasar,
   bugun,
+  secenekler,
 }: {
   hasar: HasarKalemi;
   /** İş saat diliminde bugün (YYYY-AA-GG). */
   bugun: string;
+  secenekler: KarsiTarafSecenegi[];
 }) {
   const t = useTranslations("Tazminat");
   const tDurum = useTranslations("TazminatDurumu");
@@ -98,6 +105,27 @@ export function TalepFormu({
         <form onSubmit={formGonderimi(formAction)} className="space-y-4">
           <input type="hidden" name="kaynak" value={hasar.kaynak} />
           <input type="hidden" name="kalemId" value={hasar.kalemId} />
+
+          {/* KARŞI TARAF (30.09.2026): tazmini kim ödüyor — iadede çoğu zaman PAZARYERİ.
+              Önerilen, son alımın tedarikçisi; değiştirilebilir. */}
+          <div className="space-y-2">
+            <Label htmlFor="tazminat-karsi">{t("karsiTarafEtiketi")} *</Label>
+            <Select name="karsiTaraf" defaultValue={hasar.onerilenKarsiTaraf ?? undefined}>
+              <SelectTrigger id="tazminat-karsi" className="h-11 w-full md:h-9">
+                <SelectValue placeholder={t("karsiTarafSec")} />
+              </SelectTrigger>
+              <SelectContent>
+                {secenekler.map((s) => (
+                  <SelectItem key={s.deger} value={s.deger}>
+                    {s.tur === "kargo" ? t("karsiTarafKargo", { ad: s.ad }) : s.ad}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hasar.kaynak === "iade" ? (
+              <p className="text-muted-foreground text-xs">{t("karsiTarafIadeIpucu")}</p>
+            ) : null}
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

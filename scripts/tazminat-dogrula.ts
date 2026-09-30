@@ -41,6 +41,8 @@ import {
   talepTutariniCoz,
   varsayilanTalepTutari,
   izdekiTahsilGunu,
+  karsiTarafCoz,
+  karsiTarafDegeri,
   TAHSIL_GUNU_ALANI,
   tazminatTahsilTarihi,
   tazminatTahsilTarihleri,
@@ -51,7 +53,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -572,6 +574,37 @@ console.log("\n6) TAHSİL GÜNÜ İZİN İÇİNDEN — pazaryeri bildirimi tarih
   const borc = yorumsuzla(kaynakOku("src/app/kart-borcu/page.tsx"));
   kontrol("kart borcu ekranı tarihsiz iadeyi ÇİZER", /\{tarihsizIadeler\.length > 0 \? \([\s\S]{0,300}t\("tarihsizIadeBaslik"/.test(borc));
   kosanBolumler.push("tahsil-gunu");
+}
+
+// ===========================================================================
+// 7) KARŞI TARAF SEÇİLİR VE DÜZELTİLİR (30.09.2026)
+// ===========================================================================
+console.log("\n7) KARŞI TARAF — formda seçilir, satırda düzeltilir");
+{
+  kontrol("tedarikçi değeri S: önekiyle", karsiTarafDegeri({ supplierId: "a1" }) === "S:a1");
+  kontrol("kargo değeri C: önekiyle", karsiTarafDegeri({ carrierId: "k1" }) === "C:k1");
+  kontrol("ikisi de boşsa değer YOK", karsiTarafDegeri({}) === null);
+  kontrol("S: çözülür → yalnız tedarikçi", JSON.stringify(karsiTarafCoz("S:a1")) === JSON.stringify({ supplierId: "a1", carrierId: null }));
+  kontrol("C: çözülür → yalnız kargo", JSON.stringify(karsiTarafCoz("C:k1")) === JSON.stringify({ supplierId: null, carrierId: "k1" }));
+  kontrol("tanınmayan önek çözülmez (sessizce bir tarafa düşmez)", karsiTarafCoz("X:a1") === null && karsiTarafCoz("a1") === null && karsiTarafCoz("") === null);
+
+  const yorumsuzla = (m: string) => m.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+  const eylem = yorumsuzla(kaynakOku("src/app/tazminat/actions.ts"));
+  const ac = eylem.slice(eylem.indexOf("export async function tazminatAc("), eylem.indexOf("export async function tazminatDurumDegistir("));
+  kontrol("talep açma gövdesi bulundu", ac.length > 500, ac.length);
+  kontrol("formdaki karşı taraf VARLIĞI sorularak kullanılır", /if \(!cozulen \|\| !\(await karsiTarafVarMi\(cozulen\)\)\) return \{ hatalar: \[t\("karsiTarafGecersiz"\)\] \};/.test(ac));
+  kontrol("seçilen karşı taraf YAZILIR (sabit tedarikçi değil)", /supplierId: karsi\.supplierId,\s*carrierId: karsi\.carrierId,/.test(ac));
+  const degis = eylem.slice(eylem.indexOf("export async function tazminatKarsiTarafDegistir("), eylem.indexOf("export async function tazminatNotGuncelle("));
+  kontrol("düzeltme gövdesi bulundu", degis.length > 300, degis.length);
+  kontrol("düzeltme de varlığı sorar", /if \(!yeni \|\| !\(await karsiTarafVarMi\(yeni\)\)\) return/.test(degis));
+  kontrol("düzeltme YALNIZ karşı tarafı yazar (tutar/adet/durum yok)", /tx\.compensation\.update\(\{ where: \{ id \}, data: \{ supplierId: yeni\.supplierId, carrierId: yeni\.carrierId \} \}\)/.test(degis));
+  kontrol("düzeltme eski ve yeni değeri İZE yazar", /action: TAZMINAT_KARSI_TARAF_EYLEMI,[\s\S]{0,160}detail: JSON\.stringify\(\{ eski, yeni: karsiTarafDegeri\(yeni\) \}\)/.test(degis));
+  const form = yorumsuzla(kaynakOku("src/app/tazminat/talep-formu.tsx"));
+  kontrol("formda karşı taraf seçimi var (önerilen varsayılan)", /<Select name="karsiTaraf" defaultValue=\{hasar\.onerilenKarsiTaraf \?\? undefined\}>/.test(form));
+  const sayfa = yorumsuzla(kaynakOku("src/app/tazminat/page.tsx"));
+  kontrol("satırda karşı taraf düzeltilebilir", /<KarsiTarafAlani[\s\S]{0,200}deger=\{karsiTarafDegeri\(k\)\}/.test(sayfa));
+  kontrol("iadenin önerisi son alımın tedarikçisi", sayfa.includes("onerilenKarsiTaraf: karsiTarafDegeri({ supplierId: sonAlim?.purchase.supplierId ?? null }),"));
+  kosanBolumler.push("karsi-taraf");
 }
 
 // ===========================================================================

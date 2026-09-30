@@ -12,6 +12,9 @@ import { prisma } from "@/lib/prisma";
 import {
   kalanTalepEdilebilirAdet,
   karsiTarafGecerliMi,
+  karsiTarafCoz,
+  karsiTarafDegeri,
+  TAZMINAT_KARSI_TARAF_EYLEMI,
   TAHSIL_GUNU_ALANI,
   TAZMINAT_TAHSIL_EDILDI_EYLEMI,
   TAZMINAT_TAHSILI_GERI_ALINDI_EYLEMI,
@@ -61,6 +64,13 @@ function tazele() {
   revalidatePath("/ayarlar/tedarikciler");
   // Tahsilat GERÇEK NET'i değiştirebilir (K209).
   revalidatePath("/rapor");
+}
+
+/** Seçilen karşı taraf gerçekten var mı — formdan gelen kimliğe güvenilmez. */
+async function karsiTarafVarMi(k: { supplierId: string | null; carrierId: string | null }): Promise<boolean> {
+  if (k.supplierId) return (await prisma.supplier.count({ where: { id: k.supplierId } })) === 1;
+  if (k.carrierId) return (await prisma.cargoCarrier.count({ where: { id: k.carrierId } })) === 1;
+  return false;
 }
 
 /** İki kaynağın ortak şekli — çağıran taraf farkı bilmez. */
@@ -193,8 +203,23 @@ export async function tazminatAc(
    */
   const kalem = await hasariCoz(veri.kaynak, veri.kalemId);
   if (!kalem) return { hatalar: [t("kalemBulunamadi")] };
-  if (!kalem.tedarikciId) {
-    return { hatalar: [t("kaynakTedarikcisiz", { kod: kalem.baglam })] };
+
+  /**
+   * KARŞI TARAF FORMDAN (30.09.2026) — seçilmediyse önerilen (son alımın
+   * tedarikçisi). Seçilen değer VERİTABANINDA var mı sorulur; formdan gelen
+   * kimliğe körü körüne güvenilmez.
+   */
+  const secilenHam = String(formData.get("karsiTaraf") ?? "").trim();
+  let karsi: { supplierId: string | null; carrierId: string | null };
+  if (secilenHam !== "") {
+    const cozulen = karsiTarafCoz(secilenHam);
+    if (!cozulen || !(await karsiTarafVarMi(cozulen))) return { hatalar: [t("karsiTarafGecersiz")] };
+    karsi = cozulen;
+  } else {
+    if (!kalem.tedarikciId) {
+      return { hatalar: [t("kaynakTedarikcisiz", { kod: kalem.baglam })] };
+    }
+    karsi = { supplierId: kalem.tedarikciId, carrierId: null };
   }
 
   const mevcutler = await prisma.compensation.findMany({
@@ -233,14 +258,15 @@ export async function tazminatAc(
    * (`purchase.supplierId` nullable) — o zaman talebin kime açılacağı
    * belli değildir ve bunu söylemek gerekir.
    */
-  if (!karsiTarafGecerliMi({ supplierId: kalem.tedarikciId })) {
+  if (!karsiTarafGecerliMi(karsi)) {
     return { hatalar: [t("karsiTarafYokHata")] };
   }
 
   try {
     await prisma.compensation.create({
       data: {
-        supplierId: kalem.tedarikciId,
+        supplierId: karsi.supplierId,
+        carrierId: karsi.carrierId,
         // Talep YA alım kalemine YA iade kalemine bağlanır, ikisine değil.
         purchaseItemId: veri.kaynak === "alim" ? kalem.id : null,
         returnItemId: veri.kaynak === "iade" ? kalem.id : null,
@@ -381,6 +407,49 @@ export async function tazminatTahsilGunuKaydet(
   tazele();
   revalidatePath("/kart-borcu");
   return { basari: t("tahsilGunuKaydedildi") };
+}
+
+/**
+ * ============================================================================
+ *  KARŞI TARAF DÜZELTME (30.09.2026)
+ * ----------------------------------------------------------------------------
+ *  Açılmış talebin karşı tarafı yanlışsa (ütü vakası: HB ödedi, «Amazon»
+ *  yazıldı) satırdan düzeltilir. Tutar, adet ve durum DEĞİŞMEZ — yalnız
+ *  kimden alacaklı olduğumuz. Eski ve yeni değer `TAZMINAT_KARSI_TARAF`
+ *  izine yazılır; kayıt silinmez.
+ * ============================================================================
+ */
+export async function tazminatKarsiTarafDegistir(
+  _oncekiDurum: TazminatDurumu,
+  formData: FormData,
+): Promise<TazminatDurumu> {
+  await yetkiIste("tazminat.yaz");
+  const t = await getTranslations("Tazminat");
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return { hatalar: [t("kimlikBulunamadi")] };
+  const yeni = karsiTarafCoz(String(formData.get("karsiTaraf") ?? ""));
+  if (!yeni || !(await karsiTarafVarMi(yeni))) return { hatalar: [t("karsiTarafGecersiz")] };
+
+  try {
+    const kayit = await prisma.compensation.findUnique({ where: { id }, select: { supplierId: true, carrierId: true } });
+    if (!kayit) return { hatalar: [t("bulunamadi")] };
+    const eski = karsiTarafDegeri(kayit);
+    if (eski === karsiTarafDegeri(yeni)) return { hatalar: [t("karsiTarafAyni")] };
+    await prisma.$transaction(async (tx) => {
+      await tx.compensation.update({ where: { id }, data: { supplierId: yeni.supplierId, carrierId: yeni.carrierId } });
+      await izYaz(
+        { action: TAZMINAT_KARSI_TARAF_EYLEMI, targetType: "Compensation", targetId: id, detail: JSON.stringify({ eski, yeni: karsiTarafDegeri(yeni) }) },
+        tx,
+      );
+    });
+  } catch (e) {
+    console.error("[tazminat] karşı taraf değiştirilemedi:", e);
+    return { hatalar: [t("karsiTarafYazilamadi")] };
+  }
+
+  tazele();
+  return { basari: t("karsiTarafDegisti") };
 }
 
 /**

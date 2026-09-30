@@ -15,6 +15,7 @@ import {
   kalanTalepEdilebilirAdet,
   varsayilanTalepTutari,
   karsiTarafAdi,
+  karsiTarafDegeri,
   TAZMINAT_TAHSILAT_EYLEMLERI,
   tazminatTahsilTarihleri,
 } from "@/lib/tazminat";
@@ -22,7 +23,8 @@ import {
 import { DurumSecici } from "./durum-secici";
 import { NotAlani } from "./not-alani";
 import { TahsilGunuAlani } from "./tahsil-gunu-alani";
-import { TalepFormu, type HasarKalemi } from "./talep-formu";
+import { TalepFormu, type HasarKalemi, type KarsiTarafSecenegi } from "./talep-formu";
+import { KarsiTarafAlani } from "./karsi-taraf-alani";
 import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +45,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
     prisma.compensation.findMany({
       include: {
         supplier: { select: { name: true } },
+        carrier: { select: { name: true } },
         purchaseItem: {
           select: {
             variant: {
@@ -75,7 +78,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
           select: { sku: true, product: { select: { name: true } } },
         },
         purchase: {
-          select: { code: true, supplier: { select: { name: true } } },
+          select: { code: true, supplierId: true, supplier: { select: { name: true } } },
         },
         compensations: { select: { quantity: true } },
       },
@@ -115,12 +118,26 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
           unitCostAmount: true,
           unitCostCurrency: true,
           purchase: {
-            select: { purchasedAt: true, supplier: { select: { name: true } } },
+            select: { purchasedAt: true, supplierId: true, supplier: { select: { name: true } } },
           },
         },
         orderBy: { purchase: { purchasedAt: "desc" } },
       })
     : [];
+
+  /**
+   * KARŞI TARAF SEÇENEKLERİ (30.09.2026) — tedarikçiler (pazaryerleri de
+   * tedarikçi listesinde) ve kargo firmaları. Pasifler de listede: eski bir
+   * talebin karşı tarafı pasif olabilir ve düzeltmede görünmezse kaybolurdu.
+   */
+  const [tedarikciSecenekleri, kargoSecenekleri] = await Promise.all([
+    prisma.supplier.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.cargoCarrier.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  ]);
+  const karsiTarafSecenekleri: KarsiTarafSecenegi[] = [
+    ...tedarikciSecenekleri.map((x) => ({ deger: karsiTarafDegeri({ supplierId: x.id })!, ad: x.name, tur: "tedarikci" as const })),
+    ...kargoSecenekleri.map((x) => ({ deger: karsiTarafDegeri({ carrierId: x.id })!, ad: x.name, tur: "kargo" as const })),
+  ];
 
   const sonAlimHaritasi = new Map<string, (typeof sonAlimlar)[number]>();
   for (const a of sonAlimlar) {
@@ -148,6 +165,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
         kalemId: k.id,
         baglam: k.purchase.code,
         tedarikci: k.purchase.supplier?.name ?? "—",
+        onerilenKarsiTaraf: karsiTarafDegeri({ supplierId: k.purchase.supplierId }),
         urun: k.variant.product.name,
         sku: k.variant.sku,
         hasarliAdet: k.damagedQuantity,
@@ -174,6 +192,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
         kalemId: i.id,
         baglam: i.return.sale.code ?? "—",
         tedarikci: sonAlim?.purchase.supplier?.name ?? "—",
+        onerilenKarsiTaraf: karsiTarafDegeri({ supplierId: sonAlim?.purchase.supplierId ?? null }),
         urun: i.variant.product.name,
         sku: i.variant.sku,
         hasarliAdet: i.damagedQuantity,
@@ -311,7 +330,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
                       {t("kalanAdet")}: <strong>{h.kalanAdet}</strong>
                     </>,
                   ]}
-                  sag={<TalepFormu hasar={h} bugun={bugun} />}
+                  sag={<TalepFormu hasar={h} bugun={bugun} secenekler={karsiTarafSecenekleri} />}
                 />
               ))}
             </SatirListesi>
@@ -355,7 +374,13 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
                   baslik={talepUrunu(k)}
                   baglam={[
                     bicim.tarih(k.occurredAt),
-                    karsiTarafAdi(k) ?? t("karsiTarafYok"),
+                    <KarsiTarafAlani
+                      key="karsi"
+                      kayitId={k.id}
+                      ad={karsiTarafAdi(k) ?? t("karsiTarafYok")}
+                      deger={karsiTarafDegeri(k)}
+                      secenekler={karsiTarafSecenekleri}
+                    />,
                     /* Kaynak neyse oraya götürür: alım kaydına ya da hasarın
                        döndüğü satışa (İlke #16). */
                     k.purchaseItem ? (
