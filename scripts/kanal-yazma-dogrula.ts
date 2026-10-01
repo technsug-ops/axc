@@ -355,6 +355,29 @@ kontrol("TY: üstte status olsa da kalem yoksa başarı DENMEZ", tyBatchCoz({ st
   kontrol("TY: pencere red sebeplerini gösteriyor", tyPencere.includes("sonuc.sebepler.map("));
 }
 
+/*
+ * ═══ STOĞU ÜÇ KANALA TEK DÜĞME (Faz 4 son maddesi, 01.10.2026) ═══
+ * Yeni yazma yolu YOK — üç kanalın kendi eylemleri çağrılır. Ölçülen taahhütler:
+ * yalnız STOK gider (fiyat her kanalda boş) · önizleme gelmeden Gönder pasif ·
+ * HB canlı kilidi kapalıysa HB atlanır · atlanan kanal sebebini yazar ·
+ * sayfada iki yüzeyde de (masaüstü + mobil) düğme var.
+ */
+console.log("\n  ── ÜÇ KANALA STOK (tek düğme)");
+{
+  const uc = yorumsuz(kaynakOku("src/app/kart/[variantId]/uc-kanal-stok.tsx"));
+  kontrol("ÜÇ: üç önizleme birlikte isteniyor", /tyGonderimOnizle\(variantId\),\s*n11GonderimOnizle\(variantId\),\s*hbGonderimOnizle\(variantId\),/.test(uc));
+  kontrol("ÜÇ: TY'ye YALNIZ stok (fiyat boş)", uc.includes("hedef.ty ? tyStokFiyatGonder(variantId, { stokGonder: true, fiyat: null }) : undefined,"));
+  kontrol("ÜÇ: N11'e YALNIZ stok (iki fiyat da boş)", uc.includes("hedef.n11 ? n11StokFiyatGonder(variantId, { stokGonder: true, listeFiyati: null, satisFiyati: null }) : undefined,"));
+  kontrol("ÜÇ: HB'ye YALNIZ stok (fiyat boş)", uc.includes("hedef.hb ? hbStokFiyatGonder(variantId, { stokGonder: true, fiyat: null }) : undefined,"));
+  kontrol("ÜÇ: başka hiçbir gönderim çağrısı yok (3 tane)", (uc.match(/StokFiyatGonder\(variantId/g) ?? []).length === 3);
+  kontrol("ÜÇ: HB canlı kilidi kapalıysa HB hedef DEĞİL", uc.includes("hb: o.hb.tamam && !o.hb.canliKapali,"));
+  kontrol("ÜÇ: önizleme gelmeden ve hedef yokken Gönder pasif", uc.includes("const gonderilebilir = onizleme !== null && hedefSayisi > 0;") && uc.includes("disabled={bekliyor || !gonderilebilir}"));
+  kontrol("ÜÇ: atlanan her kanal sebebini yazıyor (TY · N11 · HB · HB kilit)", (uc.match(/t\("atlandi", \{ kanal: "/g) ?? []).length === 4);
+  kontrol("ÜÇ: TY sonucu sorma döngüsü var", uc.includes("const r = await tyGonderimSonucuSorgula(variantId, id);") && /sorguSn < SORGU_TAVANI_SN;/.test(uc));
+  const sayfa = yorumsuz(kaynakOku("src/app/urunler/[id]/page.tsx"));
+  kontrol("ÜÇ: düğme ürün sayfasının iki yüzeyinde de", (sayfa.match(/<UcKanalStokGonderim variantId=\{varyant\.id\} \/>/g) ?? []).length === 2);
+}
+
 /* ═══ K194-HB — HEPSİBURADA'YA ÖZGÜ KURALLAR (SIT ölçümüne bağlı, 01.10.2026) ═══ */
 async function hbBolumu() {
   console.log("\n  ── HB KURALLARI (istek gitmeden + doğrulama)");

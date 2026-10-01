@@ -45,7 +45,7 @@ import {
  * ============================================================================
  */
 
-const HATA_ANAHTARI: Record<
+export const HATA_ANAHTARI: Record<
   Exclude<TyGonderimSonucu, { tamam: true }>["kod"],
   string
 > = {
@@ -64,7 +64,7 @@ const HATA_ANAHTARI: Record<
 const SORGU_ARALIGI_SN = 5;
 const SORGU_TAVANI_SN = 120;
 
-const ONIZLEME_HATA: Record<
+export const ONIZLEME_HATA: Record<
   Exclude<TyGonderimOnizlemesi, { tamam: true }>["kod"],
   string
 > = {

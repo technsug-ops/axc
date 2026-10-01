@@ -22,6 +22,8 @@ const HUKUM = "src/lib/kanal-gonderim-hb.ts";
 const EYLEM = "src/app/kart/[variantId]/actions.ts";
 const PENCERE = "src/app/kart/[variantId]/hb-gonderim.tsx";
 const TY_COZ = "src/lib/kanal-gonderim-ty.ts";
+const UC = "src/app/kart/[variantId]/uc-kanal-stok.tsx";
+const SAYFA = "src/app/urunler/[id]/page.tsx";
 const TY_PENCERE = "src/app/kart/[variantId]/ty-gonderim.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
@@ -83,6 +85,22 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "TY: SONUC IZI HER SORGUDA", yon: "FAZLADAN", dosya: EYLEM,
     bul: "    if (yazilmis === 0) {", koy: "    if (yazilmis >= 0) {",
     bozdugu: "her sorgu ayni sonucu tekrar ize yazar, sure olcumu kirlenir" },
+  /* ─── Üç kanala stok — tek düğme (01.10.2026) ─── */
+  { ad: "UC: TY'YE FIYAT GIDIYOR", yon: "FAZLADAN", dosya: UC,
+    bul: "tyStokFiyatGonder(variantId, { stokGonder: true, fiyat: null })", koy: "tyStokFiyatGonder(variantId, { stokGonder: true, fiyat: 100 })",
+    bozdugu: "tek dugme TY fiyatini ezer - Halil karari (fiyat kanal basina) cignenir" },
+  { ad: "UC: HB KILIDI YOK SAYILIYOR", yon: "FAZLADAN", dosya: UC,
+    bul: "    hb: o.hb.tamam && !o.hb.canliKapali,", koy: "    hb: o.hb.tamam,",
+    bozdugu: "kilit kapaliyken HB'ye gonderilmeye calisilir" },
+  { ad: "UC: ONIZLEMESIZ GONDER", yon: "FAZLADAN", dosya: UC,
+    bul: "const gonderilebilir = onizleme !== null && hedefSayisi > 0;", koy: "const gonderilebilir = true;",
+    bozdugu: "rakam gorulmeden gonderilir" },
+  { ad: "UC: N11 DUSTU", yon: "KALDIRAN", dosya: UC,
+    bul: "hedef.n11 ? n11StokFiyatGonder(variantId, { stokGonder: true, listeFiyati: null, satisFiyati: null }) : undefined,", koy: "undefined,",
+    bozdugu: "N11 'ilan var' gorunur ama stok hic gitmez" },
+  { ad: "UC: BIR YUZEYDE DUGME YOK", yon: "KALDIRAN", dosya: SAYFA,
+    bul: "\n                      <UcKanalStokGonderim variantId={varyant.id} />", koy: "",
+    bozdugu: "urun sayfasinin iki yuzeyinden birinde dugme gorunmez" },
   { ad: "FIYAT HATASI OKUNMUYOR", yon: "KALDIRAN", dosya: HUKUM,
     bul: "  if (durum && (durum.hatalar.length > 0 || durum.kilitler.length > 0)) return \"RED\";\n", koy: "",
     bozdugu: "reddedilen ya da kilitlenen fiyat basarili gorunur" },

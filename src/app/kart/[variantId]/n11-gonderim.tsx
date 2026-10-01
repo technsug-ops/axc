@@ -51,7 +51,7 @@ import {
  * ============================================================================
  */
 
-const HATA_ANAHTARI: Record<
+export const HATA_ANAHTARI: Record<
   Exclude<N11GonderimSonucu, { tamam: true }>["kod"],
   string
 > = {
@@ -65,7 +65,7 @@ const HATA_ANAHTARI: Record<
   ULASILAMADI: "hataUlasilamadi",
 };
 
-const ONIZLEME_HATA: Record<
+export const ONIZLEME_HATA: Record<
   Exclude<N11GonderimOnizlemesi, { tamam: true }>["kod"],
   string
 > = {

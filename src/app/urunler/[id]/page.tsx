@@ -10,6 +10,7 @@ import { ListeKarti } from "@/components/liste-karti";
 import { TyGonderim } from "../../kart/[variantId]/ty-gonderim";
 import { N11Gonderim } from "../../kart/[variantId]/n11-gonderim";
 import { HbGonderim } from "../../kart/[variantId]/hb-gonderim";
+import { UcKanalStokGonderim } from "../../kart/[variantId]/uc-kanal-stok";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -243,12 +244,14 @@ export default async function UrunDetaySayfasi({
                             09.09.2026. Fiyat kanalın kararıdır (komisyon ve
                             rekabet farklı); tek düğmeyle üç kanala fiyat
                             göndermek o kararı siler. Stoğun tek düğmeden
-                            dağıtılması AYRI bir iş ve ayrı tasarlanacak. */}
+                            dağıtılması `UcKanalStokGonderim` (01.10.2026) —
+                            YALNIZ stok gönderir, fiyata dokunmaz. */}
                         {kanalYazGorunur ? (
                           <>
                             <TyGonderim variantId={varyant.id} />
                             <N11Gonderim variantId={varyant.id} />
                             <HbGonderim variantId={varyant.id} />
+                            <UcKanalStokGonderim variantId={varyant.id} />
                           </>
                         ) : null}
                         <Baglanti href={`/kart/${varyant.id}`}>
@@ -333,6 +336,7 @@ export default async function UrunDetaySayfasi({
                       <TyGonderim variantId={varyant.id} />
                       <N11Gonderim variantId={varyant.id} />
                       <HbGonderim variantId={varyant.id} />
+                      <UcKanalStokGonderim variantId={varyant.id} />
                     </span>
                   ) : undefined
                 }
