@@ -1,4 +1,6 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
+
+import { kaynakOku } from "./kaynak-oku";
 
 import { satisKosulu, teslimParametreleri } from "../src/lib/liste-suzgeci";
 
@@ -150,7 +152,7 @@ kontrol(
  */
 const yazanlar = readdirSync("scripts")
   .filter((a) => /^canli-.*-ice-aktar\.ts$/.test(a))
-  .filter((a) => /\bdeliveredAt:\s*(?!null\b|true\b)[a-zA-Z(]/.test(readFileSync("scripts/" + a, "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "")));
+  .filter((a) => /\bdeliveredAt:\s*(?!null\b|true\b)[a-zA-Z(]/.test(kaynakOku("scripts/" + a).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "")));
 const KOD_DOSYA: Record<string, string> = { TRENDYOL: "ty", HEPSIBURADA: "hb", N11: "n11" };
 kontrol("deliveredAt yazan içe aktarma bulundu (taban DOLU, en az 3)", yazanlar.length >= 3, yazanlar);
 kontrol(
@@ -178,7 +180,7 @@ console.log("\n  ── PANEL KUTUCUĞU ↔ LİSTE (sayı = liste)");
   const ky = satisKosulu(py, an).kosul as Record<string, unknown>;
   kontrol("«yolda» listesinde tarih süzgeci YOK", !("soldAt" in ky) && !("deliveredAt" in ky), Object.keys(ky));
   /* Sayfa saf değil — kullanım satırına bağlı desen (yorumsuz kodda). */
-  const sayfa = readFileSync("src/app/page.tsx", "utf8").replace(/\r\n/g, "\n").replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|\/\/.*$/gm, "");
+  const sayfa = kaynakOku("src/app/page.tsx").replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|\/\/.*$/gm, "");
   kontrol(
     "panel sayıları listenin gövdesinden (satisKosulu + teslimParametreleri) sayılıyor",
     sayfa.includes("prisma.sale.count({ where: satisKosulu(teslimParametreleri(kova, teslimTemel), an).kosul }),") &&
