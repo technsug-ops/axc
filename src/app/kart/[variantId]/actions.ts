@@ -14,6 +14,16 @@ import {
 } from "../../../../scripts/ty/yazici";
 import { kimlikOku as n11KimlikOku } from "../../../../scripts/n11/istemci";
 import { stokFiyatGonder as n11StokFiyatIste } from "../../../../scripts/n11/yazici";
+import { kimlikOku as hbKimlikOku } from "../../../../scripts/hb/istemci";
+import {
+  HB_CANLI_YAZMA_ACIK,
+  kanaldakiIlan as hbKanaldakiIlan,
+  stokFiyatGonder as hbStokFiyatIste,
+  yuklemeDurumu as hbYuklemeDurumu,
+  type KanaldakiIlan as HbKanaldakiIlan,
+  type YuklemeSonucu as HbYuklemeSonucu,
+} from "../../../../scripts/hb/yazici";
+import { parcaHukmu, type ParcaHukmu } from "@/lib/kanal-gonderim-hb";
 
 /**
  * ============================================================================
@@ -439,4 +449,205 @@ export async function n11StokFiyatGonder(
     taskDurumu: sonuc.durum,
     sebepler: sonuc.sebepler,
   };
+}
+
+/**
+ * ============================================================================
+ *  K194-HB — HEPSİBURADA'YA STOK/FİYAT GÖNDERİMİ (ürün kartından, tek varyant)
+ * ----------------------------------------------------------------------------
+ *  TY (K169) ve N11 (K194) ile AYNI üç kural: rakam görülmeden gönderilmez ·
+ *  sunucu ekrana güvenmez (stok burada yeniden çözülür) · izsiz gönderim yok.
+ *
+ *  HB'ye özgü (SIT'te ölçüldü 01.10.2026, `scripts/hb/yazici.ts`):
+ *  · stok ve fiyat AYRI yüklemeler — sonuç da parça parça döner ve İZ de
+ *    parça parça yazılır; biri reddedilip öteki gitmiş olabilir;
+ *  · stok yüklemesinin durumu başarıyı KANITLAMAZ → ilan geri okunur;
+ *  · kanal kodu `ChannelSku.channelSku` = HB SKU'su (HBCV…/HBV…) —
+ *    ölçüldü: 1.115 aktif HB ilanında bu alan HB SKU'sunu tutuyor.
+ *  · canlı mağaza `HB_CANLI_YAZMA_ACIK` kilidiyle kapalı başlar; önizleme
+ *    bunu SÖYLER, gönder düğmesi kapalı kalır.
+ * ============================================================================
+ */
+
+export type HbGonderimOnizlemesi =
+  | {
+      tamam: true;
+      hbSku: string;
+      selioraStok: number;
+      kanalAdet: number | null;
+      listelemeDurumu: string;
+      /** Hangi mağazaya gideceği — TEST (deneme) ya da CANLI. */
+      ortam: string;
+      /** Canlı mağaza kilidi kapalıysa gönderim YAPILAMAZ ve ekran bunu söyler. */
+      canliKapali: boolean;
+    }
+  | { tamam: false; kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "VARYANT_YOK" | "ANAHTAR_YOK" };
+
+type HbBaglam =
+  | { tamam: false; kod: "HESAP_YOK" | "VARYANT_YOK" | "KANAL_SKU_YOK" }
+  | { tamam: true; kanalSku: { channelSku: string; kanalAdet: number | null; listelemeDurumu: string } };
+
+async function hbBaglami(variantId: string): Promise<HbBaglam> {
+  const hesap = await prisma.channelAccount.findFirst({
+    where: { channel: { name: "Hepsiburada" }, satisIcin: true, isActive: true },
+    select: { id: true },
+  });
+  if (!hesap) return { tamam: false, kod: "HESAP_YOK" };
+  const varyant = await prisma.productVariant.findUnique({ where: { id: variantId }, select: { id: true } });
+  if (!varyant) return { tamam: false, kod: "VARYANT_YOK" };
+  const kanalSku = await prisma.channelSku.findFirst({
+    where: { variantId, channelAccountId: hesap.id, isActive: true },
+    select: { channelSku: true, kanalAdet: true, listelemeDurumu: true },
+  });
+  if (!kanalSku) return { tamam: false, kod: "KANAL_SKU_YOK" };
+  return { tamam: true, kanalSku };
+}
+
+export async function hbGonderimOnizle(variantId: string): Promise<HbGonderimOnizlemesi> {
+  await yetkiIste("kanal.yaz");
+  const b = await hbBaglami(variantId);
+  if (!b.tamam) return { tamam: false, kod: b.kod };
+  const k = hbKimlikOku();
+  if (!k) return { tamam: false, kod: "ANAHTAR_YOK" };
+  const ortam = k.ortam.toUpperCase();
+  return {
+    tamam: true,
+    hbSku: b.kanalSku.channelSku,
+    selioraStok: await varyantStogu(variantId),
+    kanalAdet: b.kanalSku.kanalAdet,
+    listelemeDurumu: b.kanalSku.listelemeDurumu,
+    ortam,
+    canliKapali: ortam !== "TEST" && !HB_CANLI_YAZMA_ACIK,
+  };
+}
+
+/** Bir parçanın (stok ya da fiyat) sonucu. */
+export type HbParcaSonucu = {
+  gonderilen: number;
+  hukum: ParcaHukmu;
+  /** HB'nin satır hataları (kodlar — ekranda sözlükle çevrilir). */
+  hatalar: string[];
+  kilitler: { tip: string; min: number | null; max: number | null }[];
+  /** İlanda geri okunan rakam (stok ya da fiyat) — doğrulama. `null` = okunamadı. */
+  kanaldaki?: number | null;
+  /** Kabul edilmediyse sebep (HTTP durumu / kanalın metni). */
+  ayrinti?: string;
+};
+
+export type HbGonderimSonucu =
+  | { tamam: true; hbSku: string; ortam: string; stok: HbParcaSonucu | null; fiyat: HbParcaSonucu | null }
+  | {
+      tamam: false;
+      kod:
+        | "KANAL_SKU_YOK"
+        | "HESAP_YOK"
+        | "VARYANT_YOK"
+        | "GONDERILECEK_YOK"
+        | "FIYAT_GECERSIZ"
+        | "KURAL_IHLALI"
+        | "ANAHTAR_YOK"
+        | "CANLI_KAPALI";
+      ayrinti?: string;
+    };
+
+export async function hbStokFiyatGonder(
+  variantId: string,
+  /** ⚠ İSTEMCİDEN YALNIZ NİYET GELİR — stok sunucuda yeniden çözülür. */
+  niyet: { stokGonder: boolean; fiyat: number | null },
+): Promise<HbGonderimSonucu> {
+  await yetkiIste("kanal.yaz");
+  const b = await hbBaglami(variantId);
+  if (!b.tamam) return { tamam: false, kod: b.kod };
+  if (niyet.fiyat !== null && !(Number.isFinite(niyet.fiyat) && niyet.fiyat > 0)) {
+    return { tamam: false, kod: "FIYAT_GECERSIZ" };
+  }
+  if (!niyet.stokGonder && niyet.fiyat === null) return { tamam: false, kod: "GONDERILECEK_YOK" };
+
+  const k = hbKimlikOku();
+  if (!k) return { tamam: false, kod: "ANAHTAR_YOK" };
+
+  /** Stok SUNUCUDA yeniden çözülür — istemciden sayı alınmaz. */
+  const stok = niyet.stokGonder ? await varyantStogu(variantId) : null;
+  const hbSku = b.kanalSku.channelSku;
+  const kalem = {
+    hepsiburadaSku: hbSku,
+    ...(stok === null ? {} : { availableStock: stok }),
+    ...(niyet.fiyat === null ? {} : { price: niyet.fiyat }),
+  };
+
+  const sonuc = await hbStokFiyatIste(k, kalem);
+  /** Kural ihlali ve canlı kilidi AĞA ÇIKMADAN döner — kanala bir şey gitmediği için iz YAZILMAZ. */
+  if (sonuc.tur === "KURAL_IHLALI") return { tamam: false, kod: "KURAL_IHLALI", ayrinti: sonuc.mesaj };
+  if (sonuc.tur === "CANLI_KAPALI") return { tamam: false, kod: "CANLI_KAPALI" };
+
+  /**
+   * ⛔ DOĞRULAMA İLAN GERİ OKUNARAK — HB'nin «Ready»/«Done» durumu başarıyı
+   * kanıtlamaz (ölçüldü 01.10.2026: olmayan SKU'ya stok «Ready»; fiyat «Done»
+   * dendiği anda ilan eski fiyattaydı). HB yüklemeyi ~5–6 sn sonra ilana
+   * yansıtıyor; ilan 12 sn'ye kadar (2 sn + 4 × 2,5 sn) yeniden okunur ve
+   * gönderilen rakamlar görülünce durulur. Görülmezse ekran «henüz
+   * görünmüyor» der — «tamam» demez.
+   */
+  const parcalar: { tur: "STOK" | "FIYAT"; gonderilen: number; y: HbYuklemeSonucu }[] = [];
+  if (stok !== null && sonuc.stok) parcalar.push({ tur: "STOK", gonderilen: stok, y: sonuc.stok });
+  if (niyet.fiyat !== null && sonuc.fiyat) parcalar.push({ tur: "FIYAT", gonderilen: niyet.fiyat, y: sonuc.fiyat });
+  const kabulEdilenler = parcalar.filter((p) => p.y.tur === "KABUL");
+
+  let ilan: HbKanaldakiIlan | null = null;
+  const kanaldaki = (tur: "STOK" | "FIYAT") => (tur === "STOK" ? ilan?.stok : ilan?.fiyat) ?? null;
+  const hepsiGorundu = () =>
+    kabulEdilenler.every((p) => parcaHukmu(null, p.gonderilen, kanaldaki(p.tur)) === "DOGRULANDI");
+  for (let deneme = 0; kabulEdilenler.length > 0 && deneme < 5; deneme++) {
+    await new Promise((coz) => setTimeout(coz, deneme === 0 ? 2000 : 2500));
+    ilan = await hbKanaldakiIlan(k, hbSku);
+    if (hepsiGorundu()) break;
+  }
+
+  const sonuclar: Partial<Record<"STOK" | "FIYAT", HbParcaSonucu>> = {};
+  for (const p of parcalar) {
+    const y = p.y;
+    if (y.tur !== "KABUL") {
+      const ayrinti = y.tur === "ULASILAMADI" ? y.sebep : y.tur === "YETKISIZ" ? "HTTP " + y.durum : "HTTP " + y.durum + " · " + y.mesaj;
+      /** ⚠ RED DE İZ BIRAKIR — kanala gitti ve reddedildi; bu bir olaydır. */
+      await izYaz({
+        action: "KANAL_GONDERIMI",
+        targetType: "ProductVariant",
+        targetId: variantId,
+        detail: JSON.stringify({ kanal: "Hepsiburada", ortam: k.ortam, hbSku, tur: p.tur, gonderilen: p.gonderilen, sonuc: "RED", durum: y.tur, mesaj: ayrinti }),
+      });
+      sonuclar[p.tur] = { gonderilen: p.gonderilen, hukum: "RED", hatalar: [], kilitler: [], ayrinti: ayrinti.slice(0, 160) };
+      continue;
+    }
+    const durum = await hbYuklemeDurumu(k, p.tur, y.id);
+    const hukum = parcaHukmu(durum, p.gonderilen, kanaldaki(p.tur));
+    await izYaz({
+      action: "KANAL_GONDERIMI",
+      targetType: "ProductVariant",
+      targetId: variantId,
+      detail: JSON.stringify({
+        kanal: "Hepsiburada",
+        ortam: k.ortam,
+        hbSku,
+        tur: p.tur,
+        gonderilen: p.gonderilen,
+        sonuc: "KABUL",
+        yuklemeId: y.id,
+        hbDurumu: durum?.durum ?? "SORGULANAMADI",
+        hatalar: durum?.hatalar ?? [],
+        kilitler: durum?.kilitler ?? [],
+        kanaldaki: kanaldaki(p.tur),
+        hukum,
+      }),
+    });
+    sonuclar[p.tur] = {
+      gonderilen: p.gonderilen,
+      hukum,
+      hatalar: durum?.hatalar ?? [],
+      kilitler: durum?.kilitler ?? [],
+      kanaldaki: kanaldaki(p.tur),
+    };
+  }
+
+  revalidatePath("/kart/" + variantId);
+  return { tamam: true, hbSku, ortam: k.ortam.toUpperCase(), stok: sonuclar.STOK ?? null, fiyat: sonuclar.FIYAT ?? null };
 }

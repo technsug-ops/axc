@@ -352,6 +352,23 @@ export const UCLAR = {
     }
     return `${taban("finance", k.ortam)}/transactions/merchantid/${k.merchantId}?${q.toString()}`;
   },
+
+  /**
+   * K194-HB — TEK İLAN, HB SKU'SUYLA (salt okuma).
+   * ⚠ Süzgeç adı ÖLÇÜLDÜ (01.10.2026, SIT): `hbSkuList` 1 kayıt döndürüyor;
+   * `hepsiburadaSku` · `hepsiburadaSkuList` · `skuList` SESSİZCE YOK SAYILIP
+   * 32 kaydın hepsini döndürüyor. Okuyan taraf gelen ilanın SKU'sunu AYRICA
+   * karşılaştırır — süzgecin çalıştığı varsayılmaz.
+   */
+  tekListing: (k: Kimlik, hbSku: string) =>
+    `${taban("listing", k.ortam)}/listings/merchantid/${k.merchantId}?offset=0&limit=1&hbSkuList=${encodeURIComponent(hbSku)}`,
+
+  /**
+   * K194-HB — stok/fiyat yüklemesinin DURUMU (salt okuma; yükleme `hb/yazici.ts`te).
+   * Durum ÖLÇÜLDÜ: önce «Ready» (kuyrukta), bitince «Done» — doküman yalnız Done/Failed diyor.
+   */
+  yuklemeDurumu: (k: Kimlik, uc: "stock-uploads" | "price-uploads", id: string) =>
+    `${taban("listing", k.ortam)}/listings/merchantid/${k.merchantId}/${uc}/id/${encodeURIComponent(id)}`,
 };
 
 /**

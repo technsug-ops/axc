@@ -9,6 +9,7 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
 import { TyGonderim } from "../../kart/[variantId]/ty-gonderim";
 import { N11Gonderim } from "../../kart/[variantId]/n11-gonderim";
+import { HbGonderim } from "../../kart/[variantId]/hb-gonderim";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -247,6 +248,7 @@ export default async function UrunDetaySayfasi({
                           <>
                             <TyGonderim variantId={varyant.id} />
                             <N11Gonderim variantId={varyant.id} />
+                            <HbGonderim variantId={varyant.id} />
                           </>
                         ) : null}
                         <Baglanti href={`/kart/${varyant.id}`}>
@@ -330,6 +332,7 @@ export default async function UrunDetaySayfasi({
                     <span className="inline-flex items-center gap-2">
                       <TyGonderim variantId={varyant.id} />
                       <N11Gonderim variantId={varyant.id} />
+                      <HbGonderim variantId={varyant.id} />
                     </span>
                   ) : undefined
                 }

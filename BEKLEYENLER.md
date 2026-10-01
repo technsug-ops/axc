@@ -5142,7 +5142,19 @@ edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
 ✅ **ÇEKİRDEK SORU 1 KAPANDI:** stok gönderimi fiyatSIZ kabul ediliyor ve fiyatı EZMİYOR — bayat fiyat riski YOK. Stok ile fiyat bağımsız (TY/N11 düzeniyle aynı: stok tek düğme, fiyat kanal başına).
 ✅ **SORU 2 GEREKSİZ ÇIKTI:** ne stok ne fiyat gönderimi CargoCompany/ShippingProfileName istiyor.
 ⚠ **DOKÜMAN İKİ YERDE YANLIŞ (ölçüldü):** ① gövde JSON olmalı — XML örneği 400 alıyor; ② bitiş durumu stokta «**Ready**», fiyatta «**Done**» (doküman yalnız Done/Failed diyor). Yazma kodu bu ÖLÇÜME göre kurulacak.
-**SIRADAKİ:** yazma kodu (önizle → onayla, TY K169 / N11 K194 deseni) — kullanıcı onayıyla açılacak.
+⚠ **DÜZELTME (aynı gün, uçtan uca koşuda):** «Ready» bitiş DEĞİL, kuyruk — stok yüklemesi de ~10 sn sonra «Done» oldu. Ayrıca «Done» dendiği anda ilan ESKİ fiyattaydı (HB ~5–6 sn sonra yansıtıyor) ve arka arkaya iki fiyat gönderilince ilan bir süre ilkinde kaldı.
+
+─── ② **01.10.2026 — YAZMA KODU YAZILDI (kullanıcı onayı «BAŞLA») · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR · CANLI KİLİTLİ]**
+⚠ **Düzeltme:** «stok tek düğmeyle üç kanala» ekranı KODDA YOK (karar yazılı, iş yapılmamış); TY/N11 ürün sayfasında kanal başına PENCERE. HB üçüncü pencere oldu.
+· `scripts/hb/yazici.ts` — tek POST, adres kapalı kümeden (`stock-uploads` · `price-uploads`); `kalemGecerliMi` ağa çıkmadan; **`HB_CANLI_YAZMA_ACIK = false`** → canlı ortamda ağa HİÇ çıkılmaz (`CANLI_KAPALI`).
+· Doğrulama ilan GERİ OKUNARAK (`kanaldakiIlan`, `hbSkuList` süzgeci + SKU ayrıca karşılaştırılır), 12 sn'ye kadar; hüküm `parcaHukmu`: hata/kilit → RED · ilanda görüldü → DOĞRULANDI · Done ama görünmüyor → «kanalda görünmüyor» · aksi → işleniyor. «Tamam» yalnız ilanda görülünce.
+· `kart/actions.ts` → `hbGonderimOnizle` / `hbStokFiyatGonder` (stok sunucuda yeniden çözülür; parça başına `KANAL_GONDERIMI` izi KABUL/RED); `hb-gonderim.tsx` → hangi mağaza (deneme/canlı) yazar, canlı kilitliyken Gönder kapalı ve nedeni yazar; stok ve fiyat sonucu AYRI satır; HB hata kodları Türkçe.
+· Ürün sayfasında TY · N11'in yanında «HB'ye Gönder» (masaüstü + telefon). İzin `kanal.yaz`.
+· **SIT uçtan uca (gerçek yazıcı kodu):** stok 11/10 ve fiyat 101/100 — dördü de DOĞRULANDI (~10 sn), ilan ₺100/10'a döndü.
+· Bekçiler: `api:dogrula` (beyan) · `kanal-yazma:dogrula` 77 (HB'ye 24 kontrol; canlı kilidinin ağa çıkmadığı fetch casusuyla değerle sınanıyor) · `hb-yazma-mutasyon` **10/10**.
+⚠ **BİLİNEN SINIR:** fiyat bandı (`OutOfPriceRange`) ÖNCEDEN hesaplanamıyor — HB'nin baktığı «yayındaki fiyat ortalaması» bize gelmiyor; ekran bandı NOT olarak yazar, red gelirse sebebi Türkçe gösterir. (Önceki plandaki «göndermeden önce hesaplayıp uyarır» sözü bu yüzden TUTULAMADI — beyan edildi.)
+**Halil testi (canlı, deploy sonrası):** Ürünler → herhangi bir HB ilanı olan ürün → Varyant satırında «HB'ye Gönder» → pencere: «Canlı Hepsiburada mağazası» + «Canlı … gönderim henüz AÇILMADI» uyarısı + HB SKU · Selliora stoğu · HB'nin bildirdiği adet → **Gönder düğmesi KAPALI**. Telefonda da aynı.
+**CANLI AÇILIŞ (ayrı onay):** `HB_CANLI_YAZMA_ACIK = true` (tek satır) → tek ürünle canlı deneme → sonuç panoya.
 
 
 ⛔ **N11 (K194) VE TY (K169) YAZMA TARAFI KAPANDI (Halil testi geçti,

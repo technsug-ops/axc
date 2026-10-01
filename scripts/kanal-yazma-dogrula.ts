@@ -1,6 +1,14 @@
 import { kaynakOku } from "./kaynak-oku";
 
 import { kalemGecerliMi } from "./n11/yazici";
+import {
+  HB_CANLI_YAZMA_ACIK,
+  kalemGecerliMi as hbKalemGecerliMi,
+  kanaldakiIlanCoz as hbKanaldakiIlanCoz,
+  stokFiyatGonder as hbStokFiyatGonder,
+  yuklemeDurumuCoz as hbYuklemeDurumuCoz,
+} from "./hb/yazici";
+import { parcaHukmu } from "../src/lib/kanal-gonderim-hb";
 
 /**
  * ============================================================================
@@ -296,9 +304,74 @@ kontrol(
   kod({ ...SK }) === "GONDERILECEK_YOK",
 );
 
-console.log(
-  "\n" +
-    (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") +
-    ` (${gecen}/${gecen + hata})\n`,
-);
-process.exit(hata === 0 ? 0 : 1);
+/* ═══ K194-HB — HEPSİBURADA'YA ÖZGÜ KURALLAR (SIT ölçümüne bağlı, 01.10.2026) ═══ */
+async function hbBolumu() {
+  console.log("\n  ── HB KURALLARI (istek gitmeden + doğrulama)");
+  const SKU = { hepsiburadaSku: "HBV000010LWPR" };
+  const hbKod = (k: Parameters<typeof hbKalemGecerliMi>[0]) => {
+    const r = hbKalemGecerliMi(k);
+    return r.gecerli ? "GECERLI" : r.kod;
+  };
+  kontrol("HB: stok tek başına GEÇERLİ (fiyatsız stok kabul ediliyor — ölçüldü)", hbKod({ ...SKU, availableStock: 5 }) === "GECERLI");
+  kontrol("HB: fiyat tek başına GEÇERLİ (stoksuz fiyat — ölçüldü)", hbKod({ ...SKU, price: 101 }) === "GECERLI");
+  kontrol("HB: ne stok ne fiyat → GONDERILECEK_YOK", hbKod({ ...SKU }) === "GONDERILECEK_YOK");
+  kontrol("HB: eksi stok reddedilir", hbKod({ ...SKU, availableStock: -1 }) === "STOK_HATALI");
+  kontrol("HB: üç haneli küsurat reddedilir", hbKod({ ...SKU, price: 10.123 }) === "FIYAT_HATALI");
+  kontrol("HB: boş SKU reddedilir", hbKod({ hepsiburadaSku: " ", availableStock: 1 }) === "SKU_YOK");
+
+  /* ⛔ CANLI KİLİDİ AĞA ÇIKMADAN DURDURUR — değerle: fetch casusu hiç çağrılmamalı. */
+  const asilFetch = globalThis.fetch;
+  let cagri = 0;
+  globalThis.fetch = (async () => {
+    cagri++;
+    throw new Error("bekçi: ağa çıkılmamalıydı");
+  }) as typeof fetch;
+  try {
+    const canli = await hbStokFiyatGonder({ merchantId: "m", key: "k", developer: "d", ortam: "CANLI" }, { ...SKU, availableStock: 3 });
+    if (!HB_CANLI_YAZMA_ACIK) {
+      kontrol("HB: canlı kilit kapalıyken CANLI_KAPALI döner", canli.tur === "CANLI_KAPALI", canli);
+      kontrol("HB:   ...ve AĞA HİÇ ÇIKILMAZ", cagri === 0, cagri);
+    }
+    const kural = await hbStokFiyatGonder({ merchantId: "m", key: "k", developer: "d", ortam: "TEST" }, { ...SKU });
+    kontrol("HB: kural ihlali de ağa çıkmadan döner", kural.tur === "KURAL_IHLALI" && cagri === 0, kural);
+  } finally {
+    globalThis.fetch = asilFetch;
+  }
+
+  /* ⛔ DOĞRULAMA İLAN GERİ OKUNARAK — HB tanımadığı süzgeci yok sayıp TÜM ilanları döndürüyor (ölçüldü). */
+  const tumIlanlar = { listings: [{ hepsiburadaSku: "HBV0000AAA", availableStock: 99, price: 5 }, { hepsiburadaSku: "HBV000010LWPR", availableStock: 11, price: 100 }] };
+  const ilan = hbKanaldakiIlanCoz(tumIlanlar, "HBV000010LWPR");
+  kontrol("HB: süzgeç yok sayılıp hepsi gelse de DOĞRU ilan okunur", ilan?.stok === 11 && ilan?.fiyat === 100, ilan);
+  kontrol("HB:   ...ilan yoksa null (ilk ilan sanılmaz)", hbKanaldakiIlanCoz(tumIlanlar, "HBV0000YOK") === null);
+  const temiz = (durum: string) => ({ durum, hatalar: [] as string[], kilitler: [] as unknown[] });
+  kontrol("HB: ilanda gönderilen rakam görülürse DOĞRULANDI", parcaHukmu(temiz("Ready"), 11, 11) === "DOGRULANDI");
+  kontrol("HB: ⛔ ÖLÇÜLEN VAKA — «Done» ama ilan eski fiyatta → «kanalda görünmüyor» (tamam DENMEZ)", parcaHukmu(temiz("Done"), 100, 101) === "KANALDA_GORUNMUYOR");
+  kontrol("HB: ⛔ ÖLÇÜLEN VAKA — olmayan SKU'ya stok «Ready», ilan yok → tamam DENMEZ (hâlâ işleniyor)", parcaHukmu(temiz("Ready"), 1, null) === "ISLENIYOR");
+  kontrol("HB: «Done» ama rakam yok → «kanalda görünmüyor»", parcaHukmu(temiz("Done"), 1, null) === "KANALDA_GORUNMUYOR");
+  kontrol("HB: durum okunamadı + rakam görünmüyor → İŞLENİYOR", parcaHukmu(null, 11, 10) === "ISLENIYOR");
+  kontrol("HB: kuruş kuyruğu eşitliği bozmaz (100,1 = 100,10)", parcaHukmu(temiz("Done"), 100.1, 100.10000000001) === "DOGRULANDI");
+  const olmayan = hbYuklemeDurumuCoz({ status: "Done", errors: [{ elementNo: 1, hepsiburadaSku: "X", errors: ["ListingNotFound"] }], priceValidations: null });
+  kontrol("HB: fiyat hatası (ListingNotFound) okunuyor", olmayan.hatalar.includes("ListingNotFound"), olmayan);
+  kontrol("HB:   ...ve rakam görünse bile hüküm RED", parcaHukmu(olmayan, 50, 50) === "RED");
+  const kilit = hbYuklemeDurumuCoz({ status: "Done", errors: null, priceValidations: [{ type: "MinLock", minPrice: 90, maxPrice: 120 }] });
+  kontrol("HB: fiyat kilidi (MinLock) okunuyor ve RED", kilit.kilitler[0]?.tip === "MinLock" && kilit.kilitler[0]?.min === 90 && parcaHukmu(kilit, 80, 80) === "RED", kilit);
+
+  /* Kaynak — eylem ve pencere sözleşmesi. */
+  const yazici = yorumsuz(kaynakOku("scripts/hb/yazici.ts"));
+  kontrol("HB: uç adresi kapalı kümeden (iki değer)", /const YUKLEME_UCLARI = \{\s*STOK: "stock-uploads",\s*FIYAT: "price-uploads",\s*\} as const;/.test(yazici) && yazici.includes("/${YUKLEME_UCLARI[tur]}`"));
+  const eylem = yorumsuz(kaynakOku("src/app/kart/[variantId]/actions.ts"));
+  kontrol("HB: hüküm GERİ OKUNAN ilandan veriliyor (stok ve fiyat)", eylem.includes("const hukum = parcaHukmu(durum, p.gonderilen, kanaldaki(p.tur));") && eylem.includes("ilan = await hbKanaldakiIlan(k, hbSku);"));
+  kontrol("HB: geri okuma 12 sn'ye kadar tekrarlanıyor (ölçülen yansıma ~5–6 sn)", /for \(let deneme = 0; kabulEdilenler\.length > 0 && deneme < 5; deneme\+\+\)/.test(eylem));
+  const pencere = yorumsuz(kaynakOku("src/app/kart/[variantId]/hb-gonderim.tsx"));
+  kontrol("HB: canlı kilit kapalıyken GÖNDER pasif", /const gonderilebilir =\s*onizleme\?\.tamam === true && !onizleme\.canliKapali/.test(pencere));
+  kontrol("HB: pencere hangi mağazaya gideceğini yazıyor", pencere.includes('t("ortamTest")') && pencere.includes('t("ortamCanli")'));
+}
+
+hbBolumu().then(() => {
+  console.log(
+    "\n" +
+      (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") +
+      ` (${gecen}/${gecen + hata})\n`,
+  );
+  process.exit(hata === 0 ? 0 : 1);
+});

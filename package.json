@@ -428,6 +428,7 @@
     "canli:hb-listeleme": "tsx scripts/canli-hb-listeleme-yaz.ts",
     "canli:hb-ice-aktar": "tsx scripts/canli-hb-ice-aktar.ts",
     "kanal-yazma:dogrula": "tsx scripts/kanal-yazma-dogrula.ts",
+    "hb-yazma-mutasyon:kontrol": "tsx scripts/hb-yazma-mutasyon-kontrol.ts",
     "canli:n11-saglik": "tsx scripts/canli-n11-saglik.ts",
     "canli:n11-ice-aktar": "tsx scripts/canli-n11-ice-aktar.ts",
     "alim-promosyon:dogrula": "tsx scripts/alim-promosyon-dogrula.ts",

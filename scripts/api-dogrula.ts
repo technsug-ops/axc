@@ -186,6 +186,14 @@ const KANALA_YAZMASI_BEYANLI = new Map<string, { gerekce: string; bekcisi: strin
       bekcisi: "kanal-yazma:dogrula",
     },
   ],
+  [
+    "scripts/hb/yazici.ts",
+    {
+      gerekce:
+        "K194-HB: HB stok/fiyat gönderimi (kullanıcı onayı 01.10.2026 «BAŞLA»). İki uç (stock-uploads · price-uploads) TEK fetch noktasından, adres kapalı kümeden; her kural SIT'te ölçüldü. Canlı mağaza `HB_CANLI_YAZMA_ACIK` kilidiyle kapalı başlar; önizlemesiz/izsiz gönderim yok.",
+      bekcisi: "kanal-yazma:dogrula",
+    },
+  ],
 ]);
 
 for (const yol of apiDosyalari) {
