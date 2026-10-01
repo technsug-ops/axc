@@ -4619,6 +4619,7 @@ kapılandı. _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez".)
 ---
 
 ─── ⑤ **30.09.2026 — TEST LİSTESİ DERLENİRKEN BULUNDU:** üç metin (`Tarife.hataSutunEksik` · `Tarife.hataTeklifDosyasi` · `Komisyon.kampanyaNeOkunur`) K227'de adı «Haftalık komisyon oranı (ürün dökümü)» olan kutuyu hâlâ «Güncel komisyon oranı listesi» diye anıyordu — kullanıcı var olmayan bir kutuyu arardı; el kitabında da iki yerde. Düzeltme: metinler adı `{kutu}` parametresiyle `KomisyonKapisi.turGuncelOran`dan alır; el kitabı güncellendi. Bekçi `komisyon:dogrula` «kutu adı» bölümü (216) — elle ad / eksik parametre kırmızı, zararsız yeşil görüldü.
+─── ⑥ **01.10.2026 — HALİL TESTİ (N11 adımı) GEÇTİ:** N11 kampanya kutusuna `4534966-01-10-2026-09-45-29.xls` yüklendi — `.xls` okundu, platform «N11», `KOMISYON_YUKLEME` izi: okunan 45 · güncellenen 9 · aynı 36 · yaratılan 0. (Board'daki 46/46 geçen haftanın dosyasıydı.) HB «Avantajlı Teklifler» 30.09'da tarife kutusuna yüklendi (146 kalem, pencere 30.09–06.10). Kalan: N11 tarife kutusu (K227) ve «Yüklü pencereler» anlık tazelenmesi (K230).
 
 ## 🔶 K225 — LİSTELEME SENKRONU ZAMANLANDI · 21.09.2026 · [KOŞTU — İLK OTOMATİK KOŞUM BEKLENİYOR]
 
