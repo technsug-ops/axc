@@ -337,7 +337,21 @@ kontrol("TY: üstte status olsa da kalem yoksa başarı DENMEZ", tyBatchCoz({ st
   kontrol("TY: üst seviye `status` okuması geri gelmedi", !/g\.status/.test(tyGovde));
   kontrol("TY: sebepler ize de yazılıyor", tyGovde.includes("sebepler: sonucOkuma.sebepler,"));
   const tyPencere = yorumsuz(kaynakOku("src/app/kart/[variantId]/ty-gonderim.tsx"));
-  kontrol("TY: pencere sonucu duruma göre yazıyor", tyPencere.includes("t(`tySonuc_${sonuc.batchDurumu}`"));
+  kontrol("TY: pencere kesin sonucu kendi anahtarıyla yazıyor", tyPencere.includes('sonuc.batchDurumu === "BASARILI" || sonuc.batchDurumu === "BASARISIZ"'));
+  /* ⛔ ÖLÇÜLDÜ 01.10: TY 12 sn'de bitirmiyor — pencere sormaya devam etmeli. */
+  kontrol("TY: pencere sonucu 2 dk'ya kadar soruyor", tyPencere.includes("const SORGU_TAVANI_SN = 120;") && tyPencere.includes("const r = await tyGonderimSonucuSorgula(variantId, id);"));
+  kontrol("TY: sorma koşulu canlı (işleniyor/sorgulanamadı iken, tavana kadar)", /const sonucBekleniyor =\s*acik &&\s*sonuc\?\.tamam === true &&\s*\(sonuc\.batchDurumu === "ISLEMDE" \|\| sonuc\.batchDurumu === "SORGULANAMADI"\) &&\s*sorguSn < SORGU_TAVANI_SN;/.test(tyPencere));
+  kontrol("TY: sorma zamanlayıcısı koşula bağlı", tyPencere.includes("if (!sonucBekleniyor || sonuc?.tamam !== true) return;"));
+  kontrol("TY: işlenmeyen sonuç BEKLENIYOR/ZAMAN_ASIMI'na gider (başarı denmez)", tyPencere.includes('? "BEKLENIYOR"') && tyPencere.includes(': "ZAMAN_ASIMI"'));
+  const sBasi = e.indexOf("export async function tyGonderimSonucuSorgula");
+  const sSonu = e.indexOf("export async function", sBasi + 10);
+  const sorgu = sBasi >= 0 ? e.slice(sBasi, sSonu >= 0 ? sSonu : undefined) : "";
+  kontrol("TY: sonuç sorgu eylemi VAR", sorgu.length > 0);
+  kontrol("TY: sorgu izin kapısından geçiyor", sorgu.includes('await yetkiIste("kanal.yaz");'));
+  kontrol("TY: sorgu SALT OKUMA — kanala gönderim çağrısı YOK", sorgu.length > 0 && !/stokFiyatGonder|StokFiyatIste/.test(sorgu));
+  kontrol("TY: sorgu yalnız bu varyantın kendi gönderim kimliğini soruyor", sorgu.includes('if (!gonderim) return { tamam: false, kod: "GONDERIM_YOK" };'));
+  kontrol("TY: sorgu sonucu tyBatchCoz ile okuyor", sorgu.includes('batch.tur === "VERI" ? tyBatchCoz(batch.govde) :'));
+  kontrol("TY: kesin sonuç ize BİR KEZ yazılıyor", sorgu.includes("if (yazilmis === 0) {") && sorgu.includes('action: "KANAL_GONDERIMI_SONUCU",'));
   kontrol("TY: pencere red sebeplerini gösteriyor", tyPencere.includes("sonuc.sebepler.map("));
 }
 

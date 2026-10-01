@@ -666,3 +666,65 @@ export async function hbStokFiyatGonder(
   revalidatePath("/kart/" + variantId);
   return { tamam: true, hbSku, ortam: k.ortam.toUpperCase(), stok: sonuclar.STOK ?? null, fiyat: sonuclar.FIYAT ?? null };
 }
+
+/**
+ * ============================================================================
+ *  K169 — TY SONUCUNU PENCERE SORMAYA DEVAM EDER (01.10.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ ÖLÇÜLDÜ: TY işlemeyi 12 sn'de BİTİRMİYOR — 01.10'daki iki gönderim de
+ *  gönderim anında «işleniyor», 14 dk sonra sorulduğunda SUCCESS. TY bitiş
+ *  anını vermiyor (`creationDate` = `lastModification`); süre ancak bizim
+ *  sorumuzla ölçülür. Sunucuyu dakikalarca bekletmek yerine pencere 5 sn'de
+ *  bir bu eylemi çağırır (en fazla 2 dk).
+ *
+ *  ⚠ SALT OKUMA (TY'ye GET) — kanala yeni bir şey göndermez. Yalnız BU
+ *  varyantın kendi gönderim izinde duran kimlik sorgulanır; başka bir kimlik
+ *  `GONDERIM_YOK` alır. Kesin sonuç (işlendi/reddedildi) bir kez ize yazılır,
+ *  geçen süreyle — Trendyol'un gerçek işleme süresi böylece birikir.
+ * ============================================================================
+ */
+export type TySonucSorgusu =
+  | { tamam: true; batchDurumu: TyBatchDurumu; sebepler: string[] }
+  | { tamam: false; kod: "GONDERIM_YOK" | "ANAHTAR_YOK" };
+
+export async function tyGonderimSonucuSorgula(
+  variantId: string,
+  batchRequestId: string,
+): Promise<TySonucSorgusu> {
+  await yetkiIste("kanal.yaz");
+  const kimlikDeseni = `"batchRequestId":${JSON.stringify(batchRequestId)}`;
+  const gonderim = await prisma.auditLog.findFirst({
+    where: { action: "KANAL_GONDERIMI", targetType: "ProductVariant", targetId: variantId, detail: { contains: kimlikDeseni } },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+  if (!gonderim) return { tamam: false, kod: "GONDERIM_YOK" };
+  const k = kimlikOku();
+  if (!k) return { tamam: false, kod: "ANAHTAR_YOK" };
+
+  const batch = await gonderimSonucu(k, batchRequestId);
+  const okuma: { durum: TyBatchDurumu; sebepler: string[] } =
+    batch.tur === "VERI" ? tyBatchCoz(batch.govde) : { durum: "SORGULANAMADI", sebepler: [] };
+
+  if (okuma.durum === "BASARILI" || okuma.durum === "BASARISIZ") {
+    const yazilmis = await prisma.auditLog.count({
+      where: { action: "KANAL_GONDERIMI_SONUCU", targetType: "ProductVariant", targetId: variantId, detail: { contains: kimlikDeseni } },
+    });
+    if (yazilmis === 0) {
+      await izYaz({
+        action: "KANAL_GONDERIMI_SONUCU",
+        targetType: "ProductVariant",
+        targetId: variantId,
+        detail: JSON.stringify({
+          kanal: "Trendyol",
+          batchRequestId,
+          batchDurumu: okuma.durum,
+          sebepler: okuma.sebepler,
+          /** Gönderim izinden bu yana — iz, gönderimden ~12 sn sonra yazılır. */
+          izdenSonraSn: Math.round((Date.now() - gonderim.createdAt.getTime()) / 1000),
+        }),
+      });
+    }
+  }
+  return { tamam: true, batchDurumu: okuma.durum, sebepler: okuma.sebepler };
+}

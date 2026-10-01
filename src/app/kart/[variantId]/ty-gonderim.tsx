@@ -22,6 +22,7 @@ import { DURUM_YAZISI } from "@/lib/renkler";
 
 import {
   tyGonderimOnizle,
+  tyGonderimSonucuSorgula,
   tyStokFiyatGonder,
   type TyGonderimOnizlemesi,
   type TyGonderimSonucu,
@@ -60,6 +61,9 @@ const HATA_ANAHTARI: Record<
   ULASILAMADI: "hataUlasilamadi",
 };
 
+const SORGU_ARALIGI_SN = 5;
+const SORGU_TAVANI_SN = 120;
+
 const ONIZLEME_HATA: Record<
   Exclude<TyGonderimOnizlemesi, { tamam: true }>["kod"],
   string
@@ -80,6 +84,31 @@ export function TyGonderim({ variantId }: { variantId: string }) {
   const [stokGonder, setStokGonder] = useState(true);
   const [fiyatMetni, setFiyatMetni] = useState("");
   const [sonuc, setSonuc] = useState<TyGonderimSonucu | null>(null);
+  /** Sunucunun 12 sn beklemesinden SONRA pencerenin sorduğu süre (sn). */
+  const [sorguSn, setSorguSn] = useState(0);
+
+  /**
+   * TY 12 sn'de bitirmediyse (ölçüldü: bitirmiyor) pencere 5 sn'de bir sormaya
+   * devam eder, en fazla 2 dk. Sorgu SALT OKUMA — kanala yeni şey gitmez.
+   * Pencere kapanınca döngü durur; gönderim iptal olmaz.
+   */
+  const sonucBekleniyor =
+    acik &&
+    sonuc?.tamam === true &&
+    (sonuc.batchDurumu === "ISLEMDE" || sonuc.batchDurumu === "SORGULANAMADI") &&
+    sorguSn < SORGU_TAVANI_SN;
+  useEffect(() => {
+    if (!sonucBekleniyor || sonuc?.tamam !== true) return;
+    const id = sonuc.batchRequestId;
+    const zamanlayici = setTimeout(async () => {
+      const r = await tyGonderimSonucuSorgula(variantId, id);
+      if (r.tamam) {
+        setSonuc((s) => (s?.tamam ? { ...s, batchDurumu: r.batchDurumu, sebepler: r.sebepler } : s));
+      }
+      setSorguSn((n) => n + SORGU_ARALIGI_SN);
+    }, SORGU_ARALIGI_SN * 1000);
+    return () => clearTimeout(zamanlayici);
+  }, [sonucBekleniyor, sonuc, sorguSn, variantId]);
 
   useEffect(() => {
     if (!acik || onizleme !== null) return;
@@ -104,6 +133,7 @@ export function TyGonderim({ variantId }: { variantId: string }) {
         stokGonder,
         fiyat: fiyat !== null && Number.isNaN(fiyat) ? Number.NaN : fiyat,
       });
+      setSorguSn(0);
       setSonuc(s);
       if (s.tamam) router.refresh();
     });
@@ -124,6 +154,7 @@ export function TyGonderim({ variantId }: { variantId: string }) {
         if (!a) {
           setOnizleme(null);
           setSonuc(null);
+          setSorguSn(0);
           setFiyatMetni("");
           setStokGonder(true);
         }
@@ -208,7 +239,16 @@ export function TyGonderim({ variantId }: { variantId: string }) {
             }`}
             role={sonuc.batchDurumu === "BASARISIZ" ? "alert" : "status"}
           >
-            {t(`tySonuc_${sonuc.batchDurumu}`, {
+            {t(
+              `tySonuc_${
+                sonucBekleniyor
+                  ? "BEKLENIYOR"
+                  : sonuc.batchDurumu === "BASARILI" || sonuc.batchDurumu === "BASARISIZ"
+                    ? sonuc.batchDurumu
+                    : "ZAMAN_ASIMI"
+              }`,
+              {
+              sn: bicim.sayi(12 + sorguSn),
               stok:
                 sonuc.gonderilenStok === null
                   ? t("gonderilmedi")
@@ -217,7 +257,8 @@ export function TyGonderim({ variantId }: { variantId: string }) {
                 sonuc.gonderilenFiyat === null
                   ? t("gonderilmedi")
                   : bicim.para(sonuc.gonderilenFiyat, "TRY"),
-            })}
+              },
+            )}
           </p>
           {sonuc.sebepler.map((sebep, i) => (
             <p key={i} className={`text-xs ${DURUM_YAZISI.olumsuz}`}>
