@@ -85,9 +85,14 @@ type Imza = {
   ozgun: string[];
   /** Kanal kodunun okunacağı kolon; sırayla denenir. */
   kodBasliklari: string[];
-  /** Pencere kolonları. */
-  baslangicBasligi: string;
-  bitisBasligi: string;
+  /**
+   * Pencere kolonları — SIRAYLA denenir, ilk bulunan kullanılır.
+   * ⛔ VAKA 01.10.2026: N11 kendi yazım hatasını düzeltti («Başlangıç Zamnı» →
+   * «Başlangıç Zamanı»); okuyucu tek yazımı aradığı için dosya «tarih aralığı
+   * yok» diye reddedildi. İki yazım da kabul edilir — eski dosyalar da okunur.
+   */
+  baslangicBasliklari: string[];
+  bitisBasliklari: string[];
   /** Dilimler tek satırda mı (N11) yoksa iki satırlı başlıkta mı (HB). */
   sekil: "TEK_SATIR" | "IKI_SATIR";
 };
@@ -97,16 +102,16 @@ const IMZALAR: Imza[] = [
     platform: "HEPSIBURADA",
     ozgun: ["teklif kodu"],
     kodBasliklari: ["sku", "satıcı stok kodu"],
-    baslangicBasligi: "başlangıç",
-    bitisBasligi: "bitiş",
+    baslangicBasliklari: ["başlangıç"],
+    bitisBasliklari: ["bitiş"],
     sekil: "IKI_SATIR",
   },
   {
     platform: "N11",
     ozgun: ["deal_ıd", "product_ıd"],
     kodBasliklari: ["satıcı stok kodu", "stok kodu"],
-    baslangicBasligi: "başlangıç zamnı",
-    bitisBasligi: "bitiş zamanı",
+    baslangicBasliklari: ["başlangıç zamanı", "başlangıç zamnı"],
+    bitisBasliklari: ["bitiş zamanı", "bitiş zamnı"],
     sekil: "TEK_SATIR",
   },
 ];
@@ -177,16 +182,24 @@ function hbTeklifleri(
   return cikti;
 }
 
-/** N11 şekli: tek satırda `N. Teklif Üst Limit / Alt Limit / Komisyon`. */
+/**
+ * N11 şekli: tek satırda `<ad> Teklif Üst Limit / Alt Limit / Komisyon`.
+ *
+ * ⛔ VAKA 01.10.2026: N11 teklif adlarını değiştirdi — «1. / 2. / 3. Teklif»
+ * yerine «Avantajlı / Süper / Kaçmaz Teklif». Okuyucu yalnız NUMARALI adı
+ * arıyordu; 45 satırın 45'i «teklif yok» diye atlandı. Teklifin adı artık
+ * başlığın kendisinden okunur (`<ad> teklif üst limit`) ve alt limit/komisyon
+ * AYNI adla eşlenir — numara da kelime de çalışır; sıra dilim kurulurken
+ * fiyattan çıkar, addan değil.
+ */
 function n11Teklifleri(bas: string[], satir: unknown[]): HamTeklif[] {
   const cikti: HamTeklif[] = [];
   for (let i = 0; i < bas.length; i++) {
     const b = bas[i] ?? "";
-    if (!/teklif.*üst limit/.test(b)) continue;
-    const no = b.match(/(\d+)\s*\.\s*teklif/)?.[1];
-    if (no === undefined) continue;
-    const altIdx = bas.findIndex((x) => x === `${no}. teklif alt limit`);
-    const oranIdx = bas.findIndex((x) => x === `${no}. teklif komisyon`);
+    const ad = b.match(/^(.+?)\s*teklif\s*üst limit$/)?.[1]?.trim();
+    if (ad === undefined || ad === "") continue;
+    const altIdx = bas.findIndex((x) => x === `${ad} teklif alt limit`);
+    const oranIdx = bas.findIndex((x) => x === `${ad} teklif komisyon`);
     const ust = sayiCoz(satir[i]);
     const oran = oranIdx >= 0 ? yuzdeCoz(satir[oranIdx]) : null;
     if (ust === null || oran === null) continue;
@@ -302,8 +315,10 @@ export function teklifTarifesiOku(tanima: TeklifTanimasi): TarifeOkumasi & {
   const iAd = ustBas.indexOf("ürün adı");
   const iFiyat = ustBas.findIndex((b) => b.includes("mevcut") && b.includes("fiyat"));
   const iOran = ustBas.findIndex((b) => b.includes("mevcut") && b.includes("komisyon"));
-  const iBas = ustBas.indexOf(tanima.imza.baslangicBasligi);
-  const iBit = ustBas.indexOf(tanima.imza.bitisBasligi);
+  const ilkBulunan = (adaylar: string[]) =>
+    adaylar.map((a) => ustBas.indexOf(a)).find((x) => x >= 0) ?? -1;
+  const iBas = ilkBulunan(tanima.imza.baslangicBasliklari);
+  const iBit = ilkBulunan(tanima.imza.bitisBasliklari);
 
   const eksik: string[] = [];
   if (iKod === undefined) eksik.push(tanima.imza.kodBasliklari[0] ?? "kod");

@@ -395,6 +395,31 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "onceki urunun satis fiyatiyla yeni urunun NET'i hesaplanir - en sinsi hali",
   },
+  /* 01.10.2026 - N11 dosyasi degisti: adli teklifler + "Baslangic Zamani". */
+  {
+    ad: "N11 YENI TARIH BASLIGI TANINMIYOR",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/teklif-tarifesi.ts",
+    bul: '    baslangicBasliklari: ["başlangıç zamanı", "başlangıç zamnı"],',
+    koy: '    baslangicBasliklari: ["başlangıç zamnı"],',
+    bozdugu: "bu haftanin N11 dosyasi 'tarih araligi yok' diye reddedilir",
+  },
+  {
+    ad: "N11 ESKI TARIH BASLIGI TANINMIYOR",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/teklif-tarifesi.ts",
+    bul: '    baslangicBasliklari: ["başlangıç zamanı", "başlangıç zamnı"],',
+    koy: '    baslangicBasliklari: ["başlangıç zamanı"],',
+    bozdugu: "eski N11 dosyalari artik yuklenemez",
+  },
+  {
+    ad: "N11 ADLI TEKLIF OKUNMUYOR (yalniz numarali)",
+    yon: "KALDIRAN",
+    dosya: "src/lib/komisyon/teklif-tarifesi.ts",
+    bul: "    const ad = b.match(/^(.+?)\\s*teklif\\s*üst limit$/)?.[1]?.trim();",
+    koy: "    const ad = b.match(/^(\\d+\\s*\\.)\\s*teklif\\s*üst limit$/)?.[1]?.trim();",
+    bozdugu: "Avantajli/Super/Kacmaz tekliflerin hepsi 'teklif yok' diye atlanir",
+  },
 ];
 
 function bekciyiKostur(m: Mutasyon): { kod: number; ciktiVar: boolean } {

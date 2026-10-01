@@ -1375,6 +1375,34 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
   kontrol("N11: dilimBul(11999) -> %18", dilimBul(dN, 11999)?.oran === 18);
   kontrol("N11: dilimBul(5000) -> %1", dilimBul(dN, 5000)?.oran === 1);
 
+  /*
+   * 01.10.2026 - N11 DOSYASI DEGISTI (gercek dosya 4534966-01-10-2026-09-45-29.xls,
+   * md5 1417289f...): teklif adlari "1./2./3. Teklif" -> "Avantajli / Super / Kacmaz
+   * Teklif", tarih basligi "Baslangic Zamni" -> "Baslangic Zamani" (N11 yazim hatasini
+   * duzeltti). Eski okuyucu 45 satirin 45'ini "teklif yok" diye atladi ve "tarih araligi
+   * yok" dedi. Ayrimin iki yakasi: YENI bicim okunur, ESKI bicim (yukarida + asagida
+   * Zamni) okunmaya devam eder.
+   */
+  {
+    const bas = new Date(Date.UTC(2026, 8, 30, 12, 0));
+    const bit = new Date(Date.UTC(2026, 9, 27, 20, 0));
+    const yeni = (baslangicBasligi: string): unknown[][] => [
+      [null, null, "Dikkat Edilmesi Gerekenler"],
+      [], [], [], [], [], [], [], [], [],
+      ["Ürün Adı", "Satıcı\n Stok Kodu", "Avantajlı Teklif\n Üst Limit", "Avantajlı Teklif\n Alt Limit", "Avantajlı Teklif\n Komisyon",
+        "Kaçmaz Teklif\n Üst Limit", "Kaçmaz Teklif\n Alt Limit", "Kaçmaz Teklif\n Komisyon", baslangicBasligi, "Bitiş Zamanı", "Mevcut\n Fiyat", "Mevcut\n Komisyon", "DEAL_ID"],
+      ["Freebuds", "EN10052383745", "", "", "", 7897, 8.25, 1, bas, bit, 9875, 15, 279616136],
+    ];
+    const o = teklifTarifesiOku(teklifTarifesiTani([{ sheet: "Ürün Komisyon Teklifleri", data: yeni("Başlangıç Zamanı") }]));
+    const d = o.satirlar[0]?.dilimler ?? [];
+    kontrol("N11 YENI bicim: adli teklif ('Kacmaz Teklif') okunuyor - satir 1, atlanan 0", o.satirlar.length === 1 && o.atlananlar.length === 0, o.atlananlar);
+    kontrol("  ...dilimler dosyayla ayni: 7897'ye kadar %1, ustu %15", dilimBul(d, 5000)?.oran === 1 && dilimBul(d, 9875)?.oran === 15, d);
+    kontrol("  ...bos teklif ('Avantajli' bos) dilim uretmiyor", d.length === 2, d);
+    kontrol("  ...'Baslangic Zamani' basligindan pencere kuruluyor", o.pencere !== null);
+    const eski = teklifTarifesiOku(teklifTarifesiTani([{ sheet: "Ürün Komisyon Teklifleri", data: yeni("Başlangıç Zamnı") }]));
+    kontrol("N11 ESKI yazim 'Baslangic Zamni' de pencere kuruyor", eski.pencere !== null);
+  }
+
   /* YANLIS YANMA YONU: gercek TY tarifesi teklif okuyucusuna DUSMEZ. */
   kontrol(
     "gercek TY tarife dosyasi teklif SAYILMIYOR",
