@@ -29,7 +29,7 @@ alınmaya devam eder ama **SaaS'a özel iş AÇILMAZ** (bkz. BEKLEYENLER →
 Büyüme sırası).
 ⭐ **SIRA ÇEVRİLDİ — kullanıcı kararı 28.09.2026 (K303):** çok-firma veri
 katmanına ŞİMDİ geçildi. Tek firma tarafında açık kalanlar (Hepsiburada
-yazma — Faz 4'ün son maddesi; Halil testi bekleyen K222–K230 · K264)
+yazma — Faz 4'ün son maddesi [01.10.2026 KAPANDI]; Halil testi bekleyen K222–K230 · K264)
 bilerek SONRAYA bırakıldı. Yukarıdaki 13.08 gerekçesi SİLİNMEDİ: kanıtlanmamış
 paketlerin üstüne kurulan çok-firma katmanında bir hatanın kaynağını ayırmak
 zorlaşır — bu risk kabul edilerek sıra değişti. SaaS'a özel iş (kayıt sayfası,
@@ -248,12 +248,16 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
 - Faz 3 ✓: hakediş + kart borcu takibi + tazminat
   _(ölçüldü 09.09.2026: `/hakedis` · `/kartlar` · `/tazminat` üçü de canlıda)_
 - Faz 3,5 ✓: TEK KULLANICILI GİRİŞ — `/giris` (canlıya geçişin ön maddesiydi)
-- **Faz 4 (ŞİMDİ): pazaryeri API'leri + barkod + çoklu kullanıcı + yetki (RBAC)**
+- **Faz 4 (ŞİMDİ — tek açık madde kaldı): pazaryeri API'leri + barkod + çoklu kullanıcı + yetki (RBAC)**
   · pazaryeri API — OKUMA üç kanalda canlı (TY·HB·N11, 5 dakikada bir) ✓
-  · pazaryeri API — YAZMA TY ✓ (K169) ve N11 ✓ (K194) canlıda, ikisi de
-    Halil testi geçti; **yalnız HB açık** (K194-HB, resmî yazma ucu
-    aranıyor) _(kullanıcı kararı 09.09: stok TEK düğmeyle üç kanala, fiyat
-    kanal başına AYRI düğmeyle)_
+  · pazaryeri API — YAZMA üç kanalda canlı ✓: TY (K169) · N11 (K194) ·
+    **HB (K194-HB — 01.10.2026 telefonda canlı stok+fiyat gönderimi
+    ilanda doğrulandı, kullanıcı kapattı)**
+  · ⏳ **AÇIK:** _kullanıcı kararı 09.09: stok TEK düğmeyle üç kanala, fiyat
+    kanal başına AYRI düğmeyle._ Fiyat düğmeleri ✓; **stoğu üç kanala tek
+    düğmeyle gönderen ekran YOK** (bugün kanal başına ayrı pencere). Faz 4
+    bu ekran yazılıp Halil testini geçince ✓ olur — ya da kullanıcı bu
+    maddeyi fazdan çıkarırsa.
   · barkod ✓ (`/okut` · `/paketle` · `/yerlestir` + kamera)
   · yetki (RBAC) ✓ (`lib/yetki`, rol+izin, `canli:yetki` bekçisi)
 - **Çok-firma veri katmanı (K303) — 💤 UYUR (28.09.2026, aynı gün öne alınıp
