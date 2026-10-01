@@ -109,7 +109,7 @@ ekliyor, nakit takvimi eklemiyor. Ayrı kalem.
 - **Kullanıcı ekstresi:** ₺799,91 iade **3 taksitle** dönüyor (ilk taksit 266,65). Sistem tek çekim düşüyordu. → İade artık **alımın taksit sayısına** bölünüyor; eksi tutar alımın aynası bölünüyor (−799,91 → −266,63 · −266,63 · −266,65).
   ⚠ **AÇIK SORU 1:** «alımın taksit sayısı» mı «kalan taksit sayısı» mı? Tek vakada ikisi aynı (iade ilk ekstreden önce geldi); ayıran vaka gelince ölçülür.
   ✅ **SORU 2 KAPANDI (kuruş, 30.09.2026):** banka artan kuruşu İLK taksite koyuyor (266,65 + 266,63 + 266,63). Kullanıcı: «bankaya uysun». `taksitlereBol` artık kuruşu İLK taksite koyuyor — alımda da iadede de (10.08 varsayımı «SON taksite» çevrildi, gerekçesi `kart-borcu.ts` başlığında). Bekçi `kart:dogrula` bankanın kendi rakamıyla sınıyor; mutasyon «kuruş yine son taksite» kırmızı yandı.
-  ⚠ **YAN ETKİ BULUNDU VE KAPANDI (30.09.2026, kullanıcı ekranından):** kuruş taşınınca eski ödemeler eski bölmenin toplamıyla kayıtlı olduğundan **30 tam ödenmiş ekstre ₺0,01–0,30 «ödenmemiş»** göründü (toplam ₺1,66; nakit takviminde «Kredi kartı · 29 kalem −₺1,63» gecikmiş). Eski kuralla aynı ölçüm **0** verdi → artığı hesap değişikliği üretti. **Kullanıcı kararı:** ödeme, KAYIT ANINDAKİ borcun (`KartOdeme.ekstreBorcu`) tamamını karşılıyorsa ekstre kapalıdır; sonradan yeniden hesap açmaz. Bedeli beyan edildi: tam ödenmiş ekstreye sonradan eklenen unutulmuş alım da borç görünmez (banka tahsil etmişti). Kısmi · ters kayıtla sıfırlanan · snapshot'sız ödeme eski hesapla. Ödeme dönüşümü 4 kopyadan tek gövdeye (`kartinEkstreOdemeleri`) + desen yasağı. Canlı ölçüm sonrası artık **0**. `kart:dogrula` 56 · mutasyon 20/20.
+  ⚠ **YAN ETKİ BULUNDU VE KAPANDI (30.09.2026, kullanıcı ekranından):** kuruş taşınınca eski ödemeler eski bölmenin toplamıyla kayıtlı olduğundan **30 tam ödenmiş ekstre ₺0,01–0,30 «ödenmemiş»** göründü (toplam ₺1,66; nakit takviminde «Kredi kartı · 29 kalem −₺1,63» gecikmiş). Eski kuralla aynı ölçüm **0** verdi → artığı hesap değişikliği üretti. **Kullanıcı kararı:** ödeme, KAYIT ANINDAKİ borcun (`KartOdeme.ekstreBorcu`) tamamını karşılıyorsa ekstre kapalıdır; sonradan yeniden hesap açmaz. Bedeli beyan edildi: tam ödenmiş ekstreye sonradan eklenen unutulmuş alım da borç görünmez (banka tahsil etmişti). Kısmi · ters kayıtla sıfırlanan · snapshot'sız ödeme eski hesapla. Ödeme dönüşümü 4 kopyadan tek gövdeye (`kartinEkstreOdemeleri`) + desen yasağı. Canlı ölçüm sonrası artık **0**. `kart:dogrula` 56 · mutasyon 20/20. ✅ **01.10.2026 kullanıcı: «nakit takvimi ok»** — kuruş artığı satırı kalktı.
 - **Ölçüldü (canlı, salt okuma):** kartla ödenmiş 5 alım iadesinin **4'ünün tahsil izi YOK** (K209'dan önce kapatılmışlar) → `continue` ile **sessizce** kart borcundan düşmüyordu: ALM-HB-260811-01 ₺1.111 (Hasan Akbank, 1 taksit) · ALM-HB-260817-03 ₺759,90 ve -04 ₺1.519,80 (S.ahmet Vakıf, 3 taksit) · ALM-AMZ-260904-01 ₺8.811 (Murat Garanti, 9 taksit) = **₺12.201,70**. Daha önce raporlanan «5 kayıt · ₺13.001,61» TALEP sayısıydı, borca ulaşan değil.
 - **Kullanıcı kararı:** kart sahiplerinin ekstresine bakmak yerine **pazaryerinin «iade edildi» bildirim tarihi** tahsil günü sayılır (para ~2 gün içinde düşer). Tazminat ekranında kapanmış her talebin satırında «Tahsil: gg.aa.yyyy» / «Tahsil günü girilmedi» alanı; gün İZİN İÇİNE yazılır (`tahsilGunu`), sıra hâlâ iz anıyla (geçmiş güne düzeltme de kazanır). Kart borcu ve rapor AYNI günü okur. Kart borcu ekranında «N alım iadesinin tahsil günü girilmedi» kutusu, satır tazminat kaydına götürür.
   ⚠ Bilinen sapma: bildirim kesim gününe 2 günden yakınsa iade bir sonraki ekstreye kayabilir — tarih kaydırılmadı (tahmin yok).
@@ -3932,7 +3932,7 @@ birlikte taşındı. _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış
 
 ---
 
-## 🔶 K230 — TEK KAPI SÖZÜ TAMAMLANDI + TARİFE AYNASI · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ BEKLİYOR]
+## 🟢 K230 — TEK KAPI SÖZÜ TAMAMLANDI + TARİFE AYNASI · 21.09.2026 · [KOD KOŞTU — HALİL TESTİ GEÇTİ 01.10.2026 («Yüklü pencereler» anlık tazelenme · «Tarife hesaplama» bağlantısı)]
 
 **KULLANICI SORUSU:** _"Bu ikisi arasındaki fark nedir, neden iki tane var?"_
 (menüde `Komisyon tarifesi` ve `Komisyon yükleme`).
@@ -4793,7 +4793,7 @@ için otomatik koşum bundan etkilenmiyor. Kalem açık.
 
 ---
 
-## 🔶 K224 — KANAL LİSTELEME SAĞLIĞI EKRANI · 21.09.2026 · [KOŞTU — HALİL TESTİ BEKLİYOR]
+## 🟢 K224 — KANAL LİSTELEME SAĞLIĞI EKRANI · 21.09.2026 · [KOŞTU — HALİL TESTİ GEÇTİ 01.10.2026 (sayı = liste · eski kod araması · ölçüm yaşı · telefon)]
 
 `/kanal-listeleme` — **salt okuma**, kanala hiçbir şey yazmaz.
 
@@ -4890,7 +4890,7 @@ ekrana yazıldı — **doğru bir sayı, kapsamı görünmezse yanlış bir hük
 
 ---
 
-## 🔶 K222/K223 — TRENDYOL HAKEDİŞ TURU · 20-21.09.2026 · [KOŞTU — HALİL TESTİ BEKLİYOR]
+## 🟢 K222/K223 — TRENDYOL HAKEDİŞ TURU · 20-21.09.2026 · [KOŞTU — HALİL TESTİ GEÇTİ 01.10.2026 (21.09 ödemesi TY dökümüyle ₺90.739,15 · «Gelecek ödemeler» notu · takvim günleri · nakit takviminde pazaryeri adı)]
 
 Bir günde üç ayrı kusur ölçüldü ve düzeltildi. **Üçü de canlıda; hiçbiri
 henüz gerçek kullanımda doğrulanmadı — paket bu yüzden AÇIK.**
