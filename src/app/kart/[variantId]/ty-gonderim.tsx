@@ -197,8 +197,18 @@ export function TyGonderim({ variantId }: { variantId: string }) {
         )}
 
         {sonuc === null ? null : sonuc.tamam ? (
-          <p className={`text-sm ${DURUM_YAZISI.olumlu}`} role="status">
-            {t("basari", {
+          <div className="space-y-1">
+          <p
+            className={`text-sm ${
+              sonuc.batchDurumu === "BASARILI"
+                ? DURUM_YAZISI.olumlu
+                : sonuc.batchDurumu === "BASARISIZ"
+                  ? DURUM_YAZISI.olumsuz
+                  : DURUM_YAZISI.uyari
+            }`}
+            role={sonuc.batchDurumu === "BASARISIZ" ? "alert" : "status"}
+          >
+            {t(`tySonuc_${sonuc.batchDurumu}`, {
               stok:
                 sonuc.gonderilenStok === null
                   ? t("gonderilmedi")
@@ -207,9 +217,14 @@ export function TyGonderim({ variantId }: { variantId: string }) {
                 sonuc.gonderilenFiyat === null
                   ? t("gonderilmedi")
                   : bicim.para(sonuc.gonderilenFiyat, "TRY"),
-              durum: sonuc.batchDurumu,
             })}
           </p>
+          {sonuc.sebepler.map((sebep, i) => (
+            <p key={i} className={`text-xs ${DURUM_YAZISI.olumsuz}`}>
+              {sebep}
+            </p>
+          ))}
+          </div>
         ) : (
           <p className={`text-sm ${DURUM_YAZISI.olumsuz}`} role="alert">
             {t(HATA_ANAHTARI[sonuc.kod])}

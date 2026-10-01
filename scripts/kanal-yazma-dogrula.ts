@@ -10,6 +10,7 @@ import {
   yuklemeDurumuCoz as hbYuklemeDurumuCoz,
 } from "./hb/yazici";
 import { parcaHukmu } from "../src/lib/kanal-gonderim-hb";
+import { tyBatchCoz } from "../src/lib/kanal-gonderim-ty";
 
 /**
  * ============================================================================
@@ -304,6 +305,41 @@ kontrol(
   "boş kalem reddedilir (ne stok ne fiyat)",
   kod({ ...SK }) === "GONDERILECEK_YOK",
 );
+
+/*
+ * ═══ K169 — TRENDYOL TOPLU İŞLEM SONUCU (01.10.2026) ═══
+ * ⛔ VAKA: eylem durumu üst seviyede (`govde.status`) arıyordu; TY o alanı hiç
+ * göndermiyor → her gönderim «ISLEMDE» yazıldı, başarı ekranda hiç görünmedi.
+ * Aşağıdaki gövde 01.10 14:48 gönderiminin TY'den dönen GERÇEK cevabıdır.
+ */
+console.log("\n  ── TY SONUÇ OKUMASI");
+const tyGercek = {
+  items: [{ requestItem: { barcode: "8690000000000", quantity: 2 }, status: "SUCCESS", failureReasons: [] }],
+  itemCount: 1,
+  failedItemCount: 0,
+  batchRequestType: "ProductInventoryUpdate",
+};
+kontrol("TY: ⛔ ÖLÇÜLEN CEVAP (kalemde SUCCESS, üstte status YOK) → BASARILI", tyBatchCoz(tyGercek).durum === "BASARILI", tyBatchCoz(tyGercek));
+const tyRed = tyBatchCoz({ items: [{ status: "FAILED", failureReasons: ["Fiyat aralık dışı"] }], failedItemCount: 1 });
+kontrol("TY: FAILED kalem → BASARISIZ ve sebep taşınır", tyRed.durum === "BASARISIZ" && tyRed.sebepler[0] === "Fiyat aralık dışı", tyRed);
+kontrol("TY: karışık (biri SUCCESS biri FAILED) → BASARISIZ (başarı denmez)", tyBatchCoz({ items: [{ status: "SUCCESS" }, { status: "FAILED", failureReasons: [] }] }).durum === "BASARISIZ");
+kontrol("TY: boş kalem listesi → ISLEMDE (henüz işlenmedi)", tyBatchCoz({ items: [] }).durum === "ISLEMDE");
+kontrol("TY: bilinmeyen kalem durumu → ISLEMDE (başarı denmez)", tyBatchCoz({ items: [{ status: "PENDING" }] }).durum === "ISLEMDE");
+kontrol("TY: üstte status olsa da kalem yoksa başarı DENMEZ", tyBatchCoz({ status: "COMPLETED" }).durum === "SORGULANAMADI");
+{
+  const e = yorumsuz(kaynakOku("src/app/kart/[variantId]/actions.ts"));
+  const gBasi = e.indexOf("export async function tyStokFiyatGonder");
+  const gSonu = e.indexOf("export async function", gBasi + 10);
+  const tyGovde = gBasi >= 0 ? e.slice(gBasi, gSonu >= 0 ? gSonu : undefined) : "";
+  kontrol("TY: gönderim gövdesi bulundu", tyGovde.length > 0);
+  kontrol("TY: sonuç tyBatchCoz ile okunuyor", tyGovde.includes('sonucOkuma = batch.tur === "VERI" ? tyBatchCoz(batch.govde) :'));
+  kontrol("TY: sonuç 12 sn'ye kadar tekrar sorgulanıyor", /for \(let deneme = 0; deneme < 5; deneme\+\+\)/.test(tyGovde) && tyGovde.includes("const batch = await gonderimSonucu(k, sonuc.batchRequestId);"));
+  kontrol("TY: üst seviye `status` okuması geri gelmedi", !/g\.status/.test(tyGovde));
+  kontrol("TY: sebepler ize de yazılıyor", tyGovde.includes("sebepler: sonucOkuma.sebepler,"));
+  const tyPencere = yorumsuz(kaynakOku("src/app/kart/[variantId]/ty-gonderim.tsx"));
+  kontrol("TY: pencere sonucu duruma göre yazıyor", tyPencere.includes("t(`tySonuc_${sonuc.batchDurumu}`"));
+  kontrol("TY: pencere red sebeplerini gösteriyor", tyPencere.includes("sonuc.sebepler.map("));
+}
 
 /* ═══ K194-HB — HEPSİBURADA'YA ÖZGÜ KURALLAR (SIT ölçümüne bağlı, 01.10.2026) ═══ */
 async function hbBolumu() {

@@ -21,6 +21,8 @@ const YAZICI = "scripts/hb/yazici.ts";
 const HUKUM = "src/lib/kanal-gonderim-hb.ts";
 const EYLEM = "src/app/kart/[variantId]/actions.ts";
 const PENCERE = "src/app/kart/[variantId]/hb-gonderim.tsx";
+const TY_COZ = "src/lib/kanal-gonderim-ty.ts";
+const TY_PENCERE = "src/app/kart/[variantId]/ty-gonderim.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -51,8 +53,24 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "  return durum.durum === \"Done\" ? \"KANALDA_GORUNMUYOR\" : \"ISLENIYOR\";", koy: "  return durum.durum === \"Done\" ? \"DOGRULANDI\" : \"ISLENIYOR\";",
     bozdugu: "Done dendigi anda ilan eski fiyattayken 'tamam' denir (olculen vaka)" },
   { ad: "GERI OKUMA TEK DENEME", yon: "KALDIRAN", dosya: EYLEM,
-    bul: "deneme < 5; deneme++", koy: "deneme < 1; deneme++",
+    bul: "kabulEdilenler.length > 0 && deneme < 5; deneme++", koy: "kabulEdilenler.length > 0 && deneme < 1; deneme++",
     bozdugu: "HB ~5-6 sn'de yansitiyor; tek okuma basariyi hep 'gorunmuyor' der" },
+  /* ─── K169 TY sonuç okuması (01.10.2026) ─── */
+  { ad: "TY: USTTEKI status GERI GELDI", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "sonucOkuma = batch.tur === \"VERI\" ? tyBatchCoz(batch.govde) :", koy: "sonucOkuma = batch.tur === \"VERI\" ? { durum: \"ISLEMDE\" as TyBatchDurumu, sebepler: [] } :",
+    bozdugu: "TY isleseydi de ekran hep ISLEMDE der (olculen vaka)" },
+  { ad: "TY: TEK SORGU", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "for (let deneme = 0; deneme < 5; deneme++) {", koy: "for (let deneme = 0; deneme < 1; deneme++) {",
+    bozdugu: "TY birkac saniyede isliyor; tek sorgu basariyi hep 'isleniyor' gosterir" },
+  { ad: "TY: FAILED BASARI SAYILIYOR", yon: "FAZLADAN", dosya: TY_COZ,
+    bul: "  if (kalemler.some((k) => k.status === \"FAILED\")) return { durum: \"BASARISIZ\", sebepler };\n", koy: "",
+    bozdugu: "reddedilen gonderim 'islendi' gorunur" },
+  { ad: "TY: BOS LISTE BASARI", yon: "FAZLADAN", dosya: TY_COZ,
+    bul: "  if (g.items.length === 0) return { durum: \"ISLEMDE\", sebepler: [] };\n", koy: "",
+    bozdugu: "henuz islenmemis gonderim 'islendi' gorunur (every bos listede true)" },
+  { ad: "TY: SEBEPLER GOSTERILMIYOR", yon: "KALDIRAN", dosya: TY_PENCERE,
+    bul: "sonuc.sebepler.map(", koy: "[].map(",
+    bozdugu: "kullanici neden reddedildigini goremez" },
   { ad: "FIYAT HATASI OKUNMUYOR", yon: "KALDIRAN", dosya: HUKUM,
     bul: "  if (durum && (durum.hatalar.length > 0 || durum.kilitler.length > 0)) return \"RED\";\n", koy: "",
     bozdugu: "reddedilen ya da kilitlenen fiyat basarili gorunur" },

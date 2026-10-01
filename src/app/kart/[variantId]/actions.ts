@@ -25,6 +25,7 @@ import {
   type YuklemeSonucu as HbYuklemeSonucu,
 } from "../../../../scripts/hb/yazici";
 import { parcaHukmu, type ParcaHukmu } from "@/lib/kanal-gonderim-hb";
+import { tyBatchCoz, type TyBatchDurumu } from "@/lib/kanal-gonderim-ty";
 
 /**
  * ============================================================================
@@ -131,8 +132,14 @@ export type TyGonderimSonucu =
       gonderilenStok: number | null;
       gonderilenFiyat: number | null;
       batchRequestId: string;
-      /** TY kuyruğu asenkron — sorgu anındaki durum; "İŞLEMDE" olabilir. */
-      batchDurumu: string;
+      /**
+       * TY'nin KENDİ sonucu (kalem satırından — `tyBatchCoz`). 12 sn'ye kadar
+       * beklenir; bitmediyse ISLEMDE. Eskiden üst seviyede aranıyordu ve hep
+       * «ISLEMDE» dönüyordu (01.10.2026 bulgusu).
+       */
+      batchDurumu: TyBatchDurumu;
+      /** TY'nin red sebepleri (BASARISIZ ise). */
+      sebepler: string[];
     }
   | {
       tamam: false;
@@ -206,14 +213,19 @@ export async function tyStokFiyatGonder(
     };
   }
 
-  /** Kabul edildi — kuyruk sonucu kısa beklemeyle sorgulanır. */
-  await new Promise((coz) => setTimeout(coz, 2000));
-  const batch = await gonderimSonucu(k, sonuc.batchRequestId);
-  let batchDurumu = "SORGULANAMADI";
-  if (batch.tur === "VERI") {
-    const g = batch.govde as { status?: unknown; items?: unknown[] };
-    batchDurumu = typeof g.status === "string" ? g.status : "ISLEMDE";
+  /**
+   * Kabul edildi — TY'nin sonucu 12 sn'ye kadar (2 sn + 4 × 2,5 sn) okunur,
+   * bitince durulur. ⚠ Sonuç TY'de bir süre sonra SİLİNİYOR (ölçüldü) — bu
+   * yüzden gönderim ANINDA okunur ve ize yazılır.
+   */
+  let sonucOkuma: { durum: TyBatchDurumu; sebepler: string[] } = { durum: "SORGULANAMADI", sebepler: [] };
+  for (let deneme = 0; deneme < 5; deneme++) {
+    await new Promise((coz) => setTimeout(coz, deneme === 0 ? 2000 : 2500));
+    const batch = await gonderimSonucu(k, sonuc.batchRequestId);
+    sonucOkuma = batch.tur === "VERI" ? tyBatchCoz(batch.govde) : { durum: "SORGULANAMADI", sebepler: [] };
+    if (sonucOkuma.durum === "BASARILI" || sonucOkuma.durum === "BASARISIZ") break;
   }
+  const batchDurumu = sonucOkuma.durum;
 
   await izYaz({
     action: "KANAL_GONDERIMI",
@@ -226,6 +238,7 @@ export async function tyStokFiyatGonder(
       sonuc: "KABUL",
       batchRequestId: sonuc.batchRequestId,
       batchDurumu,
+      sebepler: sonucOkuma.sebepler,
     }),
   });
   revalidatePath("/kart/" + variantId);
@@ -236,6 +249,7 @@ export async function tyStokFiyatGonder(
     gonderilenFiyat: niyet.fiyat,
     batchRequestId: sonuc.batchRequestId,
     batchDurumu,
+    sebepler: sonucOkuma.sebepler,
   };
 }
 
