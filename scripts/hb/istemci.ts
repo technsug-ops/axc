@@ -385,6 +385,16 @@ export const UCLAR = {
  *   çarpış `kesildiMi` ile BEYAN edilir, sessizce tam liste sanılmaz
  *   _(bir kaynağın listesi kendi tamlığını kanıtlayamaz — beyan da öyle:
  *   `beyanToplam` çağırana verilir ki sayımla karşılaştırılsın)_.
+ *
+ * ⛔ SAYFA TAVANI KANALINDIR, BİZİM DEĞİL (vaka 02.10.2026, K195-②):
+ * `/shipped` · `/delivered` · `/cancelled` 100 istense de en fazla **50**
+ * veriyor (zarf `limit: 50`). Eski gezici «istenenden az geldi = son sayfa»
+ * diyordu ve `/delivered`in 122 kaydının yalnız ilk 50'sini okudu — 14.09'dan
+ * beri hiçbir HB teslimi damgalanmadı, 54 teslim edilmiş paket «yolda»
+ * göründü. Durmasa bile sonraki sayfayı `tur × istenen` (100) ile açacak,
+ * 50–99'u ATLAYACAKTI. Şimdi: ① ofset GELEN kayıt kadar ilerler; ② kısa
+ * sayfa ölçütü kanalın beyan ettiği tavana (`limit`) göre; ③ `totalCount`
+ * varken kısa sayfa bitirmez — beyana ya da boş sayfaya kadar sürer.
  */
 export async function tumKayitlar(
   yolKur: (offset: number, limit: number) => string,
@@ -406,8 +416,9 @@ export async function tumKayitlar(
   let beyanToplam: number | null = null;
   let turSayisi = 0;
   let temizBitti = false;
+  let ofset = 0;
   for (; turSayisi < tavanTur; turSayisi++) {
-    const s = await apiGet(yolKur(turSayisi * limit, limit), baslik);
+    const s = await apiGet(yolKur(ofset, limit), baslik);
     if (s.tur !== "VERI") {
       if (turSayisi === 0) return { tur: "HATA", sonuc: s };
       /** Ara sayfada hata: kısmi sonuç — kesik BEYAN edilir. */
@@ -422,10 +433,15 @@ export async function tumKayitlar(
       return { tur: "TAMAM", kayitlar, turSayisi, kesildiMi: true, beyanToplam };
     }
     kayitlar.push(...z.kayitlar);
-    if (
-      z.kayitlar.length < limit ||
-      (beyanToplam !== null && kayitlar.length >= beyanToplam)
-    ) {
+    ofset += z.kayitlar.length;
+    /** Kanalın beyan ettiği sayfa tavanı — istediğimizden küçükse o geçerli. */
+    const sayfaTavani = typeof g?.limit === "number" && g.limit > 0 ? Math.min(limit, g.limit) : limit;
+    const bitti =
+      z.kayitlar.length === 0 ||
+      (beyanToplam !== null
+        ? kayitlar.length >= beyanToplam
+        : z.kayitlar.length < sayfaTavani);
+    if (bitti) {
       turSayisi++;
       temizBitti = true;
       break;

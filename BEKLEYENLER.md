@@ -5122,6 +5122,8 @@ kutunun kendisi ayrı bir tasarım kararı:
 duruyorsa tıklanınca kaynağını açmak zorunda ("sayı = liste"). Kutuyu
 tasarlamadan yazmak, adresi olmayan bir rakam üretirdi.
 
+─── ② **02.10.2026 — KUTUDAN ÖNCE ÖLÇÜM: HB TESLİM DAMGASI 14.09'DAN BERİ YAZILMIYORDU (kullanıcı «sıra ile devam et»).** Son 30 gün HB: kargoda 120 · «yolda» **76** (60'ı 8–30 gündür) — oysa HB kargo→teslim ortalaması ~50 saat. Örnek 12 siparişin **12'si de** HB'nin kendi kaydında `Delivered`. **Kök sebep:** `tumKayitlar` 100 istiyor, HB `/shipped` · `/delivered` · `/cancelled` en fazla **50** veriyor (zarf `limit: 50`; `/listings` 100). Gezici «az geldi = son sayfa» deyip durdu → `/delivered`in 122 kaydının yalnız ilk 50'si okundu (en yenisi 14.09). Durmasa bile sonraki sayfayı 100'den açıp 50–99'u atlayacaktı. **Düzeltme:** ofset GELEN kayıt kadar ilerler · kısa sayfa ölçütü kanalın beyan ettiği tavana göre · `totalCount` varken beyana ya da boş sayfaya kadar sürer. Canlı salt-okuma: teslim **122/122** (eskiden 50) · kargoda 3/3 · iptal 10/10. Yeni bekçi `hb-sayfa:dogrula` 11/11 (sahte HB, ölçülen tavanlarla) · `hb-sayfa-mutasyon` 6/6 (tavan mutasyonu ilk turda KAÇTI → «zarf tavan söylüyor, toplam söylemiyor» durumu eklendi, kırmızı yandı). Etki: bir sonraki 5 dk'lık HB çekimi boş `deliveredAt`leri doldurur (ezme yok). ⚠ Zarfsız dizi dönen `/packages` için tavan BİLİNEMEZ — bugün 1 kayıt; 100'ü aşan açık sipariş olursa aynı soru yeniden sorulur. **Sonra:** «yolda» yeniden ölçülür (HB 76 → birkaç beklenir), kutu ondan sonra yazılır.
+
 ⚠ **KAPSAM SINIRI ŞİMDİDEN BELLİ VE KUTUYA YAZILACAK:** `deliveredAt` bugün
 boş doğuyor ve yalnız **bundan sonraki** teslimlerle doluyor. "Teslim
 edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
