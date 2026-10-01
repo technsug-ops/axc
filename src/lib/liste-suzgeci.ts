@@ -213,7 +213,12 @@ export function satisKosulu(
      * yazılırsa "bu ay satılmış VE bu ay kargolanmış" olur; oysa sorulan
      * "bu ay kargolanmış"tır.
      */
-    ...(pencere.aralik && kargo !== "verildi"
+    /**
+     * K195-② (02.10.2026): `teslim` de ekseni devralır — panel «bu dönemde
+     * teslim edilen» sayıyor; dönem satış tarihine uygulansaydı sayı ile
+     * liste sessizce ayrışırdı (İlke #16).
+     */
+    ...(pencere.aralik && kargo !== "verildi" && kargo !== "teslim"
       ? { soldAt: pencere.aralik }
       : {}),
     /**
@@ -364,6 +369,7 @@ export function satisKosulu(
     ...(kargo === "verildi"
       ? { shippedAt: pencere.aralik ?? { not: null } }
       : {}),
+    ...(kargo === "teslim" && pencere.aralik ? { deliveredAt: pencere.aralik } : {}),
     /**
      * ⛔ ELLE `shippedAt: null` YAZILMAZ — tek gövde (K60).
      * İçe aktarılmış siparişin kargo tarihi BİLİNMİYOR; "çıkmadı" değil.
@@ -575,6 +581,26 @@ export function kargosuzParametreleri(p: { pencere: string; baslangic?: string; 
     kar: "kargosuz",
     pencere: p.pencere,
     ...(p.pencere === "OZEL" ? { baslangic: p.baslangic, bitis: p.bitis } : {}),
+    ...(p.kanal ? { kanal: p.kanal } : {}),
+  };
+}
+
+/**
+ * K195-② — panelin teslim kutucuklarının parametreleri. Sayı ve tıklanınca
+ * açılan liste AYNI parametrelerle `satisKosulu`ndan geçer (sayı = liste).
+ * · `yolda` · `bilinmiyor` DÖNEMSİZ — anlık durum («şu an yolda»); dönem
+ *   taşınsaydı panel «5 yolda» derken liste başka bir küme açardı.
+ * · `teslim` dönemi TAŞIR — ekseni teslim tarihidir.
+ */
+export function teslimParametreleri(
+  kova: "yolda" | "teslim" | "bilinmiyor",
+  p: { pencere: string; baslangic?: string; bitis?: string; kanal?: string },
+): SuzgecParametreleri {
+  return {
+    kargo: kova,
+    ...(kova === "teslim"
+      ? { pencere: p.pencere, ...(p.pencere === "OZEL" ? { baslangic: p.baslangic, bitis: p.bitis } : {}) }
+      : {}),
     ...(p.kanal ? { kanal: p.kanal } : {}),
   };
 }

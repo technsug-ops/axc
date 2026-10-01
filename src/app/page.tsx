@@ -67,6 +67,7 @@ import {
   kargosuzParametreleri,
   pencereCoz,
   satisKosulu,
+  teslimParametreleri,
 } from "@/lib/liste-suzgeci";
 import {
   aylikMarj,
@@ -838,6 +839,28 @@ export default async function AnaSayfa({
     ? await prisma.sale.count({ where: satisKosulu(kargosuzParam, an).kosul })
     : 0;
   const kargosuzAdresi = suzgecAdresi("/satislar", kargosuzParam, {});
+
+  /**
+   * K195-② — «YOLDA» · «TESLİM EDİLDİ» kutucukları. Sayı, tıklanınca açılan
+   * listenin SÜZGEÇ GÖVDESİYLE (`satisKosulu`) ve AYNI parametrelerle sayılır:
+   * sayı = liste. Kova ayrımı `teslim-durumu.ts`te (09.09 öncesi kargolanan ve
+   * teslim bildirmeyen kanal «bilinmiyor» — sayıya girmez ama notta YAZAR).
+   * ⚠ Para birimine bölünmedi — liste para birimi süzmüyor; kutucuklar bu
+   * yüzden yalnız İLK blokta çizilir (iki blokta aynı sayı tekrar etmesin).
+   */
+  const teslimTemel = {
+    pencere: donemTuru,
+    baslangic: parametreler.baslangic,
+    bitis: parametreler.bitis,
+    kanal: seciliKanal || undefined,
+  };
+  const [yoldaSayisi, teslimEdilenSayisi, teslimBilinmiyorSayisi] = await Promise.all(
+    (["yolda", "teslim", "bilinmiyor"] as const).map((kova) =>
+      prisma.sale.count({ where: satisKosulu(teslimParametreleri(kova, teslimTemel), an).kosul }),
+    ),
+  );
+  const teslimAdresi = (kova: "yolda" | "teslim" | "bilinmiyor") =>
+    suzgecAdresi("/satislar", teslimParametreleri(kova, teslimTemel), {});
 
   const donemSatislari = seciliKanal
     ? satislar.filter((s) => s.kanalKodu === seciliKanal)
@@ -2671,7 +2694,7 @@ export default async function AnaSayfa({
             </CardContent>
           </Card>
         ) : (
-          bloklar.map((blok) => {
+          bloklar.map((blok, blokSirasi) => {
             /**
              * ⚠ KANAL PAYLARI ARTIK BURADA HESAPLANMIYOR — pazaryeri kartları
              * üst sıraya taşındı ve payları `ustPaylar` olarak orada bir kez
@@ -2994,6 +3017,28 @@ export default async function AnaSayfa({
                         </span>
                       </span>
                     </Baglanti>
+                    {blokSirasi === 0 ? (
+                      <>
+                        <Baglanti
+                          href={teslimAdresi("yolda")}
+                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
+                        >
+                          {t("teslimYolda")}
+                          <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
+                            {yoldaSayisi}
+                          </span>
+                        </Baglanti>
+                        <Baglanti
+                          href={teslimAdresi("teslim")}
+                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
+                        >
+                          {t("teslimEdildi")}
+                          <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
+                            {teslimEdilenSayisi}
+                          </span>
+                        </Baglanti>
+                      </>
+                    ) : null}
                     <span className="text-muted-foreground max-sm:col-span-4">
                       {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
                       <span className="block">{t("kargoEkseniNotu")}</span>
@@ -3012,6 +3057,22 @@ export default async function AnaSayfa({
                         bekleyen: tumKanalKargo.bekleyen,
                       })}
                     </span>
+                      ) : null}
+                      {/* K195-②: «yolda» yalnız teslimi bildiren kanallarda ve 09.09'dan
+                          sonra kargolananlarda sayılır; dışarıda kalan küme GİZLENMEZ.
+                          Sıfırken bağlantı olmaz (açılacak liste yok). */}
+                      {blokSirasi === 0 ? (
+                        <span className="block">
+                          {teslimBilinmiyorSayisi > 0 ? (
+                            <Baglanti href={teslimAdresi("bilinmiyor")}>
+                              {t("teslimBilinmiyorNotu", { sayi: teslimBilinmiyorSayisi })}
+                            </Baglanti>
+                          ) : (
+                            t("teslimBilinmiyorNotu", { sayi: 0 })
+                          )}
+                          {" · "}
+                          {t("teslimEkseniNotu")}
+                        </span>
                       ) : null}
                     </span>
                   </div>

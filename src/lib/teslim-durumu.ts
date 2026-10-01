@@ -53,9 +53,29 @@ export type TeslimKovasi =
   /** Henüz kargoya verilmedi — bu kutunun konusu değil. */
   | "KARGOLANMADI";
 
+/**
+ * TESLİMİ KANALIN KENDİSİ BİLDİREN KANALLAR (K195-②, 02.10.2026) — BEYAN.
+ *
+ * ⛔ NİYE VAR — ÖLÇÜLDÜ: Amazon ve Elden Satış'ta teslim damgası HİÇ doğmaz
+ * (`deliveredAt` yalnız TY · HB · N11 içe aktarmalarında yazılıyor). Bu
+ * kanallarda 09.09'dan sonra kargolanan bir sipariş eskiden «YOLDA» sayılıyor
+ * ve SONSUZA KADAR orada kalıyordu (ölçüm 02.10: Elden Satış 1). Kutu
+ * kapatılamayan bir madde taşırdı. Artık «BİLİNMİYOR» — sistem bilmiyor.
+ * ⚠ Sınıf kanaldan TÜRETİLEMİYOR (kanal kaydı «teslim bildirir» demiyor) —
+ * bu yüzden beyan; `teslim-durumu:dogrula` beyanı `deliveredAt` YAZAN içe
+ * aktarma betikleriyle karşılaştırır.
+ */
+export const TESLIM_BILDIREN_KANALLAR = ["TRENDYOL", "HEPSIBURADA", "N11"] as const;
+
+export function teslimBildirenKanalMi(kanalKodu: string): boolean {
+  return (TESLIM_BILDIREN_KANALLAR as readonly string[]).includes(kanalKodu);
+}
+
 export function teslimKovasi(satis: {
   shippedAt: Date | null;
   deliveredAt: Date | null;
+  /** `Channel.code` — teslim bildirmeyen kanalda «yolda» iddia edilmez. */
+  kanalKodu: string;
 }): TeslimKovasi {
   /**
    * ⚠ SIRA ÖNEMLİ: teslim damgası VARSA eşik hiç sorulmaz. Eski bir sipariş
@@ -64,6 +84,7 @@ export function teslimKovasi(satis: {
    */
   if (satis.deliveredAt !== null) return "TESLIM_EDILDI";
   if (satis.shippedAt === null) return "KARGOLANMADI";
+  if (!teslimBildirenKanalMi(satis.kanalKodu)) return "BILINMIYOR";
   return satis.shippedAt >= TESLIM_IZI_DOGDU ? "YOLDA" : "BILINMIYOR";
 }
 
@@ -76,7 +97,19 @@ export function teslimKovasi(satis: {
 export function teslimKovasiKosulu(kova: Exclude<TeslimKovasi, "KARGOLANMADI">) {
   if (kova === "TESLIM_EDILDI") return { deliveredAt: { not: null } };
   if (kova === "YOLDA") {
-    return { deliveredAt: null, shippedAt: { gte: TESLIM_IZI_DOGDU } };
+    return {
+      deliveredAt: null,
+      shippedAt: { gte: TESLIM_IZI_DOGDU },
+      channelAccount: { channel: { code: { in: [...TESLIM_BILDIREN_KANALLAR] } } },
+    };
   }
-  return { deliveredAt: null, shippedAt: { lt: TESLIM_IZI_DOGDU } };
+  /** Eşikten önce kargolanan YA DA teslim bildirmeyen kanalda kargolanan. */
+  return {
+    deliveredAt: null,
+    shippedAt: { not: null },
+    OR: [
+      { shippedAt: { lt: TESLIM_IZI_DOGDU } },
+      { channelAccount: { channel: { code: { notIn: [...TESLIM_BILDIREN_KANALLAR] } } } },
+    ],
+  };
 }

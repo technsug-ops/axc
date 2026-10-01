@@ -168,6 +168,14 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "tablo-oku-mutasyon:kontrol",
   "teklif-tanima-mutasyon:kontrol",
   /**
+   * K195-② (02.10.2026) — `teslim-durumu` artık PANEL sayfasını
+   * (`src/app/page.tsx`: kutucuk sayıları ve adresleri) ve
+   * `liste-suzgeci.ts`i (teslim ekseni) mutasyona uğratıyor; ikisine de
+   * `panel` · `kargosuz` ve başka üyeler dokunuyor. Bekçi push öncesi
+   * yakaladı.
+   */
+  "teslim-durumu-mutasyon:kontrol",
+  /**
    * K243 (23.09.2026) — `kargo-kaynagi` artık SATIŞ DETAY ekranını da
    * mutasyona uğratıyor (`satislar/[id]/page.tsx`): desi ve kanal kargo
    * firması satırlarının ÇİZİLDİĞİNİ sınıyor. O dosyaya yukarıdaki grubun

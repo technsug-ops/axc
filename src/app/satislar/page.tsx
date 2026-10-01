@@ -443,6 +443,10 @@ export default async function SatislarSayfasi({
       secenekler: [
         { deger: "verildi", etiket: t("kargoSuzgeciVerildi") },
         { deger: "bekleyen", etiket: t("kargoSuzgeciBekleyen") },
+        /* K195-②: panelin «Yolda» · «Teslim edildi» kutucukları buraya iner. */
+        { deger: "yolda", etiket: t("kargoSuzgeciYolda") },
+        { deger: "teslim", etiket: t("kargoSuzgeciTeslim") },
+        { deger: "bilinmiyor", etiket: t("kargoSuzgeciBilinmiyor") },
       ],
     },
     /**

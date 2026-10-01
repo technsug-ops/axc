@@ -19,10 +19,12 @@ import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 const BEKCI = "scripts/teslim-durumu-dogrula.ts";
 const BEKCI_BASLIGI = "TESLİM DURUMU BEKÇİSİ";
 const GOVDE = "src/lib/teslim-durumu.ts";
+const SUZGEC = "src/lib/liste-suzgeci.ts";
+const SAYFA = "src/app/page.tsx";
 
 type Mutasyon = {
   ad: string;
-  yon: "KALDIRAN" | "FAZLADAN";
+  yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN";
   dosya: string;
   bul: string;
   koy: string;
@@ -30,6 +32,19 @@ type Mutasyon = {
 };
 
 const MUTASYONLAR: Mutasyon[] = [
+  /**
+   * ⛔ ZARARSIZ SAĞLAMA (02.10.2026): bu tur 13/13 «yakalandı» dedi ama bekçi
+   * MUTASYONSUZ kodda da kırmızıydı — sonuçların hepsi geçersizdi. Zararsız
+   * bir değişiklik YEŞİL kalmalı; kalmazsa bekçi yalancı kırmızı üretiyor.
+   */
+  {
+    ad: "ZARARSIZ - yorum",
+    yon: "ZARARSIZ",
+    dosya: GOVDE,
+    bul: "/** Eşikten önce kargolanan YA DA teslim bildirmeyen kanalda kargolanan. */",
+    koy: "/** Bilinmiyor kovası. */",
+    bozdugu: "hicbir sey - YESIL kalmali",
+  },
   {
     ad: "EŞİK AYRIMI KALKTI — her şey YOLDA",
     yon: "FAZLADAN",
@@ -75,10 +90,75 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "KOŞUL GÖVDESİ EŞİĞİ DÜŞÜRDÜ — sayı ile liste ayrışır",
     yon: "KALDIRAN",
     dosya: GOVDE,
-    bul: "    return { deliveredAt: null, shippedAt: { gte: TESLIM_IZI_DOGDU } };",
-    koy: "    return { deliveredAt: null };",
+    bul: "      shippedAt: { gte: TESLIM_IZI_DOGDU },",
+    koy: "",
     bozdugu:
       "kutu bir kumeyi sayar, tiklanan liste BASKA kumeyi gosterir — panelin 'sayi = liste' sozu duser",
+  },
+  /* ─── K195-② (02.10.2026): teslim bildirmeyen kanal ─── */
+  {
+    ad: "KANAL AYRIMI KALKTI — Elden Satış/Amazon YOLDA",
+    yon: "FAZLADAN",
+    dosya: GOVDE,
+    bul: '  if (!teslimBildirenKanalMi(satis.kanalKodu)) return "BILINMIYOR";\n',
+    koy: "",
+    bozdugu: "teslim damgasi hic dogmayan kanaldaki paket sonsuza kadar 'yolda' kalir",
+  },
+  {
+    ad: "YOLDA KOŞULU KANALI SÜZMÜYOR",
+    yon: "FAZLADAN",
+    dosya: GOVDE,
+    bul: "      channelAccount: { channel: { code: { in: [...TESLIM_BILDIREN_KANALLAR] } } },\n",
+    koy: "",
+    bozdugu: "kutudaki 'yolda' sayisi Amazon/Elden paketlerini de sayar",
+  },
+  {
+    ad: "BEYANA YAZICISI OLMAYAN KANAL EKLENDİ (Amazon)",
+    yon: "FAZLADAN",
+    dosya: GOVDE,
+    bul: 'export const TESLIM_BILDIREN_KANALLAR = ["TRENDYOL", "HEPSIBURADA", "N11"] as const;',
+    koy: 'export const TESLIM_BILDIREN_KANALLAR = ["TRENDYOL", "HEPSIBURADA", "N11", "AMAZON"] as const;',
+    bozdugu: "teslim yazmayan kanal 'bildiren' sayilir; paketleri yolda kalir",
+  },
+  {
+    ad: "TESLİM LİSTESİ DÖNEMİ SATIŞ TARİHİNE UYGULUYOR",
+    yon: "KALDIRAN",
+    dosya: SUZGEC,
+    bul: '    ...(pencere.aralik && kargo !== "verildi" && kargo !== "teslim"',
+    koy: '    ...(pencere.aralik && kargo !== "verildi"',
+    bozdugu: "panel 'bu ay teslim edilen' sayar, liste 'bu ay satilan'i acar",
+  },
+  {
+    ad: "TESLİM LİSTESİ TESLİM TARİHİNE BAKMIYOR",
+    yon: "KALDIRAN",
+    dosya: SUZGEC,
+    bul: '    ...(kargo === "teslim" && pencere.aralik ? { deliveredAt: pencere.aralik } : {}),\n',
+    koy: "",
+    bozdugu: "liste donemdeki teslimleri degil butun teslimleri acar",
+  },
+  {
+    ad: "YOLDA KUTUCUĞU DÖNEM TAŞIYOR",
+    yon: "FAZLADAN",
+    dosya: SUZGEC,
+    bul: '    ...(kova === "teslim"' + "\n" + "      ? { pencere: p.pencere,",
+    koy: '    ...(kova !== "bilinmiyor"' + "\n" + "      ? { pencere: p.pencere,",
+    bozdugu: "'su an yolda' sayisi secili doneme gore daralir, liste ile ayrisir",
+  },
+  {
+    ad: "PANEL SAYISI LİSTE GÖVDESİNDEN SAYMIYOR",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "      prisma.sale.count({ where: satisKosulu(teslimParametreleri(kova, teslimTemel), an).kosul }),",
+    koy: "      prisma.sale.count({ where: { shippedAt: { not: null }, deliveredAt: null } }),",
+    bozdugu: "kutudaki sayi ile tiklanan liste ayrisir (sayi = liste sozu duser)",
+  },
+  {
+    ad: "YOLDA KUTUCUĞU YANLIŞ LİSTEYE GİDİYOR",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: '                          href={teslimAdresi("yolda")}',
+    koy: '                          href={teslimAdresi("teslim")}',
+    bozdugu: "Yolda'ya tiklayan teslim edilenleri gorur",
   },
 ];
 
@@ -126,8 +206,15 @@ for (const m of MUTASYONLAR) {
     dayanikliYaz(m.dosya, asil);
   }
 
-  const isaret = m.yon === "KALDIRAN" ? "-" : "+";
-  if (sonuc.kod !== 0 && sonuc.ciktiVar) {
+  const isaret = m.yon === "KALDIRAN" ? "-" : m.yon === "FAZLADAN" ? "+" : "o";
+  if (m.yon === "ZARARSIZ") {
+    if (sonuc.kod === 0 && sonuc.ciktiVar) {
+      yakalanan++;
+      console.log("  OK  o " + m.ad + " (yeşil kaldı)");
+    } else {
+      bozuk.push(m.ad + "\n       zararsız mutasyon KIRMIZI — bekçi yalancı kırmızı üretiyor, öteki sonuçlar GEÇERSİZ");
+    }
+  } else if (sonuc.kod !== 0 && sonuc.ciktiVar) {
     yakalanan++;
     console.log("  OK  " + isaret + " " + m.ad);
   } else if (sonuc.kod !== 0) {
