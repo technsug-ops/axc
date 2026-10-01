@@ -5128,7 +5128,22 @@ edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
 
 ---
 
-## 🔶 K194-HB — HB'YE STOK/FİYAT GÖNDERİMİ (ÜÇÜNCÜ KANAL) · 09.09.2026 · [UÇ + GÖVDE RESMİ DOKÜMANDAN OKUNDU — SIT DENEMESİ + YAZMA KODU BEKLİYOR]
+## 🔶 K194-HB — HB'YE STOK/FİYAT GÖNDERİMİ (ÜÇÜNCÜ KANAL) · 09.09.2026 · [SIT DENEMESİ KOŞTU 01.10.2026 — ÇEKİRDEK SORU KAPANDI; YAZMA KODU BEKLİYOR]
+
+⭐ **01.10.2026 — SIT ERİŞİMİ AÇILDI VE DENEME KOŞTU (kullanıcı onayı «yap»).**
+· **401'in sebebi:** kayıtlı SIT secret key eskimişti. HB'nin verdiği merchantId ve developer (`axcali_dev`) bizdekiyle AYNIYDI (değer basılmadan karşılaştırıldı). Kullanıcı yeni anahtarı `.env.canli`ye KENDİSİ koydu (sohbete yazılmadı) → listing ve oms okuması **VERİ** döndü.
+· **Deneme — yalnız SIT, yalnız `HBV000010LWPR` (önce: fiyat ₺100 · stok 10), betik başlangıç hâli tutmazsa hiçbir şey göndermiyordu:**
+    stock-uploads XML (dokümandaki örnek)  → HTTP 400 «deserializing input data» — HİÇBİR ŞEY DEĞİŞMEDİ
+    stock-uploads JSON [{hepsiburadaSku, merchantSku, availableStock:11}] → 200 · durum «Ready» · stok 11 · **fiyat ₺100 (değişmedi)**
+    geri: availableStock:10 → 200 · Ready · stok 10
+    price-uploads JSON [{hepsiburadaSku, merchantSku, price:101}] → 200 · durum «Done» · priceValidations null · fiyat 101 · **stok 10 (değişmedi)**
+    geri: price:100 → 200 · Done · fiyat 100
+    (correlation id'ler: dd6e048c… · d40407fb… · 105cad25… · b28880c9…)
+✅ **ÇEKİRDEK SORU 1 KAPANDI:** stok gönderimi fiyatSIZ kabul ediliyor ve fiyatı EZMİYOR — bayat fiyat riski YOK. Stok ile fiyat bağımsız (TY/N11 düzeniyle aynı: stok tek düğme, fiyat kanal başına).
+✅ **SORU 2 GEREKSİZ ÇIKTI:** ne stok ne fiyat gönderimi CargoCompany/ShippingProfileName istiyor.
+⚠ **DOKÜMAN İKİ YERDE YANLIŞ (ölçüldü):** ① gövde JSON olmalı — XML örneği 400 alıyor; ② bitiş durumu stokta «**Ready**», fiyatta «**Done**» (doküman yalnız Done/Failed diyor). Yazma kodu bu ÖLÇÜME göre kurulacak.
+**SIRADAKİ:** yazma kodu (önizle → onayla, TY K169 / N11 K194 deseni) — kullanıcı onayıyla açılacak.
+
 
 ⛔ **N11 (K194) VE TY (K169) YAZMA TARAFI KAPANDI (Halil testi geçti,
 bkz. ARSIV.md) — YALNIZ HB AÇIK.**
