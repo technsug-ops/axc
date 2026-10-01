@@ -36,8 +36,19 @@ import { apiGet, baslikKur, taban, UCLAR, type Kimlik } from "./istemci";
 /**
  * ⛔ CANLI MAĞAZAYA GÖNDERİM — KULLANICI ONAYIYLA AÇILIR.
  * `false` iken `stokFiyatGonder` canlı ortamda ağa çıkmadan `CANLI_KAPALI` döner.
+ * ⭐ AÇILDI 01.10.2026 (kullanıcı onayı «ok») — SIT uçtan uca dört adımı da
+ * DOĞRULADIKTAN sonra. İlk canlı deneme: tek ürün, yalnız stok, aynı rakam.
  */
-export const HB_CANLI_YAZMA_ACIK = false;
+export const HB_CANLI_YAZMA_ACIK = true;
+
+/**
+ * KİLİT KARARI — SAF. Deneme ortamı her zaman açık; canlı yalnız bayrakla.
+ * Bayrağın DEĞERİNDEN bağımsız sınanabilsin diye ayrı (bayrak açılınca
+ * «kilit kapalıyken ağa çıkılmaz» sınaması koşmaz olurdu).
+ */
+export function hbYazmaAcikMi(ortam: string, canliAcik: boolean): boolean {
+  return ortam.toUpperCase() === "TEST" || canliAcik;
+}
 
 /** İki yükleme ucu — kapalı küme. Adres başka hiçbir yerden kurulamaz. */
 const YUKLEME_UCLARI = {
@@ -142,7 +153,7 @@ export async function stokFiyatGonder(
 ): Promise<YazmaSonucu> {
   const kural = kalemGecerliMi(kalem);
   if (!kural.gecerli) return { tur: "KURAL_IHLALI", kod: kural.kod, mesaj: kural.mesaj };
-  if (k.ortam.toUpperCase() !== "TEST" && !HB_CANLI_YAZMA_ACIK) return { tur: "CANLI_KAPALI" };
+  if (!hbYazmaAcikMi(k.ortam, HB_CANLI_YAZMA_ACIK)) return { tur: "CANLI_KAPALI" };
 
   const stok =
     kalem.availableStock === undefined

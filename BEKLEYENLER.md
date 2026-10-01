@@ -5154,7 +5154,7 @@ edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
 · Bekçiler: `api:dogrula` (beyan) · `kanal-yazma:dogrula` 77 (HB'ye 24 kontrol; canlı kilidinin ağa çıkmadığı fetch casusuyla değerle sınanıyor) · `hb-yazma-mutasyon` **10/10**.
 ⚠ **BİLİNEN SINIR:** fiyat bandı (`OutOfPriceRange`) ÖNCEDEN hesaplanamıyor — HB'nin baktığı «yayındaki fiyat ortalaması» bize gelmiyor; ekran bandı NOT olarak yazar, red gelirse sebebi Türkçe gösterir. (Önceki plandaki «göndermeden önce hesaplayıp uyarır» sözü bu yüzden TUTULAMADI — beyan edildi.)
 **Halil testi (canlı, deploy sonrası):** Ürünler → herhangi bir HB ilanı olan ürün → Varyant satırında «HB'ye Gönder» → pencere: «Canlı Hepsiburada mağazası» + «Canlı … gönderim henüz AÇILMADI» uyarısı + HB SKU · Selliora stoğu · HB'nin bildirdiği adet → **Gönder düğmesi KAPALI**. Telefonda da aynı. ✅ **01.10.2026 bilgisayarda GEÇTİ** (ekran görüntüsü: «Canlı Hepsiburada mağazası» · kilit uyarısı · HBCV000076U6IO · Selliora 2 · HB 2 · Gönder kapalı). Telefon teyidi bekliyor.
-**CANLI AÇILIŞ (ayrı onay):** `HB_CANLI_YAZMA_ACIK = true` (tek satır) → tek ürünle canlı deneme → sonuç panoya.
+**CANLI AÇILIŞ (ayrı onay):** `HB_CANLI_YAZMA_ACIK = true` (tek satır) → tek ürünle canlı deneme → sonuç panoya. ⭐ **01.10.2026 AÇILDI (kullanıcı onayı «ok»).** Kilit kararı saf fonksiyona taşındı (`hbYazmaAcikMi`) — bayrak açıkken de iki konumu değerle sınanıyor (eskiden yalnız kapalıyken sınanıyordu; açılınca o sınama koşmaz olurdu). `kanal-yazma:dogrula` 81 · mutasyon 11/11. **İlk canlı deneme:** HBCV000076U6IO · yalnız stok · aynı rakam (2) — kullanıcı pencereden gönderecek, sonuç iz + HB cevabıyla doğrulanacak.
 
 
 ⛔ **N11 (K194) VE TY (K169) YAZMA TARAFI KAPANDI (Halil testi geçti,

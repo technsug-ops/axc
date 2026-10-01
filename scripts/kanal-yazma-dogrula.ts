@@ -3,6 +3,7 @@ import { kaynakOku } from "./kaynak-oku";
 import { kalemGecerliMi } from "./n11/yazici";
 import {
   HB_CANLI_YAZMA_ACIK,
+  hbYazmaAcikMi,
   kalemGecerliMi as hbKalemGecerliMi,
   kanaldakiIlanCoz as hbKanaldakiIlanCoz,
   stokFiyatGonder as hbStokFiyatGonder,
@@ -328,10 +329,16 @@ async function hbBolumu() {
   }) as typeof fetch;
   try {
     const canli = await hbStokFiyatGonder({ merchantId: "m", key: "k", developer: "d", ortam: "CANLI" }, { ...SKU, availableStock: 3 });
+    /* ⚠ Bayrak açıldı (01.10.2026); kilit KARARI bayraktan bağımsız sınanır. */
     if (!HB_CANLI_YAZMA_ACIK) {
       kontrol("HB: canlı kilit kapalıyken CANLI_KAPALI döner", canli.tur === "CANLI_KAPALI", canli);
       kontrol("HB:   ...ve AĞA HİÇ ÇIKILMAZ", cagri === 0, cagri);
     }
+    kontrol("HB: kilit kararı — canlı + bayrak kapalı → KAPALI", hbYazmaAcikMi("CANLI", false) === false);
+    kontrol("HB: kilit kararı — canlı + bayrak açık → AÇIK", hbYazmaAcikMi("CANLI", true) === true);
+    kontrol("HB: kilit kararı — deneme ortamı her zaman AÇIK", hbYazmaAcikMi("TEST", false) === true && hbYazmaAcikMi("test", false) === true);
+    /* Sayaç sıfırlanır: bayrak açıkken yukarıdaki canlı çağrı sahte ağa gider; bu sınama YALNIZ kendi çağrısını sayar. */
+    cagri = 0;
     const kural = await hbStokFiyatGonder({ merchantId: "m", key: "k", developer: "d", ortam: "TEST" }, { ...SKU });
     kontrol("HB: kural ihlali de ağa çıkmadan döner", kural.tur === "KURAL_IHLALI" && cagri === 0, kural);
   } finally {
@@ -358,6 +365,9 @@ async function hbBolumu() {
 
   /* Kaynak — eylem ve pencere sözleşmesi. */
   const yazici = yorumsuz(kaynakOku("scripts/hb/yazici.ts"));
+  kontrol("HB: gönderim kilit kararını ağa çıkmadan çağırıyor", yazici.includes('if (!hbYazmaAcikMi(k.ortam, HB_CANLI_YAZMA_ACIK)) return { tur: "CANLI_KAPALI" };'));
+  const eylemKilit = yorumsuz(kaynakOku("src/app/kart/[variantId]/actions.ts"));
+  kontrol("HB: önizleme AYNI kilit kararını gösteriyor", eylemKilit.includes("canliKapali: !hbYazmaAcikMi(ortam, HB_CANLI_YAZMA_ACIK),"));
   kontrol("HB: uç adresi kapalı kümeden (iki değer)", /const YUKLEME_UCLARI = \{\s*STOK: "stock-uploads",\s*FIYAT: "price-uploads",\s*\} as const;/.test(yazici) && yazici.includes("/${YUKLEME_UCLARI[tur]}`"));
   const eylem = yorumsuz(kaynakOku("src/app/kart/[variantId]/actions.ts"));
   kontrol("HB: hüküm GERİ OKUNAN ilandan veriliyor (stok ve fiyat)", eylem.includes("const hukum = parcaHukmu(durum, p.gonderilen, kanaldaki(p.tur));") && eylem.includes("ilan = await hbKanaldakiIlan(k, hbSku);"));

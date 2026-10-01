@@ -17,6 +17,7 @@ import { stokFiyatGonder as n11StokFiyatIste } from "../../../../scripts/n11/yaz
 import { kimlikOku as hbKimlikOku } from "../../../../scripts/hb/istemci";
 import {
   HB_CANLI_YAZMA_ACIK,
+  hbYazmaAcikMi,
   kanaldakiIlan as hbKanaldakiIlan,
   stokFiyatGonder as hbStokFiyatIste,
   yuklemeDurumu as hbYuklemeDurumu,
@@ -517,7 +518,7 @@ export async function hbGonderimOnizle(variantId: string): Promise<HbGonderimOni
     kanalAdet: b.kanalSku.kanalAdet,
     listelemeDurumu: b.kanalSku.listelemeDurumu,
     ortam,
-    canliKapali: ortam !== "TEST" && !HB_CANLI_YAZMA_ACIK,
+    canliKapali: !hbYazmaAcikMi(ortam, HB_CANLI_YAZMA_ACIK),
   };
 }
 
