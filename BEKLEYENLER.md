@@ -6351,7 +6351,7 @@ kapısını körleştir).
 · `/satislar?kar=kargosuz` süzgeci + kâr rakamının yanında «kargo düşülmedi» rozeti (masaüstü + telefon).
 · Panel ve Rapor: «N satışın kârı kargo düşülmeden hesaplandı» — sayı listenin süzgeç gövdesiyle (`satisKosulu`) AYNI parametrelerle sayılıyor, bağlantı dönemi taşıyor (panel varsayılan «Bugün», liste «tüm zamanlar» — pencere açıkça taşınmasa ayrışırdı). Yalnız `satis.kar.gor`.
 · Bekçi `suzgec:dogrula` +16 (152) · mutasyon `kargosuz-mutasyon:kontrol` 9/9.
-**Halil testi (01.10 ölçümüyle):** ① Panel «Bugün» → NET kutularının üstünde «1 satışın kârı kargo düşülmeden…» → tıkla → satış listesi 1 kayıt, kâr rakamının yanında «kargo düşülmedi». ② Panelde «Son 30 gün» → **10** · «Son 3 ay» → **12**; tıklayınca liste aynı sayıyı gösterir. ③ Satışlar → Kâr süzgeci «Kargo düşülmeden hesaplananlar», dönem yok → **1.319**. ④ Rapor «Bu ay» → aynı not, sayı **1**. ⑤ Sayılar gün geçtikçe değişir (taşıyıcı seçildikçe düşer) — önemli olan not ile listenin aynı sayı olması.
+**Halil testi (01.10 ölçümüyle):** ① Panel «Bugün» → NET kutularının üstünde «1 satışın kârı kargo düşülmeden…» → tıkla → satış listesi 1 kayıt, kâr rakamının yanında «kargo düşülmedi». ② Panelde «Son 30 gün» → **10** · «Son 3 ay» → **12**; tıklayınca liste aynı sayıyı gösterir. ③ Satışlar → Kâr süzgeci «Kargo düşülmeden hesaplananlar», dönem yok → **1.319**. ④ Rapor «Bu ay» → aynı not, sayı **1**. ⑤ Sayılar gün geçtikçe değişir (taşıyıcı seçildikçe düşer) — önemli olan not ile listenin aynı sayı olması. ✅ **HALİL TESTİ GEÇTİ 01.10.2026** — kullanıcı altı adımın hepsini «ok» dedi (panel Bugün/30 gün/3 ay, süzgeç 1.319, rapor, telefon rozeti).
 
 ---
 
