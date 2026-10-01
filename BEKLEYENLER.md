@@ -44,7 +44,7 @@ beklenen = Σ birim × adet × oran/100. Tolerans uydurulmadı: birim başına k
 fiyatı boş kalem varsa hüküm verilmez. Bekçi `alim-maliyeti:dogrula` +19 ölçüt; mutasyon 17/17 (8 yeni).
 **Halil testi:** yeni alım → KDV hariç tedarikçi → %20'lik üründen 1 adet ₺1.000 → KDV **200** yaz → uyarı YOK;
 **210** yaz → «Faturadaki KDV ₺210,00, ürünlerin KDV oranlarına göre beklenen ₺200,00» çıkar ve Kaydet düğmesi yine
-basılabilir. %10'luk bir diş fırçası eklenince beklenen ona göre artar (ör. ₺500 fırça → beklenen ₺250,00).
+basılabilir. %10'luk bir diş fırçası eklenince beklenen ona göre artar (ör. ₺500 fırça → beklenen ₺250,00). ✅ **HALİL TESTİ GEÇTİ 01.10.2026** (kullanıcı: «alım faturası KDV kontrol ok»).
 
 ---
 
@@ -118,7 +118,7 @@ ekliyor, nakit takvimi eklemiyor. Ayrı kalem.
 1. Kart borcu → üstte «4 alım iadesinin tahsil günü girilmedi» kutusu, dört satır yukarıdaki tutarlarla.
 2. Satıra tıkla → tazminat ekranı o alımla süzülü → satırda turuncu «Tahsil günü girilmedi» → tıkla → pazaryeri e-postasındaki tarihi seç → Kaydet → «Tahsil: …» yazar.
 3. Kart borcu → kutu 3'e iner; o kartın ekstrelerinde «… · iade» satırları taksit taksit görünür (Murat Garanti ₺8.811 / 9 ≈ ₺979 her ay).
-4. S.ahmet Garanti → 7 Ekim ekstresinde «ALM-HB-260911-16 · iade» **−266,65** (bankayla aynı), sonraki iki ekstrede **−266,63**'er.
+4. S.ahmet Garanti → 7 Ekim ekstresinde «ALM-HB-260911-16 · iade» **−266,65** (bankayla aynı), sonraki iki ekstrede **−266,63**'er. ✅ **01.10.2026: −266,65 görünüyor** (kullanıcı teyidi).
 
 ---
 
