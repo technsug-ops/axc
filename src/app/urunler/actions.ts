@@ -1,5 +1,6 @@
 "use server";
 
+import { urunAktifMi } from "@/lib/urun-aktiflik";
 import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
@@ -357,6 +358,8 @@ export async function urunOlustur(
     const urun = await prisma.product.create({
       data: {
         name: veri.ad,
+        /** Ürün aktifliği varyantlardan türer (`lib/urun-aktiflik.ts`). */
+        isActive: urunAktifMi(veri.varyantlar),
         brand: veri.marka || null,
         /* K285: marka metni tablodaki bir markaya düşüyorsa bağ kurulur. */
         brandId: await markaBagiBul(veri.marka),
@@ -464,6 +467,8 @@ export async function urunGuncelle(
         where: { id: urunId },
         data: {
           name: veri.ad,
+          /** Ürün aktifliği varyantlardan türer — eskiden hiç yazılmıyordu (`lib/urun-aktiflik.ts`). */
+          isActive: urunAktifMi(veri.varyantlar),
           brand: veri.marka || null,
           /* K285: marka metni değişince bağ da YENİDEN hesaplanır — eski bağ kalmaz. */
           brandId: markaBagi,

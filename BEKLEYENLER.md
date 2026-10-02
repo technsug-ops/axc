@@ -13,6 +13,16 @@
 
 ---
 
+## 🔶 K313 — ÜRÜN AKTİFLİĞİNİN YAZICISI YOKTU · 02.10.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı:** «Pasif ürünü nasıl aktif yapacağız, HBCV00006G7MR1 bu ürüne alım gireceğim giremiyorum.» Ürün: Anker Soundcore Boom 2 A3138 (siyah) — kopya DEĞİL (aktif «Boom 2 SE» A3148 başka model); 26.09 toplu «uyuyan ürün» temizliğinde (stok 0 · 90 gün satış yok · kanalda açık değil) ürün + varyant pasife alınmış.
+**Kusur:** düzenleme formu yalnız VARYANT aktifliğini yazıyordu; `Product.isActive`in arayüzde yazıcısı yoktu → varyant aktif edilince alım açıldı (arama varyanta bakıyor) ama ürün listede «pasif» kaldı; etiket ve SKU önizleme ürünü göstermedi.
+**Çare:** `lib/urun-aktiflik.ts` `urunAktifMi` — ürün, en az bir varyantı aktifse aktif; oluşturma ve güncelleme yazar. Bekçi `urun-aktiflik:dogrula` 6 · mutasyon 4/4.
+**Veri:** kullanıcı varyantı formdan aktif etti (15:24Z); ürün onayla aktif edildi (iz `URUN_AKTIF_EDILDI`). Kalan ters tutarsızlık **4 ürün** (ürün aktif, bütün varyantları pasif — yeni kural ilk kaydetmede pasife çevirir): Disney 'Up' House `axcali2601` · Comfort 3'lü Bıçak Seti `axcali3078` · Fisher-Price Eğlen&Öğren `0887961643367` · Philips BHD500 `HBCV00000R0H0K`. ⏭ **ONAY BEKLİYOR:** dördü toplu pasife çekilsin mi (yazıcısı olmayan eski hâl)?
+**Halil testi:** Ürünler → `HBCV00006G7MR1` → «pasif» rozeti YOK · Alımlar → Yeni alım → ürün aramada çıkar.
+
+---
+
 ## 🔶 K312 — VERİ KAZINMASINA KARŞI DÖRT KORUMA · 02.10.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı isteği:** «Projede veri madenciliği yapılarak db'nin kazınmasını engelle» (Selliora için).
