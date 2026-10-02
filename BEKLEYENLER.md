@@ -13,6 +13,18 @@
 
 ---
 
+## 💤 K310 — PAZARYERİNDE SİSTEMDEN YENİ İLAN AÇMAK · 02.10.2026 · [İLERİDE — kullanıcı «ekle»; AÇILIŞ ŞARTI AŞAĞIDA]
+
+**Kullanıcı sorusu:** _«Dışarıdan alım yaptığım bir ürünü pazaryerlerine programdan açabiliyor muyum?»_ — **HAYIR (bugün).**
+**Bugün olan:** ürün kartı + alım · mevcut ilanla eşleştirme (`/kanal-sku`) · eşleşmiş ilana stok (tek düğme) ve fiyat (kanal başına).
+**Olmayan:** ilanın KENDİSİNİ açmak (ad · kategori · kategoriye özel zorunlu özellikler · görseller · marka onayı). Kodda kanallara giden TEK yazma stok/fiyat; `kanal-yazma:dogrula` yazıcı başına TEK POST'u BİLEREK denetliyor — ilan açma ayrı bir yazma yolu ve ayrı karar ister.
+**Bugünkü yol:** ilanı kanalın satıcı panelinden aç → çekim görür → `/kanal-sku`de eşleştir → stok/fiyat sistemden.
+**Büyüklük:** kanal başına AYRI proje (TY kategori ağacı + özellik şeması + onay süreci; HB ve N11 kendi şemaları). Üç kanal = üç iş.
+**AÇILIŞ ŞARTI:** ① tek firma oturdu (CLAUDE.md: Faz 4 sonrası yeni büyük iş açılmaz) **ve** ② ihtiyaç ÖLÇÜLDÜ — ayda kaç yeni ilan açılıyor, kanal başına kaç dakika sürüyor. Ölçülmeden yazılmaz: olmayan ihtiyaca genel çözüm yazılmaz.
+⚠ SaaS notu: «kendi siteni bağla» gibi satılabilir bir özellik adayı; ama SaaS'a özel iş bugün AÇILMAZ.
+
+---
+
 ## 🔴 K309 — ALIMIN FATURA YAPISI: KDV HARİÇ · KARGO AYRI · GÜMRÜK (MALİYETE DAĞITILIR) · 30.09.2026 · [MIGRATION CANLIDA · KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı kararı:** «Hep bu şekilde olmaz mal alışları — toptan alımda KDV ve kargo ayrı yazılabilir, yurtdışında gümrük
