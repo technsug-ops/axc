@@ -248,22 +248,24 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
 - Faz 3 ✓: hakediş + kart borcu takibi + tazminat
   _(ölçüldü 09.09.2026: `/hakedis` · `/kartlar` · `/tazminat` üçü de canlıda)_
 - Faz 3,5 ✓: TEK KULLANICILI GİRİŞ — `/giris` (canlıya geçişin ön maddesiydi)
-- **Faz 4 (ŞİMDİ — tek açık madde kaldı): pazaryeri API'leri + barkod + çoklu kullanıcı + yetki (RBAC)**
+- **Faz 4 ✓ (kapandı 02.10.2026): pazaryeri API'leri + barkod + çoklu kullanıcı + yetki (RBAC)**
   · pazaryeri API — OKUMA üç kanalda canlı (TY·HB·N11, 5 dakikada bir) ✓
   · pazaryeri API — YAZMA üç kanalda canlı ✓: TY (K169) · N11 (K194) ·
     **HB (K194-HB — 01.10.2026 telefonda canlı stok+fiyat gönderimi
     ilanda doğrulandı, kullanıcı kapattı)**
-  · ⏳ **AÇIK:** _kullanıcı kararı 09.09: stok TEK düğmeyle üç kanala, fiyat
-    kanal başına AYRI düğmeyle._ Fiyat düğmeleri ✓; **stoğu üç kanala tek
-    düğmeyle gönderen ekran YOK** (bugün kanal başına ayrı pencere). Faz 4
-    bu ekran yazılıp Halil testini geçince ✓ olur — ya da kullanıcı bu
-    maddeyi fazdan çıkarırsa.
+  · stok TEK düğmeyle bağlı kanallara ✓ («Stoğu bağlı kanallara gönder» —
+    02.10.2026 canlıda TY işlendi + HB ilanda görüldü, fiyata dokunulmadı;
+    düğme telefonda görüldü) · fiyat kanal başına AYRI düğmeyle ✓
+    _(kullanıcı kararı 09.09)_
+- **ŞİMDİ: tek firma kendi işinde oturur** — yeni büyük faz AÇILMAZ; bekleyen
+  Halil testleri ve ertelenmiş kalemler kapanır. Sonraki adımın (K303
+  çok-firma) açılışına kullanıcı karar verir.
   · barkod ✓ (`/okut` · `/paketle` · `/yerlestir` + kamera)
   · yetki (RBAC) ✓ (`lib/yetki`, rol+izin, `canli:yetki` bekçisi)
 - **Çok-firma veri katmanı (K303) — 💤 UYUR (28.09.2026, aynı gün öne alınıp
   geri bırakıldı).** Aşama 0 ✓ · Aşama 1 tasarım ✓ (`docs/cok-firma-tasarimi.md`,
-  kararlar kayıtlı) · Aşama 2–4 yazılmadı. Açılış şartı: Faz 4 kapanır ve
-  tek firma kendi işinde oturur (kullanıcı söyler).
+  kararlar kayıtlı) · Aşama 2–4 yazılmadı. Açılış şartı: Faz 4 kapanır ✓
+  (02.10.2026) ve tek firma kendi işinde oturur (kullanıcı söyler).
 Bir faza ait olmayan özelliği o fazda EKLEME.
 
 ⚠ **FAZ GÖSTERGESİ BİR VERİDİR VE BAYATLAYABİLİR — 09.09.2026'da bayattı.**
