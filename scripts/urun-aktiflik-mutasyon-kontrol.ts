@@ -15,6 +15,7 @@ const BEKCI = "scripts/urun-aktiflik-dogrula.ts";
 const BEKCI_BASLIGI = "ÜRÜN AKTİFLİĞİ BEKÇİSİ";
 const KURAL = "src/lib/urun-aktiflik.ts";
 const EYLEM = "src/app/urunler/actions.ts";
+const FORM = "src/app/urunler/urun-formu.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -31,6 +32,37 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "GUNCELLEME URUNU YAZMIYOR", yon: "KALDIRAN", dosya: EYLEM,
     bul: "          isActive: urunAktifMi(veri.varyantlar),", koy: "",
     bozdugu: "varyant aktif edilince urun pasif kalir (eski kusur)" },
+  /* ═══ K315 — pasiften aktife geçiş şartı ═══ */
+  { ad: "K315 EAN SARTI YOK", yon: "KALDIRAN", dosya: KURAL,
+    bul: '  if (!eanGecerliMi((g.barkod ?? "").trim())) eksik.push("EAN");', koy: "",
+    bozdugu: "barkodsuz uyuyan kayit tek tikla geri acilir" },
+  { ad: "K315 EAN YALNIZ DOLULUK", yon: "KALDIRAN", dosya: KURAL,
+    bul: '  if (!eanGecerliMi((g.barkod ?? "").trim())) eksik.push("EAN");', koy: '  if (!(g.barkod ?? "").trim()) eksik.push("EAN");',
+    bozdugu: "HBCV… gibi EAN olmayan kodla acilir" },
+  { ad: "K315 KATEGORI SARTI YOK", yon: "KALDIRAN", dosya: KURAL,
+    bul: '  if (!g.kategoriVar) eksik.push("KATEGORI");', koy: "",
+    bozdugu: "kategorisiz kayit acilir; KDV %20 varsayilir, SKU kurulamaz" },
+  { ad: "K315 MARKA SARTI YOK", yon: "KALDIRAN", dosya: KURAL,
+    bul: '  if (!g.markaTablodaMi) eksik.push("MARKA");', koy: "",
+    bozdugu: "markasiz kayit acilir; SKU'nun MRK parcasi yok" },
+  { ad: "K315 KAPSAM: AKTIF KAYIT DA KILITLI", yon: "FAZLADAN", dosya: KURAL,
+    bul: "  if (g.oncedenAktif !== false || !g.simdiAktif) return [];", koy: "  if (!g.simdiAktif) return [];",
+    bozdugu: "zaten aktif yuzlerce kaydin duzenlenmesi kilitlenir" },
+  { ad: "K315 KAPSAM: PASIF KALAN DA KILITLI", yon: "FAZLADAN", dosya: KURAL,
+    bul: "  if (g.oncedenAktif !== false || !g.simdiAktif) return [];", koy: "  if (g.oncedenAktif !== false) return [];",
+    bozdugu: "pasif birakilan eksik kayit hic kaydedilemez" },
+  { ad: "K315 EYLEM HATAYI YOK SAYIYOR", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "  if (aktifEtmeHatalari.length) return { hatalar: aktifEtmeHatalari };", koy: "",
+    bozdugu: "kural hesaplanir ama kayit yine yazilir" },
+  { ad: "K315 EYLEM MARKAYI METINDEN OLCUYOR", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "      markaTablodaMi: markaBagi !== null,", koy: "      markaTablodaMi: Boolean(veri.marka),",
+    bozdugu: "tabloda olmayan serbest marka metniyle acilir" },
+  { ad: "K315 EYLEM ESKI HALI OKUMUYOR", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "      oncedenAktif: v.id ? (oncekiAktiflik.get(v.id) ?? null) : null,", koy: "      oncedenAktif: null,",
+    bozdugu: "her kayit 'yeni' sayilir; sart hic calismaz" },
+  { ad: "K315 FORM IPUCU CIZILMIYOR", yon: "KALDIRAN", dosya: FORM,
+    bul: "{varyant.id && kayittaPasif.has(varyant.id) ? (", koy: "{false && varyant.id && kayittaPasif.has(varyant.id) ? (",
+    bozdugu: "sart ancak kaydedince ogrenilir" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

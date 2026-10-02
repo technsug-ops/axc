@@ -109,6 +109,11 @@ export function UrunFormu({
 
   const formRef = useRef<HTMLFormElement>(null);
 
+  /** K315: kayıtta PASİF olan varyantlar — aktif etme şartı yalnız onlara yazılır. */
+  const kayittaPasif = new Set(
+    (baslangic?.varyantlar ?? []).filter((v) => v.id && !v.aktif).map((v) => v.id as string),
+  );
+
   const t = useTranslations("Urunler");
   const ortak = useTranslations("Ortak");
 
@@ -546,6 +551,10 @@ export function UrunFormu({
                   <p className="text-muted-foreground text-sm">
                     {varyant.aktif ? t("aktifAciklama") : t("pasifAciklama")}
                   </p>
+                  {/* K315: şart kaydetmeden ÖNCE görünür; sunucu ayrıca reddeder. */}
+                  {varyant.id && kayittaPasif.has(varyant.id) ? (
+                    <p className="text-sm">{t("aktifEtmeSarti")}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={`konum-${sira}`}>{t("rafKonumu")}</Label>

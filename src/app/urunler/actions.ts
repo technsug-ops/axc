@@ -1,6 +1,6 @@
 "use server";
 
-import { urunAktifMi } from "@/lib/urun-aktiflik";
+import { aktifEtmeEksikleri, urunAktifMi } from "@/lib/urun-aktiflik";
 import { yetkiIste } from "@/lib/yetki";
 import { basariAdresi } from "@/lib/bildirim";
 import { revalidatePath } from "next/cache";
@@ -438,8 +438,35 @@ export async function urunGuncelle(
 
   const mevcutVaryantlar = await prisma.productVariant.findMany({
     where: { productId: urunId },
-    select: { id: true },
+    select: { id: true, isActive: true },
   });
+
+  /**
+   * K315 — PASİFTEN AKTİFE GEÇİŞ EKSİK BİLGİYLE YAPILMAZ (kural
+   * `lib/urun-aktiflik.ts`). Yazımdan ÖNCE; eksikte hiçbir şey yazılmaz ve
+   * her varyant için NE eksik olduğu söylenir (İlke #5).
+   */
+  const markaBagi = await markaBagiBul(veri.marka);
+  const oncekiAktiflik = new Map(mevcutVaryantlar.map((v) => [v.id, v.isActive]));
+  const aktifEtmeHatalari: string[] = [];
+  for (const v of veri.varyantlar) {
+    const eksikler = aktifEtmeEksikleri({
+      oncedenAktif: v.id ? (oncekiAktiflik.get(v.id) ?? null) : null,
+      simdiAktif: v.aktif,
+      barkod: v.barcode,
+      kategoriVar: Boolean(veri.kategoriId),
+      markaTablodaMi: markaBagi !== null,
+    });
+    if (eksikler.length) {
+      aktifEtmeHatalari.push(
+        t("aktifEtmeEksik", {
+          sku: v.sku,
+          eksikler: eksikler.map((e) => t(`aktifEksik_${e}`)).join(" · "),
+        }),
+      );
+    }
+  }
+  if (aktifEtmeHatalari.length) return { hatalar: aktifEtmeHatalari };
   const mevcutIdler = mevcutVaryantlar.map((v) => v.id);
   const gelenIdler = veri.varyantlar
     .map((v) => v.id)
@@ -460,7 +487,6 @@ export async function urunGuncelle(
     }
   }
 
-  const markaBagi = await markaBagiBul(veri.marka);
   try {
     await prisma.$transaction(async (tx) => {
       await tx.product.update({

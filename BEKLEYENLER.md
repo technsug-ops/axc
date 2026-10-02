@@ -13,6 +13,17 @@
 
 ---
 
+## 🔶 K315 — PASİF KAYIT EKSİK BİLGİYLE AKTİF EDİLEMEZ · 03.10.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı:** «Pasif olanın gerekli bilgileri manuel girildikten sonra aktife alınabilir hâle getirilsin» → **EAN + kategori + marka, hepsi olsun.**
+**Neden:** 26.09 temizliği 619 «uyuyan» kaydı pasife aldı (kategori/marka boş · stok 0 · 90 gün satış yok · kanalda açık değil). Formdaki tek tık onları EKSİK hâlde geri açıyordu.
+**Kural** `lib/urun-aktiflik.ts` `aktifEtmeEksikleri` (saf): yalnız **kayıtta pasif → şimdi aktif** geçişinde ① EAN gerçek GTIN (biçim + kontrol hanesi; şüpheli ürün kuralıyla AYNI gövde) ② kategori ③ marka **marka tablosuna bağlı** (SKU'nun MRK parçası). Zaten aktif kaydın düzenlenmesi, pasif bırakılan kayıt ve yeni varyant **kapsam dışı**.
+**Eksikte kayıt REDDEDİLİR** ve varyant başına ne eksik olduğu yazar (önerilen «kaydet ama pasif bırak» yerine — işaretli kutunun sessizce kalkması kafa karıştırırdı; kullanıcıya bildirildi). Formda kayıtta pasif varyantın kutusunun altında şart önceden yazar.
+**Bekçi** `urun-aktiflik:dogrula` 28 · mutasyon **14/14** (form ipucu ölçütü ilk sürümde `{false && …}` bozmasını görmedi → `{` çapası).
+**Halil testi (deploy sonrası):** ① Ürünler → pasif bir ürün (ör. Philips BHD500 `HBCV00000R0H0K`) → Düzenle → «Aktif» kutusunun altında «Pasif kaydı aktif etmek için EAN, kategori ve marka… gerekli» · ② kutuyu işaretle → Kaydet → kırmızı «… aktif edilemedi — eksik: geçerli EAN · kategori · marka…»; hiçbir şey kaydedilmez · ③ geçerli EAN + kategori + tablodaki bir marka gir → Kaydet → ürün aktif, listede «pasif» yok · ④ zaten aktif bir ürünün açıklamasını değiştirip kaydet → eskisi gibi kaydedilir.
+
+---
+
 ## 🟢 K314 — AKTARILAN SİPARİŞ: «STOK YOK» YANLIŞI · 02.10.2026 · [CANLIDA 2aa8c75 — HALİL TESTİ GEÇTİ 02.10 (kullanıcı «ok»; kayıt doğrulandı); MİMAR ONAYI BEKLİYOR]
 
 **Kayıttan doğrulama (02.10 21:45Z onay):** SALE_OUT −1 · iş tarihi **2026-10-02T15:34Z** (sisteme düştüğü an, 23.09 DEĞİL) · kaynak parti **28.09** · birim maliyet ₺499,90 · stok 2 → **1** · kâr CALCULATED, NET-1 ₺293,55 · NET-2 ₺243,17 · satış tarihi 23.09 08:24Z korundu.
