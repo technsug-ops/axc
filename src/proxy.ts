@@ -82,6 +82,7 @@ const ACIK_YOLLAR = [
   //
   // İçerikleri hassas değil: uygulama adı, sloganı ve marka simgesi.
   // Zaten giriş ekranında da görünüyorlar.
+  "/robots.txt",
   "/manifest.webmanifest",
   "/ikon",
   "/icon",

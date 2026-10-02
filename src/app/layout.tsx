@@ -86,6 +86,8 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s — ${UYGULAMA.ad}`,
     },
     description: t("slogan"),
+    /** Arama motorlarına kapalı (bkz. `app/robots.ts`) — sayfa başlığında da söylenir. */
+    robots: { index: false, follow: false },
 
     /**
      * ⚠ iOS MANİFESTİ OKUMAZ. iPhone'da "Ana Ekrana Ekle" davranışı bu üç

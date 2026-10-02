@@ -13,6 +13,21 @@
 
 ---
 
+## 🔶 K312 — VERİ KAZINMASINA KARŞI DÖRT KORUMA · 02.10.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı isteği:** «Projede veri madenciliği yapılarak db'nin kazınmasını engelle» (Selliora için).
+**Ölçüm (önce):** bütün sayfalar/API'ler oturuma kapalı (`proxy.ts`), cron uçları sır anahtarlı 404, çerez HttpOnly+SameSite, giriş tek hata mesajı + sahte özetle zamanlama sızdırmıyor, döküm/yedek `veri.aktar` iznine bağlı — **sağlam**. Eksikler:
+① **giriş denemesine sınır yoktu** → `lib/giris-kilidi.ts` (saf): aynı e-posta YA DA IP'den 15 dk'da 5 başarısız deneme → 15 dk kilit; kilitliyken parola HİÇ denenmez; başarısız deneme `AuditLog` `GIRIS_BASARISIZ` {eposta, ip} (parola yazılmaz). Yeni tablo AÇILMADI — mevcut iz tablosu soruyu taşıyor.
+② **toplu indirme iz bırakmıyordu** → «tümü», tek liste (liste + süzgeç) ve yedek indirmesi `TOPLU_INDIRME` izi yazar.
+③ `/api/olcum` · `/api/yedek/otomatik` anahtarsız isteğe 401 diyordu (varlık sızıyordu) → 404.
+④ arama motorlarına kapalı değildi → `app/robots.ts` (`disallow: "/"`) + sayfa başlığında noindex; `/robots.txt` proxy açık yollarında.
+**Bekçi** `erisim:dogrula` 27 · `erisim-mutasyon` 9/9.
+⏭ **ÖNERİ (onay bekliyor):** panelde «son 7 günde toplu indirme / başarısız giriş» satırı — iz var, gösterim yok.
+💤 **TANITIM SAYFASI (kullanıcı: «uç tarafta programın tanıtım sayfası olması lazım»)** — dışa dönük tanıtım = SaaS işi; CLAUDE.md gereği bugün AÇILMAZ, SaaS aşamasında açılır. O gün robots YALNIZ o sayfaya `allow` verir.
+**Halil testi (deploy sonrası):** ⚠ kilit IP'ye de bağlı — testi bilgisayardan yaparsan o bağlantıdan 15 dk giriş kapanır. **Telefondan, Wi-Fi KAPALI (mobil veri)** dene: ① `/giris` → olmayan bir e-posta (örn. deneme@ornek.com) + rastgele parola × 5 → 6. denemede «Çok fazla hatalı deneme… 15 dakika kapalı» · ② bilgisayardan (farklı IP) normal giriş ÇALIŞIR · ③ Veri aktar → «Tümünü indir» → sonra bana söyle, izi kayıttan doğrularım · ④ tarayıcıda `…/robots.txt` → «Disallow: /».
+
+---
+
 ## 🔶 K311 — İADE NET-2: STOĞA DÖNEN MALIN ALIŞ KDV'Sİ GERİ ALINMIYORDU · 02.10.2026 · [MEKANİZMA CANLIDA 81f30e5 · GEÇMİŞ YAZILDI 02.10 — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı bulgusu:** TY 11629354592 (₺2.945, normal iade) işlenince NET-1 6.242,18 → 5.775,35 (−466,83), NET-2 yalnız 5.138,53 → 5.106,26 (−32,27). Beklenen gerçek kayıp: gidiş kargo 106,75 + sabit 13,19 + dönüş kargo 106,70 = **226,64** (kullanıcının «334,59»u toplama hatası; üç kalem 226,59).

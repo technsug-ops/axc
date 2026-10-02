@@ -1,3 +1,4 @@
+import { izYaz } from "@/lib/iz";
 import { apiIzni } from "@/lib/yetki";
 import { get } from "@vercel/blob";
 
@@ -50,6 +51,8 @@ export async function GET(istek: Request) {
       return Response.json({ durum: "BULUNAMADI" }, { status: 404 });
     }
 
+    /** TOPLU İNDİRME İZİ (02.10.2026): bütün verinin dışarı çıktığı an görünür olmalı. */
+    await izYaz({ action: "TOPLU_INDIRME", targetType: "Yedek", targetId: ad, detail: JSON.stringify({ tur: "yedek", ad }) });
     return new Response(sonuc.stream, {
       headers: {
         "Content-Type":

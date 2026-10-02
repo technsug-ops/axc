@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { izYaz } from "@/lib/iz";
 import { apiIzni } from "@/lib/yetki";
 import {
   listeGecerliMi,
@@ -40,6 +41,8 @@ export async function GET(
       else sayfalar.push(c);
     }
     const icerik = await xlsxUret(sayfalar);
+    /** TOPLU İNDİRME İZİ (02.10.2026): «tümü» bütün listeleri tek dosyada verir. */
+    await izYaz({ action: "TOPLU_INDIRME", targetType: "DisaAktarma", targetId: "tumu", detail: JSON.stringify({ tur: "tumu", listeSayisi: LISTELER.length }) });
     return new Response(new Uint8Array(icerik), {
       headers: indirmeBasliklari(`${t("tumDosyaAdi")}.xlsx`),
     });
@@ -57,6 +60,8 @@ export async function GET(
   const cikti = await listeSayfasi(liste, parametreler);
   const sayfalar = Array.isArray(cikti) ? cikti : [cikti];
   const icerik = await xlsxUret(sayfalar);
+  /** Tek liste de iz bırakır — hangi liste, hangi süzgeçle. */
+  await izYaz({ action: "TOPLU_INDIRME", targetType: "DisaAktarma", targetId: liste, detail: JSON.stringify({ tur: "liste", liste, parametreler }) });
 
   return new Response(new Uint8Array(icerik), {
     headers: indirmeBasliklari(`${sayfalar[0]?.ad ?? liste}.xlsx`),

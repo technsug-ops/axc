@@ -425,6 +425,8 @@
     "canli:hb-saglik": "tsx scripts/canli-hb-saglik.ts",
     "canli:hb-listing-olcum": "tsx scripts/canli-hb-listing-olcum.ts",
     "hb-listeleme:dogrula": "tsx scripts/hb-listeleme-dogrula.ts",
+    "erisim:dogrula": "tsx scripts/erisim-dogrula.ts",
+    "erisim-mutasyon:kontrol": "tsx scripts/erisim-mutasyon-kontrol.ts",
     "hb-sayfa:dogrula": "tsx scripts/hb-sayfa-dogrula.ts",
     "hb-sayfa-mutasyon:kontrol": "tsx scripts/hb-sayfa-mutasyon-kontrol.ts",
     "kanal-listeleme:dogrula": "tsx scripts/kanal-listeleme-saglik-dogrula.ts",

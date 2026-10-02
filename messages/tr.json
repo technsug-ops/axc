@@ -2040,6 +2040,7 @@
     "cikis": "Çıkış",
     "cikisYapildi": "Çıkış yapıldı.",
     "hataliGiris": "E-posta veya parola hatalı.",
+    "cokFazlaDeneme": "Çok fazla hatalı deneme. Güvenlik için giriş {dakika} dakika kapalı — sonra tekrar deneyin.",
     "epostaZorunlu": "E-posta girilmeli.",
     "parolaZorunlu": "Parola girilmeli.",
     "kullaniciYokBaslik": "Henüz kullanıcı yok",

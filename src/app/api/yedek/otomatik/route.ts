@@ -103,7 +103,8 @@ export async function GET(istek: Request) {
      * aranıyor.
      */
     await redKaydiniYaz(istek);
-    return Response.json({ durum: "YETKISIZ" }, { status: 401 });
+    /* 02.10.2026: 401 → 404 — «yetkisiz» demek orada bir uç OLDUĞUNU söyler (anayasa: reddedilen istek 404). */
+    return new Response(null, { status: 404 });
   }
 
   /**
