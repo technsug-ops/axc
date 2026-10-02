@@ -13,7 +13,9 @@
 
 ---
 
-## 🔶 K314 — AKTARILAN SİPARİŞ: «STOK YOK» YANLIŞI · 02.10.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🟢 K314 — AKTARILAN SİPARİŞ: «STOK YOK» YANLIŞI · 02.10.2026 · [CANLIDA 2aa8c75 — HALİL TESTİ GEÇTİ 02.10 (kullanıcı «ok»; kayıt doğrulandı); MİMAR ONAYI BEKLİYOR]
+
+**Kayıttan doğrulama (02.10 21:45Z onay):** SALE_OUT −1 · iş tarihi **2026-10-02T15:34Z** (sisteme düştüğü an, 23.09 DEĞİL) · kaynak parti **28.09** · birim maliyet ₺499,90 · stok 2 → **1** · kâr CALCULATED, NET-1 ₺293,55 · NET-2 ₺243,17 · satış tarihi 23.09 08:24Z korundu.
 
 **Kullanıcı:** HB `4622097086`: müşteri 23.09'da BAŞKA bir mağazadan aldı, mağaza gönderemedi, pazaryeri siparişi bize aktardı (gönderemeyen mağaza ceza alır). Seyrek ama tekrarlıyor. Entegra mevcut stoktan düşüyor, tarihi 23.09'da bırakıyor; HB de 23.09 listesinde gösteriyor. Bizde onay «Stok yetersiz (KAM-KR-KL-01: 0/1)» dedi; stokta 2 adet var.
 **Sebep (ölçüldü):** stok 28.09'da girdi (2+2, 30.09'da 2 satıldı). Onay partiyi `gunSonu(soldAt)` = 23.09 sonuna kadar arıyor (29.08 arızasının sınırı) → 28.09 görünmüyor.
@@ -26,7 +28,7 @@
 
 ---
 
-## 🔶 K313 — ÜRÜN AKTİFLİĞİNİN YAZICISI YOKTU · 02.10.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🟢 K313 — ÜRÜN AKTİFLİĞİNİN YAZICISI YOKTU · 02.10.2026 · [CANLIDA 2aa8c75 — HALİL TESTİ GEÇTİ 02.10 (kullanıcı «ok»: pasif rozeti yok, alımda aranıyor); MİMAR ONAYI BEKLİYOR]
 
 **Kullanıcı:** «Pasif ürünü nasıl aktif yapacağız, HBCV00006G7MR1 bu ürüne alım gireceğim giremiyorum.» Ürün: Anker Soundcore Boom 2 A3138 (siyah) — kopya DEĞİL (aktif «Boom 2 SE» A3148 başka model); 26.09 toplu «uyuyan ürün» temizliğinde (stok 0 · 90 gün satış yok · kanalda açık değil) ürün + varyant pasife alınmış.
 **Kusur:** düzenleme formu yalnız VARYANT aktifliğini yazıyordu; `Product.isActive`in arayüzde yazıcısı yoktu → varyant aktif edilince alım açıldı (arama varyanta bakıyor) ama ürün listede «pasif» kaldı; etiket ve SKU önizleme ürünü göstermedi.
