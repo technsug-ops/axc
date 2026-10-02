@@ -180,6 +180,16 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   /** 02.10.2026 — `urun-aktiflik` `src/app/urunler/actions.ts`i mutasyona uğratıyor; `kod-cozumu` · `marka-kodu` da aynı dosyaya dokunuyor. */
   "urun-aktiflik-mutasyon:kontrol",
   /**
+   * K314 (02.10.2026) — `aktarilan-siparis` `src/lib/stok.ts` ve
+   * `src/lib/satis.ts`i mutasyona uğratıyor: `parti-secimi` stok.ts'e,
+   * `donem` satis.ts'e dokunuyor. ⛔ Push turunda paralel koştular ve bir
+   * mutant (`ILK CEKIM GUNU KAPISI YOK`) stok.ts'te KALDI; parti-secimi'nin
+   * 4 «kaçan» mutasyonu da bu yarıştan doğdu. Çakışma bekçisi yakaladı.
+   */
+  "aktarilan-siparis-mutasyon:kontrol",
+  "parti-secimi-mutasyon:kontrol",
+  "donem-mutasyon:kontrol",
+  /**
    * K243 (23.09.2026) — `kargo-kaynagi` artık SATIŞ DETAY ekranını da
    * mutasyona uğratıyor (`satislar/[id]/page.tsx`): desi ve kanal kargo
    * firması satırlarının ÇİZİLDİĞİNİ sınıyor. O dosyaya yukarıdaki grubun
