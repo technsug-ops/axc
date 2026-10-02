@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Share2 } from "lucide-react";
+import { Check, Share2, X } from "lucide-react";
 
 import {
   AlertDialog,
@@ -40,7 +40,10 @@ import { HATA_ANAHTARI as TY_HATA, ONIZLEME_HATA as TY_ONIZLEME_HATA } from "./t
 
 /**
  * ============================================================================
- *  STOĞU ÜÇ KANALA TEK DÜĞMEYLE GÖNDER — Faz 4'ün son maddesi (01.10.2026)
+ *  STOĞU BAĞLI KANALLARA TEK DÜĞMEYLE GÖNDER — Faz 4'ün son maddesi (01.10.2026)
+ *  ⚠ METİNDE KANAL SAYISI YOK (kullanıcı düzeltmesi 02.10.2026): «3 kanala»
+ *  yazıyordu; kanal sayısı ürüne ve firmaya göre değişir (anayasa: firma/kanal
+ *  yapıya gömülmez). Başarılı her kanal satırı ✓, reddedilen ✗ taşır.
  * ----------------------------------------------------------------------------
  *  Halil kararı 09.09.2026: «stok TEK düğmeyle üç kanala, fiyat kanal başına
  *  AYRI düğmeyle». Bu pencere YALNIZ STOK gönderir — fiyat hiçbir kanala
@@ -153,8 +156,11 @@ export function UcKanalStokGonderim({ variantId }: { variantId: string }) {
   const kanalAdet = (n: number | null) => (n === null ? t("olculmedi") : bicim.sayi(n));
   const satir = (renk: string, metin: string, alt?: string[]) => (
     <div className="space-y-0.5">
-      <p className={`text-sm ${renk}`} role={renk === DURUM_YAZISI.olumsuz ? "alert" : "status"}>
-        {metin}
+      <p className={`flex items-start gap-1.5 text-sm ${renk}`} role={renk === DURUM_YAZISI.olumsuz ? "alert" : "status"}>
+        {/* Simge rengin TÜREVİ — ayrı bir karar yok: başarı ✓, red ✗. */}
+        {renk === DURUM_YAZISI.olumlu ? <Check className="mt-0.5 size-4 shrink-0" aria-hidden /> : null}
+        {renk === DURUM_YAZISI.olumsuz ? <X className="mt-0.5 size-4 shrink-0" aria-hidden /> : null}
+        <span>{metin}</span>
       </p>
       {(alt ?? []).map((a, i) => (
         <p key={i} className={`text-xs ${DURUM_YAZISI.olumsuz}`}>

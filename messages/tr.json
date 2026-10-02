@@ -87,9 +87,9 @@
     "hataUlasilamadi": "Trendyol'a ulaşılamadı — ağ sorunu olabilir, tekrar dene."
   },
   "KanalStokToplu": {
-    "dugme": "Stoğu 3 kanala gönder",
-    "baslik": "Stoğu üç kanala gönder",
-    "aciklama": "Selliora'daki stok Trendyol, N11 ve Hepsiburada'ya aynı anda gönderilir. Yalnız STOK gider — hiçbir kanalda fiyata dokunulmaz.",
+    "dugme": "Stoğu bağlı kanallara gönder",
+    "baslik": "Stoğu bağlı kanallara gönder",
+    "aciklama": "Selliora'daki stok, bu ürünün bağlı olduğu bütün kanallara aynı anda gönderilir. Yalnız STOK gider — hiçbir kanalda fiyata dokunulmaz.",
     "yukleniyor": "Üç kanalın bilgisi alınıyor…",
     "onizleme": "{kanal}: Selliora stoğu {stok} → kanalda şu an {kanalda}",
     "olculmedi": "ölçülmedi",
@@ -101,7 +101,7 @@
     "gonderiliyorUzun": "Gönderiliyor — kanalların cevabı bekleniyor (yarım dakikayı bulabilir)…",
     "gonderilmedi": "{kanal}: gönderilmedi.",
     "hata": "{kanal}: gönderilemedi — {sebep}",
-    "tyBasarili": "Trendyol: stok {stok} — işlendi ✓",
+    "tyBasarili": "Trendyol: stok {stok} — işlendi",
     "tyReddetti": "Trendyol: stok {stok} — REDDEDİLDİ, sebep aşağıda.",
     "tyIsliyor": "Trendyol: stok {stok} — işliyor… ({sn} sn)",
     "tyZamanAsimi": "Trendyol: stok {stok} — 2 dakikada bitmedi; birkaç dakika sonra TY panelinden kontrol edin.",

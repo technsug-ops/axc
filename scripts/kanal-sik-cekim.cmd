@@ -163,7 +163,8 @@ echo HAZIRLIK-BITTI cikis=%HAZ% >> %HAZLOG%
 echo ============================================== >> %TYLOG%
 echo BASLADI-SIK %date% %time% hazirlik=%HAZ% >> %TYLOG%
 echo ADIM=CEKIM-TY %date% %time%> "%ADIM%"
-call npm run canli:ty-ice-aktar -- --gun=3 --yaz >> %TYLOG% 2>&1
+rem 02.10.2026: pencere 3 -> 7 gun (kullanici karari) - eski siparisin teslimi bir gun gecikiyordu.
+call npm run canli:ty-ice-aktar -- --gun=7 --yaz >> %TYLOG% 2>&1
 set TYKOD=%errorlevel%
 echo BITTI-SIK %date% %time% cikis=%TYKOD% >> %TYLOG%
 echo ADIM=TY-BITTI cikis=%TYKOD% %date% %time%> "%ADIM%"

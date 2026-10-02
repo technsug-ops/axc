@@ -237,7 +237,9 @@ export default async function UrunDetaySayfasi({
                         varyantı ayrı satar, ayrı kâr eder. Bağlantı bu yüzden
                         ürün başlığında değil, varyant satırında. */}
                     <TableCell className="text-right">
-                      <span className="inline-flex items-center gap-2">
+                      {/* 02.10.2026: dört düğme tek satıra sığmıyordu ve sonuncusu
+                          («Stoğu 3 kanala gönder») görünmüyordu — satır SARILIR. */}
+                      <span className="inline-flex flex-wrap items-center justify-end gap-2">
                         {/* K169: kanala gönderim EYLEM yüzeyinde — kart
                             okuma yüzeyi kuralı gereği kartta DEĞİL burada. */}
                         {/* ⚠ KANAL BAŞINA AYRI DÜĞME — Halil kararı
@@ -332,7 +334,9 @@ export default async function UrunDetaySayfasi({
                 ]}
                 eylemler={
                   kanalYazGorunur ? (
-                    <span className="inline-flex items-center gap-2">
+                    /* 02.10.2026: telefonda dördüncü düğme ekran dışında kalıyordu
+                       (kullanıcı: «3 pazaryerine birden gönder sekmesi yok») — SARILIR. */
+                    <span className="flex flex-wrap items-center gap-2">
                       <TyGonderim variantId={varyant.id} />
                       <N11Gonderim variantId={varyant.id} />
                       <HbGonderim variantId={varyant.id} />

@@ -43,7 +43,15 @@ export async function GET(istek: NextRequest) {
   if (dbAdresi === "") {
     return NextResponse.json({ hata: "VERITABANI_TANIMSIZ" }, { status: 500 });
   }
-  const ozet = await tyCekimKos({ yaz: true, gun: 3, dbAdresi });
+  /**
+   * ⛔ PENCERE 3 → 7 GÜN (kullanıcı kararı 02.10.2026). Ölçüldü: 26.09
+   * siparişi (11646955949) 01.10'da teslim edildi; 3 günlük pencere onu artık
+   * görmüyordu ve teslim yalnız ertesi sabahki 60 günlük çekimle (bir güne
+   * kadar gecikmeyle) düştü — panel o süre boyunca «yolda» dedi. 7 gün =
+   * 3 dilim (DILIM_GUN 3): dakikada 3 istek. 7 günden eski siparişin teslimi
+   * yine sabahki 60 günlük çekime kalır — bilerek kabul edilen sınır.
+   */
+  const ozet = await tyCekimKos({ yaz: true, gun: 7, dbAdresi });
   /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek
      olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü. */
   return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });

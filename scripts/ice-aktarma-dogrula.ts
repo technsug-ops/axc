@@ -2169,7 +2169,8 @@ kontrol(
   );
   kontrol(
     "rota ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)",
-    rota.includes("await tyCekimKos({ yaz: true, gun: 3, dbAdresi })"),
+    /* 02.10.2026: pencere 3 → 7 gün (kullanıcı kararı; gerekçe rota dosyasında). */
+    rota.includes("await tyCekimKos({ yaz: true, gun: 7, dbAdresi })"),
   );
   const kapiBasi = rota.indexOf("if (sir === \"\" || gelen !== ");
   kontrol("sır kapısı VAR ve boş-sır da kapatıyor", kapiBasi >= 0);
