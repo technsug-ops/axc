@@ -11,8 +11,8 @@ import { donemKapisi } from "@/lib/donem-kapisi";
 import {
   acikPartiler,
   fifoDagit,
-  gunSonu,
   partileriOncele,
+  satisStokZamani,
   type FifoPayi,
   type Parti,
 } from "@/lib/stok";
@@ -86,6 +86,7 @@ export async function onayCekirdegi(
       id: true,
       code: true,
       soldAt: true,
+      createdAt: true,
       shippedAt: true,
       iptalTarihi: true,
       importKaynak: true,
@@ -119,6 +120,10 @@ export async function onayCekirdegi(
     ),
   });
   if (!uygunluk.uygun) return { tamam: false, kod: uygunluk.sebep };
+
+  /** K314: aktarılan siparişte parti sınırı ve hareket tarihi sisteme
+   *  düştüğü güne kayar — bkz. `satisStokZamani`. */
+  const stokZamani = await satisStokZamani(tx, satis);
 
   /**
    * ════════════════════════════════════════════════════════════════════════
@@ -161,7 +166,7 @@ export async function onayCekirdegi(
   for (const k of satis.items) {
     const karar = sayimKorumasi({
       sonSayimIsTarihi: sonSayimlar.get(k.variantId) ?? null,
-      hareketIsTarihi: satis.soldAt,
+      hareketIsTarihi: stokZamani.hareketTarihi,
       adet: -k.quantity,
     });
     if (karar.sonuc === "DURAKSA") {
@@ -223,7 +228,8 @@ export async function onayCekirdegi(
   await donemKapisi(tx, satis.soldAt, undefined);
 
   /** FIFO — parti durumu kalemler arasında taşınır (aynı parti iki kez
-   *  tüketilmesin); sınır gunSonu(soldAt) (29.08 arızasının dersi).
+   *  tüketilmesin); sınır gunSonu(soldAt) (29.08 arızasının dersi) —
+   *  aktarılan siparişte sisteme düştüğü günün sonu (K314).
    *  K110: operatör parti seçtiyse `partileriOncele` onu listenin başına
    *  alır ve AYNI `fifoDagit` çalışır — ikinci dağıtıcı yazılmaz. */
   const partiDurumu = new Map<string, Parti[]>();
@@ -236,7 +242,7 @@ export async function onayCekirdegi(
   for (const k of satis.items) {
     const hamPartiler =
       partiDurumu.get(k.variantId) ??
-      (await acikPartiler(tx, k.variantId, gunSonu(satis.soldAt)));
+      (await acikPartiler(tx, k.variantId, stokZamani.sinir));
     const secim = girdi.secimler[k.id] ?? null;
     const oncelik = partileriOncele(hamPartiler, secim);
     /** Seçim VARDI ama uygulanamadı (parti tükenmiş/bulunamadı) → sessizce
@@ -282,7 +288,7 @@ export async function onayCekirdegi(
           variantId: plan.variantId,
           type: "SALE_OUT",
           quantityDelta: -pay.adet,
-          occurredAt: satis.soldAt,
+          occurredAt: stokZamani.hareketTarihi,
           saleItemId: plan.kalemId,
           sourceMovementId: pay.parti.hareketId,
           locationId: pay.parti.locationId,

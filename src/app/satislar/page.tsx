@@ -57,6 +57,7 @@ import {
   type MarjSebebi,
 } from "@/lib/ice-aktarma-serhi";
 import { prisma } from "@/lib/prisma";
+import { aktarilanSiparisMi, ilkCekimAnlari } from "@/lib/stok";
 
 import { satisKalemToplamlari } from "@/lib/tutar";
 import { Suspense } from "react";
@@ -278,6 +279,15 @@ export default async function SatislarSayfasi({
     },
     orderBy: { soldAt: "desc" },
   });
+
+  /**
+   * AKTARILAN SİPARİŞ ROZETİ (K314) — başka mağazanın gönderemediği, pazaryerinin
+   * bize aktardığı sipariş: tarihi eski, sisteme bugün düştü. Ölçüt onayın stok
+   * sınırıyla AYNI gövde (`aktarilanSiparisMi`); ilk çekim anları tek sorguda.
+   */
+  const ilkCekimler = await ilkCekimAnlari(prisma);
+  const aktarilanMi = (s: (typeof satislar)[number]) =>
+    aktarilanSiparisMi(s, s.importKaynak ? (ilkCekimler.get(s.importKaynak) ?? null) : null);
 
   /**
    * PAKETLENDİ İŞARETİ — YALNIZ BU SAYFADAKİ SATIRLAR İÇİN (K207).
@@ -877,6 +887,16 @@ export default async function SatislarSayfasi({
                         }
                         altIpucu={satis.code ?? undefined}
                       />
+                      {aktarilanMi(satis) ? (
+                        <span
+                          className="mt-1 block"
+                          title={t("aktarilanIpucu")}
+                        >
+                          <DurumRozeti durum="bilgi">
+                            {t("aktarilanRozet", { tarih: bicim.tarih(satis.createdAt) })}
+                          </DurumRozeti>
+                        </span>
+                      ) : null}
                       {/* ROZETTE SEBEP DE VAR — "iptal" demek yetmez, NEDEN
                           iptal edildiği listede görünür (mimar şartı). */}
                       {satis.iptalTarihi !== null ? (
@@ -1020,7 +1040,16 @@ export default async function SatislarSayfasi({
                   </span>
                 }
                 altBaslik={
-                  bicim.tarihSaat(satis.soldAt)
+                  aktarilanMi(satis) ? (
+                    <span title={t("aktarilanIpucu")}>
+                      {bicim.tarihSaat(satis.soldAt)}{" "}
+                      <DurumRozeti durum="bilgi">
+                        {t("aktarilanRozet", { tarih: bicim.tarih(satis.createdAt) })}
+                      </DurumRozeti>
+                    </span>
+                  ) : (
+                    bicim.tarihSaat(satis.soldAt)
+                  )
                 }
                 alanlar={[
                   {

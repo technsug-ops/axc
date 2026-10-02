@@ -321,6 +321,9 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
        * tüketmesine izin veriyordu; 809 bağ böyle bozuldu.
        * Sınır SATIŞ GÜNÜNÜN SONU: aynı gün alınan mal içeride kalır
        * (ölçüldü: çıkışların %48,72'si partisiyle aynı anı taşıyor).
+       *
+       * YENİ SATIŞ: kayıt şu an oluşuyor — «sisteme geç düşme» (K314
+       * aktarılan sipariş) burada olamaz; sınır satış gününün sonudur.
        */
       const partiler = await acikPartiler(tx, variantId, gunSonu(girdi.soldAt));
       partiDurumu.set(variantId, partiler);

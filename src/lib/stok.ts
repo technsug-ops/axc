@@ -1,6 +1,7 @@
 import { prisma, type IslemIstemcisi } from "@/lib/prisma";
 
 import type { Currency } from "@/generated/prisma/enums";
+import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 
 /**
  * ============================================================================
@@ -174,6 +175,144 @@ export function gunSonu(an: Date): Date {
   d.setUTCHours(0, 0, 0, 0);
   d.setUTCDate(d.getUTCDate() + 1);
   return d;
+}
+
+/**
+ * ============================================================================
+ *  AKTARILAN SİPARİŞ — FIFO SINIRI SİSTEME DÜŞTÜĞÜ GÜNE KAYAR (K314)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı bulgusu 02.10.2026, HB 4622097086: müşteri 23.09'da BAŞKA bir
+ *  mağazadan aldı, o mağaza gönderemedi, pazaryeri siparişi bize aktardı.
+ *  Kanal siparişi kendi tarihiyle (23.09) veriyor; sisteme 02.10'da düştü.
+ *  Stok 28.09'da girmişti ve `gunSonu(soldAt)` onu göremedi → «0/1».
+ *  Mal BUGÜNKÜ stoktan gönderilir; Entegra da öyle düşüyor, tarihi 23.09'da
+ *  bırakıyor. Satış tarihi DEĞİŞMEZ (kanalın etiketi; hakediş ona bağlı) —
+ *  yalnız partinin arandığı sınır kayar.
+ *
+ *  ⭐ ÖLÇÜT VERİDEN, EŞİK GEDİKTEN (ölçüldü 02.10.2026, 08.09'dan beri 348
+ *  satış): kayıt − satış farkı p50 0 · p99 0,10 gün · tek aykırı 9,30 gün
+ *  (bu sipariş). Gövde 2,4 saatte bitiyor, eşik gedikte: **1 gün**.
+ *
+ *  ⛔ YALNIZ KANAL ÇEKİMİ — Excel/elle girilen satışta `createdAt` olayı
+ *  anlatmaz (03.09'da 7.160 eski satış toplu aktarıldı; sınır kaysaydı
+ *  29.08 arızası geri gelirdi).
+ *  ⛔ KANALIN İLK ÇEKİM GÜNÜ HARİÇ — bağlantı kurulduğu gün geçmiş siparişler
+ *  toplu çekildi (ölçüldü: TY 26.08 → 438, HB 07.09 → 2; hepsi o tek günde).
+ *  Onlar o gün gönderilmedi. İlk çekim günü VERİDEN okunur (`_min.createdAt`),
+ *  tarih gömülmez.
+ *  ⚠ BEDELİ BEYAN: ileride aynı kaynak geçmişi YENİDEN toplu çekerse o
+ *  satırlar «aktarılan» sayılır. O gün bu ölçüt yeniden kurulur.
+ * ============================================================================
+ */
+export const KANAL_CEKIM_KAYNAKLARI: readonly string[] = [
+  "enumerasyon",
+  "hb-enumerasyon",
+  "n11-enumerasyon",
+];
+
+/** Kayıt − satış farkı bunu aşarsa aktarılmış sayılır (gedik ölçümü yukarıda). */
+export const AKTARIM_ESIGI_MS = 24 * 60 * 60 * 1000;
+
+export type SinirSatisi = {
+  soldAt: Date;
+  createdAt: Date;
+  importKaynak: string | null;
+};
+
+/** İş saat dilimindeki günün sonu (ertesi gün 00:00, UTC damgası). */
+function isGunuSonu(an: Date): Date {
+  return gunSonu(gunDegeri(isTakvimGunu(an)));
+}
+
+/**
+ * SAF — aktarılan sipariş mi. `ilkCekimAni`: o kaynağın sistemdeki ilk kaydı
+ * (bilinmiyorsa null → aktarılmış SAYILMAZ; eski davranış güvenli taraftır).
+ */
+export function aktarilanSiparisMi(
+  s: SinirSatisi,
+  ilkCekimAni: Date | null,
+): boolean {
+  if (s.importKaynak === null || !KANAL_CEKIM_KAYNAKLARI.includes(s.importKaynak)) {
+    return false;
+  }
+  if (ilkCekimAni === null) return false;
+  if (isGunuSonu(s.createdAt).getTime() <= isGunuSonu(ilkCekimAni).getTime()) {
+    return false;
+  }
+  return s.createdAt.getTime() - s.soldAt.getTime() > AKTARIM_ESIGI_MS;
+}
+
+/**
+ * MEVCUT BİR SATIŞIN STOK ZAMANI.
+ *
+ * · `sinir` — partinin arandığı üst sınır (`occurredAt < sinir`).
+ * · `hareketTarihi` — yazılacak stok hareketinin İŞ TARİHİ. Aktarılan
+ *   siparişte mal bugün çıkar; hareketi 23.09'a yazmak defterde «28.09'da
+ *   giren mal 23.09'da çıktı» demek olurdu (geçmiş günün stoğu −1) ve sayım
+ *   koruması yanlış güne bakardı. Satışın KENDİ tarihi (`soldAt`) değişmez.
+ */
+export type SatisStokZamani = {
+  aktarilan: boolean;
+  sinir: Date;
+  hareketTarihi: Date;
+};
+
+/** SAF. */
+export function satisStokZamaniHesapla(
+  s: SinirSatisi,
+  ilkCekimAni: Date | null,
+): SatisStokZamani {
+  const aktarilan = aktarilanSiparisMi(s, ilkCekimAni);
+  return aktarilan
+    ? { aktarilan, sinir: isGunuSonu(s.createdAt), hareketTarihi: s.createdAt }
+    : { aktarilan, sinir: gunSonu(s.soldAt), hareketTarihi: s.soldAt };
+}
+
+/** Kaynağın ilk çekim anı — veriden. */
+export async function ilkCekimAni(
+  db: IslemIstemcisi,
+  importKaynak: string | null,
+): Promise<Date | null> {
+  if (importKaynak === null || !KANAL_CEKIM_KAYNAKLARI.includes(importKaynak)) {
+    return null;
+  }
+  const r = await db.sale.aggregate({
+    where: { importKaynak },
+    _min: { createdAt: true },
+  });
+  return r._min.createdAt;
+}
+
+/**
+ * Bütün kanal çekim kaynaklarının ilk çekim anı — TEK sorguda. Liste
+ * ekranları «aktarılan sipariş» rozetini satır başına sorgu açmadan bunla
+ * kurar: `aktarilanSiparisMi(satis, harita.get(satis.importKaynak) ?? null)`.
+ */
+export async function ilkCekimAnlari(db: IslemIstemcisi): Promise<Map<string, Date>> {
+  const satirlar = await db.sale.groupBy({
+    by: ["importKaynak"],
+    where: { importKaynak: { in: [...KANAL_CEKIM_KAYNAKLARI] } },
+    _min: { createdAt: true },
+  });
+  const harita = new Map<string, Date>();
+  for (const s of satirlar) {
+    if (s.importKaynak !== null && s._min.createdAt !== null) {
+      harita.set(s.importKaynak, s._min.createdAt);
+    }
+  }
+  return harita;
+}
+
+/**
+ * Onay, onay önizlemesi, otomatik onay ve adet düzenleme BURADAN okur.
+ * Yeni satış girişi (`satis.ts`) `gunSonu`nu kullanmaya devam eder: elle
+ * girilen satışta aktarım yoktur.
+ */
+export async function satisStokZamani(
+  db: IslemIstemcisi,
+  s: SinirSatisi,
+): Promise<SatisStokZamani> {
+  return satisStokZamaniHesapla(s, await ilkCekimAni(db, s.importKaynak));
 }
 
 /**

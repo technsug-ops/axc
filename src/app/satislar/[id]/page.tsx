@@ -40,6 +40,7 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { gunMetni } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
+import { aktarilanSiparisMi, ilkCekimAni } from "@/lib/stok";
 import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 import { KargoDurumu } from "../kargo-durumu";
 import { kalemDusumleri, kalemGeriDonusleri, type Dusum } from "@/lib/satis";
@@ -394,6 +395,9 @@ export default async function SatisDetaySayfasi({
     cargoDesi: satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
   });
 
+  /** AKTARILAN SİPARİŞ (K314) — onayın stok sınırıyla AYNI ölçüt. */
+  const aktarilan = aktarilanSiparisMi(satis, await ilkCekimAni(prisma, satis.importKaynak));
+
   // `deger` ReactNode: kargo satırı bir düğme taşıyor (metin değil).
   const bilgiler: { etiket: string; deger: React.ReactNode }[] = [
     /**
@@ -403,6 +407,22 @@ export default async function SatisDetaySayfasi({
      * kopya, üç ayrı eskime demekti. _(İlke #10.)_
      */
     { etiket: t("satisTarihi"), deger: bicim.tarihSaat(satis.soldAt) },
+    /** Görünür açıklama — telefonda `title` ipucu açılmaz (İlke #8). */
+    ...(aktarilan
+      ? [
+          {
+            etiket: t("aktarilanEtiket"),
+            deger: (
+              <span>
+                {t("aktarilanRozet", { tarih: bicim.tarihSaat(satis.createdAt) })}
+                <span className="block text-xs text-muted-foreground">
+                  {t("aktarilanIpucu")}
+                </span>
+              </span>
+            ),
+          },
+        ]
+      : []),
     /**
      * ONAY DURUMU (K164) — üç ayrı hâl, üçü farklı şey söyler.
      *

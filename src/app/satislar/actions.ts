@@ -16,7 +16,13 @@ import {
   type PartiSecimleri,
 } from "@/lib/onay-cekirdegi";
 import { satisKarTazele } from "@/lib/kar-yeniden";
-import { acikPartiler, fifoDagit, gunSonu, type Parti } from "@/lib/stok";
+import {
+  acikPartiler,
+  fifoDagit,
+  satisStokZamani,
+  varyantStogu,
+  type Parti,
+} from "@/lib/stok";
 import { gunDegeri, gunMetninden, isTakvimGunu } from "@/lib/donem";
 import { DonemKorumasiHatasi } from "@/lib/donem-kapisi";
 import {
@@ -632,6 +638,12 @@ export type OnayOnizlemesi =
       tamam: false;
       kod: Exclude<SiparisOnaySonucu, { tamam: true }>["kod"];
       ayrinti?: string;
+      /**
+       * K314: stok yetersizse ve bugünkü stok YETİYORSA — sebep sınırdır,
+       * stok değil. Ekran «0/1» yerine bunu söyler (İlke #5).
+       * `sinirGunu`: partinin arandığı son gün (ISO); `bugunkuStok`: adet.
+       */
+      sinirdanSonra?: { sinirGunu: string; bugunkuStok: number };
     };
 
 export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
@@ -640,6 +652,7 @@ export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
     where: { id: saleId },
     select: {
       soldAt: true,
+      createdAt: true,
       shippedAt: true,
       iptalTarihi: true,
       importKaynak: true,
@@ -679,6 +692,7 @@ export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
   if (!uygunluk.uygun) return { tamam: false, kod: uygunluk.sebep };
 
   /** Yazımla AYNI parçalar, AYNI sınır — ama hiçbir yazma yok. */
+  const { sinir } = await satisStokZamani(prisma, satis);
   const partiDurumu = new Map<string, Parti[]>();
   const kalemler: Extract<OnayOnizlemesi, { tamam: true }>["kalemler"] = [];
   let toplamMaliyet: number | null = 0;
@@ -688,7 +702,7 @@ export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
   for (const k of satis.items) {
     const partiler =
       partiDurumu.get(k.variantId) ??
-      (await acikPartiler(prisma, k.variantId, gunSonu(satis.soldAt)));
+      (await acikPartiler(prisma, k.variantId, sinir));
     /** Seçeneklerin TAMAMI listelenir (yalnız FIFO'nun tükettiği değil):
      *  operatör herhangi bir açık partiyi seçebilir (K110). Kalan adet
      *  siparişi tek başına karşılamıyorsa seçilemez (gri) — kısmi bölme
@@ -705,10 +719,16 @@ export async function onayOnizleme(saleId: string): Promise<OnayOnizlemesi> {
 
     const dagitim = fifoDagit(partiler, k.quantity);
     if (!dagitim.yeterliMi) {
+      /** Sınırdan SONRA gelmiş stok var mı — varsa sebep tarihtir (K314). */
+      const bugunkuStok = await varyantStogu(k.variantId);
+      const sinirGunu = new Date(sinir.getTime() - 24 * 60 * 60 * 1000);
       return {
         tamam: false,
         kod: "STOK_YETERSIZ",
         ayrinti: k.variant.sku + ": " + dagitim.mevcut + "/" + k.quantity,
+        ...(bugunkuStok >= k.quantity
+          ? { sinirdanSonra: { sinirGunu: sinirGunu.toISOString(), bugunkuStok } }
+          : {}),
       };
     }
     partiDurumu.set(k.variantId, dagitim.kalanPartiler);

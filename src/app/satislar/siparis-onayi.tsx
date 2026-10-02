@@ -247,6 +247,15 @@ export function SiparisOnayi({ saleId, kod }: { saleId: string; kod: string }) {
           <p className={`text-sm ${DURUM_YAZISI.olumsuz}`} role="alert">
             {t(HATA_ANAHTARI[onizleme.kod])}
             {onizleme.ayrinti ? ` (${onizleme.ayrinti})` : ""}
+            {onizleme.sinirdanSonra ? (
+              <>
+                {" — "}
+                {t("onayHataStokSinir", {
+                  gun: bicim.tarih(new Date(onizleme.sinirdanSonra.sinirGunu)),
+                  adet: onizleme.sinirdanSonra.bugunkuStok,
+                })}
+              </>
+            ) : null}
           </p>
         )}
 

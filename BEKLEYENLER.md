@@ -13,6 +13,19 @@
 
 ---
 
+## 🔶 K314 — AKTARILAN SİPARİŞ: «STOK YOK» YANLIŞI · 02.10.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı:** HB `4622097086`: müşteri 23.09'da BAŞKA bir mağazadan aldı, mağaza gönderemedi, pazaryeri siparişi bize aktardı (gönderemeyen mağaza ceza alır). Seyrek ama tekrarlıyor. Entegra mevcut stoktan düşüyor, tarihi 23.09'da bırakıyor; HB de 23.09 listesinde gösteriyor. Bizde onay «Stok yetersiz (KAM-KR-KL-01: 0/1)» dedi; stokta 2 adet var.
+**Sebep (ölçüldü):** stok 28.09'da girdi (2+2, 30.09'da 2 satıldı). Onay partiyi `gunSonu(soldAt)` = 23.09 sonuna kadar arıyor (29.08 arızasının sınırı) → 28.09 görünmüyor.
+**Ölçüt:** 08.09'dan beri 348 satış: kayıt − satış farkı p50 0 · p99 0,10 gün; tek aykırı 9,30 gün (bu sipariş) → eşik gedikte **1 gün**. Yalnız kanal çekimi (`enumerasyon` · `hb-` · `n11-`); Excel/elle hariç. **Kanalın ilk çekim günü hariç** (bağlantı günü toplu geçmiş çekildi: TY 26.08 → 438, HB 07.09 → 2) — gün VERİDEN (`_min.createdAt`).
+**Çare** `stok.ts` `satisStokZamani`: aktarılan siparişte parti sınırı = sisteme düştüğü İstanbul gününün sonu; stok çıkışının ve sayım korumasının tarihi = sisteme düştüğü an (yoksa «28.09'da giren mal 23.09'da çıktı», geçmiş günün stoğu −1). **Satış tarihi 23.09 KALIR** (kanalın etiketi; hakediş ona bağlı). Bağlananlar: onay · onay önizlemesi · otomatik onay kuyruğu · adet düzenleme. Yeni satış girişi değişmedi (`YENİ SATIŞ:` beyanı).
+**Ekran:** listede/detayda «Aktarılan sipariş · sisteme {tarih}» rozeti + detayda açıklama; stok yetmeyip bugünkü stok yetiyorsa diyalog sebebini söyler («Satış gününde stok yoktu; bugün N adet var…»).
+**Bekçi** `fifo-sinir:dogrula` 46 (kabul kullanıma bağlı · mevcut satışta çıplak `gunSonu(x.soldAt)` yasak · hareket tarihi `soldAt` yasak · taban ≥4 · saf gövde değerle) · `aktarilan-siparis-mutasyon` **15/15** (ilk turda 14/15: örnek veri ilk çekim kapısını hiç çalıştırmıyordu → veri düzeltildi).
+⚠ **Bedeli beyan:** ① aynı kaynak geçmişi yeniden toplu çekerse o satırlar «aktarılan» sayılır — o gün ölçüt yeniden kurulur. ② Eylül cirosu/NET-2 bu satış onaylanınca geriye doğru değişir (HB de 23.09'a yazıyor — doğru). ③ Eylül muhasebe dönemi kapatılmışsa onay dönem kapısına takılır (dönem satış tarihine bakar; değiştirilmedi).
+**Halil testi (deploy sonrası):** ① Satışlar → `4622097086` ara → tarih **23.09.2026 · 11:24**, altında mavi «Aktarılan sipariş · sisteme 02.10.2026» · ② Onayla → diyalogda «0/1» YOK; parti **28.09.2026**'dan 1 adet, maliyet görünür → Onayla · ③ Stok → KAM-KR-KL-01: **2 → 1** · ④ satış detayında «Aktarım» satırı ve açıklaması · ⑤ Satış listesinde başka hiçbir satırda rozet yok.
+
+---
+
 ## 🔶 K313 — ÜRÜN AKTİFLİĞİNİN YAZICISI YOKTU · 02.10.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı:** «Pasif ürünü nasıl aktif yapacağız, HBCV00006G7MR1 bu ürüne alım gireceğim giremiyorum.» Ürün: Anker Soundcore Boom 2 A3138 (siyah) — kopya DEĞİL (aktif «Boom 2 SE» A3148 başka model); 26.09 toplu «uyuyan ürün» temizliğinde (stok 0 · 90 gün satış yok · kanalda açık değil) ürün + varyant pasife alınmış.

@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
+import { aktarilanSiparisMi, satisStokZamaniHesapla } from "../src/lib/stok";
 
 /**
  * ============================================================================
@@ -122,7 +123,24 @@ for (const kok of KOK) {
         }
         parcalar.push(govde.slice(bas));
         const ucuncu = parcalar.slice(2).join(",");
-        if (!/\bgunSonu\s*\(/.test(ucuncu)) {
+        /**
+         * ⭐ K314 — MEVCUT SATIŞIN SINIRI `satisStokZamani`'DAN GELİR.
+         * Aktarılan siparişte sınır sisteme düştüğü günün sonudur; gövde
+         * `stok.ts`te `gunSonu` ile kurulur ve aşağıda DEĞERLE sınanır.
+         * ⚠ KABUL ADA DEĞİL KULLANIMA BAĞLI: `sinir` adlı her değişken
+         * geçmez — aynı dosyada o adın `await satisStokZamani(` sonucundan
+         * alındığı görülmeli. Yoksa `const sinir = soldAt` (gün BAŞI) kaçardı.
+         */
+        const arg = ucuncu.trim();
+        const nokta = /^(\w+)\.sinir$/.exec(arg);
+        const zamandan =
+          (nokta !== null &&
+            new RegExp(
+              "\\bconst\\s+" + nokta[1] + "\\s*=\\s*await\\s+satisStokZamani\\s*\\(",
+            ).test(kod)) ||
+          (arg === "sinir" &&
+            /\bconst\s*\{\s*sinir\s*\}\s*=\s*await\s+satisStokZamani\s*\(/.test(kod));
+        if (!zamandan && !/\bgunSonu\s*\(/.test(ucuncu)) {
           hata++;
           const sn = kod.slice(0, m.index).split("\n").length;
           bulgular.push(
@@ -215,6 +233,144 @@ for (const kok of KOK) {
     );
   }
   kontrol += 2;
+}
+
+/**
+ * ⭐ K314 — MEVCUT SATIŞTA ÇIPLAK `gunSonu(x.soldAt)` YASAK.
+ * Mevcut bir satışın sınırı `satisStokZamani`'dan gelir; aksi hâlde bir ekran
+ * aktarılan siparişi eski kuralla görür ve «stok yok» der (onay ile önizleme
+ * ayrışır). Dosya listesi tutulmaz — desen yasağı (anayasa).
+ * İstisna: YENİ satış girişi (aktarım olamaz) — çağrının yorum bloğunda
+ * `YENİ SATIŞ: <gerekçe>` beyanı. Kapsam `src/` (betikler tek seferlik ölçüm).
+ */
+for (const yol of dosyalar("src")) {
+  const y = yol.replace(/\\/g, "/");
+  if (y.endsWith("src/lib/stok.ts")) continue;
+  const ham = kaynakOku(yol);
+  const kod = yorumsuz(ham);
+  const desen = /\bgunSonu\s*\(\s*[\w!.]+\.soldAt\s*\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = desen.exec(kod)) !== null) {
+    kontrol++;
+    const satirNo = kod.slice(0, m.index).split("\n").length;
+    const hamSatirlar = ham.split("\n");
+    /** Beyan çağrının kendi satırından yukarıya, BİTİŞİK yorum bloğunda. */
+    let ust = satirNo - 2;
+    let blok = "";
+    while (ust >= 0) {
+      const s = hamSatirlar[ust].trim();
+      const yorumSatiri =
+        s === "" || s.startsWith("*") || s.startsWith("//") ||
+        s.startsWith("/*") || s.endsWith("*/");
+      if (!yorumSatiri) break;
+      blok = hamSatirlar[ust] + "\n" + blok;
+      ust--;
+    }
+    if (/YENİ SATIŞ:\s*\S/.test(blok)) continue;
+    hata++;
+    bulgular.push(
+      "  ⛔ " + y + ":" + satirNo + "  →  " + m[0] +
+      "   (mevcut satış: `satisStokZamani` kullanın; yeni satışsa `YENİ SATIŞ:` beyanı)",
+    );
+  }
+}
+
+/**
+ * ⭐ K314 — SINIRI KAYAN SATIŞTA HAREKET TARİHİ DE KAYAR.
+ * `satisStokZamani` kullanan dosyada stok hareketi (`occurredAt`) ya da sayım
+ * kapısı (`hareketIsTarihi`) `soldAt`'tan beslenirse sınır kayar ama hareket
+ * 23.09'a yazılır: «28.09'da giren mal 23.09'da çıktı», geçmiş günün stoğu −1.
+ * Kapsam KULLANIMA bağlı (dosya listesi yok): `await satisStokZamani(` çağıran
+ * her dosya.
+ */
+/** Taban doluluğu: onay · önizleme · otomatik onay · adet düzenleme. */
+const ZAMAN_KULLANAN_EN_AZ = 4;
+let zamanKullanan = 0;
+for (const yol of dosyalar("src")) {
+  const y = yol.replace(/\\/g, "/");
+  if (y.endsWith("src/lib/stok.ts")) continue;
+  const kod = yorumsuz(kaynakOku(yol));
+  if (!/\bawait\s+satisStokZamani\s*\(/.test(kod)) continue;
+  zamanKullanan++;
+  for (const desen of [
+    /\boccurredAt:\s*[\w!.]+\.soldAt\b/g,
+    /\bhareketIsTarihi:\s*[\w!.]+\.soldAt\b/g,
+  ]) {
+    let m: RegExpExecArray | null;
+    kontrol++;
+    while ((m = desen.exec(kod)) !== null) {
+      hata++;
+      bulgular.push(
+        "  ⛔ " + y + ":" + kod.slice(0, m.index).split("\n").length + "  →  " + m[0] +
+        "   (aktarılan siparişte `stokZamani.hareketTarihi` olmalı)",
+      );
+    }
+  }
+}
+
+kontrol++;
+if (zamanKullanan < ZAMAN_KULLANAN_EN_AZ) {
+  hata++;
+  bulgular.push(
+    "  ⛔ K314 `satisStokZamani` kullanan dosya " + zamanKullanan +
+    " (en az " + ZAMAN_KULLANAN_EN_AZ + ") — tarama boş kümeyle yeşil kalırdı",
+  );
+}
+
+/** ⭐ K314 SAF GÖVDE — DEĞERLE (desen taranmaz). Ayrımın iki yakası da. */
+{
+  const gun = (s: string) => new Date(s);
+  const esit = (ad: string, a: unknown, b: unknown) => {
+    kontrol++;
+    if (a !== b) {
+      hata++;
+      bulgular.push("  ⛔ K314 " + ad + ": beklenen " + String(b) + " · gelen " + String(a));
+    }
+  };
+  /** Ölçülen vaka: HB 4622097086 — satış 23.09 11:24 (TR), sisteme 02.10 18:34 (TR). */
+  const vaka = {
+    soldAt: gun("2026-09-23T08:24:22Z"),
+    createdAt: gun("2026-10-02T15:34:26Z"),
+    importKaynak: "hb-enumerasyon",
+  };
+  const ilk = gun("2026-09-07T10:00:00Z");
+  const z = satisStokZamaniHesapla(vaka, ilk);
+  esit("vaka aktarılan", z.aktarilan, true);
+  esit("vaka sınırı 03.10 00:00", z.sinir.toISOString(), "2026-10-03T00:00:00.000Z");
+  esit("vaka hareket tarihi = sisteme düştüğü an", z.hareketTarihi.toISOString(), vaka.createdAt.toISOString());
+  /** 28.09 partisi sınırın İÇİNDE (ölçütle aynı: `occurredAt < sinir`). */
+  esit("28.09 partisi içeride", gun("2026-09-28T00:00:00Z") < z.sinir, true);
+
+  /** Normal sipariş: 2 saat sonra düştü → eski kural. */
+  const normal = satisStokZamaniHesapla(
+    { ...vaka, createdAt: gun("2026-09-23T10:24:22Z") }, ilk);
+  esit("normal aktarılan değil", normal.aktarilan, false);
+  esit("normal sınır gunSonu(soldAt)", normal.sinir.toISOString(), "2026-09-24T00:00:00.000Z");
+  esit("normal hareket = soldAt", normal.hareketTarihi.toISOString(), vaka.soldAt.toISOString());
+
+  /** Gece yarısı geçişi: 23:50'de verilip 00:10'da düşen sipariş aktarılan DEĞİL (eşik 1 gün). */
+  esit("gece yarısı geçişi aktarılan değil",
+    aktarilanSiparisMi({ ...vaka, soldAt: gun("2026-09-23T20:50:00Z"), createdAt: gun("2026-09-23T21:10:00Z") }, ilk), false);
+
+  /** Excel / elle girilen: createdAt geç ama kaynak kanal çekimi değil → eski kural. */
+  esit("excel aktarılan değil", aktarilanSiparisMi({ ...vaka, importKaynak: "satis-excel" }, ilk), false);
+  esit("elle aktarılan değil", aktarilanSiparisMi({ ...vaka, importKaynak: null }, ilk), false);
+
+  /** İlk çekim günü (toplu geçmiş çekimi) → eski kural; ertesi gün → aktarılan. */
+  /** ⚠ Örnek veri ayrımın İKİ yakasını göstermeli: satış ilk çekimden ÇOK
+   *  önce (eşik geçilir) — tek fark kaydın ilk çekim gününde mi ertesi gün mü
+   *  düştüğü. (İlk sürümde satış 23.09 bırakılmıştı; fark negatifti ve kapıyı
+   *  silen mutasyon YEŞİL geçti.) */
+  const gecmis = { ...vaka, soldAt: gun("2026-06-15T09:00:00Z") };
+  esit("ilk çekim günü aktarılan değil",
+    aktarilanSiparisMi({ ...gecmis, createdAt: gun("2026-09-07T18:00:00Z") }, ilk), false);
+  esit("ilk çekimin ertesi günü aktarılan",
+    aktarilanSiparisMi({ ...gecmis, createdAt: gun("2026-09-08T09:00:00Z") }, ilk), true);
+  esit("ilk çekim anı bilinmiyorsa aktarılan değil", aktarilanSiparisMi(vaka, null), false);
+
+  /** İstanbul günü: 21:30Z = TR 00:30 ertesi gün → sınır o TR gününün sonu. */
+  const gece = satisStokZamaniHesapla({ ...vaka, createdAt: gun("2026-10-02T21:30:00Z") }, ilk);
+  esit("sınır İstanbul gününe göre", gece.sinir.toISOString(), "2026-10-04T00:00:00.000Z");
 }
 
 console.log("");

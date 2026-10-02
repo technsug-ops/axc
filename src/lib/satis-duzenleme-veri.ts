@@ -2,7 +2,7 @@ import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { acikCikislar } from "@/lib/kalem-maliyeti";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { adetPlani } from "@/lib/satis-adet";
-import { acikPartilerToplu, gunSonu } from "@/lib/stok";
+import { acikPartilerToplu, satisStokZamani } from "@/lib/stok";
 import { gercekCargoTutari, karYenidenYaz } from "@/lib/kar-yeniden";
 import { prisma } from "@/lib/prisma";
 import { izYaz } from "@/lib/iz";
@@ -230,8 +230,9 @@ export async function duzenlemeUygula(girdi: {
   // Öncesi — rapor için (kullanıcı NET-2 farkını görecek).
   const once = await prisma.sale.findUnique({
     where: { id: girdi.saleId },
-    /** `soldAt` FIFO SINIRI icin okunuyor — bkz. asagidaki `gunSonu`. */
-    select: { net2Amount: true, soldAt: true },
+    /** `soldAt`/`createdAt`/`importKaynak` FIFO SINIRI icin — bkz. asagidaki
+     *  `satisStokZamani` (K314: aktarilan sipariste sinir kayar). */
+    select: { net2Amount: true, soldAt: true, createdAt: true, importKaynak: true },
   });
 
   const kalemler = await prisma.saleItem.findMany({
@@ -275,11 +276,13 @@ export async function duzenlemeUygula(girdi: {
   let stokPlani: ReturnType<typeof adetPlani> | null = null;
   if (adetDegisenler.length > 0) {
     /** SINIR: satis gununun sonu — adet artisi da FIFO'dan duser ve
-     *  geri tarihli bir satis bugunku partiyi yiyemez (29.08.2026). */
+     *  geri tarihli bir satis bugunku partiyi yiyemez (29.08.2026).
+     *  Aktarilan sipariste sisteme dustugu gunun sonu (K314). */
+    const { sinir } = await satisStokZamani(prisma, once!);
     const partiHaritasi = await acikPartilerToplu(
       prisma,
       [...new Set(adetDegisenler.map((k) => k.variantId))],
-      gunSonu(once!.soldAt),
+      sinir,
     );
     stokPlani = adetPlani(
       adetDegisenler.map((k) => ({

@@ -3,7 +3,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { gunHassasiyetliMi } from "@/lib/donem";
 import { onayCekirdegi } from "@/lib/onay-cekirdegi";
 import { satisKarTazele } from "@/lib/kar-yeniden";
-import { acikPartiler, gunSonu } from "@/lib/stok";
+import { acikPartiler, satisStokZamani, type SinirSatisi } from "@/lib/stok";
 import type { IslemIstemcisi } from "@/lib/prisma";
 
 /**
@@ -158,10 +158,11 @@ export function onayDurumuAnahtari(
  *  onaylanmaz; stok yetersizliği elle görülür). */
 async function tekPartiMi(
   db: IslemIstemcisi,
-  satis: { soldAt: Date; items: { variantId: string }[] },
+  satis: SinirSatisi & { items: { variantId: string }[] },
 ): Promise<boolean> {
   if (satis.items.length === 0) return false;
-  const sinir = gunSonu(satis.soldAt);
+  /** Onay çekirdeğiyle AYNI sınır (K314) — iki yerde iki ölçüt olmasın. */
+  const { sinir } = await satisStokZamani(db, satis);
   for (const k of satis.items) {
     const partiler = await acikPartiler(db, k.variantId, sinir);
     if (partiler.length !== 1) return false;
@@ -222,6 +223,8 @@ export async function otomatikOnaylaKuyruk(
       where: { id: b.id },
       select: {
         soldAt: true,
+        createdAt: true,
+        importKaynak: true,
         items: { select: { variantId: true } },
         channelAccount: { select: { channel: { select: { name: true } } } },
       },
