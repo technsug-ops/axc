@@ -175,6 +175,8 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * yakaladı.
    */
   "teslim-durumu-mutasyon:kontrol",
+  /** 02.10.2026 — `iade-kdv` `src/lib/iade.ts`i mutasyona uğratıyor; `iade-duzenle` ve `iade-gecerli` de aynı dosyaya dokunuyor. */
+  "iade-kdv-mutasyon:kontrol",
   /**
    * K243 (23.09.2026) — `kargo-kaynagi` artık SATIŞ DETAY ekranını da
    * mutasyona uğratıyor (`satislar/[id]/page.tsx`): desi ve kanal kargo

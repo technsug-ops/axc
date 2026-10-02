@@ -269,6 +269,18 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
   let komisyonKdvIptali = 0; // komisyon KDV indirimi iptal -> ödenecek artar
   let odemeGideriKdvIptali = 0;
   let kargoKdvIndirimi = 0; // iade kargoları indirilir -> ödenecek azalır
+  /**
+   * ⛔ ALIŞ KDV'Sİ DE GERİ ALINIR (kullanıcı onayı «yap», 02.10.2026).
+   * Satış NET-2'si ödenecek KDV'den malın ALIŞ KDV'sini düşüyor (`kar.ts`
+   * `alisKdv`). Mal stoğa DÖNÜNCE o KDV bir sonraki satışta yeniden düşülür;
+   * iade onu geri almazsa aynı alış KDV'si İKİ KEZ düşülmüş olur.
+   * ÖLÇÜLDÜ: TY 11629354592 (₺2.945, maliyet ₺2.310) — iade NET-2 +0,06
+   * yazıyordu, olması gereken −384,94 (385 = 2.310 × 20/120). Canlıda 231/234
+   * iade etkileniyordu, NET-2 toplam ₺79.077 FAZLA görünüyordu.
+   * ⚠ Yalnız STOĞA DÖNEN (sağlam) adet: hasarlı mal dönmez, KDV'si düşülmüş
+   * kalır (gider). Oran satıştakiyle AYNI — kalemin KDV oranı.
+   */
+  let maliyetKdvIptali = 0; // stoğa dönen malın alış KDV'si -> ödenecek artar
 
   for (const kalem of girdi.kalemler) {
     const satirlar: IadeSatiri[] = [];
@@ -374,6 +386,7 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
           code: "MALIYET_DONMEYEN",
           tutar: -(kalem.maliyet * hasarliOran),
         });
+        maliyetKdvIptali += kdvAyir(kalem.maliyet * saglamOran, kalem.kdvOrani);
       }
     }
 
@@ -438,7 +451,8 @@ export function iadeEtkisiHesapla(girdi: IadeGirdisi): IadeSonucu {
   const odenecekKdvDegisimi =
     -satisKdvIadesi +
     komisyonKdvIptali +
-    odemeGideriKdvIptali -
+    odemeGideriKdvIptali +
+    maliyetKdvIptali -
     kargoKdvIndirimi +
     tazminatKdv;
 

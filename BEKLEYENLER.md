@@ -13,6 +13,18 @@
 
 ---
 
+## 🔴 K311 — İADE NET-2: STOĞA DÖNEN MALIN ALIŞ KDV'Sİ GERİ ALINMIYORDU · 02.10.2026 · [MEKANİZMA YAZILDI · GEÇMİŞ KURU KOŞUM HAZIR — YAZIM ONAYI BEKLİYOR]
+
+**Kullanıcı bulgusu:** TY 11629354592 (₺2.945, normal iade) işlenince NET-1 6.242,18 → 5.775,35 (−466,83), NET-2 yalnız 5.138,53 → 5.106,26 (−32,27). Beklenen gerçek kayıp: gidiş kargo 106,75 + sabit 13,19 + dönüş kargo 106,70 = **226,64** (kullanıcının «334,59»u toplama hatası; üç kalem 226,59).
+**NET-1 DOĞRU:** iade −466,83 = satışın kârı silinir (−240,19) + gerçek kayıp (−226,64).
+**NET-2 YANLIŞTI:** satış NET-2'si ödenecek KDV'den malın ALIŞ KDV'sini (2.310 × 20/120 = 385) düşüyor; iade satış KDV'sini (490,83) ve komisyon KDV'sini geri alıyor ama **alış KDV'sini geri almıyordu** → mal stoğa dönüp yeniden satılınca aynı 385 ikinci kez düşülüyor. İade NET-2'si +0,06 yazıyordu, olması gereken **−384,94**; satış + iade birlikte −188,87 (= kayıp − kargo/hizmet KDV'si).
+**Mekanizma:** `iade.ts` `maliyetKdvIptali` — yalnız STOĞA DÖNEN (sağlam) adet, ürünün kendi KDV oranıyla (satış tarafıyla aynı); hasarlıda geri alınmaz. Kod başlığındaki «S6 varsayımı — muhasebeci teyidi bekliyor» bloğunun eksik satırıydı. `iade:dogrula` 112 (ölçülen vaka −384,94 · hasarlı · kısmi sağlam · %10 ürün; iki eski beklenti çift düşmeyi sabitliyordu → gerekçesiyle çevrildi) · yeni `iade-kdv-mutasyon` 5/5.
+**Geçmiş:** `scripts/canli-iade-alis-kdv-kosum.ts` KURU: 234 incelenen · **211 düzeltilecek · NET-2 −₺67.872,48** · 23 zaten doğru · **iki formülle de tutmayan 0**. (İlk tahmin ₺79.077 hasarlı payı da sayıyordu — aşıldı, geçerli 67.872.) Ölçüt kayıtlı `ReturnFee` satırlarından yeniden kurulur; satır satır, ikinci koşum zararsız; anlık görüntü + iz `IADE_ALIS_KDV_DUZELTME`.
+**İsteğe bağlı teyit (muhasebeci):** «İade gelen malın alış KDV'si, iade edilen satışın KDV hesabında geri alınıyor mu?»
+**Halil testi (yazımdan sonra):** Panel → dönem 02.10 seçili hâlde NET-2 ≈ 5.138,53 − 384,94'ün kırpma sonrası değeri · 11629354592 iade detayında NET-2 −384,94.
+
+---
+
 ## 💤 K310 — PAZARYERİNDE SİSTEMDEN YENİ İLAN AÇMAK · 02.10.2026 · [İLERİDE — kullanıcı «ekle»; AÇILIŞ ŞARTI AŞAĞIDA]
 
 **Kullanıcı sorusu:** _«Dışarıdan alım yaptığım bir ürünü pazaryerlerine programdan açabiliyor muyum?»_ — **HAYIR (bugün).**

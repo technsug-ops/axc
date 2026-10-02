@@ -616,7 +616,13 @@ console.log("\n4) DEĞİŞİM VE HASARLI");
      * değişti. İki rakamın toplamı korunuyor: −313 + 1799 = 1486.
      */
     yakin("değişim NET-1 (maliyet satışa taşındı)", dg.net1Etkisi, 1486);
-    yakin("değişim NET-2 (maliyet satışa taşındı)", dg.net2Etkisi, 1538.17);
+    /**
+     * ⚠ 02.10.2026: 1538,17 → 1238,33. Stoğa DÖNEN eski malın alış KDV'si
+     * (1799 × 20/120 = 299,83) artık geri alınıyor — satış onu `alisKdv`
+     * olarak düşmüştü; mal stoğa dönünce sonraki satışta yeniden düşülecek.
+     * Eski beklenti çift düşmeyi SABİTLİYORDU (bkz. iade.ts `maliyetKdvIptali`).
+     */
+    yakin("değişim NET-2 (maliyet satışa taşındı)", dg.net2Etkisi, 1238.33);
 
     // Aynı senaryo İADE olsaydı (değişim ürünü yok) ciro düşerdi —
     // iki davranışın FARKLI olduğu burada kilitlenir.
@@ -698,7 +704,10 @@ console.log("\n5) KDV VARSAYIMI (S6 — muhasebeci teyidi bekliyor)");
   // Komisyon KDV indirimi iptal -> ARTAR: 103,53 x 20/120 = 17,26
   // Ödeme gideri KDV indirimi iptal -> ARTAR: 14,38 x 20/120 = 2,40
   // İade kargosu KDV'si indirilir -> AZALIR: 89 x 20/120 = 14,83
-  const beklenen = -359.5 + 17.26 + 2.4 - 14.83;
+  // ⛔ 02.10.2026: STOĞA DÖNEN malın ALIŞ KDV'si geri alınır -> ARTAR:
+  //    1565 x 20/120 = 260,83 (eski beklenti bu satırı içermiyordu ve çift
+  //    düşmeyi sabitliyordu — canlıda 231 iade, NET-2 ₺79.077 fazla).
+  const beklenen = -359.5 + 17.26 + 2.4 + 260.83 - 14.83;
   yakin("ödenecek KDV değişimi", s.odenecekKdvDegisimi, beklenen, 0.05);
   kontrol(
     "iade edilince daha AZ KDV ödenir",
@@ -706,6 +715,56 @@ console.log("\n5) KDV VARSAYIMI (S6 — muhasebeci teyidi bekliyor)");
     s.odenecekKdvDegisimi,
   );
   yakin("net2 etkisi", s.net2Etkisi, s.net1Etkisi - s.odenecekKdvDegisimi, 0.01);
+  /**
+   * ⛔ ÖLÇÜLEN VAKA — TY 11629354592 (02.10.2026, kullanıcı bulgusu). Satış:
+   * ₺2.945 · maliyet ₺2.310 · komisyon ₺250,325 · KDV %20; iade kargosu
+   * ₺106,70. Satış NET-2'si +196,07 idi; iade +0,06 yazıyordu (alış KDV'si
+   * 385 geri alınmıyordu). Satış + iade birlikte = gerçek kayıp − kargo KDV'si.
+   */
+  const v = iadeEtkisiHesapla({
+    returnType: "NORMAL",
+    kalemler: [{ satilanAdet: 1, iadeAdedi: 1, saglamAdet: 1, satisTutari: 2945, maliyet: 2310, kdvOrani: 20, komisyon: 250.325, degisimMaliyeti: null }],
+    odemeGideri: 0,
+    siparisToplami: 2945,
+    iadeKargosu: 106.7,
+    yenidenGonderimKargosu: null,
+    ceza: null,
+  });
+  yakin("⛔ ÖLÇÜLEN VAKA 11629354592 — iade NET-1", v.net1Etkisi, -466.83, 0.01);
+  yakin("⛔ ÖLÇÜLEN VAKA 11629354592 — iade NET-2 (alış KDV'si geri alındı)", v.net2Etkisi, -384.94, 0.01);
+  /** Hasarlı: mal stoğa DÖNMEZ → alış KDV'si düşülmüş kalır (gider). */
+  const h = iadeEtkisiHesapla({
+    returnType: "NORMAL",
+    kalemler: [{ satilanAdet: 1, iadeAdedi: 1, saglamAdet: 0, satisTutari: 2945, maliyet: 2310, kdvOrani: 20, komisyon: 250.325, degisimMaliyeti: null }],
+    odemeGideri: 0,
+    siparisToplami: 2945,
+    iadeKargosu: 106.7,
+    yenidenGonderimKargosu: null,
+    ceza: null,
+  });
+  yakin("hasarlı iade: alış KDV'si GERİ ALINMAZ (mal dönmedi)", h.odenecekKdvDegisimi, -490.83 + 41.72 - 17.78, 0.05);
+  /** Kısmi sağlam: 2 sattı, 2 iade, 1 sağlam → yalnız 1 adedin alış KDV'si. */
+  const k = iadeEtkisiHesapla({
+    returnType: "NORMAL",
+    kalemler: [{ satilanAdet: 2, iadeAdedi: 2, saglamAdet: 1, satisTutari: 5890, maliyet: 4620, kdvOrani: 20, komisyon: 500.65, degisimMaliyeti: null }],
+    odemeGideri: 0,
+    siparisToplami: 5890,
+    iadeKargosu: null,
+    yenidenGonderimKargosu: null,
+    ceza: null,
+  });
+  yakin("kısmi sağlam: yalnız stoğa dönen adedin alış KDV'si (1/2)", k.odenecekKdvDegisimi, -981.67 + 83.44 + 385, 0.05);
+  /** %10'luk ürün (diş fırçası sınıfı): alış KDV'si ÜRÜNÜN oranıyla — satış tarafıyla aynı. */
+  const d = iadeEtkisiHesapla({
+    returnType: "NORMAL",
+    kalemler: [{ satilanAdet: 1, iadeAdedi: 1, saglamAdet: 1, satisTutari: 1650, maliyet: 1100, kdvOrani: 10, komisyon: 0, degisimMaliyeti: null }],
+    odemeGideri: 0,
+    siparisToplami: 1650,
+    iadeKargosu: null,
+    yenidenGonderimKargosu: null,
+    ceza: null,
+  });
+  yakin("%10'luk ürün: alış KDV'si ürünün oranıyla (1100 × 10/110 = 100)", d.odenecekKdvDegisimi, -150 + 100, 0.05);
 }
 
 // ===========================================================================
