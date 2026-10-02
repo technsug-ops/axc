@@ -4665,7 +4665,7 @@
     "olcumHic": "Bu küme kanalla hiç karşılaştırılmadı.",
     "olcumBugun": "Kanalla son karşılaştırma: bugün.",
     "olcumYas": "Kanalla son karşılaştırma {gun} gün önce — rakamlar o kadar eski.",
-    "tazelemeKomutu": "Tazeleme elle koşuyor; otomatik zamanlama henüz yok.",
+    "tazelemeKomutu": "Karşılaştırma her sabah kendiliğinden tazelenir.",
     "listeBasligi": "Listelemeler",
     "listeToplami": "{sayi} kayıt gösteriliyor ({toplam} kaydın içinden)",
     "bosSonuc": "Bu süzgeçle eşleşen kayıt yok.",

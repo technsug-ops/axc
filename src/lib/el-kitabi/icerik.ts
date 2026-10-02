@@ -37,8 +37,10 @@ export const BOLUMLER = [
   { kimlik: "paketleme", ad: "Yönlendirmeli paketleme" },
   { kimlik: "kanalSku", ad: "Kanal SKU — ne işe yarar" },
   { kimlik: "kanalListeleme", ad: "Kanal listeleme durumu — ürünüm satışta mı" },
+  { kimlik: "kanalGonderim", ad: "Kanala stok ve fiyat göndermek" },
   { kimlik: "komisyon", ad: "Komisyon oranı ve tarife" },
   { kimlik: "alim", ad: "Alım ve mal kabul" },
+  { kimlik: "malKabul", ad: "Mal kabul — günün girişleri" },
   { kimlik: "satis", ad: "Satış" },
   { kimlik: "iade", ad: "İade" },
   { kimlik: "deneme", ad: "Hesaplama motoru — nerede satmalı" },
@@ -50,25 +52,28 @@ export const BOLUMLER = [
   { kimlik: "hakedis", ad: "Hakediş — param ne zaman yatar" },
   { kimlik: "tazminat", ad: "Tazminat" },
   { kimlik: "nakit", ad: "Nakit takvimi" },
+  { kimlik: "gunlukOzet", ad: "Günlük özet" },
   { kimlik: "envanter", ad: "Envanter değeri" },
   { kimlik: "rapor", ad: "Dönem raporu" },
+  { kimlik: "donemler", ad: "Ayarlar — Muhasebe dönemleri" },
+  { kimlik: "maliyetYontemi", ad: "Ayarlar — Maliyet yöntemi" },
   { kimlik: "urunAnalizi", ad: "Ürün analizi" },
   { kimlik: "talep", ad: "Destek talepleri" },
-  { kimlik: "depo", ad: "Ayarlar — Depo kurulumu" },
-  { kimlik: "raf", ad: "Ayarlar — Raf Konumları" },
-  { kimlik: "kategori", ad: "Ayarlar — KDV Kategorileri" },
-  { kimlik: "duzeltme", ad: "Ayarlar — Düzeltme nedenleri" },
-  { kimlik: "kanalHesabi", ad: "Ayarlar — Kanal Hesapları" },
-  { kimlik: "tedarikci", ad: "Ayarlar — Tedarikçiler" },
-  { kimlik: "marka", ad: "Ayarlar — Markalar" },
-  { kimlik: "geceTuru", ad: "Ayarlar — Gece bekçi turu" },
+  { kimlik: "depo", ad: "Tanımlar — Depo kurulumu" },
+  { kimlik: "raf", ad: "Tanımlar — Raf Konumları" },
+  { kimlik: "kategori", ad: "Tanımlar — KDV Kategorileri" },
+  { kimlik: "duzeltme", ad: "Tanımlar — Düzeltme nedenleri" },
+  { kimlik: "kanalHesabi", ad: "Ürün ve kanal — Kanal Hesapları" },
+  { kimlik: "tedarikci", ad: "Tanımlar — Tedarikçiler" },
+  { kimlik: "marka", ad: "Tanımlar — Markalar" },
+  { kimlik: "geceTuru", ad: "Veri — Gece bekçi turu" },
   { kimlik: "kullanici", ad: "Ayarlar — Kullanıcılar" },
   { kimlik: "rol", ad: "Ayarlar — Roller" },
   { kimlik: "menu", ad: "Ayarlar — Menü düzeni" },
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
-  { kimlik: "gecmisEkstre", ad: "Ayarlar — Geçmiş ekstreler" },
-  { kimlik: "komisyonKapisi", ad: "Ayarlar — Komisyon yükleme" },
-  { kimlik: "kargoTarifesi", ad: "Ayarlar — Kargo tarifesi" },
+  { kimlik: "gecmisEkstre", ad: "Veri — Geçmiş ekstreler" },
+  { kimlik: "komisyonKapisi", ad: "Veri — Komisyon yükleme" },
+  { kimlik: "kargoTarifesi", ad: "Veri — Kargo tarifesi" },
   { kimlik: "yedek", ad: "Yedek" },
   { kimlik: "sorun", ad: "Bir şey ters giderse" },
   { kimlik: "sozluk", ad: "Sözlük" },
@@ -93,24 +98,13 @@ export const BOLUMLER = [
 export const MENU_BOLUM: Record<string, string | null> = {
   panel: "panel",
   /**
-   * ⚠ DÖNEM EKRANININ EL KİTABI BÖLÜMÜ HENÜZ YOK — `null` BİLEREK.
-   * Eşlemede olmayan bir anahtar bekçiyi kırmızı yakıyor (haklı olarak:
-   * menüdeki her ekranın el kitabında karşılığı SORULMALI). Ama olmayan
-   * bir bölüme işaret etmek, var olmayan bir sayfaya link vermek olurdu
-   * — anayasa: "gösterdiğim link VAR OLAN bir ekrana mı gidiyor".
-   * Bölüm yazıldığı gün burası doldurulur.
+   * 03.10.2026: dört ekranın bölümü yazıldı — eskiden `null`dı ("olmayan bir
+   * bölüme link verilmez"; bölüm yazıldığı gün doldurulur kuralı).
    */
-  donemler: null,
-  /**
-   * ⚠ `null` — UYDURMA BİR BÖLÜME İŞARET EDİLMEDİ. Mal kabul ekranının el
-   * kitabı bölümü henüz YOK; var olmayan bir bölüme link vermek, anayasadaki
-   * "gösterdiğim link VAR OLAN bir ekrana mı gidiyor" tuzağı olurdu.
-   */
-  malKabul: null,
-  /** ⚠ `null` — el kitabında maliyet yöntemi bölümü henüz YOK. */
-  maliyetYontemi: null,
-  /** ⚠ `null` — el kitabında günlük özet bölümü henüz YOK (K-OZET, yeni ekran). */
-  gunlukOzet: null,
+  donemler: "donemler",
+  malKabul: "malKabul",
+  maliyetYontemi: "maliyetYontemi",
+  gunlukOzet: "gunlukOzet",
   urunler: "urun",
   urunKarti: "kart",
   simulasyon: "deneme",
@@ -367,7 +361,9 @@ güvenmediği bir kayda dönüşür.</p></div>
 <p>Aynı ürünü farklı zamanlarda farklı fiyata almış olabilirsiniz. Her alım ayrı
 bir <em>parti</em>dir ve kendi maliyetini taşır. Satış olduğunda sistem
 <strong>en eski partiden</strong> düşer; kâr o partinin gerçek maliyetiyle
-hesaplanır — ortalama alınmaz.</p>
+hesaplanır — ortalama alınmaz. Partilerin maliyeti farklıysa formda bir
+<strong>parti seçici</strong> çıkar; isterseniz başka bir partiyi seçersiniz
+(kimin seçeceği <strong>Ayarlar → Maliyet yöntemi</strong>'nden ayarlanır).</p>
 
 <h3>İki kâr rakamı vardır</h3>
 <div class="formul">NET-1 = satış − maliyet − komisyon − stopaj − kargo − sabit kesintiler
@@ -377,7 +373,10 @@ devlete ödeyeceğiniz KDV de düşüldükten sonra cebinizde gerçekten kalan r
 Listelerde NET-2 gösterilir, çünkü sorulan soru odur.</p>
 
 <h3>Genel gider ürün kârına karışmaz</h3>
-<div class="formul"><b>GERÇEK NET</b> = Σ NET-2 (iadeler dahil) − dönem giderleri</div>
+<div class="formul"><b>GERÇEK NET</b> = Σ NET-2 (iadeler dahil) − dönem giderleri − fire/hasar/kayıp + tazminat geliri</div>
+<p>Sayımda çıkan fazla ya da eksik <strong>kâr sayılmaz</strong>: çoğu zaman girilmemiş
+bir alımın ya da hatalı bir kaydın düzeltmesidir. Raporda ayrı bir
+<strong>veri düzeltmesi</strong> satırında görünür, GERÇEK NET'e girmez.</p>
 <div class="ek-not"><div class="etiket">Neden böyle</div>
 <p>Bir ürünü alıp almamaya karar verirken kirayı hesaba katarsanız, kararınızı
 zaten ödediğiniz bir masraf bozar. Ürün kararı brüt kârla verilir; kira ay
@@ -403,10 +402,24 @@ ${baslik("giris")}
 </ul>
 <div class="ek-not dikkat"><div class="etiket">Dikkat</div>
 <p>Bu sistemde satış fiyatlarınız, maliyetleriniz, kâr marjlarınız ve
-tedarikçileriniz duruyor. Parolanızı kimseyle paylaşmayın — şu an herkes aynı
-yetkiyle giriyor, "sadece stok görsün" gibi bir ayrım yok.</p></div>
-<p>Parola değişince <strong>açık olan tüm oturumlar kapanır</strong> —
+tedarikçileriniz duruyor. Parolanızı kimseyle paylaşmayın. Başka birine erişim
+vermek için ona <strong>kendi kullanıcısını</strong> açın ve yalnız gereken
+yetkileri olan bir rol verin (bkz. Ayarlar — Kullanıcılar ve Roller); örneğin
+depocu stok girer ama kâr marjını görmez.</p></div>
+<h3>Hatalı giriş kilidi</h3>
+<p>Aynı e-postayla <strong>ya da</strong> aynı internet bağlantısından 15 dakika
+içinde <strong>5 hatalı deneme</strong> yapılırsa giriş 15 dakika kapanır ve
+ekranda bu yazar. Kilit sürerken doğru parola da kabul edilmez — 15 dakika
+bekleyin. Kilit bağlantıya da bağlı olduğu için, aynı ev/iş ağındaki başka bir
+cihaz da o sürede giremeyebilir.</p>
+<h3>Parolanızı değiştirmek</h3>
+<p>Parolanız yönetici tarafından sıfırlandıysa ya da ilk girişinizse sistem sizi
+kendiliğinden <strong>parola değiştirme</strong> ekranına götürür; yeni parolayı
+belirlemeden başka ekran açılmaz. Parola yenileme <strong>Ayarlar →
+Kullanıcılar</strong>'dan yapılır. Parola değişince <strong>açık olan tüm oturumlar kapanır</strong> —
 telefonunuzda açık kalmış bir oturum varsa o da düşer.</p>
+<p>Toplu indirmeler (Excel dökümleri, yedek) kimin ne zaman indirdiğiyle kayda
+geçer; arama motorları sisteme kapalıdır.</p>
 </section>
 
 <section id="kurulum">
@@ -414,11 +427,11 @@ ${baslik("kurulum")}
 <p>Boş bir sistemde bu sırayı izleyin. Sıra önemli: her adım bir sonrakinin
 malzemesini hazırlıyor.</p>
 <ol class="adimlar">
-<li><div><h3>Raf konumları</h3><p><strong>Ayarlar → Raf Konumları.</strong> Depodaki her rafa bir kod verin. Mal kabulde ve toplamada bu kodu göreceksiniz.</p></div></li>
-<li><div><h3>KDV kategorileri</h3><p><strong>Ayarlar → KDV Kategorileri.</strong> Ürünün KDV oranı buradan okunur — ürün ürün oran girmezsiniz.</p></div></li>
-<li><div><h3>Kanal hesapları</h3><p><strong>Ayarlar → Kanal Hesapları.</strong> Hangi pazaryerinde hangi mağazanız var. Aynı pazaryerinde birden fazla mağazanız olabilir.</p></div></li>
+<li><div><h3>Raf konumları</h3><p><strong>Tanımlar → Raf Konumları.</strong> Depodaki her rafa bir kod verin. Mal kabulde ve toplamada bu kodu göreceksiniz.</p></div></li>
+<li><div><h3>KDV kategorileri</h3><p><strong>Tanımlar → KDV Kategorileri.</strong> Ürünün KDV oranı buradan okunur — ürün ürün oran girmezsiniz.</p></div></li>
+<li><div><h3>Kanal hesapları</h3><p><strong>Ürün ve kanal → Kanal Hesapları.</strong> Hangi pazaryerinde hangi mağazanız var. Aynı pazaryerinde birden fazla mağazanız olabilir.</p></div></li>
 <li><div><h3>Kredi kartları</h3><p><strong>Kartlar.</strong> Kart numarasının yalnızca <strong>son 4 hanesi</strong> saklanır — tam numara ve CVV hiçbir zaman istenmez.</p></div></li>
-<li><div><h3>Ürünler ve açılış stoğu</h3><p>Az ürününüz varsa tek tek girin. Listeniz varsa <strong>Ayarlar → Veri Aktarımı</strong> ile topluca yükleyin.</p></div></li>
+<li><div><h3>Ürünler ve açılış stoğu</h3><p>Az ürününüz varsa tek tek girin. Listeniz varsa <strong>Veri → Veri Aktarımı</strong> ile topluca yükleyin.</p></div></li>
 <li><div><h3>Kanal SKU ve komisyon oranları</h3><p><strong>Kanal SKU.</strong> Sattığınız her pazaryeri için ürünün oradaki kodunu ve <strong>komisyon oranını</strong> girin. <strong>Bu adımı atlamayın</strong> — atlanırsa satış kaydedilir ama kârı hesaplanamaz. <a href="#kanalSku">Ne işe yaradığı</a>.</p></div></li>
 </ol>
 
@@ -506,6 +519,10 @@ ${sikHata([
       "Kapatıp yeniden açın. Veri her zaman canlı çekilir; ekranın kendisi (düğmeler, yerleşim) yeni sürümde tazelenir.",
   },
 ])}
+<h3>Telefondaki alt çubuk</h3>
+<p>Telefonda ekranın altında sabit bir çubuk durur: <strong>Panel · Satışlar · Okut ·
+Alımlar · Menü</strong>. <strong>Menü</strong> sekmesi bütün ekranları büyük
+düğmeler hâlinde açar; bekleyen işi olan ekranın üstünde sayısı yazar.</p>
 </section>
 
 <section id="panel">
@@ -517,7 +534,7 @@ ${neZaman(
   "Her sabah ilk açtığın yer. Gün içinde bir şey ters gittiğini hissedersen de önce buraya bak — sistemin bildiği bütün uyarılar burada toplanır.",
 )}
 ${ekranSemasi("Panel", [
-  { no: 1, ad: "Dönem seçici", aciklama: "Bugün · Dün · Bu ay · Son 30 gün. Ekrandaki BÜTÜN rakamlar bu seçime göre değişir.", genis: true },
+  { no: 1, ad: "Dönem seçici", aciklama: "Açılışta «Bugün». Hızlı seçenekler: Dün · Bugün · Bu hafta · Son 30 gün · Bu ay; ayrıca daha uzun dönemler ve Özel aralık. Ekrandaki BÜTÜN rakamlar bu seçime göre değişir.", genis: true },
   { no: 2, ad: "Ciro ve NET", aciklama: "Seçili dönemin satış tutarı ve elde kalan. İkisi yan yana durur çünkü biri olmadan öteki yanıltır.", vurgulu: true },
   { no: 3, ad: "Görev kutuları", aciklama: "Mal kabul bekleyen alım, kârı hesaplanamayan satış gibi ELİNDE İŞ olan kalemler." },
   { no: 4, ad: "Uyarılar", aciklama: "Sistemin şüphelendiği kayıtlar. Rakam + 'aç' bağlantısı; döküm kendi sayfasında." },
@@ -539,6 +556,15 @@ ${sikHata([
     cozum: "Uyarılar kendiliğinden kaybolmaz; veri düzelene kadar her gün taşınırlar. Okunmayan uyarı, bir süre sonra hiç okunmayan bir rozete dönüşür.",
   },
 ])}
+<h3>Siparişler ve kargo kutucukları</h3>
+<ul>
+<li><strong>Onay bekleyen sipariş (API):</strong> pazaryerinden gelip henüz
+onaylanmamış siparişler. Tıklayınca o liste açılır (bkz. Satış → Onay).</li>
+<li><strong>Yolda</strong> şu an kargoda olanları sayar — seçili dönemden bağımsızdır.
+<strong>Teslim edildi</strong> seçili dönemde teslim edilenleri sayar. Tıklayınca
+aynı sayıda satır açılır. Teslim bildirmeyen kanallar (Amazon, elden satış)
+«teslim bilgisi yok» sayılır.</li>
+</ul>
 </section>
 
 <section id="urun">
@@ -576,6 +602,31 @@ ${sikHata([
     cozum: "Barkod (EAN) ÜRETİCİNİN kodudur, kutunun üstünde yazar. SKU sistemin kendi kodu. Firma SKU ise senin fiziksel etiketin. Üçü ayrı alan, üçü de aranabilir.",
   },
 ])}
+<h3>Pasif ürünü yeniden aktif etmek</h3>
+<p>Pasif ürün aramalarda ve alımda çıkmaz. Aktif etmek için ürünü
+<strong>Düzenle</strong>, varyantın <strong>Aktif</strong> kutusunu işaretleyin. Pasif bir
+kaydı aktif etmek için üç bilgi <strong>zorunludur</strong>: geçerli <strong>EAN</strong>
+(son hanesi tutan gerçek barkod), <strong>kategori</strong> ve marka tablosunda kayıtlı
+bir <strong>marka</strong>. Eksik varsa kayıt yapılmaz ve ekranda ne eksik olduğu
+yazar. En az bir varyantı aktif olan ürün aktif sayılır.</p>
+
+<h3>Ürünler ekranındaki üç bağlantı</h3>
+<ul>
+<li><strong>Şüpheli ürünler:</strong> barkodu olmayan, gerçek EAN olmayan ya da
+Trendyol'da o EAN ile bulunamayan aktif ürünler; sebebi yazar. Listeyi indirip
+Excel'de «Doğru EAN» ve «Bu ürün sizin mi» sütunlarını doldurur, geri
+yüklersiniz. Önce önizleme gösterilir, onayınız olmadan hiçbir şey yazılmaz.
+«Hayır» denen ürün pasife alınır. «Kimlik» sütununa dokunmayın.</li>
+<li><strong>SKU önizlemesi:</strong> yeni Firma SKU biçimi
+<strong>KATEGORİ-MARKA-SIRA</strong> (örn. OYU-LEG-0001). Bu ekran <strong>hiçbir şey
+değiştirmez</strong>, yalnız her ürünün hangi kodu alacağını ve kod alamayanların
+nedenini gösterir. Ürün formundaki <strong>Öner</strong> düğmesi bu biçimde kod
+önerir. Eski kodlar aramada ve okutmada bulunmaya devam eder.</li>
+<li><strong>Ürün etiketi bas:</strong> ürünü arayın, kaç adet basılacağını girin,
+Yazdır'a basın. Etikette Firma SKU barkodu, kodun kendisi ve ürün adı yazar.
+Yazdırma penceresinde etiket yazıcınızı ve seçili ölçüyü seçin — rulo bu ölçüde
+olmalı, yoksa etiketler kayar.</li>
+</ul>
 </section>
 
 <section id="stok">
@@ -621,7 +672,7 @@ defterde kalır. Silme olsaydı cevap da silinirdi.</p></div>
 ${sikHata([
   {
     hata: "Stok rakamını elle düzeltmeye çalışmak",
-    cozum: "Elle yazılan rakam nedenini taşımaz. Sayımda fark çıktıysa DÜZELTME hareketi gir ve nedenini seç \u2014 üç ay sonra o farkın neden oluştuğu okunabilir olur.",
+    cozum: "Elle yazılan rakam nedenini taşımaz. Rafları saymak için Barkod okut → Sayım başlat kullan; tek bir üründe fark çıktıysa Stok ekranından DÜZELTME hareketi gir ve nedenini seç \u2014 üç ay sonra o farkın neden oluştuğu okunabilir olur.",
   },
   {
     hata: "Rafı boş bırakmak",
@@ -644,7 +695,7 @@ soruyorsun.</p>
 oraya sipariş yüklenmiş hâlde götürür.</p></div>
 <p><strong>Sol menü &rarr; Barkod okut.</strong> Elindeki ürünü okutursun;
 sistem o barkod hakkında <strong>ne bildiğini</strong> söyler. Hepsi bu.
-Hiçbir şey engellenmez, hiçbir kayıt değişmez, onay istenmez.</p>
+Hiçbir şey engellenmez, onay istenmez. (Bu ekrandan yalnız iki şey kayıt yazar: bulunan siparişi <strong>Paketlendi</strong> işaretlemek ve <strong>Sayım</strong> kipi — bkz. aşağıda.)</p>
 ${neZaman(
   "Depoda paket hazırlarken. Kutuyu eline aldığında okut, ekranda ne yazdığına bak, paketlemeye devam et.",
 )}
@@ -662,7 +713,7 @@ sen ürünü <strong>gösterdin</strong>, ya da <strong>hüküm verilemedi</stro
 Bir hafta sonra bu dağılım, defterin ne kadarının eksik olduğunu
 <em>pazaryerinden de sistemden de bağımsız</em> olarak söyler.</p></div>
 <h3>Kod bulunamazsa</h3>
-<p>Ekran sadece &quot;bu kod dört alanın hiçbirinde bulunamadı&quot; der.
+<p>Ekran &quot;bu kod hiçbir alanda bulunamadı&quot; der ve baktığı beş alanı sayar: Barkod (EAN), Firma SKU, SKU, Kanal SKU, gönderi numarası.
 Altında isteğe bağlı bir arama kutusu çıkar: elindeki ürünün hangisi
 olduğunu biliyorsan gösterebilirsin. <strong>İstersen atla</strong> &mdash;
 hiçbir şey beklemiyor, paketlemeye devam edebilirsin.</p>
@@ -681,6 +732,26 @@ ${sikHata([
     cozum: "Zorunlu de\u011fil. Acelen varsa atla; kay\u0131t yine tutulur ve raporda \u0022hüküm verilemedi\u0022 taraf\u0131nda say\u0131l\u0131r.",
   },
 ])}
+<h3>Fiziksel sayım</h3>
+<p>Bu ekrandaki <strong>Sayım başlat</strong>, rafları sayma kipini açar. Kamera
+açık kalır, okuttukça sayılır; ekranda «sayılan / kapsam» sayacı durur.
+<strong>Ara verebilirsiniz</strong>: her okuma anında kaydedilir, uygulamayı kapatıp
+açtığınızda aynı sayıma dönersiniz. <strong>Sayımı bitir</strong> dediğinizde:</p>
+<ul>
+<li>Okutulmayan ürünler için <strong>«Rafta yok»</strong> (gerçek eksik, düzeltmesi
+yazılır) ile <strong>«Sayılmadı»</strong> (sistem o ürün hakkında hiçbir şey
+söylemez) ayrı seçilir — ikisi aynı şey değildir.</li>
+<li>Eksik çıkan ürün için <strong>Sayım farkı</strong> ya da satış seçilir.
+<strong>Emin değilseniz Sayım farkı seçin</strong>: yanlış sayım farkı ters kayıtla
+düzeltilebilir; yanlış satış ise ciroyu şişirir, KDV ve stopaj matrahına girer.</li>
+<li>Sayım farkı bir satış değildir: ciroya ve NET-2'ye girmez; raporda ayrı
+kalem olarak görünür.</li>
+<li>O gün hareket görmüş ürünler «belirsiz» işaretlenir ve düzeltmeleri yazılmaz —
+ertesi gün tek tek bakarsınız.</li>
+</ul>
+<p>Sayılmış bir ürünün stoğu, sonradan girilen <strong>sayım öncesi tarihli</strong> bir
+kayıtla sessizce değişmez: sistem durur, ne olduğunu söyler ve ısrar ederseniz
+istisnayı kayda geçirip o ürünün yeniden sayılmasını ister.</p>
 </section>
 
 <section id="yerlestirme">
@@ -742,9 +813,10 @@ Sistem sana <em>hangi raftan ne alacağını</em> söyler ve doğru ürünü
 aldığını <em>okutarak doğrular</em>.</p>
 <p><strong>Öteki ekran</strong> (<a href="#okuma">Barkod okut</a>): elinde
 bir kod var ama ne olduğunu bilmiyorsun &mdash; ürün mü, sipariş mi.</p>
-<p>⚠ Buraya <strong>ürün barkodu</strong> okutursan bir şey bulamaz: bu
-ekranın ilk adımı <strong>kargo ya da sipariş numarasıdır</strong>. Ürün
-barkodu ikinci adımda okutulur.</p></div>
+<p>Bu ekranın ilk adımı <strong>kargo ya da sipariş numarasıdır</strong>.
+İlk adımda yanlışlıkla <strong>ürün barkodu</strong> okutursan ekran ürünü tanır
+ve o ürünü bekleyen, kargoya verilmemiş siparişleri listeler — üstüne basıp
+o siparişle devam edersin. Bekleyen sipariş yoksa bunu söyler.</p></div>
 <p><strong>Sol menü &rarr; Paketle.</strong> Bu ekran sana paketi
 <strong>tarif eder</strong>: hangi üründen kaç adet, hangi raftan. Ezberlemen
 gereken hiçbir şey yok &mdash; iki okutma yeter.</p>
@@ -775,10 +847,11 @@ okumadan geçmeyi öğrenirsin.</p>
 durmaz. Rafı <a href="#raf">Ayarlar &rarr; Raf Konumları</a>ndan tanımlayıp
 ürün kartından seçebilirsin &mdash; bir kez yaparsın, hep işine yarar.</p>
 <h3>Kod bulunamazsa</h3>
-<p>&quot;Paketlenmeyi bekleyen sipariş bulunamadı&quot; der. En sık sebebi:
-o sipariş <strong>zaten kargoya verilmiş</strong> ya da <strong>iptal
-edilmiş</strong>. Bu ekran yalnız <em>paketlenmeyi bekleyen</em> siparişleri
-gösterir.</p>
+<p>Ekran sebebini ayrı ayrı söyler: sipariş sistemde <strong>hiç yok</strong>
+(çoğu zaman gönderi numarası henüz girilmemiştir) · <strong>kargoya verilmiş</strong> ·
+<strong>onay bekliyor</strong> (API ile gelmiş, önce onaylanmalı; stok düşünce burada
+görünür) · <strong>iptal edilmiş</strong>. Bu ekran yalnız <em>paketlenmeyi bekleyen</em>
+siparişleri gösterir.</p>
 ${sikHata([
   {
     hata: "Ürünü okutmadan Paketlendi aramak",
@@ -833,7 +906,7 @@ Bu yüzden eşleme her mağaza için ayrı girilir.</p>
 (<strong>Trendyol salı</strong>, <strong>Hepsiburada çarşamba</strong>).
 Oran değişince Kanal SKU'daki değeri güncellersiniz.</p>
 <div class="ek-not"><div class="etiket">Yüzlerce oranı tek tek girmeyin</div>
-<p>Kanal SKU ekranındaki <strong>Komisyon oranı içe aktarma</strong> düğmesi,
+<p>Kanal kodları ekranındaki <strong>Komisyon oranı içe aktarma</strong> düğmesi,
 pazaryerinin satıcı panelinden indirdiğiniz <strong>ürün listesi</strong>
 dosyasını okur ve oranları toplu yazar. Dosya nereden inecek: Trendyol'da
 <em>Ürünler → Ürünlerim → Excel'e aktar</em>, Hepsiburada'da
@@ -854,12 +927,12 @@ ayın kârı her hafta oynardı.</p></div>
 <ul>
 <li><strong>Ürünü ilk satışa çıkarmadan önce.</strong> Alım yapmak için gerekmez, satış için gerekir.</li>
 <li>Sadece <strong>gerçekten sattığınız</strong> pazaryerleri için girin. Satmadığınız kanal için eşleme açmak boş iş.</li>
-<li><strong>Kanal SKU</strong> ekranından tek tek, <strong>Ayarlar → Veri Aktarımı</strong> ile topluca (bu sayfa tek başına da yüklenebilir), ya da <strong>Kanal SKU → Komisyon oranı içe aktarma</strong> ile pazaryerinin kendi ürün listesinden.</li>
+<li><strong>Kanal kodları</strong> ekranından tek tek, <strong>Veri → Veri Aktarımı</strong> ile topluca (bu sayfa tek başına da yüklenebilir), ya da <strong>Kanal kodları → Komisyon oranı içe aktarma</strong> ile pazaryerinin kendi ürün listesinden.</li>
 </ul>
 
 <div class="ek-not"><div class="etiket">Eksik eşlemeni nasıl görürsün</div>
 <p>Hangi ürünün hangi mağazada tanımlı olduğunu ve <strong>hangilerinde
-komisyon oranı boş kaldığını</strong> <strong>Kanal SKU</strong> ekranındaki
+komisyon oranı boş kaldığını</strong> <strong>Kanal kodları</strong> ekranındaki
 süzgeçlerden görürsün. Oranı boş bir eşleme satış kaydını engellemez ama o
 satışın <strong>kârı hesaplanamaz</strong> — panelde uyarı olarak çıkar.</p></div>
 </section>
@@ -898,15 +971,48 @@ karşılaştırılmadı.</em> Bu <strong>"sorun yok" demek değildir</strong>;
 
 <div class="ek-not dikkat"><div class="etiket">Rakamların yaşına bakın</div>
 <p>Ekranın en üstünde <strong>son karşılaştırmanın ne zaman yapıldığı</strong>
-yazar. İki günü geçerse satır sarı yanar. Bayat bir rakam taze sanılırsa
+yazar. 2. günden itibaren satır sarı yanar. Bayat bir rakam taze sanılırsa
 yanlış karar verdirir — bu yüzden yaş her zaman görünür.</p>
-<p>Tazeleme bugün <strong>elle</strong> koşuyor; otomatik zamanlama henüz
-yok.</p></div>
+<p>Karşılaştırma <strong>her sabah kendiliğinden</strong> yapılır.</p></div>
 
 <h3>Bu ekran pazaryerine bir şey yazar mı?</h3>
 <p><strong>Hayır.</strong> Sadece okur. Listeleme durumu pazaryerinin
 cevabıdır; sistem onu değiştirmez, yalnız size gösterir. Bir ürünü yeniden
 satışa açmak için pazaryerinin kendi panelini kullanırsınız.</p>
+</section>
+
+<section id="kanalGonderim">
+${baslik("kanalGonderim")}
+<p><strong>Ürünler → ürünün detay sayfası.</strong> Her varyant satırında kanal
+düğmeleri durur (yalnız <em>kanala yazma</em> yetkisi olan görür). Selliora'daki
+stoğu ve fiyatı pazaryerindeki ilana <strong>siz göndermedikçe</strong> hiçbir
+şey gitmez.</p>
+${neZaman(
+  "Mal kabul ya da sayım sonrası kanaldaki stok Selliora'dakinden farklıysa; ve fiyat değiştirmeye karar verdiğinde.",
+)}
+<h3>Stok — tek düğme, bütün bağlı kanallar</h3>
+<ol class="adimlar">
+<li><div><h3>Stoğu bağlı kanallara gönder</h3><p>Düğmeye basınca her kanal için
+«Selliora stoğu X → kanalda şu an Y» satırı gösterilir. Gönderilemeyecek kanal
+(ör. ürün o kanala bağlı değil) sebebiyle yazar.</p></div></li>
+<li><div><h3>Onaylayın</h3><p>«Stoğu gönder (N kanal)». Sonuç kanal kanal ayrı
+satırda yazar; biri başarısız olsa ötekiler etkilenmez.</p></div></li>
+</ol>
+<p>Bu düğme <strong>yalnız stok</strong> gönderir — fiyata dokunmaz.</p>
+<h3>Fiyat — her kanalın kendi düğmesi</h3>
+<p>Fiyat kanal başına ayrı bir karardır: <strong>TY'ye Gönder</strong>, N11 ve
+Hepsiburada düğmeleri ayrı ayrı çalışır. Gönderilecek rakamlar önce gösterilir;
+onaylamadan hiçbir şey kanala gitmez.</p>
+${sikHata([
+  {
+    hata: "Trendyol'a aynı gönderimi hemen tekrar denemek",
+    cozum: "Trendyol aynı isteği 15 dakika içinde ikinci kez kabul etmez — bu bir arıza değil, kanalın kuralı. Biraz bekleyip tekrar deneyin.",
+  },
+  {
+    hata: "Ürün kanalda görünmüyor diye gönderim yapmak",
+    cozum: "Gönderim yalnız VAR OLAN ve Kanal kodları ekranında eşleştirilmiş ilana yazar. İlan yoksa önce kanalın panelinden açılır, sonra Kanal kodları'nda eşleştirilir.",
+  },
+])}
 </section>
 
 <section id="komisyon">
@@ -920,8 +1026,8 @@ satışta 144 ₺ demek.</p>
 <div class="ek-tablo"><table>
 <thead><tr><th>Ne</th><th>Nereden yüklenir</th><th>Ne işe yarar</th></tr></thead>
 <tbody>
-<tr><td><strong>Tek oran</strong></td><td>Kanal SKU → <em>Komisyon listesi aktar</em></td><td>Satış formunda önerilen oran</td></tr>
-<tr><td><strong>Dilim tarifesi</strong></td><td>Komut satırından tarife yükleme</td><td>Fiyata göre değişen oran — fiyat denemesi bunu kullanır</td></tr>
+<tr><td><strong>Tek oran</strong></td><td><a href="#komisyonKapisi">Veri → Komisyon yükleme</a> → «Haftalık komisyon oranı»</td><td>Kâr hesabında ve satış formunda kullanılan oran</td></tr>
+<tr><td><strong>Dilim tarifesi</strong></td><td><a href="#komisyonKapisi">Veri → Komisyon yükleme</a> → «Haftalık dilimli komisyon tarifesi»</td><td>Fiyata göre değişen oran — fiyat denemesi bunu kullanır</td></tr>
 </tbody></table></div>
 <p>İkisi <strong>aynı dosyayı</strong> okuyabilir ama farklı şeyler kaydeder.
 Biri "bugün oranın ne", öteki "hangi fiyatta hangi oran".</p>
@@ -929,7 +1035,7 @@ Biri "bugün oranın ne", öteki "hangi fiyatta hangi oran".</p>
 ${neZaman(
   "Pazaryeri komisyon oranlarını güncellediğinde. Trendyol SALI ve CUMA yayımlar, Hepsiburada ÇARŞAMBA. Yüklemezsen sistem eski oranla hesap yapar ve NET yanlış çıkar.",
 )}
-${ekranSemasi("Kanal SKU → Komisyon listesi aktar", [
+${ekranSemasi("Kanal kodları → Komisyon oranı içe aktarma", [
   { no: 1, ad: "Mağaza seç", aciklama: "Hangi pazaryerinin hangi hesabı. ALIŞ hesabı seçilirse reddedilir — komisyon yalnız SATTIĞIN mağazada anlamlı." },
   { no: 2, ad: "Dosya seç", aciklama: "Satıcı panelinden indirdiğin ürün listesi. Hangi pazaryerine ait olduğu dosyanın kendisinden anlaşılır." },
   { no: 3, ad: "Denetle", aciklama: "HİÇBİR ŞEY YAZILMAZ. Kaç oran değişecek, kaç yeni eşleme açılacak, kaç satır bizde yok — hepsi listelenir." },
@@ -975,15 +1081,37 @@ ${neZaman(
 <h3>1. Alım girme</h3>
 <ul>
 <li><strong>Alımlar → Yeni alım.</strong> Tedarikçi, tarih, kart ve taksit sayısı.</li>
-<li>Her kalem için ürün, adet ve <strong>birim maliyet</strong> (KDV dahil).</li>
+<li>Her kalem için ürün, adet ve <strong>birim maliyet</strong>.</li>
 <li>Para birimi kalem bazında seçilir.</li>
 </ul>
+<h3>Fatura yapısı — KDV, kargo, gümrük</h3>
+<p>Formdaki <strong>Fatura yapısı</strong> kutusu faturanın nasıl yazıldığını sorar.
+Varsayılanı tedarikçiden gelir (<strong>Tanımlar → Tedarikçiler → Düzenle</strong>:
+«Fiyatlar KDV dahil», «Kargo fiyata dahil»); alımda değiştirebilirsiniz.</p>
+<ul>
+<li><strong>Fiyatlar KDV dahil</strong> (varsayılan, çoğu perakende alım): birim maliyeti
+KDV dahil yazarsınız.</li>
+<li><strong>KDV hariç fatura</strong> (toptan alım): birim fiyatı KDV hariç yazar,
+<strong>KDV tutarını faturadan</strong> girersiniz. Sistem bunu ürünlerin KDV
+oranlarıyla hesapladığı tutarla kıyaslar; fark varsa <strong>sarı uyarı</strong>
+verir ama kaydı engellemez — esas olan faturadır.</li>
+<li><strong>Kargo ayrı</strong> yazılmışsa kargo tutarı girilir; <strong>gümrük</strong>
+(yurtdışı alım) varsa o da. İkisi kalemlere <strong>tutar oranında dağıtılır ve ürün
+maliyetine girer</strong>.</li>
+</ul>
+<p>Formun altındaki kutu üç rakamı birlikte gösterir: <strong>fatura toplamı</strong>,
+<strong>karta yazılacak</strong> tutar (gümrük karta yazılmaz) ve stoğa yazılacak
+<strong>birim maliyet</strong>. Stok maliyeti her durumda KDV dahil tutulur.</p>
 <div class="ek-not dikkat"><div class="etiket">Dikkat</div>
 <p>Birim maliyeti boş bırakmayın. Maliyeti olmayan bir partiden satış yapıldığında
-sistem kârı hesaplayamaz. Sonradan düzeltmek şu an mümkün değil.</p></div>
+sistem kârı hesaplayamaz. Yanlış girilen maliyet iki yoldan düzeltilir: alımın
+kendisi <strong>Alımlar → alım detayı → Düzenle</strong>'den, belirli bir satışın
+düştüğü partinin maliyeti ise satış detayındaki <strong>Maliyeti düzelt</strong>
+düğmesinden. Düzeltme o partiden çıkmış satışların kârını da yeniden hesaplar;
+adetler değişmez.</p></div>
 <h3>2. Mal kabul</h3>
 <ul>
-<li>Alım detayında <strong>Mal Kabul</strong> düğmesi.</li>
+<li>Alım detayında <strong>Mal Kabul Et</strong> düğmesi.</li>
 <li><strong>Sağlam</strong> ve <strong>hasarlı</strong> adedi ayrı girilir. Yalnız sağlam olan stoğa girer.</li>
 <li>Malın hangi rafa girdiğini seçersiniz; bu bilgi hareketin üstünde kalıcı durur.</li>
 <li>Parçalı teslimat olabilir: bugün 3, yarın 2 kabul edersiniz.</li>
@@ -1000,18 +1128,64 @@ ${sikHata([
 ])}
 </section>
 
+<section id="malKabul">
+${baslik("malKabul")}
+<p><strong>Sol menü → Mal kabul.</strong> Seçili aralıkta depoya fiilen
+<strong>giren</strong> ürünleri ürün düzeyinde listeler: ürün çeşidi, gelen adet
+ve rafı. Paneldeki «Mal kabul» sayısına tıklayınca bu liste açılır.</p>
+<ul>
+<li>Sipariş verilmiş ama henüz kabul edilmemiş alımlar burada <strong>görünmez</strong> —
+onlar alım listesinde bekler.</li>
+<li>Her satırda <strong>Kod var / Kod yok</strong> rozeti: ürünün kanal kodu eksikse
+yeni gelen malı satışa açmadan önce eşleştirmeniz gerekir. «Kanal kodu eksik»
+süzgeci yalnız onları gösterir.</li>
+</ul>
+</section>
+
 <section id="satis">
 ${baslik("satis")}
 ${neZaman(
-  "Pazaryerinden sipariş düştüğünde. Ne kadar erken girersen kâr rakamın o kadar doğru olur — komisyon oranı satış anında dondurulur.",
+  "Trendyol, Hepsiburada ve N11 siparişleri KENDİLİĞİNDEN gelir — siz onları yalnız ONAYLARSINIZ. Elle satış girmek yalnız bağlı olmayan kanallar (Amazon, elden satış vb.) içindir.",
 )}
+<h3>Pazaryeri siparişleri kendiliğinden gelir</h3>
+<p>Trendyol, Hepsiburada ve N11'deki yeni siparişler yaklaşık <strong>5 dakikada
+bir</strong> çekilir ve <strong>Satışlar</strong> listesine düşer. Bunları elle
+girmeyin — aynı sipariş iki kez kaydedilmeye çalışılırsa sistem sipariş
+numarasından tanır ve ikinci kaydı açmaz.</p>
+<ul>
+<li><strong>Onay:</strong> gelen sipariş önce <strong>onay bekler</strong>; stok henüz
+düşmemiştir. Panelde «Onay bekleyen sipariş (API)» kutusu sayısını gösterir,
+tıklayınca liste açılır. Satırdaki <strong>Onayla</strong> düğmesi her kalem için
+hangi partiden düşüleceğini ve maliyetini gösterir: en eskisi «önerilen (FIFO)»
+diye işaretlidir, isterseniz başka bir partiyi seçersiniz. Onaylayınca stok düşer,
+kâr hesaplanır ve sipariş kargolanacaklara girer.</li>
+<li><strong>Otomatik onay:</strong> Trendyol ve N11 siparişinde her kalemin tek bir
+partisi varsa (seçilecek bir şey yoksa) sistem kendisi onaylar. <strong>Hepsiburada
+siparişleri şimdilik her zaman elle onaylanır</strong>; çok partili siparişler de
+hep sizi bekler.</li>
+<li><strong>Kargodan önce iptal:</strong> müşteri pazaryerinde kargodan önce vazgeçerse
+sipariş burada da kendiliğinden iptal edilir; cirodan ve kârdan düşer, stok
+geri gelir.</li>
+<li><strong>«Aktarılan sipariş» rozeti:</strong> müşteri ürünü başka bir mağazadan
+almış, o mağaza gönderemeyince pazaryeri siparişi size aktarmıştır. Sipariş
+pazaryerindeki gibi <strong>ilk sipariş tarihiyle</strong> görünür (geçmiş bir
+güne, hatta geçen aya düşebilir); stok ise siparişin sisteme düştüğü güne kadar
+girmiş partilerden düşer. Bu yüzden «o tarihte stok yoktu» diye takılmaz.</li>
+</ul>
+<div class="ek-not dikkat"><div class="etiket">Onay penceresinde «stok yetersiz»</div>
+<p>Pencere satış gününde yeterli stok olmadığını ama bugün stok bulunduğunu
+söylüyorsa, stok satış gününden sonra girmiş demektir. Siparişte «Aktarılan
+sipariş» rozeti yoksa ilgili alım kaydının tarihini kontrol edin — mal aslında
+daha önce geldiyse tarih yanlış girilmiştir.</p></div>
+
+<h3>Elle satış girmek</h3>
 <p><strong>Satışlar → Yeni satış.</strong> Bir satış her zaman bir kanal hesabına
 bağlıdır — hangi pazaryerinin hangi mağazasından satıldığı, kesintileri belirler.</p>
 <ol class="adimlar">
 <li><div><h3>Kanal hesabı ve sipariş numarası</h3><p>Sipariş numarası zorunlu değil ama girerseniz benzersiz olmalı.</p></div></li>
 <li><div><h3>Kalemler</h3><p>Ürünü arayın veya barkodunu okutun; fiyat KDV dahildir.</p></div></li>
 <li><div><h3>Kargo</h3><p>Firmayı seçin; ücret desiye göre tarifeden okunur. Farklıysa elle yazabilirsiniz.</p></div></li>
-<li><div><h3>Kaydet</h3><p>Stok en eski partiden düşer, kâr hesaplanır ve <strong>o anki hâliyle kayda yazılır.</strong></p></div></li>
+<li><div><h3>Kaydet</h3><p>Stok en eski partiden düşer (parti seçici çıktıysa seçtiğiniz partiden), kâr hesaplanır ve <strong>o anki hâliyle kayda yazılır.</strong></p></div></li>
 </ol>
 <div class="ek-not"><div class="etiket">Neden böyle</div>
 <p>Komisyon oranları haftalık değişiyor. Kâr satış anında kaydedildiği için, oran
@@ -1040,6 +1214,12 @@ Kargo, desi tarifesinden okunur ve üstüne %20 KDV eklenir.</p>
 tutar ödediysen elle yazabilirsin — yazdığın tutar geçerli olur.</p>
 <p>Kullandığın firmalar ve tarifeleri kurulumda tanımlanır; listeni satış
 formundaki kargo seçiminde görürsün.</p>
+<h3>Satışı iptal etmek</h3>
+<p>Satış detayında <strong>Satışı iptal et</strong>. İptal iade <strong>değildir</strong>:
+mal hiç çıkmamıştır, komisyon kesilmemiş, kargo yanmamıştır. İptal edilen satış
+ciroya, NET'e ve hakediş beklentisine girmez; stok geri gelir. Sebep listeden
+seçilir. Kayıt silinmez — listede üstü çizili durur ve iptal geri alınabilir.
+(Pazaryerinde kargodan önce iptal edilen siparişler bunu kendiliğinden yapar.)</p>
 </section>
 
 <section id="iade">
@@ -1054,7 +1234,7 @@ türü seçersiniz; tür, malın stoğa girip girmeyeceğini belirler.</p>
 <tbody>
 <tr><td><strong>Teslim edilemedi</strong></td><td>Müşteriye ulaşmadan geri döndü</td><td>Evet, sağlam gelense</td></tr>
 <tr><td><strong>Normal iade</strong></td><td>Müşteri aldı, iade etti</td><td>Evet, sağlam gelense</td></tr>
-<tr><td><strong>İtirazlı iade</strong></td><td>İtiraz kabul edildi, ürün müşteride kaldı</td><td><strong>Hayır</strong></td></tr>
+<tr><td><strong>İtiraz kabul edildi</strong></td><td>İtiraz kabul edildi, ürün müşteride kaldı</td><td><strong>Hayır</strong></td></tr>
 </tbody></table></div>
 
 <h3>Hangi kesinti geri gelir</h3>
@@ -1068,6 +1248,22 @@ türü seçersiniz; tür, malın stoğa girip girmeyeceğini belirler.</p>
 <p>İade formundaki kargo alanına <strong>gidiş kargosunu yazmayın</strong>. O
 zaten satışta düşüldü. Buraya yalnızca iade/dönüş kargosunu yazın.</p></div>
 
+<h3>İade KDV'yi de geri alır</h3>
+<p>İade, satışın KDV hesabını da tersine çevirir. <strong>Sağlam gelip stoğa dönen</strong>
+malın alış KDV'si iadede geri alınır — çünkü o mal yeniden satılacak ve alış
+KDV'si o satışta tekrar kullanılacak. Bu yüzden bir iadenin NET-2 etkisi NET-1
+etkisinden farklı çıkabilir. Hasarlı gelen malda alış KDV'si geri alınmaz.</p>
+
+<h3>İadeyi düzeltmek</h3>
+<ul>
+<li>Satış detayındaki iade bloğunda <strong>Düzenle</strong>: stoğa dokunmayan alanlar
+(dönüş kargosu, ceza, not) değiştirilir.</li>
+<li><strong>İadeyi geri al</strong>: tür, adet ya da sağlam/hasarlı ayrımı yanlış
+girildiyse iade ters kayıtla geri çevrilir, sonra doğrusu yeniden girilir. İade
+silinmez; geri alınanlar ayrı listede «toplamlara girmez» diye durur. Kalemine
+tazminat talebi açılmışsa önce o talep sonuçlandırılmalıdır.</li>
+</ul>
+
 <h3>Ceza kademeleriniz</h3>
 <p>Pazaryeri ceza kestiyse tutarı siz girersiniz; sistem sipariş tutarına göre bir
 <strong>öneri</strong> gösterir. Kademesi olmayan tutarda öneri çıkmaz.</p>
@@ -1080,9 +1276,19 @@ her iade kendi tarihli bloğunda görünür, en altta iade sonrası net yazar.</
 ${sikHata([
   {
     hata: "Her iadeyi “normal iade” seçmek",
-    cozum: "İtirazlı iadede ürün MÜŞTERİDE kalır ve stoğa girmemelidir. Yanlış tür seçilirse elinde olmayan mal stokta görünür ve bir sonraki satış hatalı FIFO ile hesaplanır.",
+    cozum: "«İtiraz kabul edildi» türünde ürün MÜŞTERİDE kalır ve stoğa girmemelidir. Yanlış tür seçilirse elinde olmayan mal stokta görünür ve bir sonraki satış hatalı FIFO ile hesaplanır.",
   },
 ])}
+<h3>İadeler ekranı ve iade bildirimleri</h3>
+<p><strong>Sol menü → İadeler.</strong> İki sekme vardır:</p>
+<ul>
+<li><strong>Bildirimler:</strong> pazaryeri «müşteri iade istiyor» dedi ve mal yolda.
+Burada stok ve kâr hesabı <strong>yoktur</strong>; yalnız takip edilir. Mal gelince
+<strong>İadeyi işle</strong> ile iade kaydı açılır ve hesap o zaman yapılır.</li>
+<li><strong>İşlenmiş iadeler:</strong> seçili dönemde işlenen iadeler, dönem özeti ve
+iade oranı. İade oranı = dönemde gelen iade ÷ dönemde yapılan satış; operasyon
+yükünü ölçer, ürün kalitesini değil.</li>
+</ul>
 </section>
 
 <section id="deneme">
@@ -1201,8 +1407,10 @@ gibi KDV dışı vergiler içindir.</p></div>
 bağlanır: <strong>sabit</strong> (kira gibi her ay aynı) ya da
 <strong>değişken</strong> (ambalaj gibi hacimle değişen). Bu ayrım dönem
 raporunda sabit giderlerin ayrı toplanmasını sağlar.</p>
-<p>Kategorilerin kendi listesini ve varsayılan KDV oranlarını
-<strong>Giderler → Şablonlar</strong> ekranında yönetirsin.</p>
+<p>Gider kategorilerinin listesi ve varsayılan KDV oranları sistemde hazır
+tanımlıdır. <strong>Yeni gider kategorisi ekleyecek bir ekran henüz yok</strong>;
+listede olmayan bir kategoriye ihtiyacınız olursa <strong>Destek talebi</strong>
+açın.</p>
 
 <h3>Her ay tekrar eden giderler</h3>
 <p><strong>Giderler → Tekrarlayan giderler.</strong> Kirayı bir kez şablon olarak
@@ -1374,8 +1582,20 @@ ${baslik("hakedis")}
 vermez. Hakediş, <em>ne kadar alacağın olduğunu ve ne zaman yatacağını</em>
 takip eder.</p>
 ${neZaman(
-  "Pazaryerinden ödeme dosyası indirdiğinde yüklemek için; ve “bu ay elime ne geçecek” diye merak ettiğinde.",
+  "“Bu ay elime ne geçecek, eksik ödenen var mı” diye merak ettiğinde. Trendyol ve Hepsiburada ödemeleri kendiliğinden gelir; yalnız N11 dosyasını sen yüklersin.",
 )}
+<h3>Ödemeler nasıl gelir</h3>
+<ul>
+<li><strong>Trendyol ve Hepsiburada:</strong> ödeme kayıtları her sabah kanaldan
+<strong>kendiliğinden</strong> çekilir; bir şey yapmanız gerekmez.</li>
+<li><strong>N11:</strong> N11 satıcı panelinde <strong>Ödemelerim → Excel'e Aktar</strong>
+ile dosyayı indirip burada <strong>Rapor yükle</strong> ile yüklersiniz. Önce
+<strong>Denetle</strong> ne yazılacağını gösterir, sonra <strong>Onayla ve yaz</strong>.</li>
+<li>Aynı dosyayı ikinci kez yüklemek zararsızdır: zaten kayıtlı kalemler yeniden
+yazılmaz.</li>
+</ul>
+<p>Her ödeme, sipariş sipariş <strong>beklenen hakedişle</strong> karşılaştırılır;
+eksik, fazla ve geciken ödeme işaretlenir.</p>
 <div class="ek-not dikkat"><div class="etiket">Ödeme dosyası GEÇ gelir</div>
 <p>Ölçüldü: Trendyol ödeme dosyası siparişten <strong>ortanca 28 gün</strong>
 sonra, Hepsiburada <strong>~34 gün</strong> sonra yayımlanıyor. Yani
@@ -1383,7 +1603,7 @@ sonra, Hepsiburada <strong>~34 gün</strong> sonra yayımlanıyor. Yani
 dosya hiçbir satışla eşleşmez — bu bir arıza değil, <strong>takvimin
 kendisi</strong>.</p></div>
 ${ekranSemasi("Hakediş", [
-  { no: 1, ad: "Dosya yükle", aciklama: "Pazaryerinin ödeme/hakediş dosyası. Hangi kanala ait olduğu içeriğinden anlaşılır." },
+  { no: 1, ad: "Rapor yükle", aciklama: "Yalnız kendiliğinden gelmeyen kanallar (N11) için: pazaryerinin ödeme dosyası. Önce Denetle, sonra Onayla ve yaz." },
   { no: 2, ad: "Kalemler", aciklama: "Her satır bir ödeme kalemi. Sipariş numarasıyla satışına bağlanır." },
   { no: 3, ad: "Bağlanamayanlar", aciklama: "Sistemde karşılığı bulunamayan kalemler AYRI sayılır ve adıyla listelenir.", vurgulu: true },
 ])}
@@ -1401,9 +1621,23 @@ ${sikHata([
 
 <section id="tazminat">
 ${baslik("tazminat")}
-<p><strong>Sol menü → Tazminat.</strong> Kargo firması malı kaybederse ya da
-hasar verirse ödediği bedel buraya kaydedilir.</p>
-${neZaman("Kargo kaybı/hasarı için tazminat talebi açtığında ve sonuçlandığında.")}
+<p><strong>Sol menü → Tazminat.</strong> Hasarlı mal için <strong>alacak
+takibi</strong>. Hasar iki yerden gelir: mal kabulde sayılan «hasarlı» adet ve
+hasarlı dönen müşteri iadesi. Burada talep açılır, <strong>karşı taraf</strong>
+seçilir (tedarikçi, kargo ya da pazaryeri — müşteri iadesinde tazmini çoğu zaman
+pazaryeri öder) ve sonucu izlenir.</p>
+${neZaman("Mal kabulde hasarlı adet girdiğinde (talep aç) ve talep sonuçlandığında (tahsil günü gir).")}
+<ul>
+<li><strong>Talep bekleyen hasar</strong> kutusu, mal kabulde hasarlı sayılmış ama
+henüz talep açılmamış kalemleri listeler. Satırda <strong>Talep aç</strong>.</li>
+<li><strong>Açık alacak:</strong> açık, bildirilmiş ve kabul edilmiş talepler. Kabul
+edilmiş ama parası gelmemiş talep hâlâ alacaktır.</li>
+<li>Talep «Kapandı» olunca <strong>tahsil günü</strong> girilir (pazaryerinin «iade
+edildi»/ödeme bildiriminin tarihi). Müşteri iadesinden doğan tahsil GERÇEK NET'e
+<strong>tazminat geliri</strong> olarak eklenir; mal kabuldeki hasar için gelen para
+ise gelir sayılmaz — alımın kartına geri döner ve kart borcundan düşer. Tahsil
+günü girilmezse kart borcuna yansımaz.</li>
+</ul>
 ${sikHata([
   {
     hata: "Tazminatı satışın kârına yazmak",
@@ -1420,10 +1654,24 @@ ${neZaman(
   "Büyük bir alım yapmadan önce. “Bu parayı harcarsam 10 gün sonra kart borcunu ödeyebilir miyim” sorusunun cevabı burada.",
 )}
 ${ekranSemasi("Nakit takvimi", [
-  { no: 1, ad: "Çıkacaklar", aciklama: "Kart borçları, vadesi gelen giderler." },
+  { no: 1, ad: "Çıkacaklar", aciklama: "Kart borçlarının ödeme günleri ve finansman ekranındaki planlı geri ödemeler (kredi taksidi, borç)." },
   { no: 2, ad: "Girecekler", aciklama: "Beklenen hakediş ödemeleri." },
   { no: 3, ad: "Günlük denge", aciklama: "Girenden çıkanı düşünce kalan.", vurgulu: true },
 ])}
+</section>
+
+<section id="gunlukOzet">
+${baslik("gunlukOzet")}
+<p><strong>Sol menü → Günlük Özet.</strong> Uyarıları, görevleri ve nakit /
+tazminat / kart borcu sinyallerini birleştiren, <strong>günde bir kez</strong>
+üretilen Türkçe anlatı. Panelde kısa hâli durur, «Tam özeti gör» buraya getirir.</p>
+<ul>
+<li>Özetteki her rakam sistemin kendi doğrulanmış verisinden gelir. Otomatik
+anlatı doğrulanamazsa <strong>gösterilmez</strong>; yerine aynı verilerden üretilen
+sade bir liste çıkar.</li>
+<li>Ekranın üstünde özetin tazeliği yazar (Güncel / Bayat — son üretimden N saat
+geçti). Bayat özet bugünün rakamı sanılmamalı.</li>
+</ul>
 </section>
 
 <section id="envanter">
@@ -1453,11 +1701,19 @@ ${baslik("rapor")}
 <div class="formul">Satış geliri      satılan malın toplam tutarı
 Σ NET-1 / NET-2   brüt kâr, <b>iade etkileri dahil</b>
 Dönem giderleri   KDV hariç, net'ten düşen kısım
-<b>GERÇEK NET      Σ NET-2 − dönem giderleri</b></div>
-<div class="ek-not"><div class="etiket">Önemli ayrıntı</div>
-<p>Bir iade, <strong>iadenin yapıldığı aya</strong> yazılır — satışın ayına değil.
-Temmuz satışının Ağustos iadesi Ağustos'a düşer. Böylece kapanmış bir ayın raporu
-sonradan değişmez.</p></div>
+Fire / hasar       gerçek kayıp, net'ten düşer
+Tazminat geliri   tahsil edilen tazminat, eklenir
+<b>GERÇEK NET      Σ NET-2 − dönem giderleri − fire + tazminat geliri</b>
+Veri düzeltmesi   sayım fazlası/eksiği — AYRI satır, GERÇEK NET'e girmez</div>
+<div class="ek-not"><div class="etiket">Önemli ayrıntı — iade hangi aya yazılır</div>
+<p>Bu raporda ve panelde bir iade, <strong>iade edilen satışın ayına</strong> yazılır:
+Temmuz satışının Ağustos iadesi <strong>Temmuz'u</strong> düşürür. Soru «o ay
+gerçekte ne kazandım» olduğu için iade, sebebi olan satışın sorunudur —
+pazaryeri de ödemeyi o siparişten keser. Bu yüzden geçmiş bir ayın rakamı, o
+aya ait bir iade sonradan gelince değişebilir.</p>
+<p><strong>Muhasebe dönem raporu bilerek farklıdır:</strong> KDV beyanı için iade,
+yapıldığı aya yazılır. İki ekranın aynı ay için farklı iade toplamı göstermesi
+bir hata değildir.</p></div>
 <h3>Kârı hesaplanamayan satışlar</h3>
 <p>Rapor bunları <strong>sessizce atlamaz</strong>: sarı bir kutuda sayısını,
 nedenini ve <strong>hangi satışlar olduğunu</strong> gösterir. Kayda tıklarsanız
@@ -1465,14 +1721,14 @@ doğrudan o satışa gidersiniz, altında nasıl düzeltileceği yazar. Gelirler
 katılır, kârları katılmaz — sıfır sayılmazlar.</p>
 
 <h3>Panel (ana sayfa)</h3>
-<p>Girişte karşınıza çıkan ekran. <strong>Bu ayı kanal kanal</strong> gösterir:
+<p>Girişte karşınıza çıkan ekran; açılışta <strong>Bugün</strong>ü gösterir, dönem üstteki seçiciden değişir. Kanal kanal gösterir:
 kaç satış, ne kadar ciro, ne kadar NET-2. Aynı pazaryerinde birden fazla
 hesabınız varsa <strong>tek satırda birleşir</strong> — "Trendyol bu ay ne yaptı"
 sorusunun cevabı hesaplara bölünmez.</p>
 <div class="ek-not"><div class="etiket">NET-2 nereden geliyor</div>
 <p>Panelin NET-2'si <strong>Rapor ekranındaki Σ NET-2 ile aynı şeydir</strong>:
-satışların kârı <strong>artı iade etkileri</strong>. Bir iade, iadenin yapıldığı
-aya ve <strong>iade edilen satışın kanalına</strong> yazılır. İki ekranın aynı ay
+satışların kârı <strong>artı iade etkileri</strong>. Bir iade, <strong>iade edilen
+satışın ayına ve kanalına</strong> yazılır. İki ekranın aynı ay
 için farklı rakam vermemesi için tanım tektir — kanal blokları, grafik çizgisi ve
 aylık tablo, üçü de aynı hesabı kullanır.</p></div>
 <p>Altındaki grafik <strong>son 12 ayı</strong> çizer: dolu çizgi NET-2, kesikli
@@ -1494,6 +1750,40 @@ böyle olduğunu söyler ve kategori ekranına götürür.</p>
 <p>Maliyetsiz girilmiş partiler (açılış stoğu ya da elle düzeltme) <strong>ayrı bir
 kutuda</strong> durur. Adetleri gerçektir, paraları bilinmez — bu yüzden toplamlara
 katılmazlar. Sıfır sayılsalardı envanteriniz olduğundan ucuz görünürdü.</p></div>
+</section>
+
+<section id="donemler">
+${baslik("donemler")}
+<p><strong>Ayarlar → Muhasebe dönemleri.</strong> Son ayları listeler; biten bir
+ayı <strong>Kapat</strong> ile kapatırsınız (bitmemiş ay kapatılamaz). Her satırdaki
+<strong>Raporu aç</strong>, muhasebeciye verilecek dönem raporunu açar — tarayıcıdan
+PDF olarak yazdırılır.</p>
+${neZaman("Bir ayın beyanı verildiğinde — o ayı kapatırsınız ki geriye dönük bir kayıt fark edilmeden rakamı değiştirmesin.")}
+<div class="ek-not"><div class="etiket">Kapatmak yasak koymaz, uyarı koyar</div>
+<p>Kapalı döneme yazılmak istenen her kayıt (satış, sipariş onayı, mal kabul, iade, stok düzeltmesi)
+<strong>durur</strong> ve «Kapalı döneme yazıyorsunuz» der. Sebep seçip
+«Uyarıyı okudum, yine de yaz» kutusunu işaretlerseniz kayıt geçer ve uyarıya
+rağmen yazıldığı kayda geçer. Kapanış <strong>Yeniden aç</strong> ile geri alınabilir;
+kapanış izi silinmez.</p></div>
+<p>Dönem raporunda iade, KDV beyanı için <strong>yapıldığı aya</strong> yazılır —
+yönetim raporundan bilerek farklıdır (bkz. Dönem raporu).</p>
+</section>
+
+<section id="maliyetYontemi">
+${baslik("maliyetYontemi")}
+<p><strong>Ayarlar → Maliyet yöntemi.</strong> Stok maliyetinin nasıl hesaplandığını
+ve satışta partiyi kimin seçtiğini belirler.</p>
+<ul>
+<li><strong>Yöntem:</strong> FIFO — her mal kabul kendi partisini kurar, satış en eski
+partiden düşer. (Hareketli ortalama seçeneği henüz açık değil.)</li>
+<li><strong>Partiyi kim seçer:</strong>
+<ul>
+<li><em>Sistem seçsin</em> — formda parti seçici çıkmaz, hep en eski parti.</li>
+<li><em>İstersem ben seçeyim</em> (varsayılan) — partilerin maliyeti farklıysa seçici çıkar; dokunmazsanız en eskisi.</li>
+<li><em>Her satışta ben seçeyim</em> — birden çok partisi olan üründe parti seçimi zorunludur; tek partili üründe sorulmaz.</li>
+</ul></li>
+</ul>
+<p>Değişiklik <strong>ileriye dönüktür</strong>: geçmiş satışların maliyeti değişmez.</p>
 </section>
 
 <section id="urunAnalizi">
@@ -1642,7 +1932,7 @@ ${sikHata([
 
 <section id="raf">
 ${baslik("raf")}
-<p><strong>Ayarlar → Raf Konumları.</strong> Deponun içindeki yerlerin
+<p><strong>Tanımlar → Raf Konumları.</strong> Deponun içindeki yerlerin
 listesi. Her rafın bir <strong>kodu</strong> (kısa, okunaklı) ve isteğe bağlı
 bir <strong>adı</strong> vardır.</p>
 ${neZaman(
@@ -1665,7 +1955,7 @@ ${sikHata([
 
 <section id="kategori">
 ${baslik("kategori")}
-<p><strong>Ayarlar → KDV Kategorileri.</strong> Her ürün bir kategoriye
+<p><strong>Tanımlar → KDV Kategorileri.</strong> Her ürün bir kategoriye
 bağlanır ve <strong>KDV oranı o kategoriden okunur</strong> \u2014 ürün ürün
 elle girilmez.</p>
 ${neZaman(
@@ -1686,7 +1976,7 @@ ${sikHata([
 
 <section id="duzeltme">
 ${baslik("duzeltme")}
-<p><strong>Ayarlar → Düzeltme nedenleri.</strong> Bir stok düzeltmesi
+<p><strong>Tanımlar → Düzeltme nedenleri.</strong> Bir stok düzeltmesi
 girildiğinde seçilen <strong>neden</strong> listesini yönetir: sayım farkı,
 kırık ya da hasarlı, kayıp, numune gibi.</p>
 ${neZaman("Yeni bir düzeltme sebebi ortaya çıktığında.")}
@@ -1699,7 +1989,7 @@ kaybettiğin ancak liste tutarlıysa ölçülebilir.</p>
 
 <section id="kanalHesabi">
 ${baslik("kanalHesabi")}
-<p><strong>Ayarlar → Kanal Hesapları.</strong> Hangi pazaryerinde hangi
+<p><strong>Ürün ve kanal → Kanal Hesapları.</strong> Hangi pazaryerinde hangi
 mağazayla satış yaptığını tanımlar. Bir <strong>kanal</strong> pazaryeridir;
 bir <strong>hesap</strong> o pazaryerindeki mağazandır.</p>
 ${neZaman(
@@ -1724,7 +2014,7 @@ ${sikHata([
 
 <section id="tedarikci">
 ${baslik("tedarikci")}
-<p><strong>Ayarlar → Tedarikçiler.</strong> Mal aldığın yerlerin listesi.
+<p><strong>Tanımlar → Tedarikçiler.</strong> Mal aldığın yerlerin listesi.
 Alım kaydında tedarikçi seçilir; böylece bir ürünü kimden ve kaça aldığın
 sorusu geçmişe dönük cevaplanabilir.</p>
 ${neZaman("Yeni bir yerden ilk kez mal aldığında.")}
@@ -1736,7 +2026,7 @@ geldiği</strong> kayıtta durur, kutunun üstünde değil.</p>
 
 <section id="marka">
 ${baslik("marka")}
-<p><strong>Ayarlar → Markalar.</strong> Her markanın <strong>3 harfli,
+<p><strong>Tanımlar → Markalar.</strong> Her markanın <strong>3 harfli,
 benzersiz bir kodu</strong> vardır (Philips → PHL, Karaca → KRC). Bu kod
 ürünün SKU'sunun marka parçasıdır; ürüne bakınca markası koddan okunur.</p>
 ${neZaman("Yeni bir markadan ilk kez ürün girdiğinde — ekranın üstünde «bağlanmayı bekleyen» olarak görünür.")}
@@ -1758,7 +2048,7 @@ ${sikHata([
 
 <section id="geceTuru">
 ${baslik("geceTuru")}
-<p><strong>Ayarlar → Gece bekçi turu.</strong> Sistemin kendi kendini denetleyen
+<p><strong>Veri → Gece bekçi turu.</strong> Sistemin kendi kendini denetleyen
 kontrolleri iki zamanda koşar: her yayında (push) kodun doğru davrandığını
 sınayan <strong>bekçilerin hepsi</strong> ve yalnız değişen dosyalara dokunan
 denetimler; <strong>her gece</strong> ise bütün kontroller. Bu ekran gece
@@ -1875,13 +2165,13 @@ stoktan daha kötüdür.</p></div>
 <h3>Dışa aktarma</h3>
 <ul>
 <li>Ürünler, Alımlar, Satışlar, Stok ve Giderler ekranlarında <strong>Excel indir</strong> düğmesi <strong>ekrandaki filtreyi uygular</strong>.</li>
-<li><strong>Ayarlar → Dışa Aktarma</strong> altında tüm veri tek dosyada iner.</li>
+<li><strong>Veri → Dışa Aktarma</strong> altında tüm veri tek dosyada iner.</li>
 </ul>
 </section>
 
 <section id="gecmisEkstre">
 ${baslik("gecmisEkstre")}
-<p><strong>Ayarlar → Geçmiş ekstreler.</strong> Sistemi kullanmaya
+<p><strong>Veri → Geçmiş ekstreler.</strong> Sistemi kullanmaya
 başlamadan ÖNCEKİ döneme ait kredi kartı ekstrelerini yükler. Böylece eski
 borçlar da kart borcu ekranında görünür.</p>
 ${neZaman(
@@ -1896,7 +2186,7 @@ sayılabilirdi.</p></div>
 
 <section id="komisyonKapisi">
 ${baslik("komisyonKapisi")}
-<p><strong>Ayarlar → Komisyon yükleme.</strong> Komisyon dosyalarının
+<p><strong>Veri → Komisyon yükleme.</strong> Komisyon dosyalarının
 <strong>tek kapısı</strong>. Her satış kanalınız için bir kart vardır; kartta
 o kanalın kabul ettiği dosya yazar ve dosyayı kartın içine bırakırsınız.
 Kanal seçip yanlış dosya yükleme karışıklığı böylece biter.</p>
@@ -2018,7 +2308,7 @@ ${sikHata([
 
 <section id="kargoTarifesi">
 ${baslik("kargoTarifesi")}
-<p><strong>Ayarlar → Kargo tarifesi.</strong> Her pazaryerinin desiye göre
+<p><strong>Veri → Kargo tarifesi.</strong> Her pazaryerinin desiye göre
 değişen kargo ücret tablosu burada durur. Satış formundaki kargo firması
 önerileri ve kâr hesabındaki kargo tutarı buradan okunur.</p>
 <p><strong>Her kanalın kendi kartı var.</strong> Kart üç şeyi yazar: o kanalda
@@ -2070,7 +2360,7 @@ ${baslik("yedek")}
 <tr><td>Yedek (JSON)</td><td>Geri yükleme</td><td>Büyük bir değişiklikten önce</td></tr>
 <tr><td>Otomatik yedek</td><td>Sistem</td><td>Her gece, 30 gün saklanır</td></tr>
 </tbody></table></div>
-<p>Otomatik yedekler <strong>Ayarlar → Dışa Aktarma</strong> sayfasında tarih ve
+<p>Otomatik yedekler <strong>Veri → Dışa Aktarma</strong> sayfasında tarih ve
 boyutlarıyla listelenir. Listede yedek görmüyorsanız bir sorun var demektir.</p>
 <div class="ek-not dikkat"><div class="etiket">Dikkat</div>
 <p>Yedek dosyasında satış, maliyet ve kâr bilgileriniz <strong>açık metin</strong>
@@ -2081,24 +2371,24 @@ durur. İndirdiğiniz dosyayı güvenli bir yerde saklayın.</p></div>
 
 ${baslik("sorun")}
 <h3>Yedekten geri dönme</h3>
-<p><strong>Ayarlar → Geri yükleme.</strong> Bu ekran felaket icindir: veriler bozulduysa
-ya da yanlislikla silindiyse, bir yedekteki hale dondurur.</p>
+<p><strong>Veri → Geri yükleme.</strong> Bu ekran felaket içindir: veriler bozulduysa
+ya da yanlışlıkla silindiyse, bir yedekteki hâle döndürür.</p>
 <ol class="adimlar">
-<li><div><h3>Yedegi secin</h3><p>Gece yedekleri listede durur; disaridan indirdiginiz bir dosyayi da yukleyebilirsiniz.</p></div></li>
-<li><div><h3>Denetleyin</h3><p><strong>Denetle</strong> hicbir sey yazmaz. Tablo tablo <strong>kac satir silinecek, kac satir gelecek</strong> yazar. Yedekte olmayan tablo bosalacaksa ayrica uyarir.</p></div></li>
-<li><div><h3>Onaylayin</h3><p>Kutuya <strong>GERI YUKLE</strong> yazmadan dugme calismaz. Onaylayinca sistem <strong>once mevcut verinizin guvenlik yedegini alir</strong>; yedek alinamazsa islem hic baslamaz.</p></div></li>
+<li><div><h3>Yedeği seçin</h3><p>Gece yedekleri listede durur; dışarıdan indirdiğiniz bir dosyayı da yükleyebilirsiniz.</p></div></li>
+<li><div><h3>Denetleyin</h3><p><strong>Denetle</strong> hiçbir şey yazmaz. Tablo tablo <strong>kaç satır silinecek, kaç satır gelecek</strong> yazar. Yedekte olmayan tablo boşalacaksa ayrıca uyarır.</p></div></li>
+<li><div><h3>Onaylayın</h3><p>Kutuya <strong>GERİ YÜKLE</strong> yazmadan düğme çalışmaz (Türkçe harflerle). Onaylayınca sistem <strong>önce mevcut verinizin güvenlik yedeğini alır</strong>; yedek alınamazsa işlem hiç başlamaz.</p></div></li>
 </ol>
-<div class="ek-not"><div class="etiket">Yanlis dosyayi yuklediyseniz</div>
-<p>Islem bittiginde ekranda <strong>guvenlik yedeginiz</strong> duruyor: geri yuklemeden hemen onceki haliniz. O dosyayi secip tekrar geri yukleyerek donebilirsiniz. Yani bu ekranin kendisi de geri alinabilir.</p></div>
-<div class="ek-not dikkat"><div class="etiket">Kismi geri yukleme yoktur</div>
-<p>"Sadece urunleri geri yukle" diye bir secenek YOK. Yarisi eski yarisi yeni bir veritabani, hic geri yuklememekten tehlikelidir: stok defteri ile satislar birbirini tutmaz.</p></div>
+<div class="ek-not"><div class="etiket">Yanlış dosyayı yüklediyseniz</div>
+<p>İşlem bittiğinde ekranda <strong>güvenlik yedeğiniz</strong> duruyor: geri yüklemeden hemen önceki hâliniz. O dosyayı seçip tekrar geri yükleyerek dönebilirsiniz. Yani bu ekranın kendisi de geri alınabilir.</p></div>
+<div class="ek-not dikkat"><div class="etiket">Kısmi geri yükleme yoktur</div>
+<p>"Sadece ürünleri geri yükle" diye bir seçenek YOK. Yarısı eski yarısı yeni bir veritabanı, hiç geri yüklememekten tehlikelidir: stok defteri ile satışlar birbirini tutmaz.</p></div>
 
 <p>Sistem sessiz kalmaz: bir şey olmadıysa <strong>neden olmadığı</strong> ekranda
 yazar. Aşağıda en sık görülenler.</p>
 <div class="ek-tablo"><table>
 <thead><tr><th>Ekranda gördüğünüz</th><th>Anlamı ve çözümü</th></tr></thead>
 <tbody>
-<tr><td><strong>kural eksik</strong></td><td>Komisyon oranı ya da kargo tarifesi bulunamadı. <strong>Kanal SKU</strong> ekranından oranı girin; mevcut satış için <strong>Yeniden hesapla</strong>.</td></tr>
+<tr><td><strong>kural eksik</strong></td><td>Komisyon oranı ya da kargo tarifesi bulunamadı. <strong>Kanal kodları</strong> ekranından oranı girin; mevcut satış için <strong>Yeniden hesapla</strong>.</td></tr>
 <tr><td><strong>maliyet yok</strong></td><td>Satılan mal, birim maliyeti girilmemiş bir partiden düştü. Sonradan düzeltmek şu an mümkün değil.</td></tr>
 <tr><td><strong>para birimi</strong></td><td>Maliyet ile satış farklı para biriminde. Kur çevrilmez.</td></tr>
 <tr><td><strong>Stokta yeterli ürün yok</strong></td><td>Satmaya çalıştığınız adet elinizdekinden fazla. Mal kabul yapmayı unutmuş olabilirsiniz.</td></tr>
@@ -2125,7 +2415,7 @@ ${baslik("sozluk")}
 <tr><td><strong>Stopaj</strong></td><td>KDV hariç tutarın %1'i olarak kesilen vergi.</td></tr>
 <tr><td><strong>NET-1</strong></td><td>Stopaj düşülmüş kâr.</td></tr>
 <tr><td><strong>NET-2</strong></td><td>NET-1'den ödenecek KDV de düşülmüş kâr. Cebinizde kalan.</td></tr>
-<tr><td><strong>GERÇEK NET</strong></td><td>Σ NET-2 − dönem giderleri. Ayın gerçek sonucu.</td></tr>
+<tr><td><strong>GERÇEK NET</strong></td><td>Σ NET-2 − dönem giderleri − fire/hasar + tazminat geliri. Ayın gerçek sonucu. Sayım farkı buna girmez.</td></tr>
 <tr><td><strong>Snapshot</strong></td><td>Bir rakamın o anki hâliyle kayda yazılması.</td></tr>
 </tbody></table></div>
 </section>
@@ -2136,13 +2426,12 @@ ${baslik("yolda")}
 <div class="ek-tablo"><table>
 <thead><tr><th>Özellik</th><th>Durum</th></tr></thead>
 <tbody>
-<tr><td>Hakediş takibi — "sattım, parayı ne zaman aldım?"</td><td><span class="pul yok">yapım aşamasında</span></td></tr>
-<tr><td>Kredi kartı borç ve limit ekranı</td><td><span class="pul yok">hesap hazır, ekran yok</span></td></tr>
-<tr><td>Tedarikçiden tazminat takibi</td><td><span class="pul yok">planlı</span></td></tr>
-<tr><td>Alım kaydını sonradan düzenleme</td><td><span class="pul yok">planlı</span></td></tr>
-<tr><td>Yedekten ekrandan geri yükleme</td><td><span class="pul yok">elle yapılıyor</span></td></tr>
-<tr><td>Birden çok kullanıcı ve yetki ayrımı</td><td><span class="pul yok">sonraki aşama</span></td></tr>
-<tr><td>Pazaryeri bağlantıları (otomatik sipariş çekme)</td><td><span class="pul yok">sonraki aşama</span></td></tr>
+<tr><td>Pazaryerinde sistemden <strong>yeni ilan açmak</strong> (bugün ilan kanalın panelinden açılır, sonra Kanal SKU'da eşleştirilir)</td><td><span class="pul yok">ileride</span></td></tr>
+<tr><td>Amazon ve diğer kanallardan otomatik sipariş çekme (bugün yalnız Trendyol, Hepsiburada, N11)</td><td><span class="pul yok">bağlı değil</span></td></tr>
+<tr><td>Hepsiburada siparişlerinin otomatik onayı</td><td><span class="pul yok">bilerek kapalı</span></td></tr>
+<tr><td>Hareketli ortalama maliyet yöntemi (bugün FIFO)</td><td><span class="pul yok">henüz açık değil</span></td></tr>
+<tr><td>Kendi web sitenizi 12. kanal olarak bağlamak</td><td><span class="pul yok">planlı</span></td></tr>
+<tr><td>Birden çok firmayı tek sistemde yönetmek</td><td><span class="pul yok">hazırlanıyor</span></td></tr>
 </tbody></table></div>
 </section>
 

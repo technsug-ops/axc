@@ -39,6 +39,18 @@ yerine oturmadı.»_ 13.08 sırası YENİDEN geçerli: önce tek firma tamamlan�
 kanıtlanır. K303 UYUR; tasarım belgesi ve kararlar (otomatik süzgeç · ortak
 veri · roller · firma seçici · deneme ortamı şartı) hazır bekler, yeniden
 tartışılmaz. Hiçbir şema/migration yazılmadı.
+▶ **YENİDEN AÇILDI — kullanıcı kararı 03.10.2026, ŞARTLI:** _«K303'ten
+vazgeçmedim, hedefim bu; ama çalışan firmayı riske atmak istemiyorum, daha pasif
+çalışan bir firmada deneme yapmak istiyorum.»_ Çok-firma işi **yalnız deneme
+kurulumunda** yürür (ayrı domain · ayrı veritabanı · `k303-cok-firma` dalı ·
+pazaryeri anahtarı ve zamanlanmış iş YOK). **Canlı Axcali, deneme kurulumunda
+kanıtlanana kadar DEĞİŞMEZ.** İkinci firma: az satış yapan GERÇEK bir firma —
+izolasyon bekçisi sahte firmayla yeşil yanmadan girmez, girerken deneme
+kurulumundaki Axcali kopyası anonimleştirilir/silinir, ilk haftalarda kanala
+yazma kapalı. Üç şart: ① `main`'de yeni büyük iş açılmaz, her `main` değişikliği
+aynı gün dala taşınır · ② Axcali'nin açık Halil testleri paralel kapanır ·
+③ pasif firma korumalı başlar. 28.09 gerekçesi SİLİNMEDİ — risk deneme
+kurulumuyla karşılanıyor. SaaS'a özel iş (kayıt, faturalama, plan) hâlâ AÇILMAZ.
 
 Bu nedenle hiçbir firma/marka adı sistemin YAPISINA gömülmez.
 
@@ -262,10 +274,10 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
   çok-firma) açılışına kullanıcı karar verir.
   · barkod ✓ (`/okut` · `/paketle` · `/yerlestir` + kamera)
   · yetki (RBAC) ✓ (`lib/yetki`, rol+izin, `canli:yetki` bekçisi)
-- **Çok-firma veri katmanı (K303) — 💤 UYUR (28.09.2026, aynı gün öne alınıp
-  geri bırakıldı).** Aşama 0 ✓ · Aşama 1 tasarım ✓ (`docs/cok-firma-tasarimi.md`,
-  kararlar kayıtlı) · Aşama 2–4 yazılmadı. Açılış şartı: Faz 4 kapanır ✓
-  (02.10.2026) ve tek firma kendi işinde oturur (kullanıcı söyler).
+- **Çok-firma veri katmanı (K303) — ▶ AÇILDI, YALNIZ DENEME KURULUMUNDA
+  (kullanıcı kararı 03.10.2026; 28.09'da uyutulmuştu).** Aşama 0 ✓ · Aşama 1
+  tasarım ✓ (`docs/cok-firma-tasarimi.md`) · Aşama 2–4 yazılmadı. İlk iş: deneme
+  kurulumu. Canlı Axcali kanıtlanana kadar değişmez (şartlar yukarıda).
 Bir faza ait olmayan özelliği o fazda EKLEME.
 
 ⚠ **FAZ GÖSTERGESİ BİR VERİDİR VE BAYATLAYABİLİR — 09.09.2026'da bayattı.**

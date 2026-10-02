@@ -13,6 +13,18 @@
 
 ---
 
+## 🔶 K316 — EL KİTABI GÜNCELLEMESİ (6 HAFTALIK BORÇ) · 03.10.2026 · [YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı:** «Kullanım kılavuzunu çok iyi kontrol et, eksiklerin hepsini yaz.» Üç salt-okuma denetimi (ekran/menü · son 6 haftanın değişiklikleri · iddialar) + her iddia yazılmadan önce kodda/sözlükte/canlı izde doğrulandı. Kaynak `src/lib/el-kitabi/icerik.ts` (son dokunuş 30.09'du).
+**YANLIŞTI → düzeltildi:** iade ayı (rapor/panelde SATIŞIN ayına; dönem raporu bilerek olay ayına) · GERÇEK NET (− fire + tazminat geliri; sayım farkı ayrı satır) · «siparişleri elle girin» (TY/HB/N11 5 dk'da bir gelir) · «herkes aynı yetkiyle giriyor» · «maliyet sonradan düzeltilemez» · tazminat tanımı · hakediş yalnız dosya · kanal listeleme «elle» · dilim tarifesi «komut satırı» · paketlemede ürün barkodu · «Giderler → Şablonlar» (öyle ekran yok) · geri yükleme «GERI YUKLE» (kod «GERİ YÜKLE» ister; blok Türkçe karaktersizdi) · panel «bu ay» (açılış Bugün) · nakit takvimi «giderler» (kaynak kart + hakediş + finansman) · okut «hiçbir kayıt değişmez» · «dört alan» (beş) · paketle «bulunamadı» mesajı (dört ayrı sebep) · «Yolda» tablosu (7/7 maddesi artık vardı → gerçekten olmayan 6 iş) · **37 menü yolu** «Ayarlar →» yazıyordu, ekranlar Tanımlar / Veri / Ürün ve kanal grubunda.
+**EKSİKTİ → yazıldı:** sipariş onayı · otomatik onay (HB kapalı) · otomatik iptal · aktarılan sipariş · satış iptali · alım fatura yapısı (KDV hariç/kargo/gümrük/KDV kontrolü) · iade alış KDV'si · iadeyi düzenle/geri al · iade bildirimleri ekranı · giriş kilidi · parola değişimi · fiziksel sayım · aktif etme şartı · şüpheli ürünler · SKU önizleme/Öner · ürün etiketi · telefon alt çubuğu · panelde onay/yolda/teslim · **5 yeni bölüm:** kanala stok/fiyat gönderme · mal kabul günlüğü · günlük özet · muhasebe dönemleri · maliyet yöntemi (menü eşlemesindeki 4 `null` kapandı).
+**Ekran metni de bayattı:** `KanalListeleme.tazelemeKomutu` «otomatik zamanlama henüz yok» → düzeltildi (zamanlama canlı izde ölçüldü, K225).
+**BİLEREK KALAN (sonraki tur):** panel ekran şeması yeniden çizimi · ürün analizi yeni süzgeç/sekmeler · `/tarife` kendi bölümü · Kanal kodları ↔ Komisyon yükleme iki kapı ilişkisi · gecikme faizi · «Bildir» düğmesi · alımda Promosyon (₺0) · «kargo düşülmedi» rozeti · paketlemede her adedin ayrı okutulması · okuyucu klavye düzeni emniyeti · TY kategori eşleşmesi · ürün resmi · takipçi kuponu · Excel indir listesi · `docs/el-kitabi.html` eski dışa aktarım (13.08; bağlantısı yok).
+**ÜRÜN BOŞLUĞU (kılavuz değil, ekran eksik):** ① **gider kategorisi ekleyecek ekran yok** (yalnız seed) — kılavuz artık «destek talebi açın» diyor · ② kullanıcının **kendi parolasını değiştireceği bağlantı yok** (`/parola-degistir` yalnız zorunlu değişimde açılıyor).
+**Halil testi (deploy sonrası):** ① El Kitabı → İçindekiler'de yeni başlıklar: «Kanala stok ve fiyat göndermek», «Mal kabul — günün girişleri», «Günlük özet», «Ayarlar — Muhasebe dönemleri», «Ayarlar — Maliyet yöntemi» — tıklayınca bölüm açılır · ② «Satış» bölümü «Pazaryeri siparişleri kendiliğinden gelir» ile başlar · ③ «Dönem raporu»nda «iade edilen satışın ayına yazılır» · ④ «Henüz yok, yolda» tablosunda hakediş/kullanıcı/pazaryeri bağlantısı YOK · ⑤ «Raf Konumları» bölüm başlığı «Tanımlar — Raf Konumları» · ⑥ Kanal listeleme ekranının üstünde «her sabah kendiliğinden tazelenir».
+
+---
+
 ## 🔶 K315 — PASİF KAYIT EKSİK BİLGİYLE AKTİF EDİLEMEZ · 03.10.2026 · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı:** «Pasif olanın gerekli bilgileri manuel girildikten sonra aktife alınabilir hâle getirilsin» → **EAN + kategori + marka, hepsi olsun.**
@@ -272,7 +284,10 @@ gerçekleşirken «faiz + verginin ödenen TL karşılığı» sorulur, Giderler
 
 ---
 
-## 💤 K303 — ÇOK FİRMALI YAPI (MULTI-TENANCY) · 28.09.2026 · [UYUR — kullanıcı kararı 28.09: «henüz program yerine oturmadı»; AŞAMA 0–1 ✓, AŞAMA 2–4 YAZILMADI]
+## 🔶 K303 — ÇOK FİRMALI YAPI (MULTI-TENANCY) · 28.09.2026 · [▶ AÇILDI 03.10.2026 — YALNIZ DENEME KURULUMUNDA; AŞAMA 0–1 ✓, AŞAMA 2–4 YAZILMADI]
+
+▶ **03.10.2026 kullanıcı kararı:** «Vazgeçmedim, hedefim bu; çalışan firmayı riske atmadan daha pasif çalışan bir firmada deneyelim.» Sıra: ① deneme kurulumu (ayrı domain + boş/kopya veritabanı + `k303-cok-firma` dalı; pazaryeri anahtarı ve zamanlanmış iş YOK) → ② canlı kopyası üzerinde Aşama 2–3 → ③ sahte ikinci firma + izolasyon bekçisi → ④ gerçek pasif firma (Axcali kopyası anonimleştirilmiş/silinmiş, kanala yazma kapalı başlar) → ⑤ canlı Axcali geçişi (yedek + onay). **Canlı Axcali ⑤'e kadar değişmez.** ⏭ **Kullanıcıdan bekleniyor:** domain hazır mı · hesaplar kimin adına · pasif firmanın kanalları.
+_(28.09 kaydı aşağıda olduğu gibi duruyor.)_
 
 ⏪ **AYNI GÜN GERİ BIRAKILDI.** 13.08 sırası yeniden geçerli (önce tek firma kanıtlanır). Hiçbir şema/migration
 yazılmadı; tasarım + kararlar hazır bekler ve **yeniden tartışılmaz**, yalnız açılır. **Açılış şartı:** Faz 4
@@ -4699,7 +4714,9 @@ kapılandı. _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez".)
 ─── ⑤ **30.09.2026 — TEST LİSTESİ DERLENİRKEN BULUNDU:** üç metin (`Tarife.hataSutunEksik` · `Tarife.hataTeklifDosyasi` · `Komisyon.kampanyaNeOkunur`) K227'de adı «Haftalık komisyon oranı (ürün dökümü)» olan kutuyu hâlâ «Güncel komisyon oranı listesi» diye anıyordu — kullanıcı var olmayan bir kutuyu arardı; el kitabında da iki yerde. Düzeltme: metinler adı `{kutu}` parametresiyle `KomisyonKapisi.turGuncelOran`dan alır; el kitabı güncellendi. Bekçi `komisyon:dogrula` «kutu adı» bölümü (216) — elle ad / eksik parametre kırmızı, zararsız yeşil görüldü.
 ─── ⑥ **01.10.2026 — HALİL TESTİ (N11 adımı) GEÇTİ:** N11 kampanya kutusuna `4534966-01-10-2026-09-45-29.xls` yüklendi — `.xls` okundu, platform «N11», `KOMISYON_YUKLEME` izi: okunan 45 · güncellenen 9 · aynı 36 · yaratılan 0. (Board'daki 46/46 geçen haftanın dosyasıydı.) HB «Avantajlı Teklifler» 30.09'da tarife kutusuna yüklendi (146 kalem, pencere 30.09–06.10). Kalan: N11 tarife kutusu (K227) ve «Yüklü pencereler» anlık tazelenmesi (K230).
 
-## 🔶 K225 — LİSTELEME SENKRONU ZAMANLANDI · 21.09.2026 · [KOŞTU — İLK OTOMATİK KOŞUM BEKLENİYOR]
+## 🟢 K225 — LİSTELEME SENKRONU ZAMANLANDI · 21.09.2026 · [OTOMATİK KOŞUYOR — ölçüldü 03.10.2026]
+
+**Ölçüm (canlı iz, 03.10.2026):** `HB_LISTELEME_YAZIM` + `N11_LISTELEME_YAZIM` her gün ~04:50Z (cron) ve ~11:10–11:40Z (GitHub yedek iş) — 30.09, 01.10, 02.10'da kesintisiz. Ekrandaki «otomatik zamanlama henüz yok» metni ve el kitabı cümlesi bayattı; ikisi de düzeltildi.
 
 K224'ün açık bıraktığı madde kapandı: _"senkron zamanlanmış değil; bugün elle
 koşuldu, yarın yine bayatlar. Ekran bunu söylüyor ama söylemek çözmek
