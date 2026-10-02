@@ -1848,9 +1848,20 @@ kontrol(
   const cikisBasi = cekirdekK.indexOf("tx.stockMovement.create");
   kontrol("onay SALE_OUT yazıyor", cikisBasi >= 0);
   const cikisB = cikisBasi >= 0 ? cekirdekK.slice(cikisBasi, cikisBasi + 600) : "";
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL — TAZELENDİ 02.10.2026 (K314).
+   * Eski ölçüt `occurredAt: satis.soldAt` arıyordu. Aktarılan siparişte
+   * (başka mağazanın gönderemediği, pazaryerinin bize aktardığı) mal BUGÜN
+   * çıkar; hareketi 23.09'a yazmak «28.09'da giren mal 23.09'da çıktı»
+   * demekti. Tarih artık `satisStokZamani`dan gelir.
+   * ⭐ K163 SÖZÜ KORUNDU: normal siparişte `hareketTarihi === soldAt` — bu
+   * `fifo-sinir:dogrula`da DEĞERLE sınanıyor (saf gövde); burada bağ ölçülür:
+   * hareket o gövdeden besleniyor, gövde de bu dosyada `satis` ile çağrılıyor.
+   */
   kontrol(
-    "  ...saat stok defterine TAŞINIYOR (occurredAt = soldAt, K163 sözü)",
-    cikisB.includes("occurredAt: satis.soldAt"),
+    "  ...saat stok defterine TAŞINIYOR (occurredAt = satış saati; aktarılanda sisteme düştüğü an — K163/K314)",
+    cikisB.includes("occurredAt: stokZamani.hareketTarihi") &&
+      cekirdekK.includes("const stokZamani = await satisStokZamani(tx, satis);"),
   );
   kontrol(
     "  ...parti izi kuruluyor (sourceMovementId)",

@@ -1040,16 +1040,17 @@ export default async function SatislarSayfasi({
                   </span>
                 }
                 altBaslik={
-                  aktarilanMi(satis) ? (
-                    <span title={t("aktarilanIpucu")}>
-                      {bicim.tarihSaat(satis.soldAt)}{" "}
-                      <DurumRozeti durum="bilgi">
-                        {t("aktarilanRozet", { tarih: bicim.tarih(satis.createdAt) })}
-                      </DurumRozeti>
-                    </span>
-                  ) : (
-                    bicim.tarihSaat(satis.soldAt)
-                  )
+                  <>
+                    {bicim.tarihSaat(satis.soldAt)}
+                    {aktarilanMi(satis) ? (
+                      <span title={t("aktarilanIpucu")}>
+                        {" "}
+                        <DurumRozeti durum="bilgi">
+                          {t("aktarilanRozet", { tarih: bicim.tarih(satis.createdAt) })}
+                        </DurumRozeti>
+                      </span>
+                    ) : null}
+                  </>
                 }
                 alanlar={[
                   {
