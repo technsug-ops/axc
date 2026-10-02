@@ -115,6 +115,14 @@ const ISTISNALAR = new Map<string, string>([
     "TOPLAM GÖVDESİ: ciro çarpımı `_sum` ile yapılamadığı için kalem okunuyor; küme `sale: kosul` olarak geliyor ve çağıran `giren`/`haric` veriyor.",
   ],
   [
+    "src/lib/stok.ts:sale.aggregate",
+    "K314 İLK ÇEKİM ANI: ciro/NET üretmiyor; sorulan şey kanalın sisteme İLK sipariş çektiği an (`_min.createdAt`). O gün çekilen bir siparişin sonradan iptal edilmesi o anı değiştirmez — süzgeç eklemek, ilk günün tek siparişi iptal edilince sınırı kaydırıp toplu geçmiş çekimini «aktarılan» sayardı.",
+  ],
+  [
+    "src/lib/stok.ts:sale.groupBy",
+    "K314 İLK ÇEKİM ANLARI: yukarıdaki gerekçenin aynısı — liste rozeti için bütün kaynakların ilk çekim anı tek sorguda; iptal o anı değiştirmez.",
+  ],
+  [
     "src/lib/yedek.ts:saleItem.findMany",
     "YEDEK: yukarıdaki gerekçenin aynısı — kalemler de eksiksiz yedeklenir",
   ],
