@@ -44,10 +44,13 @@ vazgeçmedim, hedefim bu; ama çalışan firmayı riske atmak istemiyorum, daha 
 çalışan bir firmada deneme yapmak istiyorum.»_ Çok-firma işi **yalnız deneme
 kurulumunda** yürür (ayrı domain · ayrı veritabanı · `k303-cok-firma` dalı ·
 pazaryeri anahtarı ve zamanlanmış iş YOK). **Canlı Axcali, deneme kurulumunda
-kanıtlanana kadar DEĞİŞMEZ.** İkinci firma: az satış yapan GERÇEK bir firma —
-izolasyon bekçisi sahte firmayla yeşil yanmadan girmez, girerken deneme
-kurulumundaki Axcali kopyası anonimleştirilir/silinir, ilk haftalarda kanala
-yazma kapalı. Üç şart: ① `main`'de yeni büyük iş açılmaz, her `main` değişikliği
+kanıtlanana kadar DEĞİŞMEZ.** İkinci firma: **demo firma «Damisell»** (kullanıcı
+kararı 03.10.2026 — «demo yapamaz mıyız?» → evet; ad VERİDİR, yapıya gömülmez).
+İzolasyon, firma süzgeci, roller ve sıfırdan kurulum Damisell ile kanıtlanır.
+Gerçek (pasif) bir firma **isteğe bağlı son adımdır**; girerse deneme
+kurulumundaki Axcali kopyası anonimleştirilir/silinir ve kanala yazma kapalı
+başlar. Damisell'in verisi örnek veridir: göstermek ve izolasyonu sınamak
+içindir, Halil testinin «gerçek veri» şartının yerine geçmez. Üç şart: ① `main`'de yeni büyük iş açılmaz, her `main` değişikliği
 aynı gün dala taşınır · ② Axcali'nin açık Halil testleri paralel kapanır ·
 ③ pasif firma korumalı başlar. 28.09 gerekçesi SİLİNMEDİ — risk deneme
 kurulumuyla karşılanıyor. SaaS'a özel iş (kayıt, faturalama, plan) hâlâ AÇILMAZ.

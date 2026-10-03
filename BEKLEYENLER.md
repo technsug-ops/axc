@@ -286,7 +286,9 @@ gerçekleşirken «faiz + verginin ödenen TL karşılığı» sorulur, Giderler
 
 ## 🔶 K303 — ÇOK FİRMALI YAPI (MULTI-TENANCY) · 28.09.2026 · [▶ AÇILDI 03.10.2026 — YALNIZ DENEME KURULUMUNDA; AŞAMA 0–1 ✓, AŞAMA 2–4 YAZILMADI]
 
-▶ **03.10.2026 kullanıcı kararı:** «Vazgeçmedim, hedefim bu; çalışan firmayı riske atmadan daha pasif çalışan bir firmada deneyelim.» Sıra: ① deneme kurulumu (ayrı domain + boş/kopya veritabanı + `k303-cok-firma` dalı; pazaryeri anahtarı ve zamanlanmış iş YOK) → ② canlı kopyası üzerinde Aşama 2–3 → ③ sahte ikinci firma + izolasyon bekçisi → ④ gerçek pasif firma (Axcali kopyası anonimleştirilmiş/silinmiş, kanala yazma kapalı başlar) → ⑤ canlı Axcali geçişi (yedek + onay). **Canlı Axcali ⑤'e kadar değişmez.** ⏭ **Kullanıcıdan bekleniyor:** domain hazır mı · hesaplar kimin adına · pasif firmanın kanalları.
+▶ **03.10.2026 kullanıcı kararı:** «Vazgeçmedim, hedefim bu; çalışan firmayı riske atmadan daha pasif çalışan bir firmada deneyelim.» Sıra: ① deneme kurulumu (ayrı domain + boş/kopya veritabanı + `k303-cok-firma` dalı; pazaryeri anahtarı ve zamanlanmış iş YOK) → ② canlı kopyası üzerinde Aşama 2–3 → ③ sahte ikinci firma + izolasyon bekçisi → ④ (İSTEĞE BAĞLI) gerçek pasif firma (Axcali kopyası anonimleştirilmiş/silinmiş, kanala yazma kapalı başlar) → ⑤ canlı Axcali geçişi (yedek + onay). **Canlı Axcali ⑤'e kadar değişmez.**
+▶ **03.10.2026 kullanıcı kararı: ikinci firma DEMO — adı «Damisell».** ③ Damisell ile yapılır; ④ zorunlu değil. Demo firmanın sınayamadığı: kendi pazaryeri mağazası olmadığı için sipariş çekme / stok gönderme onun adına denenemez (kanalların deneme ortamı araştırılmadı). Yan fayda: tanıtım sayfasındaki «kendi rakamlarınızla görün» için örnek verili demo giriş — açılırsa ekranda «örnek veri» yazar.
+⏭ **Kullanıcıdan bekleniyor:** domain hazır mı (yoksa `…vercel.app` yeter) · Vercel projesi ve veritabanı kimin hesabında.
 _(28.09 kaydı aşağıda olduğu gibi duruyor.)_
 
 ⏪ **AYNI GÜN GERİ BIRAKILDI.** 13.08 sırası yeniden geçerli (önce tek firma kanıtlanır). Hiçbir şema/migration
