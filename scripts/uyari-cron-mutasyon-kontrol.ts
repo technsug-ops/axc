@@ -110,8 +110,8 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     bekci: "cron-yollari:dogrula",
     dosya: TY_ROTA,
-    bul: '  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });',
-    koy: "  return NextResponse.json(ozet);",
+    bul: '  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => "atlandi" in o) });',
+    koy: "  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, () => false) });",
     bozdugu: "kimlik/hesap arizasinda zamanlayici YESIL gorur - 24.09 N11 vakasi TY'de",
   },
   {
@@ -119,8 +119,8 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     bekci: "cron-yollari:dogrula",
     dosya: TY_HAKEDIS,
-    bul: "  return NextResponse.json({ hakedis, kargo, dusen }, { status: dusen > 0 ? 503 : 200 });",
-    koy: "  return NextResponse.json({ hakedis, kargo, dusen });",
+    bul: "  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => o.dusen > 0) });",
+    koy: "  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, () => false) });",
     bozdugu: "iki isten biri atlansa bile 200 - kacan hakedis cekimi gorunmez",
   },
   {
@@ -128,8 +128,8 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     bekci: "ice-aktarma:dogrula",
     dosya: N11_ROTA,
-    bul: '  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });',
-    koy: "  return NextResponse.json(ozet);",
+    bul: '  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => "atlandi" in o) });',
+    koy: "  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, () => false) });",
     bozdugu: "bos cekim dali yazilsa bile kimlik/hesap arizasi 200 doner",
   },
 ];

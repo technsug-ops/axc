@@ -230,6 +230,15 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "kategori-eslesme-mutasyon:kontrol",
   "uyari-cron-mutasyon:kontrol",
   /**
+   * K303 (03.10.2026) — `deneme-ortami` pazaryeri istemcilerinin kimlik
+   * kapısını (`scripts/hb/istemci.ts`) mutasyona uğratıyor; `hb-sayfa` da aynı
+   * dosyayı bozuyor. Çakışma deneme ortamı kapısının geldiği commit'ten beri
+   * vardı ve o gün tam tur koşulmadığı için görülmedi — 3b turunda
+   * `mutasyon-cakisma:dogrula` yakaladı.
+   */
+  "deneme-ortami-mutasyon:kontrol",
+  "hb-sayfa-mutasyon:kontrol",
+  /**
    * K284 (26.09.2026) — `supheli-urun` Ürünler listesindeki şüpheli
    * bağlantısını (`src/app/urunler/page.tsx`) mutasyona uğratıyor; aynı dosyayı
    * `kod-cozumu` da bozuyor. Paralel koşsalar biri ötekinin mutantını asıl

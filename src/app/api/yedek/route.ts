@@ -1,5 +1,6 @@
 import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import { apiIzni } from "@/lib/yetki";
+import { tamSistemIslemiAcikMi } from "@/lib/firma-dongusu";
 import { yedegiMetneCevir, yedekUret } from "@/lib/yedek";
 
 /**
@@ -21,6 +22,10 @@ export const maxDuration = 60;
 export async function GET(istek: Request) {
   const red = await apiIzni("veri.aktar");
   if (red) return red;
+  /* K303 3b: çok firmada tam yedek ekrandan inmez (lib/firma-dongusu.ts). */
+  if (!(await tamSistemIslemiAcikMi())) {
+    return Response.json({ hata: "COK_FIRMA_KAPALI" }, { status: 409 });
+  }
 
   const tarifesiz =
     new URL(istek.url).searchParams.get("tarifesiz") === "1";

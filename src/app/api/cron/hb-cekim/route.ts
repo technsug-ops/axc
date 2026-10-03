@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
 
 import { hbCekimKos } from "../../../../../scripts/canli-hb-ice-aktar";
 import { kimlikEksikleri } from "../../../../../scripts/hb/istemci";
@@ -61,7 +62,14 @@ export async function GET(istek: NextRequest) {
    * Güvenlik yazımın kendisinde: çakışan ATLANIR (ezme yok), `Sale.code`
    * global `@unique`, ve her koşum `importBatch` ile geri alınabilir.
    */
-  const ozet = await hbCekimKos({ yaz: true, dbAdresi });
+  /**
+   * K303 Aşama 3b: iş firma firma döner (`lib/firma-dongusu.ts`). Kanal anahtarı
+   * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
+   * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
+   */
+  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, (companyId) =>
+    hbCekimKos({ yaz: true, dbAdresi, companyId }),
+  );
   /**
    * ⛔ ATLANAN KOŞUM 200 DÖNMEZ — BU BENİM KUSURUMDU (08.09.2026).
    *
@@ -79,19 +87,12 @@ export async function GET(istek: NextRequest) {
    * ⛔ EKSİĞİN ADI SÖYLENİR, DEĞERİ ASLA. `kimlikEksikleri()` yalnız
    * değişken ADLARINI döndürür; satıcı kimliği bile gövdeye girmez.
    */
-  if ("atlandi" in ozet) {
-    if (ozet.atlandi === "BEKCI_TURU") {
-      return NextResponse.json({ atlandi: ozet.atlandi }, { status: 200 });
-    }
-    return NextResponse.json(
-      {
-        hata: ozet.atlandi,
-        ...(ozet.atlandi === "KIMLIK" ? { eksikDegiskenler: kimlikEksikleri() } : {}),
-      },
-      { status: 503 },
-    );
-  }
+  const kimlikDustu = sonuc.tamam && sonuc.firmalar.some((f) => f.durum === "KOSTU" && "atlandi" in f.sonuc && f.sonuc.atlandi === "KIMLIK");
   /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek
-     olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü. */
-  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });
+     olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü.
+     BEKCI_TURU istisnası korunur (yukarıdaki gerekçe). */
+  return NextResponse.json(
+    { ...sonuc, ...(kimlikDustu ? { eksikDegiskenler: kimlikEksikleri() } : {}) },
+    { status: donguDurumKodu(sonuc, (o) => "atlandi" in o && o.atlandi !== "BEKCI_TURU") },
+  );
 }

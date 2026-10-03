@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
 import { haritaUret, dosyaMetni, HARITA_DOSYASI } from "./firma-modelleri-uret";
 import { argumanlariSuz, firmaModeliMi, veriEkle, whereEkle } from "../src/lib/firma-suzgeci";
+import { donguDurumKodu, firmaFirmaKos, kimlikFirmasiSec } from "../src/lib/firma-dongusu";
+import { acikFirmaBaglami, zorunluFirma } from "../src/lib/firma-baglami";
 
 /**
  * ============================================================================
@@ -17,6 +19,9 @@ import { argumanlariSuz, firmaModeliMi, veriEkle, whereEkle } from "../src/lib/f
  *  ④ bağlam `await`i run İÇİNDE (tembel PrismaPromise — ölçülmüş vaka)
  *  ⑤ DESEN YASAĞI: `sistemPrisma` kullanan her satırın BİTİŞİK yorumunda
  *     `SISTEM:` gerekçesi olmalı (dosya listesi yok; `src/` taranır)
+ *  ⑥ (3b) anahtar firması seçimi + firma döngüsü DEĞERLE
+ *  ⑦ (3b) her zamanlanmış iş ucu döngüden geçer; ucun çağırdığı betik kendi
+ *     süzgeçsiz istemcisini KURAMAZ (küme uçların import'undan türetilir)
  * ============================================================================
  */
 
@@ -78,11 +83,15 @@ kontrol("where'de farklı companyId → FIRMA_CAKISMASI", firlatirMi(() => where
   kontrol(`firmaya ait model tabanı DOLU (≥49, bulunan ${firmaSayisi})`, firmaSayisi >= 49);
 }
 
-/* ③ İSTEMCİ BAĞI — kullanım bloğu */
+/* ③ İSTEMCİ BAĞI — kullanım bloğu (gövde `firma-istemcisi.ts`: web + betik ORTAK) */
 {
+  const u = yorumsuz(kaynakOku("src/lib/firma-istemcisi.ts"));
+  const b = u.indexOf("async $allOperations({ model, operation, args, query })");
+  const blok = b >= 0 ? u.slice(b, b + 600) : "";
+  kontrol("firmaIstemcisi boş firmayla kurulamaz", /if \(!companyId\) \{\s*throw new FirmaBaglamiHatasi\("FIRMA_BAGLAMI_YOK", "firmaIstemcisi/.test(u));
+  kontrol("firmaIstemcisi süzgeçten geçer (sabit firma)", u.includes("return suzgecUzat(ham, () => companyId);"));
   const p = yorumsuz(kaynakOku("src/lib/prisma.ts"));
-  const b = p.indexOf("async $allOperations({ model, operation, args, query })");
-  const blok = b >= 0 ? p.slice(b, b + 600) : "";
+  kontrol("ortak istemci aynı gövdeyi kullanır (bağlam/oturum firması)", p.includes("suzgecli = suzgecUzat(istemciyiAl(), aktifFirmaKimligi);"));
   kontrol("uzantı tüm modellerde kurulu", b >= 0);
   kontrol("ortak model süzülmeden geçer", blok.includes("if (!firmaModeliMi(model)) return query(args);"));
   kontrol("bağlam yoksa FIRMA_BAGLAMI_YOK", /if \(!companyId\) \{\s*throw new FirmaBaglamiHatasi\("FIRMA_BAGLAMI_YOK"/.test(blok));
@@ -132,5 +141,71 @@ for (const yol of dosyalar("src")) {
 }
 kontrol(`sistemPrisma kullanımı tarandı (bulunan ${sistemKullanimi})`, sistemKullanimi >= 1);
 
-console.log("\n" + (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") + ` (${gecen}/${gecen + hata})\n`);
-process.exit(hata === 0 ? 0 : 1);
+/* ⑥ ANAHTAR FİRMASI + DÖNGÜ — DEĞERLE (döngü async; özetten ÖNCE beklenir) */
+async function donguOlc() {
+  const A = { id: "a", code: "AXC", name: "Axcalı" };
+  const D = { id: "d", code: "DMS", name: "Damisell" };
+  kontrol("tek firma, beyan yok → o firma (canlı davranışı aynen)", J(kimlikFirmasiSec([A], undefined)) === J({ tamam: true, firma: A }));
+  kontrol("iki firma, beyan yok → BEYAN_GEREKLI («ilkini seç» yok)", J(kimlikFirmasiSec([A, D], undefined)) === J({ tamam: false, sebep: "BEYAN_GEREKLI" }));
+  kontrol("iki firma, beyan DMS → Damisell", J(kimlikFirmasiSec([A, D], "DMS")) === J({ tamam: true, firma: D }));
+  kontrol("beyan edilen firma aktif değil → HATA, başkasına düşmez", J(kimlikFirmasiSec([A], "DMS")) === J({ tamam: false, sebep: "BEYAN_EDILEN_FIRMA_YOK" }));
+  kontrol("firma yok → AKTIF_FIRMA_YOK", J(kimlikFirmasiSec([], undefined)) === J({ tamam: false, sebep: "AKTIF_FIRMA_YOK" }));
+  kontrol("zorunluFirma: firmasız HATA", firlatirMi(() => zorunluFirma(undefined, "x"), "FIRMA_BAGLAMI_YOK"));
+
+  const kosanlar: string[] = [];
+  const baglamlar: (string | null)[] = [];
+  const is = async (id: string) => {
+    kosanlar.push(id);
+    baglamlar.push(acikFirmaBaglami());
+    if (id === "d") throw new Error("patladi");
+    return { atlandi: false };
+  };
+  const s1 = await firmaFirmaKos([A, D], { kanalAnahtariGerekir: true, beyan: undefined }, is);
+  kontrol("anahtar isteyen iş, iki firma + beyansız → HİÇ koşmaz", !s1.tamam && kosanlar.length === 0);
+  const s2 = await firmaFirmaKos([A, D], { kanalAnahtariGerekir: true, beyan: "AXC" }, is);
+  kontrol("anahtar isteyen iş YALNIZ anahtar firmasında koşar", J(kosanlar) === J(["a"]));
+  kontrol("öteki firma ATLANDI · anahtar tanımlı değil", s2.tamam && s2.firmalar[1]?.durum === "ATLANDI");
+  kontrol("iş kendi firmasının BAĞLAMINDA koşar", J(baglamlar) === J(["a"]));
+  kosanlar.length = 0;
+  baglamlar.length = 0;
+  const s3 = await firmaFirmaKos([A, D], { kanalAnahtariGerekir: false, beyan: undefined }, is);
+  kontrol("anahtar istemeyen iş HER firmada, kendi bağlamında", J(kosanlar) === J(["a", "d"]) && J(baglamlar) === J(["a", "d"]));
+  kontrol("bir firmanın hatası ötekini durdurmaz, firma adıyla yazılır",
+    s3.tamam && s3.firmalar[0]?.durum === "KOSTU" && s3.firmalar[1]?.durum === "HATA" && s3.firmalar[1]?.firma === "DMS · Damisell");
+  const s4 = await firmaFirmaKos([], { kanalAnahtariGerekir: false, beyan: undefined }, is);
+  kontrol("boş firma listesi «hepsi koştu» sayılmaz", J(s4) === J({ tamam: false, sebep: "AKTIF_FIRMA_YOK" }));
+  kontrol("durum kodu: firma HATA → 503", donguDurumKodu(s3, () => false) === 503);
+  kontrol("durum kodu: anahtar firması seçilemedi → 503", donguDurumKodu(s1, () => false) === 503);
+  kontrol("durum kodu: anahtarsız firmanın ATLANDI'sı 503 YAPMAZ", donguDurumKodu(s2, () => false) === 200);
+  kontrol("durum kodu: işin kendi «atlandı»sı → 503", donguDurumKodu(s2, () => true) === 503);
+}
+
+/* ⑦ ZAMANLANMIŞ İŞ UÇLARI — küme uçlardan türetilir */
+{
+  const uclar = dosyalar("src/app/api/cron").filter((y) => /route\.ts$/.test(y));
+  kontrol(`zamanlanmış iş ucu tabanı DOLU (≥7, bulunan ${uclar.length})`, uclar.length >= 7);
+  const betikler = new Set<string>();
+  for (const u of uclar) {
+    const k = yorumsuz(kaynakOku(u));
+    kontrol(`${u.replace(/\\/g, "/")} firma döngüsünden geçer`, /await zamanlanmisIsDongusu\(\{ kanalAnahtariGerekir: (true|false) \}/.test(k));
+    for (const m of k.matchAll(/from "(?:\.\.\/)+scripts\/([\w-]+)"/g)) betikler.add(m[1]!);
+  }
+  kontrol(`uçların çağırdığı betik tabanı DOLU (≥8, bulunan ${betikler.size})`, betikler.size >= 8);
+  for (const b of betikler) {
+    const k = yorumsuz(kaynakOku(`scripts/${b}.ts`));
+    kontrol(`scripts/${b}.ts süzgeçsiz istemci kurmuyor`, !/new PrismaClient\(/.test(k));
+  }
+}
+
+/* Anayasa: «ölçüt bloğu özet ve çıkış kodundan ÖNCE koşar» — async blok
+   bitmeden özet basılmaz; çökerse GEÇERSİZ. */
+donguOlc().then(
+  () => {
+    console.log("\n" + (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") + ` (${gecen}/${gecen + hata})\n`);
+    process.exit(hata === 0 ? 0 : 1);
+  },
+  (e) => {
+    console.log("\nDÖNGÜ ÖLÇÜMÜ ÇÖKTÜ — sonuç GEÇERSİZ:", e instanceof Error ? e.message : e);
+    process.exit(1);
+  },
+);

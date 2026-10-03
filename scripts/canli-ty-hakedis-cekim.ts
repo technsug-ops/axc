@@ -44,9 +44,7 @@
  *  pencereli tek seferlik bir koşum gerekir: `--gun=300` gibi.
  * ============================================================================
  */
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-import { PrismaClient } from "../src/generated/prisma/client";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumSayfalar, UCLAR } from "./ty/istemci";
@@ -60,6 +58,9 @@ import {
   tyApiSatirlariniOku,
   type TyFinansKaydi,
 } from "../src/lib/hakedis/ty-api-oku";
+import { betikFirmasiylaKos } from "./betik-firmasi";
+import { firmaIstemcisi } from "../src/lib/firma-istemcisi";
+import { zorunluFirma } from "../src/lib/firma-baglami";
 
 const GUN_MS = 86_400_000;
 const PENCERE_GUN = 15;
@@ -119,6 +120,8 @@ export type TyHakedisCekimOzeti = {
 export async function tyHakedisCekimKos(ayar: {
   yaz: boolean;
   dbAdresi?: string;
+  /** K303: firma — zamanlanmış iş döngüsü ya da `--firma=` verir; yoksa HATA. */
+  companyId?: string;
   /** Kaç gün geriye taranacak. Günlük koşum 45 yeterli; geçmiş açığı
    *  kapatmak için tek seferlik geniş bir değer (ör. 300) verilir. */
   taramaGun?: number;
@@ -141,7 +144,7 @@ export async function tyHakedisCekimKos(ayar: {
     }
     dbAdresi = betikAdresi(c.veri.ham);
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(dbAdresi) });
+  const prisma = firmaIstemcisi(dbAdresi, zorunluFirma(ayar.companyId, "tyHakedisCekimKos"));
 
   console.log("\n" + "=".repeat(100));
   console.log("TY HAKEDİŞ — API ÇEKİM " + (YAZ ? "⚠ YAZIM" : "(KURU KOŞUM, yazmaz)"));
@@ -565,7 +568,7 @@ const dogrudanKosuluyor = (() => {
 if (dogrudanKosuluyor) {
   const gunArg = process.argv.find((a) => a.startsWith("--gun="));
   const taramaGun = gunArg ? Number(gunArg.split("=")[1]) || TARAMA_GUN_VARSAYILAN : undefined;
-  tyHakedisCekimKos({ yaz: process.argv.includes("--yaz"), taramaGun }).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => tyHakedisCekimKos({ yaz: process.argv.includes("--yaz"), taramaGun, companyId })).catch((e) => {
     console.error("HATA:", e instanceof Error ? e.stack : e);
     process.exit(1);
   });

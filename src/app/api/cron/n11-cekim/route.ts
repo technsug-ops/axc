@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
 
 import { n11CekimKos } from "../../../../../scripts/canli-n11-ice-aktar";
 
@@ -37,8 +38,15 @@ export async function GET(istek: NextRequest) {
   if (dbAdresi === "") {
     return NextResponse.json({ hata: "VERITABANI_TANIMSIZ" }, { status: 500 });
   }
-  const ozet = await n11CekimKos({ yaz: true, dbAdresi });
+  /**
+   * K303 Aşama 3b: iş firma firma döner (`lib/firma-dongusu.ts`). Kanal anahtarı
+   * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
+   * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
+   */
+  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, (companyId) =>
+    n11CekimKos({ yaz: true, dbAdresi, companyId }),
+  );
   /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek
      olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü. */
-  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });
+  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => "atlandi" in o) });
 }

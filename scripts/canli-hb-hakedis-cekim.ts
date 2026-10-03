@@ -33,9 +33,7 @@
  *  ayrıca ölçüldü.
  * ============================================================================
  */
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-import { PrismaClient } from "../src/generated/prisma/client";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { apiGet, baslikKur, kimlikOku, UCLAR } from "./hb/istemci";
@@ -44,6 +42,9 @@ import { satirlariEslestir } from "../src/lib/hakedis/eslestir";
 import { satirAnahtari } from "../src/lib/hakedis/okuyucu";
 import { izYaz } from "../src/lib/iz";
 import { hbApiSatirlariniOku, type HbFinansKaydi } from "../src/lib/hakedis/hb-api-oku";
+import { betikFirmasiylaKos } from "./betik-firmasi";
+import { firmaIstemcisi } from "../src/lib/firma-istemcisi";
+import { zorunluFirma } from "../src/lib/firma-baglami";
 
 const GUN_MS = 86_400_000;
 const PENCERE_GUN = 29;
@@ -75,6 +76,8 @@ export type HbHakedisCekimOzeti = {
 export async function hbHakedisCekimKos(ayar: {
   yaz: boolean;
   dbAdresi?: string;
+  /** K303: firma — zamanlanmış iş döngüsü ya da `--firma=` verir; yoksa HATA. */
+  companyId?: string;
   taramaGun?: number;
 }): Promise<HbHakedisCekimOzeti | { atlandi: "KIMLIK" | "VERITABANI" | "HESAP" }> {
   const YAZ = ayar.yaz;
@@ -96,7 +99,7 @@ export async function hbHakedisCekimKos(ayar: {
     }
     dbAdresi = betikAdresi(c.veri.ham);
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(dbAdresi) });
+  const prisma = firmaIstemcisi(dbAdresi, zorunluFirma(ayar.companyId, "hbHakedisCekimKos"));
 
   console.log("\n" + "=".repeat(100));
   console.log("HB HAKEDİŞ — API ÇEKİM " + (YAZ ? "⚠ YAZIM" : "(KURU KOŞUM, yazmaz)"));
@@ -472,7 +475,7 @@ const dogrudanKosuluyor = (() => {
 if (dogrudanKosuluyor) {
   const gunArg = process.argv.find((a) => a.startsWith("--gun="));
   const taramaGun = gunArg ? Number(gunArg.split("=")[1]) || TARAMA_GUN_VARSAYILAN : undefined;
-  hbHakedisCekimKos({ yaz: process.argv.includes("--yaz"), taramaGun }).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => hbHakedisCekimKos({ yaz: process.argv.includes("--yaz"), taramaGun, companyId })).catch((e) => {
     console.error("HATA:", e instanceof Error ? e.stack : e);
     process.exit(1);
   });

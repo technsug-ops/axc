@@ -56,3 +56,14 @@ export async function aktifFirmaKimligi(): Promise<string | null> {
     throw e;
   }
 }
+
+/**
+ * Çekim betiklerinin firması: açıkça verilen, yoksa açık bağlam. İkisi de
+ * yoksa HATA — «parametresiz koşum HATA verir» (tasarım §5). Oturuma BAKMAZ:
+ * betik ve zamanlanmış işin oturumu yoktur.
+ */
+export function zorunluFirma(verilen: string | undefined, yer: string): string {
+  const id = verilen ?? acikFirmaBaglami();
+  if (!id) throw new Error(`FIRMA_BAGLAMI_YOK: ${yer} firmasız çağrıldı (--firma=<kod> ya da zamanlanmış iş döngüsü)`);
+  return id;
+}

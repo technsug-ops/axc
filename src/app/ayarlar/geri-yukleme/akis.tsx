@@ -117,7 +117,9 @@ export function GeriYuklemeAkisi({
                                 ? t("hataSayimTutmadi")
                                 : kod === "ONAY_YANLIS"
                                   ? t("hataOnayYanlis")
-                                  : t("hataBilinmeyen");
+                                  : kod === "COK_FIRMA_KAPALI"
+                                    ? t("hataCokFirma")
+                                    : t("hataBilinmeyen");
 
   function govdeKur(onayMetni?: string) {
     const govde = new FormData();

@@ -29,6 +29,7 @@ import {
   tarihselKipKontrol,
 } from "../src/lib/iade";
 import { prisma } from "../src/lib/prisma";
+import { bekciFirmasiylaKos } from "./betik-firmasi";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -1056,4 +1057,5 @@ async function cezaTesti() {
  */
 iadeNotuEkranda();
 
-void cezaTesti();
+/* K303 3b: ortak istemci firmaya süzülür — bekçi yerel veritabanının firmasının BAĞLAMINDA koşar. */
+void bekciFirmasiylaKos(() => cezaTesti());

@@ -35,7 +35,8 @@ import { dbAdresiAyikla, dbSaglikliMi } from "../src/lib/db-saglik";
  *
  * `npx prisma format` dosyayı CRLF'e çevirdi ve enum ayrıştıran kontrol
  * SESSİZCE 0 değer buldu: `split("
-")` sonrası satırlar `` ile
+")` sonrası satırlar `
+` ile
  * bitiyor, `/\/\/.*$/` deseni `$`i bulamadığı için yorum SİLİNMİYOR ve
  * `^[A-Z_]+$` testi düşüyor.
  *
@@ -53,7 +54,9 @@ import {
   YEDEK_TABLOLARI,
   yedegiMetneCevir,
   yedekUret,
-} from "../src/lib/yedek";
+} from "../src/lib/yedek";
+import { bekciFirmasiylaKos } from "./betik-firmasi";
+
 
 let basarisiz = 0;
 let calisan = 0;
@@ -692,7 +695,8 @@ async function main() {
   console.log("");
 }
 
-main().catch(async (e) => {
+/* K303 3b: ortak istemci firmaya süzülür — bekçi yerel veritabanının firmasının BAĞLAMINDA koşar. */
+bekciFirmasiylaKos(() => main()).catch(async (e) => {
   console.error("BEKLENMEYEN HATA:", e);
   await prisma.$disconnect();
   process.exitCode = 1;

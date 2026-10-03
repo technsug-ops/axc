@@ -110,12 +110,19 @@ kontrol("çekim çekirdeği çağıran rota bulundu (taban DOLU, >= 3)", cekimRo
  * (K-liste kararı, çevrilmedi). Ortak olan şey: SON `NextResponse.json`
  * çağrısı `status:` taşır ve atlandı dalı 200 DEĞİLDİR.
  */
+/**
+ * ⚠ ÖLÇÜT GÜNCELLENDİ (K303 Aşama 3b, 03.10.2026) — eski ölçüt yukarıda
+ * anlatılıyor; NİYE ESKİDİĞİ: rotalar artık firma firma dönüyor ve 503 kararı
+ * ORTAK gövdede (`donguDurumKodu`, `firma-suzgeci:dogrula` ⑥'da DEĞERLE
+ * sınanıyor). Rotaya düşen tek iş «atlandı»yı tanıyan yüklemi vermek: yüklem
+ * `atlandi` ya da `dusen`e bakmalı — `() => false` atlanan çekimi 200 ile örter.
+ */
 for (const dosya of cekimRotalari) {
   const metin = kaynakOku(dosya);
   const sonCevap = metin.slice(metin.lastIndexOf("NextResponse.json("));
   kontrol(
-    `${urlYolu(dosya)} → atlandı ise 503/500, koştuysa 200 (son cevapta status var)`,
-    /status: [^}]*\? 50[03] : 200/.test(sonCevap),
+    `${urlYolu(dosya)} → atlandı ise 503, koştuysa 200 (son cevap donguDurumKodu + atlandı yüklemi)`,
+    /status: donguDurumKodu\(sonuc, \(o\) => [^)]*?(?:"atlandi" in o|o\.dusen > 0)/.test(sonCevap),
   );
 }
 

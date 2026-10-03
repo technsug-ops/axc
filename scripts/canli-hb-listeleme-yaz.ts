@@ -2,6 +2,7 @@ import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumKayitlar, UCLAR } from "./hb/istemci";
 import { hbHesabiCoz, hbHesapHatasi } from "../src/lib/kanal-hesabi-hb";
+import { betikFirmasiylaKos } from "./betik-firmasi";
 
 /**
  * ============================================================================
@@ -338,7 +339,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  hbListelemeCekimKos({ yaz: process.argv.includes("--uygula") })
+  betikFirmasiylaKos(undefined, () => hbListelemeCekimKos({ yaz: process.argv.includes("--uygula") }))
     .then((o) => {
       /** ⛔ HATA SESSİZ GEÇMEZ: çıkış kodu da düşer. */
       if ("atlandi" in o || o.hata > 0) process.exitCode = 1;

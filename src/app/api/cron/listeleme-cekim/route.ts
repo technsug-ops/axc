@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
 
 import { hbListelemeCekimKos } from "../../../../../scripts/canli-hb-listeleme-yaz";
 import { tyListelemeCekimKosGuvenli } from "../../../../../scripts/canli-kanal-listeleme-yaz";
@@ -75,6 +76,13 @@ export async function GET(istek: NextRequest) {
    * ⛔ SIRALI KOŞUYOR, PARALEL DEĞİL: ikisi de `process.env.DATABASE_URL`
    * yazıyor ve aynı anda koşsalar biri ötekinin adresini ezerdi.
    */
+  /**
+   * K303 Aşama 3b: iş firma firma döner (`lib/firma-dongusu.ts`). Kanal anahtarı
+   * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
+   * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
+   */
+  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, async (companyId) => {
+  void companyId; // listeleme gövdeleri ortak istemciyi kullanır; firma bağlamdan gelir
   const tyBasladi = Date.now();
   const ty = await tyListelemeCekimKosGuvenli({ yaz: true, dbAdresi });
   const tyMs = Date.now() - tyBasladi;
@@ -100,8 +108,7 @@ export async function GET(istek: NextRequest) {
    * tetikte 60 sn yetmedi ve elimizde hiçbir sayı yoktu; 504 zamanlama
    * bilgisi vermiyor. Bundan sonra her koşum kendi maliyetini söylüyor.
    */
-  return NextResponse.json(
-    { ty, tyMs, hb, hbMs, n11, n11Ms, toplamMs: tyMs + hbMs + n11Ms, dusen },
-    { status: dusen > 0 ? 500 : 200 },
-  );
+  return { ty, tyMs, hb, hbMs, n11, n11Ms, toplamMs: tyMs + hbMs + n11Ms, dusen };
+  });
+  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => o.dusen > 0) });
 }

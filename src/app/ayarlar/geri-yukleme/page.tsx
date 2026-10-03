@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { tamSistemIslemiAcikMi } from "@/lib/firma-dongusu";
 import { sayfaIzni } from "@/lib/yetki";
 import { ShieldAlert } from "lucide-react";
 
@@ -34,6 +35,7 @@ export default async function GeriYuklemeSayfasi() {
   await sayfaIzni("veri.aktar");
 
   const t = await getTranslations("GeriYukleme");
+  const tamSistemAcik = await tamSistemIslemiAcikMi();
 
   const depoBagli = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 
@@ -80,7 +82,16 @@ export default async function GeriYuklemeSayfasi() {
         </p>
       </div>
 
-      {!depoBagli ? (
+      {!tamSistemAcik ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("cokFirmaBaslik")}</CardTitle>
+          </CardHeader>
+          <CardContent className="text-muted-foreground text-sm">
+            <p>{t("cokFirmaMetin")}</p>
+          </CardContent>
+        </Card>
+      ) : !depoBagli ? (
         <Card>
           <CardHeader>
             <CardTitle>{t("depoYokBaslik")}</CardTitle>

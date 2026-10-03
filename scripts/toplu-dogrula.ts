@@ -22,6 +22,7 @@ import "dotenv/config";
 
 import { prisma } from "../src/lib/prisma";
 import { topluGuncelle } from "../src/lib/toplu-guncelle";
+import { bekciFirmasiylaKos } from "./betik-firmasi";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -230,7 +231,8 @@ async function main() {
   console.log("");
 }
 
-main().catch(async (e) => {
+/* K303 3b: ortak istemci firmaya süzülür — bekçi yerel veritabanının firmasının BAĞLAMINDA koşar. */
+bekciFirmasiylaKos(() => main()).catch(async (e) => {
   console.error("BEKLENMEYEN HATA:", e);
   await prisma.$disconnect();
   process.exitCode = 1;

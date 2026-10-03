@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma, sistemPrisma } from "@/lib/prisma";
 
 import { YEDEK_SURUMU, YEDEK_TABLOLARI, type YedekDosyasi } from "./yedek-bicim";
 
@@ -48,7 +48,13 @@ export async function yedekUret(
    * yedekler. 12.08.2026'da kimlik göçünde tam olarak bu oldu — göç canlıya,
    * yedek yerele gidecekti. Sahte güvenlik ağı, hiç ağ olmamasından kötüdür.
    */
-  istemci: typeof prisma = prisma,
+  /**
+   * SISTEM: tam yedek BÜTÜN firmaları kapsar (K303 3b). Süzgeçli istemciyle
+   * gece yedeği oturumsuz koştuğu için düşer, ekrandaki yedek de karışık
+   * (bir firma + ortak tablolar) alınırdı. Çok firmada ekran kapısı:
+   * `tamSistemIslemiAcikMi` (lib/firma-dongusu.ts).
+   */
+  istemci: typeof prisma = sistemPrisma,
 ): Promise<YedekDosyasi> {
   // Sıra YEDEK_TABLOLARI ile aynıdır — bağımlılık sırası.
   const tablolar: Record<string, unknown[]> = {

@@ -18,6 +18,10 @@ const ISTEMCI = "src/lib/prisma.ts";
 const BAGLAM = "src/lib/firma-baglami.ts";
 const IZ = "src/lib/iz.ts";
 const HARITA = "src/lib/firma-modelleri.uretilmis.ts";
+const UZANTI = "src/lib/firma-istemcisi.ts";
+const DONGU = "src/lib/firma-dongusu.ts";
+const UC = "src/app/api/cron/ozet-uret/route.ts";
+const CEKIM = "scripts/canli-n11-ice-aktar.ts";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -46,7 +50,7 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ORTAK MODEL DE SUZULUYOR", yon: "FAZLADAN", dosya: SUZGEC,
     bul: "  if (!model || !firmaModeliMi(model)) return a;\n", koy: "  if (!model) return a;\n",
     bozdugu: "kanal/kullanici gibi ortak tablolar bozulur" },
-  { ad: "ISTEMCI: BAGLAMSIZ SORGU GECIYOR", yon: "KALDIRAN", dosya: ISTEMCI,
+  { ad: "ISTEMCI: BAGLAMSIZ SORGU GECIYOR", yon: "KALDIRAN", dosya: UZANTI,
     bul: '            throw new FirmaBaglamiHatasi("FIRMA_BAGLAMI_YOK", `${model}.${operation}`);', koy: "            return query(args);",
     bozdugu: "firma bilinmiyorsa HEPSI gorunur" },
   { ad: "ISTEMCI: DISARIYA SUZGECSIZ VEKIL", yon: "KALDIRAN", dosya: ISTEMCI,
@@ -64,6 +68,40 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "HARITA BAYAT", yon: "KALDIRAN", dosya: HARITA,
     bul: '  "AiOzet": {\n    "firma": true,', koy: '  "AiOzet": {\n    "firma": false,',
     bozdugu: "semaya uymayan harita bir tabloyu suzgecsiz birakir" },
+  /* ── 3b ── */
+  { ad: "BETIK ISTEMCISI SUZGECSIZ", yon: "KALDIRAN", dosya: UZANTI,
+    bul: "  return suzgecUzat(ham, () => companyId);", koy: "  return ham;",
+    bozdugu: "cekim betigi butun firmalarin satirini gorur" },
+  { ad: "ORTAK ISTEMCI GOVDEDEN KOPTU", yon: "KALDIRAN", dosya: ISTEMCI,
+    bul: "  suzgecli = suzgecUzat(istemciyiAl(), aktifFirmaKimligi);", koy: "  suzgecli = istemciyiAl();",
+    bozdugu: "web istekleri suzgecsiz" },
+  { ad: "DONGU: ANAHTARSIZ FIRMADA DA KOSUYOR", yon: "FAZLADAN", dosya: DONGU,
+    bul: "    kosacaklar = [secim.firma];\n", koy: "",
+    bozdugu: "Axcali anahtariyla Damisell adina cekim" },
+  { ad: "DONGU: BEYANSIZ ILK FIRMAYI SECIYOR", yon: "FAZLADAN", dosya: DONGU,
+    bul: '  return { tamam: false, sebep: "BEYAN_GEREKLI" };', koy: "  return { tamam: true, firma: aktifFirmalar[0]! };",
+    bozdugu: "ikinci firma dogunca anahtar sessizce rastgele firmaya gider" },
+  { ad: "DONGU: BAGLAMSIZ KOSUYOR", yon: "KALDIRAN", dosya: DONGU,
+    bul: "      const sonuc = await firmaBaglamindaCalistir(f.id, () => is(f.id));", koy: "      const sonuc = await is(f.id);",
+    bozdugu: "cekimin icindeki yardimcilar FIRMA_BAGLAMI_YOK ile duser" },
+  { ad: "DONGU: BIR FIRMANIN HATASI HEPSINI DURDURUYOR", yon: "KALDIRAN", dosya: DONGU,
+    bul: '      firmalar.push({ firma: etiket, durum: "HATA", hata });\n', koy: "      throw e;\n",
+    bozdugu: "bir firmanin hatasi oteki firmalarin cekimini keser" },
+  { ad: "DONGU: BOS LISTE GECIYOR", yon: "KALDIRAN", dosya: DONGU,
+    bul: '  if (aktifFirmalar.length === 0) return { tamam: false, sebep: "AKTIF_FIRMA_YOK" };\n  let kosacaklar', koy: "  let kosacaklar",
+    bozdugu: "hic firma yokken zamanlayici yesil gorur" },
+  { ad: "DURUM KODU: FIRMA HATASI 200", yon: "KALDIRAN", dosya: DONGU,
+    bul: '(f) => f.durum === "HATA" || (', koy: "(f) => (",
+    bozdugu: "patlayan firma zamanlayicida yesil" },
+  { ad: "UC DONGUYU ATLIYOR", yon: "KALDIRAN", dosya: UC,
+    bul: "await zamanlanmisIsDongusu({ kanalAnahtariGerekir: false }, () => ozetUretKos());", koy: "(await ozetUretKos()) as never;",
+    bozdugu: "zamanlanmis is baglamsiz/firmasiz kosar" },
+  { ad: "CEKIM BETIGI KENDI ISTEMCISINE DONDU", yon: "KALDIRAN", dosya: CEKIM,
+    bul: 'firmaIstemcisi(dbAdresi, zorunluFirma(ayar.companyId, "n11CekimKos"))', koy: "new PrismaClient({ adapter: undefined as never })",
+    bozdugu: "N11 cekimi suzgecsiz yazar" },
+  { ad: "ZORUNLU FIRMA GEVSEDI", yon: "KALDIRAN", dosya: BAGLAM,
+    bul: "  if (!id) throw new Error(`FIRMA_BAGLAMI_YOK:", koy: "  if (false) throw new Error(`FIRMA_BAGLAMI_YOK:",
+    bozdugu: "firmasiz betik kosumu gecer" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

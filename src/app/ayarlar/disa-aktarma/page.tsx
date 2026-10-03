@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { tamSistemIslemiAcikMi } from "@/lib/firma-dongusu";
 import { sayfaIzni } from "@/lib/yetki";
 import { Database, Download, TriangleAlert } from "lucide-react";
 
@@ -21,6 +22,7 @@ export default async function DisaAktarmaSayfasi() {
   await sayfaIzni("veri.aktar");
 
   const t = await getTranslations("DisaAktarma");
+  const tamYedekAcik = await tamSistemIslemiAcikMi();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -57,6 +59,12 @@ export default async function DisaAktarmaSayfasi() {
         <CardContent className="space-y-3">
           <p className="text-muted-foreground text-sm">{t("yedekMetin")}</p>
 
+          {!tamYedekAcik ? (
+            <p className={`flex gap-2 rounded-md p-3 text-sm ${DURUM_KUTUSU.uyari}`}>
+              <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+              <span>{t("cokFirmaYedekKapali")}</span>
+            </p>
+          ) : (
           <div className="flex flex-wrap gap-2">
             <Button asChild>
               <a href="/api/yedek">
@@ -71,6 +79,7 @@ export default async function DisaAktarmaSayfasi() {
               </a>
             </Button>
           </div>
+          )}
 
           <p className="text-muted-foreground text-xs">{t("hafifYedekNotu")}</p>
 

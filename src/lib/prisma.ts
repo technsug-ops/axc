@@ -33,7 +33,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 import { havuzluAdres } from "@/lib/veritabani-adresi";
 import { aktifFirmaKimligi } from "@/lib/firma-baglami";
-import { argumanlariSuz, FirmaBaglamiHatasi, firmaModeliMi } from "@/lib/firma-suzgeci";
+import { suzgecUzat } from "@/lib/firma-istemcisi";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -88,20 +88,9 @@ let suzgecli: PrismaClient | undefined;
 
 function suzgecliyiAl(): PrismaClient {
   if (suzgecli) return suzgecli;
-  suzgecli = istemciyiAl().$extends({
-    query: {
-      $allModels: {
-        async $allOperations({ model, operation, args, query }) {
-          if (!firmaModeliMi(model)) return query(args);
-          const companyId = await aktifFirmaKimligi();
-          if (!companyId) {
-            throw new FirmaBaglamiHatasi("FIRMA_BAGLAMI_YOK", `${model}.${operation}`);
-          }
-          return query(argumanlariSuz(model, operation, args, companyId) as typeof args);
-        },
-      },
-    },
-  }) as unknown as PrismaClient;
+  // Süzgeç gövdesi betiklerle ORTAK (`lib/firma-istemcisi.ts`); burada yalnız
+  // firmanın nereden bulunduğu verilir: açık bağlam, yoksa oturum.
+  suzgecli = suzgecUzat(istemciyiAl(), aktifFirmaKimligi);
   return suzgecli;
 }
 

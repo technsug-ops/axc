@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
 
 import { hbHakedisCekimKos } from "../../../../../scripts/canli-hb-hakedis-cekim";
 
@@ -30,7 +31,14 @@ export async function GET(istek: NextRequest) {
   if (dbAdresi === "") {
     return NextResponse.json({ hata: "VERITABANI_TANIMSIZ" }, { status: 500 });
   }
-  const ozet = await hbHakedisCekimKos({ yaz: true, dbAdresi });
+  /**
+   * K303 Aşama 3b: iş firma firma döner (`lib/firma-dongusu.ts`). Kanal anahtarı
+   * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
+   * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
+   */
+  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, (companyId) =>
+    hbHakedisCekimKos({ yaz: true, dbAdresi, companyId }),
+  );
   /* K264: «atlandı» 200 DEĞİL 503 — zamanlayıcının yeşili «koştu» demek olsun. */
-  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });
+  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => "atlandi" in o) });
 }

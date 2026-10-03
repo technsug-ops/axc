@@ -28,6 +28,8 @@ import { kaynagiOku, metniCoz } from "../ortak";
  * ============================================================================
  */
 
+import { tamSistemIslemiAcikMi } from "@/lib/firma-dongusu";
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
@@ -36,6 +38,10 @@ const KLASOR = "yedek";
 export async function POST(istek: Request) {
   const red = await apiIzni("veri.aktar");
   if (red) return red;
+  /* K303 3b: geri yükleme BÜTÜN tabloları boşaltır — çok firmada kapalı. */
+  if (!(await tamSistemIslemiAcikMi())) {
+    return Response.json({ durum: "COK_FIRMA_KAPALI" }, { status: 409 });
+  }
 
   // İstek gövdesi bir kez okunabilir; onay da aynı formdan gelir.
   const kopya = istek.clone();

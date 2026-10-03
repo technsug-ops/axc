@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
 
 import { tyCekimKos } from "../../../../../scripts/canli-ty-ice-aktar";
 
@@ -51,8 +52,15 @@ export async function GET(istek: NextRequest) {
    * 3 dilim (DILIM_GUN 3): dakikada 3 istek. 7 günden eski siparişin teslimi
    * yine sabahki 60 günlük çekime kalır — bilerek kabul edilen sınır.
    */
-  const ozet = await tyCekimKos({ yaz: true, gun: 7, dbAdresi });
+  /**
+   * K303 Aşama 3b: iş firma firma döner (`lib/firma-dongusu.ts`). Kanal anahtarı
+   * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
+   * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
+   */
+  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, (companyId) =>
+    tyCekimKos({ yaz: true, gun: 7, dbAdresi, companyId }),
+  );
   /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek
      olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü. */
-  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });
+  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => "atlandi" in o) });
 }

@@ -24,6 +24,13 @@
  */
 export const YEDEK_TABLOLARI = [
   // --- kimseye bağlı olmayanlar ---
+  /**
+   * K303 Aşama 2/3b — `Company` EN BAŞTA: firmaya ait 49 tablo `companyId`
+   * ile ona bağlı. Eskiden `StockAdjustmentReason`dan sonra duruyordu (o gün
+   * kimse ona bağlı değildi); öyle kalsaydı geri yükleme ilk firmalı tabloda
+   * yabancı anahtarla düşerdi. `yedek:dogrula` sıra bekçisi yakaladı.
+   */
+  "Company",
   "Category",
   /** K283 — `Category`ye bağlı (categoryId, SetNull); kategoriden SONRA. */
   "TyKategoriEslesme",
@@ -43,7 +50,6 @@ export const YEDEK_TABLOLARI = [
   "Supplier",
   "User",
   "StockAdjustmentReason",
-  "Company",
   "Role",
   // --- yetki: rol izinleri ve üyelikler ---
   "RolePermission",

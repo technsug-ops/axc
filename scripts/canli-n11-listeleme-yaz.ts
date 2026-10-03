@@ -1,6 +1,7 @@
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { apiGet, baslikKur, kimlikOku } from "./n11/istemci";
+import { betikFirmasiylaKos } from "./betik-firmasi";
 
 /**
  * ============================================================================
@@ -285,7 +286,7 @@ const dogrudanKosuluyor = (() => {
   return /canli-n11-listeleme-yaz\.(ts|js)$/.test(giris.split("\\").join("/"));
 })();
 if (dogrudanKosuluyor) {
-  n11ListelemeCekimKos({ yaz: process.argv.includes("--uygula") })
+  betikFirmasiylaKos(undefined, () => n11ListelemeCekimKos({ yaz: process.argv.includes("--uygula") }))
     .then((o) => {
       if ("atlandi" in o || o.hata > 0) process.exitCode = 1;
     })

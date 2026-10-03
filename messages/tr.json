@@ -2037,7 +2037,8 @@
     "yedekKactiNe": "Otomatik yedek o günlerde çalışmamış. \"Şimdi yedek al\" bugünü kurtarır ama geçmiş günler geri gelmez.",
     "yedekReddedildi": "Yedek ucuna {sayi} yetkisiz çağrı geldi",
     "yedekReddedildiNe": "Biri ucu çağırdı ama doğru anahtarı göndermedi. Kaynak \"vercel\" ise zamanlayıcı çağırıyor demektir ve sorun anahtarın gönderilmemesindedir. Günde en fazla bir kayıt tutulur.",
-    "yedekCagiranlar": "Yedeği kim aldı (son çağrılar)"
+    "yedekCagiranlar": "Yedeği kim aldı (son çağrılar)",
+    "cokFirmaYedekKapali": "Bu kurulumda birden çok firma var. Tam yedek bütün firmaların verisini içerdiği için ekrandan indirilemez; firma başına yedek henüz yok. Kendi verinizi yukarıdaki Excel dışa aktarmasıyla alabilirsiniz. Gece yedeği çalışmaya devam ediyor."
   },
   "Giris": {
     "baslik": "Selliora",
@@ -2703,7 +2704,10 @@
     "hataBilinmeyen": "Beklenmeyen bir sorun oldu. Aşağıdaki ayrıntıyı kaydedip tekrar deneyin.",
     "girisKaybiBaslik": "DİKKAT: bu yedekte giriş hesabı YOK",
     "girisKaybiMetin": "Geri yükledikten sonra sisteme GİREMEZSİNİZ. Şu an kayıtlı olan giriş hesapları silinecek ve yedekten hiçbiri gelmeyecek.",
-    "girisKaybiCare": "Devam ederseniz hesabı yeniden oluşturmak için bilgisayarınızdan `npm run kullanici:olustur` çalıştırmanız gerekir. Bunu yapamayacaksanız bu dosyayı KULLANMAYIN."
+    "girisKaybiCare": "Devam ederseniz hesabı yeniden oluşturmak için bilgisayarınızdan `npm run kullanici:olustur` çalıştırmanız gerekir. Bunu yapamayacaksanız bu dosyayı KULLANMAYIN.",
+    "cokFirmaBaslik": "Geri yükleme bu kurulumda kapalı",
+    "cokFirmaMetin": "Bu kurulumda birden çok firma var. Geri yükleme bütün tabloları boşaltıp yedeği yazar; açık olsaydı bir firmanın geri yüklemesi öteki firmaların verisini silerdi. Firma başına geri yükleme henüz yok.",
+    "hataCokFirma": "Birden çok firma olduğu için geri yükleme kapalı — öteki firmaların verisi silinirdi."
   },
   "Bildirim": {
     "eklendi": "Kayıt eklendi.",

@@ -17,14 +17,15 @@
  *  11486752988 → API 141,42 = tarife(desi5, KDV hariç) 117,85 × 1,20 tam).
  * ============================================================================
  */
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-import { PrismaClient } from "../src/generated/prisma/client";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { apiGet, baslikKur, kimlikOku, tumSayfalar, UCLAR } from "./ty/istemci";
 import { izYaz } from "../src/lib/iz";
 import { satisKarTazele } from "../src/lib/kar-yeniden";
+import { betikFirmasiylaKos } from "./betik-firmasi";
+import { firmaIstemcisi } from "../src/lib/firma-istemcisi";
+import { zorunluFirma } from "../src/lib/firma-baglami";
 
 const GUN = 86_400_000;
 const TARAMA_GUN = 45;
@@ -53,6 +54,8 @@ export type TyKargoGercekOzeti = {
 export async function tyKargoGercekYazKos(ayar: {
   yaz: boolean;
   dbAdresi?: string;
+  /** K303: firma — zamanlanmış iş döngüsü ya da `--firma=` verir; yoksa HATA. */
+  companyId?: string;
 }): Promise<TyKargoGercekOzeti | { atlandi: "KIMLIK" | "VERITABANI" | "HESAP" }> {
   const YAZ = ayar.yaz;
   const kimlik = kimlikOku();
@@ -71,7 +74,7 @@ export async function tyKargoGercekYazKos(ayar: {
     }
     dbAdresi = betikAdresi(c.veri.ham);
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(dbAdresi) });
+  const prisma = firmaIstemcisi(dbAdresi, zorunluFirma(ayar.companyId, "tyKargoGercekYazKos"));
 
   console.log("\n" + "=".repeat(100));
   console.log("TY GERÇEK KARGO MALİYETİ " + (YAZ ? "⚠ YAZIM (yalnız boş kalemler)" : "(KURU KOŞUM, ölçer)"));
@@ -253,7 +256,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  tyKargoGercekYazKos({ yaz: process.argv.includes("--yaz") }).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => tyKargoGercekYazKos({ yaz: process.argv.includes("--yaz"), companyId })).catch((e) => {
     console.error("HATA:", e instanceof Error ? e.stack : e);
     process.exit(1);
   });

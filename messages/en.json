@@ -2037,7 +2037,8 @@
     "yedekKactiNe": "",
     "yedekReddedildi": "",
     "yedekReddedildiNe": "",
-    "yedekCagiranlar": ""
+    "yedekCagiranlar": "",
+    "cokFirmaYedekKapali": ""
   },
   "Giris": {
     "baslik": "",
@@ -2703,7 +2704,10 @@
     "hataBilinmeyen": "",
     "girisKaybiBaslik": "",
     "girisKaybiMetin": "",
-    "girisKaybiCare": ""
+    "girisKaybiCare": "",
+    "cokFirmaBaslik": "",
+    "cokFirmaMetin": "",
+    "hataCokFirma": ""
   },
   "Bildirim": {
     "eklendi": "",

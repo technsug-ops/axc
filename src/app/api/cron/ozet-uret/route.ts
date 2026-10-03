@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
 
 import { ozetUretKos } from "@/lib/ozet/orkestrasyon";
 
@@ -31,9 +32,11 @@ export async function GET(istek: NextRequest) {
     return new NextResponse(null, { status: 404 });
   }
 
-  const sonuc = await ozetUretKos();
-  if ("atlandi" in sonuc) {
-    return NextResponse.json({ atlandi: sonuc.atlandi }, { status: 200 });
-  }
-  return NextResponse.json(sonuc);
+  /**
+   * K303 Aşama 3b: özet HER aktif firma için kendi bağlamında üretilir (kanal
+   * anahtarı istemez). Özetin kendi «atlandı»sı (bugünkü zaten yayında) bir
+   * hata değildir — eskisi gibi 200.
+   */
+  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: false }, () => ozetUretKos());
+  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, () => false) });
 }

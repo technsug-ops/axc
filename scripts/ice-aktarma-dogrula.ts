@@ -2181,7 +2181,7 @@ kontrol(
   kontrol(
     "rota ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)",
     /* 02.10.2026: pencere 3 → 7 gün (kullanıcı kararı; gerekçe rota dosyasında). */
-    rota.includes("await tyCekimKos({ yaz: true, gun: 7, dbAdresi })"),
+    rota.includes("tyCekimKos({ yaz: true, gun: 7, dbAdresi, companyId })"),
   );
   const kapiBasi = rota.indexOf("if (sir === \"\" || gelen !== ");
   kontrol("sır kapısı VAR ve boş-sır da kapatıyor", kapiBasi >= 0);
@@ -2195,7 +2195,7 @@ kontrol(
   );
   kontrol(
     "betik modu da AYNI çekirdeği çağırıyor",
-    betik.includes("tyCekimKos({ yaz: YAZ, gun: GUN })"),
+    betik.includes("tyCekimKos({ yaz: YAZ, gun: GUN, companyId })"),
   );
 }
 
@@ -2212,9 +2212,10 @@ kontrol(
   const hbBetik = yorumsuz(kaynakOku("scripts/canli-hb-ice-aktar.ts"));
   const akis = kaynakOku(".github/workflows/ty-cekim.yml");
 
-  kontrol("HB ucu ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)", hbRota.includes("await hbCekimKos({"));
+  /* K303 3b (03.10.2026): çekirdek firma döngüsünden çağrılır, `companyId` taşır — ölçüt aynı, yazılış güncellendi. */
+  kontrol("HB ucu ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)", hbRota.includes("hbCekimKos({ yaz: true, dbAdresi, companyId })"));
   kontrol("çekirdek DIŞA AKTARILMIŞ", hbBetik.includes("export async function hbCekimKos("));
-  kontrol("betik kipi de AYNI çekirdeği çağırıyor", hbBetik.includes("await hbCekimKos({ yaz: YAZ, sadece: SADECE })"));
+  kontrol("betik kipi de AYNI çekirdeği çağırıyor", hbBetik.includes("hbCekimKos({ yaz: YAZ, sadece: SADECE, companyId })"));
 
   /** ⛔ SIR KAPISI — reddedilen istek 404 alır; rotanın VARLIĞI bile sızmaz. */
   const kapiBasi = hbRota.indexOf('if (sir === "" || gelen !== ');
@@ -2350,14 +2351,18 @@ kontrol(
    * Yalancı yeşilin en pahalı biçimi buydu: uç "atladım" diyor, HTTP 200
    * veriyor, akış GEÇİYOR. `BEKCI_TURU` bilerek istisna — o hata değil,
    * bilinçli duraksama. */
-  const atlamaBasi = hbRota.indexOf('if ("atlandi" in ozet)');
+  /* K303 3b: karar ortak gövdede (`donguDurumKodu` — atlandı → 503, değerle
+   * sınanıyor); rotanın işi yüklemi vermek. ESKİ ölçüt `if ("atlandi" in
+   * ozet)` dalında `status: 503`/`status: 200` arıyordu — niyet aynı. */
+  const atlamaBasi = hbRota.indexOf("const kimlikDustu =");
   kontrol("HB ucu ATLAMA dalını AYIRIYOR", atlamaBasi >= 0);
   const atlamaB = atlamaBasi >= 0 ? hbRota.slice(atlamaBasi, atlamaBasi + 700) : "";
-  kontrol("  ...kimliksiz/DB'siz koşum 503 döner (200 DEĞİL)", atlamaB.includes("status: 503"));
-  kontrol("  ...eksik değişken ADLARI gövdeye giriyor", atlamaB.includes("kimlikEksikleri()"));
+  const yuklem = 'donguDurumKodu(sonuc, (o) => "atlandi" in o && o.atlandi !== "BEKCI_TURU")';
+  kontrol("  ...kimliksiz/DB'siz koşum 503 döner (200 DEĞİL)", atlamaB.includes(yuklem));
+  kontrol("  ...eksik değişken ADLARI gövdeye giriyor", atlamaB.includes("...(kimlikDustu ? { eksikDegiskenler: kimlikEksikleri() } : {})"));
   kontrol(
     "  ...BEKCI_TURU istisna ve 200 kalıyor (doğru davranış arıza sayılmaz)",
-    /BEKCI_TURU[\s\S]{0,160}status: 200/.test(atlamaB),
+    atlamaB.includes(yuklem) && /f\.sonuc\.atlandi === "KIMLIK"/.test(atlamaB),
   );
   /**
    * ⛔ ÜÇ KANAL BAĞIMSIZ: birinin düşmesi ötekini engellemez. `if: always()`
@@ -2641,7 +2646,7 @@ kontrol(
   );
   kontrol(
     "rota ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)",
-    rota.includes("await n11CekimKos({ yaz: true, dbAdresi })"),
+    rota.includes("n11CekimKos({ yaz: true, dbAdresi, companyId })"),
   );
   const kapiBasi = rota.indexOf("if (sir === \"\" || gelen !== ");
   kontrol("sır kapısı VAR ve boş-sır da kapatıyor", kapiBasi >= 0);
@@ -2655,7 +2660,7 @@ kontrol(
   );
   kontrol(
     "betik modu da AYNI çekirdeği çağırıyor",
-    betik.includes("n11CekimKos({ yaz: YAZ })"),
+    betik.includes("n11CekimKos({ yaz: YAZ, companyId })"),
   );
 }
 
@@ -2968,7 +2973,7 @@ console.log("\nONAY DURUMU ETİKETİ");
   );
   /* Rotalar: atlandı → 503 (ayrıntı cron-yollari:dogrula'da; burada N11 rotası). */
   const rota = kaynakOku("src/app/api/cron/n11-cekim/route.ts");
-  kontrol("n11 rotası atlandı ise 503 dönüyor", /status: "atlandi" in ozet \? 503 : 200/.test(rota));
+  kontrol("n11 rotası atlandı ise 503 dönüyor", /status: donguDurumKodu\(sonuc, \(o\) => "atlandi" in o\)/.test(rota));
 }
 
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);

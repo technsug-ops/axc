@@ -1,7 +1,5 @@
 /** BETIK SINIFI: SUREKLI. Kanala YAZMAZ (GET); deftere yalniz --yaz ile yazar. */
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-import { PrismaClient } from "../src/generated/prisma/client";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
 import { desiSecimi } from "../src/lib/kargo-kaynagi";
 import { n11KargoMaliyeti } from "../src/lib/n11-kargo-tarifesi";
@@ -16,6 +14,9 @@ import { baslikKur, kimlikOku, tumPaketler } from "./n11/istemci";
 import { otomatikOnaylaKuyruk } from "../src/lib/onay-kuyrugu";
 import { otomatikIptalAdayiMi } from "../src/lib/satis-iptali";
 import { iptalOnizle, iptalUygula } from "../src/lib/satis-iptali-veri";
+import { betikFirmasiylaKos } from "./betik-firmasi";
+import { firmaIstemcisi } from "../src/lib/firma-istemcisi";
+import { zorunluFirma } from "../src/lib/firma-baglami";
 
 /**
  * ============================================================================
@@ -178,6 +179,8 @@ export async function n11CekimKos(ayar: {
   yaz: boolean;
   /** K166: sunucu ucundan DATABASE_URL; betikte boş → dosyadan. */
   dbAdresi?: string;
+  /** K303: firma — zamanlanmış iş döngüsü ya da `--firma=` verir; yoksa HATA. */
+  companyId?: string;
 }): Promise<
   | N11CekimOzeti
   | { atlandi: "BEKCI_TURU" | "KIMLIK" | "VERITABANI" | "CEKIM" | "HESAP" }
@@ -205,7 +208,7 @@ export async function n11CekimKos(ayar: {
     }
     dbAdresi = c.veri.ham;
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(dbAdresi) });
+  const prisma = firmaIstemcisi(dbAdresi, zorunluFirma(ayar.companyId, "n11CekimKos"));
   const okumaAni = new Date();
   const partiKimligi = `n11-${okumaAni.toISOString().slice(0, 19).replace(/[-:T]/g, "")}`;
 
@@ -860,7 +863,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  n11CekimKos({ yaz: YAZ }).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => n11CekimKos({ yaz: YAZ, companyId })).catch((e) => {
     console.error(e);
     process.exit(1);
   });

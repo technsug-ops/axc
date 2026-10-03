@@ -1,5 +1,4 @@
 /** BETIK SINIFI: SUREKLI. Kanala YAZMAZ (GET); deftere yalniz --yaz ile yazar. */
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { hbHesabiCoz, hbHesapHatasi, HB_KANAL_ADI } from "../src/lib/kanal-hesabi-hb";
@@ -19,6 +18,9 @@ import {
 import { hbIptalSebebiCoz, otomatikIptalAdayiMi } from "../src/lib/satis-iptali";
 import { iptalOnizle, iptalUygula } from "../src/lib/satis-iptali-veri";
 import { kargoTartimGeldiTazele } from "../src/lib/kargo-tartim-tazele";
+import { betikFirmasiylaKos } from "./betik-firmasi";
+import { firmaIstemcisi } from "../src/lib/firma-istemcisi";
+import { zorunluFirma } from "../src/lib/firma-baglami";
 
 /**
  * ============================================================================
@@ -218,6 +220,8 @@ export async function hbCekimKos(ayar: {
   /** Onay kapsamı — boş dizi = süzgeç yok. */
   sadece?: string[];
   dbAdresi?: string;
+  /** K303: firma — zamanlanmış iş döngüsü ya da `--firma=` verir; yoksa HATA. */
+  companyId?: string;
 }): Promise<
   HbCekimOzeti | { atlandi: "BEKCI_TURU" | "KIMLIK" | "VERITABANI" | "HESAP" }
 > {
@@ -246,7 +250,7 @@ export async function hbCekimKos(ayar: {
     console.log("\n⛔ CANLI ADRES OKUNAMADI\n");
     return { atlandi: "VERITABANI" };
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(adres) });
+  const prisma = firmaIstemcisi(adres, zorunluFirma(ayar.companyId, "hbCekimKos"));
   const baslik = baslikKur(k);
   const okumaAni = new Date();
   const partiKimligi = `hb-${okumaAni.toISOString().slice(0, 19).replace(/[-:T]/g, "")}`;
@@ -1297,7 +1301,7 @@ export async function hbCekimKos(ayar: {
  * Argümanlar burada okunur; çekirdek argv bilmez (sunucuda argv yok).
  */
 async function main() {
-  const ozet = await hbCekimKos({ yaz: YAZ, sadece: SADECE });
+  const ozet = await betikFirmasiylaKos(undefined, (companyId) => hbCekimKos({ yaz: YAZ, sadece: SADECE, companyId }));
   if ("atlandi" in ozet) {
     /** ⚠ Bekçi turu bir HATA DEĞİL — kırmızı dönmez, atlandı der. */
     if (ozet.atlandi !== "BEKCI_TURU") process.exitCode = 1;

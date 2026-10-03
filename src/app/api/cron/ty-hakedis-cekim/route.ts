@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
 
 import { tyHakedisCekimKos } from "../../../../../scripts/canli-ty-hakedis-cekim";
 import { tyKargoGercekYazKos } from "../../../../../scripts/canli-ty-kargo-gercek-olcum";
@@ -40,9 +41,17 @@ export async function GET(istek: NextRequest) {
   if (dbAdresi === "") {
     return NextResponse.json({ hata: "VERITABANI_TANIMSIZ" }, { status: 500 });
   }
-  const hakedis = await tyHakedisCekimKos({ yaz: true, dbAdresi });
-  const kargo = await tyKargoGercekYazKos({ yaz: true, dbAdresi });
+  /**
+   * K303 Aşama 3b: iş firma firma döner (`lib/firma-dongusu.ts`). Kanal anahtarı
+   * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
+   * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
+   */
+  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, async (companyId) => {
+    const hakedis = await tyHakedisCekimKos({ yaz: true, dbAdresi, companyId });
+    const kargo = await tyKargoGercekYazKos({ yaz: true, dbAdresi, companyId });
+    const dusen = [hakedis, kargo].filter((o) => "atlandi" in o).length;
+    return { hakedis, kargo, dusen };
+  });
   /* K264: iki işten biri «atlandı» ise 503 — zamanlayıcının yeşili «koştu» demek olsun. */
-  const dusen = [hakedis, kargo].filter((o) => "atlandi" in o).length;
-  return NextResponse.json({ hakedis, kargo, dusen }, { status: dusen > 0 ? 503 : 200 });
+  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => o.dusen > 0) });
 }

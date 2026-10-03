@@ -1,6 +1,4 @@
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
-import { PrismaClient } from "../src/generated/prisma/client";
 import { otomatikOnaylaKuyruk } from "../src/lib/onay-kuyrugu";
 import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
@@ -21,6 +19,9 @@ import {
 import { iptalOnizle, iptalUygula } from "../src/lib/satis-iptali-veri";
 import { otomatikIptalAdayiMi } from "../src/lib/satis-iptali";
 import { kargoTartimGeldiTazele } from "../src/lib/kargo-tartim-tazele";
+import { betikFirmasiylaKos } from "./betik-firmasi";
+import { firmaIstemcisi } from "../src/lib/firma-istemcisi";
+import { zorunluFirma } from "../src/lib/firma-baglami";
 
 /**
  * ============================================================================
@@ -209,6 +210,8 @@ export async function tyCekimKos(ayar: {
   gun: number;
   /** K166: sunucu ucundan DATABASE_URL; betikte boş → dosyadan. */
   dbAdresi?: string;
+  /** K303: firma — zamanlanmış iş döngüsü ya da `--firma=` verir; yoksa HATA. */
+  companyId?: string;
 }): Promise<TyCekimOzeti | { atlandi: "BEKCI_TURU" | "KIMLIK" | "VERITABANI" | "HESAP" }> {
   const YAZ = ayar.yaz;
   const GUN = Math.min(ayar.gun || 60, 90);
@@ -236,7 +239,7 @@ export async function tyCekimKos(ayar: {
     }
     dbAdresi = c.veri.ham;
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(dbAdresi) });
+  const prisma = firmaIstemcisi(dbAdresi, zorunluFirma(ayar.companyId, "tyCekimKos"));
   const baslik = baslikKur(k);
   const son = Date.now();
   const bas = son - GUN * GUN_MS;
@@ -947,7 +950,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  tyCekimKos({ yaz: YAZ, gun: GUN }).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => tyCekimKos({ yaz: YAZ, gun: GUN, companyId })).catch((e) => {
     console.error(e);
     process.exit(1);
   });

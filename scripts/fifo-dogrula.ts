@@ -27,6 +27,7 @@ import {
   SiparisNoCakismasiHatasi,
 } from "../src/lib/satis";
 import { kaynakOku } from "./kaynak-oku";
+import { bekciFirmasiylaKos } from "./betik-firmasi";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -556,4 +557,5 @@ async function ucanUca() {
   }
 }
 
-void ucanUca();
+/* K303 3b: ortak istemci firmaya süzülür — bekçi yerel veritabanının firmasının BAĞLAMINDA koşar. */
+void bekciFirmasiylaKos(() => ucanUca());

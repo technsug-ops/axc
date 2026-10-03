@@ -3,6 +3,7 @@ import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { kimlikOku, baslikKur, kesilmeMetni, tumSayfalar, UCLAR } from "./ty/istemci";
 import { v2KayitlariniNormallestir } from "./ty/urun-v2";
+import { betikFirmasiylaKos } from "./betik-firmasi";
 
 /**
  * ============================================================================
@@ -359,7 +360,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  void tyListelemeCekimKosGuvenli({ yaz: YAZ }).then(async (o) => {
+  void betikFirmasiylaKos(undefined, () => tyListelemeCekimKosGuvenli({ yaz: YAZ })).then(async (o) => {
     if ("atlandi" in o) process.exitCode = 1;
     /**
      * ⛔ BAĞLANTI YALNIZ CLI'DA KAPATILIR — GÖVDEDE DEĞİL.
