@@ -363,6 +363,11 @@ enum PurchaseStatus {
 
 model Product {
   id          String  @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   name        String
   description String? @db.Text
   brand       String?
@@ -434,6 +439,8 @@ model Product {
   @@index([tyKategori])
   @@index([isFavorite])
   @@index([needsReview])
+
+  @@index([companyId])
 }
 
 /// Elle atanan mevsim etiketi — yalnız YAZ/KIŞ (kullanıcı kararı
@@ -456,6 +463,11 @@ enum ProductSeason {
 model Category {
   id String @id @default(cuid())
 
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   name String @unique
 
   /// KİMLİK KISALTMASI — otomatik SKU'nun ilk parçası (OYU-LG-260707-01).
@@ -476,6 +488,8 @@ model Category {
   tyEslesmeleri TyKategoriEslesme[]
 
   @@index([isActive])
+
+  @@index([companyId])
 }
 /// K283 — KANAL KATEGORİSİ ↔ BİZİM KATEGORİ (kullanıcı kararı 26.09.2026).
 /// «Ürün adından karar vermek saçma, pazaryerleri ürünleri zaten kategorize
@@ -489,6 +503,11 @@ model Category {
 /// ikinci bir yeniden kodlamada ilk eski kod da kaybolmasın.
 model EskiKod {
   id        String         @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
   kod       String         @unique @db.VarChar(191)
@@ -497,6 +516,8 @@ model EskiKod {
   createdAt DateTime       @default(now())
 
   @@index([variantId])
+
+  @@index([companyId])
 }
 
 /// K285 — MARKA KOD TABLOSU (kullanıcı onayı 26.09.2026).
@@ -505,16 +526,28 @@ model EskiKod {
 /// (addan hesaplanan eski 2 harfli kısaltmada Karaca/Karcher çakışıyordu).
 model Brand {
   id        String    @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   name      String    @db.VarChar(191)
   anahtar   String    @unique @db.VarChar(191)
   code      String    @unique @db.VarChar(3)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   products  Product[]
+
+  @@index([companyId])
 }
 
 model TyKategoriEslesme {
   id         String    @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   tyKategori String    @unique @db.VarChar(191)
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -522,6 +555,8 @@ model TyKategoriEslesme {
   updatedAt  DateTime  @updatedAt
 
   @@index([categoryId])
+
+  @@index([companyId])
 }
 
 /// K283 — ürün kategorisinin kaynağı.
@@ -536,6 +571,11 @@ model ProductVariant {
   komisyonTarifeKalemleri KomisyonTarifeKalemi[]
 
   id        String  @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
@@ -612,6 +652,8 @@ model ProductVariant {
   @@index([isActive])
   @@index([locationId])
   @@index([sayimGecersizAt])
+
+  @@index([companyId])
 }
 
 /// Varyant seçenekleri (Beden=M, Renk=Kırmızı).
@@ -619,6 +661,11 @@ model ProductVariant {
 /// seçenek türleri şema değişikliği gerektirmez.
 model VariantOption {
   id        String         @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
@@ -627,6 +674,8 @@ model VariantOption {
 
   @@unique([variantId, name])
   @@index([name, value])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -664,6 +713,11 @@ model VariantOption {
 model DepoBolumu {
   id String @id @default(cuid())
 
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   /// Görünen ad — DEĞİŞEBİLİR ("Salon" → "Salon dolabı").
   ad String
 
@@ -687,10 +741,17 @@ model DepoBolumu {
   updatedAt DateTime @updatedAt
 
   @@index([isActive])
+
+  @@index([companyId])
 }
 
 model Location {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   /// ⚠ NULLABLE VE GERİ DOLDURULMUYOR — göç ONAYLANANA KADAR mevcut 41 raf
   /// bölümsüz kalır. Onaysız tek ad değişmez (K50); şema bunu zorlar.
@@ -726,6 +787,8 @@ model Location {
   @@index([isActive])
   /// ⚠ Raf listesi bölüm → ünite → göz sırasında okunur.
   @@index([bolumId, unite, goz])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -773,6 +836,11 @@ model Channel {
 
 model PenaltyTariff {
   id        String  @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   channelId String
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
@@ -788,6 +856,8 @@ model PenaltyTariff {
 
   @@unique([channelId, orderAmountUpTo, effectiveFrom])
   @@index([channelId, orderAmountUpTo])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -806,6 +876,11 @@ model PenaltyTariff {
 
 model ChannelFee {
   id        String  @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   channelId String
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
@@ -839,6 +914,8 @@ model ChannelFee {
 
   @@unique([channelId, code, validFrom])
   @@index([channelId, isActive])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -896,6 +973,11 @@ model ChannelAccount {
   komisyonTarifeleri KomisyonTarifesi[]
 
   id        String  @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   channelId String
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Restrict)
 
@@ -992,11 +1074,18 @@ model ChannelAccount {
   @@index([channelId])
   /// Yazıcılar hesabı BU alandan buluyor — dizin şart.
   @@index([apiHesapKimligi])
+
+  @@index([companyId])
 }
 
 /// Bir varyantın belirli bir kanal hesabındaki karşılığı.
 model ChannelSku {
   id               String         @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   channelAccountId String
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Cascade)
   variantId        String
@@ -1056,6 +1145,8 @@ model ChannelSku {
   @@unique([channelAccountId, channelSku])
   @@unique([channelAccountId, variantId])
   @@index([variantId])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -1068,6 +1159,11 @@ model ChannelSku {
 
 model CreditCard {
   id         String  @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   label      String // "Garanti Bonus ***4321"
   bankName   String?
   last4      String  @db.Char(4)
@@ -1106,6 +1202,8 @@ model CreditCard {
   gecmisEkstreler GecmisEkstre[]
 
   @@index([isActive])
+
+  @@index([companyId])
 }
 
 /// KART EKSTRE ÖDEMESİ — bir ekstre dönemi için bir ödeme kaydı.
@@ -1124,6 +1222,11 @@ model CreditCard {
 /// önce ₺X ödenmiş, kalan ₺Y — yine de ekle?" uyarısıyla yakalanır.
 model KartOdeme {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   cardId String
   card   CreditCard @relation(fields: [cardId], references: [id], onDelete: Restrict)
@@ -1187,6 +1290,8 @@ model KartOdeme {
   @@index([cardId, donem])
   @@index([odemeTarihi])
   @@index([kaynak])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -1211,6 +1316,11 @@ model KartOdeme {
 model Finansman {
   id String @id @default(cuid())
 
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   tur FinansmanTuru
   /// Kimden — kişi, ortak, kurum ya da banka adı. VERİDİR (yapıya gömülmez).
   kaynakAdi String   @db.VarChar(191)
@@ -1233,10 +1343,17 @@ model Finansman {
   hareketler FinansmanHareketi[]
 
   @@index([tur])
+
+  @@index([companyId])
 }
 
 model FinansmanHareketi {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   finansmanId String
   finansman   Finansman @relation(fields: [finansmanId], references: [id], onDelete: Restrict)
@@ -1273,6 +1390,8 @@ model FinansmanHareketi {
   @@index([finansmanId])
   @@index([vade])
   @@index([gerceklestiAt])
+
+  @@index([companyId])
 }
 
 /// K304-② — BİRİM FİYATI (TL). Güncel TL karşılığı için KULLANICININ girdiği
@@ -1281,6 +1400,11 @@ model FinansmanHareketi {
 /// Geçmiş silinmez — en yeni kayıt okunur (fiyatın nasıl değiştiği bilgidir).
 model FinansmanBirimFiyati {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   birim      FinansmanBirimi
   /// 1 birimin TL fiyatı.
@@ -1291,6 +1415,8 @@ model FinansmanBirimFiyati {
   createdAt DateTime @default(now())
 
   @@index([birim, gecerliGun])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -1303,6 +1429,11 @@ model FinansmanBirimFiyati {
 
 model Purchase {
   id     String         @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   code   String         @unique // ALM-2026-0001
   status PurchaseStatus @default(DRAFT)
 
@@ -1409,10 +1540,17 @@ model Purchase {
   @@index([supplierOrderNo])
   /// Geri alma tüm partiyi bu alandan bulacak — dizin şart.
   @@index([importBatch])
+
+  @@index([companyId])
 }
 
 model PurchaseItem {
   id         String         @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   purchaseId String
   purchase   Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   variantId  String
@@ -1448,6 +1586,8 @@ model PurchaseItem {
 
   @@index([purchaseId])
   @@index([variantId])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -1466,6 +1606,11 @@ model PurchaseItem {
 
 model StockMovement {
   id        String         @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
 
@@ -1548,6 +1693,8 @@ model StockMovement {
   @@index([adjustmentReasonId])
   @@index([sayimSatiriId])
   @@index([userId])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -1564,6 +1711,11 @@ model StockMovement {
 
 model Sale {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   /// Pazaryerindeki sipariş numarası. Girilmesi zorunlu değil; girilirse
   /// benzersizdir (MySQL'de NULL'lar tekrarlanabilir, bu bilinçli).
@@ -1890,6 +2042,8 @@ model Sale {
   @@index([iptalTarihi])
   /// Geri alma bu alandan tüm partiyi bulacak — dizin şart.
   @@index([importBatch])
+
+  @@index([companyId])
 }
 
 model SaleItem {
@@ -1908,6 +2062,11 @@ model SaleItem {
   commissionTarife   KomisyonTarifesi? @relation(fields: [commissionTarifeId], references: [id], onDelete: SetNull)
 
   id     String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   saleId String
   sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
@@ -1967,6 +2126,8 @@ model SaleItem {
   @@index([variantId])
   /// Her ciro/NET sorgusu bu alanı süzecek — dizin şart.
   @@index([kaldirildiAt])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -1983,6 +2144,11 @@ model SaleItem {
 
 model SaleFee {
   id     String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   saleId String
   sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
@@ -2002,6 +2168,8 @@ model SaleFee {
 
   @@index([saleId])
   @@index([saleItemId])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -2024,6 +2192,11 @@ model SaleFee {
 
 model Return {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   saleId String
   sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
@@ -2120,6 +2293,8 @@ model Return {
   @@index([userId])
   @@index([geriAlindiAt])
   @@index([geriAlanId])
+
+  @@index([companyId])
 }
 
 /// ============================================================================
@@ -2139,6 +2314,11 @@ model Return {
 /// ============================================================================
 model ReturnNotice {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   saleId String
   sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
@@ -2240,6 +2420,8 @@ model ReturnNotice {
   /// "Süresi dolmak üzere olanlar" sorgusu — panel çanı buradan besleniyor.
   @@index([otomatikOnayTarihi])
   @@index([islemSonTarihi])
+
+  @@index([companyId])
 }
 
 /// ============================================================================
@@ -2262,6 +2444,11 @@ model ReturnNotice {
 model Attachment {
   id String @id @default(cuid())
 
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   /// "ReturnNotice" | "Return" | "Purchase" | "Compensation" | "Talep"
   /// ENUM DEĞİL, düz string: hedef listesi `lib/ekler.ts`te tutuluyor ve
   /// `ekHedefiGecerliMi` ile doğrulanıyor. Yeni hedef eklemek migration
@@ -2283,10 +2470,17 @@ model Attachment {
 
   @@index([targetType, targetId])
   @@index([userId])
+
+  @@index([companyId])
 }
 
 model ReturnItem {
   id       String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   returnId String
   return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
@@ -2325,10 +2519,17 @@ model ReturnItem {
   @@index([variantId])
   @@index([locationId])
   @@index([exchangeVariantId])
+
+  @@index([companyId])
 }
 
 model ReturnFee {
   id       String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   returnId String
   return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
@@ -2351,6 +2552,8 @@ model ReturnFee {
 
   @@index([returnId])
   @@index([returnItemId])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -2370,6 +2573,11 @@ model ReturnFee {
 
 model ExpenseCategory {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   name String @unique
 
@@ -2399,10 +2607,17 @@ model ExpenseCategory {
   templates ExpenseTemplate[]
 
   @@index([isActive])
+
+  @@index([companyId])
 }
 
 model Expense {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   /// İŞ TARİHİ — giderin hangi döneme yazıldığı. Alım/satışla aynı kalıp:
   /// takvim günü, UTC gece yarısı. Kayıt zamanı `createdAt`tir, bu değil.
@@ -2485,6 +2700,8 @@ model Expense {
   @@index([categoryId])
   @@index([templateId])
   @@index([creditCardId])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -2564,6 +2781,11 @@ model User {
 model Supplier {
   id String @id @default(cuid())
 
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   name String @unique
 
   /// KİMLİK KISALTMASI — otomatik alım numarasının parçası (ALM-ER-260810-01).
@@ -2589,6 +2811,8 @@ model Supplier {
   compensations Compensation[]
 
   @@index([isActive])
+
+  @@index([companyId])
 }
 
 // ----------------------------------------------------------------------------
@@ -2605,6 +2829,11 @@ model Supplier {
 
 model Settlement {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   channelAccountId String
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
@@ -2640,6 +2869,8 @@ model Settlement {
 
   @@index([channelAccountId])
   @@index([paidAt])
+
+  @@index([companyId])
 }
 
 /// Hakedişin hangi satışı kapsadığı. Bir satış birden çok hakedişte
@@ -2651,6 +2882,11 @@ model Settlement {
 /// kısıtı kaldırıldı — o kısıt HB raporunun ikinci satırını reddediyordu.
 model SettlementItem {
   id           String     @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   settlementId String
   settlement   Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
 
@@ -2718,6 +2954,8 @@ model SettlementItem {
   @@index([orderNo])
   @@index([dueDate])
   @@index([paymentOrderId])
+
+  @@index([companyId])
 }
 
 // ----------------------------------------------------------------------------
@@ -2726,6 +2964,11 @@ model SettlementItem {
 
 model Compensation {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   /**
    * ══════════════════════════════════════════════════════════════════════
@@ -2798,6 +3041,8 @@ model Compensation {
   @@index([returnItemId])
   @@index([carrierId])
   @@index([returnNoticeId])
+
+  @@index([companyId])
 }
 
 /// Tekrarlayan gider ŞABLONU — gider DEĞİLDİR, hiçbir toplama girmez.
@@ -2811,6 +3056,11 @@ model Compensation {
 /// kendiliğinden gider yazmaz (kullanıcı kararı 10.08.2026).
 model ExpenseTemplate {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   /// "Ofis kirası", "Muhasebeci ücreti"
   name String
@@ -2835,6 +3085,8 @@ model ExpenseTemplate {
   expenses Expense[]
 
   @@index([isActive])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -2848,6 +3100,11 @@ model ExpenseTemplate {
 
 model StockAdjustmentReason {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   name String @unique
 
@@ -2887,6 +3144,8 @@ model StockAdjustmentReason {
   movements StockMovement[]
 
   @@index([isActive])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -2996,6 +3255,53 @@ model Company {
   uyelikler UserCompanyRole[]
   auditLogs AuditLog[]
   talepler  Talep[]
+  /// K303 Aşama 2 — firmaya ait tabloların geri bağları.
+  productListesi Product[]
+  productVariantListesi ProductVariant[]
+  variantOptionListesi VariantOption[]
+  eskiKodListesi EskiKod[]
+  categoryListesi Category[]
+  brandListesi Brand[]
+  tyKategoriEslesmeListesi TyKategoriEslesme[]
+  depoBolumuListesi DepoBolumu[]
+  locationListesi Location[]
+  supplierListesi Supplier[]
+  channelAccountListesi ChannelAccount[]
+  channelSkuListesi ChannelSku[]
+  channelFeeListesi ChannelFee[]
+  penaltyTariffListesi PenaltyTariff[]
+  komisyonTarifesiListesi KomisyonTarifesi[]
+  komisyonTarifeKalemiListesi KomisyonTarifeKalemi[]
+  purchaseListesi Purchase[]
+  purchaseItemListesi PurchaseItem[]
+  stockMovementListesi StockMovement[]
+  saleListesi Sale[]
+  saleItemListesi SaleItem[]
+  saleFeeListesi SaleFee[]
+  returnListesi Return[]
+  returnNoticeListesi ReturnNotice[]
+  returnItemListesi ReturnItem[]
+  returnFeeListesi ReturnFee[]
+  attachmentListesi Attachment[]
+  expenseListesi Expense[]
+  expenseCategoryListesi ExpenseCategory[]
+  expenseTemplateListesi ExpenseTemplate[]
+  compensationListesi Compensation[]
+  settlementListesi Settlement[]
+  settlementItemListesi SettlementItem[]
+  creditCardListesi CreditCard[]
+  kartOdemeListesi KartOdeme[]
+  gecmisEkstreListesi GecmisEkstre[]
+  stockAdjustmentReasonListesi StockAdjustmentReason[]
+  stokSayimiListesi StokSayimi[]
+  stokSayimSatiriListesi StokSayimSatiri[]
+  muhasebeDonemiListesi MuhasebeDonemi[]
+  aiOzetListesi AiOzet[]
+  roleListesi Role[]
+  rolePermissionListesi RolePermission[]
+  finansmanListesi Finansman[]
+  finansmanHareketiListesi FinansmanHareketi[]
+  finansmanBirimFiyatiListesi FinansmanBirimFiyati[]
 
   @@index([isActive])
 }
@@ -3003,6 +3309,11 @@ model Company {
 /// Rol — FİRMA BAĞIMSIZ. İzin tanımları ortaktır, atama üyelikte yapılır.
 model Role {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   name String @unique
 
@@ -3020,11 +3331,18 @@ model Role {
   uyelikler UserCompanyRole[]
 
   @@index([isActive])
+
+  @@index([companyId])
 }
 
 /// Rolün sahip olduğu izin. Anahtar KODDAN gelir (lib/yetki/izinler.ts).
 model RolePermission {
   id     String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   roleId String
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
@@ -3036,6 +3354,8 @@ model RolePermission {
 
   @@unique([roleId, permissionKey])
   @@index([roleId])
+
+  @@index([companyId])
 }
 
 /// ÜYELİK: kullanıcı + firma + rol. Kullanıcı role DOĞRUDAN bağlanmaz.
@@ -3232,6 +3552,11 @@ model Talep {
 model GecmisEkstre {
   id String @id @default(cuid())
 
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   cardId String
   card   CreditCard @relation(fields: [cardId], references: [id], onDelete: Restrict)
 
@@ -3272,6 +3597,8 @@ model GecmisEkstre {
   @@unique([cardId, donem])
   @@index([donem])
   @@index([iceAktarimKodu])
+
+  @@index([companyId])
 }
 
 /// ============================================================================
@@ -3301,6 +3628,11 @@ model GecmisEkstre {
 /// ============================================================================
 model KomisyonTarifesi {
   id               String         @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   channelAccountId String
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
 
@@ -3338,11 +3670,18 @@ model KomisyonTarifesi {
   /// Bir hesap + bir pencere = TEK tarife.
   @@unique([channelAccountId, pencereBaslangic])
   @@index([pencereBitis])
+
+  @@index([companyId])
 }
 
 /// Tarifenin tek satırı: bir ürünün BİR dilimi.
 model KomisyonTarifeKalemi {
   id       String           @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   tarifeId String
   tarife   KomisyonTarifesi @relation(fields: [tarifeId], references: [id], onDelete: Cascade)
 
@@ -3378,6 +3717,8 @@ model KomisyonTarifeKalemi {
   @@unique([tarifeId, barkod, dilimSirasi])
   @@index([variantId])
   @@index([barkod])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -3408,6 +3749,11 @@ enum SayimKapsamTuru {
 
 model StokSayimi {
   id String @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   /// `sayim-YYYYMMDD` — düzeltme hareketlerine bu kod damgalanır.
   kod String @unique
@@ -3454,10 +3800,17 @@ model StokSayimi {
 
   @@index([sayimGunu])
   @@index([userId])
+
+  @@index([companyId])
 }
 
 model StokSayimSatiri {
   id      String     @id @default(cuid())
+
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   sayimId String
   sayim   StokSayimi @relation(fields: [sayimId], references: [id], onDelete: Cascade)
 
@@ -3498,6 +3851,8 @@ model StokSayimSatiri {
 
   @@unique([sayimId, variantId])
   @@index([variantId])
+
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -3575,6 +3930,11 @@ enum DonemDurumu {
 model MuhasebeDonemi {
   id String @id @default(cuid())
 
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   /// Takvim yılı ve ayı (1–12). İŞ SAAT DİLİMİNE göre — `Europe/Istanbul`.
   yil Int
   ay  Int
@@ -3603,6 +3963,8 @@ model MuhasebeDonemi {
   /// ⚠ Bir ay için TEK satır. İki kez kapatma denemesi ikinci satır açamaz.
   @@unique([yil, ay])
   @@index([durum])
+
+  @@index([companyId])
 }
 
 /**
@@ -3615,7 +3977,10 @@ model MuhasebeDonemi {
  *  ileri servis edilen veri). Üretimi (LLM çağrısı) pahalı olduğu için
  *  önbelleklenmesi gerekiyor — SORGU ihtiyacı var, tablo bu yüzden haklı.
  *
- *  ⚠ `companyId` YOK — BİLİNÇLİ. Bu tablonun üzerine kurulduğu iki sistem
+ *  ▶ ÇEVRİLDİ 03.10.2026 (K303 Aşama 2): artık `companyId` VAR — çok-firma
+ *  kararı (28.09) «kanal/izin/kargo dışında her şey firmaya ait» dedi; aşağıdaki
+ *  gerekçe o günün TEK-FİRMA kalıbına aitti, silinmedi.
+ *  ⚠ `companyId` YOKTU — BİLİNÇLİYDİ. Bu tablonun üzerine kurulduğu iki sistem
  *  (Uyarı Merkezi, Görev Kutusu) tamamen firma-bağımsız GLOBAL sayaçlar;
  *  40 modelin yalnız 3'ünde `companyId` var (bkz. `lib/yetki/izinler.ts`
  *  başlığı). Yeni bir alanı çoğunluk deseninin dışında firma-kapsamlı
@@ -3639,6 +4004,11 @@ enum AiOzetDurumu {
 model AiOzet {
   id String @id @default(cuid())
 
+  /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
+  /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
   /// İş takvimi günü — `gunDegeri(isTakvimGunu(...))`. UTC gece yarısı.
   isGunu DateTime @db.Date
 
@@ -3657,4 +4027,6 @@ model AiOzet {
   createdAt DateTime @default(now())
 
   @@index([isGunu, createdAt])
+
+  @@index([companyId])
 }
