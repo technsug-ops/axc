@@ -429,6 +429,8 @@
     "erisim-mutasyon:kontrol": "tsx scripts/erisim-mutasyon-kontrol.ts",
     "urun-aktiflik:dogrula": "tsx scripts/urun-aktiflik-dogrula.ts",
     "urun-aktiflik-mutasyon:kontrol": "tsx scripts/urun-aktiflik-mutasyon-kontrol.ts",
+    "deneme-ortami:dogrula": "tsx scripts/deneme-ortami-dogrula.ts",
+    "deneme-ortami-mutasyon:kontrol": "tsx scripts/deneme-ortami-mutasyon-kontrol.ts",
     "aktarilan-siparis-mutasyon:kontrol": "tsx scripts/aktarilan-siparis-mutasyon-kontrol.ts",
     "hb-sayfa:dogrula": "tsx scripts/hb-sayfa-dogrula.ts",
     "hb-sayfa-mutasyon:kontrol": "tsx scripts/hb-sayfa-mutasyon-kontrol.ts",

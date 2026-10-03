@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { denemeOrtamiMi } from "../../src/lib/deneme-ortami";
 
 /**
  * ============================================================================
@@ -18,6 +19,8 @@ import { readFileSync } from "node:fs";
 export type Kimlik = { appKey: string; appSecret: string };
 
 export function kimlikOku(): Kimlik | null {
+  /** K303 DENEME ORTAMI — kimlik VERİLMEZ, `.env.canli` bulunsa bile (`src/lib/deneme-ortami.ts`). */
+  if (denemeOrtamiMi()) return null;
   const ortam = {
     appKey: process.env.N11_APP_KEY?.trim() ?? "",
     appSecret: process.env.N11_APP_SECRET?.trim() ?? "",

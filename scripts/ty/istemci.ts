@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { denemeOrtamiMi } from "../../src/lib/deneme-ortami";
 
 /**
  * ============================================================================
@@ -30,6 +31,8 @@ export type Kimlik = { saticiId: string; key: string; secret: string };
 
 /** `.env.canli`den okur. Eksikse `null` — çağıran açıklayıcı mesaj basar. */
 export function kimlikOku(): Kimlik | null {
+  /** K303 DENEME ORTAMI — kimlik VERİLMEZ, `.env.canli` bulunsa bile (`src/lib/deneme-ortami.ts`). */
+  if (denemeOrtamiMi()) return null;
   /**
    * K166: Vercel'de `.env.canli` DOSYASI YOK — süreç ortamı ÖNCE denenir
    * (uygulama env'leri oradan gelir). Üçü de ortamda doluysa dosyaya hiç

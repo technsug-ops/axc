@@ -24,6 +24,7 @@
  * ============================================================================
  */
 import { readFileSync } from "node:fs";
+import { denemeOrtamiMi } from "../../src/lib/deneme-ortami";
 
 export type Kimlik = {
   merchantId: string;
@@ -59,6 +60,8 @@ function kimlikAdlari(ortam: string): { onek: string; adlar: [string, string, st
 }
 
 export function kimlikOku(): Kimlik | null {
+  /** K303 DENEME ORTAMI — kimlik VERİLMEZ, `.env.canli` bulunsa bile (`src/lib/deneme-ortami.ts`). */
+  if (denemeOrtamiMi()) return null;
   /** ① SÜREÇ ORTAMI. Vercel'de kimlik buradan gelir; yerelde boştur ve
    *  dosya yoluna düşülür — iki ortam da tek gövdeden çalışır. */
   const ortamAdi = (process.env.HEPSIBURADA_ORTAM?.trim() || "").toUpperCase();
@@ -103,6 +106,8 @@ export function kimlikOku(): Kimlik | null {
  * çıktıya girmez (K165 boyunca korunan sınır).
  */
 export function kimlikEksikleri(): string[] {
+  /** K303: deneme ortamında kimlik bilerek yok — sebebi adıyla söylenir. */
+  if (denemeOrtamiMi()) return ["DENEME_ORTAMI (pazaryeri bağlantısı kapalı)"];
   const ortamAdi = (process.env.HEPSIBURADA_ORTAM?.trim() || "").toUpperCase();
   if (ortamAdi === "") return ["HEPSIBURADA_ORTAM"];
   const { onek, adlar } = kimlikAdlari(ortamAdi);

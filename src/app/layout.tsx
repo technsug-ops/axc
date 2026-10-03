@@ -34,6 +34,8 @@ import { TemaSecici } from "@/components/tema-secici";
 import { KABUK_RENKLERI } from "@/lib/marka/renkler";
 import { UyariCani } from "@/components/uyari-cani";
 import { UYGULAMA } from "@/lib/uygulama";
+import { denemeOrtamiMi } from "@/lib/deneme-ortami";
+import { DURUM_ZEMINI } from "@/lib/renkler";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -128,6 +130,22 @@ export default async function RootLayout({
   const ortak = await getTranslations("Ortak");
 
   /**
+   * K303 DENEME ORTAMI ŞERİDİ — hangi kurulumda olunduğu her ekranda görünür
+   * (giriş dahil). Canlıda değişken yoktur, şerit çizilmez.
+   */
+  const denemeSeridi = denemeOrtamiMi() ? (
+    <div
+      role="status"
+      className={cn(
+        "px-3 py-1.5 text-center text-xs font-semibold tracking-wide print:hidden",
+        DURUM_ZEMINI.uyari,
+      )}
+    >
+      {ortak("denemeSeridi", { firma: process.env.DENEME_FIRMA_ADI?.trim() || "—" })}
+    </div>
+  ) : null;
+
+  /**
    * İKİNCİ KAPI — İPTAL EDİLMİŞ OTURUMLAR.
    *
    * `proxy.ts` jetonun imzasına ve süresine bakar; veritabanına bakamaz
@@ -199,6 +217,7 @@ export default async function RootLayout({
           <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
         </head>
         <body>
+          {denemeSeridi}
           {/* ⚠ GİRİŞ EKRANINDA DA KAYIT YAPILIR. Kullanıcı uygulamayı
               telefona kurmadan önce zaten giriş ekranını görüyor; kayıt
               yalnız içeride yapılsaydı "kur" teklifi ilk girişten sonra
@@ -242,6 +261,7 @@ export default async function RootLayout({
           <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
         </head>
       <body>
+        {denemeSeridi}
         <SwKayit />
         {/* Sözlük ve biçimler istemci bileşenlerine buradan akıyor. */}
         <NextIntlClientProvider>

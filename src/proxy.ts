@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { denemedeKapaliMi } from "@/lib/deneme-ortami";
 
 import { jetonuCoz, OTURUM_CEREZI } from "@/lib/oturum-imza";
 
@@ -101,6 +102,13 @@ function acikMi(yol: string): boolean {
 
 export async function proxy(istek: NextRequest) {
   const yol = istek.nextUrl.pathname;
+
+  /**
+   * K303 DENEME ORTAMI — zamanlanmış işler ve ölçüm uçları HİÇ çalışmaz.
+   * Açık-yol kontrolünden ÖNCE: o uçlar açık listede, sırası ters olsaydı
+   * kapı hiç devreye girmezdi. 404 — rotanın varlığı sızmaz (K312 ile aynı).
+   */
+  if (denemedeKapaliMi(yol)) return new NextResponse(null, { status: 404 });
 
   if (acikMi(yol)) return NextResponse.next();
 
