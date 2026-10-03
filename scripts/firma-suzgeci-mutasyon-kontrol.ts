@@ -102,6 +102,10 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ZORUNLU FIRMA GEVSEDI", yon: "KALDIRAN", dosya: BAGLAM,
     bul: "  if (!id) throw new Error(`FIRMA_BAGLAMI_YOK: ${yer} firmasız çağrıldı (--firma", koy: "  if (false) throw new Error(`FIRMA_BAGLAMI_YOK: ${yer} firmasız çağrıldı (--firma",
     bozdugu: "firmasiz betik kosumu gecer" },
+  /* ── 3d bileşik tekil anahtar ── */
+  { ad: "BILESIK ANAHTARDAKI FIRMA DENETLENMIYOR", yon: "KALDIRAN", dosya: SUZGEC,
+    bul: '      if (anahtar.startsWith("companyId_") && nesneMi(deger)) {', koy: "      if (false && nesneMi(deger)) {",
+    bozdugu: "baska firmanin kimligiyle upsert sessizce yanlis yerde arar" },
   /* ── 3c ham SQL ── */
   { ad: "ALIM ARAMASI FIRMA SARTINI KAYBETTI", yon: "KALDIRAN", dosya: "src/lib/alim-arama.ts",
     bul: "      WHERE companyId = ${companyId} AND (REPLACE(", koy: "      WHERE (REPLACE(",

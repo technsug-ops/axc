@@ -22,7 +22,8 @@ import { ChannelType } from "../src/generated/prisma/enums";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { karMotoruSeed } from "./seed-kar-motoru";
 import { stokDuzeltmeSeed } from "./seed-stok-duzeltme";
-import { yetkiSeed } from "./seed-yetki";
+import { firmaSeed, yetkiSeed } from "./seed-yetki";
+import { firmaIstemcisi } from "../src/lib/firma-istemcisi";
 import { iadeSeed } from "./seed-iade";
 import { giderSeed } from "./seed-gider";
 
@@ -85,17 +86,27 @@ async function main() {
 
   // Kâr motoru sabit verisi: KDV kategorileri, kanal kesintileri,
   // kargo firmaları ve tarifeleri.
-  await karMotoruSeed(prisma);
+  /**
+   * K303 3d: firma ÖNCE kurulur; firmaya ait her tohum FİRMA İSTEMCİSİYLE
+   * koşar — süzgeç her kayda firmayı yazar, tekil anahtarlar firma içinde.
+   */
+  const firma = await firmaSeed(prisma);
+  const fp = firmaIstemcisi(betikAdresi(process.env.DATABASE_URL!), firma.id);
+  try {
+  await karMotoruSeed(fp, firma.id);
 
   // Iade sabit verisi: kanal politikasi + ceza tarifeleri.
-  await iadeSeed(prisma);
+  await iadeSeed(fp, firma.id);
 
   // Gider kategorileri — baslangic seti; ekrandan degistirilebilir.
-  await giderSeed(prisma);
+  await giderSeed(fp, firma.id);
 
-  await stokDuzeltmeSeed(prisma);
+  await stokDuzeltmeSeed(fp, firma.id);
 
-  await yetkiSeed(prisma);
+  await yetkiSeed(fp, firma);
+  } finally {
+    await fp.$disconnect();
+  }
 }
 
 main()

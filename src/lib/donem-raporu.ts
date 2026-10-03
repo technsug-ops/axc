@@ -84,8 +84,8 @@ export async function donemRaporu(
   const { bas, bit } = donemSiniri(yil, ay);
 
   const [donemKaydi, satislar, iadeler, izler] = await Promise.all([
-    prisma.muhasebeDonemi.findUnique({
-      where: { yil_ay: { yil, ay } },
+    prisma.muhasebeDonemi.findFirst({
+      where: { yil, ay },
       select: { durum: true },
     }),
     /**

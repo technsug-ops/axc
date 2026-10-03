@@ -2,6 +2,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { canliYapilandirma } from "./canli-ortak";
+import { betikFirmasi } from "./betik-firmasi";
 
 /**
  * ============================================================================
@@ -50,6 +51,8 @@ async function main() {
     return;
   }
   const p = new PrismaClient({ adapter: new PrismaMariaDb(c.veri.ham) });
+  /* K303 3d: hesap kodu firma içinde tekil — firma açıkça seçilir (`--firma=` ya da tek firma). */
+  const companyId = await betikFirmasi(c.veri.ham);
 
   const kanal = await p.channel.findUnique({
     where: { code: "AMAZON" },
@@ -108,9 +111,10 @@ async function main() {
 
   console.log("\n⚠ YAZILIYOR…");
   const hesap = await p.channelAccount.upsert({
-    where: { channelId_code: { channelId: kanal.id, code: HESAP.code } },
+    where: { companyId_channelId_code: { companyId, channelId: kanal.id, code: HESAP.code } },
     update: {},
     create: {
+      companyId,
       channelId: kanal.id,
       code: HESAP.code,
       name: HESAP.name,

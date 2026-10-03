@@ -107,7 +107,7 @@ export async function kategoriEkle(
   }
   const veri = sonuc.data;
 
-  const mevcut = await prisma.category.findUnique({
+  const mevcut = await prisma.category.findFirst({
     where: { name: veri.name },
     select: { id: true },
   });

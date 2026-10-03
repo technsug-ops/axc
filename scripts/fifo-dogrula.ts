@@ -291,7 +291,7 @@ async function ucanUca() {
       yakalandi instanceof YetersizStokHatasi && yakalandi.mevcut === 3,
     );
 
-    const yarimSatis = await prisma.sale.findUnique({
+    const yarimSatis = await prisma.sale.findFirst({
       where: { code: `${ONEK}SIP-2` },
     });
     kontrol("reddedilen satıştan HİÇ kayıt kalmadı", yarimSatis === null);

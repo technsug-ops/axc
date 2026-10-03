@@ -44,7 +44,7 @@ const ITIRAZ_KARGO_SATICIDA: Record<string, boolean> = {
   HEPSIBURADA: true,
 };
 
-export async function iadeSeed(prisma: PrismaClient) {
+export async function iadeSeed(prisma: PrismaClient, companyId: string) {
   console.log("\n=== İADE SEED ===\n");
 
   const kanallar = new Map(
@@ -79,7 +79,8 @@ export async function iadeSeed(prisma: PrismaClient) {
     for (const kademe of kademeler) {
       await prisma.penaltyTariff.upsert({
         where: {
-          channelId_orderAmountUpTo_effectiveFrom: {
+          companyId_channelId_orderAmountUpTo_effectiveFrom: {
+            companyId,
             channelId,
             orderAmountUpTo: String(kademe.upTo),
             effectiveFrom: yururluk,
@@ -87,6 +88,7 @@ export async function iadeSeed(prisma: PrismaClient) {
         },
         update: {},
         create: {
+          companyId,
           channelId,
           orderAmountUpTo: String(kademe.upTo),
           amount: String(kademe.amount),

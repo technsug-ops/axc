@@ -49,14 +49,14 @@ const KATEGORILER: GiderKategorisi[] = [
   { name: "Diğer", isFixed: false, defaultVatRate: 20, sortOrder: 80 },
 ];
 
-export async function giderSeed(prisma: PrismaClient) {
+export async function giderSeed(prisma: PrismaClient, companyId: string) {
   console.log(`\nGider kategorileri — ${KATEGORILER.length} kayıt.`);
 
   for (const kategori of KATEGORILER) {
     const kayit = await prisma.expenseCategory.upsert({
-      where: { name: kategori.name },
+      where: { companyId_name: { companyId, name: kategori.name } },
       update: {}, // mevcut kaydı BİLEREK değiştirmiyoruz
-      create: kategori,
+      create: { ...kategori, companyId },
     });
     const tur = kayit.isFixed ? "sabit" : "değişken";
     console.log(

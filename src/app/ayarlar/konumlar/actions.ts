@@ -77,7 +77,7 @@ export async function konumEkle(
 
   const { code, name, description } = sonuc.data;
 
-  const mevcut = await prisma.location.findUnique({ where: { code } });
+  const mevcut = await prisma.location.findFirst({ where: { code } });
   if (mevcut) {
     // PASİF RAF LİSTEDE GÖRÜNMEYEBİLİR: "zaten kayıtlı" deyip susmak,
     // kullanıcıyı göremediği bir kayıtla çarpıştırmak olurdu.
@@ -138,7 +138,7 @@ export async function konumGuncelle(
   const { code, name, description } = sonuc.data;
 
   // Kod benzersiz; başka bir rafta kullanılıyorsa engelle.
-  const ayniKodlu = await prisma.location.findUnique({ where: { code } });
+  const ayniKodlu = await prisma.location.findFirst({ where: { code } });
   if (ayniKodlu && ayniKodlu.id !== id) {
     return {
       hatalar: [

@@ -117,7 +117,7 @@ async function main() {
     urunVeri: Record<string, unknown>;
     sayilar: Record<string, number>;
   };
-  const oku = (sku: string) => prisma.productVariant.findUnique({ where: { sku }, select: varyantSec });
+  const oku = (sku: string) => prisma.productVariant.findFirst({ where: { sku }, select: varyantSec });
 
   const planlar: Plan[] = [];
   let durdu = 0;
@@ -130,7 +130,7 @@ async function main() {
     const [kopya, asil] = await Promise.all([oku(cift.kopya), oku(cift.asil)]);
     if (!asil) { console.log("  ⛔ ASIL kart bulunamadı — DURDU"); durdu++; continue; }
     if (!kopya) {
-      const iz = await prisma.eskiKod.findUnique({ where: { kod: cift.kopya }, select: { variantId: true } });
+      const iz = await prisma.eskiKod.findFirst({ where: { kod: cift.kopya }, select: { variantId: true } });
       if (iz?.variantId === asil.id) { console.log("  ✓ zaten birleşmiş (kopyanın kodu asıl kartın eski kodu)"); zaten++; }
       else { console.log("  ⛔ KOPYA kart bulunamadı ve birleşme izi yok — DURDU"); durdu++; }
       continue;

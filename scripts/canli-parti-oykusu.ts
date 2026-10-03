@@ -223,7 +223,7 @@ async function main() {
   }
 
   for (const sku of SKULAR) {
-    const v = await prisma.productVariant.findUnique({
+    const v = await prisma.productVariant.findFirst({
       where: { sku },
       select: { id: true, sku: true, product: { select: { name: true } } },
     });

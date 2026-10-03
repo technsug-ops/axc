@@ -54,7 +54,7 @@ export async function markaAdlaEkle(ad: string, kod?: string): Promise<EkleSonuc
   const temizAd = ad.trim().replace(/\s+/g, " ");
   const anahtar = markaAnahtari(temizAd);
   if (!anahtar) return { durum: "AD_BOS" };
-  const mevcut = await prisma.brand.findUnique({ where: { anahtar }, select: { code: true, name: true } });
+  const mevcut = await prisma.brand.findFirst({ where: { anahtar }, select: { code: true, name: true } });
   if (mevcut) return { durum: "ZATEN_VAR", kod: mevcut.code, ad: mevcut.name };
   const urunler = await bagsizUrunler(anahtar);
   if (urunler.length > 0) return markaEkleVeBagla(anahtar, kod);
@@ -81,7 +81,7 @@ export async function markaAdlaEkle(ad: string, kod?: string): Promise<EkleSonuc
 
 export async function markaEkleVeBagla(anahtar: string, kod?: string): Promise<EkleSonucu> {
   const urunler = await bagsizUrunler(anahtar);
-  let marka = await prisma.brand.findUnique({ where: { anahtar }, select: { id: true, code: true } });
+  let marka = await prisma.brand.findFirst({ where: { anahtar }, select: { id: true, code: true } });
   let durum: "EKLENDI" | "BAGLANDI" = "BAGLANDI";
 
   if (!marka) {
@@ -163,5 +163,5 @@ export async function markaKoduDegistir(id: string, yeniHam: string): Promise<Ko
 export async function markaBagiBul(yazim: string | null | undefined): Promise<string | null> {
   const anahtar = markaAnahtari(yazim);
   if (anahtar === "") return null;
-  return (await prisma.brand.findUnique({ where: { anahtar }, select: { id: true } }))?.id ?? null;
+  return (await prisma.brand.findFirst({ where: { anahtar }, select: { id: true } }))?.id ?? null;
 }

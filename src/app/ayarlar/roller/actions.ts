@@ -57,7 +57,7 @@ export async function rolEkle(
   const cozum = semaKur(t).safeParse({ name: formData.get("name") });
   if (!cozum.success) return { hatalar: cozum.error.issues.map((i) => i.message) };
 
-  const mevcut = await prisma.role.findUnique({
+  const mevcut = await prisma.role.findFirst({
     where: { name: cozum.data.name },
     select: { id: true },
   });

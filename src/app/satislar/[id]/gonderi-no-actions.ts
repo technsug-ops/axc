@@ -74,7 +74,7 @@ export async function gonderiNoKaydet(
    * ⚠ AYNI SATIŞA AYNI KODU YAZMAK ÇAKIŞMA DEĞİLDİR — kullanıcı formu
    * ikinci kez göndermiş olabilir.
    */
-  const cakisan = await prisma.sale.findUnique({
+  const cakisan = await prisma.sale.findFirst({
     where: { shipmentCode: kod },
     select: { id: true, code: true },
   });

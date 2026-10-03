@@ -600,7 +600,7 @@ export class MaliyetsizSatisHatasi extends Error {
  * görünür; adı değiştirilebilir, `systemKey` sabit kalır.
  */
 async function sevkiyatHatasiNedeniId(tx: IslemIstemcisi): Promise<string> {
-  const mevcut = await tx.stockAdjustmentReason.findUnique({
+  const mevcut = await tx.stockAdjustmentReason.findFirst({
     where: { systemKey: "SEVKIYAT_HATASI" },
     select: { id: true },
   });

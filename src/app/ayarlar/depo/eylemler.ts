@@ -13,6 +13,7 @@ import {
 } from "@/lib/depo/sablon";
 import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
+import { zorunluAktifFirma } from "@/lib/firma-baglami";
 
 /**
  * ============================================================================
@@ -125,8 +126,10 @@ export async function depoyuKur(form: FormData): Promise<DepoSonucu> {
      *  yaratırdı. Tek kaynak: giriş kapısı. */
     const kisaltma = tarif.kisaltma;
     const enBuyuk = await prisma.depoBolumu.aggregate({ _max: { sira: true } });
+    /* K303 3d: kısaltma FİRMA İÇİNDE tekil — tekil anahtar firmayı taşır. */
+    const companyId = await zorunluAktifFirma("depoBolumu.upsert");
     const bolum = await prisma.depoBolumu.upsert({
-      where: { kisaltma },
+      where: { companyId_kisaltma: { companyId, kisaltma } },
       update: {},
       create: { ad: tarif.ad, kisaltma, sira: (enBuyuk._max.sira ?? 0) + 1 },
       select: { id: true },

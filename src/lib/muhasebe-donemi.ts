@@ -113,8 +113,8 @@ export async function donemOzeti(bugun: Date): Promise<{
 }> {
   const buDonem = tarihinDonemi(bugun);
   const [kapali, sonKapanan] = await Promise.all([
-    prisma.muhasebeDonemi.findUnique({
-      where: { yil_ay: { yil: buDonem.yil, ay: buDonem.ay } },
+    prisma.muhasebeDonemi.findFirst({
+      where: { yil: buDonem.yil, ay: buDonem.ay },
       select: { durum: true },
     }),
     prisma.muhasebeDonemi.findFirst({

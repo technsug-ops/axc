@@ -112,12 +112,12 @@ const NEDENLER = [
   },
 ];
 
-export async function stokDuzeltmeSeed(prisma: PrismaClient) {
+export async function stokDuzeltmeSeed(prisma: PrismaClient, companyId: string) {
   console.log("\n=== STOK DÜZELTME NEDENLERİ ===\n");
 
   for (const n of NEDENLER) {
     await prisma.stockAdjustmentReason.upsert({
-      where: { name: n.name },
+      where: { companyId_name: { companyId, name: n.name } },
       /**
        * YÖN GÜNCELLENİR, GERİSİ DOKUNULMAZ.
        *
@@ -131,7 +131,7 @@ export async function stokDuzeltmeSeed(prisma: PrismaClient) {
        * kullanıcıya ait kalıyor.
        */
       update: { yon: n.yon },
-      create: n,
+      create: { ...n, companyId },
     });
   }
 

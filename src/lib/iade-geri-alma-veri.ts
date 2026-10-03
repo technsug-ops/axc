@@ -31,7 +31,7 @@ import { acikPartilerToplu } from "@/lib/stok";
 export const IADE_GERI_ALINDI_EYLEMI = "IADE_GERI_ALINDI";
 
 async function sistemNedeniId(tx: IslemIstemcisi): Promise<string> {
-  const mevcut = await tx.stockAdjustmentReason.findUnique({
+  const mevcut = await tx.stockAdjustmentReason.findFirst({
     where: { systemKey: "IADE_GERI_ALMA" },
     select: { id: true },
   });

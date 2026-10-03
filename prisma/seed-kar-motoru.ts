@@ -137,15 +137,15 @@ function firmaEslestir(baslik: string) {
 
 // ---------------------------------------------------------------------------
 
-export async function karMotoruSeed(prisma: PrismaClient) {
+export async function karMotoruSeed(prisma: PrismaClient, companyId: string) {
   console.log("\n=== KÂR MOTORU SEED ===\n");
 
   // ---- 1. Kategoriler ----
   for (const k of KATEGORILER) {
     await prisma.category.upsert({
-      where: { name: k.name },
+      where: { companyId_name: { companyId, name: k.name } },
       update: {},
-      create: { name: k.name, vatRate: k.vatRate },
+      create: { companyId, name: k.name, vatRate: k.vatRate },
     });
   }
   console.log(`Kategori    : ${await prisma.category.count()} kayıt`);
@@ -166,10 +166,11 @@ export async function karMotoruSeed(prisma: PrismaClient) {
     const validFrom = new Date("2026-01-01");
     await prisma.channelFee.upsert({
       where: {
-        channelId_code_validFrom: { channelId, code: f.code, validFrom },
+        companyId_channelId_code_validFrom: { companyId, channelId, code: f.code, validFrom },
       },
       update: {},
       create: {
+        companyId,
         channelId,
         code: f.code,
         scope: f.scope,

@@ -138,7 +138,7 @@ async function main() {
   // ── VAKA 1 — LEGO: hayalet hareketi açık partiye bağla ──────────────
   {
     const vaka = "lego-hayalet-bag";
-    const v = await prisma.productVariant.findUnique({
+    const v = await prisma.productVariant.findFirst({
       where: { sku: "OYU-LG-598P-01" },
       select: { id: true },
     });
@@ -230,7 +230,7 @@ async function main() {
   // ── VAKA 3 — Anker: ayna hareketin kaynak bağı silinir ──────────────
   {
     const vaka = "anker-ayna-bagi";
-    const v = await prisma.productVariant.findUnique({
+    const v = await prisma.productVariant.findFirst({
       where: { sku: "axcali1667" },
       select: { id: true },
     });

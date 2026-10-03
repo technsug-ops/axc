@@ -64,6 +64,10 @@ kontrol("companyId: null «verilmemiş» sayılır (izYaz vakası)",
 kontrol("farklı companyId → FIRMA_CAKISMASI", firlatirMi(() => veriEkle("Sale", { companyId: "firma-B" }, F), "FIRMA_CAKISMASI"));
 kontrol("farklı company.connect → FIRMA_CAKISMASI", firlatirMi(() => veriEkle("Sale", { company: { connect: { id: "firma-B" } } }, F), "FIRMA_CAKISMASI"));
 kontrol("where'de farklı companyId → FIRMA_CAKISMASI", firlatirMi(() => whereEkle("findUnique", { id: "s", companyId: "firma-B" }, F), "FIRMA_CAKISMASI"));
+kontrol("(3d) bileşik tekil anahtarda farklı firma → FIRMA_CAKISMASI",
+  firlatirMi(() => whereEkle("upsert", { companyId_sku: { companyId: "firma-B", sku: "X" } }, F), "FIRMA_CAKISMASI"));
+kontrol("(3d) bileşik tekil anahtarda AYNI firma geçer, dış firma da eklenir",
+  J(whereEkle("upsert", { companyId_sku: { companyId: F, sku: "X" } }, F)) === J({ companyId_sku: { companyId: F, sku: "X" }, companyId: F }));
 {
   const d = veriEkle("Sale", { code: "S1", items: { create: [{ variantId: "v1", quantity: 1 }] } }, F);
   kontrol("İÇ İÇE create: çocuk satıra da companyId", al(d, "items", "create", 0, "companyId") === F);

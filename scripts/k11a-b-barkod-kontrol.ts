@@ -87,7 +87,7 @@ async function main() {
     console.log("─".repeat(74));
     console.log("BARKOD " + barkod);
 
-    const varyant = await prisma.productVariant.findUnique({
+    const varyant = await prisma.productVariant.findFirst({
       where: { barcode: barkod },
       select: {
         id: true,

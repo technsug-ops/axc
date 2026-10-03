@@ -221,7 +221,7 @@ export class SayimKorumasiHatasi extends Error {
 export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
   return prisma.$transaction(async (tx) => {
     if (girdi.code) {
-      const cakisan = await tx.sale.findUnique({
+      const cakisan = await tx.sale.findFirst({
         where: { code: girdi.code },
         select: { id: true, iptalTarihi: true },
       });
@@ -240,7 +240,7 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
      * geçiyor — iptal edilmiş bir satışın kodu yeniden kullanılabilir.
      */
     if (girdi.shipmentCode) {
-      const cakisan = await tx.sale.findUnique({
+      const cakisan = await tx.sale.findFirst({
         where: { shipmentCode: girdi.shipmentCode },
         select: { id: true, iptalTarihi: true },
       });

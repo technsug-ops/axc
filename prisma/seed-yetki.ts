@@ -32,22 +32,33 @@ import { PrismaClient } from "../src/generated/prisma/client";
 /** Firma bilgisi — kullanıcı kararı. Ekrandan değiştirilebilir olacak. */
 const FIRMA = { name: "Axcalı", code: "AXC" };
 
-export async function yetkiSeed(prisma: PrismaClient) {
-  console.log("\n=== YETKİ SEED ===\n");
-
-  // --- 1) FİRMA: tek kayıt ---
+/**
+ * K303 3d: firma ÖNCE kurulur ve kimliği öteki tohumlara verilir — tekil
+ * anahtarlar artık firma içinde (`companyId_name` …). Eskiden firma en son
+ * (bu tohumun başında) kuruluyordu ve öteki tohumlar firmasız kayıt yazıyordu.
+ * ⚠ Firma adı hâlâ burada sabit (bilinen bulgu, BEKLEYENLER K303) — veriye taşınacak.
+ */
+export async function firmaSeed(prisma: PrismaClient) {
   const firma = await prisma.company.upsert({
     where: { code: FIRMA.code },
     update: {},
     create: FIRMA,
   });
   console.log(`Firma          : ${firma.name} (${firma.code})`);
+  return firma;
+}
+
+export async function yetkiSeed(prisma: PrismaClient, verilenFirma?: { id: string; name: string; code: string }) {
+  console.log("\n=== YETKİ SEED ===\n");
+
+  // --- 1) FİRMA: tek kayıt ---
+  const firma = verilenFirma ?? (await firmaSeed(prisma));
 
   // --- 2) SAHİP: sistem rolü, tüm izinler ---
   const sahip = await prisma.role.upsert({
-    where: { name: SAHIP_ROLU },
+    where: { companyId_name: { companyId: firma.id, name: SAHIP_ROLU } },
     update: { isSystem: true },
-    create: { name: SAHIP_ROLU, isSystem: true, sortOrder: 10 },
+    create: { companyId: firma.id, name: SAHIP_ROLU, isSystem: true, sortOrder: 10 },
   });
 
   // İzinler HER KOŞUDA tazelenir (yukarıdaki gerekçe).
@@ -161,8 +172,8 @@ export async function yetkiSeed(prisma: PrismaClient) {
   }
 
   // --- 3) OPERASYON: yalnız YOKSA kurulur ---
-  const mevcutOperasyon = await prisma.role.findUnique({
-    where: { name: OPERASYON_ROLU },
+  const mevcutOperasyon = await prisma.role.findFirst({
+    where: { companyId: firma.id, name: OPERASYON_ROLU },
     select: { id: true },
   });
 
@@ -217,7 +228,7 @@ export async function yetkiSeed(prisma: PrismaClient) {
     );
   } else {
     const operasyon = await prisma.role.create({
-      data: { name: OPERASYON_ROLU, sortOrder: 20 },
+      data: { companyId: firma.id, name: OPERASYON_ROLU, sortOrder: 20 },
     });
     await prisma.rolePermission.createMany({
       data: OPERASYON_IZINLERI.map((permissionKey) => ({

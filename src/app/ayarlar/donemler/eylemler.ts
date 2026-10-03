@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
 import { tarihinDonemi } from "@/lib/muhasebe-donemi";
 import { izYaz } from "@/lib/iz";
+import { zorunluAktifFirma } from "@/lib/firma-baglami";
 
 /**
  * ============================================================================
@@ -60,8 +61,10 @@ export async function donemiKapat(
     return { hata: t("gelecekDonemKapatilamaz") };
   }
 
+  /* K303 3d: dönem FİRMA İÇİNDE tekil — tekil anahtar firmayı taşır. */
+  const companyId = await zorunluAktifFirma("muhasebeDonemi.upsert");
   await prisma.muhasebeDonemi.upsert({
-    where: { yil_ay: { yil, ay } },
+    where: { companyId_yil_ay: { companyId, yil, ay } },
     create: {
       yil,
       ay,
@@ -114,8 +117,9 @@ export async function donemiAc(
    * bilgisini yok ederdi; o bilgi, dönem içinde uyarıya rağmen yazılmış
    * kayıtları açıklayan tek şey.
    */
+  const firma = await zorunluAktifFirma("muhasebeDonemi.update");
   await prisma.muhasebeDonemi.update({
-    where: { yil_ay: { yil, ay } },
+    where: { companyId_yil_ay: { companyId: firma, yil, ay } },
     data: { durum: "ACIK" },
   });
 

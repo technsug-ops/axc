@@ -33,7 +33,7 @@ export async function eslesmeKaydet(tyKategori: string, categoryId: string | nul
   try {
     const baglam = await yetkiBaglami();
     if (!baglam || !baglam.izinler.has("ayar.yaz")) return { hata: "YETKISIZ" };
-    const satir = await prisma.tyKategoriEslesme.findUnique({
+    const satir = await prisma.tyKategoriEslesme.findFirst({
       where: { tyKategori },
       select: { id: true, categoryId: true },
     });

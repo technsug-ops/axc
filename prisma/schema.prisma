@@ -468,13 +468,13 @@ model Category {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
-  name String @unique
+  name String
 
   /// KİMLİK KISALTMASI — otomatik SKU'nun ilk parçası (OYU-LG-260707-01).
   /// Boş olabilir: mevcut kayıtlara kod türetilirken ÇAKIŞMA çıkarsa
   /// sessizce çözülmez, boş bırakılır ve ekran kullanıcıya sorar.
   /// Kod boşken o kategorideki ürün için SKU önerisi üretilemez.
-  code String? @unique
+  code String?
 
   /// KDV oranı YÜZDE olarak: 20, 10, 1
   vatRate Decimal @db.Decimal(5, 2)
@@ -490,6 +490,9 @@ model Category {
   @@index([isActive])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, name])
+  @@unique([companyId, code])
 }
 /// K283 — KANAL KATEGORİSİ ↔ BİZİM KATEGORİ (kullanıcı kararı 26.09.2026).
 /// «Ürün adından karar vermek saçma, pazaryerleri ürünleri zaten kategorize
@@ -510,7 +513,7 @@ model EskiKod {
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  kod       String         @unique @db.VarChar(191)
+  kod       String @db.VarChar(191)
   /// Hangi alandan geldiği (ör. `FIRMA_SKU`).
   kaynak    String         @db.VarChar(40)
   createdAt DateTime       @default(now())
@@ -518,6 +521,8 @@ model EskiKod {
   @@index([variantId])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, kod])
 }
 
 /// K285 — MARKA KOD TABLOSU (kullanıcı onayı 26.09.2026).
@@ -532,13 +537,16 @@ model Brand {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
   name      String    @db.VarChar(191)
-  anahtar   String    @unique @db.VarChar(191)
-  code      String    @unique @db.VarChar(3)
+  anahtar   String @db.VarChar(191)
+  code      String @db.VarChar(3)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   products  Product[]
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, anahtar])
+  @@unique([companyId, code])
 }
 
 model TyKategoriEslesme {
@@ -548,7 +556,7 @@ model TyKategoriEslesme {
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  tyKategori String    @unique @db.VarChar(191)
+  tyKategori String @db.VarChar(191)
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdAt  DateTime  @default(now())
@@ -557,6 +565,8 @@ model TyKategoriEslesme {
   @@index([categoryId])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, tyKategori])
 }
 
 /// K283 — ürün kategorisinin kaynağı.
@@ -580,15 +590,15 @@ model ProductVariant {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   /// Sistem içi ana stok kodu. Kanal SKU'larından bağımsızdır.
-  sku     String  @unique
+  sku     String
   /// Üreticinin barkodu (EAN/GTIN). Bizim ürettiğimiz bir kod değildir.
-  barcode String? @unique
+  barcode String?
 
   /// FİRMA SKU — firmanın fiziğe yapıştırdığı etiket kodu.
   /// Arayüzde "Firma SKU" olarak görünür.
   /// ChannelSku (pazaryeri stok kodu) ile hiçbir ilgisi yoktur, bağımsızdır.
   /// ZORUNLU ve benzersiz: etiketsiz varyant kaydı açılamaz.
-  companySku String @unique
+  companySku String
 
   /// Gösterim adı: "M / Kırmızı". Varsayılan varyantta boş bırakılabilir.
   name      String?
@@ -654,6 +664,10 @@ model ProductVariant {
   @@index([sayimGecersizAt])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, sku])
+  @@unique([companyId, barcode])
+  @@unique([companyId, companySku])
 }
 
 /// Varyant seçenekleri (Beden=M, Renk=Kırmızı).
@@ -729,7 +743,7 @@ model DepoBolumu {
   ///
   /// ⚠ Değişmezliğin sebebi FİZİKSEL: kısaltma basılı etiketin içinde. Değişse
   /// etiket yalan söyler ve raf kodu ile duvardaki kâğıt ayrışır.
-  kisaltma String @unique
+  kisaltma String
 
   /// Ekranda görünme sırası — koda gömülmez, kullanıcı sıralar.
   sira     Int     @default(0)
@@ -743,6 +757,8 @@ model DepoBolumu {
   @@index([isActive])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, kisaltma])
 }
 
 model Location {
@@ -770,7 +786,7 @@ model Location {
   goz   Int?
 
   /// Raf kodu: "A-03-2". Etiketlerde ve toplama listesinde bu görünür.
-  code String  @unique
+  code String
   /// İsteğe bağlı okunabilir ad: "Salon dolabı üst raf".
   name String?
 
@@ -789,6 +805,8 @@ model Location {
   @@index([bolumId, unite, goz])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, code])
 }
 
 // ============================================================================
@@ -854,7 +872,7 @@ model PenaltyTariff {
 
   createdAt DateTime @default(now())
 
-  @@unique([channelId, orderAmountUpTo, effectiveFrom])
+  @@unique([companyId, channelId, orderAmountUpTo, effectiveFrom])
   @@index([channelId, orderAmountUpTo])
 
   @@index([companyId])
@@ -912,7 +930,7 @@ model ChannelFee {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([channelId, code, validFrom])
+  @@unique([companyId, channelId, code, validFrom])
   @@index([channelId, isActive])
 
   @@index([companyId])
@@ -1070,7 +1088,7 @@ model ChannelAccount {
   settlements     Settlement[]
   settlementItems SettlementItem[]
 
-  @@unique([channelId, code])
+  @@unique([companyId, channelId, code])
   @@index([channelId])
   /// Yazıcılar hesabı BU alandan buluyor — dizin şart.
   @@index([apiHesapKimligi])
@@ -1434,7 +1452,7 @@ model Purchase {
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  code   String         @unique // ALM-2026-0001
+  code   String // ALM-2026-0001
   status PurchaseStatus @default(DRAFT)
 
   /// TEDARİKÇİ — 10.08.2026'da kayda bağlandı (Faz 3).
@@ -1542,6 +1560,8 @@ model Purchase {
   @@index([importBatch])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, code])
 }
 
 model PurchaseItem {
@@ -1719,7 +1739,7 @@ model Sale {
 
   /// Pazaryerindeki sipariş numarası. Girilmesi zorunlu değil; girilirse
   /// benzersizdir (MySQL'de NULL'lar tekrarlanabilir, bu bilinçli).
-  code String? @unique
+  code String?
 
   /// GÖNDERİ (TAKİP) NUMARASI — kargo/pazaryeri kodu, K41① 24.08.2026.
   ///
@@ -1732,7 +1752,7 @@ model Sale {
   ///
   /// ⚠ GERİ DOLDURULMAZ. Kod pazaryerinde/kargoda SONRADAN oluşuyor;
   /// var olan 125 satışta boş kalması doğrudur — uydurulamaz.
-  shipmentCode String? @unique
+  shipmentCode String?
 
   /// Satış her zaman bir kanal hesabından yapılır — hangi pazaryerinin
   /// hangi mağazasından satıldığı kâr ve hakediş hesabının temelidir.
@@ -2044,6 +2064,9 @@ model Sale {
   @@index([importBatch])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, code])
+  @@unique([companyId, shipmentCode])
 }
 
 model SaleItem {
@@ -2579,7 +2602,7 @@ model ExpenseCategory {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
-  name String @unique
+  name String
 
   /// Sabit gider mi (kira, maaş) yoksa değişken mi (sarf malzeme)?
   /// Dönem raporundaki gider dökümü bu ayrımla gruplanır.
@@ -2609,6 +2632,8 @@ model ExpenseCategory {
   @@index([isActive])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, name])
 }
 
 model Expense {
@@ -2786,11 +2811,11 @@ model Supplier {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
-  name String @unique
+  name String
 
   /// KİMLİK KISALTMASI — otomatik alım numarasının parçası (ALM-ER-260810-01).
   /// Kategori kodundaki kural aynen geçerli: çakışmada boş kalır, sorulur.
-  code String? @unique
+  code String?
 
   /// Telefon / e-posta / kişi — serbest metin, tek alan yeter.
   contact String?
@@ -2813,6 +2838,9 @@ model Supplier {
   @@index([isActive])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, name])
+  @@unique([companyId, code])
 }
 
 // ----------------------------------------------------------------------------
@@ -3106,14 +3134,14 @@ model StockAdjustmentReason {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
-  name String @unique
+  name String
 
   /// SİSTEM ANAHTARI — kod bu nedeni adıyla DEĞİL bununla bulur.
   /// Ad kullanıcıya aittir ve "Neden yönetimi" ekranından değiştirilebilir;
   /// koda ad gömseydik kullanıcı adı düzelttiği an sevkiyat hatası düzeltmesi
   /// sessizce çalışmaz olurdu. Elle açılan nedenlerde null'dur.
   /// Bugünkü tek değer: "SEVKIYAT_HATASI" (yanlış ürün gönderimi).
-  systemKey String? @unique
+  systemKey String?
 
   /// Bu neden hangi hareket tipini yazar.
   /// COUNT_CORRECTION (sayım farkı) ile ADJUSTMENT (kırılma/kayıp) ayrı
@@ -3146,6 +3174,9 @@ model StockAdjustmentReason {
   @@index([isActive])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, name])
+  @@unique([companyId, systemKey])
 }
 
 // ============================================================================
@@ -3315,7 +3346,7 @@ model Role {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
-  name String @unique
+  name String
 
   /// Sistem rolü SİLİNEMEZ ve pasife alınamaz (SAHİP).
   /// Ada bakarak korumak kırılgandı: kullanıcı adı "Patron" yapabilir.
@@ -3333,6 +3364,8 @@ model Role {
   @@index([isActive])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, name])
 }
 
 /// Rolün sahip olduğu izin. Anahtar KODDAN gelir (lib/yetki/izinler.ts).
@@ -3458,7 +3491,7 @@ model Talep {
   id String @id @default(cuid())
 
   /// Ekranda ve listede gösterilen kısa numara (TLP-0001).
-  kod String @unique
+  kod String
 
   tur   TalepTuru
   durum TalepDurumu @default(ACIK)
@@ -3526,6 +3559,8 @@ model Talep {
   @@index([tur])
   @@index([bildirenId])
   @@index([createdAt])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, kod])
 }
 
 /// ============================================================================
@@ -3756,7 +3791,7 @@ model StokSayimi {
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
 
   /// `sayim-YYYYMMDD` — düzeltme hareketlerine bu kod damgalanır.
-  kod String @unique
+  kod String
 
   /// SAYIMIN İŞ GÜNÜ (İstanbul), UTC gece yarısı olarak. Karşılaştırma
   /// "bugünkü stok"a değil, BU GÜN SONU stoğuna yapılır:
@@ -3802,6 +3837,8 @@ model StokSayimi {
   @@index([userId])
 
   @@index([companyId])
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, kod])
 }
 
 model StokSayimSatiri {
@@ -3961,7 +3998,7 @@ model MuhasebeDonemi {
   updatedAt DateTime @updatedAt
 
   /// ⚠ Bir ay için TEK satır. İki kez kapatma denemesi ikinci satır açamaz.
-  @@unique([yil, ay])
+  @@unique([companyId, yil, ay])
   @@index([durum])
 
   @@index([companyId])

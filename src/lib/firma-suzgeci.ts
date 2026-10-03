@@ -58,6 +58,14 @@ export function whereEkle(islem: string, where: unknown, companyId: string): Nes
   if (WHERE_TEKIL_ISLEMLERI.has(islem)) {
     const w = nesneMi(where) ? where : {};
     catismaDenetle(w.companyId, companyId, `${islem}.where`);
+    /* K303 3d: firma içi tekil anahtarlar bileşik (`companyId_sku: { companyId, sku }`).
+       İçindeki firma da denetlenir — başka firmanın kimliği sessizce «bulunamadı»ya
+       düşmesin, HATA versin. */
+    for (const [anahtar, deger] of Object.entries(w)) {
+      if (anahtar.startsWith("companyId_") && nesneMi(deger)) {
+        catismaDenetle(deger.companyId, companyId, `${islem}.where.${anahtar}`);
+      }
+    }
     return { ...w, companyId };
   }
   return nesneMi(where) && Object.keys(where).length > 0

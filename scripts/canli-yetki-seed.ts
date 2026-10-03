@@ -25,7 +25,8 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
-import { yetkiSeed } from "../prisma/seed-yetki";
+import { firmaSeed, yetkiSeed } from "../prisma/seed-yetki";
+import { firmaIstemcisi } from "../src/lib/firma-istemcisi";
 import { canliYapilandirma, parolayiTemizle } from "./canli-ortak";
 import { bekciyiYaz, yetkiBekcisi } from "./yetki-bekci";
 
@@ -47,7 +48,14 @@ async function main() {
   });
 
   try {
-    await yetkiSeed(prisma);
+    /* K303 3d: rol/izin tabloları firmaya ait — firma istemcisiyle yazılır. */
+    const firma = await firmaSeed(prisma);
+    const fp = firmaIstemcisi(betikAdresi(y.veri.ham), firma.id);
+    try {
+      await yetkiSeed(fp, firma);
+    } finally {
+      await fp.$disconnect();
+    }
     console.log("");
     console.log("  ✓ izinler canlıda güncel");
 
