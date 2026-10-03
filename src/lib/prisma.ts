@@ -32,6 +32,8 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 import { havuzluAdres } from "@/lib/veritabani-adresi";
+import { aktifFirmaKimligi } from "@/lib/firma-baglami";
+import { argumanlariSuz, FirmaBaglamiHatasi, firmaModeliMi } from "@/lib/firma-suzgeci";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -68,21 +70,61 @@ function istemciyiAl(): PrismaClient {
 }
 
 /**
+ * ============================================================================
+ *  K303 AŞAMA 3a — FİRMA SÜZGEÇLİ İSTEMCİ
+ * ----------------------------------------------------------------------------
+ *  `prisma` artık firmaya ait 49 modelde her sorguyu aktif firmaya göre süzer
+ *  ve her yazıma firmayı yazar (`lib/firma-suzgeci.ts`, saf gövde). Firma
+ *  bilinmiyorsa sorgu `FIRMA_BAGLAMI_YOK` ile DURUR. 197 çağrı yeri değişmedi.
+ *  `$transaction(async (tx) => …)` içindeki `tx` de süzgeçlidir (Prisma
+ *  uzantıları etkileşimli işleme taşınır).
+ *
+ *  `sistemPrisma` SÜZGEÇSİZDİR: firmalar-üstü işler içindir (oturum, üyelik/
+ *  yetki çözümü, tam yedek ve geri yükleme). Her kullanımı gerekçeli olmalı —
+ *  bekçisi `firma-suzgeci:dogrula` (desen yasağı, beyan `SISTEM:`).
+ * ============================================================================
+ */
+let suzgecli: PrismaClient | undefined;
+
+function suzgecliyiAl(): PrismaClient {
+  if (suzgecli) return suzgecli;
+  suzgecli = istemciyiAl().$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          if (!firmaModeliMi(model)) return query(args);
+          const companyId = await aktifFirmaKimligi();
+          if (!companyId) {
+            throw new FirmaBaglamiHatasi("FIRMA_BAGLAMI_YOK", `${model}.${operation}`);
+          }
+          return query(argumanlariSuz(model, operation, args, companyId) as typeof args);
+        },
+      },
+    },
+  }) as unknown as PrismaClient;
+  return suzgecli;
+}
+
+function vekil(al: () => PrismaClient): PrismaClient {
+  return new Proxy({} as PrismaClient, {
+    get(_hedef, ozellik) {
+      const gercek = al() as unknown as Record<string | symbol, unknown>;
+      const deger = gercek[ozellik];
+      // Metotların `this` bağı korunmalı ($transaction, $disconnect...).
+      return typeof deger === "function" ? deger.bind(gercek) : deger;
+    },
+  });
+}
+
+/**
  * Dışarıya istemcinin kendisi değil, ilk erişimde onu kuran bir vekil
  * (proxy) veriliyor. Çağrı yerleri değişmedi: `prisma.product.findMany()`
- * aynen çalışır.
+ * aynen çalışır — artık aktif firmaya süzülmüş olarak.
  */
-export const prisma = new Proxy({} as PrismaClient, {
-  get(_hedef, ozellik) {
-    const gercek = istemciyiAl() as unknown as Record<
-      string | symbol,
-      unknown
-    >;
-    const deger = gercek[ozellik];
-    // Metotların `this` bağı korunmalı ($transaction, $disconnect...).
-    return typeof deger === "function" ? deger.bind(gercek) : deger;
-  },
-});
+export const prisma = vekil(suzgecliyiAl);
+
+/** SÜZGEÇSİZ — yalnız firmalar-üstü işler (yukarıdaki başlık). */
+export const sistemPrisma = vekil(istemciyiAl);
 
 /**
  * İnteraktif transaction içindeki istemci:

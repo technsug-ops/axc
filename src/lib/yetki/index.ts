@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 
-import { prisma } from "@/lib/prisma";
+import { prisma, sistemPrisma } from "@/lib/prisma";
 import { oturumdakiKullanici } from "@/lib/oturum";
 
 import { izinTaninirMi, tamYetkiliMi, type Izin } from "./izinler";
@@ -54,7 +54,11 @@ export const yetkiBaglami = cache(async (): Promise<YetkiBaglami | null> => {
   // ÜYELİK: bugün tek firma, o yüzden ilk üyelik alınıyor. Çok firmaya
   // geçildiğinde burası oturumdaki aktifCompanyId'ye bakacak — çağıran
   // taraflar değişmeyecek.
-  const uyelik = await prisma.userCompanyRole.findFirst({
+  /**
+   * SISTEM: üyelik çözümü FİRMALAR-ÜSTÜDÜR — aktif firmayı belirleyen sorgu
+   * firma süzgecinden geçemez (süzgeç firmayı bu sorgudan öğrenir; döngü).
+   */
+  const uyelik = await sistemPrisma.userCompanyRole.findFirst({
     where: { userId: kullanici.id, company: { isActive: true } },
     select: {
       companyId: true,

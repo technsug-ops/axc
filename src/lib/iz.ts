@@ -1,4 +1,5 @@
-import { prisma } from "@/lib/prisma";
+import { prisma, sistemPrisma } from "@/lib/prisma";
+import { aktifFirmaKimligi } from "@/lib/firma-baglami";
 import { yetkiBaglami } from "@/lib/yetki";
 
 /**
@@ -90,7 +91,12 @@ export async function izYaz(
 ): Promise<string> {
   const userId =
     veri.userId === undefined ? await izKullanicisi() : veri.userId;
-  const hedef = istemci ?? prisma;
+  /**
+   * K303: firma süzgeçli istemci izi aktif firmaya bağlar. Firma bağlamı YOKSA
+   * (yalnız oturum açılmadan önce: hatalı giriş denemesi) iz firmasız yazılır.
+   * SISTEM: girişten önce firma yoktur; bu dal süzgeci atlar, başka yol açmaz.
+   */
+  const hedef = istemci ?? ((await aktifFirmaKimligi()) ? prisma : sistemPrisma);
   const satir = await hedef.auditLog.create({
     data: {
       action: veri.action,
