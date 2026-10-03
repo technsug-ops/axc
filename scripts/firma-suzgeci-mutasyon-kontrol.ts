@@ -102,6 +102,16 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ZORUNLU FIRMA GEVSEDI", yon: "KALDIRAN", dosya: BAGLAM,
     bul: "  if (!id) throw new Error(`FIRMA_BAGLAMI_YOK: ${yer} firmasız çağrıldı (--firma", koy: "  if (false) throw new Error(`FIRMA_BAGLAMI_YOK: ${yer} firmasız çağrıldı (--firma",
     bozdugu: "firmasiz betik kosumu gecer" },
+  /* ── 3e firma zorunlu ── */
+  { ad: "SATIS TABLOSUNUN FIRMA KURALI YOK", yon: "KALDIRAN", dosya: "prisma/migrations/20261003100400_k303_firma_zorunlu/migration.sql",
+    bul: "ALTER TABLE `Sale` ADD CONSTRAINT `Sale_companyId_zorunlu` CHECK (`companyId` IS NOT NULL);\n", koy: "",
+    bozdugu: "firmasiz satis veritabanina girebilir" },
+  { ad: "URUN BAGLANTISI YENIDEN CASCADE", yon: "KALDIRAN", dosya: "prisma/schema.prisma",
+    bul: "onDelete: Restrict, onUpdate: Restrict)\n  name        String\n", koy: "onDelete: Restrict)\n  name        String\n",
+    bozdugu: "CASCADE varken CHECK konamaz - kural sessizce kurulamaz" },
+  { ad: "MUAFIYET GEREKCESIZ", yon: "KALDIRAN", dosya: BEKCI,
+    bul: '    AuditLog: "oturum açılmadan önceki giriş izinin firması yoktur (iz.ts → sistemPrisma)",', koy: '    AuditLog: "",',
+    bozdugu: "firma zorunlulugundan gerekcesiz muafiyet" },
   /* ── 3d bileşik tekil anahtar ── */
   { ad: "BILESIK ANAHTARDAKI FIRMA DENETLENMIYOR", yon: "KALDIRAN", dosya: SUZGEC,
     bul: '      if (anahtar.startsWith("companyId_") && nesneMi(deger)) {', koy: "      if (false && nesneMi(deger)) {",

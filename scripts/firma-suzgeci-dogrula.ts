@@ -247,6 +247,34 @@ async function donguOlc() {
   kontrol(`ham SQL tabanı DOLU (≥5 dosya, bulunan ${hamDosya}; ${hamKullanim} beyansız-dosya kullanımı)`, hamDosya >= 5);
 }
 
+/* ⑨ FİRMA ZORUNLU (3e) — veritabanı kuralı. Küme ŞEMADAN türetilir: firma
+   bağlantısı İSTEĞE BAĞLI olan her model (zorunlu olanlar zaten NOT NULL).
+   Muafiyet BEYANLI ve gerekçeli. Her model için: bağlantı `onUpdate: Restrict`
+   (CASCADE varken CHECK konamaz — MariaDB 1901, ölçüldü) VE bir migration'da
+   `<Model>_companyId_zorunlu` CHECK kuralı. */
+{
+  const MUAF: Record<string, string> = {
+    AuditLog: "oturum açılmadan önceki giriş izinin firması yoktur (iz.ts → sistemPrisma)",
+  };
+  const sema = kaynakOku("prisma/schema.prisma").replace(/\r\n/g, "\n");
+  const goc = readdirSync("prisma/migrations")
+    .filter((d) => /^\d/.test(d))
+    .map((d) => kaynakOku(`prisma/migrations/${d}/migration.sql`))
+    .join("\n");
+  let kume = 0;
+  for (const m of sema.matchAll(/^model (\w+) \{\n([\s\S]*?)^\}/gm)) {
+    const ad = m[1]!;
+    const satir = /^\s+company\s+Company\?\s+@relation\(([^)]*)\)/m.exec(m[2]!);
+    if (!satir) continue;
+    if (MUAF[ad]) { kontrol(`${ad} firma zorunluluğundan muaf — gerekçe: ${MUAF[ad]}`, MUAF[ad].length > 10); continue; }
+    kume++;
+    kontrol(`${ad}: firma bağlantısı onUpdate: Restrict`, /onUpdate: Restrict/.test(satir[1]!));
+    kontrol(`${ad}: migration'da firma boş olamaz kuralı`,
+      goc.includes(`ALTER TABLE \`${ad}\` ADD CONSTRAINT \`${ad}_companyId_zorunlu\` CHECK (\`companyId\` IS NOT NULL);`));
+  }
+  kontrol(`firma zorunlu küme tabanı DOLU (≥46, bulunan ${kume})`, kume >= 46);
+}
+
 /* ⑧b topluGuncelle firmayı sorguya YAZIYOR — değerle */
 async function topluOlc() {
   const { topluGuncelle } = await import("../src/lib/toplu-guncelle");

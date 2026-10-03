@@ -367,7 +367,7 @@ model Product {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   name        String
   description String? @db.Text
   brand       String?
@@ -466,7 +466,7 @@ model Category {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   name String
 
@@ -510,7 +510,7 @@ model EskiKod {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
   kod       String @db.VarChar(191)
@@ -535,7 +535,7 @@ model Brand {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   name      String    @db.VarChar(191)
   anahtar   String @db.VarChar(191)
   code      String @db.VarChar(3)
@@ -555,7 +555,7 @@ model TyKategoriEslesme {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   tyKategori String @db.VarChar(191)
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -585,7 +585,7 @@ model ProductVariant {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
@@ -679,7 +679,7 @@ model VariantOption {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
@@ -730,7 +730,7 @@ model DepoBolumu {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /// Görünen ad — DEĞİŞEBİLİR ("Salon" → "Salon dolabı").
   ad String
@@ -767,7 +767,7 @@ model Location {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /// ⚠ NULLABLE VE GERİ DOLDURULMUYOR — göç ONAYLANANA KADAR mevcut 41 raf
   /// bölümsüz kalır. Onaysız tek ad değişmez (K50); şema bunu zorlar.
@@ -858,7 +858,7 @@ model PenaltyTariff {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelId String
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
@@ -898,7 +898,7 @@ model ChannelFee {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelId String
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
@@ -995,7 +995,7 @@ model ChannelAccount {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelId String
   channel   Channel @relation(fields: [channelId], references: [id], onDelete: Restrict)
 
@@ -1103,7 +1103,7 @@ model ChannelSku {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelAccountId String
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Cascade)
   variantId        String
@@ -1181,7 +1181,7 @@ model CreditCard {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   label      String // "Garanti Bonus ***4321"
   bankName   String?
   last4      String  @db.Char(4)
@@ -1244,7 +1244,7 @@ model KartOdeme {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   cardId String
   card   CreditCard @relation(fields: [cardId], references: [id], onDelete: Restrict)
@@ -1337,7 +1337,7 @@ model Finansman {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   tur FinansmanTuru
   /// Kimden — kişi, ortak, kurum ya da banka adı. VERİDİR (yapıya gömülmez).
@@ -1371,7 +1371,7 @@ model FinansmanHareketi {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   finansmanId String
   finansman   Finansman @relation(fields: [finansmanId], references: [id], onDelete: Restrict)
@@ -1422,7 +1422,7 @@ model FinansmanBirimFiyati {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   birim      FinansmanBirimi
   /// 1 birimin TL fiyatı.
@@ -1451,7 +1451,7 @@ model Purchase {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   code   String // ALM-2026-0001
   status PurchaseStatus @default(DRAFT)
 
@@ -1570,7 +1570,7 @@ model PurchaseItem {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   purchaseId String
   purchase   Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   variantId  String
@@ -1630,7 +1630,7 @@ model StockMovement {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
 
@@ -1735,7 +1735,7 @@ model Sale {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /// Pazaryerindeki sipariş numarası. Girilmesi zorunlu değil; girilirse
   /// benzersizdir (MySQL'de NULL'lar tekrarlanabilir, bu bilinçli).
@@ -2089,7 +2089,7 @@ model SaleItem {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   saleId String
   sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
@@ -2171,7 +2171,7 @@ model SaleFee {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   saleId String
   sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
@@ -2219,7 +2219,7 @@ model Return {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   saleId String
   sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
@@ -2341,7 +2341,7 @@ model ReturnNotice {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   saleId String
   sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
@@ -2470,7 +2470,7 @@ model Attachment {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /// "ReturnNotice" | "Return" | "Purchase" | "Compensation" | "Talep"
   /// ENUM DEĞİL, düz string: hedef listesi `lib/ekler.ts`te tutuluyor ve
@@ -2503,7 +2503,7 @@ model ReturnItem {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   returnId String
   return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
@@ -2552,7 +2552,7 @@ model ReturnFee {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   returnId String
   return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
@@ -2600,7 +2600,7 @@ model ExpenseCategory {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   name String
 
@@ -2642,7 +2642,7 @@ model Expense {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /// İŞ TARİHİ — giderin hangi döneme yazıldığı. Alım/satışla aynı kalıp:
   /// takvim günü, UTC gece yarısı. Kayıt zamanı `createdAt`tir, bu değil.
@@ -2809,7 +2809,7 @@ model Supplier {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   name String
 
@@ -2861,7 +2861,7 @@ model Settlement {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   channelAccountId String
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
@@ -2914,7 +2914,7 @@ model SettlementItem {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   settlementId String
   settlement   Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
 
@@ -2996,7 +2996,7 @@ model Compensation {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /**
    * ══════════════════════════════════════════════════════════════════════
@@ -3088,7 +3088,7 @@ model ExpenseTemplate {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /// "Ofis kirası", "Muhasebeci ücreti"
   name String
@@ -3132,7 +3132,7 @@ model StockAdjustmentReason {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   name String
 
@@ -3344,7 +3344,7 @@ model Role {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   name String
 
@@ -3375,7 +3375,7 @@ model RolePermission {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   roleId String
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
@@ -3590,7 +3590,7 @@ model GecmisEkstre {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   cardId String
   card   CreditCard @relation(fields: [cardId], references: [id], onDelete: Restrict)
@@ -3667,7 +3667,7 @@ model KomisyonTarifesi {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelAccountId String
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
 
@@ -3716,7 +3716,7 @@ model KomisyonTarifeKalemi {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   tarifeId String
   tarife   KomisyonTarifesi @relation(fields: [tarifeId], references: [id], onDelete: Cascade)
 
@@ -3788,7 +3788,7 @@ model StokSayimi {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /// `sayim-YYYYMMDD` — düzeltme hareketlerine bu kod damgalanır.
   kod String
@@ -3847,7 +3847,7 @@ model StokSayimSatiri {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   sayimId String
   sayim   StokSayimi @relation(fields: [sayimId], references: [id], onDelete: Cascade)
 
@@ -3970,7 +3970,7 @@ model MuhasebeDonemi {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /// Takvim yılı ve ayı (1–12). İŞ SAAT DİLİMİNE göre — `Europe/Istanbul`.
   yil Int
@@ -4044,7 +4044,7 @@ model AiOzet {
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   /// İş takvimi günü — `gunDegeri(isTakvimGunu(...))`. UTC gece yarısı.
   isGunu DateTime @db.Date
