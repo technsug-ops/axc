@@ -67,3 +67,14 @@ export function zorunluFirma(verilen: string | undefined, yer: string): string {
   if (!id) throw new Error(`FIRMA_BAGLAMI_YOK: ${yer} firmasız çağrıldı (--firma=<kod> ya da zamanlanmış iş döngüsü)`);
   return id;
 }
+
+/**
+ * Ham SQL yazan/okuyan gövdelerin firması (K303 Aşama 3c). Ham SQL süzgeçten
+ * GEÇMEZ; firmayı her sorgu AÇIKÇA taşır. Firma bilinmiyorsa HATA — «hepsi»
+ * diye bir dal yok.
+ */
+export async function zorunluAktifFirma(yer: string): Promise<string> {
+  const id = await aktifFirmaKimligi();
+  if (!id) throw new Error(`FIRMA_BAGLAMI_YOK: ${yer} firmasız çağrıldı`);
+  return id;
+}

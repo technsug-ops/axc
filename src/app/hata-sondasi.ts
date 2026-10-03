@@ -30,6 +30,7 @@ import { prisma } from "@/lib/prisma";
  */
 export async function veritabaniUlasilabilirMi(): Promise<boolean> {
   try {
+    // SISTEM: bağlantı yoklaması — hiçbir tablo okunmaz, firma kavramı yok.
     await prisma.$queryRaw`SELECT 1`;
     return true;
   } catch (e) {

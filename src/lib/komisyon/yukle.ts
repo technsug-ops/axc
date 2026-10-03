@@ -18,6 +18,7 @@ import {
   type PlanYaratma,
   type VaryantKaydi,
 } from "./plan";
+import { zorunluAktifFirma } from "@/lib/firma-baglami";
 
 /**
  * ============================================================================
@@ -346,6 +347,8 @@ export async function komisyonYaz(
     yaratilacaklar: PlanYaratma[];
   },
 ): Promise<KomisyonYazimi> {
+  /* K303 3c: ham SQL'li toplu güncelleme firmayı AÇIKÇA taşır. */
+  const companyId = await zorunluAktifFirma("komisyonYaz");
   return prisma.$transaction(
     async (tx) => {
       const an = new Date();
@@ -380,6 +383,7 @@ export async function komisyonYaz(
          */
         await topluGuncelle(
           tx,
+          companyId,
           "ChannelSku",
           yazim.guncellenecekler.map((g) => ({
             id: g.eslemeId,

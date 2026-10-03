@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { zorunluAktifFirma } from "@/lib/firma-baglami";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 
 /**
@@ -86,12 +87,14 @@ export async function alimAramaKosulu(
   // 3 karakterin altında sadeleştirilmiş tarama yapılmaz: "12" gibi bir terim
   // neredeyse her kaydı getirir, kullanıcıya yardım etmez.
   if (sade.length >= 3) {
+    /* K303 3c: ham SQL süzgeçten geçmez — firma AÇIKÇA yazılır. */
+    const companyId = await zorunluAktifFirma("alimAramaKosulu");
     const satirlar = await prisma.$queryRaw<{ id: string }[]>`
       SELECT id FROM Purchase
-      WHERE REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(supplierOrderNo, ''), ' ', ''), '-', ''), '_', ''), '.', '')
+      WHERE companyId = ${companyId} AND (REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(supplierOrderNo, ''), ' ', ''), '-', ''), '_', ''), '.', '')
               LIKE CONCAT('%', ${sade}, '%')
          OR REPLACE(REPLACE(REPLACE(REPLACE(code, ' ', ''), '-', ''), '_', ''), '.', '')
-              LIKE CONCAT('%', ${sade}, '%')
+              LIKE CONCAT('%', ${sade}, '%'))
     `;
     if (satirlar.length > 0) {
       kosullar.push({ id: { in: satirlar.map((s) => s.id) } });

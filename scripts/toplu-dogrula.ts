@@ -23,6 +23,9 @@ import "dotenv/config";
 import { prisma } from "../src/lib/prisma";
 import { topluGuncelle } from "../src/lib/toplu-guncelle";
 import { bekciFirmasiylaKos } from "./betik-firmasi";
+import { acikFirmaBaglami } from "../src/lib/firma-baglami";
+/** K303 3c: toplu güncelleme firmayı açıkça ister; bekçi firmanın bağlamında koşar. */
+const firma = (): string => acikFirmaBaglami() ?? "";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -66,6 +69,7 @@ async function main() {
 
       const yazilan = await topluGuncelle(
         tx as never,
+        firma(),
         "ProductVariant",
         hedefler.map((v, i) => ({
           id: v.id,
@@ -103,7 +107,7 @@ async function main() {
       }
 
       // --- NULL yazılabiliyor mu ---
-      await topluGuncelle(tx as never, "ProductVariant", [
+      await topluGuncelle(tx as never, firma(), "ProductVariant", [
         { id: hedefler[0].id, degerler: { name: null } },
       ]);
       const nullSonuc = await tx.productVariant.findUnique({
@@ -115,7 +119,7 @@ async function main() {
       // --- KOLONU VERİLMEYEN SATIR O KOLONU KORUR ---
       // Bir satır name, öteki barcode güncelliyor. ELSE dalı olmasaydı
       // ötekinin name'i NULL'a düşerdi — sessiz veri kaybı.
-      await topluGuncelle(tx as never, "ProductVariant", [
+      await topluGuncelle(tx as never, firma(), "ProductVariant", [
         { id: hedefler[1].id, degerler: { name: "SADECE-AD" } },
         { id: hedefler[2].id, degerler: { companySku: "SADECE-KOD" } },
       ]);
@@ -164,6 +168,7 @@ async function main() {
       // Paket boyutu 2 verilerek 2'şerli bölünme zorlanıyor.
       const yazilan = await topluGuncelle(
         tx as never,
+        firma(),
         "ProductVariant",
         hepsi.map((v, i) => ({ id: v.id, degerler: { name: `PAKET-${i}` } })),
         2,
@@ -194,7 +199,7 @@ async function main() {
   {
     let atti = false;
     try {
-      await topluGuncelle({ $executeRawUnsafe: async () => 0 }, "Urun; DROP TABLE x", [
+      await topluGuncelle({ $executeRawUnsafe: async () => 0 }, firma(), "Urun; DROP TABLE x", [
         { id: "a", degerler: { name: "x" } },
       ]);
     } catch {
@@ -204,7 +209,7 @@ async function main() {
 
     let attiKolon = false;
     try {
-      await topluGuncelle({ $executeRawUnsafe: async () => 0 }, "ProductVariant", [
+      await topluGuncelle({ $executeRawUnsafe: async () => 0 }, firma(), "ProductVariant", [
         { id: "a", degerler: { "name = 1, x": "y" } },
       ]);
     } catch {
@@ -214,6 +219,7 @@ async function main() {
 
     const bos = await topluGuncelle(
       { $executeRawUnsafe: async () => 99 },
+      firma(),
       "ProductVariant",
       [],
     );

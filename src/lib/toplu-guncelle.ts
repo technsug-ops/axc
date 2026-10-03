@@ -34,7 +34,7 @@ type HamSorguIstemcisi = {
  *      UPDATE `Tablo`
  *         SET `kolon` = CASE `id` WHEN ? THEN ? WHEN ? THEN ? ELSE `kolon` END,
  *             ...
- *       WHERE `id` IN (?, ?)
+ *       WHERE `id` IN (?, ?) AND `companyId` = ?
  *
  *  `ELSE kolon END` bilerek var: WHERE listesindeki ama o kolon için değeri
  *  verilmemiş bir satır olursa değeri KORUNUR, NULL'a düşmez.
@@ -58,15 +58,22 @@ export type TopluSatir = {
  * Verilen satırları toplu günceller ve YAZILAN SATIR SAYISINI döndürür.
  *
  * @param tx      Açık transaction istemcisi — kendi işlemini açmaz.
+ * @param companyId (aşağıda)
  * @param tablo   Tablo adı (kod içinden sabit).
  * @param satirlar Güncellenecek satırlar. Boşsa hiçbir sorgu atılmaz.
+ * @param companyId Firma — ZORUNLU (K303 Aşama 3c). Ham SQL firma süzgecinden
+ *                GEÇMEZ; firma her sorguda `AND companyId = ?` olarak açıkça
+ *                yazılır. Başka firmanın kimliği gelirse o satır YAZILMAZ ve
+ *                dönen sayı eksik çıkar — çağıranlar sayıyı planla kıyaslıyor.
  */
 export async function topluGuncelle(
   tx: HamSorguIstemcisi,
+  companyId: string,
   tablo: string,
   satirlar: TopluSatir[],
   paketBoyutu = PAKET_BOYUTU,
 ): Promise<number> {
+  if (!companyId) throw new Error("FIRMA_BAGLAMI_YOK: topluGuncelle firmasız çağrıldı");
   if (satirlar.length === 0) return 0;
   if (!AD_DESENI.test(tablo)) {
     throw new Error(`Geçersiz tablo adı: ${tablo}`);
@@ -109,12 +116,14 @@ export async function topluGuncelle(
     if (atamalar.length === 0) continue;
 
     const idler = paket.map((s) => s.id);
-    parametreler.push(...idler);
+    parametreler.push(...idler, companyId);
 
     const sorgu =
       `UPDATE \`${tablo}\` SET ${atamalar.join(", ")} ` +
-      `WHERE \`id\` IN (${idler.map(() => "?").join(", ")})`;
+      `WHERE \`id\` IN (${idler.map(() => "?").join(", ")}) AND \`companyId\` = ?`;
 
+    // FIRMA: sorgunun sonunda `AND companyId = ?`, parametrelerin sonunda
+    // companyId — değerle sınanıyor (firma-suzgeci:dogrula ⑧).
     toplam += await tx.$executeRawUnsafe(sorgu, ...parametreler);
   }
 

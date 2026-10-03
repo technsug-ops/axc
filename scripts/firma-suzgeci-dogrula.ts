@@ -197,9 +197,73 @@ async function donguOlc() {
   }
 }
 
+/* ⑧ HAM SQL (3c) — süzgeçten geçmez; her kullanım firmayı AÇIKÇA taşır ya da
+   gerekçeyle firmalar-üstü beyan edilir. Küme `src/` taramasından (liste yok). */
+{
+  const HAM = /\.\$(queryRaw|executeRaw)(Unsafe)?\b/g;
+  let hamDosya = 0;
+  let hamKullanim = 0;
+  for (const yol of dosyalar("src")) {
+    const ham = kaynakOku(yol);
+    const kod = yorumsuz(ham);
+    if (!HAM.test(kod)) continue;
+    HAM.lastIndex = 0;
+    hamDosya++;
+    const y = yol.replace(/\\/g, "/");
+    if (/HAM SQL SINIFI: SISTEM — \S/.test(ham)) {
+      kontrol(`${y} ham SQL — dosya gerekçeyle firmalar-üstü beyanlı`, true);
+      continue;
+    }
+    const satirlar = ham.split("\n");
+    let m: RegExpExecArray | null;
+    while ((m = HAM.exec(kod)) !== null) {
+      hamKullanim++;
+      const satirNo = kod.slice(0, m.index).split("\n").length;
+      const blok = kod.slice(m.index, m.index + 700);
+      const sonu = blok.search(/\);|`;/);
+      const kullanim = sonu >= 0 ? blok.slice(0, sonu + 2) : blok;
+      let ust = satirNo - 1;
+      let yorum = "";
+      while (ust > 0) {
+        const s = satirlar[ust - 1]!.trim();
+        if (!(s.startsWith("*") || s.startsWith("//") || s.startsWith("/*"))) break;
+        yorum = satirlar[ust - 1] + "\n" + yorum;
+        ust--;
+      }
+      /* ⚠ İKİ KEZ: bir kez SQL'de sütun adı, bir kez değer. Tek geçiş yetmez —
+         şartı silen mutasyon, parametre satırındaki `companyId` yüzünden yeşil
+         kalırdı (ölçütü yazarken bulundu). */
+      const firmaGecisi = (kullanim.match(/\bcompanyId\b/g) ?? []).length;
+      kontrol(
+        `${y}:${satirNo} ham SQL firmayı taşıyor (sütun + değer) ya da gerekçeli (SISTEM: · FIRMA:)`,
+        firmaGecisi >= 2 || /(SISTEM|FIRMA):\s*\S/.test(yorum),
+      );
+    }
+  }
+  kontrol(`ham SQL tabanı DOLU (≥5 dosya, bulunan ${hamDosya}; ${hamKullanim} beyansız-dosya kullanımı)`, hamDosya >= 5);
+}
+
+/* ⑧b topluGuncelle firmayı sorguya YAZIYOR — değerle */
+async function topluOlc() {
+  const { topluGuncelle } = await import("../src/lib/toplu-guncelle");
+  const yakalanan: { sorgu: string; p: unknown[] }[] = [];
+  const sahte = { $executeRawUnsafe: async (sorgu: string, ...p: unknown[]) => { yakalanan.push({ sorgu, p }); return 1; } };
+  await topluGuncelle(sahte, F, "ProductVariant", [{ id: "v1", degerler: { name: "x" } }]);
+  const s = yakalanan[0];
+  kontrol("topluGuncelle: WHERE'de `AND companyId = ?`", Boolean(s && /WHERE `id` IN \(\?\) AND `companyId` = \?$/.test(s.sorgu)));
+  kontrol("topluGuncelle: son parametre bağlamın firması", s?.p[s.p.length - 1] === F);
+  let atti = false;
+  try { await topluGuncelle(sahte, "", "ProductVariant", [{ id: "v1", degerler: { name: "x" } }]); } catch (e) { atti = e instanceof Error && e.message.startsWith("FIRMA_BAGLAMI_YOK"); }
+  kontrol("topluGuncelle: firmasız çağrı HATA", atti);
+  const { zorunluAktifFirma } = await import("../src/lib/firma-baglami");
+  let bagsizAtti = false;
+  try { await zorunluAktifFirma("x"); } catch (e) { bagsizAtti = e instanceof Error && e.message.startsWith("FIRMA_BAGLAMI_YOK"); }
+  kontrol("zorunluAktifFirma: bağlamsız HATA (ham SQL firmasız koşamaz)", bagsizAtti);
+}
+
 /* Anayasa: «ölçüt bloğu özet ve çıkış kodundan ÖNCE koşar» — async blok
    bitmeden özet basılmaz; çökerse GEÇERSİZ. */
-donguOlc().then(
+donguOlc().then(() => topluOlc()).then(
   () => {
     console.log("\n" + (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") + ` (${gecen}/${gecen + hata})\n`);
     process.exit(hata === 0 ? 0 : 1);

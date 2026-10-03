@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+// HAM SQL SINIFI: SISTEM — tam geri yükleme BÜTÜN tabloları boşaltıp yazar;
+// firmalar-üstüdür. Çok firmada ekrandan kapalı (`tamSistemIslemiAcikMi`,
+// lib/firma-dongusu.ts). Firma başına geri yükleme ayrı bir tasarım kararı.
 import { YEDEK_TABLOLARI, type YedekDosyasi } from "@/lib/yedek-bicim";
 
 /**

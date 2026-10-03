@@ -18,6 +18,7 @@ import { topluGuncelle } from "@/lib/toplu-guncelle";
 import type { YazimPlani } from "./dogrula";
 import { betikDonemKarari } from "@/lib/donem-kapisi";
 import { kapaliDonemler } from "@/lib/muhasebe-donemi";
+import { zorunluAktifFirma } from "@/lib/firma-baglami";
 
 /**
  * ============================================================================
@@ -64,6 +65,8 @@ export async function planiYaz(
    */
   sayimIsrari?: SayimIsrari,
 ): Promise<YazimSonucu> {
+  /* K303 3c: ham SQL'li toplu güncelleme firmayı AÇIKÇA taşır. */
+  const companyId = await zorunluAktifFirma("planiYaz");
   return prisma.$transaction(
     async (tx) => {
       /**
@@ -177,6 +180,7 @@ export async function planiYaz(
       // 12.08.2026, bkz. lib/toplu-guncelle.ts).
       await topluGuncelle(
         tx,
+        companyId,
         "ProductVariant",
         plan.guncellenenVaryantlar.map((v) => ({
           id: v.id,
@@ -310,7 +314,7 @@ export async function planiYaz(
           );
         }
 
-        await topluGuncelle(tx, "ChannelSku", satirlar);
+        await topluGuncelle(tx, companyId, "ChannelSku", satirlar);
       }
 
       return {

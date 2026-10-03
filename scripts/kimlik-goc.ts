@@ -44,6 +44,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { topluGuncelle } from "../src/lib/toplu-guncelle";
 import { yedegiMetneCevir, yedekUret } from "../src/lib/yedek";
+import { betikFirmasi } from "./betik-firmasi";
 
 /** Hangi kod hangi kanala ait — desen bazlı tanıma. */
 const KANAL_DESENLERI: { desen: RegExp; kanalKodu: string; ad: string }[] = [
@@ -81,6 +82,8 @@ async function main() {
   }
 
   const prisma = new PrismaClient({ adapter: new PrismaMariaDb(betikAdresi(url)) });
+  /* K303 3c: toplu güncelleme firmayı açıkça ister (`--firma=` ya da tek firma). */
+  const companyId = await betikFirmasi(betikAdresi(url));
 
   console.log("\nKİMLİK GÖÇÜ");
   console.log(`  hedef  : ${canli ? "CANLI" : "YEREL"}`);
@@ -264,6 +267,7 @@ async function main() {
       // Sonra iç kimlik özdeşleşir: sku := companySku
       await topluGuncelle(
         tx as never,
+        companyId,
         "ProductVariant",
         yazilacak.map((p) => ({ id: p.id, degerler: { sku: p.yeniSku } })),
       );

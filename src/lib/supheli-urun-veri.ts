@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { zorunluAktifFirma } from "@/lib/firma-baglami";
 import { supheSebebi, type SupheSebebi } from "@/lib/supheli-urun";
 
 /**
@@ -47,8 +48,11 @@ export async function supheliSatirlari(): Promise<SupheliSatir[]> {
     _sum: { quantityDelta: true },
   });
   const stok = new Map(stoklar.map((r) => [r.variantId, r._sum.quantityDelta ?? 0]));
+  /* K303 3c: ham SQL süzgeçten geçmez — firma AÇIKÇA parametre. */
+  const companyId = await zorunluAktifFirma("supheliSatirlari");
   const sonSatisKayit = await prisma.$queryRawUnsafe<{ v: string; t: Date }[]>(
-    "SELECT si.variantId v, MAX(s.soldAt) t FROM `SaleItem` si JOIN `Sale` s ON s.id = si.saleId WHERE s.iptalTarihi IS NULL GROUP BY si.variantId",
+    "SELECT si.variantId v, MAX(s.soldAt) t FROM `SaleItem` si JOIN `Sale` s ON s.id = si.saleId WHERE s.iptalTarihi IS NULL AND s.companyId = ? GROUP BY si.variantId",
+    companyId,
   );
   const sonSatis = new Map(sonSatisKayit.map((r) => [r.v, r.t]));
   const sinir = new Date(Date.now() - 90 * 864e5);
