@@ -3,6 +3,8 @@ import {
   eksen,
   eksenIsaretleri,
   etiketAtlamasi,
+  noktaEtiketHizasi,
+  noktaEtiketleri,
   xKonumu,
   yKonumu,
 } from "./grafik-olcek";
@@ -258,15 +260,13 @@ export function CizgiGrafik({
               if (i % etiketAtla !== 0) return null;
               /**
                * ⚠ ÇAKIŞMA ÖNLEME ÖLÇÜLEBİLİR, TAHMİNİ DEĞİL: iki nokta
-               * arasındaki DİKEY MESAFE hesaplanıyor ve en az `ARALIK` piksel
-               * kalacak şekilde etiketler zıt yönlere itiliyor. Sabit bir
-               * kaydırma yazsaydım çizgiler yaklaştığında yine binerlerdi.
+               * arasındaki DİKEY MESAFE hesaplanıyor ve etiketler zıt yönlere
+               * itiliyor; NET-2 etiketi ay satırına taşacaksa noktanın üstüne
+               * alınıyor (03.10.2026 vakası). Konum saf gövdede:
+               * `noktaEtiketleri` (grafik-olcek.ts) — bekçi değerle sınar.
                */
-              const ARALIK = 24;
-              const yCiro = yKonum(n.gelir);
-              const yNet = yKonum(n.net2);
-              const bosluk = Math.abs(yNet - yCiro);
-              const itme = bosluk >= ARALIK ? 0 : (ARALIK - bosluk) / 2;
+              const { ciroY, netY } = noktaEtiketleri(yKonum(n.gelir), yKonum(n.net2));
+              const hiza = noktaEtiketHizasi(i, noktalar.length);
               return (
                 <g key={n.tamEtiket}>
                   {/* ⛔ İKİ SERİ VARKEN ANA SERİ ALTA, CİRO ÜSTE. Ciro her
@@ -275,8 +275,8 @@ export function CizgiGrafik({
                   {net2Goster ? (
                     <text
                       x={x(i)}
-                      y={yCiro - 10 - itme}
-                      textAnchor="middle"
+                      y={ciroY}
+                      textAnchor={hiza}
                       className="text-muted-foreground"
                       fill="currentColor"
                     >
@@ -287,12 +287,8 @@ export function CizgiGrafik({
                     x={x(i)}
                     /* ⚠ 10px BOŞLUK: nokta işaretinin (r=3.5) üstünde/altında
                        durur; üstüne binerse iki öğe de okunmaz olur. */
-                    y={
-                      net2Goster
-                        ? yNet + 18 + itme
-                        : yKonum(anaSeri(n)) - 10
-                    }
-                    textAnchor="middle"
+                    y={net2Goster ? netY : yKonum(anaSeri(n)) - 10}
+                    textAnchor={hiza}
                     className="text-foreground"
                     fill="currentColor"
                   >

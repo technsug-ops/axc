@@ -120,3 +120,53 @@ export function yKonumu(deger: number, y: Eksen): number {
     GRAFIK_KUTUSU.ust + IC_YUKSEKLIK * (1 - (deger - y.alt) / (y.ust - y.alt))
   );
 }
+
+/**
+ * ============================================================================
+ *  NOKTA RAKAMLARININ KONUMU — ÇİZGİ GRAFİK (03.10.2026)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı 03.10.2026: _«burada bir hata var, ciro ile net karışmış»._
+ *  Rakamlar KARIŞMAMIŞTI, üst üste BİNMİŞTİ: NET-2 etiketi noktasının
+ *  ALTINA (`yNet + 18`) yazılıyordu. Ay yeni başladığında NET-2 sıfıra
+ *  yaklaşır, nokta eksenin dibine iner ve etiket AY ADLARININ satırına düşer
+ *  («₺8,2 B» «Ekim»in üstüne). Kasım'da da aynı etiket eksendeki «₺0,00»a
+ *  biniyordu.
+ *
+ *  Kural:
+ *  · NET-2 etiketi altta kalır, AMA ay satırına taşacaksa noktanın ÜSTÜNE
+ *    alınır;
+ *  · ciro etiketi her zaman NET-2 etiketinin YUKARISINDA kalır (ciro üstteki
+ *    çizgidir — göz rakamı doğru çizgiye konumla bağlar);
+ *  · ilk ve son noktanın rakamı grafiğin İÇİNE hizalanır (ortalanınca soldaki
+ *    eksen yazılarına biner, sağda kutunun dışına taşar).
+ * ============================================================================
+ */
+
+/** İki nokta arasında kalması gereken dikey boşluk (eski sabit, değişmedi). */
+export const NOKTA_ETIKET_ARALIGI = 24;
+/** İki etiket satırı arasında en az bu kadar taban çizgisi farkı (11 px yazı). */
+export const ETIKET_SATIR_ARALIGI = 15;
+/**
+ * NET-2 etiketinin taban çizgisi bundan AŞAĞI inemez: ay adları
+ * `yukseklik - 12` tabanında, 12 px yazıyla yazılıyor; üstünde 2 px pay.
+ */
+export const ETIKET_ALT_SINIRI = GRAFIK_KUTUSU.yukseklik - 12 - 12 - 2;
+
+export function noktaEtiketleri(yCiro: number, yNet: number): { ciroY: number; netY: number } {
+  const bosluk = Math.abs(yNet - yCiro);
+  const itme = bosluk >= NOKTA_ETIKET_ARALIGI ? 0 : (NOKTA_ETIKET_ARALIGI - bosluk) / 2;
+  const alttaNet = yNet + 18 + itme;
+  if (alttaNet <= ETIKET_ALT_SINIRI) {
+    return { ciroY: yCiro - 10 - itme, netY: alttaNet };
+  }
+  const netY = yNet - 10;
+  return { ciroY: Math.min(yCiro - 10, netY - ETIKET_SATIR_ARALIGI), netY };
+}
+
+/** İlk nokta sola, son nokta sağa hizalanmaz — içe doğru yaslanır. */
+export function noktaEtiketHizasi(i: number, noktaSayisi: number): "start" | "middle" | "end" {
+  if (noktaSayisi <= 1) return "middle";
+  if (i === 0) return "start";
+  if (i === noktaSayisi - 1) return "end";
+  return "middle";
+}

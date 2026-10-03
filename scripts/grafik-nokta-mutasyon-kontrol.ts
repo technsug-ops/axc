@@ -21,6 +21,7 @@ const SERIT = "src/components/grafik-nokta-seritleri.tsx";
 const CIZGI = "src/components/cizgi-grafik.tsx";
 const TEK = "src/components/tek-serili-grafik.tsx";
 const PENCERE = "src/components/grafik-nokta-penceresi.tsx";
+const OLCEK = "src/components/grafik-olcek.ts";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -46,6 +47,22 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ESC KAPATMIYOR", yon: "KALDIRAN", dosya: PENCERE,
     bul: '      if (e.key === "Escape") setSecili(null);', koy: "      void e;",
     bozdugu: "klavyeyle pencere kapatilamaz" },
+  /* ── rakam konumu (03.10.2026 «ciro ile net karışmış» vakası) ── */
+  { ad: "NET-2 RAKAMI AY SATIRINA INIYOR", yon: "KALDIRAN", dosya: OLCEK,
+    bul: "  if (alttaNet <= ETIKET_ALT_SINIRI) {", koy: "  if (true) {",
+    bozdugu: "ay basinda NET-2 rakami ay adinin ustune biner (Ekim vakasi)" },
+  { ad: "CIRO RAKAMI NET-2 USTUNE ITILMIYOR", yon: "KALDIRAN", dosya: OLCEK,
+    bul: "  return { ciroY: Math.min(yCiro - 10, netY - ETIKET_SATIR_ARALIGI), netY };", koy: "  return { ciroY: yCiro - 10, netY };",
+    bozdugu: "iki rakam ayni satira biner" },
+  { ad: "NORMAL AYDA DA RAKAM USTE ALINIYOR", yon: "FAZLADAN", dosya: OLCEK,
+    bul: "  if (alttaNet <= ETIKET_ALT_SINIRI) {", koy: "  if (false) {",
+    bozdugu: "her ayda NET-2 rakami ciro tarafina gecer, konumla okuma bozulur" },
+  { ad: "UC NOKTA ORTALANIYOR", yon: "KALDIRAN", dosya: OLCEK,
+    bul: '  if (i === 0) return "start";\n', koy: "",
+    bozdugu: "ilk ayin rakami eksen yazisina biner (Kasim vakasi)" },
+  { ad: "GRAFIK GOVDEYI KULLANMIYOR", yon: "KALDIRAN", dosya: CIZGI,
+    bul: "                      y={ciroY}", koy: "                      y={yKonum(n.gelir) - 10}",
+    bozdugu: "duzeltme ekrana ulasmaz" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

@@ -1,7 +1,13 @@
 import { isValidElement, type ReactElement } from "react";
 
 import { NoktaSeritleri } from "../src/components/grafik-nokta-seritleri";
-import { GRAFIK_KUTUSU as G } from "../src/components/grafik-olcek";
+import {
+  GRAFIK_KUTUSU as G,
+  ETIKET_ALT_SINIRI,
+  ETIKET_SATIR_ARALIGI,
+  noktaEtiketHizasi,
+  noktaEtiketleri,
+} from "../src/components/grafik-olcek";
 import { kaynakOku } from "./kaynak-oku";
 
 /**
@@ -14,13 +20,15 @@ import { kaynakOku } from "./kaynak-oku";
  *  ② BAĞ — iki grafik sarmalayıcıyla sarılı, şeritler SVG'nin EN ÜSTÜNDE
  *     (sonra çizilen bir katman dokunmayı yutar), pencere metni sunucuda
  *     biçimleniyor, boş ay pencere açmıyor.
+ *  ③ RAKAM KONUMU (03.10.2026) — gövde çağrılır: NET-2 rakamı ay satırına
+ *     İNMEZ, ciro rakamı NET-2'nin ÜSTÜNDE kalır, uç noktalar içe yaslanır.
  * ============================================================================
  */
 
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 2;
+const BOLUM_SAYISI = 3;
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
     gecen++;
@@ -97,6 +105,28 @@ for (const [ad, yol, noktaIfadesi] of [
   kontrol("kapatma yolları: aynı nokta · Esc · dışarı dokunma", /secili\?\.i === i\)[\s\S]{0,40}setSecili\(null\)/.test(p) && /e\.key === "Escape"/.test(p) && /"pointerdown", disari/.test(p));
 }
 kosanBolumler.push("bağ");
+
+/* ③ RAKAM KONUMU — 03.10.2026 «ciro ile net karışmış» vakası */
+{
+  const AY_SATIRI = G.yukseklik - 12;
+  const dip = G.yukseklik - G.alt; // eksenin sıfır çizgisi (alt = 0 iken)
+  // Ekim vakası: ay yeni başladı, ciro ₺97 B · NET-2 ₺8,2 B, eksen ₺2 Mn → iki nokta da dipte.
+  const ekim = noktaEtiketleri(dip - 11, dip - 1);
+  kontrol("NET-2 rakamı dipteyken ay satırına İNMEZ", ekim.netY <= ETIKET_ALT_SINIRI && ekim.netY < AY_SATIRI - 12, ekim);
+  kontrol("  ...ve ciro rakamı NET-2 rakamının ÜSTÜNDE, satır boşluğuyla", ekim.ciroY <= ekim.netY - ETIKET_SATIR_ARALIGI, ekim);
+  // Normal ay: ciro üstte, NET-2 ortada — eski yerleşim AYNEN (alt etiket noktanın altında).
+  const normal = noktaEtiketleri(60, 200);
+  kontrol("normal ayda NET-2 rakamı noktasının ALTINDA (eski yerleşim korunur)", normal.netY === 218 && normal.ciroY === 50, normal);
+  // Yakın noktalar: zıt yönlere itilir (eski ölçüt).
+  const yakin = noktaEtiketleri(150, 160);
+  kontrol("yakın noktalarda etiketler zıt yönlere itilir", yakin.ciroY < 140 && yakin.netY > 178, yakin);
+  kontrol("ilk nokta içe (start), son nokta içe (end), ortadakiler orta",
+    noktaEtiketHizasi(0, 12) === "start" && noktaEtiketHizasi(11, 12) === "end" && noktaEtiketHizasi(5, 12) === "middle" && noktaEtiketHizasi(0, 1) === "middle");
+  const c = yorumsuz(kaynakOku("src/components/cizgi-grafik.tsx"));
+  kontrol("grafik konumu gövdeden alıyor", /const \{ ciroY, netY \} = noktaEtiketleri\(yKonum\(n\.gelir\), yKonum\(n\.net2\)\);/.test(c));
+  kontrol("  ...ciro rakamı ciroY'ye, NET-2 rakamı netY'ye yazılıyor", /y=\{ciroY\}\s*textAnchor=\{hiza\}[\s\S]{0,200}?bicimleKisa\(n\.gelir\)/.test(c) && /y=\{net2Goster \? netY : yKonum\(anaSeri\(n\)\) - 10\}\s*textAnchor=\{hiza\}/.test(c));
+}
+kosanBolumler.push("rakam konumu");
 
 console.log("\n" + "=".repeat(70));
 if (kosanBolumler.length !== BOLUM_SAYISI) {
