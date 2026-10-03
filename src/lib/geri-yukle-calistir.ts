@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 // firmalar-üstüdür. Çok firmada ekrandan kapalı (`tamSistemIslemiAcikMi`,
 // lib/firma-dongusu.ts). Firma başına geri yükleme ayrı bir tasarım kararı.
 import { YEDEK_TABLOLARI, type YedekDosyasi } from "@/lib/yedek-bicim";
+import { BAG_KAPISI_DEGISKENI, FIRMA_BAGLARI } from "@/lib/firma-baglari.uretilmis";
 
 /**
  * ============================================================================
@@ -46,6 +47,7 @@ export type GeriYuklemeHatasi =
   | { kod: "SUTUN_TANINMADI"; tablo: string; sutunlar: string[] }
   | { kod: "TABLO_TANINMADI"; tablo: string }
   | { kod: "SAYIM_TUTMADI"; tablo: string; beklenen: number; gelen: number }
+  | { kod: "FIRMA_BAG_TUTMADI"; tablo: string; alan: string; adet: number }
   | { kod: "ISLEM_HATASI"; ayrinti: string };
 
 export type GeriYuklemeSonucu =
@@ -154,6 +156,10 @@ export async function geriYukle(
       async (tx) => {
         // FK kontrolü KAPALI — oturum değişkeni, işlemin bağlantısında geçerli.
         await tx.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
+        /* K303 4: firma bağ kapısı (tetikleyiciler) da bu oturumda susar — kendine
+           bağlı tablolarda (stok hareketi → kaynak hareket) yazım sırası garanti
+           değil. Yazım bitince bütün bağlar AŞAĞIDA toplu doğrulanır. */
+        await tx.$executeRawUnsafe(`SET @${BAG_KAPISI_DEGISKENI} = 1`);
 
         try {
           // --- SİL: bağımlılığın TERSİ sırayla ---
@@ -206,9 +212,24 @@ export async function geriYukle(
               });
             }
           }
+
+          // --- DOĞRULA: firma bağları (K303 4) — tetikleyici sustuğu için burada TOPLU.
+          // Başka firmanın kaydına ya da hiç olmayan kayda bağlı satır varsa GERİ ALINIR.
+          for (const b of FIRMA_BAGLARI) {
+            const [{ n }] = await tx.$queryRawUnsafe<{ n: bigint }[]>(
+              `SELECT COUNT(*) AS n FROM \`${b.tablo}\` c LEFT JOIN \`${b.hedef}\` h ON h.id = c.\`${b.alan}\` ` +
+                `WHERE c.\`${b.alan}\` IS NOT NULL AND (h.id IS NULL OR NOT (h.companyId <=> c.companyId))`,
+            );
+            if (Number(n) > 0) {
+              throw Object.assign(new Error("FIRMA_BAG_TUTMADI"), {
+                firmaBag: { tablo: b.tablo, alan: b.alan, adet: Number(n) },
+              });
+            }
+          }
         } finally {
           // Hata olsa da olmasa da kontrol geri açılır.
           await tx.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+          await tx.$executeRawUnsafe(`SET @${BAG_KAPISI_DEGISKENI} = NULL`);
         }
       },
       { timeout: ISLEM_ZAMAN_ASIMI_MS, maxWait: ISLEM_BEKLEME_MS },
@@ -218,6 +239,10 @@ export async function geriYukle(
       .selliora;
     if (ek) {
       return { tamam: false, hata: { kod: "SAYIM_TUTMADI", ...ek } };
+    }
+    const bag = (e as { firmaBag?: { tablo: string; alan: string; adet: number } }).firmaBag;
+    if (bag) {
+      return { tamam: false, hata: { kod: "FIRMA_BAG_TUTMADI", ...bag } };
     }
     return {
       tamam: false,

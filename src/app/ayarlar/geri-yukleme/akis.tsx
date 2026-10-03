@@ -115,6 +115,8 @@ export function GeriYuklemeAkisi({
                               ? t("hataTabloTaninmadi")
                               : kod === "SAYIM_TUTMADI"
                                 ? t("hataSayimTutmadi")
+                                : kod === "FIRMA_BAG_TUTMADI"
+                                  ? t("hataFirmaBag")
                                 : kod === "ONAY_YANLIS"
                                   ? t("hataOnayYanlis")
                                   : kod === "COK_FIRMA_KAPALI"

@@ -2,6 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
 import { haritaUret, dosyaMetni, HARITA_DOSYASI } from "./firma-modelleri-uret";
+import { bagIliskileri, tetikleyiciSql, bagListesiDosyasi, BASLIK, BAG_LISTESI_DOSYASI, KAPI_DEGISKENI } from "./firma-bag-tetikleyici-uret";
 import { argumanlariSuz, firmaModeliMi, veriEkle, whereEkle } from "../src/lib/firma-suzgeci";
 import { donguDurumKodu, firmaFirmaKos, kimlikFirmasiSec } from "../src/lib/firma-dongusu";
 import { acikFirmaBaglami, zorunluFirma } from "../src/lib/firma-baglami";
@@ -273,6 +274,46 @@ async function donguOlc() {
       goc.includes(`ALTER TABLE \`${ad}\` ADD CONSTRAINT \`${ad}_companyId_zorunlu\` CHECK (\`companyId\` IS NOT NULL);`));
   }
   kontrol(`firma zorunlu küme tabanı DOLU (≥46, bulunan ${kume})`, kume >= 46);
+}
+
+/* ⑩ BAĞ KAPISI (Aşama 4) — tetikleyiciler + bağ listesi şemadan TAZE; kapıyı
+   susturan değişken YALNIZ geri yüklemede; geri yükleme bağları TOPLU doğrular. */
+{
+  const firma = new Set(Object.entries(haritaUret(kaynakOku("prisma/schema.prisma"))).filter(([, b]) => b.firma).map(([k]) => k));
+  const baglar = bagIliskileri(kaynakOku("prisma/schema.prisma"), firma);
+  kontrol(`firma bağı tabanı DOLU (≥67, bulunan ${baglar.length})`, baglar.length >= 67);
+  const n = (m: string) => m.replace(/\r\n/g, "\n");
+  kontrol("bağ kapısı tetikleyicileri şemayla GÜNCEL (firma-bag-tetikleyici-uret)",
+    n(kaynakOku("prisma/migrations/20261003100500_k303_firma_bag_kapisi/migration.sql")) === n(BASLIK + tetikleyiciSql(baglar)));
+  kontrol("bağ listesi şemayla GÜNCEL", n(kaynakOku(BAG_LISTESI_DOSYASI)) === n(bagListesiDosyasi(baglar)));
+  kontrol("her tetikleyici kapı değişkeni NULL iken denetler (geri yükleme dışında hep açık)",
+    (tetikleyiciSql(baglar).match(new RegExp(`IF @${KAPI_DEGISKENI} IS NULL THEN`, "g")) ?? []).length === new Set(baglar.map((b) => b.tablo)).size * 2);
+
+  /* desen yasağı — kapıyı susturan ad yalnız beyanlı dosyalarda (src/ + scripts/ taranır) */
+  const IZINLI = new Set([
+    "scripts/firma-bag-tetikleyici-uret.ts", "src/lib/firma-baglari.uretilmis.ts", "src/lib/geri-yukle-calistir.ts",
+    "scripts/firma-suzgeci-dogrula.ts", "scripts/firma-suzgeci-mutasyon-kontrol.ts",
+  ]);
+  let yasakli = 0;
+  for (const yol of [...dosyalar("src"), ...dosyalar("scripts")]) {
+    const y = yol.replace(/\\/g, "/");
+    if (IZINLI.has(y)) continue;
+    const kod = yorumsuz(kaynakOku(yol));
+    if (kod.includes(KAPI_DEGISKENI) || /\bBAG_KAPISI_DEGISKENI\b/.test(kod)) { yasakli++; kontrol(`${y} bağ kapısını SUSTURAMAZ (yalnız geri yükleme)`, false); }
+  }
+  kontrol("bağ kapısını susturan ad beyanlı dosyalar dışında YOK", yasakli === 0);
+
+  /* geri yükleme: kapıyı kapatır → toplu doğrular → açar (kullanım bloğu) */
+  const g = yorumsuz(kaynakOku("src/lib/geri-yukle-calistir.ts"));
+  const kapat = g.indexOf("await tx.$executeRawUnsafe(`SET @${BAG_KAPISI_DEGISKENI} = 1`);");
+  const dongu = g.indexOf("for (const b of FIRMA_BAGLARI) {");
+  const ac = g.indexOf("await tx.$executeRawUnsafe(`SET @${BAG_KAPISI_DEGISKENI} = NULL`);");
+  kontrol("geri yükleme kapıyı yalnız kendi oturumunda kapatıyor", kapat >= 0);
+  kontrol("  ...yazım sonrası bütün bağları TOPLU doğruluyor", dongu > kapat && kapat >= 0);
+  const dBlok = dongu >= 0 ? g.slice(dongu, dongu + 700) : "";
+  kontrol("  ...ihlal (başka firma / sahipsiz) varsa işlemi GERİ ALIYOR",
+    /h\.id IS NULL OR NOT \(h\.companyId <=> c\.companyId\)/.test(dBlok) && /if \(Number\(n\) > 0\) \{\s*throw Object\.assign\(new Error\("FIRMA_BAG_TUTMADI"\)/.test(dBlok));
+  kontrol("  ...kapıyı finally'de geri AÇIYOR", ac > dongu && /finally \{[\s\S]{0,200}SET @\$\{BAG_KAPISI_DEGISKENI\} = NULL/.test(g));
 }
 
 /* ⑧b topluGuncelle firmayı sorguya YAZIYOR — değerle */

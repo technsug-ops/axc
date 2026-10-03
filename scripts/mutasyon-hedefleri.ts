@@ -239,6 +239,12 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "deneme-ortami-mutasyon:kontrol",
   "hb-sayfa-mutasyon:kontrol",
   /**
+   * K303 Aşama 3–4 (03.10.2026) — `firma-suzgeci` artık ham SQL'li gövdeleri
+   * (`alim-arama`, `toplu-guncelle`), geri yüklemeyi ve `satis.ts`'i (bağ kapısı
+   * desen yasağı) mutasyona uğratıyor; bu dosyaları başka harness'ler de bozuyor.
+   */
+  "firma-suzgeci-mutasyon:kontrol",
+  /**
    * K284 (26.09.2026) — `supheli-urun` Ürünler listesindeki şüpheli
    * bağlantısını (`src/app/urunler/page.tsx`) mutasyona uğratıyor; aynı dosyayı
    * `kod-cozumu` da bozuyor. Paralel koşsalar biri ötekinin mutantını asıl

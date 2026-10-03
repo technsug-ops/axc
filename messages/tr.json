@@ -2707,7 +2707,8 @@
     "girisKaybiCare": "Devam ederseniz hesabı yeniden oluşturmak için bilgisayarınızdan `npm run kullanici:olustur` çalıştırmanız gerekir. Bunu yapamayacaksanız bu dosyayı KULLANMAYIN.",
     "cokFirmaBaslik": "Geri yükleme bu kurulumda kapalı",
     "cokFirmaMetin": "Bu kurulumda birden çok firma var. Geri yükleme bütün tabloları boşaltıp yedeği yazar; açık olsaydı bir firmanın geri yüklemesi öteki firmaların verisini silerdi. Firma başına geri yükleme henüz yok.",
-    "hataCokFirma": "Birden çok firma olduğu için geri yükleme kapalı — öteki firmaların verisi silinirdi."
+    "hataCokFirma": "Birden çok firma olduğu için geri yükleme kapalı — öteki firmaların verisi silinirdi.",
+    "hataFirmaBag": "Yedekteki bazı kayıtlar başka bir firmanın kaydına ya da hiç olmayan bir kayda bağlı, bu yüzden işlem geri alındı. Hiçbir şey değişmedi."
   },
   "Bildirim": {
     "eklendi": "Kayıt eklendi.",
