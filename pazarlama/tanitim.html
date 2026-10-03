@@ -1,521 +1,469 @@
 <title>Selliora</title>
-<meta name="description" content="Selliora — çok kanallı e-ticaret operasyon sistemi. Her satışın gerçek sonucu, pazaryerinin kendi belgesinden ölçülmüş kesintilerle.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-  /* Düzen: muhasebe defteri — solda dar şerit etiketi, sağda içerik; rakamlar mono ve sütun hizalı. */
+  /* Düzen: her bölüm bir SORUN satırı + ÇÖZÜM satırı + o çözümü gösteren ölçekli grafik. Defter kimliği: mono rakam, cetvel çizgisi, kadran mavisi. */
   :root {
-    --kagit:      #ECEDEF;
-    --kagit-alt:  #E3E5E8;
-    --murekkep:   #111820;
-    --murekkep-2: #3D4750;
-    --murekkep-3: #6E7981;
-    --cetvel:     #CDD2D7;
-    --cetvel-2:   #DBDFE3;
-    --kadran:     #2E6F8E;
-    --kadran-yum: #DCE7EC;
-    --zarar:      #A33A2E;
-
+    --kagit: #EEF0F2; --kagit-alt: #E2E6EA; --kart: #F7F8F9;
+    --murekkep: #0F1720; --murekkep-2: #3B4651; --murekkep-3: #6B7782;
+    --cetvel: #CBD2D8; --kadran: #236A8C; --kadran-yum: #D3E5EE;
+    --zarar: #B03A2C; --zarar-yum: #F3DCD8; --kar: #2F7A55; --kar-yum: #D8EDE2;
     --display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
-    --govde:   "Newsreader", Georgia, "Times New Roman", serif;
-    --veri:    "IBM Plex Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
-
-    --olcu: 1180px;
+    --govde: "Newsreader", Georgia, "Times New Roman", serif;
+    --veri: "IBM Plex Mono", Consolas, ui-monospace, monospace;
   }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --kagit:      #0E1318;
-      --kagit-alt:  #141A21;
-      --murekkep:   #E4E8EB;
-      --murekkep-2: #AAB4BC;
-      --murekkep-3: #7C868F;
-      --cetvel:     #29323A;
-      --cetvel-2:   #1E262D;
-      --kadran:     #6FB2CE;
-      --kadran-yum: #16303C;
-      --zarar:      #E0796A;
-      color-scheme: dark;
-    }
-  }
-
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --kagit: #0D1217; --kagit-alt: #141B22; --kart: #111820;
+    --murekkep: #E6EAED; --murekkep-2: #AEB8C1; --murekkep-3: #7D8892;
+    --cetvel: #28323B; --kadran: #6DB3D2; --kadran-yum: #15303D;
+    --zarar: #E57B6C; --zarar-yum: #3A1D19; --kar: #6FC79A; --kar-yum: #15301F; color-scheme: dark; } }
   :root[data-theme="dark"] {
-    --kagit:      #0E1318;
-    --kagit-alt:  #141A21;
-    --murekkep:   #E4E8EB;
-    --murekkep-2: #AAB4BC;
-    --murekkep-3: #7C868F;
-    --cetvel:     #29323A;
-    --cetvel-2:   #1E262D;
-    --kadran:     #6FB2CE;
-    --kadran-yum: #16303C;
-    --zarar:      #E0796A;
-    color-scheme: dark;
-  }
+    --kagit: #0D1217; --kagit-alt: #141B22; --kart: #111820;
+    --murekkep: #E6EAED; --murekkep-2: #AEB8C1; --murekkep-3: #7D8892;
+    --cetvel: #28323B; --kadran: #6DB3D2; --kadran-yum: #15303D;
+    --zarar: #E57B6C; --zarar-yum: #3A1D19; --kar: #6FC79A; --kar-yum: #15301F; color-scheme: dark; }
 
   * { box-sizing: border-box; }
-  h1, h2, h3, h4, p, ul { margin: 0; }
+  h1, h2, h3, p, ul { margin: 0; }
+  body { margin: 0; background: var(--kagit); color: var(--murekkep); font-family: var(--govde); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .sinir { max-width: 1160px; margin: 0 auto; padding-inline: 28px; }
+  @media (max-width: 560px) { .sinir { padding-inline: 18px; } }
+  h1, h2, h3 { font-family: var(--display); font-weight: 700; text-wrap: balance; }
+  .etiket { font-family: var(--veri); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--murekkep-3); }
+  .soluk { color: var(--murekkep-2); }
+  p { max-width: 60ch; }
+  .mono { font-family: var(--veri); font-variant-numeric: tabular-nums; }
 
-  body {
-    margin: 0;
-    background: var(--kagit);
-    color: var(--murekkep);
-    font-family: var(--govde);
-    font-size: 17px;
-    line-height: 1.62;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .sinir { max-width: var(--olcu); margin: 0 auto; padding-inline: 28px; }
-  @media (max-width: 520px) { .sinir { padding-inline: 18px; } }
-
-  .defter { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 0 34px; align-items: start; }
-  @media (max-width: 820px) { .defter { grid-template-columns: 1fr; gap: 10px; } }
-
-  .serit {
-    font-family: var(--veri); font-size: 11px; letter-spacing: .13em;
-    text-transform: uppercase; color: var(--murekkep-3);
-    padding-top: .55em; border-top: 2px solid var(--murekkep);
-  }
-  @media (max-width: 820px) { .serit { border-top: none; padding-top: 0; } }
-
-  .bolum { padding-block: 76px; border-top: 1px solid var(--cetvel); }
-  @media (max-width: 520px) { .bolum { padding-block: 52px; } }
-
-  h1, h2, h3, h4 { font-family: var(--display); font-weight: 700; text-wrap: balance; }
-  h2 { font-size: clamp(28px, 3.6vw, 42px); line-height: 1.1; letter-spacing: -.02em; }
-  h3 { font-size: 20px; line-height: 1.22; letter-spacing: -.01em; }
-  h4 { font-size: 17px; line-height: 1.25; }
-  p { max-width: 62ch; }
-  .yig { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-  .yig-s { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-  .sonuc { color: var(--murekkep-2); }
-
-  /* ── Hero ──────────────────────────────────────────────────────── */
-  .tepe { padding-block: 68px 54px; }
+  /* Hero */
+  .tepe { padding-block: 56px 40px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 48px; align-items: center; }
+  @media (max-width: 920px) { .tepe { grid-template-columns: 1fr; gap: 30px; } }
   .marka { font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: .3em; text-transform: uppercase; }
-  .marka span { color: var(--murekkep-3); letter-spacing: .06em; font-weight: 500; font-size: 13px; text-transform: none; margin-left: 14px; }
-  .tez {
-    font-family: var(--display); font-weight: 700;
-    font-size: clamp(36px, 6vw, 70px); line-height: .99;
-    letter-spacing: -.035em; margin-top: 24px; max-width: 16ch;
-  }
-  .tez em { font-style: normal; color: var(--kadran); }
-  .alt-tez { margin-top: 20px; font-size: 20px; color: var(--murekkep-2); max-width: 56ch; }
+  .tez { font-size: clamp(36px, 5.4vw, 64px); line-height: 1; letter-spacing: -.035em; margin-top: 22px; }
+  .tez em { font-style: normal; color: var(--zarar); }
+  .alt-tez { margin-top: 18px; font-size: 19px; color: var(--murekkep-2); }
+  .kanallar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .rozet { font-family: var(--veri); font-size: 12px; padding: 5px 10px; border: 1px solid var(--cetvel); background: var(--kart); }
+  .rozet b { color: var(--kadran); font-weight: 600; }
+  .cta { display: inline-flex; align-items: center; min-height: 48px; margin-top: 26px; padding: 0 22px; background: var(--murekkep); color: var(--kagit); font-family: var(--display); font-weight: 600; font-size: 16px; text-decoration: none; }
+  .cta:hover { background: var(--kadran); }
 
-  .kanit { margin-top: 46px; border-top: 2px solid var(--murekkep); border-bottom: 2px solid var(--murekkep); background: var(--kagit-alt); }
-  .kanit-bas { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; align-items: baseline; padding: 13px 18px; border-bottom: 1px solid var(--cetvel); }
-  .etiket { font-family: var(--veri); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--murekkep-3); }
-  .satir { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px; align-items: baseline; padding: 10px 18px; border-bottom: 1px solid var(--cetvel-2); font-family: var(--veri); font-size: 14px; }
-  .satir .ad { color: var(--murekkep-2); min-width: 0; }
-  .satir .tutar { font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
-  .satir.dus .tutar { color: var(--zarar); }
-  .satir.toplam { border-bottom: none; border-top: 2px solid var(--murekkep); padding-top: 14px; padding-bottom: 16px; }
-  .satir.toplam .ad { color: var(--murekkep); font-weight: 600; }
-  .satir.toplam .tutar { font-weight: 600; font-size: 20px; }
-  .satir.toplam .tutar.eksi { color: var(--zarar); }
-  .kanit-not { padding: 13px 18px; font-size: 14px; color: var(--murekkep-2); border-top: 1px solid var(--cetvel); }
-  .kanit-not b { font-weight: 600; color: var(--murekkep); }
+  .grafik-kart { background: var(--kart); border: 1px solid var(--cetvel); padding: 18px 18px 14px; min-width: 0; }
+  .grafik-kart h3 { font-size: 16px; }
+  .grafik-kart .alt { font-size: 14px; color: var(--murekkep-2); margin-top: 4px; }
+  .grafik { width: 100%; height: auto; display: block; margin-top: 12px; overflow: visible; }
+  .grafik text { font-family: var(--veri); font-size: 11px; fill: var(--murekkep-2); }
+  .grafik .koyu { fill: var(--murekkep); font-weight: 600; }
+  .grafik .zarar-y { fill: var(--zarar); font-weight: 600; }
+  .grafik .eksen { stroke: var(--cetvel); stroke-width: 1; }
+  .grafik .sifir { stroke: var(--murekkep-3); stroke-width: 1.2; }
+  .grafik .bag { stroke: var(--murekkep-3); stroke-width: 1; stroke-dasharray: 3 3; }
+  .b-satis { fill: var(--kadran); } .b-maliyet { fill: var(--murekkep-3); } .b-brut { fill: var(--kar); }
+  .b-kesinti { fill: var(--zarar); } .b-net { fill: var(--zarar); }
+  .grafik-not { font-size: 13px; color: var(--murekkep-3); margin-top: 8px; }
 
-  /* ── Modül ızgarası ────────────────────────────────────────────── */
-  .moduller { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 1px; background: var(--cetvel); border: 1px solid var(--cetvel); }
-  .modul { background: var(--kagit); padding: 22px 20px 24px; display: flex; flex-direction: column; gap: 11px; min-width: 0; }
-  .modul .kod { font-family: var(--veri); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--kadran); }
-  .modul p { font-size: 15.5px; color: var(--murekkep-2); }
-  .modul ul { margin-top: 3px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
-  .modul li { font-size: 14.5px; color: var(--murekkep-2); padding-left: 15px; position: relative; line-height: 1.45; }
-  .modul li::before { content: "—"; position: absolute; left: 0; color: var(--murekkep-3); }
+  /* Kanıt bandı */
+  .bant { border-block: 2px solid var(--murekkep); background: var(--kagit-alt); }
+  .bant-ic { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 760px) { .bant-ic { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .bant-k { padding: 18px 16px; border-right: 1px solid var(--cetvel); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .bant-k:last-child { border-right: none; }
+  .bant-k .say { font-family: var(--veri); font-size: clamp(22px, 3vw, 30px); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bant-k .ne { font-size: 14px; color: var(--murekkep-2); line-height: 1.35; }
 
-  /* ── Öne çıkan tek özellik ─────────────────────────────────────── */
-  .vitrin { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,340px); gap: 40px; align-items: start; }
-  @media (max-width: 900px) { .vitrin { grid-template-columns: 1fr; gap: 26px; } }
-  .kart { border: 2px solid var(--murekkep); background: var(--kagit-alt); min-width: 0; }
-  .kart-bas { padding: 12px 16px; border-bottom: 1px solid var(--cetvel); }
-  .kart .satir { font-size: 13.5px; padding: 9px 16px; }
-  .kart .satir.kazanan { background: var(--kadran-yum); }
-  .kart .satir.kazanan .ad { color: var(--murekkep); font-weight: 600; }
+  /* Sorun / çözüm bölümleri */
+  .bolum { padding-block: 72px; border-top: 1px solid var(--cetvel); }
+  @media (max-width: 560px) { .bolum { padding-block: 50px; } }
+  .bolum-bas { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+  .bolum-bas h2 { font-size: clamp(28px, 3.6vw, 42px); line-height: 1.08; letter-spacing: -.02em; }
+  .sc { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 40px; align-items: start; }
+  @media (max-width: 920px) { .sc { grid-template-columns: 1fr; gap: 24px; } }
+  .sc.ters { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); }
+  .sc.ters > .metin { order: 2; }
+  @media (max-width: 920px) { .sc.ters { grid-template-columns: 1fr; } .sc.ters > .metin { order: 0; } }
+  .metin { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .sorun, .cozum { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 14px; align-items: baseline; }
+  @media (max-width: 480px) { .sorun, .cozum { grid-template-columns: 1fr; gap: 4px; } }
+  .sorun .etiket { color: var(--zarar); }
+  .cozum .etiket { color: var(--kar); }
+  .sorun h3 { font-size: 22px; line-height: 1.2; }
+  .cozum p { color: var(--murekkep-2); }
+  .maddeler { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; margin-left: 106px; }
+  @media (max-width: 480px) { .maddeler { margin-left: 0; } }
+  .maddeler li { font-size: 15.5px; color: var(--murekkep-2); padding-left: 18px; position: relative; line-height: 1.45; }
+  .maddeler li::before { content: ""; position: absolute; left: 0; top: .6em; width: 8px; height: 2px; background: var(--kadran); }
 
-  /* ── Akış ──────────────────────────────────────────────────────── */
-  .akis { display: flex; flex-direction: column; gap: 1px; background: var(--cetvel); border-block: 1px solid var(--cetvel); }
-  .adim { background: var(--kagit); display: grid; grid-template-columns: 50px minmax(0,1fr); gap: 18px; padding: 18px 4px; align-items: start; }
-  .adim .no { font-family: var(--veri); font-size: 12px; font-weight: 600; color: var(--kadran); letter-spacing: .1em; padding-top: .3em; }
+  /* Kanal kesinti tablosu */
+  .tablo-kap { overflow-x: auto; }
+  table.kesinti { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 460px; }
+  .kesinti th, .kesinti td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--cetvel); vertical-align: top; }
+  .kesinti th { font-family: var(--veri); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--murekkep-3); font-weight: 500; }
+  .kesinti td:first-child { font-family: var(--display); font-weight: 600; white-space: nowrap; }
+  .kesinti .var { color: var(--zarar); font-family: var(--veri); font-size: 13px; }
+  .kesinti .yok { color: var(--murekkep-3); font-family: var(--veri); font-size: 13px; }
 
-  .kutular { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 1px; background: var(--cetvel); border: 1px solid var(--cetvel); }
-  .kutu { background: var(--kagit); padding: 15px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-  .kutu .say { font-family: var(--veri); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
-  .kutu .ne { font-size: 14px; color: var(--murekkep-2); line-height: 1.35; }
+  /* Akış */
+  .akis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; position: relative; }
+  @media (max-width: 860px) { .akis { grid-template-columns: 1fr; } }
+  .adim { padding: 18px 16px 18px 0; border-top: 3px solid var(--kadran); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  @media (max-width: 860px) { .adim { border-top: none; border-left: 3px solid var(--kadran); padding: 12px 0 12px 18px; } }
+  .adim .no { font-family: var(--veri); font-size: 12px; color: var(--kadran); font-weight: 600; }
+  .adim h3 { font-size: 17px; }
+  .adim p { font-size: 14.5px; color: var(--murekkep-2); }
+  .adim .oto { font-family: var(--veri); font-size: 11px; color: var(--kar); letter-spacing: .06em; text-transform: uppercase; }
 
-  .ilke { border-left: 3px solid var(--kadran); padding: 4px 0 4px 22px; font-size: clamp(19px, 2.3vw, 25px); line-height: 1.35; font-style: italic; max-width: 32ch; }
+  /* Paketleme şeması */
+  .paket { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--cetvel); border: 1px solid var(--cetvel); }
+  @media (max-width: 560px) { .paket { grid-template-columns: 1fr; } }
+  .paket > div { background: var(--kart); padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .paket svg { width: 40px; height: 40px; }
+  .paket svg * { stroke: var(--kadran); fill: none; stroke-width: 1.8; }
+  .paket h3 { font-size: 15.5px; }
+  .paket p { font-size: 14px; color: var(--murekkep-2); }
+  .ok-iyi { color: var(--kar); font-family: var(--veri); font-size: 12px; }
 
   .kapanis { background: var(--kagit-alt); border-top: 2px solid var(--murekkep); }
-  .iletisim { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; }
-  .numara-satir { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
-  .numara {
-    font-family: var(--veri); font-size: clamp(21px, 2.8vw, 28px); font-weight: 500;
-    font-variant-numeric: tabular-nums; letter-spacing: .01em;
-    color: var(--murekkep); text-decoration: none; user-select: all;
-    border-bottom: 2px solid var(--kadran);
-    padding: 4px 0 7px;
-  }
-  .numara:hover { color: var(--kadran); }
-  .kopyala {
-    font-family: var(--veri); font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
-    background: transparent; color: var(--murekkep); border: 1px solid var(--murekkep-3);
-    padding: 0 14px; min-height: 44px; cursor: pointer;
-  }
+  .iletisim { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-top: 18px; }
+  .numara { font-family: var(--veri); font-size: clamp(22px, 3vw, 30px); font-weight: 500; color: var(--murekkep); text-decoration: none; border-bottom: 2px solid var(--kadran); padding-bottom: 4px; user-select: all; }
+  .kopyala { font-family: var(--veri); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; background: transparent; color: var(--murekkep); border: 1px solid var(--murekkep-3); padding: 0 14px; min-height: 44px; cursor: pointer; }
   .kopyala:hover { border-color: var(--kadran); color: var(--kadran); }
-  .kopyala-durum { font-family: var(--veri); font-size: 12px; color: var(--murekkep-3); min-height: 1.2em; }
-  .dip { padding-block: 24px 56px; font-family: var(--veri); font-size: 12px; color: var(--murekkep-3); }
-
-  a { color: var(--kadran); }
+  .durum { font-family: var(--veri); font-size: 12px; color: var(--murekkep-3); min-height: 1.3em; margin-top: 8px; }
+  .dip { padding-block: 24px 48px; font-family: var(--veri); font-size: 12px; color: var(--murekkep-3); }
   a:focus-visible, button:focus-visible { outline: 2px solid var(--kadran); outline-offset: 3px; }
 </style>
 
 <div class="sinir">
-
   <header class="tepe">
-    <div class="marka">Selliora <span>çok kanallı e-ticaret operasyon sistemi</span></div>
-    <h1 class="tez">Ekranda kârlı görünen satış, <em>gerçekte zarardaydı.</em></h1>
-    <p class="alt-tez">
-      Alıştan paketlemeye kadar bütün operasyon tek defterde. Her satışın
-      gerçek sonucu, pazaryerinin kendi belgesinden ölçülmüş kesintilerle
-      hesaplanır.
-    </p>
+    <div>
+      <div class="marka">Selliora</div>
+      <h1 class="tez">Pazaryerinde kârlı sandığınız satış, <em>zarar ediyor olabilir.</em></h1>
+      <p class="alt-tez">Komisyon, komisyonun KDV'si, platform bedeli, kargo, stopaj ve ödenecek KDV. Selliora her satışın bu kesintilerden sonra cebinizde kalan gerçek rakamını hesaplar ve operasyonun geri kalanını aynı defterde yönetir.</p>
+      <div class="kanallar">
+        <span class="rozet"><b>●</b> Trendyol</span>
+        <span class="rozet"><b>●</b> Hepsiburada</span>
+        <span class="rozet"><b>●</b> N11</span>
+        <span class="rozet">+ Amazon, elden satış ve 7 kanal daha</span>
+      </div>
+      <a class="cta" href="#iletisim">Kendi rakamlarınızla görün</a>
+    </div>
 
-    <div class="kanit">
-      <div class="kanit-bas">
-        <span class="etiket">Gerçek bir satış · Trendyol · rakamlar yuvarlandı</span>
-        <span class="etiket">Ürün KDV %20 · komisyon %20</span>
-      </div>
-      <div class="satirlar">
-        <div class="satir"><span class="ad">Satış fiyatı</span><span class="tutar">₺6.300,00</span></div>
-        <div class="satir dus"><span class="ad">Mal maliyeti (FIFO)</span><span class="tutar">−₺4.800,00</span></div>
-        <div class="satir dus"><span class="ad">Komisyon %20</span><span class="tutar">−₺1.260,00</span></div>
-        <div class="satir dus"><span class="ad">Platform hizmet bedeli</span><span class="tutar">−₺13,19</span></div>
-        <div class="satir dus"><span class="ad">Kargo</span><span class="tutar">−₺185,00</span></div>
-        <div class="satir dus"><span class="ad">Stopaj %1</span><span class="tutar">−₺52,50</span></div>
-        <div class="satir dus"><span class="ad">Ödenecek KDV</span><span class="tutar">−₺6,97</span></div>
-        <div class="satir toplam"><span class="ad">NET-2</span><span class="tutar eksi">−₺17,66</span></div>
-      </div>
-      <p class="kanit-not">
-        Brüt farka bakan bir tablo bu satış için <b>₺1.500,00 kâr</b> yazardı.
-        Aradaki <b>₺1.517,66</b>, kalem kalem ölçülen kesintilerdir. Rakamlar
-        gerçek bir siparişten yuvarlandı; kesinti oranları ve hesap aynı.
-      </p>
+    <div class="grafik-kart" aria-label="Bir satışın kesintilerden sonra zarara dönüşü">
+      <span class="etiket">Gerçek bir Trendyol satışı · rakamlar yuvarlandı</span>
+      <h3 style="margin-top:6px">₺6.300'lük satış, kesintilerden sonra <span style="color:var(--zarar)">−₺17,66</span></h3>
+      <p class="alt">Üstte satışın tamamı; altta brüt kârın (₺1.500) kalem kalem eriyişi, büyütülmüş ölçekle.</p>
+      <svg class="grafik" id="g-selale" viewBox="0 0 560 330" role="img" aria-label="Şelale grafik"></svg>
+      <p class="grafik-not">Brüt farka bakan bir tablo bu satışa ₺1.500 kâr yazardı.</p>
     </div>
   </header>
-
-  <!-- ═══ MODÜLLER ══════════════════════════════════════════════════ -->
-  <section class="bolum defter">
-    <div class="serit">Ne var</div>
-    <div class="yig">
-      <h2>Operasyonun tamamı, tek sistemde</h2>
-      <div class="moduller">
-
-        <div class="modul">
-          <span class="kod">Pazaryeri bağlantısı</span>
-          <h4>Sipariş kendiliğinden gelir</h4>
-          <p>Trendyol, Hepsiburada ve N11 siparişleri yaklaşık 5 dakikada bir sisteme düşer.</p>
-          <ul>
-            <li>Onayda hangi partiden düşüleceği ve maliyeti görünür; isterseniz başka partiyi seçersiniz</li>
-            <li>Stok tek düğmeyle bağlı bütün kanallara; fiyat her kanala ayrı gönderilir</li>
-            <li>Kargodan önce iptal edilen sipariş burada da kendiliğinden iptal olur, stok geri gelir</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Panel</span>
-          <h4>Güne nereden bakılır</h4>
-          <p>Ciro, NET-1 ve NET-2, marj ve bekleyen işler tek ekranda.</p>
-          <ul>
-            <li>Görev kutusu: onay bekleyen, kargoya verilmeyen, kârı hesaplanamayan sipariş</li>
-            <li>Yolda ve teslim edilen paketler, kanal kanal performans</li>
-            <li>Her rakama tıklayınca onu üreten liste süzülmüş hâlde açılır</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Kârlılık</span>
-          <h4>Bir satıştan gerçekte ne kalıyor</h4>
-          <p>İki net rakam: NET-1 stopaj düşülmüş, NET-2 ödenecek KDV de düşülmüş.</p>
-          <ul>
-            <li>Maliyet FIFO partisinden gelir, ortalamadan değil</li>
-            <li>Komisyon oranı satış anında kayda damgalanır; sonradan değişse hesap kaymaz</li>
-            <li>Maliyet bilinmiyorsa kâr yazılmaz, sıfır sayılmaz</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Stok</span>
-          <h4>Elimde ne var, nereden geldi</h4>
-          <p>Parti bazlı defter. Kayıt silinmez; düzeltme ters işaretli hareketle yapılır.</p>
-          <ul>
-            <li>Her çıkış hangi partiden düştüğünü ve o partinin maliyetini taşır</li>
-            <li>Stoğu eksiye düşürecek çıkış yazılmaz</li>
-            <li>Alım, iade, sayım farkı ve düzeltme aynı defterde</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Depo</span>
-          <h4>Ürün fiziksel olarak nerede</h4>
-          <p>Raf düzeni tarif edilir, kodlar üretilir, etiketler basılır.</p>
-          <ul>
-            <li>Etiket üç gösterim taşır: Code128, QR ve okunabilir kod; üçü aynı değer</li>
-            <li>Rafı okut, ürünleri peş peşe okut; konum yazılır, eski yeri de kaydedilir</li>
-            <li>Fiziksel sayım kamerayla yapılır; sayılmış raf sonradan sessizce ezilemez</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Alış · Satış</span>
-          <h4>İki yönlü defter</h4>
-          <p>Alım, mal kabul, iade, gider ve kredi kartı borcu.</p>
-          <ul>
-            <li>KDV hariç toptan fatura, ayrı kargo ve gümrük ürün maliyetine dağıtılır</li>
-            <li>Satış girerken o desi için kargo firmaları yan yana, en ucuzu işaretli</li>
-            <li>İade satış kalemine bağlanır, mal stoğa döner, kâr ve KDV yeniden hesaplanır</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Para</span>
-          <h4>Param ne zaman, ne kadar gelecek</h4>
-          <p>Hakediş, tazminat, kart borcu ve finansman aynı yerde.</p>
-          <ul>
-            <li>Trendyol ve Hepsiburada ödemeleri her sabah kendiliğinden çekilir</li>
-            <li>Pazaryerinin ödediği tutar, sipariş sipariş beklenen hakedişle karşılaştırılır</li>
-            <li>Nakit takvimi: kart borcu, hakediş ve kredi taksidi gün gün</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Analiz</span>
-          <h4>Hangi ürün gerçekten kazandırıyor</h4>
-          <p>Ürün ve kanal bazında kârlılık, marj ve sermaye verimi.</p>
-          <ul>
-            <li>Kârlılık kartı: bir ürünün bütün kanallardaki net sonucu yan yana</li>
-            <li>Yaşlanma bandı: sermayenin hangi üründe ne kadar beklediği</li>
-            <li>Dönem raporu, muhasebe dönemi kapatma ve dışa aktarma</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Fiyat denemesi</span>
-          <h4>Kaça satsam, nerede satsam</h4>
-          <p>Bir fiyat yazarsınız; sistem bütün kanallar için sonucu hesaplar.</p>
-          <ul>
-            <li>Kanal kanal NET-2 ve başabaş fiyat</li>
-            <li>Komisyon dilimi sınıra yakınsa daha kârlı alt dilim önerilir</li>
-            <li>Her kesinti kuralı hangi kaynaktan geldiğini rozetiyle gösterir</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Paketleme</span>
-          <h4>Yönlendirmeli hazırlık</h4>
-          <p>Kargo kodunu okutun; gerisini sistem söyler.</p>
-          <ul>
-            <li>Hangi ürün, kaç adet, hangi raftan, ekranda yazar</li>
-            <li>Raftan aldığınız ürünü okutunca eşleşme sesli ve görsel doğrulanır</li>
-            <li>Yanlış ürün akışı durdurmaz, bilgi verir</li>
-          </ul>
-        </div>
-
-        <div class="modul">
-          <span class="kod">Ekip · cihaz</span>
-          <h4>Telefonda da, ekiple de</h4>
-          <p>Depoda birincil cihaz telefon; masada bilgisayar.</p>
-          <ul>
-            <li>Telefona uygulama gibi kurulur; barkod her alanda kamerayla okunur</li>
-            <li>Çok kullanıcı ve rol: depocu stok girer, kâr marjını görmez</li>
-            <li>Hatalı giriş kilidi, toplu indirmelerin kaydı, verinin tamamı dışa aktarılabilir</li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ VİTRİN ════════════════════════════════════════════════════ -->
-  <section class="bolum defter">
-    <div class="serit">Öne çıkan</div>
-    <div class="vitrin">
-      <div class="yig">
-        <h2>Aynı ürün, farklı kanal, farklı sonuç</h2>
-        <p class="sonuc">
-          Kanalların kesinti yapısı birbirinden farklı: biri komisyona KDV
-          ekliyor, biri sipariş başına sabit bedel alıyor, kargo tarifesi
-          desiye göre değişiyor. Aynı fiyat her yerde aynı kârı bırakmaz.
-        </p>
-        <p class="sonuc">
-          Fiyat denemesi ekranı bir fiyat yazdığınızda bütün kanalları
-          hesaplar ve hangisinde satmanız gerektiğini rakamla söyler. Ürünü
-          kaça alacağınıza karar verirken de aynı ekran kullanılır.
-        </p>
-        <p class="sonuc">
-          Bu hesabı önceden yapmamanın bedeli tek bir talihsiz satış değil.
-          Yandaki rakamlar bu sistemin kendi defterinden sayıldı: zarar eden
-          satışların büyük çoğunluğu, satış anında <b>kârlı görünüyordu.</b>
-        </p>
-      </div>
-      <div class="kart">
-        <div class="kart-bas"><span class="etiket">Bu defterden ölçüldü · 03.10.2026</span></div>
-        <div class="satir"><span class="ad">Zararla kapanan tek kalemli satış</span><span class="tutar">276</span></div>
-        <div class="satir dus"><span class="ad">Bunlardan satış fiyatı maliyetin<br>üstünde olan, yani kârlı görünen</span><span class="tutar">229</span></div>
-        <div class="satir kazanan"><span class="ad">Oran</span><span class="tutar">%83</span></div>
-        <div class="kanit-not">
-          Kârı hesaplanmış 8.220 satış içinde, tek kalemli ve tek adetli
-          olanlar sayıldı. Kârlı görünen 229 satış, kesintiler hesaba
-          katılınca zarara döndü.
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ AKIŞ ══════════════════════════════════════════════════════ -->
-  <section class="bolum defter">
-    <div class="serit">Günlük iş</div>
-    <div class="yig">
-      <h2>Bir siparişin defterdeki yolu</h2>
-      <div class="akis">
-        <div class="adim"><span class="no">01</span><div class="yig-s">
-          <h3>Mal kabul</h3>
-          <p class="sonuc">Alım girilir, ürünler rafa okutularak yerleştirilir. Her giriş bir parti açar.</p>
-        </div></div>
-        <div class="adim"><span class="no">02</span><div class="yig-s">
-          <h3>Fiyat kararı ve kanala gönderim</h3>
-          <p class="sonuc">Fiyat denemesinde kanal kanal net sonuç görülür; stok ve fiyat ilanlara sistemden gönderilir.</p>
-        </div></div>
-        <div class="adim"><span class="no">03</span><div class="yig-s">
-          <h3>Sipariş ve onay</h3>
-          <p class="sonuc">Sipariş pazaryerinden kendiliğinden gelir. Onaylanınca stok partisinden düşer; o günün komisyon oranı ve kesinti kuralları satışa damgalanır.</p>
-        </div></div>
-        <div class="adim"><span class="no">04</span><div class="yig-s">
-          <h3>Toplama ve paketleme</h3>
-          <p class="sonuc">Kargo kodu okutulur, sistem rafı söyler, alınan ürün okutulunca doğrulanır.</p>
-        </div></div>
-        <div class="adim"><span class="no">05</span><div class="yig-s">
-          <h3>Kâr ve hakediş</h3>
-          <p class="sonuc">NET-1 ve NET-2 hesaplanır. Pazaryerinin ödediği tutar sipariş sipariş beklenen hakedişle karşılaştırılır; eksik, fazla ve geciken ödeme işaretlenir.</p>
-        </div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ AYRIM ═════════════════════════════════════════════════════ -->
-  <section class="bolum defter">
-    <div class="serit">Ayrım</div>
-    <div class="yig">
-      <h2>Kesinti kuralları tahmin değil, ölçüm</h2>
-      <p class="sonuc">
-        Dışarıdan bakan bir hesaplayıcı, bir pazaryerinin faturasında kaç satır
-        olduğunu bilemez. İki kanalda ölçüldü, ikisinde de yanıldı:
-      </p>
-      <div class="kutular">
-        <div class="kutu"><span class="say">₺8,00</span><span class="ne">HB ödeme gideri, gerçek tutar. Dış kaynak ₺9,60 diyordu (113 siparişte ölçüldü)</span></div>
-        <div class="kutu"><span class="say">2</span><span class="ne">N11 hizmet kalemi; dış kaynak birini hiç görmemişti</span></div>
-        <div class="kutu"><span class="say">₺13,19</span><span class="ne">TY platform bedeli, sipariş başına bir kez, kalem sayısından bağımsız</span></div>
-      </div>
-      <p class="sonuc">
-        Kaynak sırası sabittir: kanalın kendi belgesi, sonra kendi defteriniz,
-        en son dış hesaplayıcı. Fiyat denemesinde her kural hangi kaynaktan
-        geldiğini rozetiyle gösterir.
-      </p>
-      <p class="ilke">Doğru sayı, yanlış çerçeve: yine yanlış hükümdür.</p>
-    </div>
-  </section>
-
-  <!-- ═══ YÖNTEM ════════════════════════════════════════════════════ -->
-  <section class="bolum defter">
-    <div class="serit">Güvence</div>
-    <div class="yig">
-      <h2>Rakamın arkasında bir disiplin var</h2>
-      <div class="kutular">
-        <div class="kutu"><span class="say">11 + 1</span><span class="ne">pazaryeri ve elden satış; Trendyol, Hepsiburada ve N11 API ile bağlı; kanal başına birden çok hesap</span></div>
-        <div class="kutu"><span class="say">140</span><span class="ne">her yayından önce koşan otomatik denetim</span></div>
-        <div class="kutu"><span class="say">208</span><span class="ne">denetim her gece, denetimlerin kendisini sınayan denemelerle birlikte</span></div>
-        <div class="kutu"><span class="say">FIFO</span><span class="ne">parti bazlı defter, kayıt silinmez</span></div>
-        <div class="kutu"><span class="say">TR</span><span class="ne">iş takvimi Europe/Istanbul’a sabit</span></div>
-      </div>
-      <p class="sonuc">
-        Kâr motoru, stok defteri, iptal süzgeçleri, yedek kapsamı ve derleme:
-        biri kırmızı yanarsa yayın durur. Denetimlerin kendisi de sınanır:
-        bir denetimin gerçekten ölçtüğü, ölçtüğü davranışı bozan bir deneme
-        kırmızı yandığı görülerek doğrulanır.
-      </p>
-    </div>
-  </section>
-
-  <!-- ═══ DURUM ═════════════════════════════════════════════════════ -->
-  <section class="bolum defter">
-    <div class="serit">Durum</div>
-    <div class="yig">
-      <h2>Bugün nerede</h2>
-      <p class="sonuc">
-        Selliora bugün <b>tek bir gerçek operasyonda</b> günlük olarak
-        çalışıyor: siparişler, alımlar, iadeler, sayım, hakediş ve kanala
-        stok gönderimi canlı veriyle yürüyor. İkinci bir firmayla deneme
-        kurulumu hazırlanıyor.
-      </p>
-      <p class="sonuc">
-        Bu sayfadaki sayılar o defterden ölçüldü. Örnek satışın rakamları
-        yuvarlandı; hesap ve oranlar aynı.
-      </p>
-    </div>
-  </section>
-
-  <section class="bolum kapanis defter">
-    <div class="serit">İletişim</div>
-    <div class="yig">
-      <h2>Kendi defterinizle görmek ister misiniz?</h2>
-      <p class="sonuc">
-        Bir aylık gerçek satış ve alım dosyanızı okutalım, NET-2’nizi
-        çıkaralım. Beklediğinizle arasındaki fark, sistemin ne yaptığını en
-        hızlı anlatan şeydir.
-      </p>
-      <div class="iletisim">
-        <span class="etiket">Telefon</span>
-        <div class="numara-satir">
-          <a class="numara" id="numara" href="tel:+4915203253691">0152 0325 3691</a>
-          <button class="kopyala" id="kopyala" type="button">Numarayı kopyala</button>
-        </div>
-        <span class="kopyala-durum" id="kopyala-durum" aria-live="polite"></span>
-      </div>
-    </div>
-  </section>
-
-  <div class="dip">Selliora · çok kanallı e-ticaret operasyon sistemi</div>
-
 </div>
 
+<div class="bant">
+  <div class="sinir bant-ic">
+    <div class="bant-k"><span class="say">8.220</span><span class="ne">satışın kârı kalem kalem hesaplandı</span></div>
+    <div class="bant-k"><span class="say">%83</span><span class="ne">zarar eden satışların satış anında kârlı görünme oranı</span></div>
+    <div class="bant-k"><span class="say">5 dk</span><span class="ne">pazaryeri siparişlerinin sisteme düşme aralığı</span></div>
+    <div class="bant-k"><span class="say">140</span><span class="ne">her güncellemeden önce koşan otomatik denetim</span></div>
+  </div>
+</div>
+
+<main class="sinir">
+
+  <!-- 1 · Kâr yanılsaması -->
+  <section class="bolum">
+    <div class="bolum-bas"><span class="etiket">01 · Kâr</span><h2>Satış fiyatı maliyetin üstündeyse kâr ettiğinizi sanırsınız</h2></div>
+    <div class="sc">
+      <div class="metin">
+        <div class="sorun"><span class="etiket">Sorun</span><h3>Brüt fark kâr gibi görünür; kesintiler sonradan, ödemede ortaya çıkar.</h3></div>
+        <div class="cozum"><span class="etiket">Selliora</span><p>Her satışta iki net rakam: <b>NET-1</b> stopaj düşülmüş, <b>NET-2</b> ödenecek KDV de düşülmüş. Maliyet, malın alındığı partiden gelir; ortalama değil.</p></div>
+        <ul class="maddeler">
+          <li>Komisyon oranı satış anında kayda damgalanır; pazaryeri oranı haftaya değiştirse geçmiş hesap kaymaz</li>
+          <li>Maliyeti bilinmeyen satışa kâr yazılmaz; sıfır sayılmaz, listede ayrıca gösterilir</li>
+          <li>İade, satışın KDV hesabını da tersine çevirir</li>
+        </ul>
+      </div>
+      <div class="grafik-kart">
+        <span class="etiket">Bu sistemin kendi defterinden · 03.10.2026</span>
+        <h3 style="margin-top:6px">Zararla kapanan 276 satışın 229'u satış anında kârlı görünüyordu</h3>
+        <svg class="grafik" id="g-halka" viewBox="0 0 520 230" role="img" aria-label="Halka grafik: 276 zararlı satışın 229'u kârlı görünüyordu"></svg>
+        <p class="grafik-not">Kârı hesaplanmış 8.220 satış içinde tek kalemli ve tek adetli olanlar sayıldı.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · Kanal seçimi -->
+  <section class="bolum">
+    <div class="bolum-bas"><span class="etiket">02 · Kanal</span><h2>Aynı ürün, aynı fiyat, her kanalda farklı kâr</h2></div>
+    <div class="sc ters">
+      <div class="metin">
+        <div class="sorun"><span class="etiket">Sorun</span><h3>Her pazaryeri farklı kalemlerden keser; hangi kanalda satmanın kârlı olduğu hesapsız bilinmez.</h3></div>
+        <div class="cozum"><span class="etiket">Selliora</span><p>Fiyat denemesi ekranına bir fiyat yazarsınız; sistem bütün kanallarda NET-2'yi ve başabaş fiyatı hesaplar. Ürünü kaça alacağınıza da aynı ekranda karar verirsiniz.</p></div>
+        <ul class="maddeler">
+          <li>Komisyon dilimi sınıra yakınsa daha kârlı alt dilim önerilir</li>
+          <li>Satış girerken o desideki kargo firmaları yan yana, en ucuzu işaretli</li>
+          <li>Kesinti kuralları pazaryerinin kendi faturasından ölçüldü; dış hesaplayıcılar iki kanalda yanıldı</li>
+        </ul>
+      </div>
+      <div class="grafik-kart">
+        <span class="etiket">Kanalların kesinti yapısı</span>
+        <h3 style="margin-top:6px">Kim, neyi, kaç kez keser</h3>
+        <div class="tablo-kap" style="margin-top:12px">
+          <table class="kesinti">
+            <thead><tr><th>Kanal</th><th>Komisyon</th><th>Sabit / hizmet</th><th>Ödeme gideri</th></tr></thead>
+            <tbody>
+              <tr><td>Trendyol</td><td class="var">oran, KDV'si içinde</td><td class="var">₺13,19 sipariş başına bir kez</td><td class="yok">yok</td></tr>
+              <tr><td>Hepsiburada</td><td class="var">oran + %20 KDV</td><td class="var">₺12,60 hizmet bedeli</td><td class="var">%0,8 (₺100'de 80 kr)</td></tr>
+              <tr><td>N11</td><td class="var">oran</td><td class="var">iki hizmet kalemi: %1,20 + %0,80</td><td class="yok">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="grafik-not">Hepsinde ayrıca: desiye göre kargo + %20 KDV ve KDV hariç tutarın %1'i stopaj. Oranlar ürün ve haftaya göre değişir; sistem her hafta yüklenen tarifeyi kullanır.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · Sipariş ve stok -->
+  <section class="bolum">
+    <div class="bolum-bas"><span class="etiket">03 · Sipariş ve stok</span><h2>Siparişi elle girmek, stoğu kanal kanal güncellemek</h2></div>
+    <div class="sc">
+      <div class="metin">
+        <div class="sorun"><span class="etiket">Sorun</span><h3>Siparişler panelden panele kopyalanır, stok bir kanalda düşer ötekinde düşmez; olmayan mal satılır.</h3></div>
+        <div class="cozum"><span class="etiket">Selliora</span><p>Trendyol, Hepsiburada ve N11 siparişleri yaklaşık 5 dakikada bir kendiliğinden gelir. Onayda hangi partiden düşüleceğini görürsünüz; stok tek düğmeyle bağlı bütün kanallara gider.</p></div>
+        <ul class="maddeler">
+          <li>Kargodan önce iptal edilen sipariş burada da kendiliğinden iptal olur, stok geri gelir</li>
+          <li>Pazaryerinin başka mağazadan size aktardığı sipariş tanınır, bugünkü stoktan düşer</li>
+          <li>Fiyat her kanala ayrı karar olarak gönderilir; gönderilecek rakam önce gösterilir</li>
+        </ul>
+      </div>
+      <div class="grafik-kart">
+        <span class="etiket">Tek stok, üç kanal</span>
+        <h3 style="margin-top:6px">Stok bir yerden, bütün ilanlara</h3>
+        <svg class="grafik" id="g-stok" viewBox="0 0 520 220" role="img" aria-label="Selliora stoğu üç kanala gönderiliyor, siparişler geri geliyor"></svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · Para -->
+  <section class="bolum">
+    <div class="bolum-bas"><span class="etiket">04 · Para</span><h2>Parayı ne zaman alacağınızı ve eksik ödenip ödenmediğini bilmek</h2></div>
+    <div class="sc ters">
+      <div class="metin">
+        <div class="sorun"><span class="etiket">Sorun</span><h3>Pazaryeri ödemeyi haftalar sonra, toplu yapar; hangi siparişin eksik ödendiği görülmez.</h3></div>
+        <div class="cozum"><span class="etiket">Selliora</span><p>Trendyol ve Hepsiburada ödemeleri her sabah kendiliğinden çekilir. Ödenen tutar sipariş sipariş beklenen hakedişle karşılaştırılır; eksik, fazla ve geciken ödeme işaretlenir.</p></div>
+        <ul class="maddeler">
+          <li>Nakit takvimi: kart borcu, hakediş ve kredi taksidi gün gün</li>
+          <li>Hasarlı mal için tazminat takibi; tahsil edilen para kart borcundan düşer</li>
+          <li>Finansman: sermaye, ortak borcu ve banka kredisi aynı ekranda</li>
+        </ul>
+      </div>
+      <div class="grafik-kart">
+        <span class="etiket">Ölçüldü · sipariş → ödeme</span>
+        <h3 style="margin-top:6px">Satışın parası ortalama bir ay sonra gelir</h3>
+        <svg class="grafik" id="g-vade" viewBox="0 0 540 200" role="img" aria-label="Trendyol ortanca 28 gün, Hepsiburada yaklaşık 34 gün"></svg>
+        <p class="grafik-not">Trendyol: 267 siparişte ortanca 28 gün (çeyrekler 23–32). Hepsiburada: yaklaşık 34 gün.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · Depo -->
+  <section class="bolum">
+    <div class="bolum-bas"><span class="etiket">05 · Depo</span><h2>Yanlış ürünü paketlemek, rafı aramak</h2></div>
+    <div class="sc">
+      <div class="metin">
+        <div class="sorun"><span class="etiket">Sorun</span><h3>Ürünün hangi rafta olduğu akılda tutulur; yanlış ürün kargoya verilince iade ve ceza gelir.</h3></div>
+        <div class="cozum"><span class="etiket">Selliora</span><p>Kargo etiketini telefonla okutursunuz; sistem hangi üründen kaç adet, hangi raftan alınacağını söyler ve raftan aldığınız ürünü okutunca doğru olduğunu teyit eder.</p></div>
+        <ul class="maddeler">
+          <li>Barkod her alanda kamerayla okunur; telefon depoda birincil cihaz</li>
+          <li>Kamerayla fiziksel sayım; sayılmış raf sonradan sessizce ezilemez</li>
+          <li>Raf etiketi: Code128, QR ve okunabilir kod, üçü aynı değer</li>
+        </ul>
+      </div>
+      <div class="paket" aria-label="Paketleme üç adımda">
+        <div>
+          <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="5" y="8" width="30" height="24" rx="2"/><path d="M10 14v12M14 14v12M17 14v12M22 14v12M25 14v12M30 14v12"/></svg>
+          <h3>1 · Etiketi okut</h3><p>Kargo ya da sipariş numarası.</p>
+        </div>
+        <div>
+          <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 34V8h28v26M6 18h28M6 26h28"/><rect x="22" y="11" width="7" height="5"/></svg>
+          <h3>2 · Raftan al</h3><p>Ekranda yazar: hangi ürün, kaç adet, hangi raf.</p>
+        </div>
+        <div>
+          <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="14"/><path d="M13 20l5 5 9-10"/></svg>
+          <h3>3 · Ürünü okut</h3><p class="ok-iyi">Eşleşti — doğru ürün.</p><p>Yanlışsa sesli uyarı; akış durmaz.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Akış -->
+  <section class="bolum">
+    <div class="bolum-bas"><span class="etiket">Günlük iş</span><h2>Bir siparişin defterdeki yolu</h2></div>
+    <div class="akis">
+      <div class="adim"><span class="no">01</span><h3>Mal kabul</h3><p>Alım girilir, ürün rafa okutulur. Her giriş kendi maliyetiyle bir parti açar.</p></div>
+      <div class="adim"><span class="no">02</span><h3>Fiyat ve ilan</h3><p>Kanal kanal net sonuç görülür; stok ve fiyat ilanlara gönderilir.</p></div>
+      <div class="adim"><span class="no">03</span><h3>Sipariş</h3><span class="oto">kendiliğinden gelir</span><p>Onaylanınca stok partisinden düşer, kesinti kuralları damgalanır.</p></div>
+      <div class="adim"><span class="no">04</span><h3>Paketleme</h3><p>Etiket okutulur, raf söylenir, ürün okutulunca teyit edilir.</p></div>
+      <div class="adim"><span class="no">05</span><h3>Kâr ve ödeme</h3><span class="oto">her sabah karşılaştırılır</span><p>NET-2 hesaplanır, pazaryerinin ödemesi beklenenle eşleştirilir.</p></div>
+    </div>
+  </section>
+
+  <!-- Güvence -->
+  <section class="bolum">
+    <div class="bolum-bas"><span class="etiket">Güvence</span><h2>Rakamın arkasında bir disiplin var</h2></div>
+    <div class="sc">
+      <div class="metin">
+        <p class="soluk">Kâr motoru, stok defteri, iptal süzgeçleri, yedek kapsamı: her güncellemeden önce 140 otomatik denetim koşar, biri kırmızı yanarsa güncelleme durur. Her gece 208 denetim, denetimlerin kendisini sınayan denemelerle birlikte koşar.</p>
+        <p class="soluk">Kayıt silinmez; düzeltme ters kayıtla yapılır. Çok kullanıcı ve rol vardır: depocu stok girer, kâr marjını görmez. Verinin tamamı her an dışa aktarılabilir.</p>
+      </div>
+      <div class="metin">
+        <p class="soluk"><b>Bugün nerede:</b> Selliora tek bir gerçek operasyonda günlük olarak çalışıyor; siparişler, alımlar, iadeler, sayım, hakediş ve kanala stok gönderimi canlı veriyle yürüyor. İkinci bir firmayla deneme kurulumu hazırlanıyor.</p>
+        <p class="soluk">Bu sayfadaki sayılar o defterden ölçüldü. Örnek satışın rakamları yuvarlandı; hesap ve oranlar aynı.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<section class="kapanis" id="iletisim">
+  <div class="sinir" style="padding-block:64px">
+    <span class="etiket">İletişim</span>
+    <h2 style="font-size:clamp(28px,3.6vw,42px);line-height:1.1;margin-top:10px">Bir aylık dosyanızla NET-2'nizi çıkaralım</h2>
+    <p class="soluk" style="margin-top:14px">Gerçek satış ve alım dosyanızı okutalım. Beklediğiniz kâr ile gerçek NET-2 arasındaki fark, sistemin ne yaptığını en hızlı anlatan şeydir.</p>
+    <div class="iletisim">
+      <a class="numara" id="numara" href="tel:+4915203253691">0152 0325 3691</a>
+      <button class="kopyala" id="kopyala" type="button">Numarayı kopyala</button>
+    </div>
+    <div class="durum" id="durum" aria-live="polite"></div>
+  </div>
+</section>
+<div class="sinir dip">Selliora · çok kanallı e-ticaret operasyon sistemi</div>
+
 <script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+  function el(svg, ad, ozel, metin) {
+    var e = document.createElementNS(NS, ad);
+    for (var k in ozel) e.setAttribute(k, ozel[k]);
+    if (metin !== undefined) e.textContent = metin;
+    svg.appendChild(e); return e;
+  }
+  function tl(v) {
+    var n = Math.abs(v), s = n.toFixed(2).split("."), t = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return (v < 0 ? "−" : "") + "₺" + t + (s[1] === "00" ? "" : "," + s[1]);
+  }
+
+  /* ── Şelale: üst şerit satışın tamamı, alt panel brüt kârın eriyişi (ölçekli) ── */
   (function () {
-    var dugme = document.getElementById("kopyala");
-    var durum = document.getElementById("kopyala-durum");
-    var numara = document.getElementById("numara");
-    function sec() {
-      var r = document.createRange();
-      r.selectNodeContents(numara);
-      var s = window.getSelection();
-      s.removeAllRanges();
-      s.addRange(r);
-    }
-    dugme.addEventListener("click", function () {
-      var metin = "+49 152 03253691";
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(metin).then(function () {
-          durum.textContent = "Kopyalandı: " + metin;
-        }, function () {
-          sec();
-          durum.textContent = "Numara seçildi — kopyalamak için Ctrl+C / uzun basın.";
-        });
-      } else {
-        sec();
-        durum.textContent = "Numara seçildi — kopyalamak için Ctrl+C / uzun basın.";
+    var s = document.getElementById("g-selale"); if (!s) return;
+    var W = 560, x0 = 8, x1 = W - 8;
+    var sx = function (v) { return x0 + (v / 6300) * (x1 - x0); };
+    el(s, "text", { x: x0, y: 14 }, "Satış ₺6.300");
+    el(s, "rect", { x: sx(0), y: 20, width: sx(4800) - sx(0), height: 22, "class": "b-maliyet" });
+    el(s, "rect", { x: sx(4800), y: 20, width: sx(6300) - sx(4800), height: 22, "class": "b-brut" });
+    el(s, "text", { x: sx(2400), y: 35, "text-anchor": "middle", style: "fill:var(--kart)" }, "maliyet ₺4.800");
+    el(s, "text", { x: sx(5550), y: 56, "text-anchor": "middle", "class": "koyu" }, "brüt ₺1.500");
+    el(s, "line", { x1: sx(4800), y1: 44, x2: 40, y2: 78, "class": "bag" });
+    el(s, "line", { x1: sx(6300), y1: 44, x2: W - 8, y2: 78, "class": "bag" });
+
+    var adimlar = [
+      { ad: "Brüt", d: 1500, tip: "b-brut", bas: true },
+      { ad: "Komisyon", d: -1260 },
+      { ad: "Hizmet", d: -13.19 },
+      { ad: "Kargo", d: -185 },
+      { ad: "Stopaj", d: -52.5 },
+      { ad: "KDV", d: -6.97 },
+      { ad: "NET-2", son: true }
+    ];
+    var top = 92, alt = 296, vmax = 1600, vmin = -200;
+    var sy = function (v) { return top + (vmax - v) / (vmax - vmin) * (alt - top); };
+    [0, 500, 1000, 1500].forEach(function (g) {
+      el(s, "line", { x1: 40, y1: sy(g), x2: W - 8, y2: sy(g), "class": g === 0 ? "sifir" : "eksen" });
+      el(s, "text", { x: 34, y: sy(g) + 4, "text-anchor": "end" }, g === 0 ? "0" : g.toLocaleString("tr-TR"));
+    });
+    var n = adimlar.length, alan = (W - 8 - 48), gen = alan / n, bw = gen * 0.62, cum = 0;
+    adimlar.forEach(function (a, i) {
+      var x = 48 + i * gen + (gen - bw) / 2, ust, alt2, cls, etiket;
+      if (a.bas) { ust = sy(a.d); alt2 = sy(0); cls = a.tip; cum = a.d; etiket = tl(a.d); }
+      else if (a.son) { ust = sy(0); alt2 = sy(cum); cls = "b-net"; etiket = tl(Math.round(cum * 100) / 100); }
+      else { var once = cum; cum = cum + a.d; ust = sy(Math.max(once, cum)); alt2 = sy(Math.min(once, cum)); cls = "b-kesinti"; etiket = tl(a.d); }
+      var h = Math.max(alt2 - ust, 1.5);
+      el(s, "rect", { x: x, y: ust, width: bw, height: h, "class": cls });
+      var ly = a.son ? alt2 + 14 : ust - 6;
+      el(s, "text", { x: x + bw / 2, y: ly, "text-anchor": "middle", "class": a.son ? "zarar-y" : "koyu" }, etiket);
+      el(s, "text", { x: x + bw / 2, y: 318, "text-anchor": "middle" }, a.ad);
+      if (!a.son && i < n - 1) {
+        var nx = 48 + (i + 1) * gen + (gen - bw) / 2;
+        el(s, "line", { x1: x + bw, y1: sy(cum), x2: nx, y2: sy(cum), "class": "bag" });
       }
     });
   })();
+
+  /* ── Halka: 276 zararlı satışın 229'u kârlı görünüyordu ── */
+  (function () {
+    var s = document.getElementById("g-halka"); if (!s) return;
+    var cx = 110, cy = 112, r = 82, sw = 30, oran = 229 / 276, C = 2 * Math.PI * r;
+    el(s, "circle", { cx: cx, cy: cy, r: r, fill: "none", style: "stroke:var(--kagit-alt)", "stroke-width": sw });
+    el(s, "circle", { cx: cx, cy: cy, r: r, fill: "none", style: "stroke:var(--zarar)", "stroke-width": sw,
+      "stroke-dasharray": (C * oran) + " " + C, transform: "rotate(-90 " + cx + " " + cy + ")" });
+    el(s, "circle", { cx: cx, cy: cy, r: r, fill: "none", style: "stroke:var(--murekkep-3)", "stroke-width": sw,
+      "stroke-dasharray": "0 " + (C * oran) + " " + (C * (1 - oran)) + " 0", transform: "rotate(-90 " + cx + " " + cy + ")" });
+    el(s, "text", { x: cx, y: cy + 4, "text-anchor": "middle", "class": "koyu", style: "font-size:30px;font-family:var(--veri)" }, "%83");
+    el(s, "text", { x: cx, y: cy + 24, "text-anchor": "middle" }, "kârlı görünüyordu");
+    var lx = 236;
+    el(s, "rect", { x: lx, y: 66, width: 14, height: 14, style: "fill:var(--zarar)" });
+    el(s, "text", { x: lx + 22, y: 78, "class": "koyu", style: "font-size:13px" }, "229 satış");
+    el(s, "text", { x: lx + 22, y: 96 }, "fiyat maliyetin üstünde → yine zarar");
+    el(s, "rect", { x: lx, y: 124, width: 14, height: 14, style: "fill:var(--murekkep-3)" });
+    el(s, "text", { x: lx + 22, y: 136, "class": "koyu", style: "font-size:13px" }, "47 satış");
+    el(s, "text", { x: lx + 22, y: 154 }, "zararı brütte zaten görünüyordu");
+  })();
+
+  /* ── Stok: tek kaynak, üç kanal ── */
+  (function () {
+    var s = document.getElementById("g-stok"); if (!s) return;
+    el(s, "rect", { x: 14, y: 76, width: 150, height: 68, style: "fill:var(--kadran-yum);stroke:var(--kadran)", "stroke-width": 1.5 });
+    el(s, "text", { x: 89, y: 104, "text-anchor": "middle", "class": "koyu", style: "font-size:13px" }, "Selliora stoğu");
+    el(s, "text", { x: 89, y: 124, "text-anchor": "middle" }, "tek defter, FIFO");
+    var kanallar = ["Trendyol", "Hepsiburada", "N11"];
+    kanallar.forEach(function (k, i) {
+      var y = 22 + i * 66;
+      el(s, "rect", { x: 356, y: y, width: 150, height: 46, style: "fill:var(--kart);stroke:var(--cetvel)", "stroke-width": 1.5 });
+      el(s, "text", { x: 431, y: y + 28, "text-anchor": "middle", "class": "koyu", style: "font-size:13px" }, k);
+      el(s, "path", { d: "M164 104 C 260 104, 260 " + (y + 16) + ", 352 " + (y + 16), fill: "none", style: "stroke:var(--kadran)", "stroke-width": 1.8 });
+      el(s, "path", { d: "M352 " + (y + 30) + " C 270 " + (y + 30) + ", 270 118, 168 118", fill: "none", style: "stroke:var(--kar)", "stroke-width": 1.4, "stroke-dasharray": "4 4" });
+    });
+    el(s, "text", { x: 258, y: 214, "text-anchor": "middle" }, "─ stok (tek düğme)   ┄ sipariş (5 dakikada bir)");
+  })();
+
+  /* ── Vade: sipariş → ödeme günleri ── */
+  (function () {
+    var s = document.getElementById("g-vade"); if (!s) return;
+    var x0 = 92, x1 = 524, gmax = 45, sx = function (g) { return x0 + g / gmax * (x1 - x0); };
+    [0, 10, 20, 30, 40].forEach(function (g) {
+      el(s, "line", { x1: sx(g), y1: 26, x2: sx(g), y2: 150, "class": "eksen" });
+      el(s, "text", { x: sx(g), y: 168, "text-anchor": "middle" }, g + ". gün");
+    });
+    el(s, "text", { x: x0 - 8, y: 64, "text-anchor": "end", "class": "koyu" }, "Trendyol");
+    el(s, "rect", { x: sx(23), y: 50, width: sx(32) - sx(23), height: 20, style: "fill:var(--kadran-yum)" });
+    el(s, "line", { x1: sx(28), y1: 44, x2: sx(28), y2: 76, style: "stroke:var(--kadran)", "stroke-width": 3 });
+    el(s, "text", { x: sx(28), y: 38, "text-anchor": "middle", "class": "koyu" }, "28 gün");
+    el(s, "text", { x: x0 - 8, y: 124, "text-anchor": "end", "class": "koyu" }, "Hepsiburada");
+    el(s, "line", { x1: sx(34), y1: 104, x2: sx(34), y2: 136, style: "stroke:var(--kadran)", "stroke-width": 3 });
+    el(s, "text", { x: sx(34), y: 98, "text-anchor": "middle", "class": "koyu" }, "~34 gün");
+    el(s, "line", { x1: sx(0), y1: 60, x2: sx(23), y2: 60, "class": "bag" });
+    el(s, "line", { x1: sx(0), y1: 120, x2: sx(34), y2: 120, "class": "bag" });
+    el(s, "circle", { cx: sx(0), cy: 60, r: 4, style: "fill:var(--murekkep)" });
+    el(s, "circle", { cx: sx(0), cy: 120, r: 4, style: "fill:var(--murekkep)" });
+    el(s, "text", { x: sx(0), y: 190, "text-anchor": "start" }, "● sipariş günü     ▮ ortanca     ▬ çeyrekler arası");
+  })();
+
+  /* ── Numara kopyala ── */
+  var d = document.getElementById("kopyala"), du = document.getElementById("durum"), nu = document.getElementById("numara");
+  function sec() { var r = document.createRange(); r.selectNodeContents(nu); var w = window.getSelection(); w.removeAllRanges(); w.addRange(r); }
+  d.addEventListener("click", function () {
+    var m = "+49 152 03253691";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(m).then(function () { du.textContent = "Kopyalandı: " + m; },
+        function () { sec(); du.textContent = "Numara seçildi — kopyalamak için Ctrl+C ya da uzun basın."; });
+    } else { sec(); du.textContent = "Numara seçildi — kopyalamak için Ctrl+C ya da uzun basın."; }
+  });
+})();
 </script>
