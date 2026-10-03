@@ -14,7 +14,9 @@ import { join } from "node:path";
  *  KOPYALANMAZ; betik onu okurken yalnız o an ana klasöre geçer.
  *
  *  ⛔ HEDEF KİLİDİ: hedef adres deneme klasörünün `.env`inden okunur ve
- *  `@127.0.0.1:3306/selliora_deneme` DEĞİLSE hiçbir şey yazılmadan durur.
+ *  `@127.0.0.1:3307/selliora_deneme` DEĞİLSE hiçbir şey yazılmadan durur.
+ *  (03.10.2026: deneme kurulumu canlıyla aynı motora — MariaDB 10.11.14, kapı 3307 —
+ *  taşındı; eski MySQL 3306 kopyası yedek olarak duruyor, bu betik ona YAZMAZ.)
  *  `geriYukle` ortak istemciyi kullanır; ortam değişkeni prisma yüklenmeden
  *  ÖNCE kurulur — yanlış klasörden koşulsa bile geliştirme ya da canlı
  *  veritabanına yazamaz.
@@ -28,7 +30,7 @@ const DENEME_KLASORU = join(__dirname, "..");
 async function main() {
   const denemeEnv = readFileSync(join(DENEME_KLASORU, ".env"), "utf8");
   const hedef = /^DATABASE_URL="?([^"\r\n]+)"?/m.exec(denemeEnv)?.[1] ?? "";
-  if (!/@127\.0\.0\.1:3306\/selliora_deneme(\?|$)/.test(hedef)) {
+  if (!/@127\.0\.0\.1:3307\/selliora_deneme(\?|$)/.test(hedef)) {
     console.log("⛔ HEDEF selliora_deneme DEĞİL — hiçbir şey yazılmadı.");
     process.exitCode = 1;
     return;
