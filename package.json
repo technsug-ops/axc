@@ -43,6 +43,7 @@
     "kart:dogrula": "tsx scripts/urun-karti-dogrula.ts",
     "baglanti:test": "tsx scripts/baglanti-testi.ts",
     "kullanici:olustur": "tsx scripts/kullanici-olustur.ts",
+    "super-admin:ata": "tsx scripts/super-admin-ata.ts",
     "oturum:dogrula": "tsx scripts/oturum-dogrula.ts",
     "el-kitabi:uret": "tsx scripts/el-kitabi-uret.ts",
     "migration:kontrol": "tsx scripts/migration-kontrol.ts",

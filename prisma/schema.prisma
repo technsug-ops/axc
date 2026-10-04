@@ -2770,6 +2770,14 @@ model User {
   /// çözdüğü sorundan büyük bir bağımlılık olurdu.
   mustChangePassword Boolean @default(false)
 
+  /// SÜPER ADMİN — Selliora yönetim katmanı (K303 4c-2, kullanıcı kararı
+  /// 04.10.2026): firma açar/kapatır, paketleri belirler, bütün firmaların
+  /// destek taleplerini çözer. Yetki KİŞİYE bağlıdır, firma rolüne değil
+  /// (30.09.2026); Selliora bir firma kaydı DEĞİLDİR (ticari verisi yok).
+  /// Giriş ayrı adresten (`/selliora`); müşteri firmanın ticari ekranlarını
+  /// bu işaret AÇMAZ.
+  isSuperAdmin Boolean @default(false)
+
   lastLoginAt DateTime?
 
   createdAt           DateTime          @default(now())
