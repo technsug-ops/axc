@@ -59,7 +59,7 @@ export const IZINLER = [
   { anahtar: "satis.gor", grup: "operasyon" },
   { anahtar: "satis.yaz", grup: "operasyon" },
   /**
-   * K169 (05.09.2026) — KANALA YAZMA: Selliora'dan pazaryerine stok/fiyat
+   * K169 (05.09.2026) — KANALA YAZMA: sistemden pazaryerine stok/fiyat
    * gönderimi. `satis.duzenle` sınıfı bir yetkidir: PARAYA dokunur (yanlış
    * fiyat = zararına satış; yanlış stok = oversell). Operasyon rolüne
    * BİLEREK verilmedi — tam yetkililer kendiliğinden alır.

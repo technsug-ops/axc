@@ -4,6 +4,7 @@ import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import { varsayilanYedekHedefi, type YedekHedefi } from "@/lib/yedek-hedefi";
 import { izYaz } from "@/lib/iz";
 import { yedegiMetneCevir, yedekUret } from "@/lib/yedek";
+import { gunlukYedekAdi, gunlukYedekMi } from "@/lib/yedek-bicim";
 
 /**
  * ============================================================================
@@ -171,7 +172,7 @@ export async function gunlukYedekYaz(
   }
 
   const gun = gunMetni(gunDegeri(isTakvimGunu(an)));
-  const ad = `${YEDEK_KLASORU}/selliora-${gun}.json`;
+  const ad = `${YEDEK_KLASORU}/${gunlukYedekAdi(gun)}`;
 
   try {
     const yedek = await yedekUret(an, true);
@@ -243,10 +244,11 @@ export async function gunlukYedekYaz(
  * olduğunu bilmiyordu. Bilgi dosyanın içinde (`kargoTarifesiHaric`) vardı ama
  * ekranda yoktu; listeden seçen kişi dosyayı açmadan karar veriyordu.
  *
- * Ad deseninden çıkarılır: günlük yedekler `selliora-<gün>.json`, elle
+ * Ad deseninden çıkarılır: günlük yedekler `bezirga-<gün>.json` (04.10.2026
+ * öncesi `selliora-<gün>.json` — ikisi de tanınır), elle
  * alınanlar `guvenlik-*`. Kesin bilgi dosyanın kendisindedir ve geri yükleme
  * "Denetle" adımında oradan okunur — bu yalnız LİSTE ipucudur.
  */
 export function yedekKapsami(dosyaAdi: string): "GUNLUK" | "TAM" {
-  return dosyaAdi.startsWith("selliora-") ? "GUNLUK" : "TAM";
+  return gunlukYedekMi(dosyaAdi) ? "GUNLUK" : "TAM";
 }

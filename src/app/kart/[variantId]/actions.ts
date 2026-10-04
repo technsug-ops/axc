@@ -65,7 +65,7 @@ export type TyGonderimOnizlemesi =
   | {
       tamam: true;
       barkod: string;
-      selioraStok: number;
+      sistemStogu: number;
       kanalAdet: number | null;
       listelemeDurumu: string;
     }
@@ -119,7 +119,7 @@ export async function tyGonderimOnizle(
   return {
     tamam: true,
     barkod: b.barkod,
-    selioraStok: await varyantStogu(variantId),
+    sistemStogu: await varyantStogu(variantId),
     kanalAdet: b.kanalSku.kanalAdet,
     listelemeDurumu: b.kanalSku.listelemeDurumu,
   };
@@ -277,7 +277,7 @@ export type N11GonderimOnizlemesi =
   | {
       tamam: true;
       stockCode: string;
-      selioraStok: number;
+      sistemStogu: number;
       kanalAdet: number | null;
       listelemeDurumu: string;
     }
@@ -322,7 +322,7 @@ export async function n11GonderimOnizle(
   return {
     tamam: true,
     stockCode: b.kanalSku.channelSku,
-    selioraStok: await varyantStogu(variantId),
+    sistemStogu: await varyantStogu(variantId),
     kanalAdet: b.kanalSku.kanalAdet,
     listelemeDurumu: b.kanalSku.listelemeDurumu,
   };
@@ -488,7 +488,7 @@ export type HbGonderimOnizlemesi =
   | {
       tamam: true;
       hbSku: string;
-      selioraStok: number;
+      sistemStogu: number;
       kanalAdet: number | null;
       listelemeDurumu: string;
       /** Hangi mağazaya gideceği — TEST (deneme) ya da CANLI. */
@@ -528,7 +528,7 @@ export async function hbGonderimOnizle(variantId: string): Promise<HbGonderimOni
   return {
     tamam: true,
     hbSku: b.kanalSku.channelSku,
-    selioraStok: await varyantStogu(variantId),
+    sistemStogu: await varyantStogu(variantId),
     kanalAdet: b.kanalSku.kanalAdet,
     listelemeDurumu: b.kanalSku.listelemeDurumu,
     ortam,

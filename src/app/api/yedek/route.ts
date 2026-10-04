@@ -1,6 +1,7 @@
 import { gunDegeri, gunMetni, isTakvimGunu } from "@/lib/donem";
 import { apiIzni } from "@/lib/yetki";
 import { yedegiMetneCevir, yedekUret } from "@/lib/yedek";
+import { YEDEK_BICIMI } from "@/lib/yedek-bicim";
 
 /**
  * YEDEK İNDİRME — /api/yedek
@@ -32,7 +33,7 @@ export async function GET(istek: Request) {
   // Gün İŞ saat diliminden çözülür: Almanya'da gece yarısını geçmiş olsa da
   // dosya Türkiye'nin gününü taşır.
   const gunler = gunMetni(gunDegeri(isTakvimGunu(an)));
-  const dosyaAdi = `selliora-yedek-${gunler}${tarifesiz ? "-hafif" : ""}.json`;
+  const dosyaAdi = `${YEDEK_BICIMI}-${gunler}${tarifesiz ? "-hafif" : ""}.json`;
 
   return new Response(metin, {
     headers: {

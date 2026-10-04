@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { UYGULAMA } from "@/lib/uygulama";
 import { UploadCloud } from "lucide-react";
 
 import {
@@ -32,7 +33,7 @@ import {
  *  K194 — N11'E GÖNDER (stok / fiyat) — İKİNCİ KANALA-YAZAN EKRAN
  * ----------------------------------------------------------------------------
  *  ⚠ RAKAM GÖRÜLMEDEN GÖNDERİLMEZ: diyalog açılır açılmaz önizleme sunucudan
- *  gelir (kanal kodu · Selliora stoğu · N11'in bildirdiği adet kıyası);
+ *  gelir (kanal kodu · sistem stoğu · N11'in bildirdiği adet kıyası);
  *  Gönder düğmesi önizleme gelmeden PASİF. _(Halil kuralı 09.09.2026:
  *  "yazım okumadan kategorik tehlikeli — asla körlemesine toplu".)_
  *
@@ -183,9 +184,9 @@ export function N11Gonderim({ variantId }: { variantId: string }) {
                 <span className="font-medium">{onizleme.stockCode}</span>
               </div>
               <div>
-                {t("selioraStok")}:{" "}
+                {t("sistemStogu", { uygulama: UYGULAMA.ad })}:{" "}
                 <span className="font-medium">
-                  {bicim.sayi(onizleme.selioraStok)}
+                  {bicim.sayi(onizleme.sistemStogu)}
                 </span>
                 {" · "}
                 {t("kanalAdet")}:{" "}
@@ -203,7 +204,7 @@ export function N11Gonderim({ variantId }: { variantId: string }) {
                 onChange={(e) => setStokGonder(e.target.checked)}
                 className="size-4"
               />
-              {t("stokGonder", { adet: bicim.sayi(onizleme.selioraStok) })}
+              {t("stokGonder", { adet: bicim.sayi(onizleme.sistemStogu) })}
             </label>
             <div className="grid gap-2 sm:grid-cols-2">
               <label className="block space-y-1">

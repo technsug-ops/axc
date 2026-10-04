@@ -1,5 +1,5 @@
 {
-  "name": "selliora",
+  "name": "bezirga",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -301,6 +301,8 @@
     "bekci-yetim:dogrula": "tsx scripts/bekci-yetim-dogrula.ts",
     "kamera:dogrula": "tsx scripts/kamera-dogrula.ts",
     "pwa:dogrula": "tsx scripts/pwa-dogrula.ts",
+    "uygulama-adi:dogrula": "tsx scripts/uygulama-adi-dogrula.ts",
+    "uygulama-adi-mutasyon:kontrol": "tsx scripts/uygulama-adi-mutasyon-kontrol.ts",
     "canli:eksik-siparis": "tsx scripts/canli-eksik-siparis.ts",
     "canli:hakedis-ortusme": "tsx scripts/canli-hakedis-ortusme.ts",
     "canli:paketleme-mutabakat": "tsx scripts/canli-paketleme-mutabakat.ts",

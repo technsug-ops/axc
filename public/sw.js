@@ -40,7 +40,10 @@
  * sürümün bütün önbelleklerini siler. Sürüm sabit kalsaydı hatalı bir
  * sürümün bıraktığı çöp telefonlarda yaşamaya devam ederdi.
  */
-const SURUM = "selliora-sw-2";
+/* 04.10.2026: ad değişikliğiyle `selliora-sw-2` → `bezirga-sw-3`. Statik
+   dosya `UYGULAMA.teknikAd`ı içe alamaz; ön ekin ona eşit olduğunu
+   `uygulama-adi:dogrula` ölçer. Numara sürmeye devam eder (geri gitmez). */
+const SURUM = "bezirga-sw-3";
 const STATIK_ONBELLEK = `${SURUM}-statik`;
 const KABUK_ONBELLEK = `${SURUM}-kabuk`;
 

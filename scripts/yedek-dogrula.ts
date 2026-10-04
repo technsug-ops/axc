@@ -53,7 +53,16 @@ import {
   YEDEK_TABLOLARI,
   yedegiMetneCevir,
   yedekUret,
-} from "../src/lib/yedek";
+} from "../src/lib/yedek";
+import {
+  GERI_YUKLENEBILIR_YEDEK_KALIBI,
+  INDIRILEBILIR_YEDEK_KALIBI,
+  TANINAN_YEDEK_BICIMLERI,
+  YEDEK_BICIMI,
+  gunlukYedekAdi,
+  gunlukYedekMi,
+} from "../src/lib/yedek-bicim";
+import { UYGULAMA } from "../src/lib/uygulama";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -190,7 +199,7 @@ async function main() {
     kontrol("başka program dosyası reddedilir", !yabanci.tamam && yabanci.hata.kod === "YEDEK_DEGIL");
 
     const yeni = yedegiCoz(
-      JSON.stringify({ bicim: "selliora-yedek", surum: YEDEK_SURUMU + 5, tablolar: {} }),
+      JSON.stringify({ bicim: YEDEK_BICIMI, surum: YEDEK_SURUMU + 5, tablolar: {} }),
     );
     kontrol(
       "GELECEKTEN gelen sürüm reddedilir",
@@ -198,15 +207,17 @@ async function main() {
       "yeni sürümü 'elimden geldiğince okurum' demek sessiz veri kaybıdır",
     );
 
-    const tablosuz = yedegiCoz(JSON.stringify({ bicim: "selliora-yedek", surum: 2 }));
+    const tablosuz = yedegiCoz(JSON.stringify({ bicim: YEDEK_BICIMI, surum: 2 }));
     kontrol("tablosuz dosya reddedilir", !tablosuz.tamam && tablosuz.hata.kod === "TABLO_YOK");
 
     const dizisiz = yedegiCoz(
-      JSON.stringify({ bicim: "selliora-yedek", surum: 2, tablolar: { Sale: "olmaz" } }),
+      JSON.stringify({ bicim: YEDEK_BICIMI, surum: 2, tablolar: { Sale: "olmaz" } }),
     );
     kontrol("dizi olmayan tablo reddedilir", !dizisiz.tamam && dizisiz.hata.kod === "TABLO_BOZUK");
 
-    // ESKİ SÜRÜM KABUL EDİLİR ama eksikleri SAYILIR.
+    // ESKİ SÜRÜM KABUL EDİLİR ama eksikleri SAYILIR. Bilerek ESKİ ADLA
+    // (`selliora-yedek`, 04.10.2026 öncesi): eski dosya hem eski sürüm hem
+    // eski ad taşır; ikisi birlikte okunabilmeli.
     const eski = yedegiCoz(
       JSON.stringify({
         bicim: "selliora-yedek",
@@ -235,7 +246,7 @@ async function main() {
     // kısa sürede görünmez olur.
     const esit = yedegiCoz(
       JSON.stringify({
-        bicim: "selliora-yedek",
+        bicim: YEDEK_BICIMI,
         surum: YEDEK_SURUMU,
         tablolar: Object.fromEntries(YEDEK_TABLOLARI.map((t) => [t, [{ id: "x" }]])),
       }),
@@ -243,6 +254,71 @@ async function main() {
     if (esit.tamam) {
       const r = farkRaporu(esit.yedek, Object.fromEntries(YEDEK_TABLOLARI.map((t) => [t, 1])));
       kontrol("birebir aynı veride kayıp uyarısı YOK", !r.kayipVar);
+    }
+
+    // =======================================================================
+    // AD DEĞİŞİKLİĞİ (04.10.2026, Selliora → Bezirga): YAZAN güncel ad,
+    // OKUYAN bütün adlar. Eski adlı yedek "bu bir yedek değil" sayılırsa
+    // felaket anında elimizdeki dosya işe yaramaz.
+    // =======================================================================
+    const ESKI_GUN = "selliora-2026-08-10.json";
+    const YENI_GUN = gunlukYedekAdi("2026-10-05");
+    kontrol(
+      "gece yedeği GÜNCEL adla yazılır",
+      YENI_GUN === `${UYGULAMA.teknikAd}-2026-10-05.json` &&
+        !UYGULAMA.eskiTeknikAdlar.some((a) => YENI_GUN.startsWith(`${a}-`)),
+      YENI_GUN,
+    );
+    kontrol(
+      "yedek biçimi GÜNCEL adla yazılır",
+      YEDEK_BICIMI === `${UYGULAMA.teknikAd}-yedek`,
+      YEDEK_BICIMI,
+    );
+    for (const bicimAdi of ["selliora-yedek", YEDEK_BICIMI]) {
+      const c = yedegiCoz(JSON.stringify({ bicim: bicimAdi, surum: 2, tablolar: { Sale: [] } }));
+      kontrol(`"${bicimAdi}" biçimli yedek OKUNUR`, c.tamam && c.yedek.bicim === bicimAdi);
+    }
+    kontrol(
+      "tanınan biçimler eski adı içerir",
+      TANINAN_YEDEK_BICIMLERI.includes("selliora-yedek"),
+    );
+    const benzer = yedegiCoz(JSON.stringify({ bicim: "selliora-yedekx", surum: 2, tablolar: {} }));
+    kontrol("benzer ama tanınmayan biçim reddedilir", !benzer.tamam && benzer.hata.kod === "YEDEK_DEGIL");
+
+    kontrol("gece yedeği sayılır: eski ad", gunlukYedekMi(ESKI_GUN));
+    kontrol("gece yedeği sayılır: güncel ad", gunlukYedekMi(YENI_GUN));
+    kontrol(
+      "güvenlik yedeği gece yedeği SAYILMAZ",
+      !gunlukYedekMi("guvenlik-2026-08-12T09-30-00-000Z.json"),
+    );
+
+    const indirilir: [string, boolean][] = [
+      [ESKI_GUN, true],
+      [YENI_GUN, true],
+      ["guvenlik-2026-08-12T09-30-00-000Z.json", true],
+      ["baska-2026-08-10.json", false],
+      [`${YENI_GUN}.exe`, false],
+      [`../${YENI_GUN}`, false],
+      [`${UYGULAMA.teknikAd}-yedek-2026-10-05.json`, false],
+    ];
+    for (const [ad, beklenen] of indirilir) {
+      kontrol(
+        `indirme kalıbı ${beklenen ? "kabul" : "RET"}: ${ad}`,
+        INDIRILEBILIR_YEDEK_KALIBI.test(ad) === beklenen,
+      );
+    }
+    const yuklenir: [string, boolean][] = [
+      [ESKI_GUN, true],
+      [YENI_GUN, true],
+      ["guvenlik-2026-08-12T09-30-00-000Z.json", true],
+      ["baska-2026-08-10.json", false],
+      [`${UYGULAMA.teknikAd}/../x.json`, false],
+    ];
+    for (const [ad, beklenen] of yuklenir) {
+      kontrol(
+        `geri yükleme kalıbı ${beklenen ? "kabul" : "RET"}: ${ad}`,
+        GERI_YUKLENEBILIR_YEDEK_KALIBI.test(ad) === beklenen,
+      );
     }
 
     kontrol("onay metni doğru kabul edilir", onayGecerliMi(ONAY_METNI));

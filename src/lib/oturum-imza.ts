@@ -19,7 +19,15 @@
  * ============================================================================
  */
 
-export const OTURUM_CEREZI = "selliora_oturum";
+import { UYGULAMA } from "@/lib/uygulama";
+
+/**
+ * Çerez adı teknik addan türetilir (04.10.2026: `selliora_oturum` →
+ * `bezirga_oturum`). ⚠ Ad değişince açık oturumlar bir kez düşer —
+ * kullanıcı kararıyla kabul edildi; eski çerez zararsız, süresi dolunca
+ * tarayıcı siler.
+ */
+export const OTURUM_CEREZI = `${UYGULAMA.teknikAd}_oturum`;
 
 /** Jetonun geçerlilik süresi. */
 export const OTURUM_SURESI_MS = 30 * 24 * 60 * 60 * 1000;

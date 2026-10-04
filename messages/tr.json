@@ -59,7 +59,7 @@
     "aciklama": "Aşağıdaki rakamlar gönderilmeden önce sana gösterilir; onaylamadan hiçbir şey Trendyol'a gitmez.",
     "yukleniyor": "Bilgiler yükleniyor…",
     "barkod": "Kanal barkodu",
-    "selioraStok": "Selliora stoğu",
+    "sistemStogu": "{uygulama} stoğu",
     "kanalAdet": "TY'nin bildirdiği",
     "kanalAdetOlculmedi": "ölçülmedi",
     "stokGonder": "Stoğu gönder ({adet} adet olarak güncellenecek)",
@@ -89,9 +89,9 @@
   "KanalStokToplu": {
     "dugme": "Stoğu bağlı kanallara gönder",
     "baslik": "Stoğu bağlı kanallara gönder",
-    "aciklama": "Selliora'daki stok, bu ürünün bağlı olduğu bütün kanallara aynı anda gönderilir. Yalnız STOK gider — hiçbir kanalda fiyata dokunulmaz.",
+    "aciklama": "{uygulama} stoğu, bu ürünün bağlı olduğu bütün kanallara aynı anda gönderilir. Yalnız STOK gider — hiçbir kanalda fiyata dokunulmaz.",
     "yukleniyor": "Üç kanalın bilgisi alınıyor…",
-    "onizleme": "{kanal}: Selliora stoğu {stok} → kanalda şu an {kanalda}",
+    "onizleme": "{kanal}: {uygulama} stoğu {stok} → kanalda şu an {kanalda}",
     "olculmedi": "ölçülmedi",
     "atlandi": "{kanal}: GÖNDERİLMEYECEK — {sebep}",
     "hicKanalYok": "Gönderilebilecek kanal yok — sebepler yukarıda yazıyor.",
@@ -115,7 +115,7 @@
     "aciklama": "Aşağıdaki rakamlar gönderilmeden önce sana gösterilir; onaylamadan hiçbir şey kanala gitmez.",
     "yukleniyor": "Bilgiler yükleniyor…",
     "stockCode": "Kanal kodu (stockCode)",
-    "selioraStok": "Selliora stoğu",
+    "sistemStogu": "{uygulama} stoğu",
     "kanalAdet": "N11'in bildirdiği",
     "kanalAdetOlculmedi": "ölçülmedi",
     "stokGonder": "Stoğu gönder ({adet} adet olarak güncellenecek)",
@@ -2008,7 +2008,7 @@
     "excelIndir": "Excel indir",
     "baslik": "Dışa aktarma ve yedek",
     "aciklamaMetni": "Verileriniz sizindir. İstediğiniz an tamamını indirebilirsiniz — hiçbir şey sistemde kilitli değildir.",
-    "tumDosyaAdi": "selliora-tum-veri",
+    "tumDosyaAdi": "tum-veri",
     "bilinmeyenListe": "Bilinmeyen liste.",
     "tumBaslik": "Tüm veriyi Excel olarak indir",
     "tumMetin": "Ürünler, alımlar, satışlar, stok ve giderler tek dosyada, her biri ayrı sayfada. Filtre uygulanmaz — her şey iner. Muhasebeciye vermek veya kendi arşiviniz için.",
@@ -2047,7 +2047,6 @@
     "yedekCagiranlar": "Yedeği kim aldı (son çağrılar)"
   },
   "Giris": {
-    "baslik": "Selliora",
     "altBaslik": "Devam etmek için giriş yapın",
     "eposta": "E-posta",
     "epostaIpucu": "örn. ad@firma.com",
@@ -2071,7 +2070,7 @@
   },
   "ElKitabi": {
     "dosyaIndir": "HTML olarak indir",
-    "dosyaAdi": "selliora-el-kitabi"
+    "dosyaAdi": "el-kitabi"
   },
   "KartBorcu": {
     "baslik": "Kart borcu",
@@ -2694,7 +2693,7 @@
     "guvenlikYedegiMetin": "Bu dosya, geri yüklemeden HEMEN ÖNCEKİ hâlinizdir. Bir sorun görürseniz bu dosyayı seçip tekrar geri yükleyerek eski hâle dönebilirsiniz.",
     "bastanBasla": "Baştan başla",
     "hataJsonDegil": "Dosya bozuk görünüyor: geçerli bir JSON değil. Doğru dosyayı seçtiğinizden emin olun; indirme yarıda kalmış olabilir.",
-    "hataYedekDegil": "Bu bir Selliora yedeği değil. Yedek dosyaları selliora- ya da guvenlik- ile başlar ve .json uzantılıdır.",
+    "hataYedekDegil": "Bu dosya bir {uygulama} yedeği değil. Yedek dosyaları {onekler} ya da guvenlik- ile başlar ve .json uzantılıdır.",
     "hataSurumYeni": "Bu dosya sistemin bildiğinden daha yeni bir sürümle alınmış. Okumaya kalkmak veriyi bozabilir; önce uygulamayı güncelleyin.",
     "hataTabloYok": "Dosyada tablo bölümü yok — yedek eksik alınmış olabilir.",
     "hataTabloBozuk": "Dosyadaki bir tablo beklenen biçimde değil. Dosya düzenlenmiş ya da bozulmuş olabilir.",
@@ -5200,7 +5199,7 @@
     "ortamCanli": "Canlı Hepsiburada mağazası.",
     "canliKapali": "Canlı Hepsiburada mağazasına gönderim henüz AÇILMADI — deneme ortamı testleri bitince onayınla açılacak. Bu yüzden Gönder düğmesi kapalı.",
     "hbSku": "Hepsiburada SKU",
-    "selioraStok": "Selliora stoğu",
+    "sistemStogu": "{uygulama} stoğu",
     "kanalAdet": "HB'nin bildirdiği",
     "kanalAdetOlculmedi": "ölçülmedi",
     "stokGonder": "Stoğu gönder ({adet} adet olarak güncellenecek)",

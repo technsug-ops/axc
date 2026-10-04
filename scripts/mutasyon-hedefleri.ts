@@ -333,4 +333,11 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * gövdesini mutasyona uğratıyor (panel · süzgeç harness'leriyle ortak).
    */
   "kargosuz-mutasyon:kontrol",
+  /**
+   * K318 (04.10.2026) — `uygulama-adi` adın okunduğu ortak dosyaları
+   * mutasyona uğratıyor: `layout.tsx` · `app-sidebar.tsx` · `giris/page.tsx`
+   * · `oturum-imza.ts` · `messages/tr.json` · `public/sw.js` · `uygulama.ts`.
+   * İlk turda paralel havuza düştü ve `mutasyon-cakisma` yakaladı.
+   */
+  "uygulama-adi-mutasyon:kontrol",
 ];

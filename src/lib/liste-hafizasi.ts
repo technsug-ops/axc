@@ -35,7 +35,9 @@
  * ============================================================================
  */
 
-const ONEK = "selliora:liste:";
+import { UYGULAMA } from "@/lib/uygulama";
+
+const ONEK = `${UYGULAMA.teknikAd}:liste:`;
 
 /** Adres kadar uzun bir değer saklanmaz — bozuk/şişmiş kayıt okunmaz. */
 const TAVAN = 2048;

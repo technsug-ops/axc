@@ -5,6 +5,7 @@ import { TriangleAlert } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { kullaniciVarMi, oturumdakiKullanici } from "@/lib/oturum";
 import { UYGULAMA } from "@/lib/uygulama";
+import { MarkaIkonu, MarkaYazisi } from "@/lib/marka/cizim";
 
 import { GirisFormu } from "./giris-formu";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -40,7 +41,13 @@ export default async function GirisSayfasi({
     <div className="flex min-h-svh items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold">{UYGULAMA.ad}</h1>
+          {/* Logo: kobalt kare ikon her temada okunur; yazı tema yazı
+              renginde (açık zeminde koyu, gece temasında açık). Başlığın
+              metni ekran okuyucu için `UYGULAMA.ad`. */}
+          <h1 className="mb-1 flex items-center justify-center gap-3">
+            <MarkaIkonu className="size-10 shrink-0" />
+            <MarkaYazisi etiket={UYGULAMA.ad} className="text-foreground h-8 w-auto" />
+          </h1>
           <p className="text-muted-foreground text-sm">{t("altBaslik")}</p>
         </div>
 

@@ -31,7 +31,7 @@ import { yetkiBaglami } from "@/lib/yetki";
 import { BildirButonu } from "@/components/bildir-butonu";
 import { SwKayit } from "@/components/sw-kayit";
 import { TemaSecici } from "@/components/tema-secici";
-import { KABUK_RENKLERI } from "@/lib/marka/renkler";
+import { KABUK_RENKLERI, TEMA_ANAHTARI } from "@/lib/marka/renkler";
 import { UyariCani } from "@/components/uyari-cani";
 import { UYGULAMA } from "@/lib/uygulama";
 
@@ -70,7 +70,7 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
  * okunuyor; eksik kalsaydı kağıt temasında çubuk lacivert kalırdı.
  */
 const KABUK_JSON = JSON.stringify(KABUK_RENKLERI);
-const TEMA_BETIGI = `(function(){var g=${KABUK_JSON};try{var t=localStorage.getItem("selliora-tema");if(!g[t]){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"gece":"kobalt";}var k=document.documentElement;k.setAttribute("data-tema",t);if(t==="gece"){k.classList.add("dark");}var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute("content",g[t]);}}catch(e){}})();`;
+const TEMA_BETIGI = `(function(){var g=${KABUK_JSON};try{var t=localStorage.getItem(${JSON.stringify(TEMA_ANAHTARI)});if(!g[t]){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"gece":"kobalt";}var k=document.documentElement;k.setAttribute("data-tema",t);if(t==="gece"){k.classList.add("dark");}var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute("content",g[t]);}}catch(e){}})();`;
 
 /**
  * Sekme başlıkları tek yerden yönetiliyor: alt sayfalar sadece kendi

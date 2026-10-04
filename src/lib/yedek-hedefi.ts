@@ -37,7 +37,7 @@ import { join } from "node:path";
  */
 
 export type YedekKaydi = {
-  /** Hedef içindeki yol/ad — `yedek/selliora-2026-08-31.json`. */
+  /** Hedef içindeki yol/ad — `yedek/bezirga-2026-10-05.json` (04.10.2026 öncesi `selliora-…`). */
   ad: string;
   boyut: number;
   yazildi: Date;
@@ -130,7 +130,7 @@ export function blobHedefi(jeton?: string): YedekHedefi {
        * ⚠ MANIFEST YAZIMDAN SONRA GÜNCELLENİR — ve dosyanın KENDİSİ hâlâ
        * tek doğru kanıttır. Manifest yalnız bir DİZİNDİR; kaybolursa
        * yeniden kurulabilir, çünkü ad deseni belirlenimci
-       * (`yedek/selliora-<gün>.json`). Bu yüzden manifest bir tek nokta
+       * (`yedek/<teknik ad>-<gün>.json`). Bu yüzden manifest bir tek nokta
        * arıza değil, bir hızlandırıcıdır.
        */
       const kayitlar = (await manifestOku()).filter((k) => k.ad !== ad);

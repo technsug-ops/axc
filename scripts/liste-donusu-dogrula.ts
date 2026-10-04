@@ -1,3 +1,4 @@
+import { UYGULAMA } from "../src/lib/uygulama";
 import { kaynakOku } from "./kaynak-oku";
 
 /**
@@ -111,7 +112,7 @@ const {
    * _(Anayasa: "zincir, halkalarının varlığıyla değil bağlantısıyla
    * sınanır" — burada iki halka birbirini maskeliyordu.)_
    */
-  const depoBos = () => depo.get("selliora:liste:__son__") ?? null;
+  const depoBos = () => depo.get(`${UYGULAMA.teknikAd}:liste:__son__`) ?? null;
 
   depo.clear();
   /** ⛔ Taban `/` KABUL EDİLMEZ: onunla HER adres doğrulamayı geçerdi. */
@@ -155,7 +156,7 @@ const {
   depo.clear();
   /** Taban GEÇERLİ, adres yabancı → yalnız ADRES kapısı değerlendirilir. */
   depo.set(
-    "selliora:liste:__son__",
+    `${UYGULAMA.teknikAd}:liste:__son__`,
     JSON.stringify({ temel: "/stok", adres: "/kotu-site", etiket: "Stok" }),
   );
   yakin(
@@ -170,7 +171,7 @@ const {
    * Elenmesinin tek sebebi `guvenliTaban` olabilir.
    */
   depo.set(
-    "selliora:liste:__son__",
+    `${UYGULAMA.teknikAd}:liste:__son__`,
     JSON.stringify({ temel: "//kotu.com", adres: "//kotu.com", etiket: "X" }),
   );
   yakin(
@@ -181,7 +182,7 @@ const {
 
   depo.clear();
   depo.set(
-    "selliora:liste:__son__",
+    `${UYGULAMA.teknikAd}:liste:__son__`,
     JSON.stringify({ temel: "/stok", adres: "/stok", etiket: "" }),
   );
   yakin(
@@ -205,10 +206,10 @@ const {
 
   /** ⛔ BOZUK KAYIT SESSİZCE KULLANILMAZ — çağıran düz adresine düşer. */
   depo.clear();
-  depo.set("selliora:liste:__son__", "{bozuk json");
+  depo.set(`${UYGULAMA.teknikAd}:liste:__son__`, "{bozuk json");
   yakin("güvenlik: bozuk JSON null döner", hatirlananSonListe(), null);
   depo.clear();
-  depo.set("selliora:liste:__son__", JSON.stringify({ temel: "/stok" }));
+  depo.set(`${UYGULAMA.teknikAd}:liste:__son__`, JSON.stringify({ temel: "/stok" }));
   yakin("güvenlik: eksik alan null döner", hatirlananSonListe(), null);
 
   kosanBolumler.push("guvenlik");

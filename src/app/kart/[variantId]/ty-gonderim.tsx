@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { UYGULAMA } from "@/lib/uygulama";
 import { UploadCloud } from "lucide-react";
 
 import {
@@ -33,7 +34,7 @@ import {
  *  K169 — TRENDYOL'A GÖNDER (stok / fiyat) — KANALA İLK YAZAN EKRAN
  * ----------------------------------------------------------------------------
  *  ⚠ RAKAM GÖRÜLMEDEN GÖNDERİLMEZ: diyalog açılır açılmaz önizleme sunucudan
- *  gelir (barkod · Selliora stoğu · TY'nin bildirdiği adet KIYASI); Gönder
+ *  gelir (barkod · sistem stoğu · TY'nin bildirdiği adet KIYASI); Gönder
  *  düğmesi önizleme gelmeden pasif. _(K164-③ maliyet kuralının kanal hâli.)_
  *
  *  ⚠ FİYAT BOŞ BIRAKILABİLİR — boş, "fiyata dokunma" demektir; 0 ya da
@@ -189,8 +190,8 @@ export function TyGonderim({ variantId }: { variantId: string }) {
                 {t("barkod")}: <span className="font-medium">{onizleme.barkod}</span>
               </div>
               <div>
-                {t("selioraStok")}:{" "}
-                <span className="font-medium">{bicim.sayi(onizleme.selioraStok)}</span>
+                {t("sistemStogu", { uygulama: UYGULAMA.ad })}:{" "}
+                <span className="font-medium">{bicim.sayi(onizleme.sistemStogu)}</span>
                 {" · "}
                 {t("kanalAdet")}:{" "}
                 <span className="font-medium">
@@ -207,7 +208,7 @@ export function TyGonderim({ variantId }: { variantId: string }) {
                 onChange={(e) => setStokGonder(e.target.checked)}
                 className="size-4"
               />
-              {t("stokGonder", { adet: bicim.sayi(onizleme.selioraStok) })}
+              {t("stokGonder", { adet: bicim.sayi(onizleme.sistemStogu) })}
             </label>
             <label className="block space-y-1">
               <span>{t("fiyatEtiketi")}</span>

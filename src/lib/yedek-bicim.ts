@@ -1,3 +1,5 @@
+import { TEKNIK_ADLAR, UYGULAMA } from "@/lib/uygulama";
+
 /**
  * ============================================================================
  *  YEDEK DOSYA BİÇİMİ — SABİTLER VE TİP
@@ -165,6 +167,56 @@ export const YEDEK_TABLOLARI = [
  * tek tek sayar ve uyarır — sessizce "tamam" demez.
  */
 export const YEDEK_SURUMU = 6;
+
+/**
+ * ============================================================================
+ *  YEDEK ADLARI — YAZAN TEK AD, OKUYAN BÜTÜN ADLAR (04.10.2026)
+ * ----------------------------------------------------------------------------
+ *  Ürün adı «Selliora»dan «Bezirga»ya döndü. Yeni yedekler yeni teknik adla
+ *  yazılır (`bezirga-<gün>.json`, `bicim: "bezirga-yedek"`); eski adla
+ *  yazılmış yedekler OKUNMAYA devam eder — felaket anında elde olan dosya
+ *  eski adlı olabilir ve "bu bir yedek değil" demek felaketi büyütürdü.
+ *
+ *  ⚠ BİÇİM ALANI ADIN PARÇASI, İÇERİĞİN DEĞİL: `selliora-yedek` ile
+ *  `bezirga-yedek` aynı yapıyı taşır; içerik farkı `surum`dadır.
+ *  ⚠ Ad listesi `TEKNIK_ADLAR`dan gelir; burada elle yazılmaz.
+ * ============================================================================
+ */
+export const YEDEK_BICIMI = `${UYGULAMA.teknikAd}-yedek`;
+
+/** Okumada kabul edilen biçimler — güncel ve eski adlar. */
+export const TANINAN_YEDEK_BICIMLERI: readonly string[] = TEKNIK_ADLAR.map(
+  (ad) => `${ad}-yedek`,
+);
+
+/**
+ * Teknik adlar yalnız küçük harf olmak ZORUNDA — kalıba kaçırılmadan girer.
+ * Kaçırma yerine kapı: harf dışı bir ad yazılırsa modül yüklenirken düşer.
+ */
+const AD_SECENEKLERI = TEKNIK_ADLAR.map((ad) => {
+  if (!/^[a-z]+$/.test(ad)) throw new Error(`teknik ad yalniz kucuk harf olmali: ${ad}`);
+  return ad;
+}).join("|");
+
+/** Gece yedeğinin adı — `yedek/` klasörü çağıranda eklenir. */
+export function gunlukYedekAdi(gun: string): string {
+  return `${UYGULAMA.teknikAd}-${gun}.json`;
+}
+
+/** Gece yedeği mi (güncel ya da eski adlı)? `guvenlik-*` değil. */
+export function gunlukYedekMi(dosyaAdi: string): boolean {
+  return TEKNIK_ADLAR.some((ad) => dosyaAdi.startsWith(`${ad}-`));
+}
+
+/** İndirilebilir yedek adları: gece yedeği (her ad) + güvenlik yedeği. */
+export const INDIRILEBILIR_YEDEK_KALIBI = new RegExp(
+  String.raw`^((?:${AD_SECENEKLERI})-\d{4}-\d{2}-\d{2}|guvenlik-[\dTZ:.-]+)\.json$`,
+);
+
+/** Geri yüklenebilir yedek adları — indirme kalıbının geniş hâli. */
+export const GERI_YUKLENEBILIR_YEDEK_KALIBI = new RegExp(
+  String.raw`^(?:${AD_SECENEKLERI}|guvenlik)-[\w:.-]+\.json$`,
+);
 
 export type YedekDosyasi = {
   bicim: string;

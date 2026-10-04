@@ -1,4 +1,5 @@
 import type { ElKitabiVerisi } from "./veri";
+import { UYGULAMA } from "@/lib/uygulama";
 
 /**
  * ============================================================================
@@ -305,7 +306,7 @@ export function elKitabiGovdesi(
     <span>${kacir(uretimTarihi)}</span>
     <span>Sürüm bilgisi kapakta durur; kurulum sayıları DURMAZ</span>
   </div>
-  <h1>Selliora</h1>
+  <h1>${UYGULAMA.ad}</h1>
   <p>Çok kanallı e-ticaret operasyonunuzun tek defteri: ne aldınız, ne sattınız,
   ne kadar kaldı. Bu kitap sıfırdan başlayan birinin sistemi yardımsız
   kullanabilmesi için yazıldı.</p>
@@ -334,7 +335,7 @@ ${icindekiler()}
 
 <section id="dusunce">
 ${baslik("dusunce")}
-<p>Selliora'yı kullanmak, birkaç temel kararı anlamakla kolaylaşıyor. Bu bölüm
+<p>${UYGULAMA.ad}'yı kullanmak, birkaç temel kararı anlamakla kolaylaşıyor. Bu bölüm
 ekran anlatmıyor — sistemin kafasını anlatıyor.</p>
 
 <h3>Dört ayrı kod vardır ve karıştırılmaz</h3>
@@ -446,7 +447,7 @@ bayatlardı; ekran bayatlamaz.</p></div>
 
 <section id="telefon">
 ${baslik("telefon")}
-<p>Selliora'yı telefonunuza <strong>uygulama gibi</strong> kurabilirsiniz. Kurulunca
+<p>${UYGULAMA.ad}'yı telefonunuza <strong>uygulama gibi</strong> kurabilirsiniz. Kurulunca
 ana ekranda kendi simgesiyle durur ve açıldığında tarayıcının adres çubuğu
 görünmez — ekranın tamamı işinize kalır. Ayrı bir program indirmezsiniz;
 kurulan şey sitenin kendisidir, yani her zaman güncel sürümdür.</p>
@@ -494,7 +495,7 @@ ek bir şey yapmanız gerekmez. Telefonu kaybederseniz, bilgisayardan
 o telefondaki oturum anında düşer.</p></div>
 
 <h3>İnternet giderse ne olur</h3>
-<p>Selliora <strong>çevrimdışı çalışmaz ve bu bilerek böyledir.</strong> Bağlantı
+<p>${UYGULAMA.ad} <strong>çevrimdışı çalışmaz ve bu bilerek böyledir.</strong> Bağlantı
 yoksa "Bağlantı yok" sayfası çıkar; rakam gösterilmez.</p>
 <div class="ek-not dikkat"><div class="etiket">Neden rakam göstermiyoruz</div>
 <p>Telefonda saklanmış bir kâr rakamının <strong>güncel mi eski mi</strong> olduğu
@@ -984,16 +985,16 @@ satışa açmak için pazaryerinin kendi panelini kullanırsınız.</p>
 <section id="kanalGonderim">
 ${baslik("kanalGonderim")}
 <p><strong>Ürünler → ürünün detay sayfası.</strong> Her varyant satırında kanal
-düğmeleri durur (yalnız <em>kanala yazma</em> yetkisi olan görür). Selliora'daki
+düğmeleri durur (yalnız <em>kanala yazma</em> yetkisi olan görür). ${UYGULAMA.ad}'daki
 stoğu ve fiyatı pazaryerindeki ilana <strong>siz göndermedikçe</strong> hiçbir
 şey gitmez.</p>
 ${neZaman(
-  "Mal kabul ya da sayım sonrası kanaldaki stok Selliora'dakinden farklıysa; ve fiyat değiştirmeye karar verdiğinde.",
+  `Mal kabul ya da sayım sonrası kanaldaki stok ${UYGULAMA.ad}'dakinden farklıysa; ve fiyat değiştirmeye karar verdiğinde.`,
 )}
 <h3>Stok — tek düğme, bütün bağlı kanallar</h3>
 <ol class="adimlar">
 <li><div><h3>Stoğu bağlı kanallara gönder</h3><p>Düğmeye basınca her kanal için
-«Selliora stoğu X → kanalda şu an Y» satırı gösterilir. Gönderilemeyecek kanal
+«${UYGULAMA.ad} stoğu X → kanalda şu an Y» satırı gösterilir. Gönderilemeyecek kanal
 (ör. ürün o kanala bağlı değil) sebebiyle yazar.</p></div></li>
 <li><div><h3>Onaylayın</h3><p>«Stoğu gönder (N kanal)». Sonuç kanal kanal ayrı
 satırda yazar; biri başarısız olsa ötekiler etkilenmez.</p></div></li>
@@ -2439,7 +2440,7 @@ ${baslik("yolda")}
 </div>
 
 <footer class="ek-dip"><div class="ek-dip-ic">
-<div><strong style="color:var(--murekkep)">Selliora Kullanıcı El Kitabı</strong> · ${kacir(uretimTarihi)}</div>
+<div><strong style="color:var(--murekkep)">${UYGULAMA.ad} Kullanıcı El Kitabı</strong> · ${kacir(uretimTarihi)}</div>
 <div>Bu belge sistemden ÜRETİLDİ. Kategori, raf, kanal hesabı ve kesinti listeleri
 o anki veritabanınızdan okunur — elle güncellenmez, sapmaz.</div>
 </div></footer>

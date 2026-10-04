@@ -166,9 +166,22 @@ for (const [, ad, boyut] of cizimOlculeri) {
 }
 
 const ikon = yorumsuz(oku("src/lib/marka/ikon.tsx"));
+/**
+ * ⚠ ÖLÇÜT ESKİDİ VE ÇEVRİLDİ (04.10.2026, K318). Eski ölçüt «simge harfi
+ * UYGULAMA.ad'dan türetiliyor» idi — gerekçesi: ad değişince simge de
+ * kendiliğinden değişsin. Bezirga paketiyle logo bir HARF değil bir ÇİZİM
+ * oldu ve çizim addan türetilemez (`cizim.tsx` başlığı). Korunan niyet aynı:
+ * simge ile menü TEK kaynaktan beslensin, biri eskimesin.
+ */
 kontrol(
-  "simge harfi UYGULAMA.ad'dan türetiliyor",
-  /UYGULAMA\.ad\.charAt\(0\)/.test(ikon),
+  "simge çizimi marka çiziminden (cizim.tsx) — menüyle aynı kaynak",
+  /from "@\/lib\/marka\/cizim"/.test(ikon) &&
+    /d=\{mikro \? MIKRO_B_YOLU : B_YOLU\}/.test(ikon) &&
+    /d=\{mikro \? MIKRO_ELMAS_YOLU : ELMAS_YOLU\}/.test(ikon),
+);
+kontrol(
+  "  ...simgede ad harfi YAZILMIYOR (çizim addan türetilmez)",
+  !/UYGULAMA\.ad/.test(ikon),
 );
 /**
  * ⚠ SAHİP OLMADIĞI ETKİYİ İDDİA EDEN SATIR OLMASIN. `fontWeight: 700`
@@ -195,7 +208,7 @@ const renkler = yorumsuz(oku("src/lib/marka/renkler.ts"));
  * (Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)
  */
 for (const tema of TEMALAR) {
-  const dosya = `src/styles/selliora-${tema}.css`;
+  const dosya = `src/styles/tema-${tema}.css`;
   const paletten = /--se-kabuk:\s*(#[0-9A-Fa-f]{6})/
     .exec(oku(dosya))?.[1]
     ?.toUpperCase();
@@ -219,11 +232,11 @@ for (const tema of TEMALAR) {
     new Set(
       [...oku(yol).matchAll(/(--se-[a-z0-9-]+):/g)].map((m) => m[1]),
     );
-  const temel = tokenSeti("src/styles/selliora-kobalt.css");
+  const temel = tokenSeti("src/styles/tema-kobalt.css");
   kontrol(`kobalt token seti dolu (${temel.size})`, temel.size > 40);
   for (const tema of TEMALAR) {
     if (tema === "kobalt") continue;
-    const bu = tokenSeti(`src/styles/selliora-${tema}.css`);
+    const bu = tokenSeti(`src/styles/tema-${tema}.css`);
     const eksik = [...temel].filter((t) => !bu.has(t));
     kontrol(`${tema}: eksik token YOK (${bu.size})`, eksik.length === 0, eksik);
   }
@@ -249,7 +262,7 @@ for (const tema of TEMALAR) {
     return 0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2];
   };
   for (const tema of TEMALAR) {
-    const metin = oku(`src/styles/selliora-${tema}.css`);
+    const metin = oku(`src/styles/tema-${tema}.css`);
     const kart = /--se-kart:\s*(#[0-9A-Fa-f]{6})/.exec(metin)?.[1];
     if (!kart) {
       kontrol(`${tema}: kart rengi okunamadı`, false);
@@ -286,7 +299,7 @@ for (const tema of TEMALAR) {
     );
     kontrol(
       `  ...${tema}: paleti import ediliyor`,
-      kopru.includes(`selliora-${tema}.css`),
+      kopru.includes(`tema-${tema}.css`),
     );
   }
 }
@@ -325,7 +338,7 @@ for (const tema of TEMALAR) {
     );
     for (const tema of TEMALAR) {
       const zemin = /--se-zemin:\s*(#[0-9A-Fa-f]{6})/.exec(
-        oku(`src/styles/selliora-${tema}.css`),
+        oku(`src/styles/tema-${tema}.css`),
       )?.[1];
       if (!zemin) {
         kontrol(`${tema}: zemin rengi okunamadı`, false);
@@ -501,7 +514,7 @@ kontrol(
  */
 kontrol(
   "  ...sürüm artırılmış (eski SW sahadan çekilsin)",
-  !/SURUM = "selliora-sw-1"/.test(sw),
+  !/SURUM = "selliora-sw-[12]"/.test(sw),
 );
 
 kontrol(

@@ -199,7 +199,7 @@ export async function geriYukle(
             const gelen = Number(n);
             if (gelen !== satirlar.length) {
               throw Object.assign(new Error("SAYIM_TUTMADI"), {
-                selliora: { tablo, beklenen: satirlar.length, gelen },
+                sayimAyrintisi: { tablo, beklenen: satirlar.length, gelen },
               });
             }
           }
@@ -211,8 +211,8 @@ export async function geriYukle(
       { timeout: ISLEM_ZAMAN_ASIMI_MS, maxWait: ISLEM_BEKLEME_MS },
     );
   } catch (e) {
-    const ek = (e as { selliora?: { tablo: string; beklenen: number; gelen: number } })
-      .selliora;
+    const ek = (e as { sayimAyrintisi?: { tablo: string; beklenen: number; gelen: number } })
+      .sayimAyrintisi;
     if (ek) {
       return { tamam: false, hata: { kod: "SAYIM_TUTMADI", ...ek } };
     }
