@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { izinMetinAnahtari } from "@/lib/yetki/izinler";
 
 export type IzinSecenegi = { anahtar: string; grup: string };
 
@@ -17,6 +18,9 @@ export type IzinSecenegi = { anahtar: string; grup: string };
  *  Anahtar -> sözlük eşlemesi SABİTTİR (i18n denetimi görebilsin);
  *  bilinmeyen anahtar ham hâliyle gösterilir ve o zaten `yetki:dogrula`
  *  tarafından ayrıca yakalanır.
+ *
+ *  ⛔ Sözlük anahtarı `izinMetinAnahtari`ndan gelir (noktasız) — noktalı
+ *  anahtarı next-intl iç içe yol sayar ve hiç bulamaz (04.10.2026 vakası).
  * ============================================================================
  */
 export function IzinSecici({
@@ -72,11 +76,13 @@ export function IzinSecici({
                 />
                 <span className="min-w-0">
                   <span className="block font-medium">
-                    {t.has(izin.anahtar) ? t(izin.anahtar) : izin.anahtar}
+                    {t.has(izinMetinAnahtari(izin.anahtar))
+                      ? t(izinMetinAnahtari(izin.anahtar))
+                      : izin.anahtar}
                   </span>
                   <span className="text-muted-foreground block text-xs">
-                    {t.has(`${izin.anahtar}.not`)
-                      ? t(`${izin.anahtar}.not`)
+                    {t.has(izinMetinAnahtari(izin.anahtar, true))
+                      ? t(izinMetinAnahtari(izin.anahtar, true))
                       : izin.anahtar}
                   </span>
                 </span>
