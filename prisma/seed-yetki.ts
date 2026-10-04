@@ -2,7 +2,6 @@ import {
   OPERASYON_IZINLERI,
   OPERASYON_ROLU,
   SAHIP_ROLU,
-  TUM_IZINLER,
   FIRMA_IZINLERI,
   otomatikDagitilacak,
 } from "../src/lib/yetki/izinler";
@@ -54,7 +53,13 @@ export async function yetkiSeed(prisma: PrismaClient, verilenFirma?: { id: strin
   // --- 1) FİRMA: tek kayıt ---
   const firma = verilenFirma ?? (await firmaSeed(prisma));
 
-  // --- 2) SAHİP: sistem rolü, tüm izinler ---
+  // --- 2) SAHİP: sistem rolü, bütün FİRMA izinleri ---
+  // K303 4c-2 (kullanıcı kararı 04.10.2026): Selliora firmaların üstündeki
+  // yönetim katmanıdır; sağlayıcı izinleri (`saglayici: true`) HİÇBİR firma
+  // rolüne girmez — yetki kişide (`User.isSuperAdmin`). ESKİ HÂL (gerekçesiyle):
+  // Sahip `TUM_IZINLER` alıyordu; tek firmada iki şapka aynı kişideydi ve
+  // zararsızdı, iki firmada her yeni firmanın Sahibi bütün firmaların destek
+  // taleplerini çözebilirdi (tasarım §9-1 «rol kopyası deliği»).
   const sahip = await prisma.role.upsert({
     where: { companyId_name: { companyId: firma.id, name: SAHIP_ROLU } },
     update: { isSystem: true },
@@ -64,12 +69,12 @@ export async function yetkiSeed(prisma: PrismaClient, verilenFirma?: { id: strin
   // İzinler HER KOŞUDA tazelenir (yukarıdaki gerekçe).
   await prisma.rolePermission.deleteMany({ where: { roleId: sahip.id } });
   await prisma.rolePermission.createMany({
-    data: TUM_IZINLER.map((permissionKey) => ({
+    data: FIRMA_IZINLERI.map((permissionKey) => ({
       roleId: sahip.id,
       permissionKey,
     })),
   });
-  console.log(`${SAHIP_ROLU.padEnd(15)}: ${TUM_IZINLER.length} izin (sistem rolü)`);
+  console.log(`${SAHIP_ROLU.padEnd(15)}: ${FIRMA_IZINLERI.length} izin (sistem rolü)`);
 
   /**
    * --- 2b) TAM YETKİLİ ROLLER: ADA DEĞİL, İZİN KÜMESİNE BAK ---
@@ -248,8 +253,20 @@ export async function yetkiSeed(prisma: PrismaClient, verilenFirma?: { id: strin
   // (pasif kullanıcı giriş yapamıyor) ama hayalet üyelik bırakmanın anlamı
   // yok — kullanılmayan bir yetki, bir gün fark edilmeden kullanılan
   // yetkidir.
+  //
+  // ⛔ K303 4c-2 (04.10.2026) — YALNIZ İLK KURULUMDA, SÜPER ADMİN HARİÇ.
+  // Bu bölüm tek firmalı ilk kurulum için yazıldı. Çok firmada bir firma
+  // tohumlanırken (`verilenFirma` — yeni firma açılışı, Damisell kurulumu)
+  // koşsaydı, üyeliği olmayan HERKES o firmanın Sahibi olurdu; bilerek hiçbir
+  // firmaya üye olmayan süper admin dahil. Ölçüldü: `saglayici-izni:dogrula`
+  // geçici firmayı tohumlarken `ceo@dgmarkt.com` o firmanın Sahibi yapıldı ve
+  // silme, üyelik yüzünden reddedildi (bekçi çökerek yakaladı).
+  if (verilenFirma) {
+    console.log("Üyelik         : verilen firmada kimse otomatik üye yapılmaz (ilk yönetici açılışta seçilir)");
+    return;
+  }
   const kullanicilar = await prisma.user.findMany({
-    where: { isActive: true, userCompanyRoles: { none: {} } },
+    where: { isActive: true, isSuperAdmin: false, userCompanyRoles: { none: {} } },
     select: { id: true, email: true },
   });
 

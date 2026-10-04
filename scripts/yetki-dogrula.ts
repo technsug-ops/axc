@@ -77,6 +77,9 @@ const KAYNAKLAR = dosyalar("src");
 const ACTION_ISTISNALARI = new Map<string, string>([
   ["girisYap", "giriş yapmamış kullanıcı çağırır — yetki isteyemez"],
   ["cikisYap", "çıkış her zaman serbest olmalı"],
+  // K303 4c-2 — Selliora yönetim katmanının girişi/çıkışı: firma girişi/çıkışıyla AYNI sınıf.
+  ["yonetimGirisYap", "yönetim girişi — giriş yapmamış kişi çağırır; süper admin işareti gövdede, tek hata mesajıyla sınanır"],
+  ["yonetimCikisYap", "yönetim çıkışı her zaman serbest olmalı (yalnız kendi çerezini siler)"],
   [
     "parolamiDegistir",
     "kendi parolasını değiştiriyor; izin şartı koysak ilk girişte parola değiştirmek ZORUNDA olan kullanıcı bunu yapamazdı — hedef oturumdan gelir, formdan değil",
@@ -169,6 +172,7 @@ console.log("\n2) KORUMASIZ SAYFA BEKÇİSİ");
 /** Yetki istemeyen sayfalar — gerekçeli. */
 const SAYFA_ISTISNALARI = new Map<string, string>([
   ["src/app/giris/page.tsx", "giriş ekranı"],
+  ["src/app/selliora/page.tsx", "Selliora yönetim giriş ekranı (K303 4c-2) — proxy'nin açık bıraktığı tek yönetim yolu; içerisi `yonetimSayfasi` kapısıyla"],
   ["src/app/page.tsx", "panel — girişi olan herkes görür"],
   [
     "src/app/parola-degistir/page.tsx",
@@ -217,6 +221,11 @@ const SAYFA_KAPILARI = [
   ...kaynakOku("src/lib/yetki/index.ts")
     .replace(/\r/g, "")
     .matchAll(/export async function (sayfa[A-Za-z]+)\(/g),
+  /* K303 4c-2 — Selliora yönetim katmanının sayfa kapısı (süper admin; firma
+     izni değil). Aynı ilke: ad modülden OKUNUR, elle yazılmaz. */
+  ...kaynakOku("src/lib/yonetim-oturumu.ts")
+    .replace(/\r/g, "")
+    .matchAll(/export async function (yonetimSayfa[A-Za-z]*)\(/g),
 ].map((e) => e[1]);
 
 kontrol(

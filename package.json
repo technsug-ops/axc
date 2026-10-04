@@ -44,6 +44,7 @@
     "baglanti:test": "tsx scripts/baglanti-testi.ts",
     "kullanici:olustur": "tsx scripts/kullanici-olustur.ts",
     "super-admin:ata": "tsx scripts/super-admin-ata.ts",
+    "deneme:saglayici-ayikla": "tsx scripts/deneme-saglayici-izni-ayikla.ts",
     "oturum:dogrula": "tsx scripts/oturum-dogrula.ts",
     "el-kitabi:uret": "tsx scripts/el-kitabi-uret.ts",
     "migration:kontrol": "tsx scripts/migration-kontrol.ts",
@@ -490,6 +491,8 @@
     "oturum-firmasi-mutasyon:kontrol": "tsx scripts/oturum-firmasi-mutasyon-kontrol.ts",
     "yonetim-kapisi:dogrula": "tsx scripts/yonetim-kapisi-dogrula.ts",
     "yonetim-kapisi-mutasyon:kontrol": "tsx scripts/yonetim-kapisi-mutasyon-kontrol.ts",
+    "saglayici-izni:dogrula": "tsx scripts/saglayici-izni-dogrula.ts",
+    "saglayici-izni-mutasyon:kontrol": "tsx scripts/saglayici-izni-mutasyon-kontrol.ts",
     "firma-bag:uret": "tsx scripts/firma-bag-tetikleyici-uret.ts prisma/migrations/20261003100500_k303_firma_bag_kapisi/migration.sql"
   },
   "dependencies": {
