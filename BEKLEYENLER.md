@@ -310,7 +310,9 @@ gerçekleşirken «faiz + verginin ödenen TL karşılığı» sorulur, Giderler
   ⚠ Ad karışıklığı (hata değil): Axcali kopyasının giriş kullanıcısı `deneme@damisell.local` (yalnız AXC/CEO) — adresinde «damisell» geçiyor; ilk ölçümde maskeli e-posta yüzünden «Damisell kullanıcısı Axcali'ye de üye» sanıldı, ayrıştırınca iki ayrı kullanıcı çıktı. Yeniden adlandırmak kullanıcının kararı.
 · **Giriş ekranı düşüyordu (dal `4032958`, 04.10.2026)** — ⛔ BULGU: kaba kuvvet kilidi (main 02.10, dala taşındı) girişten ÖNCE `AuditLog` okuyordu; firma yokken süzgeç `FIRMA_BAGLAMI_YOK` ile durdurdu, deneme girişi hiç açılmadı (hata 2371615829). Kilit artık firmalar-üstü okur (`sistemPrisma`, gerekçeli); başarısız deneme izi zaten firmasız yazıldığından süzgeçli okuma onu hiç göremez, kilit hiç tutmazdı. Ölçüldü: hatalı giriş 200 + firmasız iz. ⚠ Hiçbir bekçi yakalamadı — girişi süzgeç altında koşan ölçüt YOK (açık kalem).
 · **Halil testi GEÇTİ (04.10.2026, kullanıcı «doğru»):** deneme `localhost:3100`'de iki girişle: Damisell şeridi + 4 ürün / 1 satış (NET-2 ₺664,90); Axcali şeridi + 1.873 ürün / 8.301 satış.
-⏭ **Sıradaki:** ① girişi firma süzgeci altında koşan bekçi (yukarıdaki boşluk) · ② Aşama 4c (firma seçici / yeni firma açılışı). **Açık kararlar (kullanıcı):** firma başına pazaryeri anahtarı (şifreli, şema ister) · firma başına yedek/geri yükleme (bugün çok firmada ekrandan KAPALI) · `seed-yetki` firma adını koda yazıyor (veriye taşınacak).
+· **Giriş firmasız bekçisi ✓ (dal `e97df00`, 04.10.2026)** — kilidin okuması `lib/giris-kilidi-okuma.ts` gövdesine taşındı; `giris-firmasiz:dogrula` gövdeyi gerçek veritabanında firmasız ve firma bağlamında ÇAĞIRIR (desen aramaz), kendi izini yazar/siler: 13/13 · mutasyon 8/8 (zararsız yeşil; «süzgeçli istemci» mutasyonu kırmızı). Refaktörün yan etkisi: `erisim` bekçisi ve IP mutasyonu yeni yere taşındı (28/28 · 9/9), iki harness sıralı grupta. ⛔ Ayrıca: `supheli-urun` «iptal satışı işlem sayılıyor» mutasyonunun çapası 3c'den (`e868c04`) beri KOPUKTU — taşındı, 19/19.
+▶ **KULLANICI KARARI 04.10.2026 — FİRMA GEÇİŞİ:** _«Selliora bildiğin gibi üst yapı olacak, Axcali'nin içinden başka firmaya geçilmemeli.»_ 28.09 kararı ② («üst çubukta firma seçici») bu kararla ÇEVRİLDİ; firma içinde firma değiştiren bir düğme olmaz, firma Selliora katmanında belirlenir. **Açık soru (kullanıcıya soruldu):** birden çok firmaya üye kullanıcı — (a) girişten sonra Selliora'da firma seçimi, değiştirmek için çıkış/giriş · (b) her firmaya ayrı hesap, bir kullanıcı tek firma.
+⏭ **Sıradaki:** Aşama 4c (yeni firma açılışı + yukarıdaki sorunun cevabına göre giriş/firma belirleme). **Açık kararlar (kullanıcı):** firma başına pazaryeri anahtarı (şifreli, şema ister) · firma başına yedek/geri yükleme (bugün çok firmada ekrandan KAPALI) · `seed-yetki` firma adını koda yazıyor (veriye taşınacak).
 _(28.09 kaydı aşağıda olduğu gibi duruyor.)_
 
 ⏪ **AYNI GÜN GERİ BIRAKILDI.** 13.08 sırası yeniden geçerli (önce tek firma kanıtlanır). Hiçbir şema/migration
@@ -332,7 +334,7 @@ prisma kullanan dosya 233 · ham SQL 5 dosya · cron 7 · kimlikler `.env`de tek
 iddiadır»). Aşama 2'de geçmiş `AXC`ye bağlanır, Aşama 3'te bağlamdan OTOMATİK dolar.
 
 **KARARLAR (kullanıcı, 28.09.2026):** ① roller firmaya ait, yeni firmaya üç rolün kopyası · ② üst çubukta
-firma seçici · ③ sistem nedenleri firma açılışında kopyalanır. **Sıradaki: Aşama 2 — şema + geçiş (migration onayı).**
+firma seçici _(⏩ 04.10.2026'da ÇEVRİLDİ — firma içinden geçiş yok, Selliora üst yapı; yukarıya bakın)_ · ③ sistem nedenleri firma açılışında kopyalanır. **Sıradaki: Aşama 2 — şema + geçiş (migration onayı).**
 
 ⭐ **DENEME ORTAMI ŞART — kullanıcı kararı 28.09.2026 («best practice takip edelim»).** Aşama 2–4 ÖNCE ayrı
 ortamda: ① KAS'ta ikinci veritabanı (canlının kopyası) · ② ayrı dal `k303-cok-firma` + Vercel önizleme ·
