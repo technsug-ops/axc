@@ -18,12 +18,11 @@
  *   3) rol ekranı sözlüğe `izinMetinAnahtari` ile soruyor (ham anahtarla değil)
  * ============================================================================
  */
-import { readFileSync } from "node:fs";
 import { createTranslator } from "use-intl";
 import { IZINLER, izinMetinAnahtari } from "../src/lib/yetki/izinler";
+import { kaynakOku as oku } from "./kaynak-oku";
 
 type Agac = { [k: string]: string | Agac };
-const oku = (yol: string) => readFileSync(yol, "utf8").replace(/\r\n/g, "\n");
 const tr = JSON.parse(oku("messages/tr.json")) as Agac;
 const en = JSON.parse(oku("messages/en.json")) as Agac;
 
