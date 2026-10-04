@@ -18,6 +18,33 @@
 
 ---
 
+## ✅ K317 — ROL EKRANI İZİNLERİ HAM KODLA ÇİZİYORDU · 04.10.2026 → 04.10.2026 · [KAPANDI — Halil testi geçti]
+
+> **KAPANDI 04.10.2026 — HALİL TESTİ GEÇTİ** (canlı `axc-seven.vercel.app/ayarlar/roller`, masaüstü tarayıcı,
+> gerçek veri): «Rolü ekle» kutusu, rol listesi ve «Halil» rolünün düzenleme ekranı — bütün izinler Türkçe ad +
+> açıklamayla, noktalı kod YOK. CEO/Sahip «32 izin» = bekçinin 31 firma izni + `destek.yonet`. Telefon görünümü
+> SINANMADI (kullanıcıda).
+
+**Kök:** sözlükte `Izin` anahtarları noktalıydı (`urun.gor`); next-intl noktayı iç içe yol sayar, `t.has` hep
+`false` → ekran c67d120'den beri ham kod çiziyordu. 32 iznin 6'sının metni hiç yoktu. Düzeltme `ffca498`
+(noktasız `izinMetinAnahtari`); bekçi `izin-metni:dogrula` kütüphanenin kendi çözücüsüyle sınar, mutasyon 7/7.
+İlk push `bekci-kapisi`na takıldı (bekçi `readFileSync`i doğrudan okuyordu) → `kaynakOku`ya bağlandı.
+
+─── ② **Yeni rol formu sessiz kapanıyordu** (aynı test turunda bulundu): «Halil» eklendi ama `rolEkle` başarıda
+`{}` dönüyordu — yeşil onay YOK (İlke #5), ad ve kutular formda kalıyor, rol eklenmemiş gibi görünüyordu. Zarar
+yoktu (ikinci basış «ad zaten var» der, kopya rol açılmaz). Düzeltme: sunucu `{ eklenen }` döner; form saf
+`rolEklendiMi` kararıyla YALNIZ başarıda boşalır (hatada seçimler kalır) ve ortak yeşil bildirimi
+(`basariAdresi(…, "eklendi")`) tetikler. Bekçi `rol-formu:dogrula` 16 · mutasyon 9/9 (zararsız yeşil + 8 bozma
+kırmızı; iki yön: boşaltma silindi / hatada da boşaltıyor).
+⏳ Halil testi (②): «Rolü ekle» → yeşil «Kayıt eklendi.» çıkar, ad ve kutular boşalır; hatalı gönderimde (izin
+seçmeden) kutular/ad YERİNDE kalır.
+
+⚠ **Açık öneri (kullanıcı kararı bekliyor):** «Halil» rolünde «Satışı düzelt» var, «Satışları görüntüle» yok —
+düzeltme satış ekranından yapıldığı için izin kâğıt üstünde kalabilir. İzin bağımlılığı uyarısı (ön koşulu
+seçilmemiş izin ekranda uyarır) ayrı iş olarak açılabilir.
+
+---
+
 
 ## ✅ K236 — "BU BARKODU OKUMUYOR" ÖLÇÜLDÜ: OKUYOR · EKSİK OLAN TEŞHİSTİ · 22.09.2026 → 23.09.2026 · [KAPATILDI — kullanıcı kararı; canlı kare sebebi ÖLÇÜLMEDİ]
 
