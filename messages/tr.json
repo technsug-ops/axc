@@ -5260,6 +5260,7 @@
     "epostaZorunlu": "E-posta girilmeli.",
     "parolaZorunlu": "Parola girilmeli.",
     "hataliGiris": "E-posta veya parola hatalı.",
+    "girisYapilamadi": "Giriş yapılamadı:",
     "cokFazlaDeneme": "Çok fazla hatalı deneme. Güvenlik için giriş {dakika} dakika kapalı — sonra tekrar deneyin.",
     "kabukBasligi": "{uygulama} yönetim",
     "firmalar": "Firmalar",

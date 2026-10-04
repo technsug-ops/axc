@@ -25,7 +25,7 @@ export function YonetimGirisFormu() {
         <Label htmlFor="yonetim-parola">{t("parola")}</Label>
         <Input id="yonetim-parola" name="password" type="password" autoComplete="current-password" />
       </div>
-      <HataOzeti hatalar={durum.hatalar} />
+      <HataOzeti hatalar={durum.hatalar} baslik={t("girisYapilamadi")} />
       <Button type="submit" className="w-full" disabled={bekliyor}>
         <LogIn />
         {bekliyor ? t("giriliyor") : t("girisYap")}
