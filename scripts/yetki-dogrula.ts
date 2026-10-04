@@ -182,7 +182,7 @@ console.log("\n2) KORUMASIZ SAYFA BEKÇİSİ");
 /** Yetki istemeyen sayfalar — gerekçeli. */
 const SAYFA_ISTISNALARI = new Map<string, string>([
   ["src/app/giris/page.tsx", "giriş ekranı"],
-  ["src/app/selliora/page.tsx", "Selliora yönetim giriş ekranı (K303 4c-2) — proxy'nin açık bıraktığı tek yönetim yolu; içerisi `yonetimSayfasi` kapısıyla"],
+  ["src/app/bezirga/page.tsx", "Selliora yönetim giriş ekranı (K303 4c-2) — proxy'nin açık bıraktığı tek yönetim yolu; içerisi `yonetimSayfasi` kapısıyla"],
   ["src/app/page.tsx", "panel — girişi olan herkes görür"],
   [
     "src/app/parola-degistir/page.tsx",

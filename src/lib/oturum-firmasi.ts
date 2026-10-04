@@ -1,4 +1,5 @@
 import { sistemPrisma } from "@/lib/prisma";
+import { UYGULAMA } from "@/lib/uygulama";
 
 /**
  * ============================================================================
@@ -50,4 +51,4 @@ export async function uyeMi(kullaniciId: string, firmaId: string): Promise<boole
 }
 
 /** Bu cihazda en son girilen firma kodu — giriş ekranı alanı doldurur. Yalnız KOD. */
-export const FIRMA_KODU_CEREZI = "selliora_firma_kodu";
+export const FIRMA_KODU_CEREZI = `${UYGULAMA.teknikAd}_firma_kodu`;

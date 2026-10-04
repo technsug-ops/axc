@@ -1,3 +1,4 @@
+import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Plus } from "lucide-react";
@@ -50,13 +51,13 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">{t("firmalar")}</h1>
         <Button asChild className="min-h-11">
-          <Link href="/selliora/firmalar/yeni">
+          <Link href={`${YONETIM_YOLU}/firmalar/yeni`}>
             <Plus />
             {t("yeniFirma")}
           </Link>
         </Button>
       </div>
-      <KodAramaKutusu temelAdres="/selliora/firmalar" baslangic={arama} tasinanlar={{}} ipucu={t("firmaAramaIpucu")} />
+      <KodAramaKutusu temelAdres={`${YONETIM_YOLU}/firmalar`} baslangic={arama} tasinanlar={{}} ipucu={t("firmaAramaIpucu")} />
       <p className="text-muted-foreground text-sm">
         {arama ? t("aramaSonucu", { bulunan: firmalar.length, toplam }) : t("firmaSayisi", { toplam })}
       </p>

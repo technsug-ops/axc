@@ -1,3 +1,4 @@
+import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { getTranslations } from "next-intl/server";
 
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
@@ -17,7 +18,7 @@ export default async function YeniFirmaSayfasi() {
   return (
     <div className="space-y-4">
       <div>
-        <ListeyeDon href="/selliora/firmalar">{t("firmalar")}</ListeyeDon>
+        <ListeyeDon href={`${YONETIM_YOLU}/firmalar`}>{t("firmalar")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("yeniFirma")}</h1>
       </div>
       <YeniFirmaFormu />

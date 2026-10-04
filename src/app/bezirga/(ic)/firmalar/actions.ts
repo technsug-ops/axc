@@ -1,5 +1,7 @@
 "use server";
 
+import { YONETIM_YOLU } from "@/lib/oturum-imza";
+
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
@@ -45,7 +47,7 @@ export async function yeniFirmaAc(_onceki: YeniFirmaDurumu, formData: FormData):
     },
     k.id,
   );
-  revalidatePath("/selliora/firmalar");
+  revalidatePath(`${YONETIM_YOLU}/firmalar`);
   if (sonuc.durum === "HATA") return { hatalar: [t(HATA_ANAHTARI[sonuc.hata])] };
   return { durum: "ACILDI", kod: sonuc.kod, yoneticiEposta: sonuc.yoneticiEposta, yeniKullanici: sonuc.yeniKullanici, geciciParola: sonuc.geciciParola };
 }
@@ -55,7 +57,7 @@ export async function kurulumuTamamla(_onceki: YeniFirmaDurumu, formData: FormDa
   const k = await yonetimEylemi();
   if (!k) return { hatalar: [t(HATA_ANAHTARI.YETKISIZ)] };
   const sonuc = await firmaAcilisiniTamamla(String(formData.get("firmaId") ?? ""), k.id);
-  revalidatePath("/selliora/firmalar");
+  revalidatePath(`${YONETIM_YOLU}/firmalar`);
   if (sonuc.durum === "HATA") return { hatalar: [t(HATA_ANAHTARI[sonuc.hata])] };
   return { durum: "ACILDI", kod: sonuc.kod, yoneticiEposta: sonuc.yoneticiEposta, yeniKullanici: sonuc.yeniKullanici, geciciParola: sonuc.geciciParola };
 }
@@ -65,7 +67,7 @@ export async function firmaDurumu(firmaId: string, aktif: boolean): Promise<{ ha
   const k = await yonetimEylemi();
   if (!k) return { hata: t(HATA_ANAHTARI.YETKISIZ) };
   const sonuc = await firmaDurumunuDegistir(firmaId, aktif, k.id);
-  revalidatePath("/selliora/firmalar");
+  revalidatePath(`${YONETIM_YOLU}/firmalar`);
   if (sonuc.durum === "HATA") return { hata: t(sonuc.hata === "YARIM_KURULUM" ? "hataYarimKurulum" : "hataFirmaYok") };
   return { tamam: t(aktif ? "aktiflestirildi" : "pasifeAlindi") };
 }

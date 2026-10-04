@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { UYGULAMA } from "../src/lib/uygulama";
 
 /**
  * ============================================================================
@@ -12,7 +13,7 @@ import { join } from "node:path";
  *      npm run super-admin:ata -- --eposta=ceo@ornek.com --ad="Ad Soyad"
  *
  *  Kullanıcı kararı 04.10.2026: Selliora bir firma DEĞİL, süper admin
- *  katmanıdır; yetki KİŞİYE bağlıdır (`User.isSuperAdmin`). Giriş `/selliora`.
+ *  katmanıdır; yetki KİŞİYE bağlıdır (`User.isSuperAdmin`). Giriş `/<teknik ad>` (05.10.2026 öncesi `/selliora`).
  *
  *  · Hesap YOKSA açılır: parola rastgele üretilir ve YALNIZ masaüstündeki
  *    dosyaya yazılır (ekrana basılmaz; dosya varsa ÜSTÜNE YAZILMAZ). Parola
@@ -62,7 +63,7 @@ async function main() {
     kullaniciId = mevcut.id;
     console.log(`\n  Var olan hesaba süper admin işareti kondu: ${eposta} (parolası değişmedi)`);
   } else {
-    const dosya = join(homedir(), "Desktop", "selliora-super-admin-giris.txt");
+    const dosya = join(homedir(), "Desktop", `${UYGULAMA.teknikAd}-super-admin-giris.txt`);
     if (existsSync(dosya)) throw new Error(`${dosya} zaten var — hiçbir şey yazılmadı (eski dosyayı kaldırın)`);
     const parola = randomBytes(12).toString("base64url");
     // SISTEM: kullanıcı küreseldir.
@@ -71,8 +72,8 @@ async function main() {
       select: { id: true },
     });
     kullaniciId = yeni.id;
-    writeFileSync(dosya, `SELLIORA — SÜPER ADMİN (deneme, yalniz bu bilgisayar)\nAdres  : http://localhost:3100/selliora\nE-posta: ${eposta}\nParola : ${parola}\n`, { flag: "wx" });
-    console.log(`\n  Süper admin hesabı açıldı: ${eposta} · parola masaüstündeki selliora-super-admin-giris.txt dosyasında (ekrana basılmadı)`);
+    writeFileSync(dosya, `${UYGULAMA.ad.toLocaleUpperCase("tr")} — SÜPER ADMİN (deneme, yalniz bu bilgisayar)\nAdres  : http://localhost:3100/${UYGULAMA.teknikAd}\nE-posta: ${eposta}\nParola : ${parola}\n`, { flag: "wx" });
+    console.log(`\n  Süper admin hesabı açıldı: ${eposta} · parola masaüstündeki ${UYGULAMA.teknikAd}-super-admin-giris.txt dosyasında (ekrana basılmadı)`);
   }
   await izYaz({ action: "SUPER_ADMIN_ATANDI", targetType: "User", targetId: kullaniciId, userId: null, detail: JSON.stringify({ eposta }) });
   const sayi = await sistemPrisma.user.count({ where: { isSuperAdmin: true } });

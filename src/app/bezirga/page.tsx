@@ -1,3 +1,4 @@
+import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
@@ -20,7 +21,7 @@ export async function generateMetadata() {
  * yolu. Süper admin zaten girmişse firma listesine geçer.
  */
 export default async function YonetimGirisSayfasi() {
-  if (await yonetimOturumu()) redirect("/selliora/firmalar");
+  if (await yonetimOturumu()) redirect(`${YONETIM_YOLU}/firmalar`);
   const t = await getTranslations("Yonetim");
   return (
     <div className="flex min-h-svh items-center justify-center p-6">

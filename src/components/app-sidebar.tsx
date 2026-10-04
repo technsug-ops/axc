@@ -353,7 +353,11 @@ export function AppSidebar({
           <MarkaIsareti className="size-8 shrink-0 text-white" />
           <span className="flex min-w-0 flex-col gap-1">
             <MarkaYazisi etiket={UYGULAMA.ad} className="h-5 w-auto self-start text-white" />
-            <span className="text-muted-foreground text-xs">{t("slogan")}</span>
+            {/* Slogan kabuğun açık ikincil mürekkebiyle (kullanıcı 05.10.2026:
+                «açık font kullan»). `text-muted-foreground` sayfa gövdesinin
+                koyu grisiydi; sol menü onu üst çubuk gibi kabuk rengine
+                çevirmiyor ve koyu mavide okunmuyordu. */}
+            <span className="text-xs text-[var(--se-kabuk-ink2)]">{t("slogan")}</span>
           </span>
         </Link>
       </SidebarHeader>

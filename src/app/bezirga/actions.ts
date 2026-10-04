@@ -1,5 +1,7 @@
 "use server";
 
+import { YONETIM_YOLU } from "@/lib/oturum-imza";
+
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -61,10 +63,10 @@ export async function yonetimGirisYap(
 
   await yonetimOturumuAc(kullanici.id);
   await izYaz({ action: "YONETIM_GIRIS", targetType: "User", targetId: kullanici.id, userId: kullanici.id, detail: JSON.stringify({ ip }) });
-  redirect("/selliora/firmalar");
+  redirect(`${YONETIM_YOLU}/firmalar`);
 }
 
 export async function yonetimCikisYap() {
   await yonetimOturumuKapat();
-  redirect("/selliora");
+  redirect(YONETIM_YOLU);
 }

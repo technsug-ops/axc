@@ -1,5 +1,7 @@
 "use client";
 
+import { YONETIM_YOLU } from "@/lib/oturum-imza";
+
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { CircleCheck } from "lucide-react";
@@ -53,7 +55,7 @@ export function AcilisSonucu({
         )}
       </div>
       <Button asChild variant="outline" className="min-h-11">
-        <Link href="/selliora/firmalar">{t("listeyeDon")}</Link>
+        <Link href={`${YONETIM_YOLU}/firmalar`}>{t("listeyeDon")}</Link>
       </Button>
     </div>
   );

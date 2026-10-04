@@ -12,7 +12,7 @@ import { kaynakOku } from "./kaynak-oku";
  *      npm run yonetim-kapisi:dogrula
  *
  *  Kullanıcı kararı 04.10.2026: Selliora firmaların ÜSTÜNDEKİ yönetim
- *  katmanıdır; girişi `/selliora`, yetki kişide (`User.isSuperAdmin`).
+ *  katmanıdır; girişi `/<teknik ad>` (05.10.2026 öncesi `/selliora`), yetki kişide (`User.isSuperAdmin`).
  *
  *  ① PROXY ÇAĞRILIR (desen aranmaz): gerçek `NextRequest`, gerçek imzalı
  *     jetonlarla — giriş açık; içerisi jetonsuz / firma jetonuyla 404;
@@ -20,7 +20,7 @@ import { kaynakOku } from "./kaynak-oku";
  *     gelen katman başlığı firma yolunda SİLİNİR.
  *  ② SUNUCU KAPISI (kullanım bloğu): oturum okuması süper admin + aktif +
  *     sürüm + işaret sorar; giriş eylemi süper admin olmayanı reddeder.
- *  ③ DESEN YASAĞI: `src/app/selliora/` altında giriş dışındaki HER sayfa ve
+ *  ③ DESEN YASAĞI: `src/app/<teknik ad>/` altında giriş dışındaki HER sayfa ve
  *     düzen `await yonetimSayfasi()` çağırır (liste tutulmaz, klasör taranır).
  *  ④ KÖK DÜZEN: yönetim katmanında firma oturumuna bakılmaz.
  * ============================================================================
@@ -71,15 +71,15 @@ async function main() {
   const katmanKondu = (r: Response) => r.headers.get(`x-middleware-request-${imza.YONETIM_BASLIGI}`) === "1";
   const gecti = (r: Response) => r.headers.get("x-middleware-next") === "1";
 
-  kontrol("yol ölçütü: /selliora ve altı yönetim; /sellioraX ve /giris değil",
-    imza.yonetimYoluMu("/selliora") && imza.yonetimYoluMu("/selliora/firmalar") && !imza.yonetimYoluMu("/sellioraX") && !imza.yonetimYoluMu("/giris"));
-  const giris = await istek("/selliora");
-  kontrol("giriş ekranı (/selliora) jetonsuz AÇIK ve katman başlığını taşır", gecti(giris) && katmanKondu(giris), giris.status);
-  kontrol("içerisi JETONSUZ → 404", (await istek("/selliora/firmalar")).status === 404);
-  kontrol("içerisi FİRMA jetonuyla (firma çerezi) → 404", (await istek("/selliora/firmalar", `${imza.OTURUM_CEREZI}=${firmaJetonu}`)).status === 404);
-  kontrol("içerisi firma jetonu YÖNETİM çerezi adıyla → 404 (işaret tutmaz)", (await istek("/selliora/firmalar", `${imza.YONETIM_CEREZI}=${firmaJetonu}`)).status === 404);
-  kontrol("içerisi bozuk jetonla → 404", (await istek("/selliora/firmalar", `${imza.YONETIM_CEREZI}=${yonetimJetonu}x`)).status === 404);
-  const ic = await istek("/selliora/firmalar", `${imza.YONETIM_CEREZI}=${yonetimJetonu}`);
+  kontrol(`yol ölçütü: ${imza.YONETIM_YOLU} ve altı yönetim; ${imza.YONETIM_YOLU}X ve /giris değil`,
+    imza.yonetimYoluMu(imza.YONETIM_YOLU) && imza.yonetimYoluMu(`${imza.YONETIM_YOLU}/firmalar`) && !imza.yonetimYoluMu(`${imza.YONETIM_YOLU}X`) && !imza.yonetimYoluMu("/giris"));
+  const giris = await istek(imza.YONETIM_YOLU);
+  kontrol(`giriş ekranı (${imza.YONETIM_YOLU}) jetonsuz AÇIK ve katman başlığını taşır`, gecti(giris) && katmanKondu(giris), giris.status);
+  kontrol("içerisi JETONSUZ → 404", (await istek(`${imza.YONETIM_YOLU}/firmalar`)).status === 404);
+  kontrol("içerisi FİRMA jetonuyla (firma çerezi) → 404", (await istek(`${imza.YONETIM_YOLU}/firmalar`, `${imza.OTURUM_CEREZI}=${firmaJetonu}`)).status === 404);
+  kontrol("içerisi firma jetonu YÖNETİM çerezi adıyla → 404 (işaret tutmaz)", (await istek(`${imza.YONETIM_YOLU}/firmalar`, `${imza.YONETIM_CEREZI}=${firmaJetonu}`)).status === 404);
+  kontrol("içerisi bozuk jetonla → 404", (await istek(`${imza.YONETIM_YOLU}/firmalar`, `${imza.YONETIM_CEREZI}=${yonetimJetonu}x`)).status === 404);
+  const ic = await istek(`${imza.YONETIM_YOLU}/firmalar`, `${imza.YONETIM_CEREZI}=${yonetimJetonu}`);
   kontrol("içerisi YÖNETİM jetonuyla GEÇER ve katman başlığını taşır", gecti(ic) && katmanKondu(ic), ic.status);
   const sahte = await istek("/urunler", `${imza.OTURUM_CEREZI}=${firmaJetonu}`, { [imza.YONETIM_BASLIGI]: "1" });
   kontrol("firma yolunda DIŞARIDAN gelen katman başlığı SİLİNİR", gecti(sahte) && !katmanKondu(sahte),
@@ -94,7 +94,7 @@ async function main() {
   kontrol("oturum okuması oturum sürümünü sorar", oku.includes("if (k.sessionVersion !== govde.oturumSurumu) return null;"));
   kontrol("sayfa kapısı reddedileni 404'e gönderir", /export async function yonetimSayfasi\(\)[\s\S]{0,200}if \(!k\) notFound\(\);/.test(ot));
   kontrol("çerez YALNIZ yönetim yolunda (path: YONETIM_YOLU)", govde(ot, "export async function yonetimOturumuAc(").includes("path: YONETIM_YOLU,"));
-  const eylem = yorumsuz(kaynakOku("src/app/selliora/actions.ts"));
+  const eylem = yorumsuz(kaynakOku("src/app/bezirga/actions.ts"));
   const gir = govde(eylem, "export async function yonetimGirisYap(");
   const iRet = gir.indexOf("if (!kullanici || !kullanici.isActive || !kullanici.isSuperAdmin || !gecti) {");
   const iAc = gir.indexOf("await yonetimOturumuAc(kullanici.id);");
@@ -102,7 +102,7 @@ async function main() {
   kosanBolumler.push("sunucu");
 
   /* ③ DESEN YASAĞI */
-  const sayfalar = dosyalar("src/app/selliora").filter((d) => /\/(page|layout)\.tsx$/.test(d) && d !== "src/app/selliora/page.tsx");
+  const sayfalar = dosyalar("src/app/bezirga").filter((d) => /\/(page|layout)\.tsx$/.test(d) && d !== "src/app/bezirga/page.tsx");
   kontrol(`taban: yönetim altında giriş dışı sayfa/düzen var (${sayfalar.length} ≥ 2)`, sayfalar.length >= 2, sayfalar);
   const korumasiz = sayfalar.filter((d) => !/await yonetimSayfasi\(\)/.test(yorumsuz(kaynakOku(d))));
   kontrol("yönetim altındaki HER sayfa ve düzen kendi kapısını çağırır", korumasiz.length === 0, korumasiz);

@@ -149,10 +149,11 @@ export async function jetonuCoz(
  *  Burada yalnız Web Crypto'ya güvenen sabitler var — proxy de okuyor.
  * ============================================================================
  */
-export const YONETIM_CEREZI = "selliora_yonetim";
-export const YONETIM_ISARETI = "SELLIORA_YONETIM";
-export const YONETIM_YOLU = "/selliora";
-export const YONETIM_BASLIGI = "x-selliora-katman";
+export const YONETIM_CEREZI = `${UYGULAMA.teknikAd}_yonetim`;
+export const YONETIM_ISARETI = `${UYGULAMA.teknikAd.toUpperCase()}_YONETIM`;
+/** Yönetim katmanının adresi — teknik addan (05.10.2026, K318). ⚠ Klasör `src/app/<teknik ad>`; Next.js adresi klasörden alır, sabitten değil — `uygulama-adi:dogrula` ikisinin aynı olduğunu ölçer. */
+export const YONETIM_YOLU = `/${UYGULAMA.teknikAd}`;
+export const YONETIM_BASLIGI = `x-${UYGULAMA.teknikAd}-katman`;
 /** Süper admin oturumu daha kısa: 12 saat. */
 export const YONETIM_SURESI_MS = 12 * 60 * 60 * 1000;
 

@@ -1,3 +1,4 @@
+import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Building2 } from "lucide-react";
@@ -19,11 +20,11 @@ export default async function YonetimKabugu({ children }: { children: React.Reac
   return (
     <div className="min-h-svh">
       <header className="bg-background sticky top-0 z-10 flex h-14 items-center gap-3 border-b px-3 md:px-4">
-        <Link href="/selliora/firmalar" className="font-semibold">
+        <Link href={`${YONETIM_YOLU}/firmalar`} className="font-semibold">
           {t("kabukBasligi", { uygulama: UYGULAMA.ad })}
         </Link>
         <nav className="flex items-center gap-1 text-sm">
-          <Link href="/selliora/firmalar" className="hover:bg-muted flex min-h-11 items-center gap-1.5 rounded-md px-3 underline-offset-4 hover:underline">
+          <Link href={`${YONETIM_YOLU}/firmalar`} className="hover:bg-muted flex min-h-11 items-center gap-1.5 rounded-md px-3 underline-offset-4 hover:underline">
             <Building2 className="size-4" />
             {t("firmalar")}
           </Link>

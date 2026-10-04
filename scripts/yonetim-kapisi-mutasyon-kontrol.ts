@@ -15,8 +15,8 @@ const BEKCI = "scripts/yonetim-kapisi-dogrula.ts";
 const BEKCI_BASLIGI = "YÖNETİM KAPISI BEKÇİSİ";
 const PROXY = "src/proxy.ts";
 const OTURUM = "src/lib/yonetim-oturumu.ts";
-const EYLEM = "src/app/selliora/actions.ts";
-const FIRMALAR = "src/app/selliora/(ic)/firmalar/page.tsx";
+const EYLEM = "src/app/bezirga/actions.ts";
+const FIRMALAR = "src/app/bezirga/(ic)/firmalar/page.tsx";
 const KOK = "src/app/layout.tsx";
 const IMZA = "src/lib/oturum-imza.ts";
 
@@ -53,7 +53,7 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu: "ayni tarayicida firma oturumu varsa yonetim ekrani firma menusuyle acilir" },
   { ad: "YOL OLCUTU GEVSEK (onek)", yon: "FAZLADAN", dosya: IMZA,
     bul: "  return yol === YONETIM_YOLU || yol.startsWith(`${YONETIM_YOLU}/`);", koy: "  return yol.startsWith(YONETIM_YOLU);",
-    bozdugu: "/sellioraX gibi bir firma yolu yonetim sayilir" },
+    bozdugu: "YONETIM_YOLU + X gibi bir firma yolu yonetim sayilir" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

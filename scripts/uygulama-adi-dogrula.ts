@@ -1,4 +1,4 @@
-import { readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { kaynakOku } from "./kaynak-oku";
@@ -45,10 +45,15 @@ function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   }
 }
 
-/** Yorumları ayıklar — blok, satır başı ve boşluktan sonra gelen `// `. */
+/**
+ * Yorumları ayıklar — blok, satır başı ve boşluktan sonra gelen `// `.
+ * ⚠ SATIR SAYISI KORUNUR (05.10.2026): blok yorumun yerine aynı sayıda satır
+ * sonu bırakılır. Önceki hâl yorumu tümden siliyordu ve bildirilen satır
+ * numaraları kayıyordu (`oturum-imza.ts:100` dedi, sabit 152. satırdaydı).
+ */
 function yorumsuzla(metin: string): string {
   return metin
-    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\*[\s\S]*?\*\//g, (blok) => blok.replace(/[^\n]/g, ""))
     .replace(/^\s*\/\/.*$/gm, "")
     .replace(/\s\/\/\s.*$/gm, "");
 }
@@ -76,6 +81,24 @@ const AD_DESENI = new RegExp(
   "i",
 );
 const TANIM = "src/lib/uygulama.ts";
+
+/**
+ * BEYANLI İSTİSNALAR — dosya + satır deseni + GEREKÇE. Gerekçesiz istisna
+ * yazılamaz; istisnanın dosyası VARSA satırı da bulunmak zorundadır (bayat
+ * istisna sessizce yaşamasın). Dosya yoksa (ör. `main`de çok-firma kodu
+ * yok) istisna uygulanmaz.
+ */
+const ISTISNALAR: { dosya: string; satir: RegExp; gerekce: string }[] = [
+  {
+    dosya: "src/lib/firma-baglari.uretilmis.ts",
+    satir: /^export const BAG_KAPISI_DEGISKENI = "[a-z_]+";$/,
+    gerekce:
+      "veritabanı oturum değişkeni (@..._bag_kapisi_kapali) — tetikleyicilerin " +
+      "içinde, migration'la kurulu; kullanıcıya görünmez. Adı değiştirmek " +
+      "tetikleyicileri yeniden kuran bir migration ister; K318'de bilerek " +
+      "yapılmadı (kullanıcı onayı 05.10.2026, seçenek b).",
+  },
+];
 const SW = "public/sw.js";
 const SURUM_SATIRI = /^const SURUM = "([a-z]+)-sw-\d+";$/m;
 
@@ -103,6 +126,13 @@ for (const yol of [...kodDosyalari, ...sozlukler, ...statikler]) {
   let metin = kaynakOku(yol);
   if (!yol.endsWith(".json")) metin = yorumsuzla(metin);
   if (yol === SW) metin = metin.replace(SURUM_SATIRI, "");
+  for (const ist of ISTISNALAR) {
+    if (ist.dosya !== yol) continue;
+    metin = metin
+      .split("\n")
+      .map((satir) => (ist.satir.test(satir.trim()) ? "" : satir))
+      .join("\n");
+  }
   metin.split("\n").forEach((satir, i) => {
     if (AD_DESENI.test(satir)) ihlaller.push(`${yol}:${i + 1}  ${satir.trim().slice(0, 120)}`);
   });
@@ -112,6 +142,31 @@ kontrol(
   ihlaller.length === 0,
   ihlaller.length ? `\n         ${ihlaller.join("\n         ")}\n         → metin: sözlükte {uygulama} yer tutucusu + UYGULAMA.ad · kimlik: UYGULAMA.teknikAd` : undefined,
 );
+
+console.log("\n2b) İSTİSNALAR — gerekçeli ve bayat değil");
+for (const ist of ISTISNALAR) {
+  kontrol(`istisnanın gerekçesi yazılı (${ist.dosya})`, ist.gerekce.trim().length >= 40);
+  if (!existsSync(ist.dosya)) {
+    console.log(`  --    ${ist.dosya} bu dalda yok — istisna uygulanmıyor`);
+    continue;
+  }
+  const satirlar = kaynakOku(ist.dosya).split("\n").map((x) => x.trim());
+  kontrol("  ...istisna satırı dosyada duruyor (bayat değil)", satirlar.some((x) => ist.satir.test(x)));
+}
+
+/**
+ * Next.js adresi KLASÖR adından alır; klasör bir sabitten türetilemez. Bu
+ * yüzden ad değişince klasörün de taşındığı burada ölçülür.
+ */
+console.log("\n2c) ADRES KLASÖRÜ — eski adla klasör yok, yönetim klasörü teknik adla");
+const eskiKlasorler = UYGULAMA.eskiTeknikAdlar.filter((ad) => existsSync(`src/app/${ad}`));
+kontrol("eski adla adres klasörü yok (src/app/<eski ad>)", eskiKlasorler.length === 0, eskiKlasorler);
+const YONETIM_SABITI = "export const YONETIM_YOLU = `/${UYGULAMA.teknikAd}`;";
+if (kodDosyalari.some((y) => kaynakOku(y).includes(YONETIM_SABITI))) {
+  kontrol(`yönetim klasörü teknik adla (src/app/${UYGULAMA.teknikAd})`, existsSync(`src/app/${UYGULAMA.teknikAd}`));
+} else {
+  console.log("  --    yönetim katmanı bu dalda yok — klasör ölçütü koşmuyor");
+}
 
 console.log("\n3) SERVICE WORKER — önbellek adı güncel teknik adla");
 const sw = SURUM_SATIRI.exec(kaynakOku(SW));
