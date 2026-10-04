@@ -7,7 +7,7 @@ import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
-import { partiToplami, siradakiPartiSirasi } from "@/lib/kart-partileri";
+import { KART_PARTI_CAPASI, partiToplami, siradakiPartiSirasi } from "@/lib/kart-partileri";
 import { iadeGerekceEtiketleri, stokHareketEtiketleri } from "@/lib/etiketler";
 import { sermayeVerimiMetni } from "@/lib/marj-gosterge";
 import { kdvMahsubu } from "@/lib/panel-listeler";
@@ -73,14 +73,17 @@ function Kutu({
 function Bolum({
   baslik,
   ikon: Ikon,
+  id,
   children,
 }: {
   baslik: string;
   ikon?: typeof Boxes;
+  /** Başka ekrandan doğrudan bu bölüme inmek için çapa (ör. `#acik-partiler`). */
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-2">
+    <section id={id} className="scroll-mt-20 space-y-2">
       <h2 className="flex items-center gap-2 text-sm font-medium">
         {Ikon ? <Ikon className="size-4 shrink-0" /> : null}
         {baslik}
@@ -387,7 +390,8 @@ export default async function KartSayfasi({
         * ve sistemi bozuk sandı; cevap doğruydu (tek parti açıktı) ama ekran
         * onu SÖYLEMİYORDU. _(Anayasa: rakam kaynağına götürür.)_
         */}
-      <Bolum baslik={t("partiBaslik")} ikon={Layers}>
+      {/* Çapa: stok sayfasındaki «Mevcut stok» kutusu buraya iner (04.10.2026). */}
+      <Bolum baslik={t("partiBaslik")} ikon={Layers} id={KART_PARTI_CAPASI}>
         {veri.partiler.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t("partiYok")}</p>
         ) : (

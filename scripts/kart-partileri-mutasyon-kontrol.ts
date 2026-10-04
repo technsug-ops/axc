@@ -18,16 +18,102 @@ import { spawnSync } from "node:child_process";
 const BEKCI = "scripts/kart-partileri-dogrula.ts";
 const BEKCI_BASLIGI = "KART PARTİ PANELİ BEKÇİSİ";
 const GOVDE = "src/lib/kart-partileri.ts";
+const STOK = "src/app/stok/[variantId]/page.tsx";
+const KART = "src/app/kart/[variantId]/page.tsx";
 
 type Mutasyon = {
   ad: string;
-  yon: "KALDIRAN" | "FAZLADAN";
+  yon: "KALDIRAN" | "FAZLADAN" | "ZARARSIZ";
+  /** Varsayılan GOVDE (04.10.2026: stok sayfası bağı için çok dosya). */
+  dosya?: string;
   bul: string;
   koy: string;
   bozdugu: string;
 };
 
 const MUTASYONLAR: Mutasyon[] = [
+  {
+    ad: "ZARARSIZ — yorum değişikliği",
+    yon: "ZARARSIZ",
+    bul: "KART PARTİ PANELİ — SAF HESAP (K115, 31.08.2026)",
+    koy: "KART PARTİ PANELİ — SAF HESAP (K115)",
+    bozdugu: "hiçbir şey — YEŞİL kalmalı (harness sağlaması)",
+  },
+  {
+    ad: "ORTALAMA BİLİNMEYEN ADEDİ PAYDAYA KATIYOR",
+    yon: "FAZLADAN",
+    bul: "  const olculenAdet = olculen.reduce((s, p) => s + p.kalanAdet, 0);",
+    koy: "  const olculenAdet = toplam.adet;",
+    bozdugu: "maliyeti bilinmeyen adet ortalamayı sahte düşürür; kalan mal ucuz görünür",
+  },
+  {
+    ad: "TEK BİRİM LİRAYA YUVARLANIYOR (kuruş farkı yutuluyor)",
+    yon: "FAZLADAN",
+    bul: "Math.round(p.birimMaliyet * 100)",
+    koy: "Math.round(p.birimMaliyet)",
+    bozdugu: "100,00 ve 100,40'lık iki parti 'tek fiyat' sanılır",
+  },
+  {
+    ad: "TEK BİRİM HİÇ ÇIKMIYOR",
+    yon: "KALDIRAN",
+    bul: "kuruslar.size === 1",
+    koy: "kuruslar.size === 0",
+    bozdugu: "tek partili üründe bile 'ortalama' yazar; kullanıcı kesin rakamı göremez",
+  },
+  {
+    ad: "MALİYET BİLİNMİYORSA ORTALAMA SIFIR",
+    yon: "FAZLADAN",
+    bul: "    ortalama: olculenAdet > 0 ? toplam.tutar / olculenAdet : null,",
+    koy: "    ortalama: olculenAdet > 0 ? toplam.tutar / olculenAdet : 0,",
+    bozdugu: "'bilmiyorum' yerine '₺0' yazar (varsayılan alanın anlamından türetilir)",
+  },
+  {
+    ad: "PARA BİRİMİ SEÇİMİNDE MALİYETSİZ PARTİ SAYILIYOR",
+    yon: "FAZLADAN",
+    bul: "if (p.paraBirimi && p.birimMaliyet !== null)",
+    koy: "if (p.paraBirimi)",
+    bozdugu: "maliyeti olmayan partiler birimi belirler, ölçülebilen tutar dışarıda kalır",
+  },
+  {
+    ad: "STOK SAYFASI İZİN SORMUYOR (maliyet herkese)",
+    yon: "FAZLADAN",
+    dosya: STOK,
+    bul: '  const maliyetGorur = await izinVarMi("urun.gor");',
+    koy: "  const maliyetGorur = true;",
+    bozdugu: "yalnız stok.gor izni olan kişi maliyeti görür",
+  },
+  {
+    ad: "STOK SAYFASI YANLIŞ İZİN (stok.gor)",
+    yon: "FAZLADAN",
+    dosya: STOK,
+    bul: '  const maliyetGorur = await izinVarMi("urun.gor");',
+    koy: '  const maliyetGorur = await izinVarMi("stok.gor");',
+    bozdugu: "kartı göremeyen kişi maliyeti görür ve bağlantı 404'e gider",
+  },
+  {
+    ad: "BAĞLANTI ÇAPASIZ (kartın başına iner)",
+    yon: "KALDIRAN",
+    dosya: STOK,
+    bul: "href={`/kart/${varyant.id}#${KART_PARTI_CAPASI}`}",
+    koy: "href={`/kart/${varyant.id}`}",
+    bozdugu: "kullanıcı partileri yine aşağıda arar",
+  },
+  {
+    ad: "KARTTA ÇAPA YOK",
+    yon: "KALDIRAN",
+    dosya: KART,
+    bul: " ikon={Layers} id={KART_PARTI_CAPASI}>",
+    koy: " ikon={Layers}>",
+    bozdugu: "bağlantının hedefi yok — sayfanın başına düşer",
+  },
+  {
+    ad: "İZİNSİZ DAL MALİYET ÇİZİYOR",
+    yon: "FAZLADAN",
+    dosya: STOK,
+    bul: '<CardContent className="text-3xl font-semibold">{stok}</CardContent>',
+    koy: '<CardContent className="text-3xl font-semibold">{stok} {bicim.para(kalan.tutar, kalanPara)}</CardContent>',
+    bozdugu: "maliyet izni olmayan kişi kalan tutarı görür",
+  },
   {
     ad: "ÖLÇÜLEMEYEN PARTİ SESSİZCE ATLANIYOR — sayaç artmıyor",
     yon: "KALDIRAN",
@@ -47,24 +133,24 @@ const MUTASYONLAR: Mutasyon[] = [
   {
     ad: "MALİYETİ BİLİNMEYEN PARTİ SIFIR SAYILIYOR",
     yon: "FAZLADAN",
-    bul: "    if (p.birimMaliyet === null || !birimUyuyor) {",
-    koy: "    if (!birimUyuyor) {",
+    bul: "  return p.birimMaliyet !== null && (p.paraBirimi ?? para) === para;", /* 04.10 çapası taşındı */
+    koy: "  return (p.paraBirimi ?? para) === para;",
     bozdugu:
       "null maliyet 0 gibi toplanir — 'olctum sifir cikti' ile 'bilmiyorum' karisir (anayasa: varsayilan deger alanin anlamindan turetilir)",
   },
   {
     ad: "PARA BİRİMİ SÜZGECİ KALKTI — KUR ÇEVRİLİYORMUŞ GİBİ TOPLUYOR",
     yon: "FAZLADAN",
-    bul: "    const birimUyuyor = (p.paraBirimi ?? para) === para;",
-    koy: "    const birimUyuyor = true;",
+    bul: "  return p.birimMaliyet !== null && (p.paraBirimi ?? para) === para;",
+    koy: "  return p.birimMaliyet !== null;",
     bozdugu:
       "EUR ile TRY ayni kefeye girer; kur cevirisi anayasa geregi yapilmaz ama rakam yapilmis gibi cikar",
   },
   {
     ad: "BİRİMİ YAZILMAMIŞ KAYIT DIŞARI ATILIYOR",
     yon: "FAZLADAN",
-    bul: "    const birimUyuyor = (p.paraBirimi ?? para) === para;",
-    koy: "    const birimUyuyor = p.paraBirimi === para;",
+    bul: "  return p.birimMaliyet !== null && (p.paraBirimi ?? para) === para;",
+    koy: "  return p.birimMaliyet !== null && p.paraBirimi === para;",
     bozdugu:
       "olculebilir bir tutar sebepsiz kaybolur; bilinmeyen olan MALIYET, birim degil",
   },
@@ -114,7 +200,8 @@ const kacan: string[] = [];
 const bozuk: string[] = [];
 
 for (const m of MUTASYONLAR) {
-  const asil = readFileSync(GOVDE, "utf8");
+  const dosya = m.dosya ?? GOVDE;
+  const asil = readFileSync(dosya, "utf8");
   const bul = desenNormalle(asil, m.bul);
   const koy = desenNormalle(asil, m.koy);
 
@@ -127,18 +214,21 @@ for (const m of MUTASYONLAR) {
   const mutant = asil.replace(bul, koy);
   let sonuc: { kod: number; ciktiVar: boolean };
   try {
-    dayanikliYaz(GOVDE, mutant);
-    if (readFileSync(GOVDE, "utf8") !== mutant || mutant === asil) {
+    dayanikliYaz(dosya, mutant);
+    if (readFileSync(dosya, "utf8") !== mutant || mutant === asil) {
       bozuk.push(m.ad + "\n       mutasyon diske UYGULANMADI");
       continue;
     }
     sonuc = bekciyiKostur();
   } finally {
-    dayanikliYaz(GOVDE, asil);
+    dayanikliYaz(dosya, asil);
   }
 
-  const isaret = m.yon === "KALDIRAN" ? "-" : "+";
-  if (sonuc.kod !== 0 && sonuc.ciktiVar) {
+  const isaret = m.yon === "KALDIRAN" ? "-" : m.yon === "FAZLADAN" ? "+" : "o";
+  if (m.yon === "ZARARSIZ") {
+    if (sonuc.kod === 0 && sonuc.ciktiVar) { yakalanan++; console.log("  OK  " + isaret + " " + m.ad); }
+    else kacan.push(m.ad + "\n       zararsız mutasyon KIRMIZI yandı ya da bekçi çöktü — harness/bekçi güvenilmez");
+  } else if (sonuc.kod !== 0 && sonuc.ciktiVar) {
     yakalanan++;
     console.log("  OK  " + isaret + " " + m.ad);
   } else if (sonuc.kod !== 0) {

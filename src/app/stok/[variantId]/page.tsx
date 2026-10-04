@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { sayfaIzni } from "@/lib/yetki";
+import { ChevronRight } from "lucide-react";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 
 import { Baglanti } from "@/components/baglanti";
@@ -17,12 +19,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { stokHareketEtiketleri } from "@/lib/etiketler";
+import { DURUM_YAZISI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { tarihGirdisi } from "@/lib/bicim";
 
 import { DuzeltmeFormu } from "./duzeltme-formu";
-import { varyantStogu } from "@/lib/stok";
+import { acikPartilerToplu, varyantStogu } from "@/lib/stok";
+import { KART_PARTI_CAPASI, kalanMaliyetOzeti, partilerinParaBirimi } from "@/lib/kart-partileri";
 import { sonSayimTarihleri } from "@/lib/sayim-damgasi";
 
 export default async function VaryantHareketleriSayfasi({
@@ -63,7 +67,16 @@ export default async function VaryantHareketleriSayfasi({
   const hareketEtiketleri = await stokHareketEtiketleri();
   const tIade = await getTranslations("Iade");
 
-  const [stok, hareketler] = await Promise.all([
+  /**
+   * KALAN STOĞUN MALİYETİ (kullanıcı isteği 04.10.2026) — «Mevcut stok»
+   * kutusu açık partilerin özetini yazar ve kartın parti paneline götürür.
+   * ⛔ İZİN: stok sayfası `stok.gor` ile açılır, maliyet ise kartta `urun.gor`
+   * ile görünür. Özet ve bağlantı YALNIZ `urun.gor` sahibine çizilir — yoksa
+   * stok gören ama maliyet görmemesi gereken biri maliyeti burada görürdü.
+   */
+  const maliyetGorur = await izinVarMi("urun.gor");
+
+  const [stok, hareketler, partiHaritasi] = await Promise.all([
     varyantStogu(variantId),
     prisma.stockMovement.findMany({
       where: { variantId },
@@ -83,7 +96,16 @@ export default async function VaryantHareketleriSayfasi({
       },
       orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
     }),
+    maliyetGorur ? acikPartilerToplu(prisma, [variantId]) : Promise.resolve(null),
   ]);
+
+  const partiler = (partiHaritasi?.get(variantId) ?? []).map((pa) => ({
+    kalanAdet: pa.kalanAdet,
+    birimMaliyet: pa.birimMaliyet === null ? null : Number(pa.birimMaliyet),
+    paraBirimi: pa.birimMaliyetParaBirimi,
+  }));
+  const kalanPara = partilerinParaBirimi(partiler);
+  const kalan = kalanMaliyetOzeti(partiler, kalanPara);
 
   /**
    * Hareketin kaynağı: alım girişiyse alıma, satış çıkışıysa satışa link.
@@ -139,14 +161,60 @@ export default async function VaryantHareketleriSayfasi({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">
-              {t("mevcutStok")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold">{stok}</CardContent>
-        </Card>
+        {maliyetGorur ? (
+          /* İlke #16 — rakam kaynağına götürür: dokununca kartın «Açık
+             partiler» bölümüne iner. İlke #2 — tıklanabilir görünür (ok + hover). */
+          <Link
+            href={`/kart/${varyant.id}#${KART_PARTI_CAPASI}`}
+            aria-label={t("kalanPartileriGor")}
+            className="group block rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+          >
+            <Card className="group-hover:border-primary/60 h-full transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between gap-2 text-sm font-medium">
+                  {t("mevcutStok")}
+                  <span className="text-primary flex items-center gap-0.5 text-xs font-normal">
+                    {t("kalanPartileriGor")}
+                    <ChevronRight className="size-4" />
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                <p className="text-3xl font-semibold">{stok}</p>
+                {kalan.partiSayisi === 0 ? (
+                  stok > 0 ? <p className="text-muted-foreground text-xs">{t("kalanPartiYok")}</p> : null
+                ) : (
+                  <p className="text-sm">
+                    {kalan.tekBirim !== null
+                      ? t("kalanTekBirim", { birim: bicim.para(kalan.tekBirim, kalanPara) })
+                      : kalan.ortalama !== null
+                        ? t("kalanOrtalama", { parti: kalan.partiSayisi, ortalama: bicim.para(kalan.ortalama, kalanPara) })
+                        : t("kalanMaliyetBilinmiyor")}
+                    {kalan.olculenAdet > 0
+                      ? " · " + t("kalanToplam", { tutar: bicim.para(kalan.tutar, kalanPara) })
+                      : ""}
+                  </p>
+                )}
+                {kalan.partiSayisi > 0 && kalan.olculemeyen > 0 ? (
+                  <p className="text-muted-foreground text-xs">{t("kalanEksik", { adet: kalan.olculemeyen })}</p>
+                ) : null}
+                {/* İki defter: ekrandaki stok (ledger) ile açık partiler (FIFO) ayrışırsa SÖYLENİR. */}
+                {kalan.partiSayisi > 0 && kalan.adet !== stok ? (
+                  <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("kalanAyrisma", { adet: kalan.adet })}</p>
+                ) : null}
+              </CardContent>
+            </Card>
+          </Link>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">
+                {t("mevcutStok")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-3xl font-semibold">{stok}</CardContent>
+          </Card>
+        )}
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium">

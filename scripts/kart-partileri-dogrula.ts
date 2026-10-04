@@ -1,4 +1,10 @@
-import { partiToplami, siradakiPartiSirasi } from "../src/lib/kart-partileri";
+import {
+  kalanMaliyetOzeti,
+  partilerinParaBirimi,
+  partiToplami,
+  siradakiPartiSirasi,
+} from "../src/lib/kart-partileri";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -14,7 +20,7 @@ import { partiToplami, siradakiPartiSirasi } from "../src/lib/kart-partileri";
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 4;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let kalan = 0;
@@ -164,6 +170,67 @@ console.log("\n4) sıradaki rozeti");
   yakin("çok partide yine ilk satır", siradakiPartiSirasi(5), 0);
 }
 kosanBolumler.push("sıradaki");
+
+// --- 5) KALAN STOĞUN MALİYET ÖZETİ (stok sayfası, 04.10.2026) ----------
+console.log("\n5) kalan maliyet özeti — stok sayfasındaki «Mevcut stok» kutusu");
+{
+  const T = "TRY" as const;
+  yakin("tek parti → birim maliyet o partinin", kalanMaliyetOzeti([{ kalanAdet: 2, birimMaliyet: 1069.49, paraBirimi: T }], T),
+    { adet: 2, tutar: 2138.98, olculemeyen: 0, partiSayisi: 1, olculenAdet: 2, tekBirim: 1069.49, ortalama: 1069.49 });
+  yakin("iki parti AYNI fiyat → yine tek birim", kalanMaliyetOzeti([{ kalanAdet: 1, birimMaliyet: 100, paraBirimi: T }, { kalanAdet: 2, birimMaliyet: 100, paraBirimi: T }], T).tekBirim, 100);
+  yakin("iki parti FARKLI fiyat → tek birim YOK, adet ağırlıklı ortalama (1×100 + 3×200)/4 = 175",
+    kalanMaliyetOzeti([{ kalanAdet: 1, birimMaliyet: 100, paraBirimi: T }, { kalanAdet: 3, birimMaliyet: 200, paraBirimi: T }], T),
+    { adet: 4, tutar: 700, olculemeyen: 0, partiSayisi: 2, olculenAdet: 4, tekBirim: null, ortalama: 175 });
+  yakin("kuruş farkı da FARKTIR (100,00 ↔ 100,01 → tek birim yok)",
+    kalanMaliyetOzeti([{ kalanAdet: 1, birimMaliyet: 100, paraBirimi: T }, { kalanAdet: 1, birimMaliyet: 100.01, paraBirimi: T }], T).tekBirim, null);
+  yakin("maliyeti BİLİNMEYEN adet paydaya GİRMEZ (ortalama 200, 120 değil) ve sayılır",
+    kalanMaliyetOzeti([{ kalanAdet: 2, birimMaliyet: null, paraBirimi: null }, { kalanAdet: 3, birimMaliyet: 200, paraBirimi: T }], T),
+    { adet: 5, tutar: 600, olculemeyen: 1, partiSayisi: 2, olculenAdet: 3, tekBirim: 200, ortalama: 200 });
+  yakin("BAŞKA para birimindeki parti ortalamaya girmez (kur çevrilmez)",
+    kalanMaliyetOzeti([{ kalanAdet: 1, birimMaliyet: 100, paraBirimi: "EUR" }, { kalanAdet: 1, birimMaliyet: 200, paraBirimi: T }], T),
+    { adet: 2, tutar: 200, olculemeyen: 1, partiSayisi: 2, olculenAdet: 1, tekBirim: 200, ortalama: 200 });
+  yakin("hepsi bilinmiyorsa ortalama ve tek birim YOK (sıfır uydurulmaz)",
+    kalanMaliyetOzeti([{ kalanAdet: 2, birimMaliyet: null, paraBirimi: null }], T),
+    { adet: 2, tutar: 0, olculemeyen: 1, partiSayisi: 1, olculenAdet: 0, tekBirim: null, ortalama: null });
+  yakin("açık parti yok", kalanMaliyetOzeti([], T),
+    { adet: 0, tutar: 0, olculemeyen: 0, partiSayisi: 0, olculenAdet: 0, tekBirim: null, ortalama: null });
+}
+kosanBolumler.push("kalan özeti");
+
+// --- 6) ÖZETİN PARA BİRİMİ ------------------------------------------------
+console.log("\n6) özetin para birimi");
+{
+  yakin("parti yoksa TRY", partilerinParaBirimi([]), "TRY");
+  yakin("en çok geçen birim", partilerinParaBirimi([
+    { kalanAdet: 1, birimMaliyet: 1, paraBirimi: "EUR" }, { kalanAdet: 1, birimMaliyet: 1, paraBirimi: "EUR" }, { kalanAdet: 1, birimMaliyet: 1, paraBirimi: "TRY" }]), "EUR");
+  yakin("maliyeti bilinmeyen partinin birimi SAYILMAZ", partilerinParaBirimi([
+    { kalanAdet: 1, birimMaliyet: null, paraBirimi: "EUR" }, { kalanAdet: 1, birimMaliyet: null, paraBirimi: "EUR" }, { kalanAdet: 1, birimMaliyet: 5, paraBirimi: "TRY" }]), "TRY");
+}
+kosanBolumler.push("para birimi");
+
+// --- 7) STOK SAYFASI BAĞI (kaynak — kullanım bloğu) ------------------------
+console.log("\n7) stok sayfası: bağlantı + izin kapısı");
+{
+  const yorumsuz = (k: string) => k.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((x) => !x.trim().startsWith("//")).join("\n");
+  const stok = yorumsuz(kaynakOku("src/app/stok/[variantId]/page.tsx"));
+  const kart = yorumsuz(kaynakOku("src/app/kart/[variantId]/page.tsx"));
+  yakin("maliyet izni urun.gor'dan okunur (kartla aynı izin)", stok.includes('const maliyetGorur = await izinVarMi("urun.gor");'), true);
+  yakin("partiler YALNIZ izin varsa okunur", stok.includes("maliyetGorur ? acikPartilerToplu(prisma, [variantId]) : Promise.resolve(null)"), true);
+  yakin("özet kartın gövdesinden: kalanMaliyetOzeti(partiler, kalanPara)", stok.includes("const kalan = kalanMaliyetOzeti(partiler, kalanPara);"), true);
+  yakin("izinli dal: kutu kartın parti çapasına bağlanır",
+    /\{maliyetGorur \? \(\s*<Link\s+href=\{`\/kart\/\$\{varyant\.id\}#\$\{KART_PARTI_CAPASI\}`\}/.test(stok), true);
+  const dalBas = stok.indexOf("{maliyetGorur ? (");
+  /* Dış dalın «değilse» kolu: izinli dal `</Link>` ile biter — içteki üçlülere takılmamak için oradan aranır. */
+  const linkSonu = dalBas >= 0 ? stok.indexOf("</Link>", dalBas) : -1;
+  const izinsizBas = linkSonu >= 0 ? stok.indexOf(") : (", linkSonu) : -1;
+  const izinsizSon = izinsizBas >= 0 ? stok.indexOf("</Card>", izinsizBas) : -1;
+  const izinsizDal = izinsizBas >= 0 && izinsizSon > izinsizBas ? stok.slice(izinsizBas, izinsizSon) : "";
+  yakin("izinsiz dal bulundu ve stok rakamını çizer", izinsizDal.includes('{t("mevcutStok")}') && izinsizDal.includes("{stok}"), true);
+  yakin("izinsiz dal: maliyet ÇİZİLMEZ, bağlantı YOK", !/kalan\.|<Link|bicim\.para/.test(izinsizDal), true);
+  yakin("kartın parti bölümü çapayı taşır", /<Bolum baslik=\{t\("partiBaslik"\)\} ikon=\{Layers\} id=\{KART_PARTI_CAPASI\}>/.test(kart), true);
+  yakin("Bolum çapayı section'a yazar", kart.includes('<section id={id} className="scroll-mt-20 space-y-2">'), true);
+}
+kosanBolumler.push("stok bağı");
 
 console.log("\n" + "=".repeat(60));
 if (kosanBolumler.length !== BOLUM_SAYISI) {
