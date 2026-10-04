@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
@@ -27,11 +27,13 @@ const AD = UYGULAMA.ad;
 const ESKI = UYGULAMA.eskiTeknikAdlar[0];
 
 /**
- * `yalnizVarsa`: hedef dosya yalnız çok-firma dalında var (harness iki dalda
- * AYNI). Dosya yoksa mutasyon «geçti» SAYILMAZ, açıkça «bu dalda yok» diye
- * atlanır ve sayıya girmez; dosya varsa her zamanki gibi ölçülür.
+ * ⚠ «İstisna bayatladı» mutasyonu YALNIZ k303 dalındaki kopyada var: hedef
+ * dosyası (`firma-baglari.uretilmis.ts`) `main`de yok. İki dalda aynı harness
+ * + «dosya yoksa atla» denendi; `mutasyon-capa` hedefi okunamayan mutasyonu
+ * (doğru olarak) İNCELENEMEYEN saydı ve push durdu (05.10.2026). Ölçülemeyen
+ * mutasyon burada durmaz.
  */
-type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string; yalnizVarsa?: boolean };
+type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
 const MUTASYONLAR: Mutasyon[] = [
   { ad: "ZARARSIZ - eski adi anlatan satir yorumu (tsx)", yon: "ZARARSIZ", dosya: "src/app/giris/page.tsx",
@@ -86,8 +88,8 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "const eskiKlasorler = UYGULAMA.eskiTeknikAdlar.filter(",
     koy: `const eskiKlasorler = [...UYGULAMA.eskiTeknikAdlar, "api"].filter(`,
     bozdugu: "ad degisir, adres klasoru eski adla kalir; adres sessizce eski ad" },
-  { ad: "ISTISNA BAYATLADI (yalniz cok-firma dalinda)", yon: "KALDIRAN", dosya: "src/lib/firma-baglari.uretilmis.ts",
-    yalnizVarsa: true,
+  // YALNIZ k303 dalinda: hedef dosya main'de yok (bkz. type Mutasyon ustundeki not).
+  { ad: "ISTISNA BAYATLADI", yon: "KALDIRAN", dosya: "src/lib/firma-baglari.uretilmis.ts",
     bul: "export const BAG_KAPISI_DEGISKENI = ",
     koy: "export const BAG_KAPISI_DEGISKENI_2 = ",
     bozdugu: "istisna satiri degisir, istisna bos yere yasar ve eski ad gorunmeden kalir" },
@@ -102,16 +104,10 @@ function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
 console.log("\nUYGULAMA ADI — MUTASYON TURU\n");
 
 let dogru = 0;
-let atlanan = 0;
 const yanlis: string[] = [];
 const bozuk: string[] = [];
 
 for (const m of MUTASYONLAR) {
-  if (m.yalnizVarsa && !existsSync(m.dosya)) {
-    atlanan++;
-    console.log(`  --    ${m.ad} — ${m.dosya} bu dalda yok, atlandı`);
-    continue;
-  }
   const asil = readFileSync(m.dosya, "utf8");
   const bul = desenNormalle(asil, m.bul);
   const koy = desenNormalle(asil, m.koy);
@@ -146,10 +142,7 @@ for (const m of MUTASYONLAR) {
 console.log("");
 for (const k of yanlis) console.log("  X  " + k);
 for (const b of bozuk) console.log("  !! " + b);
-console.log(
-  `\n  ${dogru}/${MUTASYONLAR.length - atlanan} mutasyon beklendiği gibi davrandı` +
-    (atlanan ? ` (${atlanan} bu dalda yok, atlandı)` : ""),
-);
+console.log(`\n  ${dogru}/${MUTASYONLAR.length} mutasyon beklendiği gibi davrandı`);
 if (yanlis.length || bozuk.length) {
   console.log("\n  Beklenmeyen ya da ölçülemeyen mutasyon var — bekçi eksik.\n");
   process.exitCode = 1;
