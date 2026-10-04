@@ -159,6 +159,21 @@ export function izinTaninirMi(anahtar: string): anahtar is Izin {
   return ANAHTARLAR.has(anahtar);
 }
 
+/**
+ * İZNİN SÖZLÜK ANAHTARI — `Izin` bölümünde `urun.gor` → `urun_gor`, notu `urun_gor_not`.
+ *
+ * ⛔ next-intl anahtardaki NOKTAYI iç içe yol sayar: `t("urun.gor")` →
+ * `Izin.urun.gor` arar, düz `"urun.gor"` anahtarını HİÇ bulmaz. Sözlük
+ * c67d120'den 04.10.2026'ya kadar noktalıydı: `t.has` hep `false` döndü ve
+ * rol ekranı her izni ham kodla (`urun.gor`) çizdi — hata vermeden.
+ * İzin anahtarı (veritabanı) değişmez; yalnız sözlükteki karşılığı noktasızdır.
+ * Bekçi: `izin-metni:dogrula` (kütüphanenin kendi çözücüsüyle sınar).
+ */
+export function izinMetinAnahtari(anahtar: string, not = false): string {
+  const taban = anahtar.replaceAll(".", "_");
+  return not ? `${taban}_not` : taban;
+}
+
 /** Tüm izinler — SAHİP rolünün seed'i. */
 export const TUM_IZINLER: readonly Izin[] = IZINLER.map((i) => i.anahtar);
 
