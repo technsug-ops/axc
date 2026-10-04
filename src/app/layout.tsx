@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -24,7 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { OTURUM_CEREZI } from "@/lib/oturum-imza";
+import { OTURUM_CEREZI, YONETIM_BASLIGI } from "@/lib/oturum-imza";
 import { oturumdakiKullanici } from "@/lib/oturum";
 import { menuDuzeni } from "@/lib/menu/okuma";
 import { yetkiBaglami } from "@/lib/yetki";
@@ -147,7 +147,15 @@ export default async function RootLayout({
    * şeritte «Damisell» görüyordu — kendini başka firmada sanabilirdi. Giriş
    * ekranında firma yoktur; şerit firma adı yazmaz.
    */
-  const seritFirmasi = denemeOrtamiMi() ? await denemeSeridiFirmasi() : null;
+  /**
+   * K303 4c-2 — SELLİORA YÖNETİM KATMANI (`/selliora`). Başlığı proxy koyar
+   * (dışarıdan gelenini siler). Yönetim sayfasında FİRMA OTURUMUNA HİÇ
+   * BAKILMAZ: aynı tarayıcıda bir firmaya da girilmişse o firmanın menüsü,
+   * şeridi ya da `/cikis` yönlendirmesi yönetim ekranına karışmamalı.
+   */
+  const yonetimKatmani = (await headers()).get(YONETIM_BASLIGI) === "1";
+
+  const seritFirmasi = denemeOrtamiMi() && !yonetimKatmani ? await denemeSeridiFirmasi() : null;
   const denemeSeridi = denemeOrtamiMi() ? (
     <div
       role="status"
@@ -156,7 +164,11 @@ export default async function RootLayout({
         DURUM_ZEMINI.uyari,
       )}
     >
-      {seritFirmasi ? ortak("denemeSeridi", { firma: seritFirmasi }) : ortak("denemeSeridiFirmasiz")}
+      {yonetimKatmani
+        ? ortak("denemeSeridiYonetim", { uygulama: UYGULAMA.ad })
+        : seritFirmasi
+          ? ortak("denemeSeridi", { firma: seritFirmasi })
+          : ortak("denemeSeridiFirmasiz")}
     </div>
   ) : null;
 
@@ -174,7 +186,7 @@ export default async function RootLayout({
    */
   const cerezler = await cookies();
   const oturumCerezi = cerezler.get(OTURUM_CEREZI)?.value;
-  const kullanici = await oturumdakiKullanici().catch(() => null);
+  const kullanici = yonetimKatmani ? null : await oturumdakiKullanici().catch(() => null);
 
   /**
    * MENÜ DÜZENİ — SUNUCUDA ÇÖZÜLÜR (K51, 25.08.2026).
@@ -190,7 +202,7 @@ export default async function RootLayout({
   const baglam = kullanici ? await yetkiBaglami().catch(() => null) : null;
   const duzen = await menuDuzeni(baglam?.companyId ?? null);
 
-  if (oturumCerezi && !kullanici) redirect("/cikis");
+  if (!yonetimKatmani && oturumCerezi && !kullanici) redirect("/cikis");
 
   /**
    * GİRİŞ YAPMAMIŞ KULLANICIYA KABUK GÖSTERİLMEZ.

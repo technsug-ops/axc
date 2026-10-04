@@ -1,7 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { denemedeKapaliMi } from "@/lib/deneme-ortami";
 
-import { jetonuCoz, OTURUM_CEREZI } from "@/lib/oturum-imza";
+import {
+  jetonuCoz,
+  OTURUM_CEREZI,
+  YONETIM_BASLIGI,
+  YONETIM_CEREZI,
+  YONETIM_ISARETI,
+  YONETIM_YOLU,
+  yonetimYoluMu,
+} from "@/lib/oturum-imza";
 
 /**
  * ============================================================================
@@ -110,7 +118,16 @@ export async function proxy(istek: NextRequest) {
    */
   if (denemedeKapaliMi(yol)) return new NextResponse(null, { status: 404 });
 
-  if (acikMi(yol)) return NextResponse.next();
+  /**
+   * K303 4c-2 — SELLİORA YÖNETİM KATMANI. Katman başlığı DIŞARIDAN gelirse
+   * HER istekte silinir (taklit edilemez); yalnız `/selliora` isteğine proxy
+   * kendisi koyar ve kök düzen onu görünce firma kabuğunu çizmez.
+   */
+  const basliklar = new Headers(istek.headers);
+  basliklar.delete(YONETIM_BASLIGI);
+  if (yonetimYoluMu(yol)) return yonetimKapisi(istek, basliklar);
+
+  if (acikMi(yol)) return NextResponse.next({ request: { headers: basliklar } });
 
   const sir = process.env.OTURUM_SIRRI;
   if (!sir) {
@@ -125,7 +142,25 @@ export async function proxy(istek: NextRequest) {
   const govde = await jetonuCoz(jeton, sir, Date.now());
   if (!govde) return kapiyiKapat(istek, "giris");
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: basliklar } });
+}
+
+/**
+ * Yönetim katmanının kapısı. Yalnız giriş ekranı (`/selliora`) açıktır;
+ * geri kalan her yol geçerli bir YÖNETİM jetonu ister, yoksa **404** —
+ * «yetkiniz yok» ya da girişe yönlendirme, ekranın VARLIĞINI sızdırırdı.
+ * Süper admin işareti sayfa katmanında veritabanından AYRICA sorulur
+ * (`yonetimSayfasi`); proxy veritabanına gitmez.
+ */
+async function yonetimKapisi(istek: NextRequest, basliklar: Headers) {
+  basliklar.set(YONETIM_BASLIGI, "1");
+  const gec = NextResponse.next({ request: { headers: basliklar } });
+  if (istek.nextUrl.pathname === YONETIM_YOLU) return gec;
+  const sir = process.env.OTURUM_SIRRI;
+  const jeton = istek.cookies.get(YONETIM_CEREZI)?.value;
+  const govde = sir && jeton ? await jetonuCoz(jeton, sir, Date.now()) : null;
+  if (!govde || govde.firmaId !== YONETIM_ISARETI) return new NextResponse(null, { status: 404 });
+  return gec;
 }
 
 function kapiyiKapat(istek: NextRequest, sebep: "giris" | "kurulum") {

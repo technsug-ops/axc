@@ -296,7 +296,8 @@
     "temaKobalta": "Aydınlık temaya geç",
     "temaGeceye": "Karanlık temaya geç",
     "temaKagida": "Kağıt temasına geç",
-    "denemeSeridiFirmasiz": "DENEME ORTAMI · bu kurulum yalnız bu bilgisayarda; pazaryeri bağlantısı ve zamanlanmış işler kapalı"
+    "denemeSeridiFirmasiz": "DENEME ORTAMI · bu kurulum yalnız bu bilgisayarda; pazaryeri bağlantısı ve zamanlanmış işler kapalı",
+    "denemeSeridiYonetim": "DENEME ORTAMI · {uygulama} yönetim · bu kurulum yalnız bu bilgisayarda; pazaryeri bağlantısı ve zamanlanmış işler kapalı"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
@@ -5245,5 +5246,31 @@
     "hataKuralIhlali": "Gönderim kurala uymuyor, Hepsiburada'ya hiçbir şey gitmedi.",
     "hataAnahtarYok": "Hepsiburada API anahtarları okunamadı.",
     "kanaldaki": "(şu an HB'de görünen: {deger})"
+  },
+  "Yonetim": {
+    "sekmeBasligi": "Yönetim girişi",
+    "girisBasligi": "{uygulama} yönetim",
+    "girisAltBaslik": "Yalnız yönetim hesabıyla giriş yapılır",
+    "eposta": "E-posta",
+    "epostaIpucu": "örn. ad@ornek.com",
+    "parola": "Parola",
+    "girisYap": "Giriş yap",
+    "giriliyor": "Giriş yapılıyor…",
+    "epostaZorunlu": "E-posta girilmeli.",
+    "parolaZorunlu": "Parola girilmeli.",
+    "hataliGiris": "E-posta veya parola hatalı.",
+    "cokFazlaDeneme": "Çok fazla hatalı deneme. Güvenlik için giriş {dakika} dakika kapalı — sonra tekrar deneyin.",
+    "kabukBasligi": "{uygulama} yönetim",
+    "firmalar": "Firmalar",
+    "firmaAramaIpucu": "Firma adı ya da kodu ile ara…",
+    "aramaSonucu": "Aramada {bulunan} firma · toplam {toplam}",
+    "firmaSayisi": "Toplam {toplam} firma",
+    "aramaBos": "Aramaya uyan firma yok.",
+    "firmaYok": "Henüz firma yok.",
+    "firmaKodu": "Firma kodu",
+    "aktif": "Aktif",
+    "pasif": "Pasif",
+    "uyeSayisi": "{sayi} üye",
+    "acilis": "Açılış {tarih}"
   }
 }

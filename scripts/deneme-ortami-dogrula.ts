@@ -74,7 +74,8 @@ for (const yol of istemciler) {
 {
   const p = yorumsuz(kaynakOku("src/proxy.ts"));
   const iKes = p.indexOf("if (denemedeKapaliMi(yol)) return new NextResponse(null, { status: 404 });");
-  const iAcik = p.indexOf("if (acikMi(yol)) return NextResponse.next();");
+  // K303 4c-2 (04.10.2026): açık yol artık temizlenmiş başlıklarla geçer — çapa yeni biçimde.
+  const iAcik = p.indexOf("if (acikMi(yol)) return NextResponse.next({ request: { headers: basliklar } });");
   kontrol("proxy deneme kesmesi var", iKes >= 0);
   kontrol("proxy açık-yol kontrolü var", iAcik >= 0);
   kontrol("proxy kesme açık-yol kontrolünden ÖNCE", iKes >= 0 && iAcik >= 0 && iKes < iAcik);
@@ -91,13 +92,19 @@ for (const yol of istemciler) {
   // Axcali kullanıcısına da «Damisell» yazdırırdı.
   kontrol(
     "şerit firması oturumdan okunuyor",
-    /const seritFirmasi = denemeOrtamiMi\(\) \? await denemeSeridiFirmasi\(\) : null;/.test(l) &&
+    /const seritFirmasi = denemeOrtamiMi\(\) && !yonetimKatmani \? await denemeSeridiFirmasi\(\) : null;/.test(l) &&
       /where: \{ id: baglam\.companyId \}/.test(l),
   );
   kontrol("şerit sabit firma adı okumuyor", !/DENEME_FIRMA_ADI/.test(l));
   kontrol(
     "şerit firmasızken firma adı uydurmuyor",
-    /seritFirmasi \? ortak\("denemeSeridi", \{ firma: seritFirmasi \}\) : ortak\("denemeSeridiFirmasiz"\)/.test(l),
+    /seritFirmasi\s*\?\s*ortak\("denemeSeridi", \{ firma: seritFirmasi \}\)\s*:\s*ortak\("denemeSeridiFirmasiz"\)/.test(l),
+  );
+  // K303 4c-2: yönetim katmanında şerit firma oturumuna BAKMAZ (aynı tarayıcıdaki
+  // firma oturumunun adı Selliora yönetim ekranına yazılmasın).
+  kontrol(
+    "yönetim katmanında şerit kendi metnini yazar, firma adı okumaz",
+    /yonetimKatmani\s*\?\s*ortak\("denemeSeridiYonetim", \{ uygulama: UYGULAMA\.ad \}\)/.test(l),
   );
 }
 

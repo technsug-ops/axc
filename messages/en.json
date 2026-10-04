@@ -296,7 +296,8 @@
     "temaKobalta": "",
     "temaGeceye": "",
     "temaKagida": "",
-    "denemeSeridiFirmasiz": ""
+    "denemeSeridiFirmasiz": "",
+    "denemeSeridiYonetim": ""
   },
   "AlimDurumu": {
     "DRAFT": "",
@@ -5245,5 +5246,31 @@
     "hataKuralIhlali": "",
     "hataAnahtarYok": "",
     "kanaldaki": ""
+  },
+  "Yonetim": {
+    "sekmeBasligi": "",
+    "girisBasligi": "",
+    "girisAltBaslik": "",
+    "eposta": "",
+    "epostaIpucu": "",
+    "parola": "",
+    "girisYap": "",
+    "giriliyor": "",
+    "epostaZorunlu": "",
+    "parolaZorunlu": "",
+    "hataliGiris": "",
+    "cokFazlaDeneme": "",
+    "kabukBasligi": "",
+    "firmalar": "",
+    "firmaAramaIpucu": "",
+    "aramaSonucu": "",
+    "firmaSayisi": "",
+    "aramaBos": "",
+    "firmaYok": "",
+    "firmaKodu": "",
+    "aktif": "",
+    "pasif": "",
+    "uyeSayisi": "",
+    "acilis": ""
   }
 }

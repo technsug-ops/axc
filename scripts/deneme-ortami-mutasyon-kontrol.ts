@@ -52,8 +52,11 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "PROXY KESME ACIK YOLDAN SONRA", yon: "KALDIRAN", dosya: PROXY,
     /* YER DEĞİŞTİRME — ilk sürüm kopya EKLİYORDU, asıl satır yerinde kaldığı için
        bekçi haklı olarak yeşil kaldı (harness kusuru, bekçi değil). */
-    bul: "  if (denemedeKapaliMi(yol)) return new NextResponse(null, { status: 404 });\n\n  if (acikMi(yol)) return NextResponse.next();",
-    koy: "  if (acikMi(yol)) return NextResponse.next();\n\n  if (denemedeKapaliMi(yol)) return new NextResponse(null, { status: 404 });",
+    /* K303 4c-2 (04.10.2026) çapası taşındı: kesme ile açık yol arasına başlık
+       temizliği ve yönetim kapısı girdi, satırlar artık bitişik değil. Niyet
+       aynı: açık-yol kontrolü kesmeden ÖNCE çalışırsa cron uçları açık kalır. */
+    bul: "  if (denemedeKapaliMi(yol)) return new NextResponse(null, { status: 404 });\n\n  /**",
+    koy: "  if (acikMi(yol)) return NextResponse.next({ request: { headers: basliklar } });\n  if (denemedeKapaliMi(yol)) return new NextResponse(null, { status: 404 });\n\n  /**",
     bozdugu: "kesme hic devreye girmez (cron uclari acik listede)" },
   { ad: "SERIT CIZILMIYOR (oturumlu dal)", yon: "KALDIRAN", dosya: YERLESIM,
     bul: "      <body>\n        {denemeSeridi}\n", koy: "      <body>\n",

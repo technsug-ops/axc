@@ -122,3 +122,32 @@ export async function jetonuCoz(
     firmaId,
   };
 }
+
+/**
+ * ============================================================================
+ *  SELLİORA YÖNETİM KATMANI — süper admin oturumu (K303 4c-2, 04.10.2026)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı kararı: Selliora bir firma DEĞİL, firmaların üstündeki yönetim
+ *  katmanıdır; girişi AYRI adresten (`/selliora`).
+ *
+ *  · Çerez AYRI ve YALNIZ `/selliora` yolunda gönderilir — firma ekranlarına
+ *    hiç ulaşmaz.
+ *  · Jetonun firma alanı ayrılmış İŞARETİ taşır: firma jetonu yönetimde,
+ *    yönetim jetonu firma ekranlarında geçmez (firma jetonunda firma kimliği
+ *    bir cuid'dir, bu işarete eşit olamaz; yönetim jetonu firma okumasında
+ *    `uyeMi(…, YONETIM_ISARETI)` → false).
+ *  · Başlık: proxy `/selliora` isteğine koyar (dışarıdan gelenini SİLER);
+ *    kök düzen onu görünce firma kabuğunu çizmez.
+ *  Burada yalnız Web Crypto'ya güvenen sabitler var — proxy de okuyor.
+ * ============================================================================
+ */
+export const YONETIM_CEREZI = "selliora_yonetim";
+export const YONETIM_ISARETI = "SELLIORA_YONETIM";
+export const YONETIM_YOLU = "/selliora";
+export const YONETIM_BASLIGI = "x-selliora-katman";
+/** Süper admin oturumu daha kısa: 12 saat. */
+export const YONETIM_SURESI_MS = 12 * 60 * 60 * 1000;
+
+export function yonetimYoluMu(yol: string): boolean {
+  return yol === YONETIM_YOLU || yol.startsWith(`${YONETIM_YOLU}/`);
+}

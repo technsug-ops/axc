@@ -248,6 +248,8 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "oturum-firmasi-mutasyon:kontrol",
   /** `hata` da `src/lib/yetki/index.ts`i bozuyor (yetki kapısı mutasyonu) — `oturum-firmasi` ile çakışır. */
   "hata-mutasyon:kontrol",
+  /** K303 4c-2 — `yonetim-kapisi` proxy ve kök düzeni bozuyor (`deneme-ortami` ile ortak). */
+  "yonetim-kapisi-mutasyon:kontrol",
   /**
    * K303 Aşama 3–4 (03.10.2026) — `firma-suzgeci` artık ham SQL'li gövdeleri
    * (`alim-arama`, `toplu-guncelle`), geri yüklemeyi ve `satis.ts`'i (bağ kapısı

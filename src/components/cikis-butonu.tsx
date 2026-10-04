@@ -24,7 +24,14 @@ import { cikisYap } from "@/app/giris/actions";
  * Görünür bir düğme — gizli menüye saklanmaz. Onay ister: depoda telefonla
  * çalışırken yanlışlıkla basıp oturumu kapatmak sinir bozucu olurdu.
  */
-export function CikisButonu({ eposta }: { eposta: string }) {
+export function CikisButonu({
+  eposta,
+  eylem = cikisYap,
+}: {
+  eposta: string;
+  /** Hangi oturum kapanır — varsayılan firma oturumu; Selliora yönetimi kendi eylemini verir (K303 4c-2). */
+  eylem?: () => Promise<void>;
+}) {
   const t = useTranslations("Giris");
   const ortak = useTranslations("Ortak");
   const [acik, setAcik] = useState(false);
@@ -44,7 +51,7 @@ export function CikisButonu({ eposta }: { eposta: string }) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{ortak("vazgec")}</AlertDialogCancel>
-          <form action={cikisYap}>
+          <form action={eylem}>
             <Button type="submit" variant="destructive">
               <LogOut />
               {t("cikis")}
