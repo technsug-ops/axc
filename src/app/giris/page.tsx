@@ -1,9 +1,11 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { kullaniciVarMi, oturumdakiKullanici } from "@/lib/oturum";
+import { FIRMA_KODU_CEREZI } from "@/lib/oturum-firmasi";
 import { UYGULAMA } from "@/lib/uygulama";
 
 import { GirisFormu } from "./giris-formu";
@@ -35,6 +37,7 @@ export default async function GirisSayfasi({
   }
 
   const kullaniciTanimliMi = kurulumEksik ? true : await kullaniciVarMi();
+  const sonFirmaKodu = (await cookies()).get(FIRMA_KODU_CEREZI)?.value ?? "";
 
   return (
     <div className="flex min-h-svh items-center justify-center p-6">
@@ -67,7 +70,7 @@ export default async function GirisSayfasi({
         ) : (
           <Card>
             <CardContent>
-              <GirisFormu devam={devam ?? ""} />
+              <GirisFormu devam={devam ?? ""} sonFirmaKodu={sonFirmaKodu} />
             </CardContent>
           </Card>
         )}

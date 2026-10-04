@@ -240,10 +240,14 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "hb-sayfa-mutasyon:kontrol",
   /**
    * K303 (04.10.2026) — `giris-firmasiz` ve `erisim` ikisi de giriş eylemini
-   * (`src/app/giris/actions.ts`) ve kilidin okuma gövdesini mutasyona uğratıyor.
+   * (`src/app/giris/actions.ts`) ve kilidin okuma gövdesini mutasyona uğratıyor;
+   * `oturum-firmasi` (4c-1) da giriş eylemini bozuyor.
    */
   "erisim-mutasyon:kontrol",
   "giris-firmasiz-mutasyon:kontrol",
+  "oturum-firmasi-mutasyon:kontrol",
+  /** `hata` da `src/lib/yetki/index.ts`i bozuyor (yetki kapısı mutasyonu) — `oturum-firmasi` ile çakışır. */
+  "hata-mutasyon:kontrol",
   /**
    * K303 Aşama 3–4 (03.10.2026) — `firma-suzgeci` artık ham SQL'li gövdeleri
    * (`alim-arama`, `toplu-guncelle`), geri yüklemeyi ve `satis.ts`'i (bağ kapısı

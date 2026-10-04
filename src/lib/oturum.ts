@@ -6,6 +6,7 @@ import {
   OTURUM_CEREZI,
   OTURUM_SURESI_MS,
 } from "@/lib/oturum-imza";
+import { uyeMi } from "@/lib/oturum-firmasi";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -25,6 +26,8 @@ export type OturumKullanicisi = {
   id: string;
   email: string;
   ad: string | null;
+  /** Girişte seçilen firma (K303 4c-1) — oturum boyunca DEĞİŞMEZ. */
+  firmaId: string;
 };
 
 function sirriAl(): string {
@@ -37,8 +40,11 @@ function sirriAl(): string {
   return sir;
 }
 
-/** Oturumu açar: çerezi yazar ve son giriş zamanını damgalar. */
-export async function oturumAc(kullaniciId: string) {
+/**
+ * Oturumu açar: çerezi yazar ve son giriş zamanını damgalar.
+ * Firma ZORUNLU — üyeliği çağıran (`girisYap`) `uyeMi` ile doğrulamış olmalı.
+ */
+export async function oturumAc(kullaniciId: string, firmaId: string) {
   const kullanici = await prisma.user.findUnique({
     where: { id: kullaniciId },
     select: { sessionVersion: true },
@@ -51,6 +57,7 @@ export async function oturumAc(kullaniciId: string) {
       kullaniciId,
       oturumSurumu: kullanici.sessionVersion,
       sonGecerlilik,
+      firmaId,
     },
     sirriAl(),
   );
@@ -79,6 +86,8 @@ export async function oturumKapat() {
  * Oturumdaki kullanıcı — yoksa null.
  * Kullanıcı pasife alındıysa veya `sessionVersion` artırıldıysa (parola
  * değişikliği / her yerden çıkış) jeton geçerli olsa bile null döner.
+ * K303 4c-1: jetondaki firmaya üyelik (aktif firma + aktif rol) de HER
+ * okumada sınanır — üyelik kaldırılınca açık oturum o anda düşer.
  */
 export async function oturumdakiKullanici(): Promise<OturumKullanicisi | null> {
   const cerezler = await cookies();
@@ -106,8 +115,9 @@ export async function oturumdakiKullanici(): Promise<OturumKullanicisi | null> {
 
   if (!kullanici || !kullanici.isActive) return null;
   if (kullanici.sessionVersion !== govde.oturumSurumu) return null;
+  if (!(await uyeMi(kullanici.id, govde.firmaId))) return null;
 
-  return { id: kullanici.id, email: kullanici.email, ad: kullanici.name };
+  return { id: kullanici.id, email: kullanici.email, ad: kullanici.name, firmaId: govde.firmaId };
 }
 
 /** Sistemde hiç kullanıcı var mı? Giriş ekranı buna göre yol gösterir. */

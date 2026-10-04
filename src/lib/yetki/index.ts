@@ -51,15 +51,17 @@ export const yetkiBaglami = cache(async (): Promise<YetkiBaglami | null> => {
   const kullanici = await oturumdakiKullanici();
   if (!kullanici) return null;
 
-  // ÜYELİK: bugün tek firma, o yüzden ilk üyelik alınıyor. Çok firmaya
-  // geçildiğinde burası oturumdaki aktifCompanyId'ye bakacak — çağıran
-  // taraflar değişmeyecek.
+  // ÜYELİK: oturumun FİRMASI girişte seçilir ve jetonda taşınır (K303 4c-1,
+  // kullanıcı kararı 04.10.2026 — firma içinden firma değiştirilmez).
+  // ⛔ ESKİ HÂL (silinmedi, gerekçesiyle): «bugün tek firma, o yüzden İLK
+  // üyelik alınıyor» — `orderBy: { createdAt: "asc" }`. İki firmada bu,
+  // kullanıcıya hangi firmayı göreceğini SORMADAN seçen sessiz bir tahmindi.
   /**
    * SISTEM: üyelik çözümü FİRMALAR-ÜSTÜDÜR — aktif firmayı belirleyen sorgu
    * firma süzgecinden geçemez (süzgeç firmayı bu sorgudan öğrenir; döngü).
    */
   const uyelik = await sistemPrisma.userCompanyRole.findFirst({
-    where: { userId: kullanici.id, company: { isActive: true } },
+    where: { userId: kullanici.id, companyId: kullanici.firmaId, company: { isActive: true } },
     select: {
       companyId: true,
       role: {
@@ -70,7 +72,6 @@ export const yetkiBaglami = cache(async (): Promise<YetkiBaglami | null> => {
         },
       },
     },
-    orderBy: { createdAt: "asc" },
   });
 
   // ÜYELİĞİ YOKSA YETKİSİ DE YOK. Giriş yapabilir ama hiçbir sayfayı

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 
 import { girisYap, type GirisDurumu } from "./actions";
 
-export function GirisFormu({ devam }: { devam: string }) {
+export function GirisFormu({ devam, sonFirmaKodu }: { devam: string; sonFirmaKodu: string }) {
   const t = useTranslations("Giris");
 
   const [durum, formAction, bekliyor] = useActionState<GirisDurumu, FormData>(
@@ -25,6 +25,28 @@ export function GirisFormu({ devam }: { devam: string }) {
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="devam" value={devam} />
 
+      {/*
+        FİRMA KODU (K303 4c-1, kullanıcı kararı 04.10.2026). Oturum bu firmaya
+        bağlanır; firma içinden başka firmaya geçiş yoktur.
+        KAMERA YOK — BİLEREK (İlke #7 istisnası): firma kodu ürün/sipariş kodu
+        değildir, okutulacak bir etiketi yoktur; elle yazılır ve cihazda
+        hatırlanır (İlke #9).
+      */}
+      <div className="space-y-2">
+        <Label htmlFor="giris-firma-kodu">{t("firmaKodu")}</Label>
+        <Input
+          id="giris-firma-kodu"
+          name="firmaKodu"
+          type="text"
+          autoComplete="organization"
+          autoCapitalize="characters"
+          spellCheck={false}
+          defaultValue={sonFirmaKodu}
+          placeholder={t("firmaKoduIpucu")}
+          autoFocus={!sonFirmaKodu}
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="giris-eposta">{t("eposta")}</Label>
         <Input
@@ -33,7 +55,7 @@ export function GirisFormu({ devam }: { devam: string }) {
           type="email"
           autoComplete="username"
           placeholder={t("epostaIpucu")}
-          autoFocus
+          autoFocus={Boolean(sonFirmaKodu)}
         />
       </div>
 

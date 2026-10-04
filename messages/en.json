@@ -2044,6 +2044,9 @@
   "Giris": {
     "baslik": "",
     "altBaslik": "",
+    "firmaKodu": "",
+    "firmaKoduIpucu": "",
+    "firmaKoduZorunlu": "",
     "eposta": "",
     "epostaIpucu": "",
     "parola": "",

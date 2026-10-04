@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
@@ -8,6 +8,7 @@ import { girisKilidi } from "@/lib/giris-kilidi";
 import { yakinBasarisizDenemeler } from "@/lib/giris-kilidi-okuma";
 import { izYaz } from "@/lib/iz";
 import { oturumAc, oturumKapat } from "@/lib/oturum";
+import { FIRMA_KODU_CEREZI, firmaKodundanKimlik, firmaKoduNormalle, uyeMi } from "@/lib/oturum-firmasi";
 import { parolaDogrula } from "@/lib/parola";
 import { prisma } from "@/lib/prisma";
 
@@ -16,8 +17,13 @@ export type GirisDurumu = { hatalar?: string[] };
 /**
  * GİRİŞ.
  *
- * Hata mesajı BİLEREK tek: "e-posta veya parola hatalı". Hangisinin yanlış
- * olduğunu söylemek, sisteme kayıtlı e-postaları dışarıya sızdırır.
+ * Hata mesajı BİLEREK tek: "firma kodu, e-posta veya parola hatalı".
+ * Hangisinin yanlış olduğunu söylemek, sisteme kayıtlı e-postaları ve
+ * FİRMA KODLARINI dışarıya sızdırır.
+ *
+ * FİRMA (K303 4c-1, kullanıcı kararı 04.10.2026): «firma kodu + kullanıcı +
+ * şifre girer ve kendi firmasına geçer». Oturum o firmaya bağlanır; firma
+ * içinden başka firmaya geçiş YOK.
  *
  * Kullanıcı bulunamasa bile parola doğrulaması ÇALIŞTIRILIR (sahte bir özet
  * üzerinde): aksi hâlde cevap süresi "bu e-posta kayıtlı mı" sorusunu
@@ -36,7 +42,9 @@ export async function girisYap(
     .trim()
     .toLocaleLowerCase("tr");
   const parola = String(formData.get("password") ?? "");
+  const firmaKodu = firmaKoduNormalle(String(formData.get("firmaKodu") ?? ""));
 
+  if (!firmaKodu) return { hatalar: [t("firmaKoduZorunlu")] };
   if (!eposta) return { hatalar: [t("epostaZorunlu")] };
   if (!parola) return { hatalar: [t("parolaZorunlu")] };
 
@@ -63,20 +71,31 @@ export async function girisYap(
     parola,
     kullanici?.passwordHash ?? SAHTE_OZET,
   );
+  /** Üyelik sorgusu firma/kullanıcı yoksa da KOŞAR — süre, hangisinin eksik olduğunu söylemesin. */
+  const firmaId = await firmaKodundanKimlik(firmaKodu);
+  const uye = await uyeMi(kullanici?.id ?? "-", firmaId ?? "-");
 
-  if (!kullanici || !kullanici.isActive || !gecti) {
+  if (!kullanici || !kullanici.isActive || !gecti || !firmaId || !uye) {
     /** İz: kilidin sayacı + «kim deniyor» sorusunun cevabı. Parola YAZILMAZ. */
     await izYaz({
       action: "GIRIS_BASARISIZ",
       targetType: "User",
       targetId: kullanici?.id ?? null,
       userId: null,
-      detail: JSON.stringify({ eposta, ip }),
+      detail: JSON.stringify({ eposta, ip, firmaKodu }),
     });
     return { hatalar: [t("hataliGiris")] };
   }
 
-  await oturumAc(kullanici.id);
+  await oturumAc(kullanici.id, firmaId);
+  /** Bu cihazda son firma kodu hatırlanır (yalnız kod — parola/oturum değil; İlke #9). */
+  (await cookies()).set(FIRMA_KODU_CEREZI, firmaKodu, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/giris",
+    maxAge: 365 * 24 * 60 * 60,
+  });
 
   const devam = String(formData.get("devam") ?? "");
   // Yalnız kendi sitemize dönülür; dışarıdan gelen adrese yönlendirme

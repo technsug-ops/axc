@@ -85,12 +85,12 @@ kontrol(
   okuma.includes('{ detail: { contains: `"eposta":${JSON.stringify(eposta)}` } },') &&
     okuma.includes('{ detail: { contains: `"ip":${JSON.stringify(ip)}` } },'),
 );
-const basarisizBlok = govde.slice(govde.indexOf("if (!kullanici || !kullanici.isActive || !gecti) {"), govde.indexOf('return { hatalar: [t("hataliGiris")] };'));
+const basarisizBlok = govde.slice(govde.indexOf("if (!kullanici || !kullanici.isActive || !gecti || !firmaId || !uye) {"), govde.indexOf('return { hatalar: [t("hataliGiris")] };'));
 kontrol(
   "başarısız deneme İZ YAZIYOR (sayacın kaynağı) — parola yazılmıyor",
-  basarisizBlok.includes("await izYaz({") && basarisizBlok.includes("detail: JSON.stringify({ eposta, ip }),") && !/parola/.test(basarisizBlok.replace("Parola YAZILMAZ", "")),
+  basarisizBlok.includes("await izYaz({") && basarisizBlok.includes("detail: JSON.stringify({ eposta, ip, firmaKodu }),") && !/parola/.test(basarisizBlok.replace("Parola YAZILMAZ", "")),
 );
-const iOturum = govde.indexOf("await oturumAc(kullanici.id);");
+const iOturum = govde.indexOf("await oturumAc(kullanici.id, firmaId);");
 kontrol("başarılı giriş iz SAYACINA girmez (GIRIS_BASARISIZ yalnız hata dalında)", (govde.match(/action: "GIRIS_BASARISIZ"/g) ?? []).length === 1 && iOturum > govde.indexOf('return { hatalar: [t("hataliGiris")] };'));
 kontrol("kilitli mesajı sözlükten, kalan dakikayla", govde.includes('return { hatalar: [t("cokFazlaDeneme", { dakika })] };'));
 

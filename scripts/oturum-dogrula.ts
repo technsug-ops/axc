@@ -78,12 +78,35 @@ async function main() {
       kullaniciId: "kul-1",
       oturumSurumu: 1,
       sonGecerlilik: AN + OTURUM_SURESI_MS,
+      firmaId: "firma-A",
     };
     const jeton = await jetonUret(govde, SIR);
 
     const cozulen = await jetonuCoz(jeton, SIR, AN);
     kontrol("geçerli jeton çözülür", cozulen?.kullaniciId === "kul-1", cozulen);
     kontrol("oturum sürümü taşınır", cozulen?.oturumSurumu === 1);
+    kontrol("FİRMA taşınır (K303 4c-1)", cozulen?.firmaId === "firma-A", cozulen?.firmaId);
+
+    /* K303 4c-1: firmasız (3 parçalı) ESKİ jeton — imzası GEÇERLİ olsa bile
+       reddedilir; ona «ilk üyelik» diye firma uydurulmaz. İmza burada elle
+       kurulur ki ret imzadan değil BİÇİMDEN gelsin. */
+    {
+      const b64 = (v: Uint8Array) => btoa(String.fromCharCode(...v)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      const anahtar = await crypto.subtle.importKey("raw", new TextEncoder().encode(SIR), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+      const imzala = async (metin: string) => {
+        const bayt = new TextEncoder().encode(metin);
+        return `${b64(bayt)}.${b64(new Uint8Array(await crypto.subtle.sign("HMAC", anahtar, bayt)))}`;
+      };
+      const son = AN + OTURUM_SURESI_MS;
+      kontrol("imzası geçerli ama FİRMASIZ eski jeton reddedilir", (await jetonuCoz(await imzala(`kul-1|1|${son}`), SIR, AN)) === null);
+      kontrol("imzası geçerli ama FAZLA parçalı (5) jeton reddedilir — biçim tam 4 parça", (await jetonuCoz(await imzala(`kul-1|1|${son}|firma-A|fazla`), SIR, AN)) === null);
+      kontrol("imzası geçerli, firma alanı BOŞ jeton reddedilir", (await jetonuCoz(await imzala(`kul-1|1|${son}|`), SIR, AN)) === null);
+      kontrol("  ...elle imzalanan 4 parçalı jeton çözülür (ret biçimden, imzadan değil)",
+        (await jetonuCoz(await imzala(`kul-1|1|${son}|firma-B`), SIR, AN))?.firmaId === "firma-B");
+      let atti = false;
+      try { await jetonUret({ ...govde, firmaId: "" }, SIR); } catch { atti = true; }
+      kontrol("firmasız jeton ÜRETİLEMEZ", atti);
+    }
 
     kontrol(
       "YANLIŞ SIR ile çözülmez",

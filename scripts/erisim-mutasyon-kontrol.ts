@@ -43,7 +43,7 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: '        { detail: { contains: `"ip":${JSON.stringify(ip)}` } },' + "\n", koy: "",
     bozdugu: "bot her denemede baska e-posta yazar, kilit hic dolmaz" },
   { ad: "BASARISIZ DENEMEDE IP YAZILMIYOR", yon: "KALDIRAN", dosya: GIRIS,
-    bul: "detail: JSON.stringify({ eposta, ip }),", koy: "detail: JSON.stringify({ eposta }),",
+    bul: "detail: JSON.stringify({ eposta, ip, firmaKodu }),", koy: "detail: JSON.stringify({ eposta, firmaKodu }),", /* K303 4c-1: iz firma kodunu da taşır */
     bozdugu: "IP sayaci hep sifir okur" },
   { ad: "TUMU INDIRMESI IZ BIRAKMIYOR", yon: "KALDIRAN", dosya: DISA,
     bul: '    await izYaz({ action: "TOPLU_INDIRME", targetType: "DisaAktarma", targetId: "tumu",', koy: '    void ({ action: "TOPLU_INDIRME", targetType: "DisaAktarma", targetId: "tumu",',

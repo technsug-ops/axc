@@ -2044,6 +2044,9 @@
   "Giris": {
     "baslik": "Selliora",
     "altBaslik": "Devam etmek için giriş yapın",
+    "firmaKodu": "Firma kodu",
+    "firmaKoduIpucu": "örn. ABC",
+    "firmaKoduZorunlu": "Firma kodu girilmeli.",
     "eposta": "E-posta",
     "epostaIpucu": "örn. ad@firma.com",
     "parola": "Parola",
@@ -2051,7 +2054,7 @@
     "giriliyor": "Giriş yapılıyor…",
     "cikis": "Çıkış",
     "cikisYapildi": "Çıkış yapıldı.",
-    "hataliGiris": "E-posta veya parola hatalı.",
+    "hataliGiris": "Firma kodu, e-posta veya parola hatalı.",
     "cokFazlaDeneme": "Çok fazla hatalı deneme. Güvenlik için giriş {dakika} dakika kapalı — sonra tekrar deneyin.",
     "epostaZorunlu": "E-posta girilmeli.",
     "parolaZorunlu": "Parola girilmeli.",

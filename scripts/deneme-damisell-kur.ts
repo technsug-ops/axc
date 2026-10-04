@@ -168,7 +168,7 @@ async function main() {
     await prisma.userCompanyRole.create({ data: { userId: kullanici.id, companyId: firma.id, roleId: sahip.id } });
   });
   // `wx`: dosya bu arada oluştuysa ÜZERİNE YAZMAZ (varlığı en başta da soruldu).
-  writeFileSync(GIRIS_DOSYASI, `SELLIORA DENEME — ${firmaAdi} (yalniz bu bilgisayar)\nAdres : http://localhost:3100\nE-posta: ${EPOSTA}\nParola : ${parola}\n`, { flag: "wx" });
+  writeFileSync(GIRIS_DOSYASI, `SELLIORA DENEME — ${firmaAdi} (yalniz bu bilgisayar)\nAdres : http://localhost:3100\nFirma kodu: ${firma.code}\nE-posta: ${EPOSTA}\nParola : ${parola}\n`, { flag: "wx" });
   console.log(`Giriş kullanıcısı: ${EPOSTA} · parola masaüstündeki dosyada (ekrana basılmadı)`);
   await sistemPrisma.$disconnect();
 }

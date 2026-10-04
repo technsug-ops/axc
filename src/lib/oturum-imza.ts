@@ -8,7 +8,12 @@
  *  import etmek proxy'yi çalışmaz hâle getirirdi.
  *
  *  JETON BİÇİMİ:  base64url(govde) + "." + base64url(imza)
- *  Gövde:         kullaniciId | oturumSurumu | sonGecerlilikMs
+ *  Gövde:         kullaniciId | oturumSurumu | sonGecerlilikMs | firmaId
+ *
+ *  FİRMA (K303 4c-1, 04.10.2026 — kullanıcı kararı): oturum GİRİŞTE seçilen
+ *  firmaya bağlıdır (firma kodu + e-posta + parola). Firma içinden başka
+ *  firmaya geçiş YOKTUR. Firmasız (üç parçalı) eski jeton GEÇERSİZDİR:
+ *  ona «ilk üyelik» diye firma uydurulmaz, kullanıcı bir kez yeniden girer.
  *
  *  Jeton KENDİ İÇİNDE doğrulanabilir: veritabanına gitmeden imza ve süre
  *  kontrol edilir. Böylece koruma katmanı her istekte sorgu yapmaz.
@@ -28,6 +33,7 @@ export type JetonGovdesi = {
   kullaniciId: string;
   oturumSurumu: number;
   sonGecerlilik: number;
+  firmaId: string;
 };
 
 function base64urlKodla(veri: Uint8Array): string {
@@ -56,7 +62,8 @@ export async function jetonUret(
   govde: JetonGovdesi,
   sir: string,
 ): Promise<string> {
-  const metin = `${govde.kullaniciId}|${govde.oturumSurumu}|${govde.sonGecerlilik}`;
+  if (!govde.firmaId || govde.firmaId.includes("|")) throw new Error("jetonUret: firmaId boş ya da geçersiz");
+  const metin = `${govde.kullaniciId}|${govde.oturumSurumu}|${govde.sonGecerlilik}|${govde.firmaId}`;
   const govdeBaytlari = new TextEncoder().encode(metin);
   const imza = await crypto.subtle.sign(
     "HMAC",
@@ -99,17 +106,19 @@ export async function jetonuCoz(
   );
   if (!gecerli) return null;
 
-  const [kullaniciId, surum, sonGecerlilik] = new TextDecoder()
-    .decode(govdeBaytlari)
-    .split("|");
+  const parcalarGovde = new TextDecoder().decode(govdeBaytlari).split("|");
+  // Firmasız (3 parçalı) eski jeton geçersiz — firma uydurulmaz.
+  if (parcalarGovde.length !== 4) return null;
+  const [kullaniciId, surum, sonGecerlilik, firmaId] = parcalarGovde;
 
   const bitis = Number(sonGecerlilik);
-  if (!kullaniciId || !Number.isFinite(bitis)) return null;
+  if (!kullaniciId || !firmaId || !Number.isFinite(bitis)) return null;
   if (bitis <= an) return null;
 
   return {
     kullaniciId,
     oturumSurumu: Number(surum),
     sonGecerlilik: bitis,
+    firmaId,
   };
 }
