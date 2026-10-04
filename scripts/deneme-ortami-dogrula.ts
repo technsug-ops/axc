@@ -87,6 +87,18 @@ for (const yol of istemciler) {
   kontrol(`layout'ta iki <body> dalı (bulunan ${govdeler.length})`, govdeler.length === 2);
   govdeler.forEach((g, i) => kontrol(`<body> dalı ${i + 1}: şerit İLK öğe`, g.trimStart().startsWith("{denemeSeridi}")));
   kontrol("şerit deneme anahtarına bağlı", /const denemeSeridi = denemeOrtamiMi\(\) \?/.test(l));
+  // Aşama 4b (04.10.2026): firma adı OTURUMDAKİ firmadan — sabit ad iki firmada
+  // Axcali kullanıcısına da «Damisell» yazdırırdı.
+  kontrol(
+    "şerit firması oturumdan okunuyor",
+    /const seritFirmasi = denemeOrtamiMi\(\) \? await denemeSeridiFirmasi\(\) : null;/.test(l) &&
+      /where: \{ id: baglam\.companyId \}/.test(l),
+  );
+  kontrol("şerit sabit firma adı okumuyor", !/DENEME_FIRMA_ADI/.test(l));
+  kontrol(
+    "şerit firmasızken firma adı uydurmuyor",
+    /seritFirmasi \? ortak\("denemeSeridi", \{ firma: seritFirmasi \}\) : ortak\("denemeSeridiFirmasiz"\)/.test(l),
+  );
 }
 
 console.log("\n" + (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") + ` (${gecen}/${gecen + hata})\n`);

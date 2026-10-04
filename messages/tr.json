@@ -295,7 +295,8 @@
     "elKitabiKisayolu": "El Kitabı",
     "temaKobalta": "Aydınlık temaya geç",
     "temaGeceye": "Karanlık temaya geç",
-    "temaKagida": "Kağıt temasına geç"
+    "temaKagida": "Kağıt temasına geç",
+    "denemeSeridiFirmasiz": "DENEME ORTAMI · bu kurulum yalnız bu bilgisayarda; pazaryeri bağlantısı ve zamanlanmış işler kapalı"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",

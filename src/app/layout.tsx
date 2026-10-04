@@ -121,6 +121,16 @@ export async function generateMetadata(): Promise<Metadata> {
  * `children` alıyor ve bu tip bir satırla yazılabiliyor. Depoda başka
  * üretilmiş tip kullanımı YOK (tarandı).
  */
+/** Deneme şeridinin firması: oturumdaki kullanıcının aktif firması (yoksa null). */
+async function denemeSeridiFirmasi(): Promise<string | null> {
+  // Oturum yoksa `null` döner; başka hata (veritabanı kopuk) YUTULMAZ.
+  const baglam = await yetkiBaglami();
+  if (!baglam) return null;
+  const { prisma } = await import("@/lib/prisma");
+  const firma = await prisma.company.findUnique({ where: { id: baglam.companyId }, select: { name: true } });
+  return firma?.name ?? null;
+}
+
 export default async function RootLayout({
   children,
 }: {
@@ -132,7 +142,12 @@ export default async function RootLayout({
   /**
    * K303 DENEME ORTAMI ŞERİDİ — hangi kurulumda olunduğu her ekranda görünür
    * (giriş dahil). Canlıda değişken yoktur, şerit çizilmez.
+   * ⭐ Firma adı OTURUMDAKİ FİRMADAN gelir (Aşama 4b, 03.10.2026): eskiden
+   * `DENEME_FIRMA_ADI` yazılıyordu ve Damisell açılınca Axcali kullanıcısı da
+   * şeritte «Damisell» görüyordu — kendini başka firmada sanabilirdi. Giriş
+   * ekranında firma yoktur; şerit firma adı yazmaz.
    */
+  const seritFirmasi = denemeOrtamiMi() ? await denemeSeridiFirmasi() : null;
   const denemeSeridi = denemeOrtamiMi() ? (
     <div
       role="status"
@@ -141,7 +156,7 @@ export default async function RootLayout({
         DURUM_ZEMINI.uyari,
       )}
     >
-      {ortak("denemeSeridi", { firma: process.env.DENEME_FIRMA_ADI?.trim() || "—" })}
+      {seritFirmasi ? ortak("denemeSeridi", { firma: seritFirmasi }) : ortak("denemeSeridiFirmasiz")}
     </div>
   ) : null;
 
