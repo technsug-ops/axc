@@ -19,7 +19,19 @@ import { useTranslations } from "next-intl";
  *  çalışır).
  * ============================================================================
  */
-export function HataOzeti({ hatalar }: { hatalar?: string[] }) {
+export function HataOzeti({
+  hatalar,
+  baslik,
+}: {
+  hatalar?: string[];
+  /**
+   * Kutunun başlığı — varsayılan «Kaydedilemedi». Kayıt OLMAYAN formlar
+   * (giriş) kendi başlığını verir: giriş ekranında «Kaydedilemedi» yazması
+   * kullanıcıya olmayan bir kaydı anlatıyordu (kullanıcı ekran görüntüsü,
+   * 04.10.2026).
+   */
+  baslik?: string;
+}) {
   const ortak = useTranslations("Ortak");
   const kutuRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +58,7 @@ export function HataOzeti({ hatalar }: { hatalar?: string[] }) {
       tabIndex={-1}
       className="border-destructive/50 bg-destructive/10 text-destructive scroll-mt-20 rounded-md border p-4 text-sm outline-none"
     >
-      <p className="mb-2 font-medium">{ortak("kaydedilemedi")}</p>
+      <p className="mb-2 font-medium">{baslik ?? ortak("kaydedilemedi")}</p>
       <ul className="list-inside list-disc space-y-1">
         {hatalar.map((hata, i) => (
           <li key={i}>{hata}</li>
