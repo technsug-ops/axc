@@ -1,11 +1,17 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { Plus } from "lucide-react";
 
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { kurulumDurumlari } from "@/lib/firma-acilisi";
 import { bicimlendirici } from "@/lib/bicim";
 import { sistemPrisma } from "@/lib/prisma";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
+
+import { FirmaEylemleri } from "./firma-eylemleri";
 
 export const dynamic = "force-dynamic";
 
@@ -37,10 +43,19 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
       orderBy: { createdAt: "asc" },
     }),
   ]);
+  const durumlar = await kurulumDurumlari(firmalar.map((f) => f.id));
 
   return (
     <div className="max-w-3xl space-y-4">
-      <h1 className="text-2xl font-semibold">{t("firmalar")}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-semibold">{t("firmalar")}</h1>
+        <Button asChild className="min-h-11">
+          <Link href="/selliora/firmalar/yeni">
+            <Plus />
+            {t("yeniFirma")}
+          </Link>
+        </Button>
+      </div>
       <KodAramaKutusu temelAdres="/selliora/firmalar" baslangic={arama} tasinanlar={{}} ipucu={t("firmaAramaIpucu")} />
       <p className="text-muted-foreground text-sm">
         {arama ? t("aramaSonucu", { bulunan: firmalar.length, toplam }) : t("firmaSayisi", { toplam })}
@@ -53,9 +68,21 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
             <li key={f.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 text-sm">
               <span className="min-w-40 font-medium">{f.name}</span>
               <KopyalanabilirKod deger={f.code} etiket={t("firmaKodu")} />
-              <Badge variant={f.isActive ? "secondary" : "outline"}>{f.isActive ? t("aktif") : t("pasif")}</Badge>
-              <span className="text-muted-foreground">{t("uyeSayisi", { sayi: f._count.uyelikler })}</span>
-              <span className="text-muted-foreground ml-auto text-xs">{t("acilis", { tarih: bicim.tarih(f.createdAt) })}</span>
+              {(() => {
+                const d = durumlar.get(f.id) ?? (f.isActive ? "TAM" : "PASIF");
+                return (
+                  <>
+                    <Badge variant={d === "TAM" ? "secondary" : d === "YARIM" ? "destructive" : "outline"}>
+                      {d === "TAM" ? t("aktif") : d === "YARIM" ? t("kurulumYarim") : t("pasif")}
+                    </Badge>
+                    <span className="text-muted-foreground">{t("uyeSayisi", { sayi: f._count.uyelikler })}</span>
+                    <span className="text-muted-foreground text-xs">{t("acilis", { tarih: bicim.tarih(f.createdAt) })}</span>
+                    <div className="ml-auto">
+                      <FirmaEylemleri firmaId={f.id} firmaAdi={f.name} durum={d} />
+                    </div>
+                  </>
+                );
+              })()}
             </li>
           ))}
         </ul>

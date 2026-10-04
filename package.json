@@ -493,6 +493,8 @@
     "yonetim-kapisi-mutasyon:kontrol": "tsx scripts/yonetim-kapisi-mutasyon-kontrol.ts",
     "saglayici-izni:dogrula": "tsx scripts/saglayici-izni-dogrula.ts",
     "saglayici-izni-mutasyon:kontrol": "tsx scripts/saglayici-izni-mutasyon-kontrol.ts",
+    "firma-acilisi:dogrula": "tsx scripts/firma-acilisi-dogrula.ts",
+    "firma-acilisi-mutasyon:kontrol": "tsx scripts/firma-acilisi-mutasyon-kontrol.ts",
     "firma-bag:uret": "tsx scripts/firma-bag-tetikleyici-uret.ts prisma/migrations/20261003100500_k303_firma_bag_kapisi/migration.sql"
   },
   "dependencies": {

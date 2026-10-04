@@ -97,6 +97,16 @@ const ACTION_ISTISNALARI = new Map<string, string>([
 // ===========================================================================
 console.log("\n1) KORUMASIZ ACTION BEKÇİSİ");
 // ===========================================================================
+/* K303 4c-2 — Selliora yönetim eylemlerinin kapısı (süper admin). Ad modülden
+   OKUNUR; bulunamazsa desen hiçbir şeyle eşleşmez ve yönetim eylemleri
+   korumasız sayılıp kırmızı yanar (sessiz yeşil yok). */
+const YONETIM_EYLEM_ADLARI = [
+  ...kaynakOku("src/lib/yonetim-oturumu.ts").replace(/\r/g, "").matchAll(/export async function (yonetimEylem[A-Za-z]*)\(/g),
+].map((e) => e[1]);
+const YONETIM_EYLEM_KAPISI = YONETIM_EYLEM_ADLARI.length
+  ? new RegExp(YONETIM_EYLEM_ADLARI.map((a) => `await ${a}\\(\\)`).join("|"))
+  : /(?!)/;
+kontrol(`  yönetim eylem kapısı modülden okundu (${YONETIM_EYLEM_ADLARI.length} ≥ 1)`, YONETIM_EYLEM_ADLARI.length >= 1);
 {
   const korumasiz: string[] = [];
   const korumali: string[] = [];
@@ -144,7 +154,7 @@ console.log("\n1) KORUMASIZ ACTION BEKÇİSİ");
         istisna.push(ad);
         continue;
       }
-      if (/yetkiIste\(|yetkiBaglami\(|izinVarMi\(/.test(govde)) {
+      if (/yetkiIste\(|yetkiBaglami\(|izinVarMi\(/.test(govde) || YONETIM_EYLEM_KAPISI.test(govde)) {
         korumali.push(ad);
       } else {
         korumasiz.push(`${ad}  (${yol.replace(/\\/g, "/")})`);

@@ -85,3 +85,12 @@ export async function yonetimSayfasi(): Promise<YonetimKullanicisi> {
   if (!k) notFound();
   return k;
 }
+
+/**
+ * Yönetim SUNUCU EYLEMİNİN ilk satırı — süper admin değilse null döner ve
+ * eylem `{ hata: "YETKISIZ" }` ile çıkar (eylem `notFound` atamaz; ekran bunu
+ * sabit eşlemeyle metne çevirir). Yetki bekçisi bu adı modülden okur.
+ */
+export async function yonetimEylemi(): Promise<YonetimKullanicisi | null> {
+  return yonetimOturumu();
+}
