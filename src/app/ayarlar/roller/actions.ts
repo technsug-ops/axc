@@ -25,7 +25,12 @@ import { izinTaninirMi, TUM_IZINLER } from "@/lib/yetki/izinler";
  * ============================================================================
  */
 
-export type RolDurumu = { hatalar?: string[] };
+/**
+ * `eklenen`: yalnız `rolEkle` BAŞARIYLA bitince dolar. Form onu görünce
+ * kendini boşaltır ve ortak yeşil bildirimi tetikler — eskiden başarı `{}`
+ * dönüyordu, form dolu kalıyor ve hiçbir onay çıkmıyordu (04.10.2026, İlke #5).
+ */
+export type RolDurumu = { hatalar?: string[]; eklenen?: string };
 
 type Ceviri = (a: string, d?: Record<string, string | number>) => string;
 
@@ -83,7 +88,7 @@ export async function rolEkle(
   }
 
   tazele();
-  return {};
+  return { eklenen: cozum.data.name };
 }
 
 export async function rolGuncelle(

@@ -96,6 +96,7 @@
     "duzeltme:dogrula": "tsx scripts/duzeltme-dogrula.ts",
     "yetki:dogrula": "tsx scripts/yetki-dogrula.ts",
     "izin-metni:dogrula": "tsx scripts/izin-metni-dogrula.ts",
+    "rol-formu:dogrula": "tsx scripts/rol-formu-dogrula.ts",
     "baglanti:olc": "tsx scripts/baglanti-olc.ts",
     "canli:yedek": "tsx scripts/canli-yedek.ts",
     "canli:ham-yedek": "tsx scripts/canli-ham-yedek.ts",
