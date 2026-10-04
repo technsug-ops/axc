@@ -45,7 +45,7 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "SAYI LISTEDEN FARKLI KOSULLA", yon: "FAZLADAN", dosya: VERI,
     bul: "    where: SUPHELI_ADAY_KOSULU,\n    select: { barcode: true", koy: "    where: { isActive: true },\n    select: { barcode: true", bozdugu: "Urunler sayfasindaki sayi listeyle ayrisir" },
   { ad: "IPTAL EDILMIS SATIS ISLEM SAYILIYOR", yon: "FAZLADAN", dosya: VERI,
-    bul: "WHERE s.iptalTarihi IS NULL GROUP BY", koy: "GROUP BY", bozdugu: "iptal satisi olan urun «islem goruyor» diye one cikar" },
+    bul: "WHERE s.iptalTarihi IS NULL AND s.companyId = ? GROUP BY", koy: "WHERE s.companyId = ? GROUP BY", /* K303 3c çapası (04.10 taşındı) */ bozdugu: "iptal satisi olan urun «islem goruyor» diye one cikar" },
   { ad: "EXCEL BASKA GOVDEDEN", yon: "KALDIRAN", dosya: LISTE,
     bul: "(await supheliSatirlari()).map(", koy: "([] as Awaited<ReturnType<typeof supheliSatirlari>>).map(", bozdugu: "indirilen liste ekrandaki sayiyla ayrisir" },
   { ad: "EAN YAZIMI SARTSIZ", yon: "FAZLADAN", dosya: EYLEM,

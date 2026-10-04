@@ -4,11 +4,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { GIRIS_KILIT_DK, girisKilidi } from "@/lib/giris-kilidi";
+import { girisKilidi } from "@/lib/giris-kilidi";
+import { yakinBasarisizDenemeler } from "@/lib/giris-kilidi-okuma";
 import { izYaz } from "@/lib/iz";
 import { oturumAc, oturumKapat } from "@/lib/oturum";
 import { parolaDogrula } from "@/lib/parola";
-import { prisma, sistemPrisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export type GirisDurumu = { hatalar?: string[] };
 
@@ -46,21 +47,8 @@ export async function girisYap(
    */
   const ip = ((await headers()).get("x-forwarded-for") ?? "").split(",")[0].trim() || "bilinmiyor";
   const simdi = new Date();
-  // SISTEM: girişten önce firma yoktur ve kilit firmalar-üstüdür — aynı e-posta/IP
-  // hangi firmaya ait olursa olsun kilitlenir. Başarısız deneme izi de firmasız
-  // yazılır (`izYaz`); süzgeçli istemci onu hiç göremezdi.
-  const yakinDenemeler = await sistemPrisma.auditLog.findMany({
-    where: {
-      action: "GIRIS_BASARISIZ",
-      createdAt: { gte: new Date(simdi.getTime() - GIRIS_KILIT_DK * 60_000) },
-      OR: [
-        { detail: { contains: `"eposta":${JSON.stringify(eposta)}` } },
-        { detail: { contains: `"ip":${JSON.stringify(ip)}` } },
-      ],
-    },
-    select: { createdAt: true },
-  });
-  const kilit = girisKilidi(yakinDenemeler.map((d) => d.createdAt), simdi);
+  // Okuma firmalar-üstüdür (girişten önce firma yok) — gerekçe gövdede.
+  const kilit = girisKilidi(await yakinBasarisizDenemeler(eposta, ip, simdi), simdi);
   if (kilit.kilitli) {
     const dakika = Math.max(1, Math.ceil((kilit.acilis.getTime() - simdi.getTime()) / 60_000));
     return { hatalar: [t("cokFazlaDeneme", { dakika })] };

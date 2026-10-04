@@ -483,6 +483,8 @@
     "urun-arama-mutasyon:kontrol": "tsx scripts/urun-arama-mutasyon-kontrol.ts",
     "tarife-eslesme-mutasyon:kontrol": "tsx scripts/tarife-eslesme-mutasyon-kontrol.ts",
     "izolasyon:dogrula": "tsx scripts/izolasyon-dogrula.ts",
+    "giris-firmasiz:dogrula": "tsx scripts/giris-firmasiz-dogrula.ts",
+    "giris-firmasiz-mutasyon:kontrol": "tsx scripts/giris-firmasiz-mutasyon-kontrol.ts",
     "firma-bag:uret": "tsx scripts/firma-bag-tetikleyici-uret.ts prisma/migrations/20261003100500_k303_firma_bag_kapisi/migration.sql"
   },
   "dependencies": {

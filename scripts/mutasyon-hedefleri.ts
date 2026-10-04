@@ -239,6 +239,12 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "deneme-ortami-mutasyon:kontrol",
   "hb-sayfa-mutasyon:kontrol",
   /**
+   * K303 (04.10.2026) — `giris-firmasiz` ve `erisim` ikisi de giriş eylemini
+   * (`src/app/giris/actions.ts`) ve kilidin okuma gövdesini mutasyona uğratıyor.
+   */
+  "erisim-mutasyon:kontrol",
+  "giris-firmasiz-mutasyon:kontrol",
+  /**
    * K303 Aşama 3–4 (03.10.2026) — `firma-suzgeci` artık ham SQL'li gövdeleri
    * (`alim-arama`, `toplu-guncelle`), geri yüklemeyi ve `satis.ts`'i (bağ kapısı
    * desen yasağı) mutasyona uğratıyor; bu dosyaları başka harness'ler de bozuyor.

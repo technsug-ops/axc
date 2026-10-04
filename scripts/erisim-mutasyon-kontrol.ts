@@ -19,6 +19,7 @@ const BEKCI = "scripts/erisim-dogrula.ts";
 const BEKCI_BASLIGI = "ERİŞİM BEKÇİSİ";
 const KURAL = "src/lib/giris-kilidi.ts";
 const GIRIS = "src/app/giris/actions.ts";
+const OKUMA = "src/lib/giris-kilidi-okuma.ts"; // K303 04.10: kilidin okuması buraya taşındı
 const DISA = "src/app/api/disa-aktarma/[liste]/route.ts";
 const OLCUM = "src/app/api/olcum/route.ts";
 const ROBOTS = "src/app/robots.ts";
@@ -38,7 +39,7 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "KILIT KONTROLU KAPATILDI", yon: "KALDIRAN", dosya: GIRIS,
     bul: "  if (kilit.kilitli) {", koy: "  if (false && kilit.kilitli) {",
     bozdugu: "sayac doluyor ama giris kapanmiyor" },
-  { ad: "IP SAYACI KALKTI (yalniz e-posta)", yon: "KALDIRAN", dosya: GIRIS,
+  { ad: "IP SAYACI KALKTI (yalniz e-posta)", yon: "KALDIRAN", dosya: OKUMA,
     bul: '        { detail: { contains: `"ip":${JSON.stringify(ip)}` } },' + "\n", koy: "",
     bozdugu: "bot her denemede baska e-posta yazar, kilit hic dolmaz" },
   { ad: "BASARISIZ DENEMEDE IP YAZILMIYOR", yon: "KALDIRAN", dosya: GIRIS,

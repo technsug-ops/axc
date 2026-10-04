@@ -66,16 +66,24 @@ const iParola = govde.indexOf("const gecti = await parolaDogrula(");
 kontrol("kilit kontrolü VAR", iKilit >= 0);
 kontrol("parola doğrulaması VAR", iParola >= 0);
 kontrol("kilitliyken parola HİÇ denenmez (kilit, doğrulamadan ÖNCE döner)", iKilit >= 0 && iParola >= 0 && iKilit < iParola);
+/* K303 (04.10.2026): okuma `lib/giris-kilidi-okuma.ts`e taşındı — girişten önce firma
+   yoktur, okuma firmalar-üstü olmalı (süzgeçli okuma giriş ekranını düşürdü). Ölçüt
+   iki halkaya bölündü: eylem gövdeyi ÇAĞIRIR + gövde doğru izi okur. Firmasız
+   çalıştığını `giris-firmasiz:dogrula` gerçek veritabanında ölçer. */
+const okuma = yorumsuz(kaynakOku("src/lib/giris-kilidi-okuma.ts"));
 kontrol(
-  "kilit kararı saf kuraldan, son 15 dk'nın GIRIS_BASARISIZ izinden",
-  govde.includes("const kilit = girisKilidi(yakinDenemeler.map((d) => d.createdAt), simdi);") &&
-    govde.includes('action: "GIRIS_BASARISIZ",') &&
-    govde.includes("createdAt: { gte: new Date(simdi.getTime() - GIRIS_KILIT_DK * 60_000) },"),
+  "kilit kararı saf kuraldan, okuma gövdesinden beslenir",
+  govde.includes("const kilit = girisKilidi(await yakinBasarisizDenemeler(eposta, ip, simdi), simdi);"),
+);
+kontrol(
+  "okuma gövdesi son 15 dk'nın GIRIS_BASARISIZ izini okur",
+  okuma.includes('action: "GIRIS_BASARISIZ",') &&
+    okuma.includes("createdAt: { gte: new Date(simdi.getTime() - GIRIS_KILIT_DK * 60_000), lte: simdi },"),
 );
 kontrol(
   "sayaç e-posta YA DA IP üzerinden (ikisi de)",
-  govde.includes('{ detail: { contains: `"eposta":${JSON.stringify(eposta)}` } },') &&
-    govde.includes('{ detail: { contains: `"ip":${JSON.stringify(ip)}` } },'),
+  okuma.includes('{ detail: { contains: `"eposta":${JSON.stringify(eposta)}` } },') &&
+    okuma.includes('{ detail: { contains: `"ip":${JSON.stringify(ip)}` } },'),
 );
 const basarisizBlok = govde.slice(govde.indexOf("if (!kullanici || !kullanici.isActive || !gecti) {"), govde.indexOf('return { hatalar: [t("hataliGiris")] };'));
 kontrol(
@@ -83,7 +91,7 @@ kontrol(
   basarisizBlok.includes("await izYaz({") && basarisizBlok.includes("detail: JSON.stringify({ eposta, ip }),") && !/parola/.test(basarisizBlok.replace("Parola YAZILMAZ", "")),
 );
 const iOturum = govde.indexOf("await oturumAc(kullanici.id);");
-kontrol("başarılı giriş iz SAYACINA girmez (GIRIS_BASARISIZ yalnız hata dalında)", (govde.match(/action: "GIRIS_BASARISIZ"/g) ?? []).length === 2 && iOturum > govde.indexOf('return { hatalar: [t("hataliGiris")] };'));
+kontrol("başarılı giriş iz SAYACINA girmez (GIRIS_BASARISIZ yalnız hata dalında)", (govde.match(/action: "GIRIS_BASARISIZ"/g) ?? []).length === 1 && iOturum > govde.indexOf('return { hatalar: [t("hataliGiris")] };'));
 kontrol("kilitli mesajı sözlükten, kalan dakikayla", govde.includes('return { hatalar: [t("cokFazlaDeneme", { dakika })] };'));
 
 /* ═══ ② TOPLU İNDİRME İZİ ═══ */
