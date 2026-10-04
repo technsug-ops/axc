@@ -2064,6 +2064,7 @@
     "cikis": "Çıkış",
     "cikisYapildi": "Çıkış yapıldı.",
     "hataliGiris": "Firma kodu, e-posta veya parola hatalı.",
+    "girisYapilamadi": "Giriş yapılamadı:",
     "cokFazlaDeneme": "Çok fazla hatalı deneme. Güvenlik için giriş {dakika} dakika kapalı — sonra tekrar deneyin.",
     "epostaZorunlu": "E-posta girilmeli.",
     "parolaZorunlu": "Parola girilmeli.",

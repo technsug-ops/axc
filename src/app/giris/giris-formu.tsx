@@ -69,7 +69,7 @@ export function GirisFormu({ devam, sonFirmaKodu }: { devam: string; sonFirmaKod
         />
       </div>
 
-      <HataOzeti hatalar={durum.hatalar} />
+      <HataOzeti hatalar={durum.hatalar} baslik={t("girisYapilamadi")} />
 
       <Button type="submit" className="w-full" disabled={bekliyor}>
         <LogIn />
