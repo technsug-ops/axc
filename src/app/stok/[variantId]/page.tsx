@@ -169,7 +169,7 @@ export default async function VaryantHareketleriSayfasi({
             aria-label={t("kalanPartileriGor")}
             className="group block rounded-xl focus-visible:ring-2 focus-visible:outline-none"
           >
-            <Card className="group-hover:border-primary/60 h-full transition-colors">
+            <Card className="group-hover:ring-primary/60 group-hover:ring-2 h-full transition-shadow">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-2 text-sm font-medium">
                   {t("mevcutStok")}
