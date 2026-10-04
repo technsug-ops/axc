@@ -25,6 +25,7 @@ import { ALT_OGELER, MENU_IKONLARI } from "@/lib/menu/ikonlar";
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
 import type { CozulmusDuzen } from "@/lib/menu/duzen";
 import { UYGULAMA } from "@/lib/uygulama";
+import { MarkaIsareti, MarkaYazisi } from "@/lib/marka/cizim";
 
 /**
  * Sol menü.
@@ -91,8 +92,8 @@ const ALT: MenuOgesi[] = ALT_OGELER.map((o) => ({ ...o, aktif: true }));
  * `useSyncExternalStore` tam bu iş için. `useEffect` + `setState` hem lint
  * tarafından reddediliyor hem de yanlış mimari olurdu.
  */
-const MENU_ANAHTARI = "selliora-menu-acik";
-const MENU_OLAYI = "selliora-menu-degisti";
+const MENU_ANAHTARI = `${UYGULAMA.teknikAd}-menu-acik`;
+const MENU_OLAYI = `${UYGULAMA.teknikAd}-menu-degisti`;
 
 function menuAbone(geriCagir: () => void): () => void {
   window.addEventListener(MENU_OLAYI, geriCagir);
@@ -344,18 +345,14 @@ export function AppSidebar({
           onClick={menuyuKapat}
           className="hover:bg-sidebar-accent -mx-2 flex items-center gap-2.5 rounded-md px-2 py-1 transition-colors"
         >
-          {/* MARKA KARESİ — tasarım referansındaki aksan renkli kare.
-              Uygulamanın adı TEK sabitten okunuyor (anayasa); kare de o adın
-              baş harfini taşıyor, yani marka değiştiğinde burada elle
-              güncellenecek bir şey kalmıyor. */}
-          <span
-            className="bg-sidebar-primary text-sidebar-primary-foreground grid size-7 shrink-0 place-items-center rounded-md text-sm font-bold"
-            aria-hidden="true"
-          >
-            {UYGULAMA.ad.charAt(0)}
-          </span>
-          <span className="flex min-w-0 flex-col">
-            <span className="text-base font-semibold">{UYGULAMA.ad}</span>
+          {/* MARKA — Bezirga paketinin koyu zemin hâli (`isaret_ters` +
+              `yazi_ters`): beyaz «b» ve yazı, safran elmas. Kabuk üç temada
+              da koyu (kobalt · gece · kağıt), bu yüzden tek hâl yeter.
+              Çizim `lib/marka/cizim.tsx`te; erişilebilir ad `UYGULAMA.ad`dan
+              (tek sabit kuralı metin için geçerli, çizim için değil). */}
+          <MarkaIsareti className="size-8 shrink-0 text-white" />
+          <span className="flex min-w-0 flex-col gap-1">
+            <MarkaYazisi etiket={UYGULAMA.ad} className="h-5 w-auto self-start text-white" />
             <span className="text-muted-foreground text-xs">{t("slogan")}</span>
           </span>
         </Link>

@@ -2712,7 +2712,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   /**
    * ⚠ TOKEN ARTIK PALETTEN OKUNUYOR — VE BU KONTROL BİR KEZ KÖR KALDI.
    *
-   * 22.08.2026'da renk değerleri `globals.css`ten `styles/selliora-*.css`
+   * 22.08.2026'da renk değerleri `globals.css`ten `styles/tema-*.css` (04.10.2026 öncesi adı `selliora-*.css`)
    * paletlerine taşındı ve `:root` bir KÖPRÜYE döndü (`--primary:
    * var(--se-vurgu)`). Eski oklch satırları bir süre dosyada kaldı; köprü
    * SONRA geldiği için ezilmişlerdi, yani ÖLÜ koddu — ama bu kontrol tam
@@ -2724,8 +2724,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * → hex. Zincir kopuyorsa NaN döner ve kontrol kırmızı yanar — "bulamadım"
    * sessizce "temiz" sayılmaz.
    */
-  const KOBALT = kaynakOku("src/styles/selliora-kobalt.css");
-  const GECE = kaynakOku("src/styles/selliora-gece.css");
+  const KOBALT = kaynakOku("src/styles/tema-kobalt.css");
+  const GECE = kaynakOku("src/styles/tema-gece.css");
 
   /** `#RRGGBB` → 0–1 aralığında üç kanal. */
   const hexKanal = (hex: string): [number, number, number] => [

@@ -4,8 +4,9 @@ import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { MARJ_OLCULERI, type MarjOlcusu } from "@/lib/marj-gosterge";
+import { UYGULAMA } from "@/lib/uygulama";
 
-const ANAHTAR = "selliora.marjOlcusu";
+const ANAHTAR = `${UYGULAMA.teknikAd}.marjOlcusu`;
 
 /**
  * ============================================================================

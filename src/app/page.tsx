@@ -2523,7 +2523,7 @@ export default async function AnaSayfa({
       */}
       <div className="flex min-w-0 flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          {/* K270: telefonda başlık yalnız ekran okuyucuya (üst çubuk «Selliora»
+          {/* K270: telefonda başlık yalnız ekran okuyucuya (üst çubuk uygulama adı
               diyor) ve alt satır gizli — dönem çiplerde, kanal süzgeç düğmesinde.
               Çekim rozeti (uyarı) GÖRÜNÜR kalır. */}
           <h1 className="text-2xl font-semibold max-md:sr-only">{t("baslik")}</h1>

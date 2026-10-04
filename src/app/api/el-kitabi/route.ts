@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { UYGULAMA } from "@/lib/uygulama";
 
 import { apiIzni } from "@/lib/yetki";
 import { bicimlendirici } from "@/lib/bicim";
@@ -31,7 +32,7 @@ export async function GET() {
   return new Response(belge, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${t("dosyaAdi")}-${gun}.html"`,
+      "Content-Disposition": `attachment; filename="${UYGULAMA.teknikAd}-${t("dosyaAdi")}-${gun}.html"`,
       "Cache-Control": "no-store",
     },
   });

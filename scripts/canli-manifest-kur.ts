@@ -1,6 +1,7 @@
 import { get, put } from "@vercel/blob";
 
 import { canliYapilandirma } from "./canli-ortak";
+import { TEKNIK_ADLAR } from "../src/lib/uygulama";
 
 /**
  * ============================================================================
@@ -90,14 +91,16 @@ async function main() {
 
   /** ② Belirlenimci adları geriye doğru yokla. */
   console.log("");
-  console.log(`② YOKLAMA — son ${GERIYE_GUN} gün, ad deseni selliora-<gün>.json`);
+  console.log(`② YOKLAMA — son ${GERIYE_GUN} gün, ad deseni <${TEKNIK_ADLAR.join("|")}>-<gün>.json`);
   const bulunan: Kayit[] = [];
   const an = new Date();
   let yoklanan = 0;
   for (let i = 0; i < GERIYE_GUN; i++) {
     const g = new Date(an.getTime() - i * 24 * 60 * 60 * 1000);
-    const ad = `yedek/selliora-${gunAdi(g)}.json`;
     yoklanan += 1;
+    /** 04.10.2026: ad değişti; aynı gün iki adla da yedek olabilir — ikisi de yoklanır. */
+    for (const teknikAd of TEKNIK_ADLAR) {
+    const ad = `yedek/${teknikAd}-${gunAdi(g)}.json`;
     try {
       const s = await get(ad, { access: "private", token: jeton });
       if (!s || s.statusCode !== 200) continue;
@@ -114,6 +117,7 @@ async function main() {
       console.log(
         `   ⛔ ${ad} — ${String((e as Error).message).replace(/\s+/g, " ").slice(0, 80)}`,
       );
+    }
     }
   }
 

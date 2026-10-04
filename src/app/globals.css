@@ -15,9 +15,9 @@
 
    ⚠ İKİ DOSYA DA YALNIZ DEĞER TANIMLAR, token ADLARI birebir aynıdır.
    Bileşen kodunda hiçbir değişiklik gerekmez — aşağıdaki köprü sayesinde. */
-@import "../styles/selliora-kobalt.css";
-@import "../styles/selliora-gece.css";
-@import "../styles/selliora-kagit.css";
+@import "../styles/tema-kobalt.css";
+@import "../styles/tema-gece.css";
+@import "../styles/tema-kagit.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -269,7 +269,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   KÖPRÜ — shadcn sözlüğü ⇄ Selliora paleti
+   KÖPRÜ — shadcn sözlüğü ⇄ Bezirga paleti
    ----------------------------------------------------------------------
    ⚠ NİYE KÖPRÜ, NİYE YENİDEN YAZIM DEĞİL. Palet paketi kendi sözlüğünü
    getiriyor (`--se-zemin`, `--se-kart`, `--se-vurgu`…) ve yanında 110

@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { UYGULAMA } from "@/lib/uygulama";
 import { UploadCloud } from "lucide-react";
 
 import {
@@ -184,7 +185,7 @@ export function HbGonderim({ variantId }: { variantId: string }) {
                 {t("hbSku")}: <span className="font-medium">{onizleme.hbSku}</span>
               </div>
               <div>
-                {t("selioraStok")}: <span className="font-medium">{bicim.sayi(onizleme.selioraStok)}</span>
+                {t("sistemStogu", { uygulama: UYGULAMA.ad })}: <span className="font-medium">{bicim.sayi(onizleme.sistemStogu)}</span>
                 {" · "}
                 {t("kanalAdet")}:{" "}
                 <span className="font-medium">
@@ -194,7 +195,7 @@ export function HbGonderim({ variantId }: { variantId: string }) {
             </div>
             <label className="flex min-h-11 items-center gap-2 md:min-h-8">
               <input type="checkbox" checked={stokGonder} onChange={(e) => setStokGonder(e.target.checked)} className="size-4" />
-              {t("stokGonder", { adet: bicim.sayi(onizleme.selioraStok) })}
+              {t("stokGonder", { adet: bicim.sayi(onizleme.sistemStogu) })}
             </label>
             <label className="block space-y-1">
               <span>{t("fiyatEtiketi")}</span>

@@ -13,6 +13,17 @@
 
 ---
 
+## 🔶 K318 — UYGULAMA ADI «SELLIORA» → «BEZIRGA» + ADIN KODA GÖMÜLMESİ YASAĞI · 04.10.2026 · [YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı kararı 04.10.2026:** ürün adı «Bezirga»; logo «Bezirga Vektör Paketi 1.0»dan birebir (`src/lib/marka/cizim.tsx`).
+**BULGU:** anayasa «ad değişikliği tek satırlık iş» diyordu ama ad **30'dan fazla yerde elle** yazılıydı (sözlük 9 metin · el kitabı 8 cümle · oturum çerezi · yedek adı ve biçimi · tarayıcı anahtarları · CSS dosya adları). Hepsi `UYGULAMA.ad` / `UYGULAMA.teknikAd`a bağlandı; sözlükte `{uygulama}` yer tutucusu. CSS `selliora-*.css` → `tema-*.css`.
+**ESKİ ADLAR OKUNUR:** `UYGULAMA.eskiTeknikAdlar = ["selliora"]` — eski adlı yedekler (`selliora-<gün>.json`, `bicim: "selliora-yedek"`) indirilebilir ve geri yüklenebilir kalır; YAZAN her yer yalnız yeni adı kullanır (`yedek-bicim.ts`). Yedek eksik-gün raporu günü dosya adından değil yazım tarihinden okuyor — eski adlı günler «eksik» görünmez.
+⚠ **BEDELİ BEYAN:** oturum çerezi `selliora_oturum` → `bezirga_oturum`; deploy sonrası açık oturumlar **bir kez düşer**, yeniden giriş gerekir. Menü açık/kapalı ve tema tercihi de bir kez sıfırlanır (tarayıcı anahtarı değişti).
+**Bekçi:** `uygulama-adi:dogrula` — desen yasağı, dosya listesi yok: `src/` + `messages/*.json` + `public/*.js` yorumsuz kodda güncel ya da eski ad geçemez (harf büyüklüğü fark etmez); `sw.js` önbellek adı ayrıca güncel teknik adla ölçülür; taban doluluğu ayrı. **Mutasyon** `uygulama-adi-mutasyon:kontrol` **10/10**: 3 zararsız yorum YEŞİL · menü / sekme (BÜYÜK HARF) / çerez / sözlük / sw adı elle yazılınca · teknik ad değişip sw kalınca · tarama boşalınca KIRMIZI.
+**Halil testi (deploy sonrası, telefonda + bilgisayarda):** ① site açılınca giriş ekranı çıkar (oturum düştü — beklenen) · giriş ekranında kobalt kare «b» simgesi + «bezirga» yazısı · ② giriş sonrası sol menünün üstünde aynı logo · ③ tarayıcı sekmesinde «Panel — Bezirga» · ④ Ürün kartı → kanal stok kutusunda «Bezirga stoğu» · ⑤ yedek listesinde eski `selliora-…` yedekler hâlâ görünür ve «İndir» çalışır; ertesi sabahın yedeği `bezirga-<gün>.json` adıyla gelir · ⑥ telefonda ana ekrana kurulu uygulamanın simgesi yeni logo (eski simge önbellekteyse kaldırıp yeniden kurun).
+
+---
+
 ## 🔶 K316 — EL KİTABI GÜNCELLEMESİ (6 HAFTALIK BORÇ) · 03.10.2026 · [YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı:** «Kullanım kılavuzunu çok iyi kontrol et, eksiklerin hepsini yaz.» Üç salt-okuma denetimi (ekran/menü · son 6 haftanın değişiklikleri · iddialar) + her iddia yazılmadan önce kodda/sözlükte/canlı izde doğrulandı. Kaynak `src/lib/el-kitabi/icerik.ts` (son dokunuş 30.09'du).

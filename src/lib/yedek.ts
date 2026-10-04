@@ -1,6 +1,6 @@
 import { prisma, sistemPrisma } from "@/lib/prisma";
 
-import { YEDEK_SURUMU, YEDEK_TABLOLARI, type YedekDosyasi } from "./yedek-bicim";
+import { YEDEK_BICIMI, YEDEK_SURUMU, YEDEK_TABLOLARI, type YedekDosyasi } from "./yedek-bicim";
 
 export { YEDEK_SURUMU, YEDEK_TABLOLARI };
 export type { YedekDosyasi };
@@ -155,7 +155,7 @@ export async function yedekUret(
   }
 
   return {
-    bicim: "selliora-yedek",
+    bicim: YEDEK_BICIMI,
     surum: YEDEK_SURUMU,
     olusturulmaAni: an.toISOString(),
     // Dosyanın kendisi eksiğini SÖYLER: geri yükleyen taraf tarifeleri

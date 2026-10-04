@@ -1,7 +1,12 @@
 import { ImageResponse } from "next/og";
 
-import { MARKA_RENKLERI } from "@/lib/marka/renkler";
-import { UYGULAMA } from "@/lib/uygulama";
+import {
+  B_YOLU,
+  ELMAS_YOLU,
+  MARKA_PALETI,
+  MIKRO_B_YOLU,
+  MIKRO_ELMAS_YOLU,
+} from "@/lib/marka/cizim";
 
 /**
  * ============================================================================
@@ -12,28 +17,38 @@ import { UYGULAMA } from "@/lib/uygulama";
  *  değiştiğinde ötekiler sessizce eski kalırdı — telefonda bir renk,
  *  sekmede başka renk.
  *
- *  ⚠ HARF `UYGULAMA.ad`DAN GELİR, ELLE YAZILMAZ. Anayasa: "Ad değişikliği
- *  tek satırlık iş olmalıdır." Sol menüdeki marka karesi de aynı harfi aynı
- *  şekilde alıyor (`app-sidebar.tsx`), yani ad değişince ikisi birlikte
- *  döner. `public/` içine hazır PNG konsaydı bu bağ kopardı.
+ *  ⚠ ÇİZİM `lib/marka/cizim.tsx`TEN GELİR (04.10.2026, Bezirga paketi).
+ *  Önceden `UYGULAMA.ad`ın baş harfi yazılıyordu; logo artık bir harf değil
+ *  bir çizim ve sol menü de aynı yolları kullanıyor. `public/` içine hazır
+ *  PNG konmadı: menü ile simge ayrı kaynaktan beslenirse biri eskir.
+ *
+ *  ⚠ ZEMİN MARKA KOBALTI, TEMA KABUĞU DEĞİL. Simge tema seçimini bilemez;
+ *  kobalt hem varsayılan temanın kabuğu hem marka rengi (ikisi aynı değer,
+ *  `pwa:dogrula` kabuk tarafını ölçer).
  * ============================================================================
  */
-
 
 type İkonSecenegi = {
   boyut: number;
   /**
    * Android ikonu daire/kare/damla olarak KIRPAR. Kırpılacak ikonda köşe
-   * yuvarlatma YAPILMAZ (zaten maskeleniyor) ve harf küçük tutulur: güvenli
-   * alan ikonun orta %80'lik dairesidir, harf onun da içinde kalmalı.
-   * Yoksa telefonda "S" nin kenarları yenir.
+   * yuvarlatma YAPILMAZ (zaten maskeleniyor) ve işaret küçültülür: güvenli
+   * alan ikonun orta %80'lik dairesidir. İşaretin en uzak köşesi (64,40)
+   * merkezden 108,8 birim — 256'lık ızgarada güvenli yarıçap 102,4. Bu
+   * yüzden maskelide işaret %80'e iner (87 birim, payla içeride).
    */
   maskeli?: boolean;
 };
 
+/** 32 px ve altında paketin MİKRO çizimi (kılavuz: «16 ve 32 px'de mikro»). */
+const MIKRO_SINIR = 32;
+
 /** Ortak çizim — boyuttan bağımsız oranlar. */
 export function markaIkonu({ boyut, maskeli = false }: İkonSecenegi) {
-  const harf = UYGULAMA.ad.charAt(0).toLocaleUpperCase("tr-TR");
+  const mikro = !maskeli && boyut <= MIKRO_SINIR;
+  /** Yuvarlatma paketteki oran: 256'da 56 (mikro 16'da 3,5 — aynı oran). */
+  const yaricap = maskeli ? 0 : Math.round(boyut * (56 / 256));
+  const olcek = maskeli ? 0.8 : 1;
 
   return new ImageResponse(
     (
@@ -44,26 +59,18 @@ export function markaIkonu({ boyut, maskeli = false }: İkonSecenegi) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: MARKA_RENKLERI.zemin,
-          color: MARKA_RENKLERI.yazi,
-          /* Maskeli: tam kare (OS kırpar). Normal: sol menüdeki kare gibi
-             yuvarlatılmış — oran shadcn'in `rounded-md`sine yakın. */
-          borderRadius: maskeli ? 0 : Math.round(boyut * 0.22),
-          fontSize: Math.round(boyut * (maskeli ? 0.48 : 0.62)),
-          /* ⚠ `letterSpacing` VE `fontWeight` BİLEREK YOK.
-             · Harf aralığı tek harfte SAĞA boşluk ekler; kutu ortalanınca
-               harf sola kaymış görünür. İlk çizimde tam bu oldu.
-             · `fontWeight: 700` yazılmıştı ve HİÇBİR ŞEY YAPMIYORDU: çizici
-               (`next/og`) yalnız normal ağırlıkta gömülü bir yazı tipi
-               taşıyor, kalın sürümü yok. Sahip olmadığı etkiyi iddia eden
-               bir satırdı; kaldırıldı. Kalın istenirse yol, yazı tipi
-               dosyasını depoya koyup `fonts` seçeneğiyle vermektir —
-               `.next` önbelleğindeki adı her derlemede değişen dosyaya
-               bağlanmak DEĞİL. */
-          lineHeight: 1,
+          background: MARKA_PALETI.kobalt,
+          borderRadius: yaricap,
         }}
       >
-        {harf}
+        <svg
+          width={Math.round(boyut * olcek)}
+          height={Math.round(boyut * olcek)}
+          viewBox={mikro ? "0 0 16 16" : "0 0 256 256"}
+        >
+          <path d={mikro ? MIKRO_B_YOLU : B_YOLU} fill={MARKA_PALETI.beyaz} />
+          <path d={mikro ? MIKRO_ELMAS_YOLU : ELMAS_YOLU} fill={MARKA_PALETI.safran} />
+        </svg>
       </div>
     ),
     { width: boyut, height: boyut },

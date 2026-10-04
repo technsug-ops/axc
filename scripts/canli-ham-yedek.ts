@@ -29,6 +29,7 @@ import { put } from "@vercel/blob";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
+import { UYGULAMA } from "../src/lib/uygulama";
 import { canliYapilandirma, parolayiTemizle } from "./canli-ortak";
 
 const KLASOR = "yedek";
@@ -90,7 +91,7 @@ async function main() {
 
     const an = new Date();
     const dosya = {
-      bicim: "selliora-ham-yedek",
+      bicim: `${UYGULAMA.teknikAd}-ham-yedek`,
       surum: 1,
       olusturulmaAni: an.toISOString(),
       aciklama:

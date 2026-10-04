@@ -1,6 +1,7 @@
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { dosyaHedefi } from "../src/lib/yedek-hedefi";
+import { gunlukYedekAdi } from "../src/lib/yedek-bicim";
 
 /**
  * ============================================================================
@@ -63,7 +64,7 @@ async function main() {
   const yedek = await yedekUret(an, true);
   const icerik = yedegiMetneCevir(yedek);
   const hedef = dosyaHedefi(KOK);
-  const ad = `yedek/selliora-${gun}.json`;
+  const ad = `yedek/${gunlukYedekAdi(gun)}`;
   const { adres } = await hedef.yaz(ad, icerik);
 
   const boyut = Buffer.byteLength(icerik, "utf8");

@@ -1,6 +1,7 @@
 // Veritabanına dokunan `yedek.ts` DEĞİL, sabitleri taşıyan `yedek-bicim.ts`
 // kullanılıyor: bu dosya geri yükleme ekranından (istemci) da içe aktarılıyor
 // ve Prisma istemcisinin tarayıcı paketine sızmaması gerekiyor.
+import { TANINAN_YEDEK_BICIMLERI } from "@/lib/yedek-bicim";
 import {
   YEDEK_SURUMU,
   YEDEK_TABLOLARI,
@@ -26,7 +27,7 @@ import {
 export type CozumHatasi =
   /** Dosya JSON bile değil. */
   | { kod: "JSON_DEGIL"; ayrinti: string }
-  /** JSON ama Selliora yedeği değil (bicim alanı tutmuyor). */
+  /** JSON ama bu uygulamanın yedeği değil (bicim alanı tanınmıyor — güncel ya da eski ad). */
   | { kod: "YEDEK_DEGIL" }
   /** Dosya bu sürümden YENİ — okumaya kalkmak veri bozar. */
   | { kod: "SURUM_YENI"; dosyaSurumu: number; desteklenen: number }
@@ -63,7 +64,7 @@ export function yedegiCoz(metin: string): CozumSonucu {
   }
 
   const nesne = ham as Record<string, unknown>;
-  if (nesne.bicim !== "selliora-yedek") {
+  if (typeof nesne.bicim !== "string" || !TANINAN_YEDEK_BICIMLERI.includes(nesne.bicim)) {
     return { tamam: false, hata: { kod: "YEDEK_DEGIL" } };
   }
 
@@ -91,7 +92,7 @@ export function yedegiCoz(metin: string): CozumSonucu {
   return {
     tamam: true,
     yedek: {
-      bicim: "selliora-yedek",
+      bicim: nesne.bicim,
       surum,
       olusturulmaAni:
         typeof nesne.olusturulmaAni === "string" ? nesne.olusturulmaAni : "",

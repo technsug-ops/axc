@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { TEKNIK_ADLAR, UYGULAMA } from "@/lib/uygulama";
 import { CheckCircle2, Download, RotateCcw, Search, TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -90,7 +91,10 @@ export function GeriYuklemeAkisi({
     kod === "JSON_DEGIL"
       ? t("hataJsonDegil")
       : kod === "YEDEK_DEGIL"
-        ? t("hataYedekDegil")
+        ? t("hataYedekDegil", {
+            uygulama: UYGULAMA.ad,
+            onekler: TEKNIK_ADLAR.map((a) => `${a}-`).join(", "),
+          })
         : kod === "SURUM_YENI"
           ? t("hataSurumYeni")
           : kod === "TABLO_YOK"

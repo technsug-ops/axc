@@ -1,3 +1,4 @@
+import { UYGULAMA } from "../src/lib/uygulama";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -108,7 +109,7 @@ console.log("§1 SAF GÖVDE — hatırlanan adres güvenli mi");
      * onu ELEMEK zorunda. Tarayıcı yok, o yüzden gövdeyi doğrudan sınamak
      * için `globalThis.window` taklit ediliyor.
      */
-    const sahte: Record<string, string> = { ["selliora:liste:/satislar"]: deger };
+    const sahte: Record<string, string> = { [`${UYGULAMA.teknikAd}:liste:/satislar`]: deger };
     (globalThis as unknown as { window: unknown }).window = {
       sessionStorage: {
         getItem: (k: string) => sahte[k] ?? null,

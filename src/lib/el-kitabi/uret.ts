@@ -1,4 +1,5 @@
 import { EL_KITABI_BICEMI } from "./bicem";
+import { UYGULAMA } from "@/lib/uygulama";
 import { elKitabiGovdesi } from "./icerik";
 import { elKitabiVerisi } from "./veri";
 
@@ -22,7 +23,7 @@ export async function elKitabiTekDosya(uretimTarihi: string): Promise<string> {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Selliora Kullanıcı El Kitabı</title>
+<title>${UYGULAMA.ad} Kullanıcı El Kitabı</title>
 <style>
 html,body{margin:0;padding:0}
 body{background:#EEF2EE}

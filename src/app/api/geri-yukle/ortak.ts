@@ -1,6 +1,7 @@
 import { get } from "@vercel/blob";
 
 import { yedegiCoz, type CozumSonucu } from "@/lib/geri-yukle";
+import { GERI_YUKLENEBILIR_YEDEK_KALIBI } from "@/lib/yedek-bicim";
 
 /**
  * ============================================================================
@@ -21,7 +22,7 @@ import { yedegiCoz, type CozumSonucu } from "@/lib/geri-yukle";
  */
 
 /** İndirme ucuyla AYNI kalıp — yalnız `yedek/` klasöründeki bilinen adlar. */
-export const AD_KALIBI = /^(selliora|guvenlik)-[\w:.-]+\.json$/;
+export const AD_KALIBI = GERI_YUKLENEBILIR_YEDEK_KALIBI;
 
 export type KaynakSonucu =
   | { tamam: true; metin: string; kaynakAdi: string }

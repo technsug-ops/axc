@@ -12,18 +12,27 @@
  *  ⚠ BU KOPYA BEKÇİYE BAĞLI. Yorumda duran bir karar sessizce çürür:
  *  22.08.2026'da çizgi rengi kararı tam böyle çürüdü — palet değişti,
  *  gerekçe olduğu gibi kaldı, kimse fark etmedi. `scripts/pwa-dogrula.ts`
- *  aşağıdaki değerleri `src/styles/selliora-*.css` içindeki `--se-kabuk` ve
+ *  aşağıdaki değerleri `src/styles/tema-*.css` içindeki `--se-kabuk` ve
  *  `--se-kabuk-ink` ile KARŞILAŞTIRIR; ayrışırsa kırmızı yanar.
  * ============================================================================
  */
 
+import { UYGULAMA } from "@/lib/uygulama";
+
+/**
+ * Tema tercihinin tarayıcı anahtarı. Burada durur çünkü İKİ yer okur:
+ * `tema-secici.tsx` (istemci) ve `layout.tsx`teki ilk boyama betiği
+ * (sunucuda yazılır). İstemci bileşeninden sunucuya sabit aktarılamaz.
+ */
+export const TEMA_ANAHTARI = `${UYGULAMA.teknikAd}-tema`;
+
 /** Tema başına kabuk (sol menü / sistem çubuğu) zemini. */
 export const KABUK_RENKLERI = {
-  /** `selliora-kobalt.css` → `--se-kabuk` */
+  /** `tema-kobalt.css` → `--se-kabuk` */
   kobalt: "#12356B",
-  /** `selliora-gece.css` → `--se-kabuk` */
+  /** `tema-gece.css` → `--se-kabuk` */
   gece: "#08101E",
-  /** `selliora-kagit.css` → `--se-kabuk` */
+  /** `tema-kagit.css` → `--se-kabuk` */
   kagit: "#3A2E24",
 } as const;
 

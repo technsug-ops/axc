@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { UYGULAMA } from "@/lib/uygulama";
 import { Check, Share2, X } from "lucide-react";
 
 import {
@@ -173,16 +174,16 @@ export function UcKanalStokGonderim({ variantId }: { variantId: string }) {
   /* ── Önizleme satırları (gönderimden ÖNCE) ── */
   const onizlemeSatirlari = (o: Onizlemeler) => [
     o.ty.tamam
-      ? satir(DURUM_YAZISI.notr, t("onizleme", { kanal: "Trendyol", stok: bicim.sayi(o.ty.selioraStok), kanalda: kanalAdet(o.ty.kanalAdet) }))
+      ? satir(DURUM_YAZISI.notr, t("onizleme", { uygulama: UYGULAMA.ad, kanal: "Trendyol", stok: bicim.sayi(o.ty.sistemStogu), kanalda: kanalAdet(o.ty.kanalAdet) }))
       : satir(DURUM_YAZISI.uyari, t("atlandi", { kanal: "Trendyol", sebep: tTy(TY_ONIZLEME_HATA[o.ty.kod]) })),
     o.n11.tamam
-      ? satir(DURUM_YAZISI.notr, t("onizleme", { kanal: "N11", stok: bicim.sayi(o.n11.selioraStok), kanalda: kanalAdet(o.n11.kanalAdet) }))
+      ? satir(DURUM_YAZISI.notr, t("onizleme", { uygulama: UYGULAMA.ad, kanal: "N11", stok: bicim.sayi(o.n11.sistemStogu), kanalda: kanalAdet(o.n11.kanalAdet) }))
       : satir(DURUM_YAZISI.uyari, t("atlandi", { kanal: "N11", sebep: tN11(N11_ONIZLEME_HATA[o.n11.kod]) })),
     !o.hb.tamam
       ? satir(DURUM_YAZISI.uyari, t("atlandi", { kanal: "Hepsiburada", sebep: tHb(HB_ONIZLEME_HATA[o.hb.kod]) }))
       : o.hb.canliKapali
         ? satir(DURUM_YAZISI.uyari, t("atlandi", { kanal: "Hepsiburada", sebep: tHb("canliKapali") }))
-        : satir(DURUM_YAZISI.notr, t("onizleme", { kanal: "Hepsiburada", stok: bicim.sayi(o.hb.selioraStok), kanalda: kanalAdet(o.hb.kanalAdet) })),
+        : satir(DURUM_YAZISI.notr, t("onizleme", { uygulama: UYGULAMA.ad, kanal: "Hepsiburada", stok: bicim.sayi(o.hb.sistemStogu), kanalda: kanalAdet(o.hb.kanalAdet) })),
   ];
 
   /* ── Sonuç satırları (gönderimden SONRA) ── */
@@ -231,7 +232,7 @@ export function UcKanalStokGonderim({ variantId }: { variantId: string }) {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("baslik")}</AlertDialogTitle>
-          <AlertDialogDescription>{sonuc === null ? t("aciklama") : null}</AlertDialogDescription>
+          <AlertDialogDescription>{sonuc === null ? t("aciklama", { uygulama: UYGULAMA.ad }) : null}</AlertDialogDescription>
         </AlertDialogHeader>
 
         {sonuc !== null ? (

@@ -1,6 +1,7 @@
 import { izYaz } from "@/lib/iz";
 import { apiIzni } from "@/lib/yetki";
 import { get } from "@vercel/blob";
+import { INDIRILEBILIR_YEDEK_KALIBI } from "@/lib/yedek-bicim";
 
 /**
  * ============================================================================
@@ -24,13 +25,14 @@ export const dynamic = "force-dynamic";
 
 /**
  * İki ad kalıbı, başka hiçbir şey:
- *   selliora-2026-08-10.json            gece yedeği
+ *   bezirga-2026-10-05.json             gece yedeği (eski adı
+ *   selliora-2026-08-10.json            da indirilebilir — 04.10.2026)
  *   guvenlik-2026-08-12T09-30-00-000Z.json   geri yükleme öncesi güvenlik
  *
  * Güvenlik yedeği indirilebilir OLMALI: geri yüklemeden önceki hâle dönmek
  * isteyen kullanıcı o dosyaya ulaşamazsa, güvenlik yedeği güvenlik sağlamaz.
  */
-const AD_KALIBI = /^(selliora-\d{4}-\d{2}-\d{2}|guvenlik-[\dTZ:.-]+)\.json$/;
+const AD_KALIBI = INDIRILEBILIR_YEDEK_KALIBI;
 
 export async function GET(istek: Request) {
   const red = await apiIzni("veri.aktar");

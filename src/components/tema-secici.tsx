@@ -5,7 +5,7 @@ import { FileText, Moon, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
-import { KABUK_RENKLERI } from "@/lib/marka/renkler";
+import { KABUK_RENKLERI, TEMA_ANAHTARI } from "@/lib/marka/renkler";
 import {
   Tooltip,
   TooltipContent,
@@ -59,7 +59,6 @@ export function sonrakiTema(tema: Tema): Tema {
   return TEMALAR[(i + 1) % TEMALAR.length];
 }
 
-export const TEMA_ANAHTARI = "selliora-tema";
 
 /**
  * Temayı belgeye uygular.

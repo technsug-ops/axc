@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { UYGULAMA } from "@/lib/uygulama";
 
 import { izYaz } from "@/lib/iz";
 import { apiIzni } from "@/lib/yetki";
@@ -44,7 +45,7 @@ export async function GET(
     /** TOPLU İNDİRME İZİ (02.10.2026): «tümü» bütün listeleri tek dosyada verir. */
     await izYaz({ action: "TOPLU_INDIRME", targetType: "DisaAktarma", targetId: "tumu", detail: JSON.stringify({ tur: "tumu", listeSayisi: LISTELER.length }) });
     return new Response(new Uint8Array(icerik), {
-      headers: indirmeBasliklari(`${t("tumDosyaAdi")}.xlsx`),
+      headers: indirmeBasliklari(`${UYGULAMA.teknikAd}-${t("tumDosyaAdi")}.xlsx`),
     });
   }
 
