@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { TriangleAlert } from "lucide-react";
+import { CircleCheck, TriangleAlert } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { kullaniciVarMi, oturumdakiKullanici } from "@/lib/oturum";
@@ -21,9 +21,9 @@ export async function generateMetadata() {
 export default async function GirisSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ devam?: string; kurulum?: string }>;
+  searchParams: Promise<{ devam?: string; kurulum?: string; parola?: string }>;
 }) {
-  const { devam, kurulum } = await searchParams;
+  const { devam, kurulum, parola } = await searchParams;
   const t = await getTranslations("Giris");
 
   // OTURUM_SIRRI yoksa giriş çalışamaz; sebebi ekranda yazar (İlke #5).
@@ -73,7 +73,16 @@ export default async function GirisSayfasi({
           </div>
         ) : (
           <Card>
-            <CardContent>
+            <CardContent className="space-y-3">
+              {/* Parola değiştirme eylemi buraya `?parola=degisti` ile gönderir;
+                  okuyan yer yoktu ve kullanıcı neden yeniden giriş istendiğini
+                  bilmiyordu (05.10.2026, İlke #5). */}
+              {parola === "degisti" ? (
+                <p role="status" className={`flex items-start gap-2 rounded-lg p-3 text-sm ${DURUM_KUTUSU.olumlu} ${DURUM_YAZISI.olumlu}`}>
+                  <CircleCheck className="mt-0.5 size-4 shrink-0" />
+                  {t("parolaDegistiBilgi")}
+                </p>
+              ) : null}
               <GirisFormu devam={devam ?? ""} />
             </CardContent>
           </Card>

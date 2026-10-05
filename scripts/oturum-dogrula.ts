@@ -18,7 +18,7 @@
  * ============================================================================
  */
 
-import { readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -30,7 +30,7 @@ import { parolaDogrula, parolaOzetle, parolaYeterliMi } from "../src/lib/parola"
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 4;
+const BOLUM_SAYISI = 5;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -196,6 +196,37 @@ async function main() {
       kapali.filter((y) => y.startsWith("/api")),
     );
     kosanBolumler.push("tarama");
+  }
+
+  {
+    /**
+     * ⑤ PAROLA DEĞİŞİMİ ÇIKIŞ GİBİ BİTER (05.10.2026, kullanıcı bulgusu).
+     * Sürüm artışı jetonu geçersiz kılıyordu ama çerez duruyordu; Next.js
+     * çerez değişmeyen eylemden sonra layout'u yeniden çizmediği için giriş
+     * formu ESKİ MENÜNÜN içinde açıldı. Ve eylemin gönderdiği `?parola=degisti`
+     * bilgisini okuyan yer yoktu.
+     * Sunucu eylemi buradan çağrılamaz → kaynak taranır (son çare): YORUMSUZ
+     * kod, eylemin KENDİ gövdesine daraltılmış, sıra ölçülmeden önce iki
+     * parçanın VARLIĞI ayrı kapılanır (`indexOf` -1 tuzağı).
+     */
+    console.log("\n⑤ PAROLA DEĞİŞİMİ ÇIKIŞ GİBİ BİTER");
+    const yorumsuz = (k: string) =>
+      k.replace(/\r/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const eylem = yorumsuz(readFileSync("src/app/parola-degistir/actions.ts", "utf8"));
+    const bas = eylem.indexOf("export async function parolamiDegistir(");
+    const govde = bas >= 0 ? eylem.slice(bas) : "";
+    const iKapat = govde.indexOf("await oturumKapat();");
+    const iYonlen = govde.indexOf('redirect("/giris?parola=degisti");');
+    kontrol("eylem gövdesi bulundu", bas >= 0);
+    kontrol("  ...çerezi siler (`await oturumKapat();`)", iKapat >= 0);
+    kontrol("  ...giriş ekranına bilgiyle döner", iYonlen >= 0);
+    kontrol("  ...çerez YÖNLENDİRMEDEN ÖNCE silinir", iKapat >= 0 && iYonlen >= 0 && iKapat < iYonlen);
+    const giris = yorumsuz(readFileSync("src/app/giris/page.tsx", "utf8"));
+    kontrol(
+      "giriş ekranı `?parola=degisti`yi okur ve bilgiyi yazar",
+      /parola === "degisti" \? \([\s\S]{0,400}?t\("parolaDegistiBilgi"\)/.test(giris),
+    );
+    kosanBolumler.push("parola-degisimi");
   }
 
   console.log("");

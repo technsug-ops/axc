@@ -2048,6 +2048,7 @@
   },
   "Giris": {
     "altBaslik": "Devam etmek için giriş yapın",
+    "parolaDegistiBilgi": "Parolanız değişti. Güvenliğiniz için bütün oturumlarınız kapatıldı; yeni parolanızla giriş yapın.",
     "eposta": "E-posta",
     "epostaIpucu": "örn. ad@firma.com",
     "parola": "Parola",
