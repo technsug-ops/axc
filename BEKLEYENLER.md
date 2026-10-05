@@ -13,6 +13,16 @@
 
 ---
 
+## 🔶 K319 — GEÇİCİ PAROLAYLA GİREN KİŞİ PANELE DÜŞÜYORDU (ZORUNLU PAROLA DEĞİŞİMİ ATLANIYORDU) · 05.10.2026 · [YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı bulgusu (deneme, yeni firma TechNS):** «firma kuruldu ama şifre yenilenme istemedi». Ölçüldü: yönetici 14:10'da girdi, `mustChangePassword` HÂLÂ `true`; dünkü TST1'de de aynısı (fark edilmemiş).
+**KÖK:** zorunlu parola değişimi sayfa kapılarının (`sayfaIzni` · `sayfaGirisi` · `sayfaTamYetki`) içinde yaşıyor; Panel «girişi olan herkes görür» gerekçesiyle KAPISIZ beyanlıydı ve yalnız `izinVarMi` çağırıyordu. Girişten sonra ilk açılan sayfa panel → parola ekranı hiç gelmiyordu (menüden başka sayfaya tıklayınca geliyordu). **Canlıda da aynı kod** — `main`de düzeltildi. _(Anayasa: «ilke kendi kapsamının dışına uygulanırsa hatayı korur».)_
+**Düzeltme:** Panel `sayfaGirisi()` kapısından geçer (izin istemez, niyet aynı); kapısız sayfa istisnalarından ÇIKTI.
+**Bekçi açığı da kapandı:** `yetki:dogrula` `izinVarMi`yi kapı sayıyordu → panel kapısını silen mutasyon YEŞİL geçti. Yeni ölçüt: istisna olmayan her sayfa, gövdesi `redirect("/parola-degistir")` taşıyan bir kapıyı (modülden TÜRETİLİR, elle liste yok; taban ≥3) yorumsuz kodda çağırır. Mutasyonlar: panel kapısı silindi · kapının içindeki yönlendirme silindi (taban 2'ye düştü, panel + menü kırmızı) · kapı yalnız yorumda — üçü de KIRMIZI. Ölçüldü: bugün başka açık sayfa yok (kapısız yalnız giriş · parola değiştir · çevrimdışı, üçü beyanlı).
+**Halil testi (deploy sonrası, canlı):** ① Kullanıcılar ekranından bir kullanıcının parolasını sıfırlayın (yeni parola verin) · ② o kullanıcıyla `bezirga.com`'a girin → Panel DEĞİL «Parolanızı değiştirin» ekranı açılmalı · ③ yeni parolayı koyun → Panel açılır · ④ deneme kurulumunda TechNS yöneticisiyle yeniden girin → aynı şekilde parola ekranı.
+
+---
+
 ## 🔶 K318 — UYGULAMA ADI «SELLIORA» → «BEZIRGA» + ADIN KODA GÖMÜLMESİ YASAĞI · 04.10.2026 · [YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı kararı 04.10.2026:** ürün adı «Bezirga»; logo «Bezirga Vektör Paketi 1.0»dan birebir (`src/lib/marka/cizim.tsx`).

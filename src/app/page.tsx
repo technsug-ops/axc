@@ -142,7 +142,7 @@ import {
   analizAdresi as urunAnaliziAdresi,
   yogunlasmaAdresi,
 } from "@/lib/rapor/urun-analizi";
-import { izinVarMi } from "@/lib/yetki";
+import { izinVarMi, sayfaGirisi } from "@/lib/yetki";
 import {
   bandinVaryantlari,
   siralamaGecerliMi,
@@ -272,6 +272,13 @@ export default async function AnaSayfa({
     kiyas?: string;
   }>;
 }) {
+  // ⛔ GİRİŞ KAPISI (05.10.2026, kullanıcı bulgusu). Panel «girişi olan herkes
+  // görür» gerekçesiyle KAPISIZ beyanlıydı; ama zorunlu parola değişimi
+  // kapıların içinde yaşıyor ve girişten sonra ilk açılan sayfa panel
+  // olduğu için geçici parolayla giren kişi parolasını değiştirmeden
+  // panele düşüyordu. Niyet aynı (izin istemez), kapı `sayfaGirisi`.
+  await sayfaGirisi();
+
   // PANEL HERKESE AÇIK ama NET DEĞİL. 13.08.2026'da kullanıcı yakaladı:
   // satış listesinde marj gizliydi, panelde TOPLU görünüyordu.
   // `satis.kar.gor` NET KAVRAMINI yönetir — nerede görünürse orada.
