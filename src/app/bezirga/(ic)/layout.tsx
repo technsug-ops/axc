@@ -1,7 +1,7 @@
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Building2 } from "lucide-react";
+import { Building2, Mail } from "lucide-react";
 
 import { CikisButonu } from "@/components/cikis-butonu";
 import { UYGULAMA } from "@/lib/uygulama";
@@ -27,6 +27,10 @@ export default async function YonetimKabugu({ children }: { children: React.Reac
           <Link href={`${YONETIM_YOLU}/firmalar`} className="hover:bg-muted flex min-h-11 items-center gap-1.5 rounded-md px-3 underline-offset-4 hover:underline">
             <Building2 className="size-4" />
             {t("firmalar")}
+          </Link>
+          <Link href={`${YONETIM_YOLU}/eposta`} className="hover:bg-muted flex min-h-11 items-center gap-1.5 rounded-md px-3 underline-offset-4 hover:underline">
+            <Mail className="size-4" />
+            {t("gidenEpostalar")}
           </Link>
         </nav>
         <div className="ml-auto">

@@ -8,12 +8,16 @@ import { getTranslations } from "next-intl/server";
 import {
   firmaAc,
   firmaAcilisiniTamamla,
-  firmaDurumunuDegistir,
   type FirmaAcilisHatasi,
 } from "@/lib/firma-acilisi";
 import { firmaAdiniDegistir, firmaKullanicisininParolasiniSifirla } from "@/lib/firma-karti";
 import { uyelikDurumunuDegistir } from "@/lib/kullanici-uyeligi";
 import { yonetimEylemi } from "@/lib/yonetim-oturumu";
+import { askiyaAl, askiyiKaldir, firmaYoneticiEpostalari, uyariBaslat, uyariKaldir, UYARI_EN_AZ_GUN, UYARI_EN_COK_GUN } from "@/lib/aski-sureci";
+import { bicimlendirici } from "@/lib/bicim";
+import { epostaGonder, type EpostaTuru } from "@/lib/eposta";
+import { sistemPrisma } from "@/lib/prisma";
+import { UYGULAMA } from "@/lib/uygulama";
 
 /**
  * FİRMA YÖNETİMİ EYLEMLERİ (K303 4c-2). Her eylem yönetim kapısından geçer;
@@ -64,14 +68,135 @@ export async function kurulumuTamamla(_onceki: YeniFirmaDurumu, formData: FormDa
   return { durum: "ACILDI", kod: sonuc.kod, yoneticiEposta: sonuc.yoneticiEposta, yeniKullanici: sonuc.yeniKullanici, geciciParola: sonuc.geciciParola };
 }
 
+/**
+ * Listedeki «Aktifleştir» — ASKIYI KALDIRIR (yöneticilere e-posta gider).
+ * ⚠ 05.10.2026: sebepsiz pasife alma KALKTI; pasife alma yalnız firma
+ * kartındaki «Askı süreci»nden, sebeple (`askiyaAlEylemi`).
+ */
 export async function firmaDurumu(firmaId: string, aktif: boolean): Promise<{ hata?: string; tamam?: string }> {
   const t = await getTranslations("Yonetim");
   const k = await yonetimEylemi();
   if (!k) return { hata: t(HATA_ANAHTARI.YETKISIZ) };
-  const sonuc = await firmaDurumunuDegistir(firmaId, aktif, k.id);
+  if (!aktif) return { hata: t("hataSebepGerekli") };
+  const sonuc = await askiyiKaldir(firmaId, k.id);
   revalidatePath(`${YONETIM_YOLU}/firmalar`);
+  revalidatePath(`${YONETIM_YOLU}/firmalar/${firmaId}`);
   if (sonuc.durum === "HATA") return { hata: t(sonuc.hata === "YARIM_KURULUM" ? "hataYarimKurulum" : "hataFirmaYok") };
-  return { tamam: t(aktif ? "aktiflestirildi" : "pasifeAlindi") };
+  const e = await yoneticilereBildir(firmaId, "ASKI_KALDIRILDI", {}, k.id);
+  return { tamam: `${t("aktiflestirildi")} ${epostaOzeti(t, e)}` };
+}
+
+/* ═══ ASKI SÜRECİ (kullanıcı kararı 05.10.2026: uyarı → süre → onaylı askı) ═══ */
+
+export type AskiEylemDurumu = { hatalar?: string[]; tamam?: string };
+
+const SEBEP_HATA_ANAHTARI: Record<string, string> = {
+  SEBEP_GECERSIZ: "hataSebepGecersiz",
+  ACIKLAMA_ZORUNLU: "hataAciklamaZorunlu",
+  ACIKLAMA_UZUN: "hataAciklamaUzun",
+  GUN_GECERSIZ: "hataGunGecersiz",
+  FIRMA_YOK: "hataFirmaYok",
+  FIRMA_AKTIF_DEGIL: "hataFirmaAktifDegil",
+  YARIM_KURULUM: "hataYarimKurulum",
+  SEBEP_YOK: "hataSebepGerekli",
+  UYARI_YOK: "hataUyariYok",
+};
+
+type EpostaOzet = { gonderilen: number; gonderilemeyen: number; ayarYok: boolean; aliciYok: boolean };
+
+/** Bildirim metni sözlükten; alıcı firmanın aktif tam yetkili üyeleri. Fırlatmaz. */
+async function yoneticilereBildir(
+  firmaId: string,
+  tur: EpostaTuru,
+  d: { sebep?: string; aciklama?: string | null; sonGun?: Date },
+  yapanId: string,
+): Promise<EpostaOzet> {
+  const te = await getTranslations("EpostaAski");
+  const ts = await getTranslations("AskiSebebi");
+  const bicim = await bicimlendirici();
+  // SISTEM: bildirimde firmanın adı.
+  const firma = await sistemPrisma.company.findUnique({ where: { id: firmaId }, select: { name: true } });
+  const alicilar = await firmaYoneticiEpostalari(firmaId);
+  const degerler = {
+    uygulama: UYGULAMA.ad,
+    firma: firma?.name ?? "",
+    sebep: d.sebep ? ts(d.sebep) : "",
+    aciklama: d.aciklama ?? "",
+    tarih: d.sonGun ? bicim.tarih(d.sonGun) : "",
+  };
+  let gonderilen = 0;
+  let gonderilemeyen = 0;
+  let ayarYok = false;
+  for (const kime of alicilar) {
+    const s = await epostaGonder({ kime, konu: te(`${tur}.konu`, degerler), metin: te(`${tur}.metin`, degerler), tur, firmaId, yapanId });
+    if (s.durum === "GONDERILDI") gonderilen++;
+    else if (s.durum === "AYAR_YOK") ayarYok = true;
+    else gonderilemeyen++;
+  }
+  return { gonderilen, gonderilemeyen, ayarYok, aliciYok: alicilar.length === 0 };
+}
+
+function epostaOzeti(t: Awaited<ReturnType<typeof getTranslations>>, e: EpostaOzet): string {
+  if (e.aliciYok) return t("epostaAliciYok");
+  if (e.ayarYok) return t("epostaAyarYok");
+  return e.gonderilemeyen > 0
+    ? t("epostaKismen", { gonderilen: e.gonderilen, gonderilemeyen: e.gonderilemeyen })
+    : t("epostaGitti", { sayi: e.gonderilen });
+}
+
+export async function uyariBaslatEylemi(_onceki: AskiEylemDurumu, formData: FormData): Promise<AskiEylemDurumu> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hatalar: [t(HATA_ANAHTARI.YETKISIZ)] };
+  const firmaId = String(formData.get("firmaId") ?? "");
+  try {
+    const aciklama = String(formData.get("aciklama") ?? "");
+    const r = await uyariBaslat(firmaId, { sebep: String(formData.get("sebep") ?? ""), aciklama, gun: Number(formData.get("gun")) }, k.id);
+    if (r.durum === "HATA") return { hatalar: [t(SEBEP_HATA_ANAHTARI[r.hata] ?? "hataKaydedilemedi", { enAz: UYARI_EN_AZ_GUN, enCok: UYARI_EN_COK_GUN })] };
+    revalidatePath(`${YONETIM_YOLU}/firmalar`);
+    revalidatePath(`${YONETIM_YOLU}/firmalar/${firmaId}`);
+    const e = await yoneticilereBildir(firmaId, "ASKI_UYARI", { sebep: r.sebep, aciklama, sonGun: r.sonGun }, k.id);
+    return { tamam: `${t("uyariBasladi")} ${epostaOzeti(t, e)}` };
+  } catch (hata) {
+    console.error("[aski uyari] beklenmeyen hata:", hata);
+    return { hatalar: [t("hataKaydedilemedi")] };
+  }
+}
+
+export async function uyariKaldirEylemi(firmaId: string): Promise<{ hata?: string; tamam?: string }> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hata: t(HATA_ANAHTARI.YETKISIZ) };
+  try {
+    const r = await uyariKaldir(firmaId, k.id);
+    if (r.durum === "HATA") return { hata: t(SEBEP_HATA_ANAHTARI[r.hata]) };
+    revalidatePath(`${YONETIM_YOLU}/firmalar`);
+    revalidatePath(`${YONETIM_YOLU}/firmalar/${firmaId}`);
+    const e = await yoneticilereBildir(firmaId, "ASKI_UYARI_KALDIRILDI", {}, k.id);
+    return { tamam: `${t("uyariKaldirildi")} ${epostaOzeti(t, e)}` };
+  } catch (hata) {
+    console.error("[aski uyari kaldir] beklenmeyen hata:", hata);
+    return { hata: t("hataKaydedilemedi") };
+  }
+}
+
+export async function askiyaAlEylemi(_onceki: AskiEylemDurumu, formData: FormData): Promise<AskiEylemDurumu> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hatalar: [t(HATA_ANAHTARI.YETKISIZ)] };
+  const firmaId = String(formData.get("firmaId") ?? "");
+  try {
+    const aciklama = String(formData.get("aciklama") ?? "");
+    const r = await askiyaAl(firmaId, { sebep: String(formData.get("sebep") ?? ""), aciklama }, k.id);
+    if (r.durum === "HATA") return { hatalar: [t(SEBEP_HATA_ANAHTARI[r.hata] ?? "hataKaydedilemedi")] };
+    revalidatePath(`${YONETIM_YOLU}/firmalar`);
+    revalidatePath(`${YONETIM_YOLU}/firmalar/${firmaId}`);
+    const e = await yoneticilereBildir(firmaId, "ASKI_BASLADI", { sebep: r.sebep, aciklama }, k.id);
+    return { tamam: `${t("pasifeAlindi")} ${epostaOzeti(t, e)}` };
+  } catch (hata) {
+    console.error("[aski] beklenmeyen hata:", hata);
+    return { hatalar: [t("hataKaydedilemedi")] };
+  }
 }
 
 /* ═══ FİRMA KARTI (süper admin ① — 05.10.2026) ═══════════════════════════ */

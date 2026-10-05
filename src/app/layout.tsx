@@ -36,6 +36,7 @@ import { UyariCani } from "@/components/uyari-cani";
 import { UYGULAMA } from "@/lib/uygulama";
 import { denemeOrtamiMi } from "@/lib/deneme-ortami";
 import { DURUM_ZEMINI } from "@/lib/renkler";
+import { bicimlendirici } from "@/lib/bicim";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -131,6 +132,30 @@ async function denemeSeridiFirmasi(): Promise<string | null> {
   return firma?.name ?? null;
 }
 
+/**
+ * FİRMA UYARI ŞERİDİ (K303 askı süreci, kullanıcı kararı 05.10.2026): firma
+ * uyarıdaysa ya da süresi dolduysa girişli kabuğun HER ekranında üstte durur.
+ * Yalnız üç alan okunur; gün İstanbul gününe göre (`aski-sureci.ts`).
+ */
+async function firmaUyariSeridi(companyId: string): Promise<React.ReactNode> {
+  const { prisma } = await import("@/lib/prisma");
+  const { askiDurumu, bugunIs } = await import("@/lib/aski-sureci");
+  const f = await prisma.company.findUnique({ where: { id: companyId }, select: { isActive: true, uyariSonGun: true, uyariSebebi: true } });
+  if (!f) return null;
+  const d = askiDurumu({ aktif: f.isActive, uyariSonGun: f.uyariSonGun, uyariSebebi: f.uyariSebebi, askiSebebi: null }, bugunIs());
+  if (d.tur !== "UYARIDA" && d.tur !== "SURESI_DOLDU") return null;
+  const tf = await getTranslations("FirmaSeridi");
+  const ts = await getTranslations("AskiSebebi");
+  const bicim = await bicimlendirici();
+  const degerler = { uygulama: UYGULAMA.ad, tarih: bicim.tarih(d.sonGun), sebep: d.sebep ? ts(d.sebep) : "—" };
+  const sonGunGecti = d.tur === "SURESI_DOLDU" || d.kalanGun === 0;
+  return (
+    <div role="alert" className={`px-4 py-2 text-center text-sm font-medium ${sonGunGecti ? DURUM_ZEMINI.olumsuz : DURUM_ZEMINI.uyari}`}>
+      {sonGunGecti ? tf("uyariSeridiBugun", degerler) : tf("uyariSeridi", degerler)}
+    </div>
+  );
+}
+
 export default async function RootLayout({
   children,
 }: {
@@ -201,6 +226,7 @@ export default async function RootLayout({
    */
   const baglam = kullanici ? await yetkiBaglami().catch(() => null) : null;
   const duzen = await menuDuzeni(baglam?.companyId ?? null);
+  const uyariSeridi = baglam ? await firmaUyariSeridi(baglam.companyId) : null;
 
   if (!yonetimKatmani && oturumCerezi && !kullanici) redirect("/cikis");
 
@@ -289,6 +315,7 @@ export default async function RootLayout({
         </head>
       <body>
         {denemeSeridi}
+        {uyariSeridi}
         <SwKayit />
         {/* Sözlük ve biçimler istemci bileşenlerine buradan akıyor. */}
         <NextIntlClientProvider>

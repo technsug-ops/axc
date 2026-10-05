@@ -116,6 +116,12 @@ export async function girisYap(
       userId: null,
       detail: JSON.stringify({ eposta, ip, firmaKodu, sebep: red ?? "HATALI" }),
     });
+    // Askı sebebi (05.10.2026) yalnız FIRMA_ASKIDA dalında — o dal zaten
+    // parola doğru + üyelik var şartından geçti (`girisRedSebebi`).
+    if (red === "FIRMA_ASKIDA" && firma?.askiSebebi) {
+      const ts = await getTranslations("AskiSebebi");
+      return { hatalar: [t("firmaAskidaSebepli", { sebep: ts(firma.askiSebebi) })] };
+    }
     return { hatalar: [t(GIRIS_RED_ANAHTARI[red ?? "HATALI"])] };
   }
 

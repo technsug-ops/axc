@@ -61,6 +61,13 @@ export type FirmaKarti = {
     kanalHesabi: number;
     kullanici: number;
   };
+  /** Askı süreci alanları (05.10.2026) — durum sayfada `askiDurumu` ile hesaplanır. */
+  aski: {
+    uyariSonGun: Date | null;
+    uyariSebebi: string | null;
+    askiSebebi: string | null;
+    aciklama: string | null;
+  };
   ayarlar: {
     maliyetYontemi: string;
     lotKipi: string;
@@ -82,6 +89,10 @@ export async function firmaKarti(firmaId: string): Promise<FirmaKarti | null> {
       maliyetYontemi: true,
       lotKipi: true,
       finansmanCokBirim: true,
+      uyariSonGun: true,
+      uyariSebebi: true,
+      askiSebebi: true,
+      askiAciklama: true,
       _count: {
         select: {
           productListesi: true,
@@ -142,6 +153,7 @@ export async function firmaKarti(firmaId: string): Promise<FirmaKarti | null> {
       kanalHesabi: f._count.channelAccountListesi,
       kullanici: f._count.uyelikler,
     },
+    aski: { uyariSonGun: f.uyariSonGun, uyariSebebi: f.uyariSebebi, askiSebebi: f.askiSebebi, aciklama: f.askiAciklama },
     ayarlar: {
       maliyetYontemi: f.maliyetYontemi,
       lotKipi: f.lotKipi,

@@ -4,6 +4,7 @@ import { firmaIstemcisi } from "@/lib/firma-istemcisi";
 import { firmaKoduNormalle } from "@/lib/oturum-firmasi";
 import { parolaOzetle } from "@/lib/parola";
 import { sistemPrisma } from "@/lib/prisma";
+import type { FirmaAskiSebebi } from "@/generated/prisma/client";
 import { SAHIP_ROLU } from "@/lib/yetki/izinler";
 
 import { giderSeed } from "../../prisma/seed-gider";
@@ -208,21 +209,41 @@ async function kurulumuYurut(firmaId: string, g: FirmaAcilisGirdisi, yapanId: st
 }
 
 /** Firmayı pasife al / yeniden aktifleştir — YARIM kurulum buradan aktifleşmez. */
+/**
+ * Firmanın aktif/pasif durumunun TEK yazıcısı.
+ * ⚠ 05.10.2026 (askı süreci, kullanıcı kararı): pasife alma SEBEPSİZ yapılamaz
+ * — `aski` verilmezse SEBEP_YOK döner. Askı kalkınca (aktif) sebep, açıklama
+ * ve varsa uyarı AYNI işlemde temizlenir; askıya alınınca açık uyarı kapanır.
+ */
 export async function firmaDurumunuDegistir(
   firmaId: string,
   aktif: boolean,
   yapanId: string,
-): Promise<{ durum: "TAMAM" } | { durum: "HATA"; hata: "FIRMA_YOK" | "YARIM_KURULUM" }> {
+  aski?: { sebep: FirmaAskiSebebi; aciklama: string | null },
+): Promise<{ durum: "TAMAM" } | { durum: "HATA"; hata: "FIRMA_YOK" | "YARIM_KURULUM" | "SEBEP_YOK" }> {
   const durum = (await kurulumDurumlari([firmaId])).get(firmaId);
   if (durum === undefined) return { durum: "HATA", hata: "FIRMA_YOK" };
   if (durum === "YARIM") return { durum: "HATA", hata: "YARIM_KURULUM" };
+  if (!aktif && !aski) return { durum: "HATA", hata: "SEBEP_YOK" };
   // SISTEM: yönetim katmanı firmanın durumunu değiştirir; iz aynı işlemde.
   await sistemPrisma.$transaction([
     // SISTEM: firmanın durumu (yönetim katmanı).
-    sistemPrisma.company.update({ where: { id: firmaId }, data: { isActive: aktif } }),
+    sistemPrisma.company.update({
+      where: { id: firmaId },
+      data: aktif
+        ? { isActive: true, askiSebebi: null, askiAciklama: null, uyariSonGun: null, uyariSebebi: null }
+        : { isActive: false, askiSebebi: aski!.sebep, askiAciklama: aski!.aciklama, uyariSonGun: null, uyariSebebi: null },
+    }),
     // SISTEM: iz firmalar-üstü, hedef firma targetId'de.
     sistemPrisma.auditLog.create({
-      data: { action: aktif ? "FIRMA_AKTIFLESTI" : "FIRMA_PASIFE_ALINDI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: null },
+      data: {
+        action: aktif ? "FIRMA_AKTIFLESTI" : "FIRMA_PASIFE_ALINDI",
+        targetType: "Company",
+        targetId: firmaId,
+        userId: yapanId,
+        companyId: null,
+        detail: aktif ? null : JSON.stringify({ sebep: aski!.sebep, aciklama: aski!.aciklama }),
+      },
     }),
   ]);
   return { durum: "TAMAM" };

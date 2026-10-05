@@ -374,4 +374,11 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * harness'iyle ortak) ve yeni satış sayfasını mutasyona uğratıyor.
    */
   "kullanici-uyeligi-mutasyon:kontrol",
+  /**
+   * K303 (05.10.2026) — `aski-sureci` `firma-acilisi.ts`i (firma-acilisi
+   * harness'iyle ortak) ve `eposta.ts`i mutasyona uğratıyor.
+   */
+  "aski-sureci-mutasyon:kontrol",
+  /** K303 (05.10.2026) — `firma-acilisi.ts` aski-sureci harness'iyle ortak. */
+  "firma-acilisi-mutasyon:kontrol",
 ];

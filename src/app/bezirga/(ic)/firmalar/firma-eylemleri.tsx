@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Power, PowerOff, Wrench } from "lucide-react";
 
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { DURUM_YAZISI } from "@/lib/renkler";
+import { YONETIM_YOLU } from "@/lib/oturum-imza";
 
 import { firmaDurumu, kurulumuTamamla, type YeniFirmaDurumu } from "./actions";
 import { AcilisSonucu } from "./acilis-sonucu";
@@ -58,6 +60,21 @@ export function FirmaEylemleri({
   }
 
   const aktiflestir = durum === "PASIF";
+  /**
+   * 05.10.2026 (askı süreci, kullanıcı kararı): sebepsiz «Pasife al» KALKTI —
+   * aktif firmada satır, kartın «Askı süreci» bölümüne götürür (sebep, uyarı,
+   * onay orada). «Aktifleştir» (askıyı kaldır) burada kalır; sebep istemez.
+   */
+  if (!aktiflestir) {
+    return (
+      <Button asChild size="sm" variant="outline" className="min-h-11">
+        <Link href={`${YONETIM_YOLU}/firmalar/${firmaId}#aski`}>
+          <PowerOff />
+          {t("askiSurecineGit")}
+        </Link>
+      </Button>
+    );
+  }
   const uygula = () =>
     gecis(async () => {
       setMesaj(await firmaDurumu(firmaId, aktiflestir));

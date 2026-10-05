@@ -7,7 +7,9 @@ import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { askiDurumu, bugunIs } from "@/lib/aski-sureci";
 import { kurulumDurumlari } from "@/lib/firma-acilisi";
+import { DURUM_YAZISI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
 import { sistemPrisma } from "@/lib/prisma";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
@@ -40,11 +42,12 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
     // SISTEM: yönetim katmanı firmalar-üstüdür — firmaların KAYDI (ticari veri değil).
     sistemPrisma.company.findMany({
       where: arama ? { OR: [{ name: { contains: arama } }, { code: { contains: arama } }] } : {},
-      select: { id: true, name: true, code: true, isActive: true, createdAt: true, _count: { select: { uyelikler: true } } },
+      select: { id: true, name: true, code: true, isActive: true, createdAt: true, uyariSonGun: true, uyariSebebi: true, askiSebebi: true, _count: { select: { uyelikler: true } } },
       orderBy: { createdAt: "asc" },
     }),
   ]);
   const durumlar = await kurulumDurumlari(firmalar.map((f) => f.id));
+  const bugun = bugunIs();
 
   return (
     <div className="max-w-3xl space-y-4">
@@ -78,6 +81,13 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
                     <Badge variant={d === "TAM" ? "secondary" : d === "YARIM" ? "destructive" : "outline"}>
                       {d === "TAM" ? t("aktif") : d === "YARIM" ? t("kurulumYarim") : t("pasif")}
                     </Badge>
+                    {(() => {
+                      // Askı süreci rozeti (05.10.2026) — İstanbul gününe göre.
+                      const a = askiDurumu({ aktif: f.isActive, uyariSonGun: f.uyariSonGun, uyariSebebi: f.uyariSebebi, askiSebebi: f.askiSebebi }, bugun);
+                      if (a.tur === "UYARIDA") return <Badge variant="outline" className={DURUM_YAZISI.uyari}>{a.kalanGun === 0 ? t("durumUyaridaBugun") : t("durumUyarida", { kalan: a.kalanGun })}</Badge>;
+                      if (a.tur === "SURESI_DOLDU") return <Badge variant="destructive">{t("durumSuresiDoldu", { gecen: a.gecenGun })}</Badge>;
+                      return null;
+                    })()}
                     <span className="text-muted-foreground">{t("uyeSayisi", { sayi: f._count.uyelikler })}</span>
                     <span className="text-muted-foreground text-xs">{t("acilis", { tarih: bicim.tarih(f.createdAt) })}</span>
                     <div className="ml-auto flex flex-wrap items-start gap-2">

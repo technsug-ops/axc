@@ -3291,6 +3291,19 @@ model Company {
   /// USD/altın kayıtları GİZLENMEZ (veri saklanmaz, yalnız yeni seçim daralır).
   finansmanCokBirim Boolean @default(false)
 
+  /// ═══ ASKI SÜRECİ (K303, kullanıcı kararı 05.10.2026) ═══════════════════════
+  /// Akış: uyarı → süre → askı (süper admin ONAYIYLA, kendiliğinden değil).
+  /// ⚠ NİYE SÜTUN, İZ DEĞİL: uyarı şeridi firma ekranlarının HER açılışında
+  /// okunur — `AuditLog` current-state deposu değildir (menü düzeni kararıyla
+  /// aynı ölçüt). Sürecin GEÇMİŞİ izden okunur; burada yalnız BUGÜNKÜ hâl.
+  /// `null` = uyarı yok. Askı hâlinin kendisi `isActive=false`tır (değişmedi).
+  uyariSonGun   DateTime?
+  uyariSebebi   FirmaAskiSebebi?
+  /// Askıdaki firmanın sebebi — giriş ekranı ve firma kartı okur. Aktifken null.
+  askiSebebi    FirmaAskiSebebi?
+  /// Sebep «DIGER» ise zorunlu açıklama; öteki sebeplerde isteğe bağlı not.
+  askiAciklama  String?          @db.Text
+
   uyelikler UserCompanyRole[]
   auditLogs AuditLog[]
   talepler  Talep[]
@@ -3966,6 +3979,16 @@ enum MaliyetYontemi {
  * PARTİYİ KİM SEÇER (K115). Maliyet kuralı üçünde de FIFO'dur.
  * ⚠ Yeni değer SONA eklenir — yukarıdaki ENUM sırası kuralı burada da.
  */
+/// Askı/uyarı sebebi — kapalı küme (anayasa: sebepsiz işlem iz bırakmaz;
+/// «diğer» açıklama ister). K303, 05.10.2026.
+enum FirmaAskiSebebi {
+  ODEME_GECIKMESI
+  SOZLESME_IHLALI
+  FIRMA_ISTEGI
+  GUVENLIK
+  DIGER
+}
+
 enum LotKipi {
   /// Seçici gizli — sistem hep en eski partiyi tüketir.
   FIFO

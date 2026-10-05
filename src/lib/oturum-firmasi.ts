@@ -83,12 +83,12 @@ export function girisRedSebebi(g: {
 }
 
 /** Girişte koddan firma — PASİF firma da bulunur (askı sebebini söylemek için). */
-export async function firmaKodundanDurum(kod: string): Promise<{ id: string; aktif: boolean } | null> {
+export async function firmaKodundanDurum(kod: string): Promise<{ id: string; aktif: boolean; askiSebebi: string | null } | null> {
   const temiz = firmaKoduNormalle(kod);
   if (!temiz) return null;
   // SISTEM: girişte firma henüz yok; kod → firma çözümü firmalar-üstüdür.
-  const f = await sistemPrisma.company.findFirst({ where: { code: temiz }, select: { id: true, isActive: true } });
-  return f ? { id: f.id, aktif: f.isActive } : null;
+  const f = await sistemPrisma.company.findFirst({ where: { code: temiz }, select: { id: true, isActive: true, askiSebebi: true } });
+  return f ? { id: f.id, aktif: f.isActive, askiSebebi: f.askiSebebi } : null;
 }
 
 /** Kişinin bu firmadaki üyeliğinin ham durumu — yoksa null. */

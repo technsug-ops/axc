@@ -6,11 +6,14 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { Badge } from "@/components/ui/badge";
 import { bicimlendirici } from "@/lib/bicim";
+import { askiDurumu, bugunIs, surecGecmisi, UYARI_EN_AZ_GUN, UYARI_EN_COK_GUN } from "@/lib/aski-sureci";
 import { firmaKarti } from "@/lib/firma-karti";
+import type { FirmaAskiSebebi } from "@/generated/prisma/client";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
 
 import { FirmaEylemleri } from "../firma-eylemleri";
+import { AskiSureci, type AskiGorunumu } from "./aski-sureci";
 import { FirmaAdiFormu } from "./firma-adi-formu";
 import { KartKullanicilari } from "./kart-kullanicilari";
 
@@ -43,6 +46,20 @@ export default async function FirmaKartiSayfasi({
   const t = await getTranslations("Yonetim");
   const tm = await getTranslations("MaliyetYontemi");
   const bicim = await bicimlendirici();
+  const durum = askiDurumu(
+    {
+      aktif: kart.aktif,
+      uyariSonGun: kart.aski.uyariSonGun,
+      uyariSebebi: kart.aski.uyariSebebi as FirmaAskiSebebi | null,
+      askiSebebi: kart.aski.askiSebebi as FirmaAskiSebebi | null,
+    },
+    bugunIs(),
+  );
+  const askiGorunumu: AskiGorunumu =
+    durum.tur === "UYARIDA" ? { tur: "UYARIDA", kalanGun: durum.kalanGun, sonGun: bicim.tarih(durum.sonGun), sebep: durum.sebep }
+    : durum.tur === "SURESI_DOLDU" ? { tur: "SURESI_DOLDU", gecenGun: durum.gecenGun, sonGun: bicim.tarih(durum.sonGun), sebep: durum.sebep }
+    : durum;
+  const gecmis = await surecGecmisi(kart.id);
   const aranan = arama.toLocaleLowerCase("tr");
   const gorunen = aranan
     ? kart.kullanicilar.filter((k) => `${k.ad ?? ""} ${k.eposta}`.toLocaleLowerCase("tr").includes(aranan))
@@ -102,6 +119,20 @@ export default async function FirmaKartiSayfasi({
             ...k,
             sonGiris: k.sonGiris ? bicim.tarihSaat(k.sonGiris) : null,
           }))}
+        />
+      </section>
+
+      {/* ASKI SÜRECİ (05.10.2026) — uyarı → süre → onaylı askı */}
+      <section id="aski" className="scroll-mt-4 space-y-2">
+        <h2 className="text-lg font-semibold">{t("bolumAski")}</h2>
+        <AskiSureci
+          firmaId={kart.id}
+          firmaAdi={kart.ad}
+          durum={askiGorunumu}
+          aciklama={kart.aski.aciklama}
+          gecmis={gecmis.map((g) => ({ ...g, an: bicim.tarihSaat(g.an) }))}
+          enAzGun={UYARI_EN_AZ_GUN}
+          enCokGun={UYARI_EN_COK_GUN}
         />
       </section>
 
