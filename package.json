@@ -497,6 +497,8 @@
     "saglayici-izni-mutasyon:kontrol": "tsx scripts/saglayici-izni-mutasyon-kontrol.ts",
     "firma-acilisi:dogrula": "tsx scripts/firma-acilisi-dogrula.ts",
     "firma-karti:dogrula": "tsx scripts/firma-karti-dogrula.ts",
+    "kullanici-uyeligi:dogrula": "tsx scripts/kullanici-uyeligi-dogrula.ts",
+    "kullanici-uyeligi-mutasyon:kontrol": "tsx scripts/kullanici-uyeligi-mutasyon-kontrol.ts",
     "firma-karti-mutasyon:kontrol": "tsx scripts/firma-karti-mutasyon-kontrol.ts",
     "firma-acilisi-mutasyon:kontrol": "tsx scripts/firma-acilisi-mutasyon-kontrol.ts",
     "firma-bag:uret": "tsx scripts/firma-bag-tetikleyici-uret.ts prisma/migrations/20261003100500_k303_firma_bag_kapisi/migration.sql"

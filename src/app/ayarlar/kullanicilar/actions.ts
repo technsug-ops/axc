@@ -7,7 +7,8 @@ import { z } from "zod";
 import { EN_AZ_PAROLA_UZUNLUGU, parolaOzetle, parolaYeterliMi } from "@/lib/parola";
 import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
-import { baskaSahipVarMi, baskaSahipVarMiKullanici } from "@/lib/yetki/koruma";
+import { baskaSahipVarMi } from "@/lib/yetki/koruma";
+import { firmaUyeligi, uyelikDurumunuDegistir } from "@/lib/kullanici-uyeligi";
 
 /**
  * ============================================================================
@@ -47,7 +48,7 @@ export async function kullaniciEkle(
   _onceki: KullaniciDurumu,
   formData: FormData,
 ): Promise<KullaniciDurumu> {
-  await yetkiIste("kullanici.yonet");
+  const baglam = await yetkiIste("kullanici.yonet");
   const t = await getTranslations("Kullanici");
 
   const cozum = semaKur(t).safeParse({
@@ -74,12 +75,11 @@ export async function kullaniciEkle(
   });
   if (!rol || !rol.isActive) return { hatalar: [t("rolBulunamadi")] };
 
-  const firma = await prisma.company.findFirst({
-    where: { isActive: true },
-    select: { id: true },
-    orderBy: { createdAt: "asc" },
-  });
-  if (!firma) return { hatalar: [t("firmaYok")] };
+  // K303 (05.10.2026): yeni kişi OTURUMDAKİ firmaya üye olur. Eski hâl
+  // «en eski aktif firma» seçiyordu (`company` firma süzgecinin dışında) —
+  // tek firmada zararsızdı, iki firmada TechNS'in eklediği kişi Axcali'ye
+  // düşerdi. Ayrı bir firma sorgusu artık gereksiz: firma bağlamdan gelir.
+  const firma = { id: baglam.companyId };
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -156,33 +156,26 @@ export async function kullaniciDurumDegistir(
   _onceki: KullaniciDurumu,
   formData: FormData,
 ): Promise<KullaniciDurumu> {
-  await yetkiIste("kullanici.yonet");
+  const baglam = await yetkiIste("kullanici.yonet");
   const t = await getTranslations("Kullanici");
 
   const id = String(formData.get("id") ?? "");
   if (!id) return { hatalar: [t("kayitBulunamadi")] };
 
-  const kullanici = await prisma.user.findUnique({
-    where: { id },
-    select: { isActive: true, email: true },
-  });
-  if (!kullanici) return { hatalar: [t("kayitBulunamadi")] };
-
-  // PASİFE ALMA da kilitleyebilir — aynı koruma.
-  if (kullanici.isActive && !(await baskaSahipVarMiKullanici(id))) {
-    return { hatalar: [t("sonSahipPasif", { eposta: kullanici.email })] };
-  }
-
+  /**
+   * K303 (05.10.2026): YALNIZ BU FİRMADAKİ ÜYELİK pasife alınır/açılır.
+   * ⛔ Eski hâl `User.isActive`i yazıyordu: kişi BÜTÜN firmalarında
+   * kapanıyordu ve kişi kimliğiyle bulunduğu için başka firmanın kişisine
+   * de dokunulabiliyordu. Açık oturum `uyeMi` her istekte üyeliğin
+   * aktifliğini sorduğu için o anda düşer (sürüm artışı gerekmez).
+   */
   try {
-    await prisma.user.update({
-      where: { id },
-      data: {
-        isActive: !kullanici.isActive,
-        // Pasife alınan kullanıcının AÇIK OTURUMLARI da kapanır.
-        // Yoksa jetonu 30 gün daha geçerli kalırdı.
-        ...(kullanici.isActive ? { sessionVersion: { increment: 1 } } : {}),
-      },
-    });
+    const sonuc = await uyelikDurumunuDegistir(baglam.companyId, id, baglam.kullaniciId);
+    if (sonuc.durum === "HATA") {
+      return {
+        hatalar: [sonuc.hata === "SON_SAHIP" ? t("sonSahipPasif", { eposta: sonuc.eposta ?? "" }) : t("kayitBulunamadi")],
+      };
+    }
   } catch (e) {
     console.error("[kullanici durum] beklenmeyen hata:", e);
     return { hatalar: [t("kaydedilemedi")] };
@@ -197,12 +190,15 @@ export async function kullaniciParolaSifirla(
   _onceki: KullaniciDurumu,
   formData: FormData,
 ): Promise<KullaniciDurumu> {
-  await yetkiIste("kullanici.yonet");
+  const baglam = await yetkiIste("kullanici.yonet");
   const t = await getTranslations("Kullanici");
 
   const id = String(formData.get("id") ?? "");
   const parola = String(formData.get("password") ?? "");
   if (!id) return { hatalar: [t("kayitBulunamadi")] };
+  // K303 (05.10.2026): kişi BU firmanın üyesi olmalı; yönetim hesabına dokunulmaz.
+  const uyelik = await firmaUyeligi(baglam.companyId, id);
+  if (!uyelik || uyelik.user.isSuperAdmin) return { hatalar: [t("kayitBulunamadi")] };
   if (!parolaYeterliMi(parola)) {
     return { hatalar: [t("parolaKisa", { uzunluk: EN_AZ_PAROLA_UZUNLUGU })] };
   }

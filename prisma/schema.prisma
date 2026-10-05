@@ -3414,6 +3414,14 @@ model UserCompanyRole {
   /// alınır — bu kısıt o kuralın veritabanı tarafındaki karşılığıdır.
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
+  /// ÜYELİK AKTİFLİĞİ (K303, kullanıcı kararı 05.10.2026). Aktiflik KİŞİDE
+  /// (`User.isActive`) tutuluyordu: bir firmada «pasife al» kişiyi BÜTÜN
+  /// firmalarında kapatıyordu. Firma ekranları artık YALNIZ bu alanı yazar;
+  /// `User.isActive` kişinin tamamen kapatılmasıdır (yönetim katmanının işi).
+  /// Varsayılan true: eklendiği anda kimsenin durumu değişmez (ölçüldü:
+  /// denemede pasif kişi 0, çok firmalı kişi 0).
+  isActive Boolean @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

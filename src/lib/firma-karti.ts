@@ -14,10 +14,11 @@ import { sistemPrisma } from "@/lib/prisma";
  *  ekranlarını görmez» (05.10'da dışa aktarma için yeniden soruldu ve
  *  KORUNDU). Kart tutar/kâr/fiyat okumaz; kayıt sayısı bir HACİM ölçüsüdür.
  *
- *  ⚠ «PASİFE AL» BİLEREK YOK. Aktiflik KİŞİDE (`User.isActive`), üyelikte
- *  değil: firma kartından pasife almak o kişiyi üye olduğu BÜTÜN firmalarda
- *  kapatırdı. Üyelik düzeyinde aktiflik bir migration ister — kullanıcı
- *  kararı bekliyor (BEKLEYENLER K303).
+ *  ⚠ «PASİFE AL» İLK SÜRÜMDE BİLEREK YOKTU: aktiflik KİŞİDEYDİ
+ *  (`User.isActive`) ve firma kartından pasife almak kişiyi BÜTÜN
+ *  firmalarında kapatırdı. ✅ ÇÖZÜLDÜ 05.10.2026 (kullanıcı kararı):
+ *  `UserCompanyRole.isActive` eklendi; kart YALNIZ bu firmadaki üyeliği
+ *  değiştirir (`lib/kullanici-uyeligi.ts`, firma ekranıyla aynı gövde).
  *
  *  ⚠ «SON GİRİŞ» KİŞİNİN, FİRMANIN DEĞİL. `User.lastLoginAt` hangi firmaya
  *  girildiğini tutmaz. Birden çok firmada üye olan kişide ekran bunu YAZAR
@@ -33,7 +34,10 @@ export type KartKullanicisi = {
   ad: string | null;
   eposta: string;
   rol: string;
+  /** Bu firmadaki ÜYELİK aktif mi (pasife alma firma bazında). */
   aktif: boolean;
+  /** Kişi kaydı tamamen kapalı mı (`User.isActive`) — firma kartı bunu değiştirmez. */
+  hesapKapali: boolean;
   sonGiris: Date | null;
   parolaDegismeli: boolean;
   /** Kişinin üye olduğu firma sayısı — 1'den büyükse «son giriş» firmaya özgü değildir. */
@@ -91,6 +95,7 @@ export async function firmaKarti(firmaId: string): Promise<FirmaKarti | null> {
       },
       uyelikler: {
         select: {
+          isActive: true,
           role: { select: { name: true } },
           user: {
             select: {
@@ -122,7 +127,8 @@ export async function firmaKarti(firmaId: string): Promise<FirmaKarti | null> {
       ad: u.user.name,
       eposta: u.user.email,
       rol: u.role.name,
-      aktif: u.user.isActive,
+      aktif: u.isActive,
+      hesapKapali: !u.user.isActive,
       sonGiris: u.user.lastLoginAt,
       parolaDegismeli: u.user.mustChangePassword,
       uyelikSayisi: u.user._count.userCompanyRoles,

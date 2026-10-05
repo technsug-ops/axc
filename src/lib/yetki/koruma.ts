@@ -84,6 +84,7 @@ export async function baskaSahipVarMi(haricUyelikId: string): Promise<boolean> {
     where: {
       id: { not: haricUyelikId },
       roleId: { in: rolIdleri },
+      isActive: true,
       user: { isActive: true },
     },
   });
@@ -91,20 +92,8 @@ export async function baskaSahipVarMi(haricUyelikId: string): Promise<boolean> {
   return sayi > 0;
 }
 
-/** Bu kullanıcı pasife alınırsa başka tam yetkili aktif kullanıcı kalır mı? */
-export async function baskaSahipVarMiKullanici(
-  haricKullaniciId: string,
-): Promise<boolean> {
-  const rolIdleri = await tamYetkiliRolIdleri();
-  if (rolIdleri.length === 0) return false;
-
-  const sayi = await prisma.userCompanyRole.count({
-    where: {
-      userId: { not: haricKullaniciId },
-      roleId: { in: rolIdleri },
-      user: { isActive: true },
-    },
-  });
-
-  return sayi > 0;
-}
+/**
+ * ⚠ `baskaSahipVarMiKullanici` KALDIRILDI (K303, 05.10.2026): kişi bazlı
+ * pasife alma yok — firma bazlı karşılığı `lib/kullanici-uyeligi.ts` →
+ * `firmadaBaskaSahipVarMi` (firma açıkça verilir, üyelik aktifliğine bakar).
+ */

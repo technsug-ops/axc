@@ -49,7 +49,10 @@ export async function yontemiDegistir(
   const baglam = await yetkiIste(IZIN);
   const t = await getTranslations("MaliyetYontemi");
 
-  const firma = await prisma.company.findFirst({
+  // K303 (05.10.2026): firma OTURUMDAN — `company` tablosu firma süzgecinin
+  // dışında; koşulsuz findFirst çok-firmada EN ESKİ firmayı (Axcali) seçiyordu.
+  const firma = await prisma.company.findUnique({
+    where: { id: baglam.companyId },
     select: { id: true, maliyetYontemi: true, lotKipi: true },
   });
   if (!firma) return { hata: t("firmaYok") };

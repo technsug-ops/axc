@@ -61,7 +61,8 @@ export const yetkiBaglami = cache(async (): Promise<YetkiBaglami | null> => {
    * firma süzgecinden geçemez (süzgeç firmayı bu sorgudan öğrenir; döngü).
    */
   const uyelik = await sistemPrisma.userCompanyRole.findFirst({
-    where: { userId: kullanici.id, companyId: kullanici.firmaId, company: { isActive: true } },
+    // Üyelik de AKTİF olmalı (K303, 05.10.2026: pasife alma firma bazında).
+    where: { userId: kullanici.id, companyId: kullanici.firmaId, isActive: true, company: { isActive: true } },
     select: {
       companyId: true,
       role: {

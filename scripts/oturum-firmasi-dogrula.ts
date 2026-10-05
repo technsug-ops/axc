@@ -165,7 +165,11 @@ async function main() {
     for (let m = desen.exec(metin); m; m = desen.exec(metin)) {
       okumaSayisi++;
       const blok = cagriBlogu(metin, m.index);
-      if (!/\bcompanyId\s*:/.test(blok)) ihlal.push(`${yol.replace(/\\/g, "/")} → ${m[0]}`);
+      // ⚠ Ölçüt 05.10.2026'da genişledi: kısaltma yazımı (`{ userId, companyId }` —
+      // birleşik anahtar `userId_companyId` içinde) da firma koşuludur; eski desen
+      // yalnız `companyId:` arıyordu ve aynı anlamı görmüyordu. Firma koşulda HİÇ
+      // yoksa yine kırmızı (mutasyonla sınandı).
+      if (!/\bcompanyId\s*[:,}]/.test(blok)) ihlal.push(`${yol.replace(/\\/g, "/")} → ${m[0]}`);
     }
   }
   kontrol(`taban: src/ altında firmalar-üstü üyelik okuması bulundu (${okumaSayisi} ≥ 2)`, okumaSayisi >= 2, okumaSayisi);

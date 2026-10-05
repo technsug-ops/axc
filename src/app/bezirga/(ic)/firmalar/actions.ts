@@ -12,6 +12,7 @@ import {
   type FirmaAcilisHatasi,
 } from "@/lib/firma-acilisi";
 import { firmaAdiniDegistir, firmaKullanicisininParolasiniSifirla } from "@/lib/firma-karti";
+import { uyelikDurumunuDegistir } from "@/lib/kullanici-uyeligi";
 import { yonetimEylemi } from "@/lib/yonetim-oturumu";
 
 /**
@@ -107,6 +108,26 @@ export async function firmaKullaniciParolaSifirla(firmaId: string, kullaniciId: 
     return { geciciParola: sonuc.geciciParola, eposta: sonuc.eposta };
   } catch (e) {
     console.error("[yonetim parola sifirla] beklenmeyen hata:", e);
+    return { hata: t("hataKaydedilemedi") };
+  }
+}
+
+export type UyelikDurumuSonucu = { hata?: string; tamam?: string };
+
+/** Kişiyi BU firmada pasife al / aktif et (öteki firmalarına dokunmaz). */
+export async function firmaUyeligiDurumu(firmaId: string, kullaniciId: string): Promise<UyelikDurumuSonucu> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hata: t(HATA_ANAHTARI.YETKISIZ) };
+  try {
+    const sonuc = await uyelikDurumunuDegistir(firmaId, kullaniciId, k.id);
+    if (sonuc.durum === "HATA") {
+      return { hata: sonuc.hata === "SON_SAHIP" ? t("hataSonSahip", { eposta: sonuc.eposta ?? "" }) : t("hataUyeDegil") };
+    }
+    revalidatePath(`${YONETIM_YOLU}/firmalar/${firmaId}`);
+    return { tamam: t(sonuc.aktif ? "uyelikAktiflesti" : "uyelikPasifeAlindi", { eposta: sonuc.eposta }) };
+  } catch (e) {
+    console.error("[yonetim uyelik durumu] beklenmeyen hata:", e);
     return { hata: t("hataKaydedilemedi") };
   }
 }

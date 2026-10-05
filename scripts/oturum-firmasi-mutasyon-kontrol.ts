@@ -26,19 +26,20 @@ type Mutasyon = {
   bekci?: string;
 };
 
-const UYELIK_KOSULU = "where: { userId: kullaniciId, companyId: firmaId, company: { isActive: true }, role: { isActive: true } },";
+/* K303 (05.10.2026): koşula ÜYELİK aktifliği eklendi (`isActive: true`) — çapa taşındı, mutasyonların niyeti aynı. */
+const UYELIK_KOSULU = "where: { userId: kullaniciId, companyId: firmaId, isActive: true, company: { isActive: true }, role: { isActive: true } },";
 
 const MUTASYONLAR: Mutasyon[] = [
   { ad: "ZARARSIZ - yorum", yon: "ZARARSIZ", dosya: GOVDE,
     bul: "OTURUMUN FİRMASI — K303 4c-1", koy: "OTURUM FİRMASI — K303 4c-1", bozdugu: "hicbir sey - YESIL kalmali" },
   { ad: "UYELIK FIRMA SORMUYOR (herhangi bir uyelik yeter)", yon: "FAZLADAN", dosya: GOVDE,
-    bul: UYELIK_KOSULU, koy: "where: { userId: kullaniciId, company: { isActive: true }, role: { isActive: true } },",
+    bul: UYELIK_KOSULU, koy: "where: { userId: kullaniciId, isActive: true, company: { isActive: true }, role: { isActive: true } },",
     bozdugu: "Axcali kullanicisi DMS koduyla Damisell'e girer" },
   { ad: "PASIF ROL GECIYOR", yon: "FAZLADAN", dosya: GOVDE,
-    bul: UYELIK_KOSULU, koy: "where: { userId: kullaniciId, companyId: firmaId, company: { isActive: true } },",
+    bul: UYELIK_KOSULU, koy: "where: { userId: kullaniciId, companyId: firmaId, isActive: true, company: { isActive: true } },",
     bozdugu: "rolu kapatilan kisinin acik oturumu surer" },
   { ad: "PASIF FIRMA UYELIGI GECIYOR", yon: "FAZLADAN", dosya: GOVDE,
-    bul: UYELIK_KOSULU, koy: "where: { userId: kullaniciId, companyId: firmaId, role: { isActive: true } },",
+    bul: UYELIK_KOSULU, koy: "where: { userId: kullaniciId, companyId: firmaId, isActive: true, role: { isActive: true } },",
     bozdugu: "kapatilan firmaya giris surer" },
   { ad: "PASIF FIRMANIN KODU COZULUYOR", yon: "FAZLADAN", dosya: GOVDE,
     bul: "where: { code: temiz, isActive: true },", koy: "where: { code: temiz },", bozdugu: "kapatilan firma kodu calisir" },
@@ -52,8 +53,8 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "  if (!(await uyeMi(kullanici.id, govde.firmaId))) return null;\n", koy: "",
     bozdugu: "uyeligi kaldirilan kisinin acik oturumu surer" },
   { ad: "YETKI ILK UYELIGE DONDU", yon: "FAZLADAN", dosya: YETKI,
-    bul: "where: { userId: kullanici.id, companyId: kullanici.firmaId, company: { isActive: true } },",
-    koy: "where: { userId: kullanici.id, company: { isActive: true } },",
+    bul: "where: { userId: kullanici.id, companyId: kullanici.firmaId, isActive: true, company: { isActive: true } },",
+    koy: "where: { userId: kullanici.id, isActive: true, company: { isActive: true } },",
     bozdugu: "iki firmali kullanici sectigi firmayi degil ilk uyeligini gorur" },
   { ad: "YENI FIRMASIZ UYELIK OKUMASI (desen yasagi)", yon: "FAZLADAN", dosya: GOVDE,
     bul: "/** Bu cihazda en son girilen firma kodu",

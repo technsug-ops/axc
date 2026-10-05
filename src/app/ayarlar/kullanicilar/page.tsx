@@ -37,19 +37,21 @@ export default async function KullanicilarSayfasi() {
   const bicim = await bicimlendirici();
 
   const [kayitlar, roller, tamYetkili] = await Promise.all([
-    prisma.user.findMany({
-      orderBy: [{ isActive: "desc" }, { email: "asc" }],
+    /**
+     * K303 (05.10.2026): liste BU FİRMANIN ÜYELİKLERİNDEN kurulur. ⛔ Eski hâl
+     * `prisma.user.findMany` idi — `User` firma süzgecinin dışında olduğu için
+     * çok-firmada BÜTÜN firmaların kişileri (süper admin dahil) listeleniyordu.
+     * Aktiflik ÜYELİĞİN aktifliğidir (pasife alma firma bazında).
+     */
+    prisma.userCompanyRole.findMany({
+      where: { companyId: baglam.companyId },
+      orderBy: [{ isActive: "desc" }, { user: { email: "asc" } }],
       select: {
         id: true,
-        email: true,
-        name: true,
+        roleId: true,
         isActive: true,
-        mustChangePassword: true,
-        lastLoginAt: true,
-        userCompanyRoles: {
-          select: { id: true, roleId: true, role: { select: { name: true } } },
-          take: 1,
-        },
+        role: { select: { name: true } },
+        user: { select: { id: true, email: true, name: true, mustChangePassword: true, lastLoginAt: true } },
       },
     }),
     prisma.role.findMany({
@@ -61,28 +63,23 @@ export default async function KullanicilarSayfasi() {
   ]);
 
   // Kaç tam yetkili AKTİF kullanıcı var — "son sahip" kilidi buna bakar.
-  const sahipSayisi = kayitlar.filter(
-    (k) =>
-      k.isActive &&
-      k.userCompanyRoles.some((u) => tamYetkili.includes(u.roleId)),
-  ).length;
+  const sahipSayisi = kayitlar.filter((u) => u.isActive && tamYetkili.includes(u.roleId)).length;
 
-  const kullanicilar: KullaniciSatiriVerisi[] = kayitlar.map((k) => {
-    const uyelik = k.userCompanyRoles[0];
-    const sahipMi = uyelik ? tamYetkili.includes(uyelik.roleId) : false;
+  const kullanicilar: KullaniciSatiriVerisi[] = kayitlar.map((u) => {
+    const sahipMi = tamYetkili.includes(u.roleId);
     return {
-      id: k.id,
-      uyelikId: uyelik?.id ?? null,
-      eposta: k.email,
-      ad: k.name,
-      rolId: uyelik?.roleId ?? null,
-      rolAdi: uyelik?.role.name ?? null,
-      aktif: k.isActive,
-      parolaDegismeli: k.mustChangePassword,
-      sonGiris: k.lastLoginAt ? bicim.tarih(k.lastLoginAt) : null,
-      kendisiMi: k.id === baglam.kullaniciId,
-      // SON SAHİP: tek tam yetkili aktif kullanıcı buysa kilitli.
-      sonSahipMi: sahipMi && k.isActive && sahipSayisi === 1,
+      id: u.user.id,
+      uyelikId: u.id,
+      eposta: u.user.email,
+      ad: u.user.name,
+      rolId: u.roleId,
+      rolAdi: u.role.name,
+      aktif: u.isActive,
+      parolaDegismeli: u.user.mustChangePassword,
+      sonGiris: u.user.lastLoginAt ? bicim.tarih(u.user.lastLoginAt) : null,
+      kendisiMi: u.user.id === baglam.kullaniciId,
+      // SON SAHİP: firmadaki tek tam yetkili aktif üyelik buysa kilitli.
+      sonSahipMi: sahipMi && u.isActive && sahipSayisi === 1,
     };
   });
 

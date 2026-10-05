@@ -23,14 +23,16 @@ export async function generateMetadata() {
 }
 
 export default async function YeniSatisSayfasi() {
-  await sayfaIzni("satis.yaz");
+  const baglam = await sayfaIzni("satis.yaz");
 
   /**
    * PARTİ SEÇİM KİPİ (K115) — firma ayarı. Form kendi kararını vermiyor;
    * kip SUNUCUDAN geliyor ve seçicinin çizilip çizilmeyeceğini o belirliyor.
    * ⚠ Firma kaydı yoksa varsayılan `HIBRIT` — bugünkü davranış.
    */
-  const firma = await prisma.company.findFirst({ select: { lotKipi: true } });
+  // K303 (05.10.2026): firma OTURUMDAN — `company` tablosu firma süzgecinin
+  // dışında; koşulsuz findFirst çok-firmada EN ESKİ firmayı (Axcali) seçiyordu.
+  const firma = await prisma.company.findUnique({ where: { id: baglam.companyId }, select: { lotKipi: true } });
   const lotKipi = lotKipiCoz(firma?.lotKipi ?? null);
 
   const t = await getTranslations("Satis");

@@ -44,7 +44,8 @@ export async function uyeMi(kullaniciId: string, firmaId: string): Promise<boole
   if (!kullaniciId || !firmaId) return false;
   // SISTEM: üyelik çözümü firma bağlamının kaynağıdır; süzgeçten geçemez.
   const uyelik = await sistemPrisma.userCompanyRole.findFirst({
-    where: { userId: kullaniciId, companyId: firmaId, company: { isActive: true }, role: { isActive: true } },
+    // Üyelik de AKTİF olmalı (K303, 05.10.2026: pasife alma firma bazında).
+    where: { userId: kullaniciId, companyId: firmaId, isActive: true, company: { isActive: true }, role: { isActive: true } },
     select: { id: true },
   });
   return uyelik !== null;

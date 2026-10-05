@@ -369,4 +369,9 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * İlk turda paralel havuza düştü ve `mutasyon-cakisma` yakaladı.
    */
   "uygulama-adi-mutasyon:kontrol",
+  /**
+   * K303 (05.10.2026) — `kullanici-uyeligi` `oturum-firmasi.ts` (oturum-firmasi
+   * harness'iyle ortak) ve yeni satış sayfasını mutasyona uğratıyor.
+   */
+  "kullanici-uyeligi-mutasyon:kontrol",
 ];
