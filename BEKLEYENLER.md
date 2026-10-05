@@ -13,6 +13,16 @@
 
 ---
 
+## 🔶 K319 — GEÇİCİ PAROLAYLA GİREN KİŞİ PANELE DÜŞÜYORDU (ZORUNLU PAROLA DEĞİŞİMİ ATLANIYORDU) · 05.10.2026 · [YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı bulgusu (deneme, yeni firma TechNS):** «firma kuruldu ama şifre yenilenme istemedi». Ölçüldü: yönetici 14:10'da girdi, `mustChangePassword` HÂLÂ `true`; dünkü TST1'de de aynısı (fark edilmemiş).
+**KÖK:** zorunlu parola değişimi sayfa kapılarının (`sayfaIzni` · `sayfaGirisi` · `sayfaTamYetki`) içinde yaşıyor; Panel «girişi olan herkes görür» gerekçesiyle KAPISIZ beyanlıydı ve yalnız `izinVarMi` çağırıyordu. Girişten sonra ilk açılan sayfa panel → parola ekranı hiç gelmiyordu (menüden başka sayfaya tıklayınca geliyordu). **Canlıda da aynı kod** — `main`de düzeltildi. _(Anayasa: «ilke kendi kapsamının dışına uygulanırsa hatayı korur».)_
+**Düzeltme:** Panel `sayfaGirisi()` kapısından geçer (izin istemez, niyet aynı); kapısız sayfa istisnalarından ÇIKTI.
+**Bekçi açığı da kapandı:** `yetki:dogrula` `izinVarMi`yi kapı sayıyordu → panel kapısını silen mutasyon YEŞİL geçti. Yeni ölçüt: istisna olmayan her sayfa, gövdesi `redirect("/parola-degistir")` taşıyan bir kapıyı (modülden TÜRETİLİR, elle liste yok; taban ≥3) yorumsuz kodda çağırır. Mutasyonlar: panel kapısı silindi · kapının içindeki yönlendirme silindi (taban 2'ye düştü, panel + menü kırmızı) · kapı yalnız yorumda — üçü de KIRMIZI. Ölçüldü: bugün başka açık sayfa yok (kapısız yalnız giriş · parola değiştir · çevrimdışı, üçü beyanlı).
+**Halil testi (deploy sonrası, canlı):** ① Kullanıcılar ekranından bir kullanıcının parolasını sıfırlayın (yeni parola verin) · ② o kullanıcıyla `bezirga.com`'a girin → Panel DEĞİL «Parolanızı değiştirin» ekranı açılmalı · ③ yeni parolayı koyun → Panel açılır · ④ deneme kurulumunda TechNS yöneticisiyle yeniden girin → aynı şekilde parola ekranı.
+
+---
+
 ## 🔶 K318 — UYGULAMA ADI «SELLIORA» → «BEZIRGA» + ADIN KODA GÖMÜLMESİ YASAĞI · 04.10.2026 · [YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı kararı 04.10.2026:** ürün adı «Bezirga»; logo «Bezirga Vektör Paketi 1.0»dan birebir (`src/lib/marka/cizim.tsx`).
@@ -338,6 +348,7 @@ gerçekleşirken «faiz + verginin ödenen TL karşılığı» sorulur, Giderler
 ⛔ **BULGU — ÜYELİKTE AKTİFLİK YOK (karar bekliyor):** aktiflik KİŞİDE (`User.isActive`). Firma kartından «pasife al» o kişiyi BÜTÜN firmalarında kapatırdı → ①'de bilerek YAZILMADI. Aynı kusur bugün firmanın kendi Kullanıcılar ekranında da var: A firmasının yöneticisi pasife alınca kişi B'ye de giremez. Doğru çare `UserCompanyRole.isActive` (migration, yalnız deneme) + giriş/oturum ölçütü `uyeMi` ona bakar. Kullanıcı kararı bekliyor.
 ⚠ **Bu turda bulunan, önceki commit'ten:** `c8657d4` firma-suzgeci'de kırmızıydı (ad bekçisi bağ kapısı değişkenini anıyordu; o gün bu bekçi koşulmamıştı) → iki ad betiği gerekçesiyle izinli listeye; `firma-acilisi.ts` iki gerekçesiz `sistemPrisma` satırı gerekçelendi.
 **Halil testi (① firma kartı, deneme `localhost:3100/bezirga`):** a) Firmalar → bir firmanın satırında «Aç» → kart açılır, başlıkta ad + kod + durum · b) Kimlik → adı değiştir → Kaydet → «Firma adı kaydedildi», listeye dönünce yeni ad · c) Kullanıcılar → bir kişide «Parolayı sıfırla» → onay → geçici parola görünür → o kişiyle `/giris`te firma kodu + e-posta + geçici parola → parola değiştirme ekranı · d) Kayıt sayıları: Axcali kartında Ürün ve Satış rakamları firmanın kendi ekranındaki sayılarla aynı · e) Firma ayarları: Axcali'de «FIFO» yazar, düzenleme kutusu yok.
+⛔ **BULGU — YÖNETİM KATMANINDA ZORUNLU PAROLA DEĞİŞİMİ YOK (05.10.2026, K319 dala taşınırken):** firma tarafındaki açık (geçici parolayla panele düşmek) `main`de kapandı ve dala taşındı. Yönetim sayfaları firma kapısından geçmez (`yonetimSayfasi`); süper admin hesabı betikle açılıyor, parolası masaüstündeki dosyada ve DEĞİŞTİRMESİ İSTENMİYOR — yönetimde parola değiştirme ekranı yok. `yetki:dogrula` yönetim sayfalarını ayrı koşulla sınıyor (her biri `yonetimSayfasi` kapısından geçer, taban ≥3, mutasyonla kırmızı görüldü). **Canlıya geçişten ÖNCE kapanmalı** (süper admin parolası bir dosyada kalıcı olmamalı).
 ⏭ **Sıradaki: ② paketler ve haklar** (① Halil testinden sonra). **Açık kararlar (kullanıcı):** firma başına pazaryeri anahtarı (şifreli, şema ister) · firma başına yedek/geri yükleme (bugün çok firmada ekrandan KAPALI) · `seed-yetki` firma adını koda yazıyor (veriye taşınacak).
 _(28.09 kaydı aşağıda olduğu gibi duruyor.)_
 

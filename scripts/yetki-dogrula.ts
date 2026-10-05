@@ -39,6 +39,7 @@ import {
 } from "../src/lib/yetki/izinler";
 import { yetkiBekcisi } from "./yetki-bekci";
 import { kaynakOku } from "./kaynak-oku";
+import { YONETIM_YOLU } from "../src/lib/oturum-imza";
 
 let basarisiz = 0;
 let calisan = 0;
@@ -182,8 +183,14 @@ console.log("\n2) KORUMASIZ SAYFA BEKÇİSİ");
 /** Yetki istemeyen sayfalar — gerekçeli. */
 const SAYFA_ISTISNALARI = new Map<string, string>([
   ["src/app/giris/page.tsx", "giriş ekranı"],
-  ["src/app/bezirga/page.tsx", "Selliora yönetim giriş ekranı (K303 4c-2) — proxy'nin açık bıraktığı tek yönetim yolu; içerisi `yonetimSayfasi` kapısıyla"],
-  ["src/app/page.tsx", "panel — girişi olan herkes görür"],
+  ["src/app/bezirga/page.tsx", "Yönetim katmanı giriş ekranı (K303 4c-2) — proxy'nin açık bıraktığı tek yönetim yolu; içerisi `yonetimSayfasi` kapısıyla"],
+  /**
+   * ⚠ PANEL BURADAN ÇIKTI (05.10.2026). «Girişi olan herkes görür» niyeti
+   * doğruydu ama kapısız olmak zorunlu parola değişimini de atlatıyordu
+   * (geçici parolayla giren kişi panele düştü). Panel artık `sayfaGirisi`
+   * kapısından geçer; istisna listesinde durursa kapı silinse de bekçi
+   * susardı.
+   */
   [
     "src/app/parola-degistir/page.tsx",
     "ilk girişte parola değiştirme — yetkisi henüz çözülemeyen kullanıcı da açabilmeli",
@@ -271,6 +278,65 @@ kontrol(
     "her sayfa yetki istiyor",
     korumasiz.length === 0,
     korumasiz.length ? korumasiz.join("\n         ") : undefined,
+  );
+}
+
+/**
+ * ============================================================================
+ *  ZORUNLU PAROLA DEĞİŞİMİ HER SAYFADA (05.10.2026, kullanıcı bulgusu)
+ * ----------------------------------------------------------------------------
+ *  Üstteki ölçüt `izinVarMi`/`yetkiBaglami`yı da KAPI sayıyor — ikisi izin
+ *  sorar ama parola zorunluluğunu UYGULAMAZ. Panel yalnız `izinVarMi`
+ *  çağırıyordu ve geçici parolayla giren kişi parolasını değiştirmeden
+ *  panele düşüyordu; üstteki ölçüt bunu YEŞİL geçirdi (mutasyonla ölçüldü).
+ *
+ *  ÖLÇÜT: istisna olmayan her sayfa, gövdesi parola ekranına yönlendiren
+ *  bir kapıyı (yorumsuz kodda) ÇAĞIRIR. Kapılar elle sayılmaz — yetki
+ *  modülünde `redirect("/parola-degistir")` taşıyan `sayfa*` fonksiyonları.
+ * ============================================================================
+ */
+{
+  const modul = kaynakOku("src/lib/yetki/index.ts").replace(/\r/g, "");
+  const PAROLA_KAPILARI = SAYFA_KAPILARI.filter((ad) => {
+    const bas = modul.indexOf(`export async function ${ad}(`);
+    if (bas < 0) return false;
+    const son = modul.indexOf("\nexport ", bas + 1);
+    return modul.slice(bas, son < 0 ? undefined : son).includes('redirect("/parola-degistir")');
+  });
+  kontrol(
+    "  parola kapıları modülden türetildi (en az 3)",
+    PAROLA_KAPILARI.length >= 3,
+    "bulunan: " + JSON.stringify(PAROLA_KAPILARI),
+  );
+  const PAROLA_DESENI = new RegExp(PAROLA_KAPILARI.map((ad) => `\\b${ad}\\(`).join("|"));
+  const parolasiz: string[] = [];
+  let yonetimSayfasi = 0;
+  for (const yol of KAYNAKLAR) {
+    if (!/[\\/]page\.tsx$/.test(yol)) continue;
+    const anahtar = yol.replace(/\\/g, "/");
+    if (SAYFA_ISTISNALARI.has(anahtar)) continue;
+    const kod = kaynakOku(yol)
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    /**
+     * K303 (yalnız bu dal): YÖNETİM KATMANI firma oturumu taşımaz; firma
+     * kapısının parola kontrolü ona uygulanamaz. Yönetim sayfası ayrı bir
+     * koşulla sınanır: `yonetimSayfasi(` kapısından geçmek ZORUNDA. ⚠ Açık
+     * bulgu: yönetimde zorunlu parola değişimi YOK (panoda, K319).
+     */
+    if (anahtar.startsWith(`src/app${YONETIM_YOLU}/`)) {
+      yonetimSayfasi++;
+      if (!/\byonetimSayfasi\(/.test(kod)) parolasiz.push(anahtar + "  (yönetim kapısı yok)");
+      continue;
+    }
+    if (PAROLA_KAPILARI.length === 0 || !PAROLA_DESENI.test(kod)) parolasiz.push(anahtar);
+  }
+  console.log(`        yönetim katmanı: ${yonetimSayfasi} sayfa yönetim kapısıyla sınandı (firma parola kapısı uygulanmaz)`);
+  kontrol("  yönetim sayfaları bulundu (taban dolu, en az 3)", yonetimSayfasi >= 3, yonetimSayfasi);
+  kontrol(
+    "her sayfa zorunlu parola değişimini uygulayan bir kapıdan geçiyor",
+    parolasiz.length === 0,
+    parolasiz.length ? parolasiz.join("\n         ") : undefined,
   );
 }
 
