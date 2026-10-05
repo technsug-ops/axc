@@ -85,13 +85,17 @@ kontrol(
   okuma.includes('{ detail: { contains: `"eposta":${JSON.stringify(eposta)}` } },') &&
     okuma.includes('{ detail: { contains: `"ip":${JSON.stringify(ip)}` } },'),
 );
-const basarisizBlok = govde.slice(govde.indexOf("if (!kullanici || !kullanici.isActive || !gecti || !firmaId || !uye) {"), govde.indexOf('return { hatalar: [t("hataliGiris")] };'));
+const basarisizBlok = govde.slice(govde.indexOf("if (red !== null || !kullanici || !firmaId || !uye) {"), govde.indexOf('return { hatalar: [t(GIRIS_RED_ANAHTARI[red ?? "HATALI"])] };'));
 kontrol(
   "başarısız deneme İZ YAZIYOR (sayacın kaynağı) — parola yazılmıyor",
-  basarisizBlok.includes("await izYaz({") && basarisizBlok.includes("detail: JSON.stringify({ eposta, ip, firmaKodu }),") && !/parola/.test(basarisizBlok.replace("Parola YAZILMAZ", "")),
+  basarisizBlok.includes("await izYaz({") && basarisizBlok.includes('detail: JSON.stringify({ eposta, ip, firmaKodu, sebep: red ?? "HATALI" }),') && !/parola/.test(basarisizBlok.replace("Parola YAZILMAZ", "")),
 );
 const iOturum = govde.indexOf("await oturumAc(kullanici.id, firmaId);");
-kontrol("başarılı giriş iz SAYACINA girmez (GIRIS_BASARISIZ yalnız hata dalında)", (govde.match(/action: "GIRIS_BASARISIZ"/g) ?? []).length === 1 && iOturum > govde.indexOf('return { hatalar: [t("hataliGiris")] };'));
+/* ⚠ 05.10.2026: bu ölçüt eski dönüş satırını arıyordu; satır değişince indexOf
+   -1 döndü ve `iOturum > -1` HER ZAMAN doğruydu (yalancı yeşil). Varlık ayrıca
+   kapılanır (anayasa: «indexOf · every · ?? — nötr görünen varsayılan»). */
+const iRed = govde.indexOf('return { hatalar: [t(GIRIS_RED_ANAHTARI[red ?? "HATALI"])] };');
+kontrol("başarılı giriş iz SAYACINA girmez (GIRIS_BASARISIZ yalnız hata dalında)", (govde.match(/action: "GIRIS_BASARISIZ"/g) ?? []).length === 1 && iRed >= 0 && iOturum >= 0 && iOturum > iRed);
 kontrol("kilitli mesajı sözlükten, kalan dakikayla", govde.includes('return { hatalar: [t("cokFazlaDeneme", { dakika })] };'));
 
 /* ═══ ② TOPLU İNDİRME İZİ ═══ */

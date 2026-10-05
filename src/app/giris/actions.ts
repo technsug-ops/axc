@@ -8,7 +8,23 @@ import { girisKilidi } from "@/lib/giris-kilidi";
 import { yakinBasarisizDenemeler } from "@/lib/giris-kilidi-okuma";
 import { izYaz } from "@/lib/iz";
 import { oturumAc, oturumKapat } from "@/lib/oturum";
-import { FIRMA_KODU_CEREZI, firmaKodundanKimlik, firmaKoduNormalle, uyeMi } from "@/lib/oturum-firmasi";
+import {
+  FIRMA_KODU_CEREZI,
+  firmaKodundanDurum,
+  firmaKoduNormalle,
+  girisRedSebebi,
+  uyelikGirisDurumu,
+  uyeMi,
+  type GirisRedSebebi,
+} from "@/lib/oturum-firmasi";
+
+/** Red sebebi → sözlük anahtarı (`Giris`). Hata KODA çevrilir, metne değil. */
+const GIRIS_RED_ANAHTARI: Record<GirisRedSebebi, string> = {
+  HATALI: "hataliGiris",
+  FIRMA_ASKIDA: "firmaAskida",
+  UYELIK_PASIF: "uyelikPasif",
+  HESAP_KAPALI: "hesapKapali",
+};
 import { parolaDogrula } from "@/lib/parola";
 import { prisma } from "@/lib/prisma";
 
@@ -72,19 +88,35 @@ export async function girisYap(
     kullanici?.passwordHash ?? SAHTE_OZET,
   );
   /** Üyelik sorgusu firma/kullanıcı yoksa da KOŞAR — süre, hangisinin eksik olduğunu söylemesin. */
-  const firmaId = await firmaKodundanKimlik(firmaKodu);
-  const uye = await uyeMi(kullanici?.id ?? "-", firmaId ?? "-");
+  const firma = await firmaKodundanDurum(firmaKodu);
+  const uyelik = await uyelikGirisDurumu(kullanici?.id ?? "-", firma?.id ?? "-");
+  const uye = await uyeMi(kullanici?.id ?? "-", firma?.id ?? "-");
+  /**
+   * Karar saf gövdede (`girisRedSebebi`, 05.10.2026 kullanıcı bulgusu):
+   * askıdaki firma / pasif üyelik / kapalı hesap YALNIZ parola doğru ve kişi
+   * o firmanın üyesiyken söylenir; öteki her durum genel mesaj.
+   */
+  const red = girisRedSebebi({
+    kullaniciVar: Boolean(kullanici),
+    parolaDogru: gecti,
+    kisiAktif: kullanici?.isActive ?? false,
+    firma: firma ? { aktif: firma.aktif } : null,
+    uyelik,
+  });
+  const firmaId = firma?.id ?? null;
 
-  if (!kullanici || !kullanici.isActive || !gecti || !firmaId || !uye) {
+  // Son kapı `uyeMi` (oturum okumasıyla AYNI ölçüt): karar «geç» dese bile
+  // üyelik ölçütü evet demezse oturum açılmaz — iki ölçüt ayrışamaz.
+  if (red !== null || !kullanici || !firmaId || !uye) {
     /** İz: kilidin sayacı + «kim deniyor» sorusunun cevabı. Parola YAZILMAZ. */
     await izYaz({
       action: "GIRIS_BASARISIZ",
       targetType: "User",
       targetId: kullanici?.id ?? null,
       userId: null,
-      detail: JSON.stringify({ eposta, ip, firmaKodu }),
+      detail: JSON.stringify({ eposta, ip, firmaKodu, sebep: red ?? "HATALI" }),
     });
-    return { hatalar: [t("hataliGiris")] };
+    return { hatalar: [t(GIRIS_RED_ANAHTARI[red ?? "HATALI"])] };
   }
 
   await oturumAc(kullanici.id, firmaId);

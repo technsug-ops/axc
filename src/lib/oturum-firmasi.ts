@@ -27,17 +27,12 @@ export function firmaKoduNormalle(ham: string): string {
   return ham.trim().toUpperCase();
 }
 
-/** Aktif bir firmanın kimliği — kod yoksa ya da firma pasifse null. */
-export async function firmaKodundanKimlik(kod: string): Promise<string | null> {
-  const temiz = firmaKoduNormalle(kod);
-  if (!temiz) return null;
-  // SISTEM: girişte firma henüz yok; kod → firma çözümü firmalar-üstüdür.
-  const firma = await sistemPrisma.company.findFirst({
-    where: { code: temiz, isActive: true },
-    select: { id: true },
-  });
-  return firma?.id ?? null;
-}
+/**
+ * ⚠ `firmaKodundanKimlik` KALDIRILDI (05.10.2026): pasif firmanın kodunu hiç
+ * çözmüyordu, bu yüzden askı sebebi söylenemiyordu. Yerini `firmaKodundanDurum`
+ * aldı (pasif firmayı da bulur, `aktif` bayrağıyla); askıdaki firmaya GİRİŞ yine
+ * YOK — `girisRedSebebi` (FIRMA_ASKIDA) ve `uyeMi` (company.isActive) korur.
+ */
 
 /** Kullanıcı bu firmaya, aktif bir rolle, aktif firmada üye mi. */
 export async function uyeMi(kullaniciId: string, firmaId: string): Promise<boolean> {
@@ -53,3 +48,56 @@ export async function uyeMi(kullaniciId: string, firmaId: string): Promise<boole
 
 /** Bu cihazda en son girilen firma kodu — giriş ekranı alanı doldurur. Yalnız KOD. */
 export const FIRMA_KODU_CEREZI = `${UYGULAMA.teknikAd}_firma_kodu`;
+
+/**
+ * ============================================================================
+ *  GİRİŞ RED SEBEBİ — saf (05.10.2026, kullanıcı bulgusu)
+ * ----------------------------------------------------------------------------
+ *  «Hesap askıya alındı ama askıya alındığına dair bir uyarı yok» — askıdaki
+ *  firmanın kullanıcısı «firma kodu, e-posta veya parola hatalı» görüyordu;
+ *  kendi hatası sanıp deniyor, kilide takılıyordu (İlke #5).
+ *
+ *  ⚠ SIZINTI KURALI: özel sebep YALNIZ parola DOĞRU ve kişi O FİRMANIN üyesi
+ *  iken söylenir. Parolayı bilmeyen biri hiçbir şey öğrenmez; başka firmanın
+ *  kodunu doğru parolayla deneyen biri o firmanın durumunu öğrenmez.
+ * ============================================================================
+ */
+export type GirisRedSebebi = "HATALI" | "FIRMA_ASKIDA" | "UYELIK_PASIF" | "HESAP_KAPALI";
+
+export function girisRedSebebi(g: {
+  kullaniciVar: boolean;
+  parolaDogru: boolean;
+  kisiAktif: boolean;
+  /** Koddan bulunan firma — kod yoksa null. Pasif firma da bulunur. */
+  firma: { aktif: boolean } | null;
+  /** Kişinin O firmadaki üyeliği — yoksa null. */
+  uyelik: { aktif: boolean; rolAktif: boolean } | null;
+}): GirisRedSebebi | null {
+  if (!g.kullaniciVar || !g.parolaDogru) return "HATALI";
+  if (!g.firma || !g.uyelik) return "HATALI";
+  if (!g.kisiAktif) return "HESAP_KAPALI";
+  if (!g.firma.aktif) return "FIRMA_ASKIDA";
+  if (!g.uyelik.aktif) return "UYELIK_PASIF";
+  if (!g.uyelik.rolAktif) return "HATALI";
+  return null;
+}
+
+/** Girişte koddan firma — PASİF firma da bulunur (askı sebebini söylemek için). */
+export async function firmaKodundanDurum(kod: string): Promise<{ id: string; aktif: boolean } | null> {
+  const temiz = firmaKoduNormalle(kod);
+  if (!temiz) return null;
+  // SISTEM: girişte firma henüz yok; kod → firma çözümü firmalar-üstüdür.
+  const f = await sistemPrisma.company.findFirst({ where: { code: temiz }, select: { id: true, isActive: true } });
+  return f ? { id: f.id, aktif: f.isActive } : null;
+}
+
+/** Kişinin bu firmadaki üyeliğinin ham durumu — yoksa null. */
+export async function uyelikGirisDurumu(kullaniciId: string, firmaId: string): Promise<{ aktif: boolean; rolAktif: boolean } | null> {
+  if (!kullaniciId || !firmaId) return null;
+  // SISTEM: giriş anı, firma bağlamı henüz yok; kişi + firma çiftiyle.
+  const u = await sistemPrisma.userCompanyRole.findUnique({
+    where: { userId_companyId: { userId: kullaniciId, companyId: firmaId } },
+    select: { isActive: true, role: { select: { isActive: true } } },
+  });
+  return u ? { aktif: u.isActive, rolAktif: u.role.isActive } : null;
+}

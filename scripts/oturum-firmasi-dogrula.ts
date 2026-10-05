@@ -14,7 +14,7 @@ import { kaynakOku } from "./kaynak-oku";
  *  Kullanıcı kararı 04.10.2026: «Firma kodu + kullanıcı + şifre girer ve kendi
  *  firmasına geçer»; firma içinden başka firmaya geçiş YOK.
  *
- *  GÖVDEYİ GERÇEK VERİTABANINDA ÇAĞIRIR (`firmaKodundanKimlik` · `uyeMi`).
+ *  GÖVDEYİ GERÇEK VERİTABANINDA ÇAĞIRIR (`firmaKodundanDurum` · `uyelikGirisDurumu` · `uyeMi`) + saf `girisRedSebebi`.
  *  İKİ YÖN:
  *   · yanlış susma — başka firmanın kodu/üyeliği KABUL EDİLMEZ; pasif rol ya
  *     da pasif firma üyeliği DÜŞÜRÜR
@@ -31,7 +31,7 @@ import { kaynakOku } from "./kaynak-oku";
 
 console.log("\nOTURUM FİRMASI BEKÇİSİ\n");
 
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let hata = 0;
@@ -72,7 +72,7 @@ function kaynaklar(kok: string): string[] {
 
 async function main() {
   const { sistemPrisma } = await import("../src/lib/prisma");
-  const { firmaKodundanKimlik, firmaKoduNormalle, uyeMi } = await import("../src/lib/oturum-firmasi");
+  const { firmaKodundanDurum, firmaKoduNormalle, girisRedSebebi, uyelikGirisDurumu, uyeMi } = await import("../src/lib/oturum-firmasi");
 
   /* ① TABAN — iki farklı firmada, YALNIZ o firmaya üye birer kullanıcı */
   // SISTEM: bekçi firmalar-üstü bakar; hangi kullanıcının hangi firmaya üye olduğu.
@@ -90,13 +90,30 @@ async function main() {
   kosanBolumler.push("taban");
 
   /* ② FİRMA KODU */
-  kontrol("firma kodu kendi firmasını bulur", (await firmaKodundanKimlik(A.company.code)) === A.companyId);
-  kontrol("küçük harf + boşlukla yazılan kod da bulur", (await firmaKodundanKimlik(`  ${A.company.code.toLowerCase()} `)) === A.companyId);
-  kontrol("öteki firmanın kodu ÖTEKİ firmayı verir (karışmaz)", (await firmaKodundanKimlik(B.company.code)) === B.companyId);
-  kontrol("olmayan kod → null", (await firmaKodundanKimlik(`YOK-${Date.now()}`)) === null);
-  kontrol("boş kod → null", (await firmaKodundanKimlik("   ")) === null);
+  kontrol("firma kodu kendi firmasını bulur", (await firmaKodundanDurum(A.company.code))?.id === A.companyId);
+  kontrol("küçük harf + boşlukla yazılan kod da bulur", (await firmaKodundanDurum(`  ${A.company.code.toLowerCase()} `))?.id === A.companyId);
+  kontrol("öteki firmanın kodu ÖTEKİ firmayı verir (karışmaz)", (await firmaKodundanDurum(B.company.code))?.id === B.companyId);
+  kontrol("olmayan kod → null", (await firmaKodundanDurum(`YOK-${Date.now()}`)) === null);
+  kontrol("boş kod → null", (await firmaKodundanDurum("   ")) === null);
   kontrol("normalleştirme saf: ' abc ' → 'ABC'", firmaKoduNormalle(" abc ") === "ABC");
   kosanBolumler.push("firma-kodu");
+
+  /* ②b GİRİŞ RED SEBEBİ — saf (05.10.2026, kullanıcı bulgusu: askı uyarısı yoktu) */
+  {
+    const tam: Parameters<typeof girisRedSebebi>[0] = { kullaniciVar: true, parolaDogru: true, kisiAktif: true, firma: { aktif: true }, uyelik: { aktif: true, rolAktif: true } };
+    const r = (o: Partial<typeof tam>) => girisRedSebebi({ ...tam, ...o });
+    kontrol("her şey tamam → giriş (null)", r({}) === null);
+    kontrol("parola YANLIŞ + firma askıda → GENEL mesaj (askı sızmaz)", r({ parolaDogru: false, firma: { aktif: false } }) === "HATALI");
+    kontrol("kullanıcı YOK → genel mesaj", r({ kullaniciVar: false }) === "HATALI");
+    kontrol("parola doğru, firma askıda, ÜYE → FIRMA_ASKIDA", r({ firma: { aktif: false } }) === "FIRMA_ASKIDA");
+    kontrol("parola doğru, firma askıda, ÜYE DEĞİL → genel mesaj (başka firmanın durumu sızmaz)", r({ firma: { aktif: false }, uyelik: null }) === "HATALI");
+    kontrol("parola doğru, üyelik pasif → UYELIK_PASIF", r({ uyelik: { aktif: false, rolAktif: true } }) === "UYELIK_PASIF");
+    kontrol("parola doğru, kişi hesabı kapalı → HESAP_KAPALI", r({ kisiAktif: false }) === "HESAP_KAPALI");
+    kontrol("parola YANLIŞ + hesap kapalı → genel mesaj (kapalılık sızmaz)", r({ parolaDogru: false, kisiAktif: false }) === "HATALI");
+    kontrol("kod yok (firma null) → genel mesaj", r({ firma: null }) === "HATALI");
+    kontrol("rol pasif → genel mesaj", r({ uyelik: { aktif: true, rolAktif: false } }) === "HATALI");
+  }
+  kosanBolumler.push("red-sebebi");
 
   /* ③ ÜYELİK — iki yön */
   kontrol("A kendi firmasına üye (geçer)", await uyeMi(A.userId, A.companyId));
@@ -115,13 +132,16 @@ async function main() {
     const rol = await sistemPrisma.role.create({ data: { name: ek, companyId: Z.id }, select: { id: true } });
     await sistemPrisma.userCompanyRole.create({ data: { userId: A.userId, companyId: Z.id, roleId: rol.id } });
     kontrol("geçici firmada üyelik geçer", await uyeMi(A.userId, Z.id));
-    kontrol("  ...ve kodu çözülür", (await firmaKodundanKimlik(ek)) === Z.id);
+    kontrol("  ...ve kodu çözülür (aktif)", (await firmaKodundanDurum(ek))?.id === Z.id && (await firmaKodundanDurum(ek))?.aktif === true);
     await sistemPrisma.role.update({ where: { id: rol.id }, data: { isActive: false } });
     kontrol("rol PASİF → üyelik geçmez (açık oturum düşer)", !(await uyeMi(A.userId, Z.id)));
     await sistemPrisma.role.update({ where: { id: rol.id }, data: { isActive: true } });
     await sistemPrisma.company.update({ where: { id: Z.id }, data: { isActive: false } });
     kontrol("firma PASİF → üyelik geçmez", !(await uyeMi(A.userId, Z.id)));
-    kontrol("firma PASİF → kodu da çözülmez", (await firmaKodundanKimlik(ek)) === null);
+    // 05.10.2026: pasif firmanın kodu BULUNUR (askı sebebi söylenebilsin) ama
+    // aktif=false taşır; GİRİŞİ `uyeMi` (yukarıda) ve `girisRedSebebi` kapatır.
+    kontrol("firma PASİF → kod bulunur, aktif=false", (await firmaKodundanDurum(ek))?.aktif === false);
+    kontrol("firma PASİF → üyelik ham durumu okunur (sebep söylenebilsin)", (await uyelikGirisDurumu(A.userId, Z.id))?.aktif === true);
   } finally {
     // SISTEM: bekçinin geçici kayıtları kimlikleriyle silinir.
     await sistemPrisma.userCompanyRole.deleteMany({ where: { companyId: Z.id } });
@@ -136,10 +156,11 @@ async function main() {
   const giris = yorumsuz(kaynakOku("src/app/giris/actions.ts"));
   const gBas = giris.indexOf("export async function girisYap(");
   const gGovde = gBas >= 0 ? giris.slice(gBas, giris.indexOf("export async function cikisYap(")) : "";
-  const iUye = gGovde.indexOf("const uye = await uyeMi(kullanici?.id ?? \"-\", firmaId ?? \"-\");");
-  const iKapi = gGovde.indexOf("if (!kullanici || !kullanici.isActive || !gecti || !firmaId || !uye) {");
+  const iUye = gGovde.indexOf("const uye = await uyeMi(kullanici?.id ?? \"-\", firma?.id ?? \"-\");");
+  const iKapi = gGovde.indexOf("if (red !== null || !kullanici || !firmaId || !uye) {");
   const iAc = gGovde.indexOf("await oturumAc(kullanici.id, firmaId);");
-  kontrol("giriş: firma kodu çözülür ve üyelik sorulur", gGovde.includes("const firmaId = await firmaKodundanKimlik(firmaKodu);") && iUye >= 0);
+  kontrol("giriş: firma kodu çözülür ve üyelik sorulur", gGovde.includes("const firma = await firmaKodundanDurum(firmaKodu);") && iUye >= 0);
+  kontrol("giriş: red kararı saf gövdeden (girisRedSebebi) ve mesaj KODDAN", gGovde.includes("const red = girisRedSebebi({") && gGovde.includes('return { hatalar: [t(GIRIS_RED_ANAHTARI[red ?? "HATALI"])] };'));
   kontrol("giriş: üyelik/firma yoksa giriş REDDEDİLİR (aynı tek kapı)", iKapi >= 0);
   kontrol("giriş: oturum seçilen firmayla açılır, kapıdan SONRA", iAc >= 0 && iKapi >= 0 && iUye >= 0 && iUye < iKapi && iKapi < iAc);
 
