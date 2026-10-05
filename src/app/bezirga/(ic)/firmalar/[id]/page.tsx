@@ -130,7 +130,8 @@ export default async function FirmaKartiSayfasi({
           firmaAdi={kart.ad}
           durum={askiGorunumu}
           aciklama={kart.aski.aciklama}
-          gecmis={gecmis.map((g) => ({ ...g, an: bicim.tarihSaat(g.an) }))}
+          // Son gün izde ISO gün metni («2026-10-07»); ekranda ortak biçimleyiciyle (İlke #10).
+          gecmis={gecmis.map((g) => ({ ...g, an: bicim.tarihSaat(g.an), sonGun: g.sonGun ? bicim.tarih(new Date(`${g.sonGun}T00:00:00.000Z`)) : null }))}
           enAzGun={UYARI_EN_AZ_GUN}
           enCokGun={UYARI_EN_COK_GUN}
         />
