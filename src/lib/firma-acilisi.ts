@@ -68,6 +68,14 @@ export function acilisGirdisiniSina(
   return { durum: "TAMAM", girdi: { ad, kod, yoneticiEposta, yoneticiAd } };
 }
 
+/**
+ * Geçici parola — açılışta ve süper adminin parola sıfırlamasında TEK gövde.
+ * 9 rastgele bayt → 12 karakter (base64url); parola alt sınırını (10) aşar.
+ */
+export function geciciParolaUret(): string {
+  return randomBytes(9).toString("base64url");
+}
+
 const BASLADI = "FIRMA_ACILIS_BASLADI";
 const ACILDI = "FIRMA_ACILDI";
 
@@ -139,6 +147,11 @@ export async function kurulumDurumlari(firmaIdleri: string[]): Promise<Map<strin
   return sonuc;
 }
 
+/** Tek firmanın kurulum durumu — `kurulumDurumlari` ile aynı ölçüt; firma yoksa PASIF değil, çağıran firmayı zaten bulmuştur. */
+export async function firmaKurulumDurumu(firmaId: string): Promise<KurulumDurumu> {
+  return (await kurulumDurumlari([firmaId])).get(firmaId) ?? "PASIF";
+}
+
 async function kurulumuYurut(firmaId: string, g: FirmaAcilisGirdisi, yapanId: string): Promise<FirmaAcilisSonucu> {
   // SISTEM: firmanın kendi kaydı (tohumlara verilir).
   const firma = await sistemPrisma.company.findUniqueOrThrow({ where: { id: firmaId }, select: { id: true, name: true, code: true } });
@@ -158,7 +171,7 @@ async function kurulumuYurut(firmaId: string, g: FirmaAcilisGirdisi, yapanId: st
     /* ② TEK İŞLEM — yönetici + üyelik + aktif + iz. */
     // SISTEM: kullanıcı küreseldir; yönetici e-postası firmalar-üstü aranır.
     const mevcut = await sistemPrisma.user.findUnique({ where: { email: g.yoneticiEposta }, select: { id: true } });
-    const geciciParola = mevcut ? null : randomBytes(9).toString("base64url");
+    const geciciParola = mevcut ? null : geciciParolaUret();
     const ozet = geciciParola ? await parolaOzetle(geciciParola) : null;
     // SISTEM: açılışın son adımı tek işlemde — ya hepsi ya hiçbiri.
     await sistemPrisma.$transaction(
@@ -205,7 +218,9 @@ export async function firmaDurumunuDegistir(
   if (durum === "YARIM") return { durum: "HATA", hata: "YARIM_KURULUM" };
   // SISTEM: yönetim katmanı firmanın durumunu değiştirir; iz aynı işlemde.
   await sistemPrisma.$transaction([
+    // SISTEM: firmanın durumu (yönetim katmanı).
     sistemPrisma.company.update({ where: { id: firmaId }, data: { isActive: aktif } }),
+    // SISTEM: iz firmalar-üstü, hedef firma targetId'de.
     sistemPrisma.auditLog.create({
       data: { action: aktif ? "FIRMA_AKTIFLESTI" : "FIRMA_PASIFE_ALINDI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: null },
     }),

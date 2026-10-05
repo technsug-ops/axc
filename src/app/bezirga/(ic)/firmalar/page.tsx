@@ -1,7 +1,7 @@
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Plus } from "lucide-react";
+import { FolderOpen, Plus } from "lucide-react";
 
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -67,7 +67,9 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
         <ul className="divide-y rounded-lg border">
           {firmalar.map((f) => (
             <li key={f.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 text-sm">
-              <span className="min-w-40 font-medium">{f.name}</span>
+              <Link href={`${YONETIM_YOLU}/firmalar/${f.id}`} className="min-w-40 font-medium underline-offset-4 hover:underline">
+                {f.name}
+              </Link>
               <KopyalanabilirKod deger={f.code} etiket={t("firmaKodu")} />
               {(() => {
                 const d = durumlar.get(f.id) ?? (f.isActive ? "TAM" : "PASIF");
@@ -78,7 +80,13 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
                     </Badge>
                     <span className="text-muted-foreground">{t("uyeSayisi", { sayi: f._count.uyelikler })}</span>
                     <span className="text-muted-foreground text-xs">{t("acilis", { tarih: bicim.tarih(f.createdAt) })}</span>
-                    <div className="ml-auto">
+                    <div className="ml-auto flex flex-wrap items-start gap-2">
+                      <Button asChild size="sm" variant="outline" className="min-h-11">
+                        <Link href={`${YONETIM_YOLU}/firmalar/${f.id}`}>
+                          <FolderOpen />
+                          {t("kartiAc")}
+                        </Link>
+                      </Button>
                       <FirmaEylemleri firmaId={f.id} firmaAdi={f.name} durum={d} />
                     </div>
                   </>

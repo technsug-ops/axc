@@ -293,6 +293,10 @@ async function donguOlc() {
   const IZINLI = new Set([
     "scripts/firma-bag-tetikleyici-uret.ts", "src/lib/firma-baglari.uretilmis.ts", "src/lib/geri-yukle-calistir.ts",
     "scripts/firma-suzgeci-dogrula.ts", "scripts/firma-suzgeci-mutasyon-kontrol.ts",
+    // K318 (05.10.2026): uygulama adı bekçisi değişkenin ADINI DENETLER (eski
+    // adla kalan tek yer, gerekçeli istisna); harness'i o satırı bozar.
+    // Susturma yolu değil — üstteki iki bekçiyle aynı sınıf.
+    "scripts/uygulama-adi-dogrula.ts", "scripts/uygulama-adi-mutasyon-kontrol.ts",
   ]);
   let yasakli = 0;
   for (const yol of [...dosyalar("src"), ...dosyalar("scripts")]) {

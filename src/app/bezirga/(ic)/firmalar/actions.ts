@@ -11,6 +11,7 @@ import {
   firmaDurumunuDegistir,
   type FirmaAcilisHatasi,
 } from "@/lib/firma-acilisi";
+import { firmaAdiniDegistir, firmaKullanicisininParolasiniSifirla } from "@/lib/firma-karti";
 import { yonetimEylemi } from "@/lib/yonetim-oturumu";
 
 /**
@@ -70,4 +71,42 @@ export async function firmaDurumu(firmaId: string, aktif: boolean): Promise<{ ha
   revalidatePath(`${YONETIM_YOLU}/firmalar`);
   if (sonuc.durum === "HATA") return { hata: t(sonuc.hata === "YARIM_KURULUM" ? "hataYarimKurulum" : "hataFirmaYok") };
   return { tamam: t(aktif ? "aktiflestirildi" : "pasifeAlindi") };
+}
+
+/* ═══ FİRMA KARTI (süper admin ① — 05.10.2026) ═══════════════════════════ */
+
+export type FirmaAdiDurumu = { hatalar?: string[]; tamam?: string };
+
+export async function firmaAdiDegistir(_onceki: FirmaAdiDurumu, formData: FormData): Promise<FirmaAdiDurumu> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hatalar: [t(HATA_ANAHTARI.YETKISIZ)] };
+  const firmaId = String(formData.get("firmaId") ?? "");
+  try {
+    const sonuc = await firmaAdiniDegistir(firmaId, String(formData.get("ad") ?? ""), k.id);
+    if (sonuc.durum === "HATA") return { hatalar: [t(sonuc.hata === "AD_BOS" ? "hataAdBos" : "hataFirmaYok")] };
+    revalidatePath(`${YONETIM_YOLU}/firmalar`);
+    revalidatePath(`${YONETIM_YOLU}/firmalar/${firmaId}`);
+    return { tamam: t(sonuc.degisti ? "adKaydedildi" : "adAyni") };
+  } catch (e) {
+    console.error("[yonetim firma adi] beklenmeyen hata:", e);
+    return { hatalar: [t("hataKaydedilemedi")] };
+  }
+}
+
+export type ParolaSifirlamaDurumu = { hata?: string; geciciParola?: string; eposta?: string };
+
+export async function firmaKullaniciParolaSifirla(firmaId: string, kullaniciId: string): Promise<ParolaSifirlamaDurumu> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hata: t(HATA_ANAHTARI.YETKISIZ) };
+  try {
+    const sonuc = await firmaKullanicisininParolasiniSifirla(firmaId, kullaniciId, k.id);
+    if (sonuc.durum === "HATA") return { hata: t(sonuc.hata === "SUPER_ADMIN" ? "hataSuperAdminSifirlanmaz" : "hataUyeDegil") };
+    revalidatePath(`${YONETIM_YOLU}/firmalar/${firmaId}`);
+    return { geciciParola: sonuc.geciciParola, eposta: sonuc.eposta };
+  } catch (e) {
+    console.error("[yonetim parola sifirla] beklenmeyen hata:", e);
+    return { hata: t("hataKaydedilemedi") };
+  }
 }
