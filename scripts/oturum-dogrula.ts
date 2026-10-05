@@ -18,7 +18,8 @@
  * ============================================================================
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
+import { kaynakOku } from "./kaynak-oku";
 import { join } from "node:path";
 
 import {
@@ -212,7 +213,7 @@ async function main() {
     console.log("\n⑤ PAROLA DEĞİŞİMİ ÇIKIŞ GİBİ BİTER");
     const yorumsuz = (k: string) =>
       k.replace(/\r/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-    const eylem = yorumsuz(readFileSync("src/app/parola-degistir/actions.ts", "utf8"));
+    const eylem = yorumsuz(kaynakOku("src/app/parola-degistir/actions.ts"));
     const bas = eylem.indexOf("export async function parolamiDegistir(");
     const govde = bas >= 0 ? eylem.slice(bas) : "";
     const iKapat = govde.indexOf("await oturumKapat();");
@@ -221,7 +222,7 @@ async function main() {
     kontrol("  ...çerezi siler (`await oturumKapat();`)", iKapat >= 0);
     kontrol("  ...giriş ekranına bilgiyle döner", iYonlen >= 0);
     kontrol("  ...çerez YÖNLENDİRMEDEN ÖNCE silinir", iKapat >= 0 && iYonlen >= 0 && iKapat < iYonlen);
-    const giris = yorumsuz(readFileSync("src/app/giris/page.tsx", "utf8"));
+    const giris = yorumsuz(kaynakOku("src/app/giris/page.tsx"));
     kontrol(
       "giriş ekranı `?parola=degisti`yi okur ve bilgiyi yazar",
       /parola === "degisti" \? \([\s\S]{0,400}?t\("parolaDegistiBilgi"\)/.test(giris),
