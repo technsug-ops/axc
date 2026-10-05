@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
-import { oturumdakiKullanici } from "@/lib/oturum";
+import { oturumKapat, oturumdakiKullanici } from "@/lib/oturum";
 import {
   EN_AZ_PAROLA_UZUNLUGU,
   parolaDogrula,
@@ -68,5 +68,10 @@ export async function parolamiDegistir(
     },
   });
 
+  // ⚠ ÇEREZ DE SİLİNİR (05.10.2026, kullanıcı bulgusu). Sürüm artışı jetonu
+  // GEÇERSİZ kılıyordu ama çerez duruyordu; Next.js çerez değişmeyen eylemden
+  // sonra layout'u yeniden çizmediği için giriş formu eski menünün İÇİNDE
+  // açılıyordu. Çerezi silmek çıkışla aynı yol: layout tazelenir.
+  await oturumKapat();
   redirect("/giris?parola=degisti");
 }
