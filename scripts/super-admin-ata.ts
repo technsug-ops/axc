@@ -49,8 +49,9 @@ async function main() {
   const { parolaOzetle } = await import("../src/lib/parola");
   const { izYaz } = await import("../src/lib/iz");
 
-  // SISTEM: kullanıcı küreseldir; süper admin işareti firmalar-üstüdür.
-  const mevcut = await sistemPrisma.user.findUnique({ where: { email: eposta }, select: { id: true, isSuperAdmin: true } });
+  // SISTEM: Model 2 (05.10.2026) — süper admin FİRMASIZ hesaptır; yalnız firmasız
+  // hesaplar aranır. Aynı e-postalı bir FİRMA hesabı süper admin yapılmaz, ayrı kalır.
+  const mevcut = await sistemPrisma.user.findFirst({ where: { email: eposta, hesapFirmasiId: null }, select: { id: true, isSuperAdmin: true } });
   let kullaniciId: string;
   if (mevcut) {
     if (mevcut.isSuperAdmin) {

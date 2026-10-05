@@ -221,6 +221,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
         "hedef": "UserCompanyRole",
         "liste": true
       },
+      "hesaplar": {
+        "hedef": "User",
+        "liste": true
+      },
       "auditLogs": {
         "hedef": "AuditLog",
         "liste": true
@@ -1447,6 +1451,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
   "User": {
     "firma": false,
     "iliskiler": {
+      "hesapFirmasi": {
+        "hedef": "Company",
+        "liste": false
+      },
       "stockMovements": {
         "hedef": "StockMovement",
         "liste": true
@@ -1496,7 +1504,9 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
         "liste": true
       }
     },
-    "yabanciAnahtarlar": []
+    "yabanciAnahtarlar": [
+      "hesapFirmasiId"
+    ]
   },
   "UserCompanyRole": {
     "firma": true,

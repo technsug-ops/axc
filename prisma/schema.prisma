@@ -2748,7 +2748,20 @@ model Expense {
 model User {
   id String @id @default(cuid())
 
-  email String @unique
+  /// ⚠ 05.10.2026 (kullanıcı kararı «Model 2: firma başına hesap»): e-posta artık
+  /// SİSTEMDE değil FİRMA İÇİNDE tekil — aynı e-posta her firmada ayrı hesap ve
+  /// ayrı parola; hangi hesap olduğunu girişteki firma kodu belirler.
+  email String
+
+  /// HESAP FİRMASI — kişinin ait olduğu firma; süper admin için null.
+  /// ⚠ ADI BİLEREK `companyId` DEĞİL: süzgeç `companyId` taşıyan her modeli
+  /// firmaya ait sayar (`firma-modelleri-uret.ts`); kişi tablosu süzgece girerse
+  /// giriş anındaki (firma bağlamı henüz yokken) arama düşer ve firmasız süper
+  /// admin «firma boş olamaz» kuralına çarpar. Kişi tablosu firmalar-üstü kalır,
+  /// firma her sorguda AÇIKÇA verilir. Değişmez: hesap firması = üyeliğin firması
+  /// (`hesap-modeli:dogrula` ölçer).
+  hesapFirmasiId String?
+  hesapFirmasi   Company? @relation("HesapFirmasi", fields: [hesapFirmasiId], references: [id], onDelete: Restrict)
 
   /// scrypt özeti — biçim: `scrypt$N$r$p$tuz$ozet` (hepsi base64url).
   /// Ayarlar özetin İÇİNDE durur ki ileride maliyet artırılsa eski
@@ -2802,6 +2815,9 @@ model User {
   /// Bu kullanıcının iptal ettiği satışlar.
   iptalEttigiSatislar Sale[]            @relation("SatisIptalEden")
 
+  /// Firma içinde tekil e-posta. ⚠ MySQL'de NULL tekilliğe girmez: süper adminlerin
+  /// (hesap firması null) e-posta tekilliği uygulamada korunur ve bekçiyle ölçülür.
+  @@unique([hesapFirmasiId, email])
   @@index([isActive])
 }
 
@@ -3305,6 +3321,8 @@ model Company {
   askiAciklama  String?          @db.Text
 
   uyelikler UserCompanyRole[]
+  /// Model 2 (05.10.2026): bu firmaya ait hesaplar.
+  hesaplar  User[] @relation("HesapFirmasi")
   auditLogs AuditLog[]
   talepler  Talep[]
   /// K303 Aşama 2 — firmaya ait tabloların geri bağları.

@@ -170,8 +170,9 @@ async function kurulumuYurut(firmaId: string, g: FirmaAcilisGirdisi, yapanId: st
     }
 
     /* ② TEK İŞLEM — yönetici + üyelik + aktif + iz. */
-    // SISTEM: kullanıcı küreseldir; yönetici e-postası firmalar-üstü aranır.
-    const mevcut = await sistemPrisma.user.findUnique({ where: { email: g.yoneticiEposta }, select: { id: true } });
+    // SISTEM: Model 2 (05.10.2026) — yönetici YENİ firmanın kendi hesabıdır; arama
+    // yalnız bu firmanın içinde (yarıda kalan kurulumun yeniden denemesi aynı hesabı bulsun).
+    const mevcut = await sistemPrisma.user.findUnique({ where: { hesapFirmasiId_email: { hesapFirmasiId: firma.id, email: g.yoneticiEposta } }, select: { id: true } });
     const geciciParola = mevcut ? null : geciciParolaUret();
     const ozet = geciciParola ? await parolaOzetle(geciciParola) : null;
     // SISTEM: açılışın son adımı tek işlemde — ya hepsi ya hiçbiri.
@@ -181,7 +182,7 @@ async function kurulumuYurut(firmaId: string, g: FirmaAcilisGirdisi, yapanId: st
         const yoneticiId = mevcut
           ? mevcut.id
           : (await tx.user.create({
-              data: { email: g.yoneticiEposta, name: g.yoneticiAd || null, passwordHash: ozet!, mustChangePassword: true },
+              data: { email: g.yoneticiEposta, hesapFirmasiId: firma.id, name: g.yoneticiAd || null, passwordHash: ozet!, mustChangePassword: true },
               select: { id: true },
             })).id;
         await tx.userCompanyRole.upsert({

@@ -63,8 +63,10 @@ export async function kullaniciEkle(
     return { hatalar: [t("parolaKisa", { uzunluk: EN_AZ_PAROLA_UZUNLUGU })] };
   }
 
+  // Model 2 (05.10.2026): «zaten var» YALNIZ bu firmanın içinde sorulur — başka
+  // firmadaki aynı e-posta ayrı bir hesaptır ve burada hiçbir iz bırakmaz.
   const mevcut = await prisma.user.findUnique({
-    where: { email: cozum.data.email },
+    where: { hesapFirmasiId_email: { hesapFirmasiId: baglam.companyId, email: cozum.data.email } },
     select: { id: true },
   });
   if (mevcut) return { hatalar: [t("epostaZatenVar", { eposta: cozum.data.email })] };
@@ -86,6 +88,7 @@ export async function kullaniciEkle(
       const kullanici = await tx.user.create({
         data: {
           email: cozum.data.email,
+          hesapFirmasiId: firma.id,
           name: cozum.data.name === "" ? null : cozum.data.name,
           passwordHash: await parolaOzetle(parola),
           // İLK GİRİŞTE DEĞİŞTİRME ZORUNLU: parolayı sahip belirledi,

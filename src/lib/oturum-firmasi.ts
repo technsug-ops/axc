@@ -101,3 +101,25 @@ export async function uyelikGirisDurumu(kullaniciId: string, firmaId: string): P
   });
   return u ? { aktif: u.isActive, rolAktif: u.role.isActive } : null;
 }
+
+/**
+ * MODEL 2 — FİRMA BAŞINA HESAP (kullanıcı kararı 05.10.2026). Firma girişinin
+ * hesabı: FİRMA + E-POSTA ile bulunur; aynı e-posta başka firmada ayrı hesaptır.
+ * Firma yoksa da sorgu KOŞAR (süre, hangisinin eksik olduğunu söylemesin).
+ */
+export async function firmaHesabi(firmaId: string | null, eposta: string) {
+  // SISTEM: giriş anı, firma bağlamı henüz yok; hesap firma + e-posta çiftiyle.
+  return sistemPrisma.user.findUnique({
+    where: { hesapFirmasiId_email: { hesapFirmasiId: firmaId ?? "-", email: eposta } },
+    select: { id: true, passwordHash: true, isActive: true },
+  });
+}
+
+/** Yönetim girişinin hesabı: YALNIZ firmasız süper admin hesabı (aynı e-postalı firma hesabı bulunmaz). */
+export async function superAdminHesabi(eposta: string) {
+  // SISTEM: süper admin firmalar-üstüdür.
+  return sistemPrisma.user.findFirst({
+    where: { email: eposta, hesapFirmasiId: null, isSuperAdmin: true },
+    select: { id: true, passwordHash: true, isActive: true, isSuperAdmin: true, mustChangePassword: true },
+  });
+}

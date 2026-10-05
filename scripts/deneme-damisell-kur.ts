@@ -61,8 +61,9 @@ async function main() {
   // SISTEM: firma açılışı firmalar-üstü bir işlemdir.
   const varMi = await sistemPrisma.company.findUnique({ where: { code: "DMS" } });
   // SISTEM: kullanıcı küreseldir; üyelik firmalar-üstü okunur (yalnız okuma).
-  const varolanKullanici = await sistemPrisma.user.findUnique({
-    where: { email: EPOSTA },
+  // Model 2 (05.10.2026): hesap firmaya aittir — Damisell'in kendi hesabı aranır.
+  const varolanKullanici = !varMi ? null : await sistemPrisma.user.findUnique({
+    where: { hesapFirmasiId_email: { hesapFirmasiId: varMi.id, email: EPOSTA } },
     select: { id: true, userCompanyRoles: { select: { companyId: true } } },
   });
   if (varMi) {
@@ -161,7 +162,7 @@ async function main() {
   const parola = randomBytes(12).toString("base64url");
   // SISTEM: kullanıcı küreseldir (tasarım §2); üyelik aşağıda firma bağlamında.
   const kullanici = await sistemPrisma.user.create({
-    data: { email: EPOSTA, name: `${firmaAdi} Deneme`, passwordHash: await parolaOzetle(parola), mustChangePassword: false },
+    data: { email: EPOSTA, hesapFirmasiId: firma.id, name: `${firmaAdi} Deneme`, passwordHash: await parolaOzetle(parola), mustChangePassword: false },
   });
   await firmaBaglamindaCalistir(firma.id, async () => {
     const sahip = await prisma.role.findFirstOrThrow({ where: { isSystem: true }, select: { id: true, name: true } });

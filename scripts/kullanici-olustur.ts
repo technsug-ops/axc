@@ -24,6 +24,7 @@ import {
   parolaYeterliMi,
 } from "../src/lib/parola";
 import { prisma } from "../src/lib/prisma";
+import { betikFirmasi } from "./betik-firmasi";
 
 async function main() {
   const [epostaHam, parola, ad] = process.argv.slice(2);
@@ -50,7 +51,10 @@ async function main() {
   }
 
   const ozet = await parolaOzetle(parola);
-  const mevcut = await prisma.user.findUnique({ where: { email: eposta } });
+  // Model 2 (05.10.2026): hesap bir firmaya aittir — firma `--firma=<kod>` ya da
+  // PAZARYERI_KIMLIK_FIRMASI ile seçilir (ortak betik firma seçimi).
+  const hesapFirmasiId = await betikFirmasi(process.env.DATABASE_URL ?? "");
+  const mevcut = await prisma.user.findUnique({ where: { hesapFirmasiId_email: { hesapFirmasiId, email: eposta } } });
 
   if (mevcut) {
     await prisma.user.update({
@@ -67,7 +71,7 @@ async function main() {
     console.log("Açık tüm oturumlar kapatıldı; yeniden giriş gerekiyor.\n");
   } else {
     await prisma.user.create({
-      data: { email: eposta, passwordHash: ozet, name: ad ?? null },
+      data: { email: eposta, hesapFirmasiId, passwordHash: ozet, name: ad ?? null },
     });
     console.log(`\nKullanıcı oluşturuldu: ${eposta}\n`);
   }

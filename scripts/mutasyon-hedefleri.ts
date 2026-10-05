@@ -381,4 +381,6 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "aski-sureci-mutasyon:kontrol",
   /** K303 (05.10.2026) — `firma-acilisi.ts` aski-sureci harness'iyle ortak. */
   "firma-acilisi-mutasyon:kontrol",
+  /** K303 Model 2 (05.10.2026) — `hesap-modeli` oturum-firmasi, giriş, kullanıcılar ve firma açılışını mutasyona uğratıyor. */
+  "hesap-modeli-mutasyon:kontrol",
 ];

@@ -10,6 +10,7 @@ import { izYaz } from "@/lib/iz";
 import { oturumAc, oturumKapat } from "@/lib/oturum";
 import {
   FIRMA_KODU_CEREZI,
+  firmaHesabi,
   firmaKodundanDurum,
   firmaKoduNormalle,
   girisRedSebebi,
@@ -26,7 +27,6 @@ const GIRIS_RED_ANAHTARI: Record<GirisRedSebebi, string> = {
   HESAP_KAPALI: "hesapKapali",
 };
 import { parolaDogrula } from "@/lib/parola";
-import { prisma } from "@/lib/prisma";
 
 export type GirisDurumu = { hatalar?: string[] };
 
@@ -78,17 +78,19 @@ export async function girisYap(
     return { hatalar: [t("cokFazlaDeneme", { dakika })] };
   }
 
-  const kullanici = await prisma.user.findUnique({
-    where: { email: eposta },
-    select: { id: true, passwordHash: true, isActive: true },
-  });
+  /**
+   * Model 2 (05.10.2026, kullanıcı kararı): hesap FİRMA + E-POSTA ile bulunur —
+   * aynı e-posta her firmada ayrı hesaptır. Firma kodu bu yüzden kişiden ÖNCE
+   * çözülür; kod yoksa da arama KOŞAR (süre, hangisinin eksik olduğunu söylemesin).
+   */
+  const firma = await firmaKodundanDurum(firmaKodu);
+  const kullanici = await firmaHesabi(firma?.id ?? null, eposta);
 
   const gecti = await parolaDogrula(
     parola,
     kullanici?.passwordHash ?? SAHTE_OZET,
   );
   /** Üyelik sorgusu firma/kullanıcı yoksa da KOŞAR — süre, hangisinin eksik olduğunu söylemesin. */
-  const firma = await firmaKodundanDurum(firmaKodu);
   const uyelik = await uyelikGirisDurumu(kullanici?.id ?? "-", firma?.id ?? "-");
   const uye = await uyeMi(kullanici?.id ?? "-", firma?.id ?? "-");
   /**

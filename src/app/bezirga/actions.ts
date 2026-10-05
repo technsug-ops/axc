@@ -13,6 +13,7 @@ import { parolaDogrula, parolaOzetle } from "@/lib/parola";
 import { EN_AZ_PAROLA_UZUNLUGU, PAROLA_HATA_ANAHTARI, parolaDegisimiHatasi } from "@/lib/parola-degisimi";
 import type { ParolaDurumu } from "@/app/parola-degistir/actions";
 import { sistemPrisma } from "@/lib/prisma";
+import { superAdminHesabi } from "@/lib/oturum-firmasi";
 import { yonetimEylemiParolaEkrani, yonetimOturumuAc, yonetimOturumuKapat } from "@/lib/yonetim-oturumu";
 
 export type YonetimGirisDurumu = { hatalar?: string[] };
@@ -46,10 +47,9 @@ export async function yonetimGirisYap(
   }
 
   // SISTEM: kullanıcı ve süper admin işareti firmalar-üstüdür.
-  const kullanici = await sistemPrisma.user.findUnique({
-    where: { email: eposta },
-    select: { id: true, passwordHash: true, isActive: true, isSuperAdmin: true, mustChangePassword: true },
-  });
+  // Model 2 (05.10.2026): yönetim girişi YALNIZ firmasız süper admin hesabını bulur —
+  // aynı e-postayla açılmış bir firma hesabı bu kapıdan giremez.
+  const kullanici = await superAdminHesabi(eposta);
   const gecti = await parolaDogrula(parola, kullanici?.passwordHash ?? SAHTE_OZET);
 
   if (!kullanici || !kullanici.isActive || !kullanici.isSuperAdmin || !gecti) {

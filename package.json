@@ -499,6 +499,8 @@
     "firma-karti:dogrula": "tsx scripts/firma-karti-dogrula.ts",
     "kullanici-uyeligi:dogrula": "tsx scripts/kullanici-uyeligi-dogrula.ts",
     "aski-sureci:dogrula": "tsx scripts/aski-sureci-dogrula.ts",
+    "hesap-modeli:dogrula": "tsx scripts/hesap-modeli-dogrula.ts",
+    "hesap-modeli-mutasyon:kontrol": "tsx scripts/hesap-modeli-mutasyon-kontrol.ts",
     "aski-sureci-mutasyon:kontrol": "tsx scripts/aski-sureci-mutasyon-kontrol.ts",
     "kullanici-uyeligi-mutasyon:kontrol": "tsx scripts/kullanici-uyeligi-mutasyon-kontrol.ts",
     "firma-karti-mutasyon:kontrol": "tsx scripts/firma-karti-mutasyon-kontrol.ts",
