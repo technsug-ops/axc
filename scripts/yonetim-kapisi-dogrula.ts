@@ -92,7 +92,19 @@ async function main() {
   kontrol("oturum okuması işareti sorar", oku.includes("if (!govde || govde.firmaId !== YONETIM_ISARETI) return null;"));
   kontrol("oturum okuması aktif + SÜPER ADMİN sorar (her istekte, veritabanından)", oku.includes("if (!k || !k.isActive || !k.isSuperAdmin) return null;"));
   kontrol("oturum okuması oturum sürümünü sorar", oku.includes("if (k.sessionVersion !== govde.oturumSurumu) return null;"));
-  kontrol("sayfa kapısı reddedileni 404'e gönderir", /export async function yonetimSayfasi\(\)[\s\S]{0,200}if \(!k\) notFound\(\);/.test(ot));
+  const sayfaKapisi = govde(ot, "export async function yonetimSayfasi(");
+  kontrol("sayfa kapısı reddedileni 404'e gönderir", sayfaKapisi.includes('if (karar === "GIRIS_YOK" || !k) notFound();'));
+  /* 05.10.2026 — süper admin ilk girişte parolasını değiştirir (kullanıcı kararı). */
+  kontrol("sayfa kapısı parolası değişmeli kişiyi PAROLA ekranına gönderir", sayfaKapisi.includes('if (karar === "PAROLA") redirect(`${YONETIM_YOLU}/parola`);'));
+  const eylemKapisi = govde(ot, "export async function yonetimEylemi(");
+  kontrol("eylem kapısı yalnız TAMAM kararında kişiyi verir (parola değişmeli → null)", eylemKapisi.includes('return yonetimKapiKarari(k) === "TAMAM" ? k : null;'));
+  {
+    const { yonetimKapiKarari } = await import("../src/lib/yonetim-oturumu");
+    const kisi = { id: "k", email: "e", ad: null };
+    kontrol("karar: oturum yok → GIRIS_YOK", yonetimKapiKarari(null) === "GIRIS_YOK");
+    kontrol("karar: parola değişmeli → PAROLA", yonetimKapiKarari({ ...kisi, parolaDegismeli: true }) === "PAROLA");
+    kontrol("karar: parola tamam → TAMAM", yonetimKapiKarari({ ...kisi, parolaDegismeli: false }) === "TAMAM");
+  }
   kontrol("çerez YALNIZ yönetim yolunda (path: YONETIM_YOLU)", govde(ot, "export async function yonetimOturumuAc(").includes("path: YONETIM_YOLU,"));
   const eylem = yorumsuz(kaynakOku("src/app/bezirga/actions.ts"));
   const gir = govde(eylem, "export async function yonetimGirisYap(");
@@ -104,8 +116,32 @@ async function main() {
   /* ③ DESEN YASAĞI */
   const sayfalar = dosyalar("src/app/bezirga").filter((d) => /\/(page|layout)\.tsx$/.test(d) && d !== "src/app/bezirga/page.tsx");
   kontrol(`taban: yönetim altında giriş dışı sayfa/düzen var (${sayfalar.length} ≥ 2)`, sayfalar.length >= 2, sayfalar);
-  const korumasiz = sayfalar.filter((d) => !/await yonetimSayfasi\(\)/.test(yorumsuz(kaynakOku(d))));
+  /* Parola ekranı TEK istisna: kapısı `yonetimSayfasiParolaEkrani` (parola
+     zorunluluğuna bakmaz, bakarsa kendine yönlendirirdi). */
+  const PAROLA_EKRANI = "src/app/bezirga/parola/page.tsx";
+  const korumasiz = sayfalar.filter((d) =>
+    d === PAROLA_EKRANI
+      ? !/await yonetimSayfasiParolaEkrani\(\)/.test(yorumsuz(kaynakOku(d)))
+      : !/await yonetimSayfasi\(\)/.test(yorumsuz(kaynakOku(d))),
+  );
   kontrol("yönetim altındaki HER sayfa ve düzen kendi kapısını çağırır", korumasiz.length === 0, korumasiz);
+  kontrol("parola ekranı yönetim altında var", sayfalar.includes(PAROLA_EKRANI), sayfalar);
+  /* Gevşek kapılar (parolaya bakmayan) YALNIZ parola ekranı ve parola eyleminde. */
+  const modul = (d: string) => d.endsWith("yonetim-oturumu.ts");
+  const gevsekSayfa = dosyalar("src").filter((d) => d !== PAROLA_EKRANI && !modul(d) && /\byonetimSayfasiParolaEkrani\(/.test(yorumsuz(kaynakOku(d))));
+  kontrol("parolaya bakmayan SAYFA kapısı başka hiçbir yerde çağrılmaz", gevsekSayfa.length === 0, gevsekSayfa);
+  const EYLEM_DOSYASI = "src/app/bezirga/actions.ts";
+  const gevsekEylemBaska = dosyalar("src").filter((d) => d !== EYLEM_DOSYASI && !modul(d) && /\byonetimEylemiParolaEkrani\(/.test(yorumsuz(kaynakOku(d))));
+  const parolaEylemi = govde(eylem, "export async function yonetimParolamiDegistir(");
+  const gevsekEylemSayisi = (eylem.match(/\byonetimEylemiParolaEkrani\(/g) ?? []).length;
+  kontrol(
+    "parolaya bakmayan EYLEM kapısı yalnız parola eyleminde (başka dosyada yok, dosyada tek çağrı, o da parola eyleminde)",
+    gevsekEylemBaska.length === 0 && gevsekEylemSayisi === 1 && parolaEylemi.includes("await yonetimEylemiParolaEkrani()"),
+    { gevsekEylemBaska, gevsekEylemSayisi },
+  );
+  const iSil = parolaEylemi.indexOf("await yonetimOturumuKapat();");
+  const iYon = parolaEylemi.indexOf("redirect(`${YONETIM_YOLU}?parola=degisti`);");
+  kontrol("parola eylemi yönetim çerezini SİLER, yönlendirmeden ÖNCE (layout tazelenir)", iSil >= 0 && iYon >= 0 && iSil < iYon);
   kosanBolumler.push("desen");
 
   /* ④ KÖK DÜZEN */

@@ -2986,7 +2986,8 @@
     "eskiYanlis": "",
     "kisa": "",
     "tekrarTutmuyor": "",
-    "ayniParola": ""
+    "ayniParola": "",
+    "kaydedilemedi": ""
   },
   "Pencere": {
     "bugun": "",
@@ -5310,6 +5311,8 @@
     "pasif": "",
     "uyeSayisi": "",
     "acilis": "",
+    "parolaZorunluMetin": "",
+    "parolaDegistiBilgi": "",
     "firmaKarti": "",
     "kartiAc": "",
     "bolumKimlik": "",

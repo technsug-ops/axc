@@ -2,7 +2,10 @@ import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+import { CircleCheck } from "lucide-react";
+
 import { Card, CardContent } from "@/components/ui/card";
+import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { UYGULAMA } from "@/lib/uygulama";
 import { yonetimOturumu } from "@/lib/yonetim-oturumu";
 
@@ -20,8 +23,10 @@ export async function generateMetadata() {
  * SELLİORA YÖNETİM GİRİŞİ (K303 4c-2). Proxy'nin AÇIK bıraktığı tek yönetim
  * yolu. Süper admin zaten girmişse firma listesine geçer.
  */
-export default async function YonetimGirisSayfasi() {
-  if (await yonetimOturumu()) redirect(`${YONETIM_YOLU}/firmalar`);
+export default async function YonetimGirisSayfasi({ searchParams }: { searchParams: Promise<{ parola?: string }> }) {
+  const { parola } = await searchParams;
+  const acik = await yonetimOturumu();
+  if (acik) redirect(acik.parolaDegismeli ? `${YONETIM_YOLU}/parola` : `${YONETIM_YOLU}/firmalar`);
   const t = await getTranslations("Yonetim");
   return (
     <div className="flex min-h-svh items-center justify-center p-6">
@@ -31,7 +36,13 @@ export default async function YonetimGirisSayfasi() {
           <p className="text-muted-foreground text-sm">{t("girisAltBaslik")}</p>
         </div>
         <Card>
-          <CardContent>
+          <CardContent className="space-y-3">
+            {parola === "degisti" ? (
+              <p role="status" className={`flex items-start gap-2 rounded-lg p-3 text-sm ${DURUM_KUTUSU.olumlu} ${DURUM_YAZISI.olumlu}`}>
+                <CircleCheck className="mt-0.5 size-4 shrink-0" />
+                {t("parolaDegistiBilgi")}
+              </p>
+            ) : null}
             <YonetimGirisFormu />
           </CardContent>
         </Card>

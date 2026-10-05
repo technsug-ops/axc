@@ -54,6 +54,25 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "YOL OLCUTU GEVSEK (onek)", yon: "FAZLADAN", dosya: IMZA,
     bul: "  return yol === YONETIM_YOLU || yol.startsWith(`${YONETIM_YOLU}/`);", koy: "  return yol.startsWith(YONETIM_YOLU);",
     bozdugu: "YONETIM_YOLU + X gibi bir firma yolu yonetim sayilir" },
+  /* ── 05.10.2026: süper admin ilk girişte parolasını değiştirir (kullanıcı kararı) ── */
+  { ad: "SAYFA KAPISI PAROLAYA YONLENDIRMIYOR", yon: "KALDIRAN", dosya: OTURUM,
+    bul: '  if (karar === "PAROLA") redirect(`${YONETIM_YOLU}/parola`);\n', koy: "",
+    bozdugu: "gecici parolali super admin parolasini degistirmeden panele girer" },
+  { ad: "EYLEM KAPISI PAROLALI KISIYE ACIK", yon: "KALDIRAN", dosya: OTURUM,
+    bul: '  return yonetimKapiKarari(k) === "TAMAM" ? k : null;', koy: "  return k;",
+    bozdugu: "parolasi degismeli kisi firma acar / parola sifirlar" },
+  { ad: "KAPI KARARI HEP TAMAM", yon: "KALDIRAN", dosya: OTURUM,
+    bul: '  return k.parolaDegismeli ? "PAROLA" : "TAMAM";', koy: '  return "TAMAM";',
+    bozdugu: "parola zorunlulugu karar govdesinde sessizce duser" },
+  { ad: "BASKA SAYFA GEVSEK KAPIYI KULLANIYOR", yon: "FAZLADAN", dosya: FIRMALAR,
+    bul: "  await yonetimSayfasi();", koy: "  await yonetimSayfasiParolaEkrani();",
+    bozdugu: "Firmalar sayfasi parola zorunluluguna bakmayan kapidan acilir" },
+  { ad: "BASKA EYLEM GEVSEK KAPIYI KULLANIYOR", yon: "FAZLADAN", dosya: EYLEM,
+    bul: "export async function yonetimCikisYap() {\n", koy: "export async function yonetimCikisYap() {\n  await yonetimEylemiParolaEkrani();\n",
+    bozdugu: "parolaya bakmayan eylem kapisi parola eylemi disina yayilir" },
+  { ad: "PAROLA EYLEMI CEREZI SILMIYOR", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "  await yonetimOturumuKapat();\n  redirect(`${YONETIM_YOLU}?parola=degisti`);", koy: "  redirect(`${YONETIM_YOLU}?parola=degisti`);",
+    bozdugu: "parola degisince giris formu eski yonetim kabugunun icinde acilir (K319-2 dersi)" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

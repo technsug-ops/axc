@@ -2986,7 +2986,8 @@
     "eskiYanlis": "Mevcut parola yanlış.",
     "kisa": "Yeni parola en az {uzunluk} karakter olmalı.",
     "tekrarTutmuyor": "İki parola aynı değil.",
-    "ayniParola": "Yeni parola eskisiyle aynı olamaz."
+    "ayniParola": "Yeni parola eskisiyle aynı olamaz.",
+    "kaydedilemedi": "Parola kaydedilemedi, beklenmeyen bir hata oluştu. Tekrar deneyin."
   },
   "Pencere": {
     "bugun": "Bugün",
@@ -5310,6 +5311,8 @@
     "pasif": "Pasif",
     "uyeSayisi": "{sayi} üye",
     "acilis": "Açılış {tarih}",
+    "parolaZorunluMetin": "Bu hesabın parolası geçici. Yönetim paneline geçmeden önce kendi parolanızı belirleyin.",
+    "parolaDegistiBilgi": "Parolanız değişti. Yönetim oturumunuz kapatıldı; yeni parolanızla giriş yapın.",
     "firmaKarti": "Firma kartı",
     "kartiAc": "Aç",
     "bolumKimlik": "Kimlik",

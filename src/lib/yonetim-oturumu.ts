@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import {
   jetonUret,
@@ -24,7 +24,19 @@ import { sistemPrisma } from "@/lib/prisma";
  * ============================================================================
  */
 
-export type YonetimKullanicisi = { id: string; email: string; ad: string | null };
+export type YonetimKullanicisi = { id: string; email: string; ad: string | null; parolaDegismeli: boolean };
+
+/**
+ * KAPI KARARI — saf (05.10.2026, kullanıcı kararı «süper admin ilk girişte
+ * parolasını değiştirsin»). Firma tarafındaki kural yönetime de işler:
+ * parolası değişmeli olan kişi yönetim sayfalarını AÇAMAZ, yönetim eylemi
+ * ÇALIŞTIRAMAZ; yalnız parola ekranına gider.
+ */
+export type YonetimKapiKarari = "GIRIS_YOK" | "PAROLA" | "TAMAM";
+export function yonetimKapiKarari(k: YonetimKullanicisi | null): YonetimKapiKarari {
+  if (!k) return "GIRIS_YOK";
+  return k.parolaDegismeli ? "PAROLA" : "TAMAM";
+}
 
 function sirriAl(): string {
   const sir = process.env.OTURUM_SIRRI;
@@ -69,11 +81,11 @@ export async function yonetimOturumu(): Promise<YonetimKullanicisi | null> {
   // SISTEM: süper admin işareti kişiye aittir.
   const k = await sistemPrisma.user.findUnique({
     where: { id: govde.kullaniciId },
-    select: { id: true, email: true, name: true, isActive: true, sessionVersion: true, isSuperAdmin: true },
+    select: { id: true, email: true, name: true, isActive: true, sessionVersion: true, isSuperAdmin: true, mustChangePassword: true },
   });
   if (!k || !k.isActive || !k.isSuperAdmin) return null;
   if (k.sessionVersion !== govde.oturumSurumu) return null;
-  return { id: k.id, email: k.email, ad: k.name };
+  return { id: k.id, email: k.email, ad: k.name, parolaDegismeli: k.mustChangePassword };
 }
 
 /**
@@ -81,6 +93,18 @@ export async function yonetimOturumu(): Promise<YonetimKullanicisi | null> {
  * yok» demek, orada bir ekran OLDUĞUNU söylerdi.
  */
 export async function yonetimSayfasi(): Promise<YonetimKullanicisi> {
+  const k = await yonetimOturumu();
+  const karar = yonetimKapiKarari(k);
+  if (karar === "GIRIS_YOK" || !k) notFound();
+  if (karar === "PAROLA") redirect(`${YONETIM_YOLU}/parola`);
+  return k;
+}
+
+/**
+ * Yalnız yönetim PAROLA ekranının kapısı: oturum ister, parola zorunluluğuna
+ * bakmaz (bakarsa ekran kendine yönlendirirdi). Başka hiçbir sayfa kullanmaz.
+ */
+export async function yonetimSayfasiParolaEkrani(): Promise<YonetimKullanicisi> {
   const k = await yonetimOturumu();
   if (!k) notFound();
   return k;
@@ -92,5 +116,16 @@ export async function yonetimSayfasi(): Promise<YonetimKullanicisi> {
  * sabit eşlemeyle metne çevirir). Yetki bekçisi bu adı modülden okur.
  */
 export async function yonetimEylemi(): Promise<YonetimKullanicisi | null> {
+  const k = await yonetimOturumu();
+  // Parolası değişmeli olan kişi hiçbir yönetim eylemini çalıştıramaz.
+  return yonetimKapiKarari(k) === "TAMAM" ? k : null;
+}
+
+/**
+ * Yalnız yönetim PAROLA EYLEMİNİN kapısı: oturum ister, parola zorunluluğuna
+ * bakmaz (bakarsa geçici parolalı kişi parolasını hiç değiştiremezdi).
+ * `yonetim-kapisi:dogrula` bunun başka bir eylemde kullanılmadığını ölçer.
+ */
+export async function yonetimEylemiParolaEkrani(): Promise<YonetimKullanicisi | null> {
   return yonetimOturumu();
 }

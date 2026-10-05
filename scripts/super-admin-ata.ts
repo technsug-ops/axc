@@ -68,7 +68,8 @@ async function main() {
     const parola = randomBytes(12).toString("base64url");
     // SISTEM: kullanıcı küreseldir.
     const yeni = await sistemPrisma.user.create({
-      data: { email: eposta, name: ad, passwordHash: await parolaOzetle(parola), isSuperAdmin: true },
+      // Parola betikle üretilip dosyaya yazıldı → ilk girişte değiştirmek ZORUNLU (05.10.2026).
+      data: { email: eposta, name: ad, passwordHash: await parolaOzetle(parola), isSuperAdmin: true, mustChangePassword: true },
       select: { id: true },
     });
     kullaniciId = yeni.id;

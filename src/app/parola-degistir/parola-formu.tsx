@@ -12,14 +12,19 @@ import { formGonderimi } from "@/lib/form-gonderimi";
 
 import { parolamiDegistir, type ParolaDurumu } from "./actions";
 
-export function ParolaFormu() {
+/**
+ * `eylem`: firma tarafında `parolamiDegistir`; yönetim katmanı kendi eylemini
+ * verir (aynı form, aynı alan adları, aynı metinler — 05.10.2026).
+ */
+export function ParolaFormu({
+  eylem = parolamiDegistir,
+}: {
+  eylem?: (onceki: ParolaDurumu, formData: FormData) => Promise<ParolaDurumu>;
+} = {}) {
   const t = useTranslations("ParolaDegistir");
   const ortak = useTranslations("Ortak");
 
-  const [durum, formAction, bekliyor] = useActionState<ParolaDurumu, FormData>(
-    parolamiDegistir,
-    {},
-  );
+  const [durum, formAction, bekliyor] = useActionState<ParolaDurumu, FormData>(eylem, {});
 
   return (
     <form onSubmit={formGonderimi(formAction)} className="space-y-4">

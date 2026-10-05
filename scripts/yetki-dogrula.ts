@@ -326,6 +326,11 @@ kontrol(
      */
     if (anahtar.startsWith(`src/app${YONETIM_YOLU}/`)) {
       yonetimSayfasi++;
+      if (anahtar === `src/app${YONETIM_YOLU}/parola/page.tsx`) {
+        // Parola ekranı: oturum kapısı, parola zorunluluğuna BAKMAYAN tek sayfa.
+        if (!/yonetimSayfasiParolaEkrani\(/.test(kod)) parolasiz.push(anahtar + "  (parola ekranı kapısı yok)");
+        continue;
+      }
       if (!/\byonetimSayfasi\(/.test(kod)) parolasiz.push(anahtar + "  (yönetim kapısı yok)");
       continue;
     }

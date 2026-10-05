@@ -4,12 +4,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { oturumKapat, oturumdakiKullanici } from "@/lib/oturum";
-import {
-  EN_AZ_PAROLA_UZUNLUGU,
-  parolaDogrula,
-  parolaOzetle,
-  parolaYeterliMi,
-} from "@/lib/parola";
+import { parolaOzetle } from "@/lib/parola";
+import { EN_AZ_PAROLA_UZUNLUGU, PAROLA_HATA_ANAHTARI, parolaDegisimiHatasi } from "@/lib/parola-degisimi";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -47,14 +43,9 @@ export async function parolamiDegistir(
   });
   if (!kayit) return { hatalar: [t("oturumYok")] };
 
-  if (!(await parolaDogrula(eski, kayit.passwordHash))) {
-    return { hatalar: [t("eskiYanlis")] };
-  }
-  if (!parolaYeterliMi(yeni)) {
-    return { hatalar: [t("kisa", { uzunluk: EN_AZ_PAROLA_UZUNLUGU })] };
-  }
-  if (yeni !== tekrar) return { hatalar: [t("tekrarTutmuyor")] };
-  if (yeni === eski) return { hatalar: [t("ayniParola")] };
+  // Kural yönetim katmanıyla ORTAK gövdeden (`lib/parola-degisimi.ts`).
+  const hata = await parolaDegisimiHatasi({ eski, yeni, tekrar }, kayit.passwordHash);
+  if (hata) return { hatalar: [t(PAROLA_HATA_ANAHTARI[hata], { uzunluk: EN_AZ_PAROLA_UZUNLUGU })] };
 
   await prisma.user.update({
     where: { id: kullanici.id },
