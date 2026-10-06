@@ -44,6 +44,15 @@ ve **esnek paket** kararı aldı — bonus da artık bir veri seçimidir (bir
 - Individuel'e geçişte firmanın seçimi o anki açık kümeden yeniden kurulur;
   eski (bayat) bir seçim geri gelmez.
 
+## 2c. Basic genişledi — 06.10.2026
+
+- Kullanıcı kararı: Basic'te kartlar ve kart borcu, kanal kodları ve kanal hesapları olsun.
+- Müşteri geri bildirimi: «API yoksa barkod olmadan her şey elle yazılır, program eziyet olur»
+  → okut ve paketle Basic'e (alım mal kabulü ve satış formundaki barkod zaten Basic'teydi).
+- Bölünen özellikler: Depo → Barkod (okut, paketle, sayım kipi) + Depo (raf, yerleştirme);
+  Pazaryeri → Kanal tanımları (kodlar, hesaplar) + Pazaryeri (hakediş, geçmiş ekstre).
+- Güncel dağılım: Basic 13 · Silver 16 · Gold 21 · Premium 25; Finansman yalnız Individuel.
+
 ## 3. Uygulama çerçevesi (açıldığında)
 
 - **Özellik anahtarları kodda** (sabit liste, ekranı/eylemi korur); **paket ↔

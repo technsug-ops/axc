@@ -62,7 +62,8 @@ async function main() {
   const b = new Map(K.BASLANGIC_PAKETLERI.map((p) => [p.ad, p]));
   const altKume = (a: string, u: string) => b.get(a)!.ozellikler.every((o) => b.get(u)!.ozellikler.includes(o));
   kontrol("başlangıç: Basic ⊂ Silver ⊂ Gold ⊂ Premium", altKume("Basic", "Silver") && altKume("Silver", "Gold") && altKume("Gold", "Premium"));
-  kontrol("başlangıç: Basic 10 · Silver 14 · Gold 19 · Premium 23 (docs §2)", [b.get("Basic"), b.get("Silver"), b.get("Gold"), b.get("Premium")].map((p) => p?.ozellikler.length).join(",") === "10,14,19,23");
+  kontrol("başlangıç: Basic 13 · Silver 16 · Gold 21 · Premium 25 (docs §2 + 06.10 bölünmesi)", [b.get("Basic"), b.get("Silver"), b.get("Gold"), b.get("Premium")].map((p) => p?.ozellikler.length).join(",") === "13,16,21,25");
+  kontrol("başlangıç: Basic'te barkod, kartlar, kanal tanımları VAR (06.10 kararı)", ["barkod", "kartlar", "kanalTanimlari"].every((o) => b.get("Basic")!.ozellikler.includes(o as never)));
   kontrol("başlangıç: Finansman HİÇBİR hazır pakette yok (06.10: yalnız Individuel)", K.BASLANGIC_PAKETLERI.every((p) => !p.ozellikler.includes("finansman")));
   kontrol("başlangıç: tek firmaya özel paket (Individuel), içeriği boş", K.BASLANGIC_PAKETLERI.filter((p) => p.firmayaOzel).map((p) => `${p.ad}:${p.ozellikler.length}`).join() === "Individuel:0");
   kontrol("açık küme: paketsiz firma → BOŞ", K.acikOzellikler(null, ["satis"]).size === 0);
@@ -218,11 +219,11 @@ async function main() {
   const coz = (y: string) => K.adresinOzelligi(y, MENU_ADRESLERI);
   for (const [y, beklenen] of [
     ["/", "panel"], ["/satislar/123", "satis"], ["/rapor", "donemRaporu"], ["/rapor/urunler", "urunAnalizi"],
-    ["/paketle", "depo"], ["/paket", null], ["/kanallar", "panel"], ["/ayarlar/hb-kargo-tarife", "kargoTarifesi"],
+    ["/paketle", "barkod"], ["/okut", "barkod"], ["/yerlestir", "depo"], ["/kanal-sku", "kanalTanimlari"], ["/kanal-sku/komisyon-aktar", "komisyonTarifesi"], ["/hakedis", "pazaryeri"], ["/paket", null], ["/kanallar", "panel"], ["/ayarlar/hb-kargo-tarife", "kargoTarifesi"],
     ["/ayarlar/menu", null], ["/kart/abc", "karlilikKarti"], ["/finansman", "finansman"],
   ] as const) kontrol(`adres ${y} → ${beklenen ?? "paket dışı"}`, coz(y) === beklenen, coz(y));
   const basicKilit = K.kilitliEkranlar(new Set(b.get("Basic")!.ozellikler));
-  kontrol("Basic: okut ve finansman KİLİTLİ, satışlar AÇIK", basicKilit.okut === "depo" && basicKilit.finansman === "finansman" && !("satislar" in basicKilit), basicKilit);
+  kontrol("Basic: yerleştir, hakediş ve finansman KİLİTLİ; okut, kartlar, kanal kodları AÇIK", basicKilit.yerlestir === "depo" && basicKilit.hakedis === "pazaryeri" && basicKilit.finansman === "finansman" && !("okut" in basicKilit) && !("kartlar" in basicKilit) && !("kanalSkulari" in basicKilit), basicKilit);
   const bosKilit = K.kilitliEkranlar(new Set());
   kontrol("hiç özellik yokken bile HEP_ACIK ekranlar kilitlenmez", K.HEP_ACIK.every((e) => !(e in bosKilit)));
   kontrol("kilit adresi açıklama sayfasına gider", K.kilitAdresi("depo") === "/paket?ozellik=depo");

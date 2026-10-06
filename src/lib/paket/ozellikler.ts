@@ -19,10 +19,11 @@
  */
 
 export const OZELLIKLER = [
-  // Basic
+  // Basic (06.10.2026: + kartlar, kanal tanımları, barkod — kullanıcı + müşteri geri bildirimi)
   "satis", "alim", "stok", "iade", "gider", "panel", "donemRaporu", "tanimlar", "veriAktarimi", "hesaplamaMotoru",
+  "kartlar", "kanalTanimlari", "barkod",
   // Silver
-  "depo", "cokKullanici", "kartlar", "nakitTakvimi",
+  "depo", "cokKullanici", "nakitTakvimi",
   // Gold
   "pazaryeri", "listelemeSagligi", "komisyonTarifesi", "kargoTarifesi", "tazminat",
   // Premium
@@ -45,11 +46,18 @@ export const OZELLIK_EKRANLARI: Record<Ozellik, readonly string[]> = {
   tanimlar: ["kategoriler", "markalar", "tedarikciler", "duzeltmeNedenleri"],
   veriAktarimi: ["veriAktarimi", "veriDisari", "geriYukleme"],
   hesaplamaMotoru: ["simulasyon", "tarifeHesaplama"],
-  depo: ["paketle", "okut", "yerlestir", "depoKurulumu", "rafKonumlari"],
+  /* 06.10.2026 — «Depo» ikiye bölündü: müşteri geri bildirimi «API yoksa barkod
+     olmadan her şey elle yazılır, program eziyet olur» → okut + paketle Basic'e
+     (sayım kipi Okut ekranının içinde, onunla gelir); raf/yerleştirme Silver'da. */
+  barkod: ["okut", "paketle"],
+  depo: ["yerlestir", "depoKurulumu", "rafKonumlari"],
   cokKullanici: ["kullanicilar", "roller"],
   kartlar: ["kartlar", "kartBorcu"],
   nakitTakvimi: ["nakitTakvimi"],
-  pazaryeri: ["hakedis", "kanalSkulari", "kanalHesaplari", "gecmisEkstre"],
+  /* 06.10.2026 — kanal tanım ekranları (yalnız ekle/düzenle; pazaryerine YAZMAZ)
+     pazaryerinden ayrıldı, Basic'e girdi (kullanıcı kararı). */
+  kanalTanimlari: ["kanalSkulari", "kanalHesaplari"],
+  pazaryeri: ["hakedis", "gecmisEkstre"],
   listelemeSagligi: ["kanalListeleme"],
   komisyonTarifesi: ["komisyonKapisi"],
   kargoTarifesi: ["kargoTarifesi"],
@@ -78,7 +86,7 @@ export const BAGIMLILIKLAR: readonly { ozellik: Ozellik; ister: Ozellik; anahtar
   { ozellik: "hesaplamaMotoru", ister: "komisyonTarifesi", anahtar: "bagMotorTarife" },
   { ozellik: "hesaplamaMotoru", ister: "kargoTarifesi", anahtar: "bagMotorKargo" },
   { ozellik: "nakitTakvimi", ister: "pazaryeri", anahtar: "bagNakitPazaryeri" },
-  { ozellik: "listelemeSagligi", ister: "pazaryeri", anahtar: "bagListelemePazaryeri" },
+  { ozellik: "listelemeSagligi", ister: "kanalTanimlari", anahtar: "bagListelemePazaryeri" },
 ];
 
 /** Saf — açık kümeye göre ekranda söylenecek bağımlılık uyarıları. */
@@ -88,10 +96,10 @@ export function eksikBagimliliklar(acik: ReadonlySet<string>) {
 
 /** İlk dağılım (docs/saas-paketleri.md §2). YALNIZ `paket:baslangic` okur. */
 export const BASLANGIC_PAKETLERI: readonly { ad: string; sira: number; firmayaOzel: boolean; ozellikler: readonly Ozellik[] }[] = [
-  { ad: "Basic", sira: 1, firmayaOzel: false, ozellikler: ["satis", "alim", "stok", "iade", "gider", "panel", "donemRaporu", "tanimlar", "veriAktarimi", "hesaplamaMotoru"] },
-  { ad: "Silver", sira: 2, firmayaOzel: false, ozellikler: ["satis", "alim", "stok", "iade", "gider", "panel", "donemRaporu", "tanimlar", "veriAktarimi", "hesaplamaMotoru", "depo", "cokKullanici", "kartlar", "nakitTakvimi"] },
-  { ad: "Gold", sira: 3, firmayaOzel: false, ozellikler: ["satis", "alim", "stok", "iade", "gider", "panel", "donemRaporu", "tanimlar", "veriAktarimi", "hesaplamaMotoru", "depo", "cokKullanici", "kartlar", "nakitTakvimi", "pazaryeri", "listelemeSagligi", "komisyonTarifesi", "kargoTarifesi", "tazminat"] },
-  { ad: "Premium", sira: 4, firmayaOzel: false, ozellikler: ["satis", "alim", "stok", "iade", "gider", "panel", "donemRaporu", "tanimlar", "veriAktarimi", "hesaplamaMotoru", "depo", "cokKullanici", "kartlar", "nakitTakvimi", "pazaryeri", "listelemeSagligi", "komisyonTarifesi", "kargoTarifesi", "tazminat", "karlilikKarti", "urunAnalizi", "envanterDegeri", "aiOzeti"] },
+  { ad: "Basic", sira: 1, firmayaOzel: false, ozellikler: ["satis", "alim", "stok", "iade", "gider", "panel", "donemRaporu", "tanimlar", "veriAktarimi", "hesaplamaMotoru", "kartlar", "kanalTanimlari", "barkod"] },
+  { ad: "Silver", sira: 2, firmayaOzel: false, ozellikler: ["satis", "alim", "stok", "iade", "gider", "panel", "donemRaporu", "tanimlar", "veriAktarimi", "hesaplamaMotoru", "kartlar", "kanalTanimlari", "barkod", "depo", "cokKullanici", "nakitTakvimi"] },
+  { ad: "Gold", sira: 3, firmayaOzel: false, ozellikler: ["satis", "alim", "stok", "iade", "gider", "panel", "donemRaporu", "tanimlar", "veriAktarimi", "hesaplamaMotoru", "kartlar", "kanalTanimlari", "barkod", "depo", "cokKullanici", "nakitTakvimi", "pazaryeri", "listelemeSagligi", "komisyonTarifesi", "kargoTarifesi", "tazminat"] },
+  { ad: "Premium", sira: 4, firmayaOzel: false, ozellikler: ["satis", "alim", "stok", "iade", "gider", "panel", "donemRaporu", "tanimlar", "veriAktarimi", "hesaplamaMotoru", "kartlar", "kanalTanimlari", "barkod", "depo", "cokKullanici", "nakitTakvimi", "pazaryeri", "listelemeSagligi", "komisyonTarifesi", "kargoTarifesi", "tazminat", "karlilikKarti", "urunAnalizi", "envanterDegeri", "aiOzeti"] },
   { ad: "Individuel", sira: 5, firmayaOzel: true, ozellikler: [] },
 ];
 
@@ -121,11 +129,15 @@ export function ekraninOzelligi(ekran: string): Ozellik | null {
 /**
  * MENÜDE OLMAYAN ama bir özelliğe ait sayfalar (ölçüldü 06.10.2026, 98 sayfa
  * rotası tarandı). `/kanallar`: panelin kanal dökümü (panel gövdesini çağırır).
+ * `/kanal-sku/komisyon-aktar`: komisyon dosyası yükleme (06.10 bölünmesiyle).
  * `/ayarlar/hb-kargo-tarife`: eski kargo tarifesi ekranı, adresi duruyor.
  */
 export const EK_ADRESLER: Partial<Record<Ozellik, readonly string[]>> = {
   panel: ["/kanallar"],
   kargoTarifesi: ["/ayarlar/hb-kargo-tarife"],
+  /* Kanal kodlarının ALTINDA ama komisyon dosyası yükler — kanal tanımlarıyla
+     Basic'e kaymasın diye kendi özelliğine bağlı (en uzun eşleşme kazanır). */
+  komisyonTarifesi: ["/kanal-sku/komisyon-aktar"],
 };
 
 /**
