@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { denemedeKapaliMi } from "@/lib/deneme-ortami";
+import { PAKET_YOL_BASLIGI } from "@/lib/paket/ozellikler";
 
 import {
   jetonuCoz,
@@ -125,6 +126,9 @@ export async function proxy(istek: NextRequest) {
    */
   const basliklar = new Headers(istek.headers);
   basliklar.delete(YONETIM_BASLIGI);
+  /* K303 ② — paket kapısının okuduğu adres. HER istekte proxy KENDİSİ yazar:
+     dışarıdan aynı adla gelen değer EZİLİR (taklit edilip kapı aşılamaz). */
+  basliklar.set(PAKET_YOL_BASLIGI, yol);
   if (yonetimYoluMu(yol)) return yonetimKapisi(istek, basliklar);
 
   if (acikMi(yol)) return NextResponse.next({ request: { headers: basliklar } });

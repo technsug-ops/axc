@@ -20,6 +20,10 @@ const KATALOG = "src/lib/paket/ozellikler.ts";
 const YONETIM = "src/lib/paket/yonetim.ts";
 const ACILIS = "src/lib/firma-acilisi.ts";
 const EYLEM = "src/app/bezirga/(ic)/paketler/actions.ts";
+const PROXY = "src/proxy.ts";
+const YETKI = "src/lib/yetki/index.ts";
+const ERISIM = "src/lib/paket/erisim.ts";
+const YAN_MENU = "src/components/app-sidebar.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -34,7 +38,7 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: '  nakitTakvimi: ["nakitTakvimi"],', koy: '  nakitTakvimi: ["nakitTakvimi", "kartBorcu"],',
     bozdugu: "bir paketten cikan ekran ötekinden acik kalir" },
   { ad: "HEP ACIK OZELLIGI YUTUYOR", yon: "FAZLADAN", dosya: KATALOG,
-    bul: '"ozellikler", "geceTuru"] as const;', koy: '"ozellikler", "geceTuru", "finansman"] as const;',
+    bul: '"geceTuru", "paketim"] as const;', koy: '"geceTuru", "paketim", "finansman"] as const;',
     bozdugu: "paket disi birakilan ekran paketle kapatilamaz" },
   { ad: "FIRMAYA OZEL SECIM OKUNMUYOR", yon: "KALDIRAN", dosya: KATALOG,
     bul: "return new Set(paket.firmayaOzel ? firmaSecimi : paket.ozellikler);", koy: "return new Set(paket.ozellikler);",
@@ -69,6 +73,31 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: 'export async function paketIcerigiEylemi(paketId: string, secim: string[]): Promise<{ hata?: string; tamam?: string }> {\n  const t = await getTranslations("Yonetim");\n  const k = await yonetimEylemi();',
     koy: 'export async function paketIcerigiEylemi(paketId: string, secim: string[]): Promise<{ hata?: string; tamam?: string }> {\n  const t = await getTranslations("Yonetim");\n  const k = { id: "x" };',
     bozdugu: "super admin olmayan biri paket icerigini degistirir" },
+  // ── 2. adım: uygulama tarafı ──
+  { ad: "PROXY ADRES BASLIGINI YAZMIYOR", yon: "KALDIRAN", dosya: PROXY,
+    bul: "  basliklar.set(PAKET_YOL_BASLIGI, yol);\n", koy: "",
+    bozdugu: "sayfa kapisi adresi bilemez, her kilitli ekran acilir" },
+  { ad: "SAYFA GIRISI PAKETE BAKMIYOR", yon: "KALDIRAN", dosya: YETKI,
+    bul: "  // K303 ② — paket halkası (sayfaIzni ile AYNI kapı; iki ölçüt olmaz).\n  await paketKapisi(baglam.companyId);\n", koy: "",
+    bozdugu: "izin istemeyen sayfalar paketten bagimsiz acilir" },
+  { ad: "KAPALI OZELLIK YONLENDIRILMIYOR", yon: "KALDIRAN", dosya: ERISIM,
+    bul: "if (!(await firmaAcikOzellikleri(firmaId)).has(ozellik)) redirect(kilitAdresi(ozellik));", koy: "if (!(await firmaAcikOzellikleri(firmaId)).has(ozellik)) return;",
+    bozdugu: "adresi elle yazan kilitli ekrana girer" },
+  { ad: "EN UZUN ESLESME DEGIL ILK ESLESME", yon: "FAZLADAN", dosya: KATALOG,
+    bul: "if (tutar && (!enIyi || adres.length > enIyi.uzunluk))", koy: "if (tutar && !enIyi)",
+    bozdugu: "/rapor/urunler Basic'in rapor ozelligine duser, Premium kilidi delinir" },
+  { ad: "PANEL HER ADRESI YUTUYOR", yon: "FAZLADAN", dosya: KATALOG,
+    bul: 'const tutar = adres === "/" ? yol === "/" : yol === adres', koy: 'const tutar = adres === "/" ? true : yol === adres',
+    bozdugu: "paket disi sayfalar panel ozelligine baglanir, kilitlenir" },
+  { ad: "ESKI KARGO ADRESI KAPSAM DISI", yon: "KALDIRAN", dosya: KATALOG,
+    bul: '  kargoTarifesi: ["/ayarlar/hb-kargo-tarife"],\n', koy: "",
+    bozdugu: "eski adresten kargo tarifesi paketsiz acilir" },
+  { ad: "BEYANSIZ PAKET DISI SAYFA", yon: "KALDIRAN", dosya: KATALOG,
+    bul: '  { onek: "/talepler", gerekce: "destek talebi — paket değişikliği de buradan istenir" },\n', koy: "",
+    bozdugu: "yeni sayfa kimse karar vermeden paket disi kalir" },
+  { ad: "YAN MENU KILIDI SORMUYOR", yon: "KALDIRAN", dosya: YAN_MENU,
+    bul: "    const kilitOzelligi = kilitli[oge.anahtar];\n", koy: "    const kilitOzelligi = undefined as string | undefined;\n",
+    bozdugu: "kilitli ekran menude acik gorunur, tiklayinca aciklamaya duser" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

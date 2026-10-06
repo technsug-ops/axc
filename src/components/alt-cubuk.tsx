@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Menu, type LucideIcon } from "lucide-react";
+import { Lock, Menu, type LucideIcon } from "lucide-react";
 
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
+import { kilitAdresi } from "@/lib/paket/ozellikler";
 import { ALT_CUBUK_SEKMELERI, MENU_IKONLARI, type AltCubukSekmesi } from "@/lib/menu/ikonlar";
 
 /**
@@ -46,9 +47,11 @@ export function sekmeAktifMi(yol: string, adres: string): boolean {
   return yol === adres || yol.startsWith(adres + "/");
 }
 
-export function AltCubuk() {
+/** `kilitli`: paketinde olmayan ekranlar (K303 ②) — sekme kilitle çizilir, açıklama sayfasına gider. */
+export function AltCubuk({ kilitli = {} }: { kilitli?: Record<string, string> }) {
   const yol = usePathname();
   const t = useTranslations("AltCubuk");
+  const tMenu = useTranslations("Menu");
   return (
     <nav
       aria-label={t("baslik")}
@@ -57,16 +60,20 @@ export function AltCubuk() {
       {ALT_CUBUK_SEKMELERI.map((sekme) => {
         const Ikon = IKONLAR[sekme];
         const aktif = sekmeAktifMi(yol, ADRESLER[sekme]);
+        const kilit = kilitli[sekme];
         return (
           <Link
             key={sekme}
-            href={ADRESLER[sekme]}
+            href={kilit ? kilitAdresi(kilit) : ADRESLER[sekme]}
             aria-current={aktif ? "page" : undefined}
             className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-md text-[10px] leading-none ${
               aktif ? "bg-accent text-foreground font-semibold" : "text-muted-foreground font-medium"
             }`}
           >
-            <Ikon className="size-[22px]" aria-hidden />
+            <span className="relative">
+              <Ikon className={`size-[22px] ${kilit ? "opacity-50" : ""}`} aria-hidden />
+              {kilit ? <Lock className="absolute -right-2 -bottom-1 size-3" aria-label={tMenu("kilitli")} /> : null}
+            </span>
             <span>{t(sekme)}</span>
           </Link>
         );

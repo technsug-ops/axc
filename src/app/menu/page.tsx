@@ -7,6 +7,9 @@ import { MENU_ADRESLERI } from "@/lib/menu/katalog";
 import { menuDuzeni } from "@/lib/menu/okuma";
 import { gorevSayilariniTopla } from "@/lib/panel/gorev-verisi";
 import { sayfaGirisi } from "@/lib/yetki";
+import { firmaKilitliEkranlari } from "@/lib/paket/erisim";
+import { kilitAdresi } from "@/lib/paket/ozellikler";
+import { Lock } from "lucide-react";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -41,11 +44,13 @@ const ROZET_KAYNAGI: Record<string, "kargoBekleyen" | "malKabulBekleyen" | "iade
 
 export default async function MenuSayfasi() {
   const baglam = await sayfaGirisi();
-  const [duzen, sayilar, t, tMenu] = await Promise.all([
+  const [duzen, sayilar, t, tMenu, kilitli] = await Promise.all([
     menuDuzeni(baglam.companyId),
     gorevSayilariniTopla(),
     getTranslations("MobilMenu"),
     getTranslations("Menu"),
+    // K303 ② — paketinde olmayan ekranlar kilitle çizilir (sol menüyle aynı kaynak).
+    firmaKilitliEkranlari(baglam.companyId),
   ]);
 
   const gruplar: { anahtar: string; ogeler: string[] }[] = [
@@ -57,10 +62,11 @@ export default async function MenuSayfasi() {
     const kaynak = ROZET_KAYNAGI[anahtar];
     const rozet = kaynak ? sayilar[kaynak] : 0;
     const oneCikan = anahtar === ONE_CIKAN_ISLEM;
+    const kilit = kilitli[anahtar];
     return (
       <Link
         key={anahtar}
-        href={href}
+        href={kilit ? kilitAdresi(kilit) : href}
         className="text-foreground flex min-h-[76px] flex-col items-center gap-1.5 rounded-lg px-0.5 py-1.5 no-underline"
       >
         <span
@@ -68,8 +74,9 @@ export default async function MenuSayfasi() {
             oneCikan ? "bg-foreground text-background" : "bg-muted text-primary"
           }`}
         >
-          <Ikon className="size-[22px]" aria-hidden />
-          {rozet > 0 ? (
+          <Ikon className={`size-[22px] ${kilit ? "opacity-40" : ""}`} aria-hidden />
+          {kilit ? <Lock className="absolute -right-1 -bottom-1 size-3.5" aria-label={tMenu("kilitli")} /> : null}
+          {!kilit && rozet > 0 ? (
             <span
               className="bg-destructive ring-card absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] leading-none font-bold text-white tabular-nums ring-2"
               aria-label={t("bekleyen", { sayi: rozet })}

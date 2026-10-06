@@ -6874,7 +6874,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   /* ── YERLESIM: alt bar ── */
   const yerlesim = yorumsuz(kaynakOku("src/app/layout.tsx"));
   kontrol("alt bar CIZILIYOR (layout, icerikten sonra)",
-    /\{children\}[\s\S]{0,200}?<\/div>\s*<AltCubuk \/>/.test(yerlesim));
+    /\{children\}[\s\S]{0,200}?<\/div>\s*<AltCubuk kilitli=\{kilitli\} \/>/.test(yerlesim));
   kontrol("  ...icerik barin ARKASINA kaymaz (pb-24, masaustunde md:pb-6)",
     /flex-1[^"]*\bpb-24\b[^"]*\bmd:pb-6\b/.test(yerlesim));
   const altCubuk = yorumsuz(kaynakOku("src/components/alt-cubuk.tsx"));

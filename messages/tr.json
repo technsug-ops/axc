@@ -965,7 +965,9 @@
     "markalar": "Markalar",
     "geceTuru": "Gece bekçi turu",
     "finansman": "Finansman",
-    "ozellikler": "Özellikler"
+    "ozellikler": "Özellikler",
+    "paketim": "Paketim",
+    "kilitli": "paketinizde yok"
   },
   "GunlukOzet": {
     "baslik": "Günlük Özet",
@@ -5612,5 +5614,19 @@
     "envanterDegeri": "Envanter değeri",
     "aiOzeti": "Yapay zekâ özeti",
     "finansman": "Finansman (sermaye, borç, kredi)"
+  },
+  "Paketim": {
+    "baslik": "Paketim",
+    "paketiniz": "Paketiniz: {ad}",
+    "paketYok": "Firmanızın bir paketi yok — yöneticinize ya da bize yazın.",
+    "kapaliBaslik": "«{ozellik}» paketinizde yok",
+    "kapaliMetin": "Açmaya çalıştığınız ekran bu özelliğe ait. Verileriniz duruyor; özellik açılınca olduğu gibi görünür.",
+    "hangiPaketlerde": "Bu özellik şu paketlerde var: {liste}.",
+    "yalnizOzel": "Bu özellik firmaya özel pakette (Individuel) seçilerek açılır.",
+    "talepAc": "Paket değişikliği için talep açın",
+    "acikBaslik": "Açık özellikler ({sayi})",
+    "kapaliListeBaslik": "Paketinizde olmayanlar ({sayi})",
+    "kapaliSatir": "{paketler}",
+    "hepAcikNotu": "Ayarlar, menü düzeni, dönemler ve bu sayfa her pakette açıktır."
   }
 }

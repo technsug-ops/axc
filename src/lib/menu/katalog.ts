@@ -75,6 +75,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   maliyetYontemi: "/ayarlar/maliyet-yontemi",
   /** K304-② — firma bazında aç/kapa isteğe bağlı özellikler. */
   ozellikler: "/ayarlar/ozellikler",
+  /** K303 ② — firmanın paketi: açık/kapalı özellikler (kilitli ekranın açıklama sayfası). */
+  paketim: "/paket",
 
   veriAktarimi: "/ayarlar/ice-aktarma",
   veriDisari: "/ayarlar/disa-aktarma",
@@ -232,6 +234,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "donemler", varsayilanGrup: "grupAyarlar" },
   { anahtar: "maliyetYontemi", varsayilanGrup: "grupAyarlar" },
   { anahtar: "ozellikler", varsayilanGrup: "grupAyarlar" },
+  { anahtar: "paketim", varsayilanGrup: "grupAyarlar" },
 ];
 
 /**

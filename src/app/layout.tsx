@@ -37,6 +37,7 @@ import { UYGULAMA } from "@/lib/uygulama";
 import { denemeOrtamiMi } from "@/lib/deneme-ortami";
 import { DURUM_ZEMINI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
+import { firmaKilitliEkranlari } from "@/lib/paket/erisim";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -227,6 +228,8 @@ export default async function RootLayout({
   const baglam = kullanici ? await yetkiBaglami().catch(() => null) : null;
   const duzen = await menuDuzeni(baglam?.companyId ?? null);
   const uyariSeridi = baglam ? await firmaUyariSeridi(baglam.companyId) : null;
+  // K303 ② — paketinde olmayan ekranlar; menü ve alt çubuk kilitle çizer.
+  const kilitli = baglam ? await firmaKilitliEkranlari(baglam.companyId).catch(() => ({})) : {};
 
   if (!yonetimKatmani && oturumCerezi && !kullanici) redirect("/cikis");
 
@@ -321,7 +324,7 @@ export default async function RootLayout({
         <NextIntlClientProvider>
           <TooltipProvider delayDuration={0}>
             <SidebarProvider>
-              <AppSidebar eposta={kullanici.email} duzen={duzen} />
+              <AppSidebar eposta={kullanici.email} duzen={duzen} kilitli={kilitli} />
               {/*
                 `min-w-0` ZORUNLU — yoksa SAYFA yana kayar.
                 _Kullanıcı 14.08.2026'da canlıda yakaladı: /alimlar,
@@ -427,7 +430,7 @@ export default async function RootLayout({
                 </div>
                 {/* TELEFON ALT BARI (K270): sabit, beş sekme; `pb-24` yukarıda onun
                     içindir — içerik barın arkasına kaymaz. Masaüstünde yok (`md:hidden`). */}
-                <AltCubuk />
+                <AltCubuk kilitli={kilitli} />
               </SidebarInset>
             </SidebarProvider>
           </TooltipProvider>

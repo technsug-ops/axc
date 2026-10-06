@@ -872,7 +872,7 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     dosya: YERLESIM,
     bul:
-      "                <AltCubuk />",
+      "                <AltCubuk kilitli={kilitli} />",
     koy:
       "                {null}",
     bozdugu:

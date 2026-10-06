@@ -25,7 +25,7 @@ import { kaynakOku } from "./kaynak-oku";
 
 console.log("\nPAKET BEKÇİSİ\n");
 
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let hata = 0;
@@ -40,6 +40,7 @@ function yorumsuz(k: string): string {
 async function main() {
   const K = await import("../src/lib/paket/ozellikler");
   const { MENU_ADRESLERI } = await import("../src/lib/menu/katalog");
+  const { YONETIM_YOLU } = await import("../src/lib/oturum-imza");
 
   /* ① KATALOG */
   console.log("① katalog (tersten sayım)");
@@ -211,6 +212,62 @@ async function main() {
     kontrol(`${dosya}/${ad}: yönetim kapısı ÖNCE, sonra ${govde.replace("await ", "").split("(")[0]}`, g.length > 0 && kapi >= 0 && cagri > kapi, { var: g.length > 0, kapi, cagri });
   }
   kosanBolumler.push("bag");
+
+  /* ⑥ UYGULAMA TARAFI (2. adım) */
+  console.log("\n⑥ uygulama: adres → özellik, sayfa kapısı, menü kilidi");
+  const coz = (y: string) => K.adresinOzelligi(y, MENU_ADRESLERI);
+  for (const [y, beklenen] of [
+    ["/", "panel"], ["/satislar/123", "satis"], ["/rapor", "donemRaporu"], ["/rapor/urunler", "urunAnalizi"],
+    ["/paketle", "depo"], ["/paket", null], ["/kanallar", "panel"], ["/ayarlar/hb-kargo-tarife", "kargoTarifesi"],
+    ["/ayarlar/menu", null], ["/kart/abc", "karlilikKarti"], ["/finansman", "finansman"],
+  ] as const) kontrol(`adres ${y} → ${beklenen ?? "paket dışı"}`, coz(y) === beklenen, coz(y));
+  const basicKilit = K.kilitliEkranlar(new Set(b.get("Basic")!.ozellikler));
+  kontrol("Basic: okut ve finansman KİLİTLİ, satışlar AÇIK", basicKilit.okut === "depo" && basicKilit.finansman === "finansman" && !("satislar" in basicKilit), basicKilit);
+  const bosKilit = K.kilitliEkranlar(new Set());
+  kontrol("hiç özellik yokken bile HEP_ACIK ekranlar kilitlenmez", K.HEP_ACIK.every((e) => !(e in bosKilit)));
+  kontrol("kilit adresi açıklama sayfasına gider", K.kilitAdresi("depo") === "/paket?ozellik=depo");
+
+  // Bütün sayfa rotaları TERSTEN: her biri bir özelliğe, HEP_ACIK ekranına ya da beyanlı paket dışına düşer.
+  const sayfalar = tumu.filter((y) => y.startsWith("src/app/") && y.endsWith("/page.tsx") || y === "src/app/page.tsx");
+  const rota = (d: string) => "/" + d.slice("src/app".length).split("/").filter((p) => p && p !== "page.tsx" && !(p.startsWith("(") && p.endsWith(")"))).join("/");
+  const hepAcikAdres = K.HEP_ACIK.map((e) => MENU_ADRESLERI[e]).filter((a): a is string => Boolean(a));
+  const onekte = (y: string, o: string) => y === o || y.startsWith(`${o}/`);
+  const beyansiz = sayfalar.map(rota).filter((y) => {
+    const ornek = y.replace(/\[[^\]]+\]/g, "x");
+    // Yönetim katmanı: firma paketi uygulanmaz (yolu tek sabitten).
+    if (onekte(ornek, YONETIM_YOLU)) return false;
+    return !coz(ornek) && !hepAcikAdres.some((a) => onekte(ornek, a)) && !K.PAKET_DISI_ROTALAR.some((p) => onekte(ornek, p.onek));
+  });
+  kontrol(`taban: sayfa rotası bulundu (${sayfalar.length} ≥ 90)`, sayfalar.length >= 90);
+  kontrol("HER sayfa ya bir özelliğe ya HEP_ACIK'a ya da beyanlı paket dışına düşer", beyansiz.length === 0, beyansiz);
+  const yutan = K.PAKET_DISI_ROTALAR.filter((p) => coz(p.onek) !== null).map((p) => p.onek);
+  kontrol("paket dışı beyanı bir özelliğin adresini YUTMUYOR", yutan.length === 0, yutan);
+
+  const proxy = yorumsuz(kaynakOku("src/proxy.ts"));
+  const pGovde = proxy.slice(proxy.indexOf("export async function proxy("), proxy.indexOf("async function yonetimKapisi("));
+  const iBaslik = pGovde.indexOf("basliklar.set(PAKET_YOL_BASLIGI, yol);");
+  const iAcik = pGovde.indexOf("if (acikMi(yol))");
+  const iSon = pGovde.lastIndexOf("return NextResponse.next({ request: { headers: basliklar } });");
+  kontrol("proxy adres başlığını HER firma isteğinde, ilk dallanmadan ÖNCE yazar", iBaslik >= 0 && iAcik > iBaslik && iSon > iBaslik, { iBaslik, iAcik, iSon });
+  const yetki = yorumsuz(kaynakOku("src/lib/yetki/index.ts"));
+  for (const ad of ["sayfaIzni", "sayfaGirisi"]) {
+    const i = yetki.indexOf(`export async function ${ad}(`);
+    const g = i < 0 ? "" : yetki.slice(i, yetki.indexOf("\n}", i));
+    const iKapi = g.indexOf("await paketKapisi(baglam.companyId);");
+    const iBaglam = g.indexOf("notFound();");
+    kontrol(`${ad}: oturum kapısından SONRA paket halkasını çağırır`, g.length > 0 && iBaglam >= 0 && iKapi > iBaglam, { iBaglam, iKapi });
+  }
+  const erisim = yorumsuz(kaynakOku("src/lib/paket/erisim.ts"));
+  kontrol("paket halkası kapalı özellikte açıklama sayfasına yönlendirir", erisim.includes("if (!(await firmaAcikOzellikleri(firmaId)).has(ozellik)) redirect(kilitAdresi(ozellik));"));
+  const kok = yorumsuz(kaynakOku("src/app/layout.tsx"));
+  kontrol("kök düzen kilitli kümeyi yan menüye VE alt çubuğa verir", kok.includes("kilitli={kilitli} />") && kok.includes("<AltCubuk kilitli={kilitli} />") && kok.includes("await firmaKilitliEkranlari(baglam.companyId)"));
+  const yan = yorumsuz(kaynakOku("src/components/app-sidebar.tsx"));
+  const ogeCiz = yan.slice(yan.indexOf("function ogeCiz("), yan.indexOf("function duzCiz("));
+  kontrol("yan menü her öğede ÖNCE kilidi sorar ve açıklama adresine götürür", ogeCiz.indexOf("const kilitOzelligi = kilitli[oge.anahtar];") >= 0 && ogeCiz.includes("href={kilitAdresi(kilitOzelligi)}"));
+  for (const [dosya, desen] of [["src/app/menu/page.tsx", "href={kilit ? kilitAdresi(kilit) : href}"], ["src/app/hizli-islemler.tsx", "href={kilit ? kilitAdresi(kilit) : href}"], ["src/components/alt-cubuk.tsx", "href={kilit ? kilitAdresi(kilit) : ADRESLER[sekme]}"]] as const) {
+    kontrol(`${dosya}: kilitli öğe açıklama adresine gider`, yorumsuz(kaynakOku(dosya)).includes(desen));
+  }
+  kosanBolumler.push("uygulama");
 
   await sistemPrisma.$disconnect();
   if (kosanBolumler.length !== BOLUM_SAYISI) {

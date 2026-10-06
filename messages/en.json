@@ -965,7 +965,9 @@
     "markalar": "",
     "geceTuru": "",
     "finansman": "",
-    "ozellikler": ""
+    "ozellikler": "",
+    "paketim": "",
+    "kilitli": ""
   },
   "GunlukOzet": {
     "baslik": "",
@@ -5612,5 +5614,19 @@
     "envanterDegeri": "",
     "aiOzeti": "",
     "finansman": ""
+  },
+  "Paketim": {
+    "baslik": "",
+    "paketiniz": "",
+    "paketYok": "",
+    "kapaliBaslik": "",
+    "kapaliMetin": "",
+    "hangiPaketlerde": "",
+    "yalnizOzel": "",
+    "talepAc": "",
+    "acikBaslik": "",
+    "kapaliListeBaslik": "",
+    "kapaliSatir": "",
+    "hepAcikNotu": ""
   }
 }

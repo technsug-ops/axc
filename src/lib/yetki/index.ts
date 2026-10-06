@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { prisma, sistemPrisma } from "@/lib/prisma";
 import { oturumdakiKullanici } from "@/lib/oturum";
+import { paketKapisi } from "@/lib/paket/erisim";
 
 import { izinTaninirMi, tamYetkiliMi, type Izin } from "./izinler";
 
@@ -177,6 +178,8 @@ export async function sayfaIzni(izin: Izin): Promise<YetkiBaglami> {
 
   const baglam = await yetkiBaglami();
   if (!baglam || !baglam.izinler.has(izin)) notFound();
+  // K303 ② — paket halkası: özellik firmanın paketinde yoksa açıklama sayfasına.
+  await paketKapisi(baglam.companyId);
   return baglam;
 }
 
@@ -195,6 +198,8 @@ export async function sayfaGirisi(): Promise<YetkiBaglami> {
   if (await parolaDegismeliMi()) redirect("/parola-degistir");
   const baglam = await yetkiBaglami();
   if (!baglam) notFound();
+  // K303 ② — paket halkası (sayfaIzni ile AYNI kapı; iki ölçüt olmaz).
+  await paketKapisi(baglam.companyId);
   return baglam;
 }
 

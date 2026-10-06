@@ -65,9 +65,10 @@ export const OZELLIK_EKRANLARI: Record<Ozellik, readonly string[]> = {
  * Hiçbir pakete bağlanmayan, her firmada açık ekranlar — gerekçesiyle.
  * menuDuzeni: kullanıcı kendi menüsünü kilitleyemez (MENUDEN_DUSURULEMEZ) ·
  * maliyetYontemi / donemler / ozellikler: firmanın kendi defter ayarı ·
- * geceTuru: sistemin teknik bakımı, ticari özellik değil.
+ * geceTuru: sistemin teknik bakımı, ticari özellik değil ·
+ * paketim: kilitli ekranın açıklama sayfası; kapansaydı kilit açıklanamazdı.
  */
-export const HEP_ACIK = ["menuDuzeni", "maliyetYontemi", "donemler", "ozellikler", "geceTuru"] as const;
+export const HEP_ACIK = ["menuDuzeni", "maliyetYontemi", "donemler", "ozellikler", "geceTuru", "paketim"] as const;
 
 /**
  * Bağımlılık UYARISI (engel değil; docs §3): A açıkken B kapalıysa ekranda
@@ -98,4 +99,77 @@ export const BASLANGIC_PAKETLERI: readonly { ad: string; sira: number; firmayaOz
 export function acikOzellikler(paket: { firmayaOzel: boolean; ozellikler: readonly string[] } | null, firmaSecimi: readonly string[]): Set<string> {
   if (!paket) return new Set();
   return new Set(paket.firmayaOzel ? firmaSecimi : paket.ozellikler);
+}
+
+/* ═══ UYGULAMA TARAFI — saf parçalar (2. adım, 06.10.2026) ════════════════ */
+
+/**
+ * Proxy'nin HER istekte kendisi yazdığı adres başlığı. Dışarıdan gelen değer
+ * EZİLİR (taklit edilemez); sayfa kapısı paketi bu başlıktan okur.
+ */
+export const PAKET_YOL_BASLIGI = "x-paket-yol";
+
+const EKRAN_OZELLIGI: Record<string, Ozellik> = Object.fromEntries(
+  OZELLIKLER.flatMap((o) => OZELLIK_EKRANLARI[o].map((e) => [e, o] as const)),
+);
+
+/** Saf — menü ekranının özelliği (HEP_ACIK ya da bilinmeyen → null). */
+export function ekraninOzelligi(ekran: string): Ozellik | null {
+  return EKRAN_OZELLIGI[ekran] ?? null;
+}
+
+/**
+ * MENÜDE OLMAYAN ama bir özelliğe ait sayfalar (ölçüldü 06.10.2026, 98 sayfa
+ * rotası tarandı). `/kanallar`: panelin kanal dökümü (panel gövdesini çağırır).
+ * `/ayarlar/hb-kargo-tarife`: eski kargo tarifesi ekranı, adresi duruyor.
+ */
+export const EK_ADRESLER: Partial<Record<Ozellik, readonly string[]>> = {
+  panel: ["/kanallar"],
+  kargoTarifesi: ["/ayarlar/hb-kargo-tarife"],
+};
+
+/**
+ * Saf — adres hangi özelliğe ait. EN UZUN eşleşen menü adresi kazanır
+ * (`/rapor/urunler` Premium, `/rapor` Basic). Panel (`/`) yalnız TAM eşleşir;
+ * yoksa her adres panelin altına düşerdi. Eşleşmeyen adres → null (pakete
+ * bağlı değil; `paket:dogrula` her sayfa rotasının ya eşleştiğini ya da
+ * gerekçeli olarak paket dışı olduğunu ölçer).
+ */
+export function adresinOzelligi(yol: string, adresler: Record<string, string>): Ozellik | null {
+  let enIyi: { ozellik: Ozellik | null; uzunluk: number } | null = null;
+  const dene = (adres: string, ozellik: Ozellik | null) => {
+    const tutar = adres === "/" ? yol === "/" : yol === adres || yol.startsWith(`${adres}/`);
+    if (tutar && (!enIyi || adres.length > enIyi.uzunluk)) enIyi = { ozellik, uzunluk: adres.length };
+  };
+  for (const [ekran, adres] of Object.entries(adresler)) dene(adres, ekraninOzelligi(ekran));
+  for (const o of OZELLIKLER) for (const adres of EK_ADRESLER[o] ?? []) dene(adres, o);
+  return (enIyi as { ozellik: Ozellik | null } | null)?.ozellik ?? null;
+}
+
+/**
+ * PAKETE BAĞLI OLMAYAN sayfa rotaları — gerekçeli (bekçi her `page.tsx`in ya
+ * bir özelliğe ya HEP_ACIK ekranına ya da buraya düştüğünü ölçer; beyansız
+ * yeni sayfa KIRMIZI). Önek eşleşir. Yönetim katmanı (`YONETIM_YOLU`) burada
+ * DEĞİL: yolu tek sabitten gelir, uygulama adı elle yazılmaz; bekçi ayrıca ayırır.
+ */
+export const PAKET_DISI_ROTALAR: readonly { onek: string; gerekce: string }[] = [
+  { onek: "/giris", gerekce: "giriş ekranı" },
+  { onek: "/parola-degistir", gerekce: "zorunlu parola değişimi; kapansaydı kullanıcı kilitlenirdi" },
+  { onek: "/cevrimdisi", gerekce: "ağ yokken gösterilen sayfa (PWA)" },
+  { onek: "/el-kitabi", gerekce: "yardım — her pakette" },
+  { onek: "/talepler", gerekce: "destek talebi — paket değişikliği de buradan istenir" },
+  { onek: "/menu", gerekce: "telefon menüsü; kilitli öğeleri kendisi işaretler" },
+  { onek: "/paket", gerekce: "Paketim / kilit açıklaması (HEP_ACIK paketim)" },
+  { onek: "/ayarlar/tarife", gerekce: "yalnız yönlendirme; hedefleri (/ayarlar/komisyon · /tarife) kapılı" },
+  { onek: "/sistem/hata-denemesi", gerekce: "bakım tetiği (K98), tam yetkili kapısı ayrı" },
+];
+
+/** Saf — açık kümeye göre KİLİTLİ menü ekranları (ekran → özelliği). */
+export function kilitliEkranlar(acik: ReadonlySet<string>): Record<string, Ozellik> {
+  return Object.fromEntries(Object.entries(EKRAN_OZELLIGI).filter(([, o]) => !acik.has(o)));
+}
+
+/** Kilitli ekranın gideceği açıklama sayfası. */
+export function kilitAdresi(ozellik: string): string {
+  return `/paket?ozellik=${encodeURIComponent(ozellik)}`;
 }
