@@ -3916,9 +3916,13 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    */
   const yaricap = /--radius:\s*([0-9.]+)rem/.exec(acikTema);
   const yaricapPx = yaricap ? Number(yaricap[1]) * 16 : NaN;
+  /* ⭐ REFERANS DEĞİŞTİ — kullanıcı kararı 07.10.2026: firma ekranları da
+     yönetim panelinin (HA-Kompass referansı, `bezirga/yonetim.css`) görünümüne
+     geçti; orada kutu 14px, düğme/girdi 9px (globals.css data-slot kuralı).
+     Eski 9px ölçütü yukarıdaki gerekçesiyle o referansa aitti. */
   kontrol(
-    "kart yarıçapı referanstaki 9px (tek kaynaktan türüyor)",
-    Math.abs(yaricapPx - 9) < 0.5,
+    "kart yarıçapı yönetim paneli referansındaki 14px (tek kaynaktan türüyor)",
+    Math.abs(yaricapPx - 14) < 0.5,
   );
   kontrol(
     "  ...kart bileşeni lg yarıçapı kullanıyor (xl referanstan yuvarlaktı)",
