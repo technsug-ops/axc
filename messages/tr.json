@@ -294,7 +294,8 @@
     "elKitabiKisayolu": "El Kitabı",
     "temaKobalta": "Aydınlık temaya geç",
     "temaGeceye": "Karanlık temaya geç",
-    "temaKagida": "Kağıt temasına geç"
+    "temaKagida": "Kağıt temasına geç",
+    "temaPembeye": "Pembe temaya geç"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",

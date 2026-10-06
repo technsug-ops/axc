@@ -3,6 +3,10 @@
    Sadece DEĞER tanımlar. Bileşenler globals.css'te.
    Gece temasıyla token ADLARI birebir aynıdır.
    ============================================================ */
+/* ⭐ 07.10.2026 — Algoritmo düzeni + Bezirga kimliği (kullanıcı kararı;
+   Halil'in «Algoritmo UI & Veri Modeli» analizi bölüm 8.1): vurgu kobalt,
+   uyarı/maliyet safran, beyaz menü, çerçevesiz gölgeli kart. Algoritmo'nun
+   pembe kimliği AYRI tema: `tema-pembe.css` («ikisi de olsun»). */
 
 :root,
 [data-tema="kobalt"] {
@@ -18,86 +22,86 @@
    * 0,0568. Eşik uydurulmuş bir sayı değil, aynı paletten türetildi
    * (bkz. panel:dogrula).
    */
-  --se-zemin:            #F4F5F8;   /* sayfa arka planı */
+  --se-zemin:            #F4F6FA;   /* sayfa arka planı */
   --se-kart:             #FFFFFF;   /* kart, panel, tablo gövdesi */
   --se-kart-2:           #FFFFFF;   /* açılır menü, modal, ipucu */
   --se-satir:            #FAFBFC;   /* zebra satır */
-  --se-baslik:           #F3F4F6;   /* tablo başlığı, bölüm şeridi */
-  --se-hover:            #F9FAFB;   /* satır üzerine gelme */
-  --se-secili:           #FDEFF2;   /* seçili satır */
+  --se-baslik:           #F2F3F5;   /* tablo başlığı, bölüm şeridi */
+  --se-hover:            #F7F8FA;   /* satır üzerine gelme */
+  --se-secili:           #E8EEF8;   /* seçili satır */
 
   /* --- kabuk (kenar çubuğu, üst şerit) --- */
   --se-kabuk:            #FFFFFF;
-  --se-kabuk-secili:     #FDEFF2;
-  --se-kabuk-hover:      #F9FAFB;
-  --se-kabuk-ink:        #374151;
-  --se-kabuk-ink2:       #6B7280;
-  --se-kabuk-cizgi:      #E5E7EB;
+  --se-kabuk-secili:     #E8EEF8;
+  --se-kabuk-hover:      #F7F8FA;
+  --se-kabuk-ink:        #232B35;
+  --se-kabuk-ink2:       #667380;
+  --se-kabuk-cizgi:      #DCE0E6;
 
   /* --- mürekkep --- */
-  --se-ink:              #1F2937;   /* birincil metin, sayılar */
-  --se-ink-2:            #6B7280;   /* etiket, ikincil metin */
-  --se-ink-3:            #9CA3AF;   /* yer tutucu, üst veri */
+  --se-ink:              #232B35;   /* birincil metin, sayılar */
+  --se-ink-2:            #667380;   /* etiket, ikincil metin */
+  --se-ink-3:            #919FA4;   /* yer tutucu, üst veri */
   --se-ink-ters:         #FFFFFF;   /* koyu dolgu üzeri metin */
 
   /* --- çizgi --- */
-  --se-cizgi:            #E5E7EB;   /* varsayılan saç teli */
-  --se-cizgi-2:          #D1D5DB;   /* girdi çerçevesi, vurgulu ayraç */
-  --se-cizgi-3:          #B6BCC6;   /* üzerine gelme */
+  --se-cizgi:            #EEF0F3;   /* varsayılan saç teli */
+  --se-cizgi-2:          #DCE0E6;   /* girdi çerçevesi, vurgulu ayraç */
+  --se-cizgi-3:          #C3C9D1;   /* üzerine gelme */
 
   /* --- vurgu: kimlik + eylem. BAŞKA HİÇBİR ANLAM TAŞIMAZ --- */
-  --se-vurgu:            #E5395F;
-  --se-vurgu-hover:      #D42D52;
-  --se-vurgu-aktif:      #B82446;
+  --se-vurgu:            #12356B;
+  --se-vurgu-hover:      #0E2A55;
+  --se-vurgu-aktif:      #0A2044;
   --se-vurgu-on:         #FFFFFF;
-  --se-vurgu-bg:         #FDEFF2;
-  --se-vurgu-cizgi:      #F7B3C2;
+  --se-vurgu-bg:         #E8EEF8;
+  --se-vurgu-cizgi:      #B6C7DE;
 
   /* --- nötr rampa: anlamı OLMAYAN her yer --- */
   /* grafik dolgusu, ilerleme çubuğu, türetilmiş değer şeridi */
-  --se-notr:             #64748B;
-  --se-notr-2:           #94A3B8;
-  --se-notr-3:           #CBD5E1;
-  --se-notr-bg:          #F3F4F6;
+  --se-notr:             #667380;
+  --se-notr-2:           #919FA4;
+  --se-notr-3:           #C3C9D1;
+  --se-notr-bg:          #F2F3F5;
 
   /* --- semantik: kâr --- */
-  --se-kar:              #3E9F45;
-  --se-kar-bg:           #EAF7E6;
-  --se-kar-cizgi:        #BFE5B5;
+  --se-kar:              #2F9E5B;
+  --se-kar-bg:           #EAF8E2;
+  --se-kar-cizgi:        #B9E3C8;
 
   /* --- semantik: zarar --- */
-  --se-zarar:            #E5395F;
-  --se-zarar-bg:         #FDECEF;
-  --se-zarar-cizgi:      #F7B3C2;
+  --se-zarar:            #D64545;
+  --se-zarar-bg:         #FCE4E2;
+  --se-zarar-cizgi:      #F2B8B3;
 
   /* --- semantik: bilinmiyor / modellenmedi --- */
-  --se-bil:              #F5A623;   /* şerit, çizgi, ikon */
-  --se-bil-ink:          #9A6100;   /* açık zeminde metin */
-  --se-bil-bg:           #FFF6E0;
-  --se-bil-cizgi:        #F7D9A0;
+  --se-bil:              #E3A13A;   /* şerit, çizgi, ikon */
+  --se-bil-ink:          #9A6A12;   /* açık zeminde metin */
+  --se-bil-bg:           #FEF5E1;
+  --se-bil-cizgi:        #F0D49C;
 
   /* --- semantik: çelişki (kaynak ile sistem uyuşmuyor) --- */
   /* zarar ile aynı ton, DOLU zemin ile ayrışır — hue sayısı artmasın */
-  --se-celiski:          #E5395F;
-  --se-celiski-bg:       #E5395F;
+  --se-celiski:          #D64545;
+  --se-celiski-bg:       #D64545;
   --se-celiski-on:       #FFFFFF;
 
   /* --- durum --- */
-  --se-odak:             #E5395F;
-  --se-odak-golge:       0 0 0 3px #FDEFF2;
-  --se-pasif-bg:         #F0F1F3;
-  --se-pasif-ink:        #9CA3AF;
+  --se-odak:             #12356B;
+  --se-odak-golge:       0 0 0 3px #D6E2F1;
+  --se-pasif-bg:         #F2F3F5;
+  --se-pasif-ink:        #919FA4;
 
   /* --- gölge (sadece yüzen katman) --- */
-  --se-golge-1:          0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
-  --se-golge-2:          0 4px 12px rgba(16, 24, 40, 0.08);
-  --se-golge-3:          0 12px 32px rgba(16, 24, 40, 0.12);
+  --se-golge-1:          0 2px 8px rgba(35, 43, 53, 0.06);
+  --se-golge-2:          0 4px 12px rgba(35, 43, 53, 0.08);
+  --se-golge-3:          0 12px 32px rgba(35, 43, 53, 0.12);
 
   /* --- seçim ve kaydırma çubuğu --- */
-  --se-secim-bg:         #FDEFF2;
-  --se-secim-ink:        #1F2937;
-  --se-kaydirma:         #D1D5DB;
-  --se-kaydirma-hover:   #B6BCC6;
+  --se-secim-bg:         #D6E2F1;
+  --se-secim-ink:        #232B35;
+  --se-kaydirma:         #DCE0E6;
+  --se-kaydirma-hover:   #C3C9D1;
 
   color-scheme: light;
 }

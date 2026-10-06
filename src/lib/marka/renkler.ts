@@ -30,6 +30,8 @@ export const TEMA_ANAHTARI = `${UYGULAMA.teknikAd}-tema`;
 export const KABUK_RENKLERI = {
   /** `tema-kobalt.css` → `--se-kabuk` */
   kobalt: "#FFFFFF",
+  /* 07.10.2026: Algoritmo pembe teması — menü beyaz, sistem çubuğu da beyaz. */
+  pembe: "#FFFFFF",
   /** `tema-gece.css` → `--se-kabuk` */
   gece: "#08101E",
   /** `tema-kagit.css` → `--se-kabuk` */

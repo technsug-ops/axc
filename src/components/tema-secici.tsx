@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { FileText, Moon, Sun } from "lucide-react";
+import { FileText, Moon, Palette, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ import {
  * ============================================================================
  */
 
-export const TEMALAR = ["kobalt", "gece", "kagit"] as const;
+export const TEMALAR = ["kobalt", "pembe", "gece", "kagit"] as const;
 export type Tema = (typeof TEMALAR)[number];
 
 /**
@@ -156,6 +156,7 @@ export function TemaSecici() {
     kobalt: t("temaKobalta"),
     gece: t("temaGeceye"),
     kagit: t("temaKagida"),
+    pembe: t("temaPembeye"),
   };
   const etiket = hedefEtiketi[sonrakiTema(tema)];
 
@@ -183,6 +184,7 @@ export function TemaSecici() {
                 kobalt: <Moon className="size-4" />,
                 gece: <Sun className="size-4" />,
                 kagit: <FileText className="size-4" />,
+                pembe: <Palette className="size-4" />,
               } satisfies Record<Tema, React.ReactNode>
             )[tema]
           }
