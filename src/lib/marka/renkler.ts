@@ -29,7 +29,7 @@ export const TEMA_ANAHTARI = `${UYGULAMA.teknikAd}-tema`;
 /** Tema başına kabuk (sol menü / sistem çubuğu) zemini. */
 export const KABUK_RENKLERI = {
   /** `tema-kobalt.css` → `--se-kabuk` */
-  kobalt: "#12356B",
+  kobalt: "#14302D",
   /** `tema-gece.css` → `--se-kabuk` */
   gece: "#08101E",
   /** `tema-kagit.css` → `--se-kabuk` */
