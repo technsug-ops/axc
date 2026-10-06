@@ -23,7 +23,9 @@ const EYLEM = "src/app/bezirga/(ic)/paketler/actions.ts";
 const PROXY = "src/proxy.ts";
 const YETKI = "src/lib/yetki/index.ts";
 const ERISIM = "src/lib/paket/erisim.ts";
-const YAN_MENU = "src/components/app-sidebar.tsx";
+const KOK = "src/app/layout.tsx";
+const ALT = "src/components/alt-cubuk.tsx";
+const HIZLI = "src/app/hizli-islemler.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -95,9 +97,18 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "BEYANSIZ PAKET DISI SAYFA", yon: "KALDIRAN", dosya: KATALOG,
     bul: '  { onek: "/talepler", gerekce: "destek talebi — paket değişikliği de buradan istenir" },\n', koy: "",
     bozdugu: "yeni sayfa kimse karar vermeden paket disi kalir" },
-  { ad: "YAN MENU KILIDI SORMUYOR", yon: "KALDIRAN", dosya: YAN_MENU,
-    bul: "    const kilitOzelligi = kilitli[oge.anahtar];\n", koy: "    const kilitOzelligi = undefined as string | undefined;\n",
-    bozdugu: "kilitli ekran menude acik gorunur, tiklayinca aciklamaya duser" },
+  { ad: "YAN MENU SUZULMEMIS DUZENLE CIZILIYOR", yon: "KALDIRAN", dosya: KOK,
+    bul: "  const duzen = duzendenCikar(hamDuzen, kilitli);\n", koy: "  const duzen = hamDuzen;\n",
+    bozdugu: "kapali ozellikler menude gorunur (06.10 karari)" },
+  { ad: "SUZGEC HICBIR SEY CIKARMIYOR", yon: "KALDIRAN", dosya: KATALOG,
+    bul: "  const acik = (a: string) => !(a in kilitli);", koy: "  const acik = (a: string) => Boolean(a);",
+    bozdugu: "kapali ozellikler menude gorunur" },
+  { ad: "ALT CUBUK KAPALI SEKMEYI GOSTERIYOR", yon: "KALDIRAN", dosya: ALT,
+    bul: "  const sekmeler = ALT_CUBUK_SEKMELERI.filter((s) => !(s in kilitli));", koy: "  const sekmeler = ALT_CUBUK_SEKMELERI.filter((s) => Boolean(s) || kilitli);",
+    bozdugu: "telefonda kapali Okut sekmesi gorunur" },
+  { ad: "HIZLI ISLEM KAPALI ISI GOSTERIYOR", yon: "KALDIRAN", dosya: HIZLI,
+    bul: "if (!href || !Ikon || anahtar in kilitli) return null;", koy: "if (!href || !Ikon) return null;",
+    bozdugu: "panelde kapali isin tusu gorunur" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

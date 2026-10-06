@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Lock, Menu, type LucideIcon } from "lucide-react";
+import { Menu, type LucideIcon } from "lucide-react";
 
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
-import { kilitAdresi } from "@/lib/paket/ozellikler";
 import { ALT_CUBUK_SEKMELERI, MENU_IKONLARI, type AltCubukSekmesi } from "@/lib/menu/ikonlar";
 
 /**
@@ -47,33 +46,30 @@ export function sekmeAktifMi(yol: string, adres: string): boolean {
   return yol === adres || yol.startsWith(adres + "/");
 }
 
-/** `kilitli`: paketinde olmayan ekranlar (K303 ②) — sekme kilitle çizilir, açıklama sayfasına gider. */
+/** `kilitli`: paketinde olmayan ekranlar (K303 ②) — sekme GÖRÜNMEZ; kalanlar genişliği paylaşır. */
 export function AltCubuk({ kilitli = {} }: { kilitli?: Record<string, string> }) {
   const yol = usePathname();
   const t = useTranslations("AltCubuk");
-  const tMenu = useTranslations("Menu");
+  const sekmeler = ALT_CUBUK_SEKMELERI.filter((s) => !(s in kilitli));
   return (
     <nav
       aria-label={t("baslik")}
-      className="bg-card fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 gap-0.5 border-t px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden print:hidden"
+      className="bg-card fixed inset-x-0 bottom-0 z-30 grid gap-0.5 border-t px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden print:hidden"
+      style={{ gridTemplateColumns: `repeat(${sekmeler.length}, minmax(0, 1fr))` }}
     >
-      {ALT_CUBUK_SEKMELERI.map((sekme) => {
+      {sekmeler.map((sekme) => {
         const Ikon = IKONLAR[sekme];
         const aktif = sekmeAktifMi(yol, ADRESLER[sekme]);
-        const kilit = kilitli[sekme];
         return (
           <Link
             key={sekme}
-            href={kilit ? kilitAdresi(kilit) : ADRESLER[sekme]}
+            href={ADRESLER[sekme]}
             aria-current={aktif ? "page" : undefined}
             className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-md text-[10px] leading-none ${
               aktif ? "bg-accent text-foreground font-semibold" : "text-muted-foreground font-medium"
             }`}
           >
-            <span className="relative">
-              <Ikon className={`size-[22px] ${kilit ? "opacity-50" : ""}`} aria-hidden />
-              {kilit ? <Lock className="absolute -right-2 -bottom-1 size-3" aria-label={tMenu("kilitli")} /> : null}
-            </span>
+            <Ikon className="size-[22px]" aria-hidden />
             <span>{t(sekme)}</span>
           </Link>
         );

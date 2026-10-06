@@ -38,6 +38,7 @@ import { denemeOrtamiMi } from "@/lib/deneme-ortami";
 import { DURUM_ZEMINI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
 import { firmaKilitliEkranlari } from "@/lib/paket/erisim";
+import { duzendenCikar } from "@/lib/paket/ozellikler";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -226,10 +227,12 @@ export default async function RootLayout({
    * hatasının bütün uygulamayı 500'e düşürmesi kabul edilemez.
    */
   const baglam = kullanici ? await yetkiBaglami().catch(() => null) : null;
-  const duzen = await menuDuzeni(baglam?.companyId ?? null);
+  const hamDuzen = await menuDuzeni(baglam?.companyId ?? null);
   const uyariSeridi = baglam ? await firmaUyariSeridi(baglam.companyId) : null;
-  // K303 ② — paketinde olmayan ekranlar; menü ve alt çubuk kilitle çizer.
+  /* K303 ② — paketinde olmayan ekranlar menüde GÖRÜNMEZ (kullanıcı kararı
+     06.10.2026). Düzen kaynağında süzülür; alt çubuk da aynı kümeyi atlar. */
   const kilitli = baglam ? await firmaKilitliEkranlari(baglam.companyId).catch(() => ({})) : {};
+  const duzen = duzendenCikar(hamDuzen, kilitli);
 
   if (!yonetimKatmani && oturumCerezi && !kullanici) redirect("/cikis");
 
@@ -324,7 +327,7 @@ export default async function RootLayout({
         <NextIntlClientProvider>
           <TooltipProvider delayDuration={0}>
             <SidebarProvider>
-              <AppSidebar eposta={kullanici.email} duzen={duzen} kilitli={kilitli} />
+              <AppSidebar eposta={kullanici.email} duzen={duzen} />
               {/*
                 `min-w-0` ZORUNLU — yoksa SAYFA yana kayar.
                 _Kullanıcı 14.08.2026'da canlıda yakaladı: /alimlar,

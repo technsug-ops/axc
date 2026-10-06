@@ -3,9 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
 import { HIZLI_ISLEMLER, MENU_IKONLARI, ONE_CIKAN_ISLEM } from "@/lib/menu/ikonlar";
-import { Lock } from "lucide-react";
 import { firmaKilitliEkranlari } from "@/lib/paket/erisim";
-import { kilitAdresi } from "@/lib/paket/ozellikler";
 import { yetkiBaglami } from "@/lib/yetki";
 
 /**
@@ -24,7 +22,7 @@ import { yetkiBaglami } from "@/lib/yetki";
 export async function HizliIslemler() {
   const t = await getTranslations("Panel");
   const tMenu = await getTranslations("Menu");
-  // K303 ② — paketinde olmayan iş kilitle çizilir (sol menüyle aynı kaynak).
+  // K303 ② — paketinde olmayan iş GÖRÜNMEZ (sol menüyle aynı küme).
   const baglam = await yetkiBaglami();
   const kilitli = baglam ? await firmaKilitliEkranlari(baglam.companyId) : {};
   return (
@@ -35,22 +33,20 @@ export async function HizliIslemler() {
           const href = MENU_ADRESLERI[anahtar];
           const Ikon = MENU_IKONLARI[anahtar];
           /* Katalogda olmayan iş ÇİZİLMEZ — eksik bir tuş, kırık bir tuştan iyidir. */
-          if (!href || !Ikon) return null;
+          if (!href || !Ikon || anahtar in kilitli) return null;
           const oneCikan = anahtar === ONE_CIKAN_ISLEM;
-          const kilit = kilitli[anahtar];
           return (
             <Link
               key={anahtar}
-              href={kilit ? kilitAdresi(kilit) : href}
+              href={href}
               className="text-foreground flex flex-col items-center gap-1.5 no-underline"
             >
               <span
-                className={`relative flex size-14 items-center justify-center rounded-2xl ${kilit ? "opacity-50" : ""} ${
+                className={`flex size-14 items-center justify-center rounded-2xl ${
                   oneCikan ? "bg-foreground text-background" : "bg-card text-primary border"
                 }`}
               >
                 <Ikon className="size-6" aria-hidden />
-                {kilit ? <Lock className="absolute -right-1 -bottom-1 size-3.5" aria-label={tMenu("kilitli")} /> : null}
               </span>
               <span className="text-center text-[11px] leading-tight font-medium">
                 {tMenu(anahtar)}

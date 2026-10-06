@@ -173,3 +173,16 @@ export function kilitliEkranlar(acik: ReadonlySet<string>): Record<string, Ozell
 export function kilitAdresi(ozellik: string): string {
   return `/paket?ozellik=${encodeURIComponent(ozellik)}`;
 }
+
+/**
+ * Saf — menü düzeninden KAPALI ekranları çıkarır (kullanıcı kararı 06.10.2026:
+ * «kapalı olan özellikler menüde görünmesin»). Boşalan grup zaten çizilmez.
+ * ⚠ ÖNCEKİ KARAR (aynı gün, çevrildi — gerekçe silinmez): kilitli öğe
+ * GİZLENMEZ, kilitle çizilirdi; «kaybolan menü bozuldu diye okunur» kaygısıyla.
+ * Kullanıcı gizlemeyi seçti; kaygının karşılığı «Paketim» sayfası: kapalı
+ * özellikler orada listelenir, adresi elle yazan da oraya düşer.
+ */
+export function duzendenCikar<D extends { gunluk: string[]; gruplar: { anahtar: string; ogeler: string[] }[] }>(duzen: D, kilitli: Record<string, string>): D {
+  const acik = (a: string) => !(a in kilitli);
+  return { ...duzen, gunluk: duzen.gunluk.filter(acik), gruplar: duzen.gruplar.map((g) => ({ ...g, ogeler: g.ogeler.filter(acik) })) };
+}

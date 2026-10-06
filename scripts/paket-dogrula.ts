@@ -260,13 +260,15 @@ async function main() {
   const erisim = yorumsuz(kaynakOku("src/lib/paket/erisim.ts"));
   kontrol("paket halkası kapalı özellikte açıklama sayfasına yönlendirir", erisim.includes("if (!(await firmaAcikOzellikleri(firmaId)).has(ozellik)) redirect(kilitAdresi(ozellik));"));
   const kok = yorumsuz(kaynakOku("src/app/layout.tsx"));
-  kontrol("kök düzen kilitli kümeyi yan menüye VE alt çubuğa verir", kok.includes("kilitli={kilitli} />") && kok.includes("<AltCubuk kilitli={kilitli} />") && kok.includes("await firmaKilitliEkranlari(baglam.companyId)"));
-  const yan = yorumsuz(kaynakOku("src/components/app-sidebar.tsx"));
-  const ogeCiz = yan.slice(yan.indexOf("function ogeCiz("), yan.indexOf("function duzCiz("));
-  kontrol("yan menü her öğede ÖNCE kilidi sorar ve açıklama adresine götürür", ogeCiz.indexOf("const kilitOzelligi = kilitli[oge.anahtar];") >= 0 && ogeCiz.includes("href={kilitAdresi(kilitOzelligi)}"));
-  for (const [dosya, desen] of [["src/app/menu/page.tsx", "href={kilit ? kilitAdresi(kilit) : href}"], ["src/app/hizli-islemler.tsx", "href={kilit ? kilitAdresi(kilit) : href}"], ["src/components/alt-cubuk.tsx", "href={kilit ? kilitAdresi(kilit) : ADRESLER[sekme]}"]] as const) {
-    kontrol(`${dosya}: kilitli öğe açıklama adresine gider`, yorumsuz(kaynakOku(dosya)).includes(desen));
-  }
+  // Kullanıcı kararı 06.10.2026: kapalı özellikler menüde GÖRÜNMEZ (önceki «kilitle çiz» çevrildi).
+  const ornekDuzen = { gunluk: ["satislar", "okut"], gruplar: [{ anahtar: "grupPara", ogeler: ["finansman"] }, { anahtar: "grupX", ogeler: ["giderler", "kartlar"] }], yeni: 1 };
+  const suzulmus = K.duzendenCikar(ornekDuzen, { okut: "depo", finansman: "finansman", kartlar: "kartlar" });
+  kontrol("düzen süzgeci kapalı ekranları ÇIKARIR, açıkları ve öteki alanları korur", suzulmus.gunluk.join() === "satislar" && suzulmus.gruplar[0]!.ogeler.length === 0 && suzulmus.gruplar[1]!.ogeler.join() === "giderler" && suzulmus.yeni === 1, suzulmus);
+  kontrol("kök düzen menüyü SÜZÜLMÜŞ düzenle çizer ve kümeyi alt çubuğa verir", kok.includes("const duzen = duzendenCikar(hamDuzen, kilitli);") && kok.includes("<AppSidebar eposta={kullanici.email} duzen={duzen} />") && kok.includes("<AltCubuk kilitli={kilitli} />") && kok.includes("await firmaKilitliEkranlari(baglam.companyId)"));
+  kontrol("telefon menüsü SÜZÜLMÜŞ düzenle çizer", yorumsuz(kaynakOku("src/app/menu/page.tsx")).includes("const duzen = duzendenCikar(hamDuzen, kilitli);"));
+  kontrol("hızlı işlemler kapalı işi ÇİZMEZ", yorumsuz(kaynakOku("src/app/hizli-islemler.tsx")).includes("if (!href || !Ikon || anahtar in kilitli) return null;"));
+  const alt = yorumsuz(kaynakOku("src/components/alt-cubuk.tsx"));
+  kontrol("alt çubuk kapalı sekmeyi ATLAR ve sütun sayısı kalan sekmeden", alt.includes("const sekmeler = ALT_CUBUK_SEKMELERI.filter((s) => !(s in kilitli));") && alt.includes("{sekmeler.map((sekme) => {") && alt.includes("repeat(${sekmeler.length}, minmax(0, 1fr))"));
   kosanBolumler.push("uygulama");
 
   await sistemPrisma.$disconnect();

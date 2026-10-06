@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronDown, Lock, type LucideIcon } from "lucide-react";
+import { ChevronDown, type LucideIcon } from "lucide-react";
 
 import {
   Sidebar,
@@ -23,7 +23,6 @@ import {
 import { CikisButonu } from "@/components/cikis-butonu";
 import { ALT_OGELER, MENU_IKONLARI } from "@/lib/menu/ikonlar";
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
-import { kilitAdresi } from "@/lib/paket/ozellikler";
 import type { CozulmusDuzen } from "@/lib/menu/duzen";
 import { UYGULAMA } from "@/lib/uygulama";
 import { MarkaIsareti, MarkaYazisi } from "@/lib/marka/cizim";
@@ -148,15 +147,8 @@ const menuSunucu = (): string => "";
 export function AppSidebar({
   eposta,
   duzen,
-  kilitli = {},
 }: {
   eposta?: string;
-  /**
-   * K303 ② — paketinde olmayan ekranlar (ekran → özelliği), SUNUCUDA çözülür.
-   * Kilitli öğe GİZLENMEZ: kilitle çizilir ve açıklama sayfasına gider —
-   * kaybolan menü «bozuldu» diye okunur (İlke #5).
-   */
-  kilitli?: Record<string, string>;
   /**
    * SUNUCUDA ÇÖZÜLMÜŞ DÜZEN — katalog (kod) + kayıt (veri).
    *
@@ -234,20 +226,6 @@ export function AppSidebar({
   }
 
   function ogeCiz(oge: MenuOgesi) {
-    const kilitOzelligi = kilitli[oge.anahtar];
-    if (kilitOzelligi) {
-      return (
-        <SidebarMenuItem key={oge.anahtar}>
-          <SidebarMenuButton asChild>
-            <Link href={kilitAdresi(kilitOzelligi)} onClick={menuyuKapat} className="text-muted-foreground">
-              <oge.icon />
-              <span>{tMenu(oge.anahtar)}</span>
-              <Lock className="ml-auto size-3.5" aria-label={tMenu("kilitli")} />
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      );
-    }
     if (!oge.aktif) {
       return (
         <SidebarMenuItem key={oge.anahtar}>
