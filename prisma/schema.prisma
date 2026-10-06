@@ -1043,6 +1043,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -1080,6 +1081,9 @@ model ChannelAccount {
   sales           Sale[]
   settlements     Settlement[]
   settlementItems SettlementItem[]
+
+  /// K303 — firma başına pazaryeri API anahtarı (şifreli; 06.10.2026).
+  apiAnahtari KanalAnahtari?
 
   @@unique([companyId, channelId, code])
   @@index([channelId])
@@ -3285,6 +3289,7 @@ model Company {
   paketId           String?
   paket             Paket?          @relation(fields: [paketId], references: [id], onDelete: Restrict)
   ozellikler        FirmaOzelligi[]
+  kanalAnahtarlari  KanalAnahtari[]
   /// Firmaya özel (Individuel) pakette ADET SINIRLARI (06.10.2026). Hazır pakette
   /// sınır paketten okunur, bunlar yok sayılır. `null` = sınırsız.
   sinirKanalHesabi  Int?
@@ -4193,4 +4198,35 @@ model FirmaOzelligi {
   ozellik String  @db.VarChar(64)
 
   @@id([firmaId, ozellik])
+}
+
+/// K303 — FİRMA BAŞINA PAZARYERİ API ANAHTARI (kullanıcı kararı 06.10.2026).
+/// Bir SATIŞ hesabına bir anahtar takımı. Firma süzgecinin İÇİNDE (`companyId`):
+/// bir firma başka firmanın anahtarını hiçbir sorguda göremez.
+/// ⚠ `sifreli` AES-256-GCM paketidir («v1:iv:etiket:veri», base64). Ana sır
+/// `PAZARYERI_ANAHTAR_SIRRI` ortam değişkeninde; veritabanı tek başına anahtarı
+/// AÇAMAZ. Düz anahtar hiçbir alana, ize ya da log'a yazılmaz — ekranda yalnız
+/// `sonDort` görünür.
+model KanalAnahtari {
+  id String @id @default(cuid())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  channelAccountId String         @unique
+  channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Cascade)
+
+  sifreli String @db.Text
+  /// Gizli anahtarın son 4 hanesi — yalnız tanıma içindir.
+  sonDort String @db.VarChar(8)
+
+  /// Son «bağlantıyı dene» sonucu (yalnız okuma çağrısı). Hata metni anahtar İÇERMEZ.
+  sonDenemeAt       DateTime?
+  sonDenemeBasarili Boolean?
+  sonHata           String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
 }

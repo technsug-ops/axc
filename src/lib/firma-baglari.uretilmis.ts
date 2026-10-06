@@ -79,6 +79,11 @@ export const FIRMA_BAGLARI: readonly { tablo: string; alan: string; hedef: strin
     "hedef": "CreditCard"
   },
   {
+    "tablo": "KanalAnahtari",
+    "alan": "channelAccountId",
+    "hedef": "ChannelAccount"
+  },
+  {
     "tablo": "KartOdeme",
     "alan": "cardId",
     "hedef": "CreditCard"

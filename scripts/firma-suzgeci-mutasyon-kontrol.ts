@@ -112,6 +112,14 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "TETIKLEYICI KOSULU GEVSEDI", yon: "KALDIRAN", dosya: "scripts/firma-bag-tetikleyici-uret.ts",
     bul: "AND NOT EXISTS (SELECT 1 FROM", koy: "AND FALSE AND NOT EXISTS (SELECT 1 FROM",
     bozdugu: "uretilen tetikleyici hicbir bagi reddetmez" },
+  /* 06.10.2026 — sonradan eklenen tablo tetikleyicisini KENDİ migration'ında taşır;
+     bekçi bütün migration'ları toplar. */
+  { ad: "YENI TABLONUN TETIKLEYICISI KAYIP", yon: "KALDIRAN", dosya: "prisma/migrations/20261006170000_k303_kanal_anahtari_bag_kapisi/migration.sql",
+    bul: "CREATE TRIGGER `KanalAnahtari_firma_bag_ekle` BEFORE INSERT ON `KanalAnahtari`", koy: "CREATE TRIGGER `KanalAnahtariX_firma_bag_ekle` BEFORE INSERT ON `KanalAnahtari`",
+    bozdugu: "anahtar baska firmanin kanal hesabina baglanabilir (ekleme tetikleyicisi yok)" },
+  { ad: "TETIKLEYICI IKI MIGRATIONDA", yon: "FAZLADAN", dosya: "prisma/migrations/20261003100500_k303_firma_bag_kapisi/migration.sql",
+    bul: "CREATE TRIGGER `ChannelSku_firma_bag_ekle`", koy: "CREATE TRIGGER `KanalAnahtari_firma_bag_ekle`",
+    bozdugu: "ayni tablo iki dosyada; sifirdan kurulumda ikinci CREATE patlar" },
   { ad: "KAPI BASKA DOSYADAN SUSTURULUYOR", yon: "FAZLADAN", dosya: "src/lib/satis.ts",
     bul: 'import { izYaz } from "@/lib/iz";\n', koy: 'import { izYaz } from "@/lib/iz";\nconst _kapi = "SET @selliora_bag_kapisi_kapali = 1";\nvoid _kapi;\n',
     bozdugu: "satis yazimi bag kapisini susturup baska firmaya baglanabilir" },

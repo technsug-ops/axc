@@ -171,6 +171,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       "settlementItems": {
         "hedef": "SettlementItem",
         "liste": true
+      },
+      "apiAnahtari": {
+        "hedef": "KanalAnahtari",
+        "liste": false
       }
     },
     "yabanciAnahtarlar": [
@@ -227,6 +231,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       },
       "ozellikler": {
         "hedef": "FirmaOzelligi",
+        "liste": true
+      },
+      "kanalAnahtarlari": {
+        "hedef": "KanalAnahtari",
         "liste": true
       },
       "uyelikler": {
@@ -704,6 +712,22 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
     },
     "yabanciAnahtarlar": [
       "cardId"
+    ]
+  },
+  "KanalAnahtari": {
+    "firma": true,
+    "iliskiler": {
+      "company": {
+        "hedef": "Company",
+        "liste": false
+      },
+      "channelAccount": {
+        "hedef": "ChannelAccount",
+        "liste": false
+      }
+    },
+    "yabanciAnahtarlar": [
+      "channelAccountId"
     ]
   },
   "KartOdeme": {

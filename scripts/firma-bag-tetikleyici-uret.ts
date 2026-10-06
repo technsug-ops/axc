@@ -98,15 +98,51 @@ export const BASLIK = `-- K303 Aşama 4 (03.10.2026): FİRMA BAĞ KAPISI — bir
 
 `;
 
+/** İlk (ana) bağ kapısı migration'ı — Aşama 4'te kurulan tablolar burada. */
+export const ANA_BAG_MIGRATION = "prisma/migrations/20261003100500_k303_firma_bag_kapisi/migration.sql";
+
+/**
+ * SONRADAN EKLENEN TABLOLAR (06.10.2026, KanalAnahtari ile ortaya çıktı): ana
+ * dosya bir kez koştu; onu yeniden yazmak koşmuş migration'ı değiştirir ve
+ * sıfırdan kurulumda tetikleyiciyi TABLODAN ÖNCE yaratıp düşerdi. Bu yüzden her
+ * migration dosyası YALNIZ başka hiçbir migration'da tetikleyicisi olmayan
+ * tabloları taşır. Bekçi bütün dosyaları toplayıp şemayla karşılaştırır.
+ * ⚠ Var olan bir tabloya YENİ bağ eklenirse (tetikleyici metni değişir) bu
+ * üretici onu yazmaz — bekçi «metin farklı» diye kırmızı yanar ve DROP+CREATE
+ * içeren ayrı bir migration elle istenir (kör yeniden yazım yok).
+ */
+export function migrationTetikleyicileri(metin: string): Map<string, string> {
+  const m = new Map<string, string>();
+  const duz = metin.replace(/\r\n/g, "\n");
+  const desen = /CREATE TRIGGER `(\w+)_firma_bag_(?:ekle|guncelle)` [\s\S]*?\nEND;/g;
+  for (let x = desen.exec(duz); x; x = desen.exec(duz)) m.set(x[1]!, (m.get(x[1]!) ?? "") + x[0] + "\n");
+  return m;
+}
+
+/** Şemadan beklenen tetikleyici metni — tablo başına (bekçi karşılaştırması için). */
+export function beklenenTetikleyiciler(baglar: Bag[]): Map<string, string> {
+  return migrationTetikleyicileri(tetikleyiciSql(baglar));
+}
+
 if (process.argv[1] && /firma-bag-tetikleyici-uret\.ts$/.test(process.argv[1].replace(/\\/g, "/"))) {
   void (async () => {
+    const { readdirSync, existsSync } = await import("node:fs");
     const { MODEL_HARITASI } = await import("../src/lib/firma-modelleri.uretilmis");
     const firma = new Set(Object.entries(MODEL_HARITASI).filter(([, b]) => b.firma).map(([k]) => k));
     const baglar = bagIliskileri(readFileSync("prisma/schema.prisma", "utf8"), firma);
-    const hedef = process.argv[2];
+    const hedef = process.argv[2]?.replace(/\\/g, "/");
     if (!hedef) throw new Error("migration.sql yolu verilmedi");
-    writeFileSync(hedef, BASLIK + tetikleyiciSql(baglar));
+    // Başka migration'larda tetikleyicisi olan tablolar bu dosyaya YAZILMAZ.
+    const baskalarinda = new Set<string>();
+    for (const d of readdirSync("prisma/migrations")) {
+      const y = `prisma/migrations/${d}/migration.sql`;
+      if (y === hedef || !existsSync(y)) continue;
+      for (const t of migrationTetikleyicileri(readFileSync(y, "utf8")).keys()) baskalarinda.add(t);
+    }
+    const buraya = baglar.filter((b) => !baskalarinda.has(b.tablo));
+    if (buraya.length === 0) throw new Error("bu dosyaya yazılacak tablo yok — bütün tabloların tetikleyicisi başka migration'larda");
+    writeFileSync(hedef, BASLIK + tetikleyiciSql(buraya));
     writeFileSync(BAG_LISTESI_DOSYASI, bagListesiDosyasi(baglar));
-    console.log(`yazıldı: ${hedef} · ${baglar.length} bağ · ${new Set(baglar.map((b) => b.tablo)).size} tablo`);
+    console.log(`yazıldı: ${hedef} · ${buraya.length} bağ · ${new Set(buraya.map((b) => b.tablo)).size} tablo (toplam ${baglar.length} bağ)`);
   })();
 }

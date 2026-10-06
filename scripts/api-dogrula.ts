@@ -103,11 +103,18 @@ const KENDI = join("scripts", "api-dogrula.ts");
  */
 /** K166: sunucu ucu istemciyi DOLAYLI alır (çekirdek importuyla) — iz
  *  çekirdeğin adına da bağlanır ki rota kapsam dışı kalmasın. */
-const ISTEMCI_IZLERI = ["ty/istemci", "hb/istemci", "n11/istemci", 'canli-ty-ice-aktar"'];
+const ISTEMCI_IZI = /(?:from\s+|import\(\s*)["'][^"']*(?:\/(?:ty|hb|n11)\/istemci|canli-ty-ice-aktar)["']/;
 /* ⚠ Üçüncü iz KAPANIŞ TIRNAKLI: import ifadesini yakalar
    (from ".../canli-ty-ice-aktar"), yorumda geçen adı yakalamaz —
    "kullanıma bağlanır, ada değil". İlk hâli tırnaksızdı ve
-   canli-birim-fiyat-onar.ts'yi YORUMDAKİ addan kapsama aldı. */
+   canli-birim-fiyat-onar.ts'yi YORUMDAKİ addan kapsama aldı.
+   ⭐ 06.10.2026 — AYNI İLKE İSTEMCİ İZLERİNE DE UYGULANDI: `ty/istemci` düz dize
+   olarak aranıyordu ve istemci DOSYASINI yalnız OKUYAN/mutasyona uğratan 9 bekçi
+   ile bir yorum «API'ye ulaşan dosya» sayılıyordu (kanal-anahtari bekçisi bu
+   yüzden yazma yasağına takıldı). İz artık yalnız İÇERİ ALMAYI (`from "…"` /
+   `import("…")`) yakalar. ÖLÇÜLDÜ: eski kural 54 · yeni 45 dosya; düşen 9'un
+   hiçbirinde fetch/import(/require( yok — gerçek API dosyası KAYBEDİLMEDİ,
+   yeni kural hiçbir dosya EKLEMEDİ. */
 
 const tumDosyalar = [...dosyalar("scripts"), ...dosyalar("src")];
 const apiDosyalari = tumDosyalar
@@ -117,7 +124,7 @@ const apiDosyalari = tumDosyalar
       const icerik = kaynakOku(y);
       return (
         API_IZLERI.some((iz) => icerik.includes(iz)) ||
-        ISTEMCI_IZLERI.some((iz) => icerik.includes(iz))
+        ISTEMCI_IZI.test(icerik)
       );
     } catch {
       return false;
@@ -131,6 +138,15 @@ console.log("\n1) PAZARYERİ API — YAZMA UCU YOK");
  * ve bu, kontrolün en tehlikeli yalancı yeşili olurdu.
  */
 kontrol("API'ye dokunan dosya bulundu", apiDosyalari.length > 0, apiDosyalari);
+/* İz İÇERİ ALMAYA bağlandığı için (06.10.2026) tabanı GERÇEK içeri alanlarla
+   sabitlenir: üçü de istemciyi yalnız import ile alır, taban adresi yazmaz —
+   iz körleşirse bu satır kırmızı yanar (boş küme yeşili yok). */
+{
+  const bilinen = ["src/app/kart/[variantId]/actions.ts", "src/app/api/cron/ty-cekim/route.ts", "scripts/canli-ty-mutabakat.ts"];
+  const norm = new Set(apiDosyalari.map((y) => y.split("\\").join("/")));
+  const kayip = bilinen.filter((y) => !norm.has(y));
+  kontrol("istemciyi İÇERİ ALAN bilinen dosyalar kapsamda (kart eylemleri · TY çekim ucu · TY mutabakat)", kayip.length === 0, kayip);
+}
 
 /** ⚠ SATIR SATIR: hangi dosyada, hangi satırda olduğu söylenmeli. */
 const YASAK = [

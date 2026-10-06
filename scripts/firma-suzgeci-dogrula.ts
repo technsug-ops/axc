@@ -2,7 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
 import { haritaUret, dosyaMetni, HARITA_DOSYASI } from "./firma-modelleri-uret";
-import { bagIliskileri, tetikleyiciSql, bagListesiDosyasi, BASLIK, BAG_LISTESI_DOSYASI, KAPI_DEGISKENI } from "./firma-bag-tetikleyici-uret";
+import { bagIliskileri, tetikleyiciSql, bagListesiDosyasi, BASLIK, BAG_LISTESI_DOSYASI, KAPI_DEGISKENI, ANA_BAG_MIGRATION, beklenenTetikleyiciler, migrationTetikleyicileri } from "./firma-bag-tetikleyici-uret";
 import { argumanlariSuz, firmaModeliMi, veriEkle, whereEkle } from "../src/lib/firma-suzgeci";
 import { donguDurumKodu, firmaFirmaKos, kimlikFirmasiSec } from "../src/lib/firma-dongusu";
 import { acikFirmaBaglami, zorunluFirma } from "../src/lib/firma-baglami";
@@ -283,8 +283,30 @@ async function donguOlc() {
   const baglar = bagIliskileri(kaynakOku("prisma/schema.prisma"), firma);
   kontrol(`firma bağı tabanı DOLU (≥67, bulunan ${baglar.length})`, baglar.length >= 67);
   const n = (m: string) => m.replace(/\r\n/g, "\n");
-  kontrol("bağ kapısı tetikleyicileri şemayla GÜNCEL (firma-bag-tetikleyici-uret)",
-    n(kaynakOku("prisma/migrations/20261003100500_k303_firma_bag_kapisi/migration.sql")) === n(BASLIK + tetikleyiciSql(baglar)));
+  /* 06.10.2026 — sonradan eklenen firma tabloları (KanalAnahtari) tetikleyicilerini
+     KENDİ migration'ında taşır; ana dosya bir kez koştu ve yeniden yazılmaz. Ölçüt:
+     bütün migration'lardaki tetikleyiciler toplanır; şemadan beklenen HER tablo
+     TAM BİR dosyada ve metni birebir aynı; fazladan tablo yok. */
+  const beklenen = beklenenTetikleyiciler(baglar);
+  const bulunan = new Map<string, string[]>();
+  const metinler = new Map<string, string>();
+  for (const d of readdirSync("prisma/migrations")) {
+    const y = `prisma/migrations/${d}/migration.sql`;
+    let m = "";
+    try { m = kaynakOku(y); } catch { continue; }
+    for (const [t, metin] of migrationTetikleyicileri(m)) {
+      bulunan.set(t, [...(bulunan.get(t) ?? []), d]);
+      metinler.set(t, metin);
+    }
+  }
+  const eksikTablo = [...beklenen.keys()].filter((t) => !bulunan.has(t));
+  const ciftDosya = [...bulunan].filter(([, d]) => d.length > 1).map(([t]) => t);
+  const farkli = [...beklenen].filter(([t, metin]) => metinler.has(t) && metinler.get(t) !== metin).map(([t]) => t);
+  const fazla = [...bulunan.keys()].filter((t) => !beklenen.has(t));
+  const tetikleyiciTemiz = eksikTablo.length + ciftDosya.length + farkli.length + fazla.length === 0;
+  kontrol("bağ kapısı tetikleyicileri şemayla GÜNCEL (her tablo tam bir migration'da, metin birebir)", tetikleyiciTemiz);
+  if (!tetikleyiciTemiz) console.log(`       ${JSON.stringify({ eksikTablo, ciftDosya, farkli, fazla })}`);
+  kontrol("ana bağ migration'ı başlığını korur", n(kaynakOku(ANA_BAG_MIGRATION)).startsWith(n(BASLIK)));
   kontrol("bağ listesi şemayla GÜNCEL", n(kaynakOku(BAG_LISTESI_DOSYASI)) === n(bagListesiDosyasi(baglar)));
   kontrol("her tetikleyici kapı değişkeni NULL iken denetler (geri yükleme dışında hep açık)",
     (tetikleyiciSql(baglar).match(new RegExp(`IF @${KAPI_DEGISKENI} IS NULL THEN`, "g")) ?? []).length === new Set(baglar.map((b) => b.tablo)).size * 2);
