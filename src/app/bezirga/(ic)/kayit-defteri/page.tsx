@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
-import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { sistemPrisma } from "@/lib/prisma";
@@ -20,10 +19,11 @@ export async function generateMetadata() {
 const SAYFA_BOYU = 50;
 
 /**
- * KAYIT DEFTERİ — referans iskeletin `log` sayfası: yönetim panelinde yapılan
- * her işlem. Ölçüt LİSTE DEĞİL, KİŞİ: yapanı süper admin olan her iz (anayasa:
- * «bekçi ölçütü elle tutulan liste değil, tersten kurulur» — yarın eklenen
- * işlem kendiliğinden görünür). İz değiştirilmez; yalnız okunur.
+ * KAYIT DEFTERİ — referans iskeletin `log` sayfası BİREBİR (`.toolbar` arama
+ * + `.tablewrap` tablo): yönetim panelinde yapılan her işlem. Ölçüt LİSTE
+ * DEĞİL, KİŞİ: yapanı süper admin olan her iz (anayasa: «bekçi ölçütü elle
+ * tutulan liste değil, tersten kurulur» — yarın eklenen işlem kendiliğinden
+ * görünür). İz değiştirilmez; yalnız okunur.
  * İlke #17: arama + toplam sayı; sayfalı (toplam süzgecin tamamıdır).
  */
 export default async function KayitDefteriSayfasi({ searchParams }: { searchParams: Promise<{ q?: string; s?: string }> }) {
@@ -64,37 +64,49 @@ export default async function KayitDefteriSayfasi({ searchParams }: { searchPara
   };
 
   return (
-    <div className="space-y-4">
+    <>
       <SayfaBasligi baslik={t("baslik")} aciklama={t("aciklama")} />
-      <KodAramaKutusu temelAdres={`${YONETIM_YOLU}/kayit-defteri`} baslangic={arama} tasinanlar={{}} ipucu={t("aramaIpucu")} />
-      <p className="text-muted-foreground text-sm">{arama ? t("aramaSonucu", { sayi: toplam }) : t("toplam", { sayi: toplam })}</p>
+      <div className="yn-toolbar">
+        <KodAramaKutusu temelAdres={`${YONETIM_YOLU}/kayit-defteri`} baslangic={arama} tasinanlar={{}} ipucu={t("aramaIpucu")} />
+      </div>
+      <p className="yn-muted yn-small" style={{ margin: "0 0 10px" }}>{arama ? t("aramaSonucu", { sayi: toplam }) : t("toplam", { sayi: toplam })}</p>
       {izler.length === 0 ? (
-        <p className="text-muted-foreground text-sm">{t("bos")}</p>
+        <div className="yn-card yn-muted">{t("bos")}</div>
       ) : (
-        <ul className="bg-card divide-y rounded-xl border text-sm">
-          {izler.map((i) => {
-            const firmaId = i.company?.id ?? (i.targetType === "Company" ? i.targetId : null);
-            const firmaAdi = i.company?.name ?? (firmaId ? hedefler.get(firmaId) : undefined);
-            return (
-              <li key={i.id} className="flex flex-wrap items-center gap-x-4 gap-y-0.5 px-3 py-2">
-                <span className="text-muted-foreground tabular-nums">{bicim.tarihSaat(i.createdAt)}</span>
-                <span className="font-medium">{t.has(`islem_${i.action}`) ? t(`islem_${i.action}`) : i.action}</span>
-                {firmaId && firmaAdi ? (
-                  <Link href={`${YONETIM_YOLU}/firmalar/${firmaId}`} className="inline-flex min-h-11 items-center underline underline-offset-4">{firmaAdi}</Link>
-                ) : null}
-                <span className="text-muted-foreground ml-auto text-xs">{i.user?.email ?? "—"}</span>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="yn-tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{t("sutunZaman")}</th>
+                <th>{t("sutunIslem")}</th>
+                <th>{t("sutunFirma")}</th>
+                <th>{t("sutunYapan")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {izler.map((i) => {
+                const firmaId = i.company?.id ?? (i.targetType === "Company" ? i.targetId : null);
+                const firmaAdi = i.company?.name ?? (firmaId ? hedefler.get(firmaId) : undefined);
+                return (
+                  <tr key={i.id}>
+                    <td className="nw yn-muted">{bicim.tarihSaat(i.createdAt)}</td>
+                    <td style={{ fontWeight: 600 }}>{t.has(`islem_${i.action}`) ? t(`islem_${i.action}`) : i.action}</td>
+                    <td>{firmaId && firmaAdi ? <Link href={`${YONETIM_YOLU}/firmalar/${firmaId}`} className="yn-link">{firmaAdi}</Link> : <span className="yn-muted">—</span>}</td>
+                    <td className="yn-muted yn-small">{i.user?.email ?? "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
       {sonSayfa > 1 ? (
-        <nav aria-label={t("sayfalama")} className="flex items-center gap-2">
-          {sayfa > 1 ? <Button asChild variant="outline" className="min-h-11"><Link href={adres(sayfa - 1)}>{t("onceki")}</Link></Button> : null}
-          <span className="text-muted-foreground text-sm">{t("sayfaBilgisi", { sayfa, son: sonSayfa })}</span>
-          {sayfa < sonSayfa ? <Button asChild variant="outline" className="min-h-11"><Link href={adres(sayfa + 1)}>{t("sonraki")}</Link></Button> : null}
+        <nav aria-label={t("sayfalama")} className="yn-row" style={{ marginTop: 12 }}>
+          {sayfa > 1 ? <Link href={adres(sayfa - 1)} className="yn-btn">{t("onceki")}</Link> : null}
+          <span className="yn-muted yn-small">{t("sayfaBilgisi", { sayfa, son: sonSayfa })}</span>
+          {sayfa < sonSayfa ? <Link href={adres(sayfa + 1)} className="yn-btn">{t("sonraki")}</Link> : null}
         </nav>
       ) : null}
-    </div>
+    </>
   );
 }

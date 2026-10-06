@@ -5314,6 +5314,12 @@
     "aramaBos": "",
     "firmaYok": "",
     "firmaKodu": "",
+    "sutunFirma": "",
+    "sutunDurum": "",
+    "sutunPaket": "",
+    "sutunKullanici": "",
+    "sutunAcilis": "",
+    "sutunEylem": "",
     "aktif": "",
     "pasif": "",
     "uyeSayisi": "",
@@ -5614,7 +5620,12 @@
     "ikiAdimAnahtarEtiketi": "",
     "ikiAdimKurulumuTamamla": "",
     "ikiAdimSunucuAyari": "",
-    "ikiAdimKurulumHatasi": ""
+    "ikiAdimKurulumHatasi": "",
+    "epostaSutunZaman": "",
+    "epostaSutunDurum": "",
+    "sutunIcerik": "",
+    "sutunFirmaSayisi": "",
+    "sutunOnerilenFiyat": ""
   },
   "AskiSebebi": {
     "ODEME_GECIKMESI": "",
@@ -5715,7 +5726,8 @@
     "paketler": "",
     "odemeler": "",
     "eposta": "",
-    "kayitDefteri": ""
+    "kayitDefteri": "",
+    "cikis": ""
   },
   "YonetimBugun": {
     "baslik": "",
@@ -5800,7 +5812,15 @@
     "odemeYok": "",
     "buAyBaslik": "",
     "buAyBos": "",
-    "buAyToplam": ""
+    "buAyToplam": "",
+    "sutunFirma": "",
+    "sutunVade": "",
+    "sutunAbonelik": "",
+    "sutunPaket": "",
+    "sutunSonOdeme": "",
+    "sutunTarih": "",
+    "sutunTutar": "",
+    "sutunYontem": ""
   },
   "YonetimKayit": {
     "baslik": "",
@@ -5839,6 +5859,10 @@
     "islem_YONETIM_PAROLA_GECTI": "",
     "islem_YONETIM_IKI_ADIM_ACILDI": "",
     "islem_YONETIM_IKI_ADIM_SIFIRLANDI": "",
-    "islem_GIRIS_BASARISIZ": ""
+    "islem_GIRIS_BASARISIZ": "",
+    "sutunZaman": "",
+    "sutunIslem": "",
+    "sutunFirma": "",
+    "sutunYapan": ""
   }
 }

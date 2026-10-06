@@ -2,8 +2,6 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { FolderOpen } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { OZELLIKLER } from "@/lib/paket/ozellikler";
@@ -21,7 +19,8 @@ export async function generateMetadata() {
 }
 
 /**
- * PAKETLER — süper admin (K303 ②, kullanıcı kararı 30.09 + 06.10.2026).
+ * PAKETLER — süper admin (K303 ②, kullanıcı kararı 30.09 + 06.10.2026),
+ * referans iskelet BİREBİR (`.tablewrap` tablo + `.card` form).
  * Paket içeriği VERİDİR; her paketin kaç özelliği ve kaç firması olduğu
  * listede yazar. Satır sayısı veriyle pek büyümez (bir avuç paket) — arama
  * kutusu bu yüzden yok (İlke #17 «veriyle büyüyen liste» şartı).
@@ -33,39 +32,56 @@ export default async function PaketlerSayfasi() {
   const liste = await paketler();
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <>
       <SayfaBasligi baslik={t("paketler")} aciklama={t("paketlerAciklama")} />
-      <ul className="divide-y rounded-lg border">
-        {liste.map((p) => (
-          <li key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 text-sm">
-            <Link href={`${YONETIM_YOLU}/paketler/${p.id}`} className="min-w-28 font-medium underline-offset-4 hover:underline">
-              {p.ad}
-            </Link>
-            {p.firmayaOzel ? (
-              <Badge variant="outline">{t("firmayaOzelRozet")}</Badge>
-            ) : (
-              <span className="text-muted-foreground">{t("ozellikSayisi", { secili: p.ozellikler.length, toplam: OZELLIKLER.length })}</span>
-            )}
-            <span className="text-muted-foreground">{t("paketFirmaSayisi", { sayi: p.firmaSayisi })}</span>
-            {p.onerilenTutar !== null && p.onerilenParaBirimi && p.onerilenDonem ? (
-              <span className="tabular-nums">{t("onerilenFiyatKisa", { tutar: bicim.para(p.onerilenTutar, p.onerilenParaBirimi), donem: t(`donem${p.onerilenDonem}`) })}</span>
-            ) : (
-              <span className="text-muted-foreground text-xs">{t("onerilenFiyatYok")}</span>
-            )}
-            <Button asChild size="sm" variant="outline" className="ml-auto min-h-11">
-              <Link href={`${YONETIM_YOLU}/paketler/${p.id}`}>
-                <FolderOpen />
-                {t("paketiAc")}
-              </Link>
-            </Button>
-          </li>
-        ))}
-      </ul>
+      <div className="yn-stack">
+        <div className="yn-tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{t("sutunPaket")}</th>
+                <th>{t("sutunIcerik")}</th>
+                <th className="num">{t("sutunFirmaSayisi")}</th>
+                <th>{t("sutunOnerilenFiyat")}</th>
+                <th>{t("sutunEylem")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {liste.map((p) => (
+                <tr key={p.id} className="click">
+                  <td><Link href={`${YONETIM_YOLU}/paketler/${p.id}`} className="yn-rowlink">{p.ad}</Link></td>
+                  <td>
+                    {p.firmayaOzel ? (
+                      <span className="yn-pill warn">{t("firmayaOzelRozet")}</span>
+                    ) : (
+                      <span className="yn-pill acc">{t("ozellikSayisi", { secili: p.ozellikler.length, toplam: OZELLIKLER.length })}</span>
+                    )}
+                  </td>
+                  <td className="num">{bicim.sayi(p.firmaSayisi)}</td>
+                  <td className="nw">
+                    {p.onerilenTutar !== null && p.onerilenParaBirimi && p.onerilenDonem ? (
+                      t("onerilenFiyatKisa", { tutar: bicim.para(p.onerilenTutar, p.onerilenParaBirimi), donem: t(`donem${p.onerilenDonem}`) })
+                    ) : (
+                      <span className="yn-muted yn-small">{t("onerilenFiyatYok")}</span>
+                    )}
+                  </td>
+                  <td>
+                    <Link href={`${YONETIM_YOLU}/paketler/${p.id}`} className="yn-btn sm">
+                      <FolderOpen aria-hidden />
+                      {t("paketiAc")}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("yeniPaket")}</h2>
-        <PaketBilgisiFormu paket={null} />
-      </section>
-    </div>
+        <section className="yn-card">
+          <h2>{t("yeniPaket")}</h2>
+          <PaketBilgisiFormu paket={null} />
+        </section>
+      </div>
+    </>
   );
 }

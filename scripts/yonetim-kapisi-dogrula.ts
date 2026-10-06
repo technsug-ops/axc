@@ -133,8 +133,25 @@ async function main() {
   /* Parola ekranı TEK istisna: kapısı `yonetimSayfasiParolaEkrani` (parola
      zorunluluğuna bakmaz, bakarsa kendine yönlendirirdi). */
   const PAROLA_EKRANI = "src/app/bezirga/parola/page.tsx";
+  /* GÖVDE DÜZENİ (07.10.2026, referans görsel dil): giriş sayfasını da sardığı
+     için kapı ÇAĞIRAMAZ (çağırsa giriş ekranı kendine yönlendirirdi). İstisna
+     DAR: yalnız yazı tipi + stil içe aktarır ve çocukları sarar — veri okuyan
+     tek bir içe aktarma eklenirse istisna düşer, kırmızı yanar. */
+  const GOVDE_DUZENI = "src/app/bezirga/layout.tsx";
+  const govdeKaynak = yorumsuz(kaynakOku(GOVDE_DUZENI));
+  const govdeIceAktarimlari = [...govdeKaynak.matchAll(/^import\s.*$/gm)].map((m) => m[0].trim());
+  kontrol(
+    "gövde düzeni YALNIZ yazı tipi + stil içe aktarır (kapısız istisnanın şartı)",
+    govdeIceAktarimlari.length === 2 &&
+      govdeIceAktarimlari.includes('import { Inter, Poppins } from "next/font/google";') &&
+      govdeIceAktarimlari.includes('import "./yonetim.css";') &&
+      !/\basync\b|\bawait\b|prisma|cookies\(|headers\(/.test(govdeKaynak),
+    govdeIceAktarimlari,
+  );
   const korumasiz = sayfalar.filter((d) =>
-    d === PAROLA_EKRANI
+    d === GOVDE_DUZENI
+      ? false
+      : d === PAROLA_EKRANI
       ? !/await yonetimSayfasiParolaEkrani\(\)/.test(yorumsuz(kaynakOku(d)))
       : !/await yonetimSayfasi\(\)/.test(yorumsuz(kaynakOku(d))),
   );

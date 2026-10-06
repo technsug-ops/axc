@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { yonetimSayfasiParolaEkrani } from "@/lib/yonetim-oturumu";
 
 import { ParolaFormu } from "@/app/parola-degistir/parola-formu";
@@ -24,23 +23,17 @@ export default async function YonetimParolaSayfasi() {
   const t = await getTranslations("ParolaDegistir");
   const ty = await getTranslations("Yonetim");
   return (
-    <div className="flex min-h-svh items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
-          <p className="text-muted-foreground text-sm">
-            {k.parolaDegismeli ? ty("parolaZorunluMetin") : t("aciklamaMetni")}
-          </p>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>{k.email}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ParolaFormu eylem={yonetimParolamiDegistir} />
-          </CardContent>
-        </Card>
+    <div className="yn-login">
+      <div>
+        <h1>{t("baslik")}</h1>
+        <p className="yn-muted yn-small" style={{ margin: "4px 0 0" }}>
+          {k.parolaDegismeli ? ty("parolaZorunluMetin") : t("aciklamaMetni")}
+        </p>
       </div>
+      <section className="yn-card">
+        <h2>{k.email}</h2>
+        <ParolaFormu eylem={yonetimParolamiDegistir} />
+      </section>
     </div>
   );
 }

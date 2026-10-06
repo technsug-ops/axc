@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
-import { Badge } from "@/components/ui/badge";
+
 import { bicimlendirici } from "@/lib/bicim";
 import { askiDurumu, bugunIs, surecGecmisi, UYARI_EN_AZ_GUN, UYARI_EN_COK_GUN } from "@/lib/aski-sureci";
 import { firmaKarti } from "@/lib/firma-karti";
@@ -23,6 +23,7 @@ import { FirmaAdiFormu } from "./firma-adi-formu";
 import { KartKullanicilari } from "./kart-kullanicilari";
 import { OdemeTakibi, type OdemeGorunumu } from "./odeme-takibi";
 import { FirmaPaketi } from "./firma-paketi";
+import { SayfaBasligi } from "../../sayfa-basligi";
 import { SinirFormu } from "../../sinir-formu";
 
 export const dynamic = "force-dynamic";
@@ -95,39 +96,41 @@ export default async function FirmaKartiSayfasi({
   ];
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <ListeyeDon href={`${YONETIM_YOLU}/firmalar`}>{t("firmalar")}</ListeyeDon>
-        <div className="mt-1 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">{kart.ad}</h1>
-          <KopyalanabilirKod deger={kart.kod} etiket={t("firmaKodu")} />
-          <Badge variant={kart.kurulum === "TAM" ? "secondary" : kart.kurulum === "YARIM" ? "destructive" : "outline"}>
-            {kart.kurulum === "TAM" ? t("aktif") : kart.kurulum === "YARIM" ? t("kurulumYarim") : t("pasif")}
-          </Badge>
-          <div className="ml-auto">
+    <>
+      <SayfaBasligi
+        ust={<ListeyeDon href={`${YONETIM_YOLU}/firmalar`}>{t("firmalar")}</ListeyeDon>}
+        baslik={kart.ad}
+        aciklama={t("acilis", { tarih: bicim.tarih(kart.acilis) })}
+        eylemler={
+          <>
+            <KopyalanabilirKod deger={kart.kod} etiket={t("firmaKodu")} />
+            <span className={`yn-pill ${kart.kurulum === "TAM" ? "ok" : kart.kurulum === "YARIM" ? "bad" : ""}`}>
+              {kart.kurulum === "TAM" ? t("aktif") : kart.kurulum === "YARIM" ? t("kurulumYarim") : t("pasif")}
+            </span>
             <FirmaEylemleri firmaId={kart.id} firmaAdi={kart.ad} durum={kart.kurulum} />
-          </div>
-        </div>
-        <p className="text-muted-foreground mt-1 text-sm">{t("acilis", { tarih: bicim.tarih(kart.acilis) })}</p>
-      </div>
+          </>
+        }
+      />
+      <div className="yn-grid2">
+      <div className="yn-stack">
 
       {/* ① KİMLİK */}
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("bolumKimlik")}</h2>
+      <section className="yn-card">
+        <h2>{t("bolumKimlik")}</h2>
         <FirmaAdiFormu firmaId={kart.id} ad={kart.ad} />
-        <p className="text-muted-foreground text-xs">{t("kodDegismezNotu")}</p>
+        <p className="yn-muted yn-small" style={{ margin: "8px 0 0" }}>{t("kodDegismezNotu")}</p>
       </section>
 
       {/* ② KULLANICILAR */}
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("bolumKullanicilar")}</h2>
+      <section className="yn-card">
+        <h2>{t("bolumKullanicilar")}</h2>
         <KodAramaKutusu
           temelAdres={`${YONETIM_YOLU}/firmalar/${kart.id}`}
           baslangic={arama}
           tasinanlar={{}}
           ipucu={t("kullaniciAramaIpucu")}
         />
-        <p className="text-muted-foreground text-sm">
+        <p className="yn-muted yn-small" style={{ margin: "8px 0" }}>
           {arama
             ? t("kullaniciAramaSonucu", { bulunan: gorunen.length, toplam: kart.kullanicilar.length })
             : t("kullaniciSayisi", { toplam: kart.kullanicilar.length })}
@@ -142,8 +145,8 @@ export default async function FirmaKartiSayfasi({
       </section>
 
       {/* PAKET (K303 ②, 06.10.2026) */}
-      <section id="paket" className="scroll-mt-4 space-y-2">
-        <h2 className="text-lg font-semibold">{t("bolumPaket")}</h2>
+      <section id="paket" className="yn-card" style={{ scrollMarginTop: 16 }}>
+        <h2>{t("bolumPaket")}</h2>
         <FirmaPaketi
           firmaId={kart.id}
           firmaAdi={kart.ad}
@@ -152,21 +155,23 @@ export default async function FirmaKartiSayfasi({
           paketler={tumPaketler.map((p) => ({ id: p.id, ad: p.ad, firmayaOzel: p.firmayaOzel, ozellikler: p.ozellikler, sinirlar: p.sinirlar }))}
           kullanim={kg.kullanim}
         />
-        <h3 className="pt-2 text-sm font-semibold">{t("kullanimBaslik")}</h3>
+        <h3 style={{ margin: "14px 0 8px" }}>{t("kullanimBaslik")}</h3>
         <KullanimKutulari kullanim={kg.kullanim} sinirlar={kg.sinirlar} etiketler={kg.etiketler} durumlar={kg.durumlar} sinirsiz={kg.sinirsiz} />
         {fp?.paket?.firmayaOzel ? (
           <>
-            <p className="text-muted-foreground text-xs">{t("firmaSinirNotu")}</p>
+            <p className="yn-muted yn-small" style={{ margin: "8px 0 0" }}>{t("firmaSinirNotu")}</p>
             <SinirFormu hedef={{ tur: "firma", id: kart.id }} baslangic={kg.sinirlar} />
           </>
         ) : (
-          <p className="text-muted-foreground text-xs">{t("paketSinirNotu")}</p>
+          <p className="yn-muted yn-small" style={{ margin: "8px 0 0" }}>{t("paketSinirNotu")}</p>
         )}
       </section>
+      </div>
 
+      <div className="yn-stack">
       {/* ÖDEMELER (06.10.2026) — elle takip; gecikme askı sürecine bağlanır */}
-      <section id="odemeler" className="scroll-mt-4 space-y-2">
-        <h2 className="text-lg font-semibold">{t("bolumOdemeler")}</h2>
+      <section id="odemeler" className="yn-card" style={{ scrollMarginTop: 16 }}>
+        <h2>{t("bolumOdemeler")}</h2>
         <OdemeTakibi
           firmaId={kart.id}
           firmaAdi={kart.ad}
@@ -187,8 +192,8 @@ export default async function FirmaKartiSayfasi({
       </section>
 
       {/* ASKI SÜRECİ (05.10.2026) — uyarı → süre → onaylı askı */}
-      <section id="aski" className="scroll-mt-4 space-y-2">
-        <h2 className="text-lg font-semibold">{t("bolumAski")}</h2>
+      <section id="aski" className="yn-card" style={{ scrollMarginTop: 16 }}>
+        <h2>{t("bolumAski")}</h2>
         <AskiSureci
           firmaId={kart.id}
           firmaAdi={kart.ad}
@@ -202,32 +207,34 @@ export default async function FirmaKartiSayfasi({
       </section>
 
       {/* ③ KAYIT SAYILARI — yalnız adet */}
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("bolumKayitSayilari")}</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <section className="yn-card">
+        <h2>{t("bolumKayitSayilari")}</h2>
+        <div className="yn-stats">
           {sayilar.map((s) => (
-            <div key={s.anahtar} className="rounded-lg border p-3">
-              <div className="text-muted-foreground text-xs">{t(s.anahtar)}</div>
-              <div className="text-xl font-semibold tabular-nums">{bicim.sayi(s.deger)}</div>
+            <div key={s.anahtar} className="yn-stat">
+              <b>{bicim.sayi(s.deger)}</b>
+              <span>{t(s.anahtar)}</span>
             </div>
           ))}
         </div>
-        <p className="text-muted-foreground text-xs">{t("sayilarNotu")}</p>
+        <p className="yn-muted yn-small" style={{ margin: "8px 0 0" }}>{t("sayilarNotu")}</p>
       </section>
 
       {/* ④ FİRMA AYARLARI — salt okunur */}
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("bolumAyarlar")}</h2>
-        <dl className="grid gap-2 rounded-lg border p-3 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-6">
-          <dt className="text-muted-foreground">{tm("yontemEtiketi")}</dt>
+      <section className="yn-card">
+        <h2>{t("bolumAyarlar")}</h2>
+        <dl className="yn-facts">
+          <dt>{tm("yontemEtiketi")}</dt>
           <dd>{tm(`yontem${kart.ayarlar.maliyetYontemi}`)}</dd>
-          <dt className="text-muted-foreground">{tm("kipEtiketi")}</dt>
+          <dt>{tm("kipEtiketi")}</dt>
           <dd>{kart.ayarlar.maliyetYontemi === "FIFO" ? tm(`kip${kart.ayarlar.lotKipi}`) : tm("kipOrtalamada")}</dd>
-          <dt className="text-muted-foreground">{t("ayarCokBirim")}</dt>
+          <dt>{t("ayarCokBirim")}</dt>
           <dd>{kart.ayarlar.finansmanCokBirim ? t("acik") : t("kapali")}</dd>
         </dl>
-        <p className="text-muted-foreground text-xs">{t("ayarlarSaltOkunurNotu")}</p>
+        <p className="yn-muted yn-small" style={{ margin: "8px 0 0" }}>{t("ayarlarSaltOkunurNotu")}</p>
       </section>
-    </div>
+      </div>
+      </div>
+    </>
   );
 }

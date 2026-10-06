@@ -4,8 +4,6 @@ import { getTranslations } from "next-intl/server";
 
 import { CircleCheck } from "lucide-react";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { UYGULAMA } from "@/lib/uygulama";
 import { sistemPrisma } from "@/lib/prisma";
 import { araAdimKullanicisi, yonetimOturumu } from "@/lib/yonetim-oturumu";
@@ -50,28 +48,30 @@ export default async function YonetimGirisSayfasi({ searchParams }: { searchPara
         adim = <IkiAdimKurulumFormu qr={qr} anahtar={k.anahtar} devamAdresi={p?.mustChangePassword ? `${YONETIM_YOLU}/parola` : YONETIM_ANA} />;
       } else {
         // Sessiz başarısızlık yok (İlke #5): kurulum neden açılamıyor, ekranda yazar.
-        adim = <p role="alert" className={`rounded-lg p-3 text-sm ${DURUM_KUTUSU.olumsuz} ${DURUM_YAZISI.olumsuz}`}>{t(k.hata === "SIR_YOK" || k.hata === "SIR_GECERSIZ" ? "ikiAdimSunucuAyari" : "ikiAdimKurulumHatasi")}</p>;
+        adim = <p role="alert" className="yn-msg err">{t(k.hata === "SIR_YOK" || k.hata === "SIR_GECERSIZ" ? "ikiAdimSunucuAyari" : "ikiAdimKurulumHatasi")}</p>;
       }
     }
   }
   return (
-    <div className="flex min-h-svh items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold">{t("girisBasligi", { uygulama: UYGULAMA.ad })}</h1>
-          <p className="text-muted-foreground text-sm">{t("girisAltBaslik")}</p>
+    <div className="yn-login">
+      {/* Referans giriş ekranı: logo kutusu + ad + alt başlık, altında tek kart. */}
+      <div className="yn-row" style={{ justifyContent: "center", gap: 12 }}>
+        <span className="yn-brand" style={{ padding: 0 }}>
+          <span className="logo">{UYGULAMA.ad.slice(0, 1)}</span>
+        </span>
+        <div>
+          <h1>{t("girisBasligi", { uygulama: UYGULAMA.ad })}</h1>
+          <p className="yn-muted yn-small" style={{ margin: 0 }}>{t("girisAltBaslik")}</p>
         </div>
-        <Card>
-          <CardContent className="space-y-3">
-            {parola === "degisti" ? (
-              <p role="status" className={`flex items-start gap-2 rounded-lg p-3 text-sm ${DURUM_KUTUSU.olumlu} ${DURUM_YAZISI.olumlu}`}>
-                <CircleCheck className="mt-0.5 size-4 shrink-0" />
-                {t("parolaDegistiBilgi")}
-              </p>
-            ) : null}
-            {adim ?? <YonetimGirisFormu />}
-          </CardContent>
-        </Card>
+      </div>
+      <div className="yn-card yn-stack" style={{ gap: 12 }}>
+        {parola === "degisti" ? (
+          <p role="status" className="yn-msg ok yn-row" style={{ margin: 0, alignItems: "flex-start", flexWrap: "nowrap" }}>
+            <CircleCheck width={16} height={16} style={{ flex: "none", marginTop: 3 }} aria-hidden />
+            {t("parolaDegistiBilgi")}
+          </p>
+        ) : null}
+        {adim ?? <YonetimGirisFormu />}
       </div>
     </div>
   );

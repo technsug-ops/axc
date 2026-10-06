@@ -43,6 +43,13 @@ export const ETIKET_RENGI: Record<FirmaEtiketi, "olumsuz" | "uyari" | "bilgi"> =
   AKTIF: "bilgi",
 };
 
+/** Etiket → referans `.yn-pill` / `.yn-chip` sınıfı. AKTIF «iyi durumda» (ok); öteki anlamlar ETIKET_RENGI'nden — tek kaynak. */
+export function etiketSinifi(e: FirmaEtiketi): "ok" | "bad" | "warn" | "acc" {
+  if (e === "AKTIF") return "ok";
+  const r = ETIKET_RENGI[e];
+  return r === "olumsuz" ? "bad" : r === "uyari" ? "warn" : "acc";
+}
+
 export function firmaEtiketiMi(x: string | undefined): x is FirmaEtiketi {
   return (FIRMA_ETIKETLERI as readonly string[]).includes(x ?? "");
 }

@@ -10,6 +10,7 @@ import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
 
 import { OzellikSecici } from "../../ozellik-secici";
 import { PaketBilgisiFormu } from "../paket-bilgisi-formu";
+import { SayfaBasligi } from "../../sayfa-basligi";
 import { SinirFormu } from "../../sinir-formu";
 
 export const dynamic = "force-dynamic";
@@ -23,8 +24,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 /**
- * PAKET — bilgi · içerik (özellik seçimi) · bu paketteki firmalar.
- * Firmaya özel pakette (Individuel) içerik firma kartında seçilir.
+ * PAKET — bilgi · içerik (özellik seçimi) · sınırlar · bu paketteki firmalar;
+ * her bölüm referans `.card` (iskelet BİREBİR). Firmaya özel pakette
+ * (Individuel) içerik firma kartında seçilir.
  */
 export default async function PaketSayfasi({ params }: { params: Promise<{ id: string }> }) {
   await yonetimSayfasi();
@@ -36,66 +38,67 @@ export default async function PaketSayfasi({ params }: { params: Promise<{ id: s
   const firmalar = await sistemPrisma.company.findMany({ where: { paketId: p.id }, select: { id: true, name: true, code: true }, orderBy: { name: "asc" } });
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <ListeyeDon href={`${YONETIM_YOLU}/paketler`}>{t("paketler")}</ListeyeDon>
-        <h1 className="mt-1 text-2xl font-semibold">{p.ad}</h1>
+    <>
+      <SayfaBasligi baslik={p.ad} ust={<ListeyeDon href={`${YONETIM_YOLU}/paketler`}>{t("paketler")}</ListeyeDon>} />
+
+      <div className="yn-grid2">
+        <div className="yn-stack">
+          <section className="yn-card">
+            <h2>{t("paketIcerigi")}</h2>
+            {p.firmayaOzel ? (
+              <p className="yn-muted yn-small" style={{ margin: 0 }}>{t("firmayaOzelIcerikNotu")}</p>
+            ) : (
+              <>
+                <p className="yn-muted yn-small" style={{ margin: "0 0 10px" }}>{t("paketIcerigiNotu", { sayi: p.firmaSayisi })}</p>
+                <OzellikSecici hedef={{ tur: "paket", id: p.id }} baslangic={p.ozellikler} />
+              </>
+            )}
+          </section>
+
+          <section className="yn-card">
+            <h2>{t("bolumSinirlar")}</h2>
+            {p.firmayaOzel ? (
+              <p className="yn-muted yn-small" style={{ margin: 0 }}>{t("firmayaOzelSinirNotu")}</p>
+            ) : (
+              <>
+                <p className="yn-muted yn-small" style={{ margin: "0 0 10px" }}>{t("sinirAciklama")}</p>
+                <SinirFormu hedef={{ tur: "paket", id: p.id }} baslangic={p.sinirlar} />
+              </>
+            )}
+          </section>
+        </div>
+
+        <div className="yn-stack">
+          <section className="yn-card">
+            <h2>{t("paketBilgisi")}</h2>
+            <PaketBilgisiFormu
+              paket={{
+                id: p.id,
+                ad: p.ad,
+                aciklama: p.aciklama,
+                tutar: p.onerilenTutar === null ? "" : p.onerilenTutar.toFixed(2).replace(".", ","),
+                paraBirimi: p.onerilenParaBirimi ?? "TRY",
+                donem: p.onerilenDonem ?? "AYLIK",
+              }}
+            />
+          </section>
+
+          <section className="yn-card">
+            <h2>{t("paketFirmalari", { sayi: firmalar.length })}</h2>
+            {firmalar.length === 0 ? (
+              <p className="yn-muted yn-small" style={{ margin: 0 }}>{t("paketFirmasiYok")}</p>
+            ) : (
+              <div className="yn-tl" style={{ marginTop: 0 }}>
+                {firmalar.map((f) => (
+                  <Link key={f.id} href={`${YONETIM_YOLU}/firmalar/${f.id}#paket`} className="yn-rowlink" style={{ minHeight: 44, borderTop: "1px solid var(--line)" }}>
+                    {f.name} <span className="yn-muted" style={{ fontWeight: 400, marginLeft: 6 }}>{f.code}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
-
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("paketBilgisi")}</h2>
-        <PaketBilgisiFormu
-          paket={{
-            id: p.id,
-            ad: p.ad,
-            aciklama: p.aciklama,
-            tutar: p.onerilenTutar === null ? "" : p.onerilenTutar.toFixed(2).replace(".", ","),
-            paraBirimi: p.onerilenParaBirimi ?? "TRY",
-            donem: p.onerilenDonem ?? "AYLIK",
-          }}
-        />
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("paketIcerigi")}</h2>
-        {p.firmayaOzel ? (
-          <p className="text-muted-foreground text-sm">{t("firmayaOzelIcerikNotu")}</p>
-        ) : (
-          <>
-            <p className="text-muted-foreground text-sm">{t("paketIcerigiNotu", { sayi: p.firmaSayisi })}</p>
-            <OzellikSecici hedef={{ tur: "paket", id: p.id }} baslangic={p.ozellikler} />
-          </>
-        )}
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("bolumSinirlar")}</h2>
-        {p.firmayaOzel ? (
-          <p className="text-muted-foreground text-sm">{t("firmayaOzelSinirNotu")}</p>
-        ) : (
-          <>
-            <p className="text-muted-foreground text-sm">{t("sinirAciklama")}</p>
-            <SinirFormu hedef={{ tur: "paket", id: p.id }} baslangic={p.sinirlar} />
-          </>
-        )}
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-lg font-semibold">{t("paketFirmalari", { sayi: firmalar.length })}</h2>
-        {firmalar.length === 0 ? (
-          <p className="text-muted-foreground text-sm">{t("paketFirmasiYok")}</p>
-        ) : (
-          <ul className="divide-y rounded-lg border text-sm">
-            {firmalar.map((f) => (
-              <li key={f.id} className="px-3 py-2">
-                <Link href={`${YONETIM_YOLU}/firmalar/${f.id}#paket`} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
-                  {f.name} ({f.code})
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </div>
+    </>
   );
 }

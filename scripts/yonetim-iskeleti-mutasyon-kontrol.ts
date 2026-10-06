@@ -39,7 +39,7 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "(!durum || f.etiketler.includes(durum))", koy: "(true)",
     bozdugu: "Bugun'deki sayiya tiklayan susulmemis listeye duser" },
   { ad: "BUGUN SUZGECSIZ LISTEYE GOTURUYOR", yon: "KALDIRAN", dosya: BUGUN,
-    bul: "<Link href={firmalarAdresi(e)}", koy: "<Link href={firmalarAdresi()}",
+    bul: "<Link key={e} href={firmalarAdresi(e)} className={SATIR[e]}>", koy: "<Link key={e} href={firmalarAdresi()} className={SATIR[e]}>",
     bozdugu: "yapilacak satiri hangi firmalar oldugunu gostermez" },
   { ad: "EPOSTA SUZGECI KENDI OLCUTU", yon: "KALDIRAN", dosya: EPOSTA,
     bul: "sorunlu ? await sorunluEpostalar()", koy: "sorunlu ? await gidenEpostalar({ adet: 500 })",

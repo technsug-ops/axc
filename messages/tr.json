@@ -5314,6 +5314,12 @@
     "aramaBos": "Aramaya uyan firma yok.",
     "firmaYok": "Henüz firma yok.",
     "firmaKodu": "Firma kodu",
+    "sutunFirma": "Firma",
+    "sutunDurum": "Durum",
+    "sutunPaket": "Paket",
+    "sutunKullanici": "Kullanıcı",
+    "sutunAcilis": "Açılış",
+    "sutunEylem": "Eylemler",
     "aktif": "Aktif",
     "pasif": "Pasif",
     "uyeSayisi": "{sayi} üye",
@@ -5614,7 +5620,12 @@
     "ikiAdimAnahtarEtiketi": "Kurulum anahtarı",
     "ikiAdimKurulumuTamamla": "Kurulumu tamamla",
     "ikiAdimSunucuAyari": "İki adımlı giriş için sunucu ayarı (IKI_ADIM_SIRRI) eksik ya da bozuk; bu ayar olmadan yönetim paneline girilemez.",
-    "ikiAdimKurulumHatasi": "İki adımlı giriş kurulumu açılamadı — yeniden giriş yapın."
+    "ikiAdimKurulumHatasi": "İki adımlı giriş kurulumu açılamadı — yeniden giriş yapın.",
+    "epostaSutunZaman": "Zaman",
+    "epostaSutunDurum": "Durum",
+    "sutunIcerik": "İçerik",
+    "sutunFirmaSayisi": "Firma",
+    "sutunOnerilenFiyat": "Önerilen fiyat"
   },
   "AskiSebebi": {
     "ODEME_GECIKMESI": "Ödeme gecikmesi",
@@ -5715,7 +5726,8 @@
     "paketler": "Paketler",
     "odemeler": "Ödemeler",
     "eposta": "Giden e-postalar",
-    "kayitDefteri": "Kayıt defteri"
+    "kayitDefteri": "Kayıt defteri",
+    "cikis": "Çıkış"
   },
   "YonetimBugun": {
     "baslik": "Bugün",
@@ -5800,7 +5812,15 @@
     "odemeYok": "henüz ödeme yok",
     "buAyBaslik": "Bu ayın ödemeleri",
     "buAyBos": "Bu ay ödeme kaydı yok.",
-    "buAyToplam": "{sayi} kayıt, toplam:"
+    "buAyToplam": "{sayi} kayıt, toplam:",
+    "sutunFirma": "Firma",
+    "sutunVade": "Vade durumu",
+    "sutunAbonelik": "Abonelik",
+    "sutunPaket": "Paket",
+    "sutunSonOdeme": "Son ödeme",
+    "sutunTarih": "Tarih",
+    "sutunTutar": "Tutar",
+    "sutunYontem": "Yöntem"
   },
   "YonetimKayit": {
     "baslik": "Kayıt defteri",
@@ -5839,6 +5859,10 @@
     "islem_YONETIM_PAROLA_GECTI": "Parola doğrulandı (kod bekleniyor)",
     "islem_YONETIM_IKI_ADIM_ACILDI": "İki adımlı giriş açıldı",
     "islem_YONETIM_IKI_ADIM_SIFIRLANDI": "İki adımlı giriş sıfırlandı (sunucudan)",
-    "islem_GIRIS_BASARISIZ": "Başarısız giriş denemesi"
+    "islem_GIRIS_BASARISIZ": "Başarısız giriş denemesi",
+    "sutunZaman": "Zaman",
+    "sutunIslem": "İşlem",
+    "sutunFirma": "Firma",
+    "sutunYapan": "Yapan"
   }
 }

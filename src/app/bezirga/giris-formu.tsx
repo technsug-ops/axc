@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { LogIn } from "lucide-react";
 
 import { HataOzeti } from "@/components/hata-ozeti";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -26,10 +25,10 @@ export function YonetimGirisFormu() {
         <Input id="yonetim-parola" name="password" type="password" autoComplete="current-password" />
       </div>
       <HataOzeti hatalar={durum.hatalar} baslik={t("girisYapilamadi")} />
-      <Button type="submit" className="w-full" disabled={bekliyor}>
-        <LogIn />
+      <button type="submit" className="yn-btn primary" style={{ width: "100%", justifyContent: "center" }} disabled={bekliyor}>
+        <LogIn aria-hidden />
         {bekliyor ? t("giriliyor") : t("girisYap")}
-      </Button>
+      </button>
     </form>
   );
 }

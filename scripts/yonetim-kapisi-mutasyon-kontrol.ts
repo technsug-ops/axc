@@ -19,6 +19,7 @@ const EYLEM = "src/app/bezirga/actions.ts";
 const FIRMALAR = "src/app/bezirga/(ic)/firmalar/page.tsx";
 const KOK = "src/app/layout.tsx";
 const IMZA = "src/lib/oturum-imza.ts";
+const GOVDE = "src/app/bezirga/layout.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -90,6 +91,13 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "PAROLA EYLEMI CEREZI SILMIYOR", yon: "KALDIRAN", dosya: EYLEM,
     bul: "  await yonetimOturumuKapat();\n  redirect(`${YONETIM_YOLU}?parola=degisti`);", koy: "  redirect(`${YONETIM_YOLU}?parola=degisti`);",
     bozdugu: "parola degisince giris formu eski yonetim kabugunun icinde acilir (K319-2 dersi)" },
+  /* Kapısız gövde düzeni (07.10.2026) — istisna yalnız yazı tipi + stil içindir */
+  { ad: "KAPISIZ GOVDE DUZENI VERI OKUYOR", yon: "FAZLADAN", dosya: GOVDE,
+    bul: 'import "./yonetim.css";\n', koy: 'import "./yonetim.css";\nimport { sistemPrisma } from "@/lib/prisma";\n',
+    bozdugu: "giris sayfasini da saran kapisiz duzen veri okur; oturumsuz ziyaretci gorur" },
+  { ad: "KAPISIZ GOVDE DUZENI CEREZ OKUYOR", yon: "FAZLADAN", dosya: GOVDE,
+    bul: "export default function YonetimGovdesi(", koy: "export default async function YonetimGovdesi(",
+    bozdugu: "kapisiz duzen beklemeli is yapar (cerez/veri) - istisnanin siniri asilir" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

@@ -4,8 +4,6 @@ import { ExternalLink, X } from "lucide-react";
 
 import { KullanimKutulari } from "@/components/kullanim-kutulari";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import type { FirmaAskiSebebi } from "@/generated/prisma/client";
 import { askiDurumu, bugunIs } from "@/lib/aski-sureci";
 import { bicimlendirici } from "@/lib/bicim";
@@ -14,15 +12,16 @@ import { odemeDurumu } from "@/lib/odeme-takibi";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { kullanimGorunumu } from "@/lib/paket/kullanim-gorunumu";
 import { firmaPaketi } from "@/lib/paket/yonetim";
-import { DURUM_YAZISI } from "@/lib/renkler";
-import { ETIKET_RENGI, firmaOzetleri } from "@/lib/yonetim/durumlar";
+import { etiketSinifi, firmaOzetleri } from "@/lib/yonetim/durumlar";
 
 /**
- * FİRMA ÇEKMECESİ — referans iskeletin sağdan açılan `aside.drawer`ı.
- * Sunucuda çizilir (`?ac=<id>`); kapatmak adresten `ac`yi düşüren bir
- * bağlantıdır (perde de aynı yere gider). Özet: durum etiketleri · paket ·
- * abonelik/vade · askı · kullanım · kullanıcılar · kayıt sayıları. Tam kart
- * ve bölümleri bağlantıyla açılır — çekmece YAZMAZ, yalnız gösterir.
+ * FİRMA ÇEKMECESİ — referans iskeletin sağdan açılan `aside.drawer`ı BİREBİR:
+ * `.scrim` perde + `.drawer` (beyaz başlık, `.dbody` içinde `.card` bölümler,
+ * `.facts` tanım listesi, `.stats` sayılar). Sunucuda çizilir (`?ac=<id>`);
+ * kapatmak adresten `ac`yi düşüren bir bağlantıdır (perde de aynı yere gider).
+ * Özet: durum etiketleri · paket · abonelik/vade · askı · kullanım ·
+ * kullanıcılar · kayıt sayıları. Tam kart bağlantıyla açılır — çekmece
+ * YAZMAZ, yalnız gösterir.
  */
 export async function FirmaCekmecesi({ firmaId, kapatAdresi }: { firmaId: string; kapatAdresi: string }) {
   const [kart, kg, fp, ozetler] = await Promise.all([firmaKarti(firmaId), kullanimGorunumu(firmaId), firmaPaketi(firmaId), firmaOzetleri()]);
@@ -48,89 +47,92 @@ export async function FirmaCekmecesi({ firmaId, kapatAdresi }: { firmaId: string
     : aski.tur === "ASKIDA" ? t("askida", { sebep: aski.sebep ? ts(aski.sebep) : "—" })
     : aski.tur === "UYARIDA" ? t("uyarida", { tarih: bicim.tarih(aski.sonGun), sebep: aski.sebep ? ts(aski.sebep) : "—" })
     : t("uyariDoldu", { tarih: bicim.tarih(aski.sonGun) });
+  const odemeSinifi = od.tur === "GECIKTI" ? "yn-pill bad" : od.tur === "YAKLASIYOR" ? "yn-pill warn" : "yn-link";
 
   return (
     <>
-      <Link href={kapatAdresi} scroll={false} aria-label={t("kapat")} className="fixed inset-0 z-40 bg-black/30" />
-      <aside role="dialog" aria-modal="true" aria-label={kart.ad} className="bg-background fixed inset-y-0 right-0 z-50 flex w-full max-w-[620px] flex-col shadow-2xl">
-        <header className="bg-card flex items-start justify-between gap-3 border-b px-5 py-4">
-          <div className="min-w-0 space-y-1.5">
-            <h2 className="text-xl font-semibold">{kart.ad}</h2>
-            <div className="flex flex-wrap items-center gap-1.5">
+      <Link href={kapatAdresi} scroll={false} aria-label={t("kapat")} className="yn-scrim" />
+      <aside role="dialog" aria-modal="true" aria-label={kart.ad} className="yn-drawer">
+        <header>
+          <div style={{ minWidth: 0 }}>
+            <h2>{kart.ad}</h2>
+            <div className="yn-row">
               <KopyalanabilirKod deger={kart.kod} etiket={ty("firmaKodu")} />
               {etiketler.map((e) => (
-                <Badge key={e} variant="outline" className={DURUM_YAZISI[ETIKET_RENGI[e]]}>{tf(e)}</Badge>
+                <span key={e} className={`yn-pill ${etiketSinifi(e)}`}>{tf(e)}</span>
               ))}
             </div>
           </div>
-          <Button asChild variant="ghost" size="icon" className="size-11 shrink-0">
-            <Link href={kapatAdresi} scroll={false} aria-label={t("kapat")}><X /></Link>
-          </Button>
+          <Link href={kapatAdresi} scroll={false} aria-label={t("kapat")} className="yn-btn">
+            <X aria-hidden />
+          </Link>
         </header>
 
-        <div className="grid gap-4 overflow-y-auto px-5 pt-4 pb-10">
-          <dl className="bg-card grid gap-x-3 gap-y-2 rounded-xl border p-4 text-sm sm:grid-cols-[110px_minmax(0,1fr)]">
-            <dt className="text-muted-foreground">{t("paket")}</dt>
-            <dd>
-              <Link href={`${kartAdresi}#paket`} className="underline underline-offset-4">{fp?.paket ? fp.paket.ad : t("paketsiz")}</Link>
-            </dd>
-            <dt className="text-muted-foreground">{t("odeme")}</dt>
-            <dd>
-              <Link href={`${kartAdresi}#odemeler`} className={`underline underline-offset-4 ${od.tur === "GECIKTI" ? DURUM_YAZISI.olumsuz : od.tur === "YAKLASIYOR" ? DURUM_YAZISI.uyari : ""}`}>{odemeMetni}</Link>
-            </dd>
-            <dt className="text-muted-foreground">{t("aski")}</dt>
-            <dd>
-              <Link href={`${kartAdresi}#aski`} className="underline underline-offset-4">{askiMetni}</Link>
-            </dd>
-            <dt className="text-muted-foreground">{t("acilis")}</dt>
-            <dd>{bicim.tarih(kart.acilis)}</dd>
-          </dl>
+        <div className="dbody">
+          <section className="yn-card">
+            <dl className="yn-facts">
+              <dt>{t("paket")}</dt>
+              <dd>
+                <Link href={`${kartAdresi}#paket`} className="yn-link">{fp?.paket ? fp.paket.ad : t("paketsiz")}</Link>
+              </dd>
+              <dt>{t("odeme")}</dt>
+              <dd>
+                <Link href={`${kartAdresi}#odemeler`} className={odemeSinifi}>{odemeMetni}</Link>
+              </dd>
+              <dt>{t("aski")}</dt>
+              <dd>
+                <Link href={`${kartAdresi}#aski`} className="yn-link">{askiMetni}</Link>
+              </dd>
+              <dt>{t("acilis")}</dt>
+              <dd>{bicim.tarih(kart.acilis)}</dd>
+            </dl>
+          </section>
 
-          <section className="space-y-2">
-            <h3 className="text-sm font-semibold">{t("kullanim")}</h3>
+          <section className="yn-card">
+            <h3 style={{ marginBottom: 10 }}>{t("kullanim")}</h3>
             <KullanimKutulari kullanim={kg.kullanim} sinirlar={kg.sinirlar} etiketler={kg.etiketler} durumlar={kg.durumlar} sinirsiz={kg.sinirsiz} />
           </section>
 
-          <section className="space-y-2">
-            <h3 className="text-sm font-semibold">{t("kullanicilar", { aktif: aktifKullanici.length, toplam: kart.kullanicilar.length })}</h3>
-            <ul className="bg-card divide-y rounded-xl border text-sm">
+          <section className="yn-card">
+            <h3>{t("kullanicilar", { aktif: aktifKullanici.length, toplam: kart.kullanicilar.length })}</h3>
+            <div className="yn-tl">
               {kart.kullanicilar.slice(0, 6).map((k) => (
-                <li key={k.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 px-3 py-2">
-                  <span className="font-medium">{k.ad ?? k.eposta}</span>
-                  <span className="text-muted-foreground">{k.rol}</span>
-                  {!k.aktif ? <Badge variant="outline">{t("pasif")}</Badge> : null}
-                  <span className="text-muted-foreground ml-auto text-xs">{k.sonGiris ? t("sonGiris", { tarih: bicim.tarihSaat(k.sonGiris) }) : t("hicGirmedi")}</span>
-                </li>
+                <div key={k.id} className="yn-tlrow">
+                  <span><b>{k.ad ?? k.eposta}</b></span>
+                  <span className="yn-muted">
+                    {k.rol}
+                    {!k.aktif ? <span className="yn-pill" style={{ marginLeft: 6 }}>{t("pasif")}</span> : null}
+                  </span>
+                  <span className="yn-muted yn-small nw">{k.sonGiris ? t("sonGiris", { tarih: bicim.tarihSaat(k.sonGiris) }) : t("hicGirmedi")}</span>
+                </div>
               ))}
-            </ul>
+            </div>
             {kart.kullanicilar.length > 6 ? (
-              <Link href={kartAdresi} className="text-muted-foreground inline-flex min-h-11 items-center text-xs underline underline-offset-4">{t("tumKullanicilar", { sayi: kart.kullanicilar.length })}</Link>
+              <Link href={kartAdresi} className="yn-link yn-small" style={{ display: "inline-flex", minHeight: 44, alignItems: "center" }}>{t("tumKullanicilar", { sayi: kart.kullanicilar.length })}</Link>
             ) : null}
           </section>
 
-          <section className="space-y-2">
-            <h3 className="text-sm font-semibold">{t("kayitlar")}</h3>
-            <div className="grid grid-cols-3 gap-2">
+          <section className="yn-card">
+            <h3 style={{ marginBottom: 10 }}>{t("kayitlar")}</h3>
+            <div className="yn-stats">
               {[
                 { a: ty("sayiUrun"), d: kart.sayilar.urun },
                 { a: ty("sayiSatis"), d: kart.sayilar.satis },
                 { a: ty("sayiAlim"), d: kart.sayilar.alim },
               ].map((x) => (
-                <div key={x.a} className="bg-card rounded-xl border p-3">
-                  <div className="text-muted-foreground text-xs">{x.a}</div>
-                  <div className="text-lg font-semibold tabular-nums">{bicim.sayi(x.d)}</div>
+                <div key={x.a} className="yn-stat">
+                  <b>{bicim.sayi(x.d)}</b>
+                  <span>{x.a}</span>
                 </div>
               ))}
             </div>
-            <p className="text-muted-foreground text-xs">{ty("sayilarNotu")}</p>
+            <p className="yn-muted yn-small" style={{ margin: "10px 0 0" }}>{ty("sayilarNotu")}</p>
           </section>
 
-          <Button asChild className="min-h-11 justify-self-start">
-            <Link href={kartAdresi}>
-              <ExternalLink />
-              {t("kartiAc")}
-            </Link>
-          </Button>
+          <Link href={kartAdresi} className="yn-btn primary" style={{ justifySelf: "start" }}>
+            <ExternalLink aria-hidden />
+            {t("kartiAc")}
+          </Link>
         </div>
       </aside>
     </>
