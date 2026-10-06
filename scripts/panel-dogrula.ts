@@ -3945,11 +3945,12 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      yönetim panelinin (HA-Kompass referansı, `bezirga/yonetim.css`) görünümüne
      geçti; orada kutu 14px, düğme/girdi 9px (globals.css data-slot kuralı).
      Eski 9px ölçütü yukarıdaki gerekçesiyle o referansa aitti. */
-  /* ⭐ Aynı gün ikinci kez: Algoritmo referansı (kullanıcı kararı 07.10.2026)
-     kutu 16px; düğme 8px, girdi 6px (globals.css data-slot kuralı). */
+  /* ⭐ Aynı gün ikinci kez: Algoritmo referansı (kullanıcı kararı 07.10.2026;
+     Halil'in analizi bölüm 2.3) kart 12px; düğme ve girdi 8px (globals.css
+     data-slot kuralı). Arada denenen 14/16px bu ölçüme bağlanmıştı. */
   kontrol(
-    "kart yarıçapı Algoritmo referansındaki 16px (tek kaynaktan türüyor)",
-    Math.abs(yaricapPx - 16) < 0.5,
+    "kart yarıçapı Algoritmo analizindeki 12px (tek kaynaktan türüyor)",
+    Math.abs(yaricapPx - 12) < 0.5,
   );
   kontrol(
     "  ...kart bileşeni lg yarıçapı kullanıyor (xl referanstan yuvarlaktı)",

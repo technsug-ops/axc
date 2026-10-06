@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Rubik } from "next/font/google";
 import { BookOpen, Home } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -40,9 +40,9 @@ import { bicimlendirici } from "@/lib/bicim";
 import { firmaKilitliEkranlari } from "@/lib/paket/erisim";
 import { duzendenCikar } from "@/lib/paket/ozellikler";
 
-/* Yazı: Algoritmo referansının geometrik grotesk'i (kullanıcı kararı 07.10.2026);
-   gövde ve başlık aynı aile, başlık yalnız kalınlıkla ayrışır. */
-const govde = Be_Vietnam_Pro({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-sans" });
+/* Yazı: Rubik — Algoritmo referansının metrikleri (Halil'in analizi bölüm 2.2,
+   8.1; Türkçe karakterler tam). Başlık aynı aile, kalınlıkla ayrışır. */
+const govde = Rubik({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-sans" });
 
 /**
  * ⚠ TEMA REACT'TEN ÖNCE UYGULANIR — yoksa sayfa bir kare AÇIK temada

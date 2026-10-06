@@ -1,15 +1,12 @@
 /* ============================================================
-   TEMA · KOBALT (gündüz teması)
-   Sadece DEĞER tanımlar. Bileşenler globals.css'te.
-   Gece temasıyla token ADLARI birebir aynıdır.
+   TEMA · PEMBE (Algoritmo referansının birebir rengi)
+   Sadece DEĞER tanımlar; token ADLARI Kobalt ile birebir aynı.
+   Kullanıcı kararı 07.10.2026: «ikisi de olsun» — varsayılan Kobalt
+   (marka), pembe tema düğmesinden seçilir. Değerler Halil'in analizi
+   bölüm 2.1'den (ekrandan ölçülen).
    ============================================================ */
-/* ⭐ 07.10.2026 — Algoritmo düzeni + Bezirga kimliği (kullanıcı kararı;
-   Halil'in «Algoritmo UI & Veri Modeli» analizi bölüm 8.1): vurgu kobalt,
-   uyarı/maliyet safran, beyaz menü, çerçevesiz gölgeli kart. Algoritmo'nun
-   pembe kimliği AYRI tema: `tema-pembe.css` («ikisi de olsun»). */
 
-:root,
-[data-tema="kobalt"] {
+[data-tema="pembe"] {
 
   /* --- yüzey merdiveni (0 en koyu → 2 en açık) --- */
   /**
@@ -22,17 +19,17 @@
    * 0,0568. Eşik uydurulmuş bir sayı değil, aynı paletten türetildi
    * (bkz. panel:dogrula).
    */
-  --se-zemin:            #F4F6FA;   /* sayfa arka planı */
+  --se-zemin:            #F3F5F9;   /* sayfa arka planı */
   --se-kart:             #FFFFFF;   /* kart, panel, tablo gövdesi */
   --se-kart-2:           #FFFFFF;   /* açılır menü, modal, ipucu */
   --se-satir:            #FAFBFC;   /* zebra satır */
   --se-baslik:           #F2F3F5;   /* tablo başlığı, bölüm şeridi */
   --se-hover:            #F7F8FA;   /* satır üzerine gelme */
-  --se-secili:           #E8EEF8;   /* seçili satır */
+  --se-secili:           #FCF0F3;   /* seçili satır */
 
   /* --- kabuk (kenar çubuğu, üst şerit) --- */
   --se-kabuk:            #FFFFFF;
-  --se-kabuk-secili:     #E8EEF8;
+  --se-kabuk-secili:     #FCF0F3;
   --se-kabuk-hover:      #F7F8FA;
   --se-kabuk-ink:        #232B35;
   --se-kabuk-ink2:       #667380;
@@ -50,12 +47,12 @@
   --se-cizgi-3:          #C3C9D1;   /* üzerine gelme */
 
   /* --- vurgu: kimlik + eylem. BAŞKA HİÇBİR ANLAM TAŞIMAZ --- */
-  --se-vurgu:            #12356B;
-  --se-vurgu-hover:      #0E2A55;
-  --se-vurgu-aktif:      #0A2044;
+  --se-vurgu:            #DE3D68;
+  --se-vurgu-hover:      #C92F59;
+  --se-vurgu-aktif:      #B0264D;
   --se-vurgu-on:         #FFFFFF;
-  --se-vurgu-bg:         #E8EEF8;
-  --se-vurgu-cizgi:      #B6C7DE;
+  --se-vurgu-bg:         #FCF0F3;
+  --se-vurgu-cizgi:      #F3B6C6;
 
   /* --- nötr rampa: anlamı OLMAYAN her yer --- */
   /* grafik dolgusu, ilerleme çubuğu, türetilmiş değer şeridi */
@@ -65,30 +62,30 @@
   --se-notr-bg:          #F2F3F5;
 
   /* --- semantik: kâr --- */
-  --se-kar:              #2F9E5B;
+  --se-kar:              #3F8F1E;
   --se-kar-bg:           #EAF8E2;
-  --se-kar-cizgi:        #B9E3C8;
+  --se-kar-cizgi:        #C3E8B0;
 
   /* --- semantik: zarar --- */
-  --se-zarar:            #D64545;
+  --se-zarar:            #C0392B;
   --se-zarar-bg:         #FCE4E2;
   --se-zarar-cizgi:      #F2B8B3;
 
   /* --- semantik: bilinmiyor / modellenmedi --- */
-  --se-bil:              #E3A13A;   /* şerit, çizgi, ikon */
-  --se-bil-ink:          #9A6A12;   /* açık zeminde metin */
+  --se-bil:              #F6C444;   /* şerit, çizgi, ikon */
+  --se-bil-ink:          #B7791F;   /* açık zeminde metin */
   --se-bil-bg:           #FEF5E1;
-  --se-bil-cizgi:        #F0D49C;
+  --se-bil-cizgi:        #F5DC9A;
 
   /* --- semantik: çelişki (kaynak ile sistem uyuşmuyor) --- */
   /* zarar ile aynı ton, DOLU zemin ile ayrışır — hue sayısı artmasın */
-  --se-celiski:          #D64545;
-  --se-celiski-bg:       #D64545;
+  --se-celiski:          #C0392B;
+  --se-celiski-bg:       #C0392B;
   --se-celiski-on:       #FFFFFF;
 
   /* --- durum --- */
-  --se-odak:             #12356B;
-  --se-odak-golge:       0 0 0 3px #D6E2F1;
+  --se-odak:             #DE3D68;
+  --se-odak-golge:       0 0 0 3px #FCF0F3;
   --se-pasif-bg:         #F2F3F5;
   --se-pasif-ink:        #919FA4;
 
@@ -98,7 +95,7 @@
   --se-golge-3:          0 12px 32px rgba(35, 43, 53, 0.12);
 
   /* --- seçim ve kaydırma çubuğu --- */
-  --se-secim-bg:         #D6E2F1;
+  --se-secim-bg:         #FCF0F3;
   --se-secim-ink:        #232B35;
   --se-kaydirma:         #DCE0E6;
   --se-kaydirma-hover:   #C3C9D1;

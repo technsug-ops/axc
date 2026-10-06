@@ -297,7 +297,8 @@
     "temaGeceye": "Karanlık temaya geç",
     "temaKagida": "Kağıt temasına geç",
     "denemeSeridiFirmasiz": "DENEME ORTAMI · bu kurulum yalnız bu bilgisayarda; pazaryeri bağlantısı ve zamanlanmış işler kapalı",
-    "denemeSeridiYonetim": "DENEME ORTAMI · {uygulama} yönetim · bu kurulum yalnız bu bilgisayarda; pazaryeri bağlantısı ve zamanlanmış işler kapalı"
+    "denemeSeridiYonetim": "DENEME ORTAMI · {uygulama} yönetim · bu kurulum yalnız bu bilgisayarda; pazaryeri bağlantısı ve zamanlanmış işler kapalı",
+    "temaPembeye": "Pembe temaya geç"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",

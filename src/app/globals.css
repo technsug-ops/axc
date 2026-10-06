@@ -18,6 +18,8 @@
 @import "../styles/tema-kobalt.css";
 @import "../styles/tema-gece.css";
 @import "../styles/tema-kagit.css";
+/* 07.10.2026 «ikisi de olsun»: Algoritmo'nun birebir pembe kimliği seçilebilir tema. */
+@import "../styles/tema-pembe.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -99,10 +101,10 @@
      rozet 5-6px). Renk DEĞİL, o yüzden `--radius` burada KALIYOR.
    ══════════════════════════════════════════════════════════════════════ */
 :root {
-    /* 07.10.2026: Algoritmo referansı — kutu 16px (önce 9px Palet
-       Spesifikasyonu, aynı gün 14px yönetim paneli). Düğme 8px, girdi 6px
-       aşağıda data-slot kuralıyla. */
-    --radius: 1rem;
+    /* 07.10.2026: Algoritmo referansı — Halil'in analizi bölüm 2.3: kart 12px,
+       düğme ve girdi 8px (aşağıda data-slot kuralıyla). Önce 9px (Palet
+       Spesifikasyonu), aynı gün geçici olarak 14px ve 16px denendi. */
+    --radius: 0.75rem;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -279,7 +281,12 @@ h1, h2, h3, [data-slot="card-title"] {
     border-radius: 8px;
 }
 [data-slot="input"], [data-slot="select-trigger"], [data-slot="textarea"] {
-    border-radius: 6px;
+    border-radius: 8px;
+}
+/* Menü 280px (analiz bölüm 3.1). İlkel bileşen genişliği satır içi stille
+   veriyor; değişken burada ezilir — bileşen koduna dokunulmaz. */
+[data-slot="sidebar-wrapper"] {
+    --sidebar-width: 17.5rem !important;
 }
 [data-slot="table-head"] {
     background: var(--se-baslik);
@@ -357,7 +364,8 @@ h1, h2, h3, [data-slot="card-title"] {
    eklemek yetmez: shadcn token'ları bu seçiciden okuyor ve tema adı burada
    yoksa uygulama VARSAYILAN (kobalt) yüzeylerle çizilir — kağıt paleti
    yüklenir ama hiçbir yere bağlanmaz. */
-[data-tema="kagit"] {
+[data-tema="kagit"],
+[data-tema="pembe"] {
     /* --- yüzeyler --- */
     --background: var(--se-zemin);
     --foreground: var(--se-ink);
