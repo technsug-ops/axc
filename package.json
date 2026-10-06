@@ -510,6 +510,8 @@
     "kanal-anahtari-mutasyon:kontrol": "tsx scripts/kanal-anahtari-mutasyon-kontrol.ts",
     "yonetim-iskeleti:dogrula": "tsx scripts/yonetim-iskeleti-dogrula.ts",
     "yonetim-iskeleti-mutasyon:kontrol": "tsx scripts/yonetim-iskeleti-mutasyon-kontrol.ts",
+    "iki-adim:dogrula": "tsx scripts/iki-adim-dogrula.ts",
+    "iki-adim-mutasyon:kontrol": "tsx scripts/iki-adim-mutasyon-kontrol.ts",
     "aski-sureci-mutasyon:kontrol": "tsx scripts/aski-sureci-mutasyon-kontrol.ts",
     "kullanici-uyeligi-mutasyon:kontrol": "tsx scripts/kullanici-uyeligi-mutasyon-kontrol.ts",
     "firma-karti-mutasyon:kontrol": "tsx scripts/firma-karti-mutasyon-kontrol.ts",

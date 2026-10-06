@@ -81,6 +81,11 @@ const ACTION_ISTISNALARI = new Map<string, string>([
   // K303 4c-2 — Selliora yönetim katmanının girişi/çıkışı: firma girişi/çıkışıyla AYNI sınıf.
   ["yonetimGirisYap", "yönetim girişi — giriş yapmamış kişi çağırır; süper admin işareti gövdede, tek hata mesajıyla sınanır"],
   ["yonetimCikisYap", "yönetim çıkışı her zaman serbest olmalı (yalnız kendi çerezini siler)"],
+  // K303 ⑤ (06.10.2026) — iki adımlı girişin adımları: henüz OTURUM YOK (parola geçti,
+  // kod bekleniyor). Kapıları gövdede: imzalı 5 dk ara adım çerezi + firmasız süper
+  // admin + giriş kilidi. `yonetim-kapisi:dogrula` bu sırayı ayrıca ölçer.
+  ["ikiAdimDogrulaEylemi", "iki adımlı girişin kod adımı — oturum henüz yok; ara adım çerezi + kilit gövdede"],
+  ["ikiAdimKurulumEylemi", "iki adımlı girişin ilk kurulumu — oturum henüz yok; ara adım çerezi + kilit gövdede"],
   [
     "parolamiDegistir",
     "kendi parolasını değiştiriyor; izin şartı koysak ilk girişte parola değiştirmek ZORUNDA olan kullanıcı bunu yapamazdı — hedef oturumdan gelir, formdan değil",

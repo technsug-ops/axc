@@ -67,6 +67,46 @@ export async function yonetimOturumuKapat(): Promise<void> {
   (await cookies()).delete({ name: YONETIM_CEREZI, path: YONETIM_YOLU });
 }
 
+/* ═══ İKİ ADIMLI GİRİŞ — ARA ADIM (K303 ⑤, 06.10.2026) ════════════════════
+ * Parola doğruysa OTURUM AÇILMAZ; 5 dakikalık, imzalı «ara adım» çerezi verilir
+ * ve giriş sayfası (`/bezirga` — proxy'nin açık bıraktığı TEK yönetim adresi)
+ * kod adımını gösterir. Jeton işareti yönetim işaretinden FARKLI: proxy ve
+ * `yonetimOturumu` onu içerideki hiçbir sayfa için kabul etmez. Ayrı çerez adı.
+ * Oturum sürümü taşır: parola değişirse bekleyen ara adım da düşer. */
+export const ARA_ADIM_CEREZI = `${YONETIM_CEREZI}_adim`;
+export const ARA_ADIM_ISARETI = `${YONETIM_ISARETI}_ADIM`;
+export const ARA_ADIM_SURESI_MS = 5 * 60 * 1000;
+
+export async function araAdimAc(kullaniciId: string): Promise<void> {
+  // SISTEM: oturum sürümü kişiye aittir.
+  const k = await sistemPrisma.user.findUnique({ where: { id: kullaniciId }, select: { sessionVersion: true } });
+  if (!k) throw new Error("Kullanıcı bulunamadı");
+  const sonGecerlilik = Date.now() + ARA_ADIM_SURESI_MS;
+  const jeton = await jetonUret({ kullaniciId, oturumSurumu: k.sessionVersion, sonGecerlilik, firmaId: ARA_ADIM_ISARETI }, sirriAl());
+  (await cookies()).set(ARA_ADIM_CEREZI, jeton, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: YONETIM_YOLU, expires: new Date(sonGecerlilik) });
+}
+
+export async function araAdimKapat(): Promise<void> {
+  (await cookies()).delete({ name: ARA_ADIM_CEREZI, path: YONETIM_YOLU });
+}
+
+/** Ara adımdaki süper admin — jeton geçersiz/süresi dolmuş/işaret farklıysa null. */
+export async function araAdimKullanicisi(): Promise<{ id: string; email: string } | null> {
+  const jeton = (await cookies()).get(ARA_ADIM_CEREZI)?.value;
+  if (!jeton) return null;
+  let govde;
+  try {
+    govde = await jetonuCoz(jeton, sirriAl(), Date.now());
+  } catch {
+    return null;
+  }
+  if (!govde || govde.firmaId !== ARA_ADIM_ISARETI) return null;
+  // SISTEM: kişi kaydı.
+  const k = await sistemPrisma.user.findUnique({ where: { id: govde.kullaniciId }, select: { id: true, email: true, isActive: true, isSuperAdmin: true, sessionVersion: true, hesapFirmasiId: true } });
+  if (!k || !k.isActive || !k.isSuperAdmin || k.hesapFirmasiId !== null || k.sessionVersion !== govde.oturumSurumu) return null;
+  return { id: k.id, email: k.email };
+}
+
 /** Oturumdaki süper admin — yoksa null. */
 export async function yonetimOturumu(): Promise<YonetimKullanicisi | null> {
   const jeton = (await cookies()).get(YONETIM_CEREZI)?.value;
@@ -81,10 +121,14 @@ export async function yonetimOturumu(): Promise<YonetimKullanicisi | null> {
   // SISTEM: süper admin işareti kişiye aittir.
   const k = await sistemPrisma.user.findUnique({
     where: { id: govde.kullaniciId },
-    select: { id: true, email: true, name: true, isActive: true, sessionVersion: true, isSuperAdmin: true, mustChangePassword: true },
+    select: { id: true, email: true, name: true, isActive: true, sessionVersion: true, isSuperAdmin: true, mustChangePassword: true, totpAcildiAt: true },
   });
   if (!k || !k.isActive || !k.isSuperAdmin) return null;
   if (k.sessionVersion !== govde.oturumSurumu) return null;
+  /* K303 ⑤ — iki adımlı giriş ZORUNLU (kullanıcı kararı 06.10.2026): iki adımı
+     açık olmayan hesabın oturumu GEÇERSİZ. Bu değişiklikten ÖNCE açılmış eski
+     çerezler de böylece düşer; bütün yönetim kapıları buradan geçer. */
+  if (!k.totpAcildiAt) return null;
   return { id: k.id, email: k.email, ad: k.name, parolaDegismeli: k.mustChangePassword };
 }
 

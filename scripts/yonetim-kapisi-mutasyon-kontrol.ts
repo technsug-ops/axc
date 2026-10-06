@@ -27,6 +27,23 @@ const ISARET_KAPISI = "  if (!govde || govde.firmaId !== YONETIM_ISARETI) return
 const MUTASYONLAR: Mutasyon[] = [
   { ad: "ZARARSIZ - yorum", yon: "ZARARSIZ", dosya: OTURUM,
     bul: "SELLİORA YÖNETİM OTURUMU — SUNUCU", koy: "SELLİORA YÖNETİM OTURUMU (SUNUCU)", bozdugu: "hicbir sey - YESIL kalmali" },
+  /* K303 ⑤ (06.10.2026) — iki adımlı giriş ZORUNLU */
+  { ad: "PAROLA TEK BASINA OTURUM ACIYOR", yon: "FAZLADAN", dosya: EYLEM,
+    bul: "  await araAdimAc(kullanici.id);\n", koy: "  await araAdimAc(kullanici.id);\n  await yonetimOturumuAc(kullanici.id);\n",
+    bozdugu: "parolayi bilen kisi kod sormadan panele girer" },
+  { ad: "IKI ADIMSIZ OTURUM GECERLI", yon: "KALDIRAN", dosya: OTURUM,
+    bul: "  if (!k.totpAcildiAt) return null;\n", koy: "",
+    bozdugu: "iki adimi hic kurmamis hesabin eski cerezi panele girer" },
+  /* Tehdit: ara adım işareti yönetim işaretiyle AYNI olursa parolayla alınan
+     5 dk'lık jeton içerideki sayfaları açar. (İlk yazımda yönetim işareti
+     değiştirildi; ara adım ondan TÜRETİLDİĞİ için ikisi yine farklı kaldı —
+     mutasyon tehdidi temsil etmiyordu, bekçi haklı olarak yeşil kaldı.) */
+  { ad: "ARA ADIM JETONU ICERIDE GECIYOR", yon: "FAZLADAN", dosya: OTURUM,
+    bul: "export const ARA_ADIM_ISARETI = `${YONETIM_ISARETI}_ADIM`;", koy: "export const ARA_ADIM_ISARETI = YONETIM_ISARETI;",
+    bozdugu: "parolayla alinan ara adim jetonu icerideki sayfalari acar" },
+  { ad: "KOD SONUCUNDAN ONCE OTURUM", yon: "FAZLADAN", dosya: EYLEM,
+    bul: '  const r = await girisDogrula(k.u.id, String(formData.get("kod") ?? ""));\n', koy: '  await yonetimOturumuAc(k.u.id);\n  const r = await girisDogrula(k.u.id, String(formData.get("kod") ?? ""));\n',
+    bozdugu: "yanlis kod girilse de oturum acilmis olur" },
   { ad: "PROXY ICERIYI JETONSUZ ACIYOR", yon: "FAZLADAN", dosya: PROXY,
     bul: ISARET_KAPISI + "\n", koy: "", bozdugu: "herkes /selliora/firmalar'a ulasir (sayfa kapisi tek savunma kalir)" },
   { ad: "PROXY ISARETI SORMUYOR (firma jetonu gecer)", yon: "FAZLADAN", dosya: PROXY,

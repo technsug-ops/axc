@@ -714,6 +714,18 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       "cardId"
     ]
   },
+  "IkiAdimYedekKodu": {
+    "firma": false,
+    "iliskiler": {
+      "user": {
+        "hedef": "User",
+        "liste": false
+      }
+    },
+    "yabanciAnahtarlar": [
+      "userId"
+    ]
+  },
   "KanalAnahtari": {
     "firma": true,
     "iliskiler": {
@@ -1556,6 +1568,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       "hesapFirmasi": {
         "hedef": "Company",
         "liste": false
+      },
+      "yedekKodlar": {
+        "hedef": "IkiAdimYedekKodu",
+        "liste": true
       },
       "stockMovements": {
         "hedef": "StockMovement",

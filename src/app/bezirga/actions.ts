@@ -15,7 +15,8 @@ import { EN_AZ_PAROLA_UZUNLUGU, PAROLA_HATA_ANAHTARI, parolaDegisimiHatasi } fro
 import type { ParolaDurumu } from "@/app/parola-degistir/actions";
 import { sistemPrisma } from "@/lib/prisma";
 import { superAdminHesabi } from "@/lib/oturum-firmasi";
-import { yonetimEylemiParolaEkrani, yonetimOturumuAc, yonetimOturumuKapat } from "@/lib/yonetim-oturumu";
+import { araAdimAc, araAdimKapat, araAdimKullanicisi, yonetimEylemiParolaEkrani, yonetimOturumuAc, yonetimOturumuKapat } from "@/lib/yonetim-oturumu";
+import { girisDogrula, kurulumuTamamla } from "@/lib/iki-adim/depo";
 
 export type YonetimGirisDurumu = { hatalar?: string[] };
 
@@ -64,10 +65,92 @@ export async function yonetimGirisYap(
     return { hatalar: [t("hataliGiris")] };
   }
 
-  await yonetimOturumuAc(kullanici.id);
-  await izYaz({ action: "YONETIM_GIRIS", targetType: "User", targetId: kullanici.id, userId: kullanici.id, detail: JSON.stringify({ ip }) });
-  // Parolası değişmeli ise doğrudan parola ekranı (kapı da yönlendirirdi; bir adım az).
-  redirect(kullanici.mustChangePassword ? `${YONETIM_YOLU}/parola` : YONETIM_ANA);
+  /* K303 ⑤ — iki adımlı giriş ZORUNLU (06.10.2026): parola doğru olsa da OTURUM
+     AÇILMAZ. Ara adım çerezi verilir; giriş sayfası kod (ya da ilk kurulum)
+     adımını gösterir. Oturum yalnız `ikiAdimDogrulaEylemi`/`ikiAdimKurulumEylemi`
+     kodu doğruladıktan SONRA açılır. */
+  await araAdimAc(kullanici.id);
+  await izYaz({ action: "YONETIM_PAROLA_GECTI", targetType: "User", targetId: kullanici.id, userId: kullanici.id, detail: JSON.stringify({ ip }) });
+  redirect(YONETIM_YOLU);
+}
+
+/* ═══ İKİ ADIMLI GİRİŞ EYLEMLERİ (K303 ⑤) ═════════════════════════════════ */
+
+export type IkiAdimDurumuSonucu = { hatalar?: string[]; yedekKodlar?: string[] };
+
+const KOD_HATA_ANAHTARI: Record<string, string> = {
+  BICIM: "ikiAdimHataBicim",
+  YANLIS: "ikiAdimHataYanlis",
+  TEKRAR: "ikiAdimHataTekrar",
+  SIR_YOK: "ikiAdimHataSir",
+  SIR_GECERSIZ: "ikiAdimHataSir",
+  COZULEMEDI: "ikiAdimHataSir",
+  KURULUM_YOK: "ikiAdimHataKurulumYok",
+  ZATEN_ACIK: "ikiAdimHataZatenAcik",
+  ACIK_DEGIL: "ikiAdimHataKurulumYok",
+};
+
+/** Ortak: ara adım + kilit. Geçmezse hata metni döner. */
+async function araAdimKapisi(t: Awaited<ReturnType<typeof getTranslations>>): Promise<{ u: { id: string; email: string }; ip: string } | { hata: string }> {
+  const u = await araAdimKullanicisi();
+  if (!u) return { hata: t("ikiAdimSureDoldu") };
+  const ip = ((await headers()).get("x-forwarded-for") ?? "").split(",")[0].trim() || "bilinmiyor";
+  const simdi = new Date();
+  const kilit = girisKilidi(await yakinBasarisizDenemeler(u.email, ip, simdi), simdi);
+  if (kilit.kilitli) {
+    const dakika = Math.max(1, Math.ceil((kilit.acilis.getTime() - simdi.getTime()) / 60_000));
+    return { hata: t("cokFazlaDeneme", { dakika }) };
+  }
+  return { u, ip };
+}
+
+/** Yanlış kod — giriş kilidinin saydığı AYNI iz (e-posta + ip). */
+async function yanlisKodIzi(u: { id: string; email: string }, ip: string, sebep: string) {
+  await izYaz({ action: "GIRIS_BASARISIZ", targetType: "User", targetId: u.id, userId: null, detail: JSON.stringify({ eposta: u.email, ip, kapi: "yonetim-iki-adim", sebep }) });
+}
+
+export async function ikiAdimDogrulaEylemi(_onceki: IkiAdimDurumuSonucu, formData: FormData): Promise<IkiAdimDurumuSonucu> {
+  const t = await getTranslations("Yonetim");
+  const k = await araAdimKapisi(t);
+  if ("hata" in k) return { hatalar: [k.hata] };
+  const r = await girisDogrula(k.u.id, String(formData.get("kod") ?? ""));
+  if (r.durum === "HATA") {
+    if (r.hata === "BICIM" || r.hata === "YANLIS" || r.hata === "TEKRAR") await yanlisKodIzi(k.u, k.ip, r.hata);
+    return { hatalar: [t(KOD_HATA_ANAHTARI[r.hata] ?? "ikiAdimHataYanlis")] };
+  }
+  await araAdimKapat();
+  await yonetimOturumuAc(k.u.id);
+  await izYaz({ action: "YONETIM_GIRIS", targetType: "User", targetId: k.u.id, userId: k.u.id, detail: JSON.stringify({ ip: k.ip, yol: r.yol, kalanYedek: r.kalanYedek }) });
+  // SISTEM: parola zorunluluğu kişiye aittir.
+  const p = await sistemPrisma.user.findUnique({ where: { id: k.u.id }, select: { mustChangePassword: true } });
+  redirect(p?.mustChangePassword ? `${YONETIM_YOLU}/parola` : YONETIM_ANA);
+}
+
+/**
+ * İlk kurulum: ilk kod doğrulanınca iki adım AÇILIR, yedek kodlar BİR KEZ
+ * döner ve oturum AYNI eylemde açılır (kod az önce doğrulandı). «Devam»
+ * düğmesi yalnız bir bağlantıdır — oturum açan ikinci bir eylem YOK (aksi
+ * hâlde parolayı bilen biri koda hiç uğramadan «devam» çağırabilirdi).
+ */
+export async function ikiAdimKurulumEylemi(_onceki: IkiAdimDurumuSonucu, formData: FormData): Promise<IkiAdimDurumuSonucu> {
+  const t = await getTranslations("Yonetim");
+  const k = await araAdimKapisi(t);
+  if ("hata" in k) return { hatalar: [k.hata] };
+  const r = await kurulumuTamamla(k.u.id, String(formData.get("kod") ?? ""));
+  if (r.durum === "HATA") {
+    if (r.hata === "BICIM" || r.hata === "YANLIS" || r.hata === "TEKRAR") await yanlisKodIzi(k.u, k.ip, r.hata);
+    return { hatalar: [t(KOD_HATA_ANAHTARI[r.hata] ?? "ikiAdimHataYanlis")] };
+  }
+  await araAdimKapat();
+  await yonetimOturumuAc(k.u.id);
+  await izYaz({ action: "YONETIM_IKI_ADIM_ACILDI", targetType: "User", targetId: k.u.id, userId: k.u.id, detail: JSON.stringify({ ip: k.ip, yedekKodSayisi: r.yedekKodlar.length }) });
+  return { yedekKodlar: r.yedekKodlar };
+}
+
+/** Ara adımdan vazgeç (başka hesapla gir). */
+export async function araAdimIptal() {
+  await araAdimKapat();
+  redirect(YONETIM_YOLU);
 }
 
 export async function yonetimCikisYap() {

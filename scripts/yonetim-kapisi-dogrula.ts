@@ -109,8 +109,22 @@ async function main() {
   const eylem = yorumsuz(kaynakOku("src/app/bezirga/actions.ts"));
   const gir = govde(eylem, "export async function yonetimGirisYap(");
   const iRet = gir.indexOf("if (!kullanici || !kullanici.isActive || !kullanici.isSuperAdmin || !gecti) {");
-  const iAc = gir.indexOf("await yonetimOturumuAc(kullanici.id);");
-  kontrol("giriş: süper admin olmayan REDDEDİLİR, oturum kapıdan SONRA açılır", iRet >= 0 && iAc > iRet);
+  const iAra = gir.indexOf("await araAdimAc(kullanici.id);");
+  /* K303 ⑤ (06.10.2026) — iki adımlı giriş ZORUNLU: parola tek başına OTURUM
+     AÇMAZ. Eski ölçüt («oturum kapıdan sonra açılır») bu yüzden çevrildi:
+     giriş eylemi ret kapısından SONRA yalnız ARA ADIM açar ve oturum açan
+     çağrıyı HİÇ içermez; oturum yalnız kod doğrulandıktan sonra açılır. */
+  kontrol("giriş: süper admin olmayan REDDEDİLİR, ret kapısından SONRA yalnız ARA ADIM açılır", iRet >= 0 && iAra > iRet);
+  kontrol("giriş: parola tek başına oturum AÇMAZ (yonetimOturumuAc yok)", gir.length > 0 && !gir.includes("yonetimOturumuAc("));
+  for (const ad of ["ikiAdimDogrulaEylemi", "ikiAdimKurulumEylemi"]) {
+    const g = govde(eylem, `export async function ${ad}(`);
+    const iKapi = g.indexOf("const k = await araAdimKapisi(t);");
+    const iHata = g.indexOf('if (r.durum === "HATA") {');
+    const iOturum = g.indexOf("await yonetimOturumuAc(k.u.id);");
+    kontrol(`${ad}: ara adım kapısı → kod sonucu → ANCAK SONRA oturum`, iKapi >= 0 && iHata > iKapi && iOturum > iHata, { iKapi, iHata, iOturum });
+  }
+  kontrol("oturum okuyucu iki adımı AÇIK OLMAYAN hesabı reddeder (eski çerezler dahil)", govde(ot, "export async function yonetimOturumu(").includes("if (!k.totpAcildiAt) return null;"));
+  kontrol("ara adım jetonu yönetim işaretinden FARKLI (içeri sayfalarda geçmez)", ot.includes("export const ARA_ADIM_ISARETI = `${YONETIM_ISARETI}_ADIM`;") && govde(ot, "export async function araAdimKullanicisi(").includes("govde.firmaId !== ARA_ADIM_ISARETI"));
   kosanBolumler.push("sunucu");
 
   /* ③ DESEN YASAĞI */

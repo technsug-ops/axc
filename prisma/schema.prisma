@@ -1044,6 +1044,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -2747,6 +2748,16 @@ model User {
   /// bu işaret AÇMAZ.
   isSuperAdmin Boolean @default(false)
 
+  /// K303 ⑤ — SÜPER ADMİN İKİ ADIMLI GİRİŞ (TOTP, RFC 6238; kullanıcı kararı
+  /// 06.10.2026: zorunlu). Gizli anahtar AES-256-GCM paketi (`IKI_ADIM_SIRRI`);
+  /// veritabanı tek başına anahtarı AÇAMAZ. `totpAcildiAt` boşken anahtar
+  /// «kurulumda» sayılır, onunla giriş YAPILAMAZ. `totpSonAdim`: son kabul
+  /// edilen 30 sn adımı — aynı kod iki kez kullanılamaz.
+  totpSifreli  String?            @db.Text
+  totpAcildiAt DateTime?
+  totpSonAdim  Int?
+  yedekKodlar  IkiAdimYedekKodu[]
+
   lastLoginAt DateTime?
 
   createdAt           DateTime          @default(now())
@@ -4229,4 +4240,21 @@ model KanalAnahtari {
   updatedAt DateTime @updatedAt
 
   @@index([companyId])
+}
+
+/// K303 ⑤ — iki adımlı girişin TEK KULLANIMLIK yedek kodları (telefon kaybolursa).
+/// Kod yalnız ÖZET olarak saklanır (parola gibi, scrypt); kullanılan işaretlenir,
+/// silinmez (iz). Yeni takım üretilince eskiler silinir.
+model IkiAdimYedekKodu {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ozet         String    @db.Text
+  kullanildiAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
