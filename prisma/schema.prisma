@@ -30,10 +30,10 @@ enum Currency {
 /// Hiçbiri GELİR değildir: ciro · NET-1 · NET-2 · KDV · stopaj hesabına GİRMEZ.
 /// Yalnız banka kredisi taksitindeki FAİZ ve VERGİ gidere düşer (kart faizi deseni).
 enum FinansmanTuru {
-  SERMAYE            // sermaye artırımı — geri ödenmez
-  ORTAK_BORCU        // ortaktan borç — geri ödenir ya da sermayeye mahsup edilir
-  UCUNCU_KISI_BORCU  // dışarıdan kişi/kurumdan borç
-  BANKA_KREDISI      // taksitli, faizli; plan bankanın ödeme planından girilir
+  SERMAYE // sermaye artırımı — geri ödenmez
+  ORTAK_BORCU // ortaktan borç — geri ödenir ya da sermayeye mahsup edilir
+  UCUNCU_KISI_BORCU // dışarıdan kişi/kurumdan borç
+  BANKA_KREDISI // taksitli, faizli; plan bankanın ödeme planından girilir
 }
 
 /// K304-② — BORÇ BİRİMİ (kullanıcı kararı 28.09.2026). Borç KENDİ biriminde
@@ -362,20 +362,20 @@ enum PurchaseStatus {
 // ============================================================================
 
 model Product {
-  id          String  @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   name        String
-  description String? @db.Text
+  description String?  @db.Text
   brand       String?
   /// K285 — MARKA KAYDINA BAĞ. `brand` (serbest metin) OLDUĞU GİBİ kalır: o,
   /// içe aktarmanın/kanalın yazdığı ham yazımdır. Bağ, 3 harfli benzersiz
   /// marka KODUNU taşır (SKU'nun marka parçası). Boş = marka tabloya bağlanmadı.
   brandId     String?
-  brandKaydi  Brand?  @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  brandKaydi  Brand?   @relation(fields: [brandId], references: [id], onDelete: SetNull)
 
   /// Sadece arayüz ipucu: false ise ürünün tek (varsayılan) varyantı vardır.
   hasVariants Boolean @default(false)
@@ -439,7 +439,6 @@ model Product {
   @@index([tyKategori])
   @@index([isFavorite])
   @@index([needsReview])
-
   @@index([companyId])
 }
 
@@ -484,16 +483,16 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  products Product[]
+  products      Product[]
   tyEslesmeleri TyKategoriEslesme[]
 
-  @@index([isActive])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, name])
   @@unique([companyId, code])
+  @@index([isActive])
+  @@index([companyId])
 }
+
 /// K283 — KANAL KATEGORİSİ ↔ BİZİM KATEGORİ (kullanıcı kararı 26.09.2026).
 /// «Ürün adından karar vermek saçma, pazaryerleri ürünleri zaten kategorize
 /// etmiş.» Trendyol kategorisi ÖLÇÜLÜR; bizdeki karşılığı BİR KEZ seçilir ve
@@ -505,24 +504,23 @@ model Category {
 /// bir eski kod başka bir ürüne yeni kod olarak verilemez. Alan yerine tablo:
 /// ikinci bir yeniden kodlamada ilk eski kod da kaybolmasın.
 model EskiKod {
-  id        String         @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  company   Company?       @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  kod       String @db.VarChar(191)
+  kod       String         @db.VarChar(191)
   /// Hangi alandan geldiği (ör. `FIRMA_SKU`).
   kaynak    String         @db.VarChar(40)
   createdAt DateTime       @default(now())
 
-  @@index([variantId])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, kod])
+  @@index([variantId])
+  @@index([companyId])
 }
 
 /// K285 — MARKA KOD TABLOSU (kullanıcı onayı 26.09.2026).
@@ -530,43 +528,42 @@ model EskiKod {
 /// düşer. `code` = 3 harf, BENZERSİZ: iki markaya aynı kod verilemez
 /// (addan hesaplanan eski 2 harfli kısaltmada Karaca/Karcher çakışıyordu).
 model Brand {
-  id        String    @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  company   Company?  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   name      String    @db.VarChar(191)
-  anahtar   String @db.VarChar(191)
-  code      String @db.VarChar(3)
+  anahtar   String    @db.VarChar(191)
+  code      String    @db.VarChar(3)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   products  Product[]
 
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, anahtar])
   @@unique([companyId, code])
+  @@index([companyId])
 }
 
 model TyKategoriEslesme {
-  id         String    @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  tyKategori String @db.VarChar(191)
+  companyId  String?
+  company    Company?  @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  tyKategori String    @db.VarChar(191)
   categoryId String?
   category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  @@index([categoryId])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, tyKategori])
+  @@index([categoryId])
+  @@index([companyId])
 }
 
 /// K283 — ürün kategorisinin kaynağı.
@@ -575,19 +572,18 @@ enum KategoriKaynagi {
   TRENDYOL
 }
 
-
 /// Stok, SKU ve barkodun tutulduğu seviye. Ürün seviyesinde stok YOKTUR.
 model ProductVariant {
   komisyonTarifeKalemleri KomisyonTarifeKalemi[]
 
-  id        String  @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   /// Sistem içi ana stok kodu. Kanal SKU'larından bağımsızdır.
   sku     String
@@ -658,28 +654,27 @@ model ProductVariant {
   /// ise gecmise bakmak icin. Bu sutun silinse bile karar izi kaybolmaz.
   sayimGecersizAt DateTime?
 
-  @@index([productId])
-  @@index([isActive])
-  @@index([locationId])
-  @@index([sayimGecersizAt])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, sku])
   @@unique([companyId, barcode])
   @@unique([companyId, companySku])
+  @@index([productId])
+  @@index([isActive])
+  @@index([locationId])
+  @@index([sayimGecersizAt])
+  @@index([companyId])
 }
 
 /// Varyant seçenekleri (Beden=M, Renk=Kırmızı).
 /// Serbest ad/değer çifti olduğu için ileride "Materyal", "Voltaj" gibi yeni
 /// seçenek türleri şema değişikliği gerektirmez.
 model VariantOption {
-  id        String         @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  company   Company?       @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
@@ -688,7 +683,6 @@ model VariantOption {
 
   @@unique([variantId, name])
   @@index([name, value])
-
   @@index([companyId])
 }
 
@@ -754,11 +748,10 @@ model DepoBolumu {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([isActive])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, kisaltma])
+  @@index([isActive])
+  @@index([companyId])
 }
 
 model Location {
@@ -800,13 +793,12 @@ model Location {
   returnItems    ReturnItem[]
   stockMovements StockMovement[]
 
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, code])
   @@index([isActive])
   /// ⚠ Raf listesi bölüm → ünite → göz sırasında okunur.
   @@index([bolumId, unite, goz])
-
   @@index([companyId])
-  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
-  @@unique([companyId, code])
 }
 
 // ============================================================================
@@ -853,14 +845,14 @@ model Channel {
 // ============================================================================
 
 model PenaltyTariff {
-  id        String  @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelId String
-  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
   /// Bu tutara KADAR olan siparişler bu kademeye girer.
   orderAmountUpTo Decimal @db.Decimal(18, 4)
@@ -874,7 +866,6 @@ model PenaltyTariff {
 
   @@unique([companyId, channelId, orderAmountUpTo, effectiveFrom])
   @@index([channelId, orderAmountUpTo])
-
   @@index([companyId])
 }
 
@@ -893,14 +884,14 @@ model PenaltyTariff {
 // ============================================================================
 
 model ChannelFee {
-  id        String  @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelId String
-  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
   /// Bilinen kesintilerde sözlükten Türkçe adı çözülen kod.
   /// Müşterinin eklediği özel kesintilerde `name` doldurulur ve o kullanılır —
@@ -932,7 +923,6 @@ model ChannelFee {
 
   @@unique([companyId, channelId, code, validFrom])
   @@index([channelId, isActive])
-
   @@index([companyId])
 }
 
@@ -990,14 +980,14 @@ model CargoTariff {
 model ChannelAccount {
   komisyonTarifeleri KomisyonTarifesi[]
 
-  id        String  @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelId String
-  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Restrict)
 
   code       String // kanal içinde benzersiz kısa kod
   name       String // "TR Ana Mağaza"
@@ -1034,6 +1024,7 @@ model ChannelAccount {
   /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
   /// edilmiş bir tarih göstermektense boş bırakılır.
   /**
+   * /**
    * /**
    * /**
    * /**
@@ -1092,18 +1083,17 @@ model ChannelAccount {
   @@index([channelId])
   /// Yazıcılar hesabı BU alandan buluyor — dizin şart.
   @@index([apiHesapKimligi])
-
   @@index([companyId])
 }
 
 /// Bir varyantın belirli bir kanal hesabındaki karşılığı.
 model ChannelSku {
-  id               String         @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  companyId        String?
+  company          Company?       @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelAccountId String
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Cascade)
   variantId        String
@@ -1163,7 +1153,6 @@ model ChannelSku {
   @@unique([channelAccountId, channelSku])
   @@unique([channelAccountId, variantId])
   @@index([variantId])
-
   @@index([companyId])
 }
 
@@ -1176,15 +1165,15 @@ model ChannelSku {
 // ============================================================================
 
 model CreditCard {
-  id         String  @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  companyId  String?
+  company    Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   label      String // "Garanti Bonus ***4321"
   bankName   String?
-  last4      String  @db.Char(4)
+  last4      String   @db.Char(4)
   holderName String?
 
   /// Kartın ekstre para birimi.
@@ -1220,7 +1209,6 @@ model CreditCard {
   gecmisEkstreler GecmisEkstre[]
 
   @@index([isActive])
-
   @@index([companyId])
 }
 
@@ -1308,7 +1296,6 @@ model KartOdeme {
   @@index([cardId, donem])
   @@index([odemeTarihi])
   @@index([kaynak])
-
   @@index([companyId])
 }
 
@@ -1339,12 +1326,12 @@ model Finansman {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
-  tur FinansmanTuru
+  tur       FinansmanTuru
   /// Kimden — kişi, ortak, kurum ya da banka adı. VERİDİR (yapıya gömülmez).
-  kaynakAdi String   @db.VarChar(191)
+  kaynakAdi String          @db.VarChar(191)
   /// Borcun BİRİMİ; hareketler bunu devralır. Kur çevirisi yapılmaz.
-  birim FinansmanBirimi @default(TRY)
-  /*
+  birim     FinansmanBirimi @default(TRY)
+  /**
    * ⚠ ESKİ `currency` ALANI ŞEMADAN ÇIKARILDI (K304-③, 29.09.2026) — SÜTUN
    * VERİTABANINDA HÂLÂ DURUYOR (NOT NULL DEFAULT 'TRY', yeni kayıt onsuz
    * yazılabilir). Sıra: ① alan şemadan çıkar, kod yayına girer (Prisma artık
@@ -1361,7 +1348,6 @@ model Finansman {
   hareketler FinansmanHareketi[]
 
   @@index([tur])
-
   @@index([companyId])
 }
 
@@ -1408,7 +1394,6 @@ model FinansmanHareketi {
   @@index([finansmanId])
   @@index([vade])
   @@index([gerceklestiAt])
-
   @@index([companyId])
 }
 
@@ -1426,14 +1411,13 @@ model FinansmanBirimFiyati {
 
   birim      FinansmanBirimi
   /// 1 birimin TL fiyatı.
-  fiyat      Decimal  @db.Decimal(18, 4)
+  fiyat      Decimal         @db.Decimal(18, 4)
   /// Fiyatın ait olduğu gün.
   gecerliGun DateTime
 
   createdAt DateTime @default(now())
 
   @@index([birim, gecerliGun])
-
   @@index([companyId])
 }
 
@@ -1446,14 +1430,14 @@ model FinansmanBirimFiyati {
 // ============================================================================
 
 model Purchase {
-  id     String         @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  code   String // ALM-2026-0001
-  status PurchaseStatus @default(DRAFT)
+  company   Company?       @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  code      String // ALM-2026-0001
+  status    PurchaseStatus @default(DRAFT)
 
   /// TEDARİKÇİ — 10.08.2026'da kayda bağlandı (Faz 3).
   /// `supplierName` SİLİNMEDİ: eski kayıtların yazıldığı hâli ve içe
@@ -1551,6 +1535,8 @@ model Purchase {
 
   items PurchaseItem[]
 
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, code])
   @@index([purchasedAt])
   @@index([status])
   @@index([creditCardId])
@@ -1558,19 +1544,16 @@ model Purchase {
   @@index([supplierOrderNo])
   /// Geri alma tüm partiyi bu alandan bulacak — dizin şart.
   @@index([importBatch])
-
   @@index([companyId])
-  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
-  @@unique([companyId, code])
 }
 
 model PurchaseItem {
-  id         String         @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  companyId  String?
+  company    Company?       @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   purchaseId String
   purchase   Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   variantId  String
@@ -1606,7 +1589,6 @@ model PurchaseItem {
 
   @@index([purchaseId])
   @@index([variantId])
-
   @@index([companyId])
 }
 
@@ -1625,12 +1607,12 @@ model PurchaseItem {
 // ============================================================================
 
 model StockMovement {
-  id        String         @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  company   Company?       @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
 
@@ -1713,7 +1695,6 @@ model StockMovement {
   @@index([adjustmentReasonId])
   @@index([sayimSatiriId])
   @@index([userId])
-
   @@index([companyId])
 }
 
@@ -1829,8 +1810,8 @@ model Sale {
    * (epoch ms) veriyor. Kanalın verdiği saati gün sınırına yuvarlamak,
    * elimizdeki kesinliği ATMAK olurdu.
    * ⭐ İKİ HASSASİYET AYNI ALANDA YAŞAR VE AYIRT EDİLEBİLİR:
-   *     elle / HB  → gün sınırı (saat İDDİA EDİLMİYOR)
-   *     TY / N11    → gerçek an
+   * elle / HB  → gün sınırı (saat İDDİA EDİLMİYOR)
+   * TY / N11    → gerçek an
    * Okuyan `gunHassasiyetliMi(tarih)` ile sorar — K163'te `soldAt` için
    * alınmış kararın aynısı; ikinci bir mekanizma açılmadı.
    * TEK PAKET VARSAYIMI: bir satış = bir sevkiyat. Kısmi sevkiyat (bir
@@ -1844,28 +1825,24 @@ model Sale {
   /**
    * TESLİM EDİLDİ — KANALIN bildirdiği teslim anı (K195-2, 09.09.2026).
    * `shippedAt`in kardeşi: aynı kalıp, aynı kurallar, aynı hassasiyet ayrımı.
-   *
    * ⛔ NİYE SÜTUN — MERDİVEN İNDİRİLDİ (anayasa: "şema değişikliği en pahalı
    * çözümdür", ve her basamak DENENDİ, "olmaz" denmedi):
-   *   ① mevcut alan taşıyor mu → HAYIR. `shippedAt` kargo anı; teslim anını
-   *      tutan hiçbir alan yok. `updatedAt` vekil YAPILAMAZ (kolon başlığı
-   *      bir iddiadır: o "en son dokunulan an"dır, "teslim edildiği an" değil).
-   *   ② serbest metin (AuditLog) yeter mi → HAYIR. Bu veriyle SORGU
-   *      kurulacak: "kaç paket yolda" = shippedAt DOLU + deliveredAt BOŞ.
-   *      Ayırt edici soru geriye bakmak değil, gruplamak.
-   *   ③ türetilebilir mi → HAYIR. Kanal söylemezse teslim anı bilinmiyor;
-   *      "kargodan N gün sonra" bir TAHMİN olurdu.
-   *   ④ sütun. ✓  (Yeni tabloya gerek yok: bir satış = bir sevkiyat
-   *      varsayımı `shippedAt` ile aynı; kısmi sevkiyat gerekirse İKİSİ
-   *      BİRLİKTE kalkar ve yerine Shipment tablosu gelir.)
-   *
+   * ① mevcut alan taşıyor mu → HAYIR. `shippedAt` kargo anı; teslim anını
+   * tutan hiçbir alan yok. `updatedAt` vekil YAPILAMAZ (kolon başlığı
+   * bir iddiadır: o "en son dokunulan an"dır, "teslim edildiği an" değil).
+   * ② serbest metin (AuditLog) yeter mi → HAYIR. Bu veriyle SORGU
+   * kurulacak: "kaç paket yolda" = shippedAt DOLU + deliveredAt BOŞ.
+   * Ayırt edici soru geriye bakmak değil, gruplamak.
+   * ③ türetilebilir mi → HAYIR. Kanal söylemezse teslim anı bilinmiyor;
+   * "kargodan N gün sonra" bir TAHMİN olurdu.
+   * ④ sütun. ✓  (Yeni tabloya gerek yok: bir satış = bir sevkiyat
+   * varsayımı `shippedAt` ile aynı; kısmi sevkiyat gerekirse İKİSİ
+   * BİRLİKTE kalkar ve yerine Shipment tablosu gelir.)
    * BOŞ = kanal henüz "teslim edildi" demedi. ⛔ UYDURULMAZ: bilinmeyen için
    * `null` bir eksiklik değil BEYANDIR — K60'ta `shippedAt`e "bugünün
    * tarihi" basan toplu bir düğme 5601 siparişe sistemin BİLMEDİĞİ bir değer
    * yazdı ve geri alınmak zorunda kalındı.
-   *
    * LEDGER DEĞİL, DURUM: kâr hesabına girmez, yanlışsa temizlenebilir.
-   *
    * ⚠ İKİ TARİH İLKESİ (K185-③): bu alan OLAYIN anını taşır. Onu okuyan her
    * ekran "sebebin günü mü, olayın günü mü" sorusunu KENDİ cevaplar ve
    * gerekçesini koduna yazar — alan cevabı vermez.
@@ -1874,11 +1851,9 @@ model Sale {
 
   /**
    * KANALIN KENDİ KARGO TAKİP BAĞLANTISI (TY/N11 `cargoTrackingLink`).
-   *
    * ⭐ "Paketim nerede" sorusunun cevabı BURADAN geliyor — 10+ kargo
    * firmasıyla ayrı ayrı sözleşme/API (Halil'in (b) seçeneği) bu yüzden
    * ERTELENDİ, gereksiz olduğu için değil: bugün gerekmiyor.
-   *
    * ⚠ DIŞ ADRESTİR — ekranda gösterilirken doğrulanır. Kanaldan gelen bir
    * dizeyi doğrudan tıklanabilir yapmak, kanalın yazdığı her şeye güvenmektir.
    */
@@ -1886,20 +1861,17 @@ model Sale {
 
   /**
    * KANALIN FİİLEN KULLANDIĞI KARGO FİRMASI (TY/N11 `cargoProviderName`).
-   *
    * ⛔ `cargoCarrierId` İLE AYNI ŞEY DEĞİL — VE AYNI ALANA YAZILMAZ:
-   *     cargoCarrierId    BİZİM satışta seçtiğimiz firma → tarife, desi,
-   *                       maliyet ve kâr ONDAN hesaplanıyor
-   *     kanalKargoFirmasi KANALIN fiilen gönderdiği firma
+   * cargoCarrierId    BİZİM satışta seçtiğimiz firma → tarife, desi,
+   * maliyet ve kâr ONDAN hesaplanıyor
+   * kanalKargoFirmasi KANALIN fiilen gönderdiği firma
    * İkisi ayrıştığında fark tam da tarife/maliyet hatasının çıktığı yerdir.
    * Tek alana yazmak o farkı GÖRÜNMEZ yapardı — ve görünmeyen bir fark
    * hakkında kimse soru soramaz.
-   *
    * ⚠ METİN, KİMLİK DEĞİL: kanalın yazdığı ad bizim `CargoCarrier`
    * kaydımızla birebir tutmayabilir. Eşleştirme BİLEREK yapılmıyor —
    * ad kanalın yazdığı gibi saklanır (dize eşleştirme sessizce yanlış
    * firmaya bağlardı).
-   *
    * ⚠ DİZİN AÇILMADI — BİLİNÇLİ: bugün bu alan üstünde sorgu yok. Dizin,
    * onu okuyan ilk sorgu ölçüldüğünde açılır ("ölçülmemiş maliyet" değil,
    * ölçülmemiş fayda da bedava değildir).
@@ -1909,69 +1881,61 @@ model Sale {
   /**
    * KANALIN BİLDİRDİĞİ GERÇEKLEŞEN DESİ (K197-4, 09.09.2026).
    * TY/N11 `cargoDeci` · HB `Deci` — taşıyıcının FİİLEN ölçtüğü desi.
-   *
    * ⛔ `cargoDesi` İLE AYNI ŞEY DEĞİL VE ONUN ÜSTÜNE YAZILMAZ:
-   *     cargoDesi        BİZİM TAHMİNİMİZ — Σ(ürün.desi × adet), kargo
-   *                      tutarının GİRDİSİ, satış anında biliniyor
-   *     kanalKargoDesi   GERÇEKLEŞEN — paket tartıldıktan SONRA belli olur
+   * cargoDesi        BİZİM TAHMİNİMİZ — Σ(ürün.desi × adet), kargo
+   * tutarının GİRDİSİ, satış anında biliniyor
+   * kanalKargoDesi   GERÇEKLEŞEN — paket tartıldıktan SONRA belli olur
    * Aynı alana yazmak farkı görünmez yapardı; oysa aranan şey tam o fark.
    * _(`cargoCarrierId` ↔ `kanalKargoFirmasi` ayrımının birebir aynısı.)_
-   *
    * ⛔ ESKİ HÂL (K197-4, 09.09.2026 — ESKİ GEREKÇE SİLİNMEDİ, ÇEVRİLDİ):
-   *   burada "bu sütun cargoAmount'ı, NET'i, hakedişi ve kâr hesabını
-   *   HİÇBİR ŞEKİLDE etkilemez" yazıyordu. _Kullanıcı kararı 09.09.2026:
-   *   "geçmişte gösterilecek ufak tefek gelir veya kâr farklılıkları
-   *   problem değil; asıl sistemin doğru kurulması önemli."_
-   *
+   * burada "bu sütun cargoAmount'ı, NET'i, hakedişi ve kâr hesabını
+   * HİÇBİR ŞEKİLDE etkilemez" yazıyordu. _Kullanıcı kararı 09.09.2026:
+   * "geçmişte gösterilecek ufak tefek gelir veya kâr farklılıkları
+   * problem değil; asıl sistemin doğru kurulması önemli."_
    * ⭐ ÇEVRİLEN KISIM (mimar kararı 15.09.2026, bkz. `kargo-tartim-tazele.ts`):
-   *   `cargoAmount` (GERÇEKLEŞEN) DOLU bir siparişe bu sütun HÂLÂ hiç
-   *   dokunmaz — o kısım aynen geçerli. Ama `cargoAmount` BOŞSA, sipariş
-   *   zaten TAHMİNLE NET veriyordu; bu durumda gerçek desi (TARTIM) yeni
-   *   geldiğinde `tahminiKargo` bu desiyle YENİDEN hesaplanır ve kâr
-   *   tazelenir (`kargoTartimGeldiTazele`). Niye: hâlâ tahmin aşamasındaki
-   *   bir siparişte ESKİ (ürün bazlı TAHMİN ya da KÜRESEL) bir desiyle
-   *   hesaplanmış kalmak, elimize geçen daha iyi bilgiyi (kaynak önceliği:
-   *   içerden gelen bilgi üsttedir) kullanmamak olurdu. Geçmişe dönük
-   *   toplu bir düzeltme YAPILMADI — yalnız BUNDAN SONRA, gerçek desi
-   *   geldiği an tetiklenen bir mekanizma kuruldu (ölçüldü 15.09.2026:
-   *   canlıda bu şartı sağlayan 20 sipariş vardı — 17 TY + 3 HB).
-   *
+   * `cargoAmount` (GERÇEKLEŞEN) DOLU bir siparişe bu sütun HÂLÂ hiç
+   * dokunmaz — o kısım aynen geçerli. Ama `cargoAmount` BOŞSA, sipariş
+   * zaten TAHMİNLE NET veriyordu; bu durumda gerçek desi (TARTIM) yeni
+   * geldiğinde `tahminiKargo` bu desiyle YENİDEN hesaplanır ve kâr
+   * tazelenir (`kargoTartimGeldiTazele`). Niye: hâlâ tahmin aşamasındaki
+   * bir siparişte ESKİ (ürün bazlı TAHMİN ya da KÜRESEL) bir desiyle
+   * hesaplanmış kalmak, elimize geçen daha iyi bilgiyi (kaynak önceliği:
+   * içerden gelen bilgi üsttedir) kullanmamak olurdu. Geçmişe dönük
+   * toplu bir düzeltme YAPILMADI — yalnız BUNDAN SONRA, gerçek desi
+   * geldiği an tetiklenen bir mekanizma kuruldu (ölçüldü 15.09.2026:
+   * canlıda bu şartı sağlayan 20 sipariş vardı — 17 TY + 3 HB).
    * ⚠ TÜKETİCİSİ VARDI AMA DAR — VE BU BİLEREK (K52'nin bilinen tuzağı).
-   *   Normalde tüketicisi doğmayan alan açılmaz. İstisnanın gerekçesi:
-   *   **VERİ GEÇİCİ.** Kanal bu değeri yalnız dar bir pencerede veriyor
-   *   (TY birkaç ay, HB yalnız ŞU AN kargoda olan paketler — ölçüldü
-   *   09.09.2026: 2025-08 · 2025-11 · 2026-03 pencerelerinin üçünde de
-   *   API `0` kayıt döndürdü, oysa defterde o aylarda 385 · 551 · 494
-   *   satış VAR). Bugün toplanmazsa yarın HİÇ toplanamaz.
-   *   ⛔ AÇILIŞ ŞARTI (ürün kataloğu tüketicisi) HÂLÂ AÇIK: örneklem
-   *   varyant başına anlamlı hâle geldiğinde ürün desi kataloğu (`cargoDesi`
-   *   kaynağı) bundan düzeltilir — bu, 15.09.2026'da açılan "hâlâ tahmin
-   *   aşamasındaki TEK siparişi tazele" tüketicisinden AYRI ve daha geniş
-   *   bir iştir, henüz yapılmadı.
-   *
+   * Normalde tüketicisi doğmayan alan açılmaz. İstisnanın gerekçesi:
+   * **VERİ GEÇİCİ.** Kanal bu değeri yalnız dar bir pencerede veriyor
+   * (TY birkaç ay, HB yalnız ŞU AN kargoda olan paketler — ölçüldü
+   * 09.09.2026: 2025-08 · 2025-11 · 2026-03 pencerelerinin üçünde de
+   * API `0` kayıt döndürdü, oysa defterde o aylarda 385 · 551 · 494
+   * satış VAR). Bugün toplanmazsa yarın HİÇ toplanamaz.
+   * ⛔ AÇILIŞ ŞARTI (ürün kataloğu tüketicisi) HÂLÂ AÇIK: örneklem
+   * varyant başına anlamlı hâle geldiğinde ürün desi kataloğu (`cargoDesi`
+   * kaynağı) bundan düzeltilir — bu, 15.09.2026'da açılan "hâlâ tahmin
+   * aşamasındaki TEK siparişi tazele" tüketicisinden AYRI ve daha geniş
+   * bir iştir, henüz yapılmadı.
    * ⚠ DOĞUM TARİHİ 09.09.2026 — VE BOŞLUK "FARK YOK" DEMEK DEĞİLDİR.
-   *   Bu sütun yalnız İLERİYE dolar; eski satışlarda kalıcı olarak BOŞ
-   *   kalacak. Onu okuyan her ekran/analiz bunu yazmak zorundadır, yoksa
-   *   boşluk "tahmin tuttu" diye okunur.
-   *   _(Anayasa: "yeni izin doğum tarihi beyan edilir".)_
-   *
+   * Bu sütun yalnız İLERİYE dolar; eski satışlarda kalıcı olarak BOŞ
+   * kalacak. Onu okuyan her ekran/analiz bunu yazmak zorundadır, yoksa
+   * boşluk "tahmin tuttu" diye okunur.
+   * _(Anayasa: "yeni izin doğum tarihi beyan edilir".)_
    * ⚠ YALNIZ BOŞ OLANA YAZILIR: desi, taşıyıcının paketi TARTTIĞI fiziksel
-   *   bir olayın ölçüsüdür — bir kez olur, sonra değişmez. `deliveredAt`
-   *   ile aynı sınıf; `kanalKargoFirmasi` ile DEĞİL (o kanalın o anki
-   *   beyanıdır ve tazelenir).
+   * bir olayın ölçüsüdür — bir kez olur, sonra değişmez. `deliveredAt`
+   * ile aynı sınıf; `kanalKargoFirmasi` ile DEĞİL (o kanalın o anki
+   * beyanıdır ve tazelenir).
    */
   kanalKargoDesi Decimal? @db.Decimal(9, 3)
 
   /**
    * TAHMİNİ KARGO — KANALIN KESTİĞİ DEĞİL, BİZİM HESABIMIZ (K201, 09.09.2026).
-   *
    * ⛔ `cargoAmount` İLE AYNI ŞEY DEĞİL VE ONUN ÜSTÜNE ASLA YAZILMAZ:
-   *     cargoAmount    GERÇEKLEŞEN — kanalın/taşıyıcının FİİLEN kestiği
-   *     tahminiKargo   TAHMİN — tarife × desi ile hesapladığımız
+   * cargoAmount    GERÇEKLEŞEN — kanalın/taşıyıcının FİİLEN kestiği
+   * tahminiKargo   TAHMİN — tarife × desi ile hesapladığımız
    * _Mimar kararı 09.09.2026:_ "cargoAmount = kanalın gerçekleşen kesintisi;
    * N11 tahminini oraya yazmak alanın anlamını KİRLETİR ve bekçiyi deler."
    * `cargoDesi` ↔ `kanalKargoDesi` ayrımının birebir kardeşi.
-   *
    * ⭐ KAYNAK SIRASI — NET HESABINDA: `cargoAmount` DOLUYSA o kullanılır,
    * BOŞSA bu. Yani N11 satışı hakediş gelmeden tahminle NET verir; hakediş
    * gelince gerçekleşen DEVRALIR. ⚠ Ve geçiş GÖRÜNÜR: tahmin SİLİNMEZ, iki
@@ -1979,22 +1943,18 @@ model Sale {
    * bir daha sorulamazdı.
    * ⛔ Sıra TEK GÖVDEDE (`src/lib/kargo-kaynagi.ts`); iki okuyucu iki farklı
    * sıra kursaydı biri tahmini, öteki gerçekleşeni tercih ederdi.
-   *
    * ⚠ TABAN KDV HARİÇ — `cargoAmount` ile aynı. Motor KDV dahil beklediği
    * için `kdvDahilKargo` ile çevrilir; iki sütun aynı kapıdan geçer.
-   *
    * ═══ FORMÜL ÖLÇÜLDÜ, BEYAN DEĞİL (09.09.2026) ════════════════════════
-   *     tahminiKargo = firmaTarifesi(desi) × 1,0235
-   *     (1,0235 = Posta Hizmet Bedeli %2,35 · 1,20 × 1,0235 = 1,2282)
+   * tahminiKargo = firmaTarifesi(desi) × 1,0235
+   * (1,0235 = Posta Hizmet Bedeli %2,35 · 1,20 × 1,0235 = 1,2282)
    * n11 satıcı panelindeki 10 gerçek kesintiden 5'i (desi 1·2·3·9·11) bu
    * zinciri KURUŞUNA doğruladı. Firma: kanalın `cargoProviderName`i; yoksa
    * altı firmanın ortalaması (ölçüldü: sabit ortalama NET'i %7,5 karamsar
    * gösteriyordu — gönderilerin onunun da firması Aras).
-   *
    * ⚠ DOĞUM TARİHİ 09.09.2026 ve YALNIZ İLERİYE dolar. Eski satışlarda
    * kalıcı BOŞ kalacak — ve boşluk "kargo yok" demek DEĞİLDİR; o satışların
    * kargosu zaten `cargoAmount`ta duruyor.
-   *
    * ⚠ BAŞLANGIÇTA YALNIZ N11 YAZIYORDU (tek tarifesi olan kanal oydu —
    * TY/HB'de zaten gerçekleşen hızlı geliyor). Alan kanal-agnostiktir;
    * 15.09.2026'dan itibaren TY/HB de DAR bir durumda yazıyor:
@@ -2055,6 +2015,9 @@ model Sale {
   returnNotices   ReturnNotice[]
   settlementItems SettlementItem[]
 
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, code])
+  @@unique([companyId, shipmentCode])
   @@index([channelAccountId])
   @@index([soldAt])
   @@index([cargoCarrierId])
@@ -2062,11 +2025,7 @@ model Sale {
   @@index([iptalTarihi])
   /// Geri alma bu alandan tüm partiyi bulacak — dizin şart.
   @@index([importBatch])
-
   @@index([companyId])
-  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
-  @@unique([companyId, code])
-  @@unique([companyId, shipmentCode])
 }
 
 model SaleItem {
@@ -2084,14 +2043,14 @@ model SaleItem {
   commissionTarifeId String?
   commissionTarife   KomisyonTarifesi? @relation(fields: [commissionTarifeId], references: [id], onDelete: SetNull)
 
-  id     String @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  saleId String
-  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
@@ -2149,7 +2108,6 @@ model SaleItem {
   @@index([variantId])
   /// Her ciro/NET sorgusu bu alanı süzecek — dizin şart.
   @@index([kaldirildiAt])
-
   @@index([companyId])
 }
 
@@ -2166,14 +2124,14 @@ model SaleItem {
 // ============================================================================
 
 model SaleFee {
-  id     String @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  saleId String
-  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
   saleItemId String?
   saleItem   SaleItem? @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
@@ -2191,7 +2149,6 @@ model SaleFee {
 
   @@index([saleId])
   @@index([saleItemId])
-
   @@index([companyId])
 }
 
@@ -2316,7 +2273,6 @@ model Return {
   @@index([userId])
   @@index([geriAlindiAt])
   @@index([geriAlanId])
-
   @@index([companyId])
 }
 
@@ -2443,7 +2399,6 @@ model ReturnNotice {
   /// "Süresi dolmak üzere olanlar" sorgusu — panel çanı buradan besleniyor.
   @@index([otomatikOnayTarihi])
   @@index([islemSonTarihi])
-
   @@index([companyId])
 }
 
@@ -2493,19 +2448,18 @@ model Attachment {
 
   @@index([targetType, targetId])
   @@index([userId])
-
   @@index([companyId])
 }
 
 model ReturnItem {
-  id       String @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  returnId String
-  return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  returnId  String
+  return    Return   @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
   saleItemId String
   saleItem   SaleItem @relation(fields: [saleItemId], references: [id], onDelete: Restrict)
@@ -2542,19 +2496,18 @@ model ReturnItem {
   @@index([variantId])
   @@index([locationId])
   @@index([exchangeVariantId])
-
   @@index([companyId])
 }
 
 model ReturnFee {
-  id       String @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  returnId String
-  return   Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  returnId  String
+  return    Return   @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
   /// Doluysa kalem etkisi, boşsa İADE GENELİ (kargo, ceza).
   returnItemId String?
@@ -2575,7 +2528,6 @@ model ReturnFee {
 
   @@index([returnId])
   @@index([returnItemId])
-
   @@index([companyId])
 }
 
@@ -2629,11 +2581,10 @@ model ExpenseCategory {
   expenses  Expense[]
   templates ExpenseTemplate[]
 
-  @@index([isActive])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, name])
+  @@index([isActive])
+  @@index([companyId])
 }
 
 model Expense {
@@ -2725,7 +2676,6 @@ model Expense {
   @@index([categoryId])
   @@index([templateId])
   @@index([creditCardId])
-
   @@index([companyId])
 }
 
@@ -2861,12 +2811,11 @@ model Supplier {
   purchases     Purchase[]
   compensations Compensation[]
 
-  @@index([isActive])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, name])
   @@unique([companyId, code])
+  @@index([isActive])
+  @@index([companyId])
 }
 
 // ----------------------------------------------------------------------------
@@ -2923,7 +2872,6 @@ model Settlement {
 
   @@index([channelAccountId])
   @@index([paidAt])
-
   @@index([companyId])
 }
 
@@ -2935,12 +2883,12 @@ model Settlement {
 /// kargosu, stopajı AYRI SATIRLARDIR. Bu yüzden "satış başına tek kalem"
 /// kısıtı kaldırıldı — o kısıt HB raporunun ikinci satırını reddediyordu.
 model SettlementItem {
-  id           String     @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  companyId    String?
+  company      Company?   @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   settlementId String
   settlement   Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
 
@@ -3008,7 +2956,6 @@ model SettlementItem {
   @@index([orderNo])
   @@index([dueDate])
   @@index([paymentOrderId])
-
   @@index([companyId])
 }
 
@@ -3095,7 +3042,6 @@ model Compensation {
   @@index([returnItemId])
   @@index([carrierId])
   @@index([returnNoticeId])
-
   @@index([companyId])
 }
 
@@ -3139,7 +3085,6 @@ model ExpenseTemplate {
   expenses Expense[]
 
   @@index([isActive])
-
   @@index([companyId])
 }
 
@@ -3197,12 +3142,11 @@ model StockAdjustmentReason {
 
   movements StockMovement[]
 
-  @@index([isActive])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, name])
   @@unique([companyId, systemKey])
+  @@index([isActive])
+  @@index([companyId])
 }
 
 // ============================================================================
@@ -3315,76 +3259,83 @@ model Company {
   /// okunur — `AuditLog` current-state deposu değildir (menü düzeni kararıyla
   /// aynı ölçüt). Sürecin GEÇMİŞİ izden okunur; burada yalnız BUGÜNKÜ hâl.
   /// `null` = uyarı yok. Askı hâlinin kendisi `isActive=false`tır (değişmedi).
-  uyariSonGun   DateTime?
-  uyariSebebi   FirmaAskiSebebi?
+  uyariSonGun  DateTime?
+  uyariSebebi  FirmaAskiSebebi?
   /// Askıdaki firmanın sebebi — giriş ekranı ve firma kartı okur. Aktifken null.
-  askiSebebi    FirmaAskiSebebi?
+  askiSebebi   FirmaAskiSebebi?
   /// Sebep «DIGER» ise zorunlu açıklama; öteki sebeplerde isteğe bağlı not.
-  askiAciklama  String?          @db.Text
+  askiAciklama String?          @db.Text
 
   /// ═══ ABONELİK (K303, kullanıcı kararı 06.10.2026: elle ödeme takibi) ═══════
   /// Tutar FİRMA BAŞINA elle (paketler gelince öneri olur). Anayasa: para = Decimal
   /// + para birimi. `null` = abonelik tanımlanmadı (takip yok, gecikme sayılmaz).
-  aboneTutari       Decimal?     @db.Decimal(14, 2)
-  aboneParaBirimi   Currency?
-  aboneDonemi       AboneDonemi?
+  aboneTutari      Decimal?       @db.Decimal(14, 2)
+  aboneParaBirimi  Currency?
+  aboneDonemi      AboneDonemi?
   /// Bir sonraki ödemenin son günü (İstanbul günü, UTC gece yarısı). Ödeme kaydı
   /// girilince bir dönem ileri kayar; ters kayıt geri alır (kayıt önceki/yeni değeri taşır).
-  sonrakiOdemeGunu  DateTime?
-  odemeler          FirmaOdemesi[] @relation("FirmaOdemeleri")
+  sonrakiOdemeGunu DateTime?
+  odemeler         FirmaOdemesi[] @relation("FirmaOdemeleri")
 
-  uyelikler UserCompanyRole[]
+  /// K303 ② paketler (kullanıcı kararı 30.09 + 06.10.2026). Paket içeriği VERİDİR.
+  /// `null` = paketsiz (bekçi kırmızı yakar). Paket «firmaya özel» ise
+  /// (Individuel) açık özellikler `ozellikler`den okunur, paketinkinden değil.
+  paketId    String?
+  paket      Paket?          @relation(fields: [paketId], references: [id], onDelete: Restrict)
+  ozellikler FirmaOzelligi[]
+
+  uyelikler                    UserCompanyRole[]
   /// Model 2 (05.10.2026): bu firmaya ait hesaplar.
-  hesaplar  User[] @relation("HesapFirmasi")
-  auditLogs AuditLog[]
-  talepler  Talep[]
+  hesaplar                     User[]                  @relation("HesapFirmasi")
+  auditLogs                    AuditLog[]
+  talepler                     Talep[]
   /// K303 Aşama 2 — firmaya ait tabloların geri bağları.
-  productListesi Product[]
-  productVariantListesi ProductVariant[]
-  variantOptionListesi VariantOption[]
-  eskiKodListesi EskiKod[]
-  categoryListesi Category[]
-  brandListesi Brand[]
-  tyKategoriEslesmeListesi TyKategoriEslesme[]
-  depoBolumuListesi DepoBolumu[]
-  locationListesi Location[]
-  supplierListesi Supplier[]
-  channelAccountListesi ChannelAccount[]
-  channelSkuListesi ChannelSku[]
-  channelFeeListesi ChannelFee[]
-  penaltyTariffListesi PenaltyTariff[]
-  komisyonTarifesiListesi KomisyonTarifesi[]
-  komisyonTarifeKalemiListesi KomisyonTarifeKalemi[]
-  purchaseListesi Purchase[]
-  purchaseItemListesi PurchaseItem[]
-  stockMovementListesi StockMovement[]
-  saleListesi Sale[]
-  saleItemListesi SaleItem[]
-  saleFeeListesi SaleFee[]
-  returnListesi Return[]
-  returnNoticeListesi ReturnNotice[]
-  returnItemListesi ReturnItem[]
-  returnFeeListesi ReturnFee[]
-  attachmentListesi Attachment[]
-  expenseListesi Expense[]
-  expenseCategoryListesi ExpenseCategory[]
-  expenseTemplateListesi ExpenseTemplate[]
-  compensationListesi Compensation[]
-  settlementListesi Settlement[]
-  settlementItemListesi SettlementItem[]
-  creditCardListesi CreditCard[]
-  kartOdemeListesi KartOdeme[]
-  gecmisEkstreListesi GecmisEkstre[]
+  productListesi               Product[]
+  productVariantListesi        ProductVariant[]
+  variantOptionListesi         VariantOption[]
+  eskiKodListesi               EskiKod[]
+  categoryListesi              Category[]
+  brandListesi                 Brand[]
+  tyKategoriEslesmeListesi     TyKategoriEslesme[]
+  depoBolumuListesi            DepoBolumu[]
+  locationListesi              Location[]
+  supplierListesi              Supplier[]
+  channelAccountListesi        ChannelAccount[]
+  channelSkuListesi            ChannelSku[]
+  channelFeeListesi            ChannelFee[]
+  penaltyTariffListesi         PenaltyTariff[]
+  komisyonTarifesiListesi      KomisyonTarifesi[]
+  komisyonTarifeKalemiListesi  KomisyonTarifeKalemi[]
+  purchaseListesi              Purchase[]
+  purchaseItemListesi          PurchaseItem[]
+  stockMovementListesi         StockMovement[]
+  saleListesi                  Sale[]
+  saleItemListesi              SaleItem[]
+  saleFeeListesi               SaleFee[]
+  returnListesi                Return[]
+  returnNoticeListesi          ReturnNotice[]
+  returnItemListesi            ReturnItem[]
+  returnFeeListesi             ReturnFee[]
+  attachmentListesi            Attachment[]
+  expenseListesi               Expense[]
+  expenseCategoryListesi       ExpenseCategory[]
+  expenseTemplateListesi       ExpenseTemplate[]
+  compensationListesi          Compensation[]
+  settlementListesi            Settlement[]
+  settlementItemListesi        SettlementItem[]
+  creditCardListesi            CreditCard[]
+  kartOdemeListesi             KartOdeme[]
+  gecmisEkstreListesi          GecmisEkstre[]
   stockAdjustmentReasonListesi StockAdjustmentReason[]
-  stokSayimiListesi StokSayimi[]
-  stokSayimSatiriListesi StokSayimSatiri[]
-  muhasebeDonemiListesi MuhasebeDonemi[]
-  aiOzetListesi AiOzet[]
-  roleListesi Role[]
-  rolePermissionListesi RolePermission[]
-  finansmanListesi Finansman[]
-  finansmanHareketiListesi FinansmanHareketi[]
-  finansmanBirimFiyatiListesi FinansmanBirimFiyati[]
+  stokSayimiListesi            StokSayimi[]
+  stokSayimSatiriListesi       StokSayimSatiri[]
+  muhasebeDonemiListesi        MuhasebeDonemi[]
+  aiOzetListesi                AiOzet[]
+  roleListesi                  Role[]
+  rolePermissionListesi        RolePermission[]
+  finansmanListesi             Finansman[]
+  finansmanHareketiListesi     FinansmanHareketi[]
+  finansmanBirimFiyatiListesi  FinansmanBirimFiyati[]
 
   @@index([isActive])
 }
@@ -3413,23 +3364,22 @@ model Role {
   izinler   RolePermission[]
   uyelikler UserCompanyRole[]
 
-  @@index([isActive])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, name])
+  @@index([isActive])
+  @@index([companyId])
 }
 
 /// Rolün sahip olduğu izin. Anahtar KODDAN gelir (lib/yetki/izinler.ts).
 model RolePermission {
-  id     String @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  roleId String
-  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   /// "alim.yaz", "rapor.gor" gibi. Kod sabiti; veritabanı doğrulamaz,
   /// uygulama tanımadığı anahtarı YOK SAYAR ve denetim betiği bildirir.
@@ -3439,7 +3389,6 @@ model RolePermission {
 
   @@unique([roleId, permissionKey])
   @@index([roleId])
-
   @@index([companyId])
 }
 
@@ -3614,13 +3563,13 @@ model Talep {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
+  @@unique([companyId, kod])
   @@index([companyId])
   @@index([durum])
   @@index([tur])
   @@index([bildirenId])
   @@index([createdAt])
-  /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
-  @@unique([companyId, kod])
 }
 
 /// ============================================================================
@@ -3692,7 +3641,6 @@ model GecmisEkstre {
   @@unique([cardId, donem])
   @@index([donem])
   @@index([iceAktarimKodu])
-
   @@index([companyId])
 }
 
@@ -3722,12 +3670,12 @@ model GecmisEkstre {
 ///  hiçbir oran değişmese bile pencere bırakır.
 /// ============================================================================
 model KomisyonTarifesi {
-  id               String         @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  companyId        String?
+  company          Company?       @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   channelAccountId String
   channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
 
@@ -3765,20 +3713,19 @@ model KomisyonTarifesi {
   /// Bir hesap + bir pencere = TEK tarife.
   @@unique([channelAccountId, pencereBaslangic])
   @@index([pencereBitis])
-
   @@index([companyId])
 }
 
 /// Tarifenin tek satırı: bir ürünün BİR dilimi.
 model KomisyonTarifeKalemi {
-  id       String           @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  tarifeId String
-  tarife   KomisyonTarifesi @relation(fields: [tarifeId], references: [id], onDelete: Cascade)
+  company   Company?         @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  tarifeId  String
+  tarife    KomisyonTarifesi @relation(fields: [tarifeId], references: [id], onDelete: Cascade)
 
   /// HAM KİMLİK — dosyadan geldiği gibi. Eşleşme kurulamasa bile kalem
   /// SAKLANIR; bağsızlık sessiz kalmaz, yükleme raporunda sayısıyla yazar.
@@ -3812,7 +3759,6 @@ model KomisyonTarifeKalemi {
   @@unique([tarifeId, barkod, dilimSirasi])
   @@index([variantId])
   @@index([barkod])
-
   @@index([companyId])
 }
 
@@ -3893,23 +3839,22 @@ model StokSayimi {
 
   satirlar StokSayimSatiri[]
 
-  @@index([sayimGunu])
-  @@index([userId])
-
-  @@index([companyId])
   /// K303 3d: «sistemde tekil» → «firma içinde tekil» (iki firma aynı kodu kullanabilir).
   @@unique([companyId, kod])
+  @@index([sayimGunu])
+  @@index([userId])
+  @@index([companyId])
 }
 
 model StokSayimSatiri {
-  id      String     @id @default(cuid())
+  id String @id @default(cuid())
 
   /// K303 — firma bağı (Aşama 2). Şimdilik boş bırakılabilir: zorunluluk, firma
   /// istemcisi her yazımda doldurduğu kanıtlanınca Aşama 3'ün son adımında.
   companyId String?
-  company   Company? @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  sayimId String
-  sayim   StokSayimi @relation(fields: [sayimId], references: [id], onDelete: Cascade)
+  company   Company?   @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  sayimId   String
+  sayim     StokSayimi @relation(fields: [sayimId], references: [id], onDelete: Cascade)
 
   variantId String
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
@@ -3948,7 +3893,6 @@ model StokSayimSatiri {
 
   @@unique([sayimId, variantId])
   @@index([variantId])
-
   @@index([companyId])
 }
 
@@ -4070,41 +4014,44 @@ model MuhasebeDonemi {
   /// ⚠ Bir ay için TEK satır. İki kez kapatma denemesi ikinci satır açamaz.
   @@unique([companyId, yil, ay])
   @@index([durum])
-
   @@index([companyId])
 }
 
 /**
  * ============================================================================
- *  GÜNLÜK ÖZET — LLM ANLATISININ ÖNBELLEĞİ (K-OZET)
+ * GÜNLÜK ÖZET — LLM ANLATISININ ÖNBELLEĞİ (K-OZET)
  * ----------------------------------------------------------------------------
- *  "Şema değişikliği en pahalı çözümdür" merdiveni izlendi: bu içerik
- *  `AuditLog.detail`e sığmaz — bir OLAYIN izi değil, sayfanın OKUYACAĞI
- *  GÜNCEL içeriktir (`Talep`e daha yakın bir yapı: geriye bakış değil,
- *  ileri servis edilen veri). Üretimi (LLM çağrısı) pahalı olduğu için
- *  önbelleklenmesi gerekiyor — SORGU ihtiyacı var, tablo bu yüzden haklı.
- *
- *  ▶ ÇEVRİLDİ 03.10.2026 (K303 Aşama 2): artık `companyId` VAR — çok-firma
- *  kararı (28.09) «kanal/izin/kargo dışında her şey firmaya ait» dedi; aşağıdaki
- *  gerekçe o günün TEK-FİRMA kalıbına aitti, silinmedi.
- *  ⚠ `companyId` YOKTU — BİLİNÇLİYDİ. Bu tablonun üzerine kurulduğu iki sistem
- *  (Uyarı Merkezi, Görev Kutusu) tamamen firma-bağımsız GLOBAL sayaçlar;
- *  40 modelin yalnız 3'ünde `companyId` var (bkz. `lib/yetki/izinler.ts`
- *  başlığı). Yeni bir alanı çoğunluk deseninin dışında firma-kapsamlı
- *  açmak, "tek firma varsayımını derinleştirmemek" ilkesini YANLIŞ yönde
- *  uygulardı — kopyalandığı sistemlerle aynı şekilde kalır.
- *
- *  ⚠ `@@unique` YOK — KASITLI. Yeniden deneme (aynı gün ikinci cron tetiği)
- *  çakışmaz; "en yeni kazanır" (`findFirst(orderBy: createdAt desc)`),
- *  tazminat tahsilat izi / paketleme iziyle AYNI desen.
+ * "Şema değişikliği en pahalı çözümdür" merdiveni izlendi: bu içerik
+ * `AuditLog.detail`e sığmaz — bir OLAYIN izi değil, sayfanın OKUYACAĞI
+ * GÜNCEL içeriktir (`Talep`e daha yakın bir yapı: geriye bakış değil,
+ * ileri servis edilen veri). Üretimi (LLM çağrısı) pahalı olduğu için
+ * önbelleklenmesi gerekiyor — SORGU ihtiyacı var, tablo bu yüzden haklı.
+ * ▶ ÇEVRİLDİ 03.10.2026 (K303 Aşama 2): artık `companyId` VAR — çok-firma
+ * kararı (28.09) «kanal/izin/kargo dışında her şey firmaya ait» dedi; aşağıdaki
+ * gerekçe o günün TEK-FİRMA kalıbına aitti, silinmedi.
+ * ⚠ `companyId` YOKTU — BİLİNÇLİYDİ. Bu tablonun üzerine kurulduğu iki sistem
+ * (Uyarı Merkezi, Görev Kutusu) tamamen firma-bağımsız GLOBAL sayaçlar;
+ * 40 modelin yalnız 3'ünde `companyId` var (bkz. `lib/yetki/izinler.ts`
+ * başlığı). Yeni bir alanı çoğunluk deseninin dışında firma-kapsamlı
+ * açmak, "tek firma varsayımını derinleştirmemek" ilkesini YANLIŞ yönde
+ * uygulardı — kopyalandığı sistemlerle aynı şekilde kalır.
+ * ⚠ `@@unique` YOK — KASITLI. Yeniden deneme (aynı gün ikinci cron tetiği)
+ * çakışmaz; "en yeni kazanır" (`findFirst(orderBy: createdAt desc)`),
+ * tazminat tahsilat izi / paketleme iziyle AYNI desen.
  * ============================================================================
  */
 enum AiOzetDurumu {
-  /** Doğrulamadan geçti — anlatiMetni dolu, ekranda gösterilir. */
+  /**
+   * Doğrulamadan geçti — anlatiMetni dolu, ekranda gösterilir.
+   */
   YAYINDA
-  /** LLM ürettiği metin doğrulamadan geçemedi (çözülemeyen anahtar/serbest sayı) — deterministik yedeğe düşülür. */
+  /**
+   * LLM ürettiği metin doğrulamadan geçemedi (çözülemeyen anahtar/serbest sayı) — deterministik yedeğe düşülür.
+   */
   REDDEDILDI
-  /** API çağrısı başarısız oldu (anahtar yok, ağ hatası vb.) — deterministik yedeğe düşülür. */
+  /**
+   * API çağrısı başarısız oldu (anahtar yok, ağ hatası vb.) — deterministik yedeğe düşülür.
+   */
   HATA
 }
 
@@ -4120,12 +4067,12 @@ model AiOzet {
   isGunu DateTime @db.Date
 
   /// `OzetVeriPaketi` — anti-halüsinasyon denetim izi (rakam kaynağına götürür).
-  girdiJson String @db.Text
+  girdiJson     String       @db.Text
   /// Yalnız `durum` YAYINDA ise dolu.
-  anlatiMetni String? @db.Text
-  durum       AiOzetDurumu
+  anlatiMetni   String?      @db.Text
+  durum         AiOzetDurumu
   /// Hangi anahtarlar/sayılar doğrulamadan geçti/geçmedi — teşhis için.
-  dogrulamaJson String @db.Text
+  dogrulamaJson String       @db.Text
 
   modelAdi         String
   girdiTokenSayisi Int?
@@ -4134,7 +4081,6 @@ model AiOzet {
   createdAt DateTime @default(now())
 
   @@index([isGunu, createdAt])
-
   @@index([companyId])
 }
 
@@ -4174,9 +4120,9 @@ model FirmaOdemesi {
   aciklama   String?           @db.Text
 
   /// Ters kayıtsa düzelttiği kayıt; bir kayıt en çok BİR kez düzeltilir.
-  duzeltilenId String?        @unique
-  duzeltilen   FirmaOdemesi?  @relation("OdemeDuzeltmesi", fields: [duzeltilenId], references: [id], onDelete: Restrict)
-  duzeltme     FirmaOdemesi?  @relation("OdemeDuzeltmesi")
+  duzeltilenId String?       @unique
+  duzeltilen   FirmaOdemesi? @relation("OdemeDuzeltmesi", fields: [duzeltilenId], references: [id], onDelete: Restrict)
+  duzeltme     FirmaOdemesi? @relation("OdemeDuzeltmesi")
 
   /// Sonraki ödeme gününün bu kayıttan ÖNCEKİ ve SONRAKİ değeri.
   vadeOnce  DateTime?
@@ -4188,4 +4134,49 @@ model FirmaOdemesi {
   createdAt DateTime @default(now())
 
   @@index([firmaId, odemeGunu])
+}
+
+/// K303 ② — SaaS paketi (Basic/Silver/Gold/Premium/Individuel; ad VERİDİR).
+/// Özellik ANAHTARLARI kodda (`src/lib/paket/ozellikler.ts`), paket ↔ özellik
+/// eşlemesi burada; süper admin ekrandan düzenler (docs/saas-paketleri.md).
+/// `companyId` alanı YOK: firmalar-üstü yönetim verisidir, firma süzgecine girmez.
+model Paket {
+  id String @id @default(cuid())
+
+  ad          String  @unique
+  aciklama    String? @db.Text
+  /// Listede sıra (küçük önce).
+  sira        Int     @default(0)
+  /// Individuel: içerik pakette değil, firma başına (`FirmaOzelligi`) seçilir.
+  firmayaOzel Boolean @default(false)
+
+  /// Abonelik formuna ÖNERİ (tutar yine firma başına elle; 06.10 kararı).
+  onerilenTutar      Decimal?     @db.Decimal(14, 2)
+  onerilenParaBirimi Currency?
+  onerilenDonem      AboneDonemi?
+
+  ozellikler PaketOzelligi[]
+  firmalar   Company[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Paketin içindeki bir özellik (anahtar `ozellikler.ts`ten).
+model PaketOzelligi {
+  paketId String
+  paket   Paket  @relation(fields: [paketId], references: [id], onDelete: Cascade)
+  ozellik String @db.VarChar(64)
+
+  @@id([paketId, ozellik])
+}
+
+/// Firmaya özel (Individuel) pakette firmanın açık özellikleri. Alan bilerek
+/// `firmaId` (süzgeç dışı, yönetim verisi).
+model FirmaOzelligi {
+  firmaId String
+  firma   Company @relation(fields: [firmaId], references: [id], onDelete: Cascade)
+  ozellik String  @db.VarChar(64)
+
+  @@id([firmaId, ozellik])
 }

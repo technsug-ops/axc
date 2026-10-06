@@ -20,7 +20,7 @@ type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; bul: st
 const MUTASYONLAR: Mutasyon[] = [
   { ad: "ZARARSIZ - yorum", yon: "ZARARSIZ", bul: "YENİ FİRMA AÇILIŞI — TEK GÖVDE", koy: "YENİ FİRMA AÇILIŞI (TEK GÖVDE)", bozdugu: "hicbir sey - YESIL kalmali" },
   { ad: "FIRMA AKTIF DOGUYOR", yon: "FAZLADAN",
-    bul: "data: { name: g.ad, code: g.kod, isActive: false }", koy: "data: { name: g.ad, code: g.kod, isActive: true }",
+    bul: "data: { name: g.ad, code: g.kod, isActive: false, paketId }", koy: "data: { name: g.ad, code: g.kod, isActive: true, paketId }",
     bozdugu: "kurulum bitmeden firma koduyla giris acilir; yarim kurulum gorunmez" },
   { ad: "AKTIFLESME TEK ISLEMDEN CIKTI", yon: "KALDIRAN",
     bul: "        await tx.company.update({ where: { id: firma.id }, data: { isActive: true } });\n", koy: "",

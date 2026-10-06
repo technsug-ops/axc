@@ -43,7 +43,7 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
     // SISTEM: yönetim katmanı firmalar-üstüdür — firmaların KAYDI (ticari veri değil).
     sistemPrisma.company.findMany({
       where: arama ? { OR: [{ name: { contains: arama } }, { code: { contains: arama } }] } : {},
-      select: { id: true, name: true, code: true, isActive: true, createdAt: true, uyariSonGun: true, uyariSebebi: true, askiSebebi: true, sonrakiOdemeGunu: true, _count: { select: { uyelikler: true } } },
+      select: { id: true, name: true, code: true, isActive: true, createdAt: true, uyariSonGun: true, uyariSebebi: true, askiSebebi: true, sonrakiOdemeGunu: true, paket: { select: { ad: true } }, _count: { select: { uyelikler: true } } },
       orderBy: { createdAt: "asc" },
     }),
   ]);
@@ -101,6 +101,13 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
                         </Link>
                       );
                     })()}
+                    {f.paket ? (
+                      <span className="text-muted-foreground">{t("paketRozeti", { ad: f.paket.ad })}</span>
+                    ) : (
+                      <Link href={`${YONETIM_YOLU}/firmalar/${f.id}#paket`} className="inline-flex min-h-11 items-center">
+                        <Badge variant="destructive" className="underline-offset-4 hover:underline">{t("paketsizRozet")}</Badge>
+                      </Link>
+                    )}
                     <span className="text-muted-foreground">{t("uyeSayisi", { sayi: f._count.uyelikler })}</span>
                     <span className="text-muted-foreground text-xs">{t("acilis", { tarih: bicim.tarih(f.createdAt) })}</span>
                     <div className="ml-auto flex flex-wrap items-start gap-2">

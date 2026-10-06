@@ -385,4 +385,6 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "hesap-modeli-mutasyon:kontrol",
   /** K303 ödeme takibi (06.10.2026) — `odeme-takibi` firmalar listesini (yonetim-kapisi ile ortak) ve firma kartını mutasyona uğratıyor. */
   "odeme-takibi-mutasyon:kontrol",
+  /** K303 ② paketler (06.10.2026) — `paket` firma-acilisi.ts'i (firma-acilisi · aski-sureci · hesap-modeli ile ortak) mutasyona uğratıyor. */
+  "paket-mutasyon:kontrol",
 ];

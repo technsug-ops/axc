@@ -62,7 +62,7 @@ export function OdemeTakibi({
   firmaAdi: string;
   durum: OdemeGorunumu;
   /** Form varsayılanları: tutar «1500,00», vade ISO gün. */
-  abonelik: { tutar: string; tutarMetni: string | null; paraBirimi: string; donem: string; vade: string };
+  abonelik: { tutar: string; tutarMetni: string | null; paraBirimi: string; donem: string; vade: string; oneriMetni: string | null };
   bugun: string;
   satirlar: OdemeSatiri[];
   toplamlar: string[];
@@ -260,6 +260,7 @@ export function OdemeTakibi({
             <Input id="abone-vade" name="vade" type="date" required defaultValue={abonelik.vade} className="min-h-11" />
           </div>
         </div>
+        {abonelik.oneriMetni ? <p className="text-sm">{t("paketOnerisiMetni", { oneri: abonelik.oneriMetni })}</p> : null}
         <p className="text-muted-foreground text-xs">{t("abonelikNotu")}</p>
         <Button type="submit" variant="outline" className="min-h-11" disabled={abBekliyor}>
           <Save />

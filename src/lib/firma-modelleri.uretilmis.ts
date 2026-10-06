@@ -221,6 +221,14 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
         "hedef": "FirmaOdemesi",
         "liste": true
       },
+      "paket": {
+        "hedef": "Paket",
+        "liste": false
+      },
+      "ozellikler": {
+        "hedef": "FirmaOzelligi",
+        "liste": true
+      },
       "uyelikler": {
         "hedef": "UserCompanyRole",
         "liste": true
@@ -422,7 +430,9 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
         "liste": true
       }
     },
-    "yabanciAnahtarlar": []
+    "yabanciAnahtarlar": [
+      "paketId"
+    ]
   },
   "Compensation": {
     "firma": true,
@@ -668,6 +678,18 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       "yazanId"
     ]
   },
+  "FirmaOzelligi": {
+    "firma": false,
+    "iliskiler": {
+      "firma": {
+        "hedef": "Company",
+        "liste": false
+      }
+    },
+    "yabanciAnahtarlar": [
+      "firmaId"
+    ]
+  },
   "GecmisEkstre": {
     "firma": true,
     "iliskiler": {
@@ -801,6 +823,32 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
     },
     "yabanciAnahtarlar": [
       "kapatanId"
+    ]
+  },
+  "Paket": {
+    "firma": false,
+    "iliskiler": {
+      "ozellikler": {
+        "hedef": "PaketOzelligi",
+        "liste": true
+      },
+      "firmalar": {
+        "hedef": "Company",
+        "liste": true
+      }
+    },
+    "yabanciAnahtarlar": []
+  },
+  "PaketOzelligi": {
+    "firma": false,
+    "iliskiler": {
+      "paket": {
+        "hedef": "Paket",
+        "liste": false
+      }
+    },
+    "yabanciAnahtarlar": [
+      "paketId"
     ]
   },
   "PenaltyTariff": {

@@ -79,7 +79,7 @@ async function main() {
   kontrol("taban: veritabanında firma var", varolan !== null);
   if (varolan) {
     let r: Awaited<ReturnType<typeof g.firmaAc>> | string;
-    try { r = await g.firmaAc({ ...temel, kod: varolan.code }, yapan); }
+    try { r = await g.firmaAc({ ...temel, kod: varolan.code }, yapan, "-"); }
     catch (e) { r = "FIRLATTI: " + String(e).replace(/\s+/g, " ").slice(0, 120); }
     kontrol("var olan kodla açılış KOD_VAR döner (fırlatmaz)", typeof r !== "string" && r.durum === "HATA" && r.hata === "KOD_VAR", r);
     // SISTEM: ölçüm.
@@ -117,7 +117,7 @@ async function main() {
   /* ③ SIRA */
   const k = yorumsuz(kaynakOku("src/lib/firma-acilisi.ts"));
   const ac = govde(k, "export async function firmaAc(");
-  kontrol("firma PASİF doğar", ac.includes("data: { name: g.ad, code: g.kod, isActive: false }"));
+  kontrol("firma PASİF doğar", ac.includes("data: { name: g.ad, code: g.kod, isActive: false, paketId }"));
   const iBas = ac.indexOf("action: BASLADI");
   const iYurut = ac.indexOf("return kurulumuYurut(firma.id, g, yapanId);");
   kontrol("başladı izi kurulumdan ÖNCE yazılır", iBas >= 0 && iYurut > iBas);

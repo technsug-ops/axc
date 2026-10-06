@@ -12,7 +12,10 @@ import { Label } from "@/components/ui/label";
 import { yeniFirmaAc, type YeniFirmaDurumu } from "../actions";
 import { AcilisSonucu } from "../acilis-sonucu";
 
-export function YeniFirmaFormu() {
+const SECIM_SINIFI = "border-input bg-background min-h-11 w-full rounded-md border px-3 text-sm";
+
+/** `paketler`: süper adminin paket kataloğu (ad + firmaya özel mi). Yeni firma paketsiz açılmaz. */
+export function YeniFirmaFormu({ paketler }: { paketler: { id: string; ad: string; firmayaOzel: boolean }[] }) {
   const t = useTranslations("Yonetim");
   const [durum, formAction, bekliyor] = useActionState<YeniFirmaDurumu, FormData>(yeniFirmaAc, {});
   if (durum.durum === "ACILDI") return <AcilisSonucu {...durum} />;
@@ -34,6 +37,16 @@ export function YeniFirmaFormu() {
       <div className="space-y-2">
         <Label htmlFor="firma-yonetici-ad">{t("yoneticiAd")}</Label>
         <Input id="firma-yonetici-ad" name="yoneticiAd" placeholder={t("yoneticiAdIpucu")} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="firma-paket">{t("paketEtiketi")}</Label>
+        <select id="firma-paket" name="paketId" required defaultValue="" className={SECIM_SINIFI}>
+          <option value="" disabled>—</option>
+          {paketler.map((p) => (
+            <option key={p.id} value={p.id}>{p.firmayaOzel ? t("paketFirmayaOzelAdi", { ad: p.ad }) : p.ad}</option>
+          ))}
+        </select>
+        <p className="text-muted-foreground text-xs">{t("paketAcilisNotu")}</p>
       </div>
       <p className="text-muted-foreground text-xs">{t("acilisAciklama")}</p>
       <HataOzeti hatalar={durum.hatalar} baslik={t("acilamadi")} />

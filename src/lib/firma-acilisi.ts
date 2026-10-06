@@ -49,7 +49,8 @@ export type FirmaAcilisHatasi =
   | "EPOSTA_GECERSIZ"
   | "YARIM_DEGIL"
   | "FIRMA_YOK"
-  | "KURULUM_HATASI";
+  | "KURULUM_HATASI"
+  | "PAKET_YOK";
 
 export type FirmaAcilisSonucu =
   | { durum: "ACILDI"; firmaId: string; kod: string; yoneticiEposta: string; yeniKullanici: boolean; geciciParola: string | null }
@@ -81,7 +82,11 @@ const BASLADI = "FIRMA_ACILIS_BASLADI";
 const ACILDI = "FIRMA_ACILDI";
 
 /** Yeni firma aç. `yapanId`: süper admin. */
-export async function firmaAc(ham: FirmaAcilisGirdisi, yapanId: string): Promise<FirmaAcilisSonucu> {
+/**
+ * `paketId` ZORUNLU (K303 ②, 06.10.2026): yeni firma paketsiz doğmaz — paketsiz
+ * firma, uygulama paketi uyguladığında hiçbir ekranı göremezdi.
+ */
+export async function firmaAc(ham: FirmaAcilisGirdisi, yapanId: string, paketId: string): Promise<FirmaAcilisSonucu> {
   const sinama = acilisGirdisiniSina(ham);
   if (sinama.durum === "HATA") return sinama;
   const g = sinama.girdi;
@@ -90,8 +95,12 @@ export async function firmaAc(ham: FirmaAcilisGirdisi, yapanId: string): Promise
   if (await sistemPrisma.company.findUnique({ where: { code: g.kod }, select: { id: true } })) {
     return { durum: "HATA", hata: "KOD_VAR" };
   }
+  // SISTEM: seçilen paket var mı (paket kataloğu firmalar-üstü).
+  if (!(await sistemPrisma.paket.findUnique({ where: { id: paketId }, select: { id: true } }))) {
+    return { durum: "HATA", hata: "PAKET_YOK" };
+  }
   // SISTEM: firma PASİF doğar — ② bitene kadar kimse giremez, giriş kodu çözmez.
-  const firma = await sistemPrisma.company.create({ data: { name: g.ad, code: g.kod, isActive: false }, select: { id: true } });
+  const firma = await sistemPrisma.company.create({ data: { name: g.ad, code: g.kod, isActive: false, paketId }, select: { id: true } });
   // SISTEM: açılışın başladığı iz — yarım kurulumun yeniden hesaplanabilir ölçütü.
   await sistemPrisma.auditLog.create({
     data: {

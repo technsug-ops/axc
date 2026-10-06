@@ -19,6 +19,7 @@ import { epostaGonder, type EpostaTuru } from "@/lib/eposta";
 import { sistemPrisma } from "@/lib/prisma";
 import { UYGULAMA } from "@/lib/uygulama";
 import { aboneligiKaydet, odemeDurumu, odemeKaydet, odemeyiDuzelt } from "@/lib/odeme-takibi";
+import { firmaOzellikleriniKaydet, firmaPaketiniDegistir } from "@/lib/paket/yonetim";
 
 /**
  * FİRMA YÖNETİMİ EYLEMLERİ (K303 4c-2). Her eylem yönetim kapısından geçer;
@@ -38,6 +39,7 @@ const HATA_ANAHTARI: Record<FirmaAcilisHatasi | "YETKISIZ", string> = {
   YARIM_DEGIL: "hataYarimDegil",
   FIRMA_YOK: "hataFirmaYok",
   KURULUM_HATASI: "hataKurulum",
+  PAKET_YOK: "hataPaketSecilmedi",
   YETKISIZ: "hataYetkisiz",
 };
 
@@ -53,6 +55,7 @@ export async function yeniFirmaAc(_onceki: YeniFirmaDurumu, formData: FormData):
       yoneticiAd: String(formData.get("yoneticiAd") ?? ""),
     },
     k.id,
+    String(formData.get("paketId") ?? ""),
   );
   revalidatePath(`${YONETIM_YOLU}/firmalar`);
   if (sonuc.durum === "HATA") return { hatalar: [t(HATA_ANAHTARI[sonuc.hata])] };
@@ -362,6 +365,39 @@ export async function odemeHatirlatEylemi(firmaId: string): Promise<{ hata?: str
     return { tamam: `${t(d.tur === "GECIKTI" ? "hatirlatmaGittiGecikmis" : "hatirlatmaGitti")} ${epostaOzeti(t, e)}` };
   } catch (hata) {
     console.error("[odeme hatirlat] beklenmeyen hata:", hata);
+    return { hata: t("hataKaydedilemedi") };
+  }
+}
+
+/* ═══ FİRMANIN PAKETİ (K303 ②, 06.10.2026) ═══════════════════════════════ */
+
+export async function firmaPaketiEylemi(firmaId: string, paketId: string): Promise<{ hata?: string; tamam?: string }> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hata: t(HATA_ANAHTARI.YETKISIZ) };
+  try {
+    const r = await firmaPaketiniDegistir(firmaId, paketId, k.id);
+    if (r.durum === "HATA") return { hata: t(r.hata === "PAKET_YOK" ? "hataPaketYok" : "hataFirmaYok") };
+    kartiTazele(firmaId);
+    return { tamam: t("firmaPaketiDegisti", { acilan: r.acilan.length, kapanan: r.kapanan.length }) };
+  } catch (hata) {
+    console.error("[firma paketi] beklenmeyen hata:", hata);
+    return { hata: t("hataKaydedilemedi") };
+  }
+}
+
+/** Individuel firmada özellik seçimi — işaretli kutuların TAM kümesi. */
+export async function firmaOzellikleriEylemi(firmaId: string, secim: string[]): Promise<{ hata?: string; tamam?: string }> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hata: t(HATA_ANAHTARI.YETKISIZ) };
+  try {
+    const r = await firmaOzellikleriniKaydet(firmaId, secim, k.id);
+    if (r.durum === "HATA") return { hata: t(r.hata === "OZEL_DEGIL" ? "hataPaketOzelDegil" : r.hata === "OZELLIK_GECERSIZ" ? "hataOzellikGecersiz" : "hataFirmaYok") };
+    kartiTazele(firmaId);
+    return { tamam: r.eklenen.length + r.cikan.length === 0 ? t("degisiklikYok") : t("paketIcerigiKaydedildi", { eklenen: r.eklenen.length, cikan: r.cikan.length }) };
+  } catch (hata) {
+    console.error("[firma ozellikleri] beklenmeyen hata:", hata);
     return { hata: t("hataKaydedilemedi") };
   }
 }

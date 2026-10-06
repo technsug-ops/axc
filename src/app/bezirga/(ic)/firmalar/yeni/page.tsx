@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
+import { paketler } from "@/lib/paket/yonetim";
 
 import { YeniFirmaFormu } from "./yeni-firma-formu";
 
@@ -21,7 +22,7 @@ export default async function YeniFirmaSayfasi() {
         <ListeyeDon href={`${YONETIM_YOLU}/firmalar`}>{t("firmalar")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("yeniFirma")}</h1>
       </div>
-      <YeniFirmaFormu />
+      <YeniFirmaFormu paketler={(await paketler()).map((p) => ({ id: p.id, ad: p.ad, firmayaOzel: p.firmayaOzel }))} />
     </div>
   );
 }

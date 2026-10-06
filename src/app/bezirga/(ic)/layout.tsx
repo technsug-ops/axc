@@ -1,7 +1,7 @@
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Building2, Mail } from "lucide-react";
+import { Building2, Mail, Package } from "lucide-react";
 
 import { CikisButonu } from "@/components/cikis-butonu";
 import { UYGULAMA } from "@/lib/uygulama";
@@ -23,10 +23,14 @@ export default async function YonetimKabugu({ children }: { children: React.Reac
         <Link href={`${YONETIM_YOLU}/firmalar`} className="font-semibold">
           {t("kabukBasligi", { uygulama: UYGULAMA.ad })}
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
+        <nav className="flex min-w-0 items-center gap-1 overflow-x-auto text-sm whitespace-nowrap">
           <Link href={`${YONETIM_YOLU}/firmalar`} className="hover:bg-muted flex min-h-11 items-center gap-1.5 rounded-md px-3 underline-offset-4 hover:underline">
             <Building2 className="size-4" />
             {t("firmalar")}
+          </Link>
+          <Link href={`${YONETIM_YOLU}/paketler`} className="hover:bg-muted flex min-h-11 items-center gap-1.5 rounded-md px-3 underline-offset-4 hover:underline">
+            <Package className="size-4" />
+            {t("paketler")}
           </Link>
           <Link href={`${YONETIM_YOLU}/eposta`} className="hover:bg-muted flex min-h-11 items-center gap-1.5 rounded-md px-3 underline-offset-4 hover:underline">
             <Mail className="size-4" />

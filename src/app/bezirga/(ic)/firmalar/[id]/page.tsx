@@ -10,6 +10,7 @@ import { askiDurumu, bugunIs, surecGecmisi, UYARI_EN_AZ_GUN, UYARI_EN_COK_GUN } 
 import { firmaKarti } from "@/lib/firma-karti";
 import { gunMetni } from "@/lib/donem";
 import { firmaOdemeleri, odemeDurumu } from "@/lib/odeme-takibi";
+import { firmaPaketi, paketler } from "@/lib/paket/yonetim";
 import type { FirmaAskiSebebi } from "@/generated/prisma/client";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
@@ -19,6 +20,7 @@ import { AskiSureci, type AskiGorunumu } from "./aski-sureci";
 import { FirmaAdiFormu } from "./firma-adi-formu";
 import { KartKullanicilari } from "./kart-kullanicilari";
 import { OdemeTakibi, type OdemeGorunumu } from "./odeme-takibi";
+import { FirmaPaketi } from "./firma-paketi";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +73,9 @@ export default async function FirmaKartiSayfasi({
     : { tur: od.tur, kalanGun: od.kalanGun, vade: bicim.tarih(od.vade) };
   const odemeler = await firmaOdemeleri(kart.id);
   const ab = kart.abonelik;
+  const [fp, tumPaketler] = await Promise.all([firmaPaketi(kart.id), paketler()]);
+  // Abonelik tanımsızsa paketin önerisi forma öneri olarak düşer (06.10: tutar firma başına elle kalır).
+  const oneri = ab.tutar === null && fp?.paket?.onerilenTutar != null ? fp.paket : null;
   const aranan = arama.toLocaleLowerCase("tr");
   const gorunen = aranan
     ? kart.kullanicilar.filter((k) => `${k.ad ?? ""} ${k.eposta}`.toLocaleLowerCase("tr").includes(aranan))
@@ -133,6 +138,18 @@ export default async function FirmaKartiSayfasi({
         />
       </section>
 
+      {/* PAKET (K303 ②, 06.10.2026) */}
+      <section id="paket" className="scroll-mt-4 space-y-2">
+        <h2 className="text-lg font-semibold">{t("bolumPaket")}</h2>
+        <FirmaPaketi
+          firmaId={kart.id}
+          firmaAdi={kart.ad}
+          paketId={fp?.paket?.id ?? null}
+          acik={[...(fp?.acik ?? [])]}
+          paketler={tumPaketler.map((p) => ({ id: p.id, ad: p.ad, firmayaOzel: p.firmayaOzel, ozellikler: p.ozellikler }))}
+        />
+      </section>
+
       {/* ÖDEMELER (06.10.2026) — elle takip; gecikme askı sürecine bağlanır */}
       <section id="odemeler" className="scroll-mt-4 space-y-2">
         <h2 className="text-lg font-semibold">{t("bolumOdemeler")}</h2>
@@ -142,10 +159,11 @@ export default async function FirmaKartiSayfasi({
           durum={odemeGorunumu}
           abonelik={{
             // Form varsayılanı Türkçe yazımla («1500,00») — `turkceSayi` geri okur.
-            tutar: ab.tutar === null ? "" : ab.tutar.toFixed(2).replace(".", ","),
+            tutar: ab.tutar !== null ? ab.tutar.toFixed(2).replace(".", ",") : oneri?.onerilenTutar != null ? oneri.onerilenTutar.toFixed(2).replace(".", ",") : "",
             tutarMetni: ab.tutar !== null && ab.paraBirimi ? bicim.para(ab.tutar, ab.paraBirimi) : null,
-            paraBirimi: ab.paraBirimi ?? "TRY",
-            donem: ab.donem ?? "AYLIK",
+            paraBirimi: ab.paraBirimi ?? oneri?.onerilenParaBirimi ?? "TRY",
+            donem: ab.donem ?? oneri?.onerilenDonem ?? "AYLIK",
+            oneriMetni: oneri?.onerilenTutar != null && oneri.onerilenParaBirimi ? `${oneri.ad}: ${bicim.para(oneri.onerilenTutar, oneri.onerilenParaBirimi)}` : null,
             vade: ab.vade ? gunMetni(ab.vade) : "",
           }}
           bugun={gunMetni(bugun)}

@@ -1,8 +1,6 @@
 # SaaS paketleri — özellik kataloğu
 
-_Kullanıcı kararı 30.09.2026. Belge: karar kaydı. **Kod yok** — SaaS'a özel iş
-bugün AÇILMAZ (CLAUDE.md → Büyüme sırası). Uygulama, özellik kataloğu adımı
-açıldığında bu belgeden yapılır._
+_Kullanıcı kararı 30.09.2026. Belge: karar kaydı. **06.10.2026'dan beri kod VAR (yalnız deneme kurulumu, `k303-cok-firma` dalı):** katalog `src/lib/paket/ozellikler.ts`, yönetim `src/lib/paket/yonetim.ts`, süper admin `/bezirga/paketler`. Uygulamanın paketi UYGULAMASI (menü kilidi) ayrı adım, henüz yazılmadı._
 
 ## 1. Ana karar — paket içeriği VERİDİR, KOD DEĞİL
 
@@ -32,6 +30,19 @@ Madde 1 gereği yeri ekrandan değiştirilebilir.
 «her pakette bonus (pazarlama)» önerildi. Aynı gün yerini yukarıdaki dağılım
 ve **esnek paket** kararı aldı — bonus da artık bir veri seçimidir (bir
 özelliği bütün paketlere eklemek), ayrı bir mekanizma gerektirmez.
+
+## 2b. Individuel ve Finansman (kullanıcı kararı 06.10.2026)
+
+- **Individuel = firmaya özel seçim.** Bu pakete alınan firmanın özelliklerini
+  süper admin firma kartında tek tek işaretler; fiyat firma başına elle.
+- **Finansman** (K304 — sermaye, ortak/banka borcu; 30.09 listesinde yoktu)
+  hiçbir hazır pakette değil, yalnız Individuel'de seçilir.
+- **Kâr motoru anahtar DEĞİL:** kendi ekranı yok, satışın parçası. Kapatılabilen
+  bir anahtar olsaydı hiçbir şeyi kapatmayan bir söz verirdi.
+- Var olan firmalar başlangıçta **Individuel + bütün özellikler** ile bağlandı
+  (Premium'a bağlansalardı Finansman'ı kaybederlerdi).
+- Individuel'e geçişte firmanın seçimi o anki açık kümeden yeniden kurulur;
+  eski (bayat) bir seçim geri gelmez.
 
 ## 3. Uygulama çerçevesi (açıldığında)
 
