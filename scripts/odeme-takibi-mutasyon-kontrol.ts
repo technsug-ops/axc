@@ -18,7 +18,9 @@ const BEKCI = "scripts/odeme-takibi-dogrula.ts";
 const BEKCI_BASLIGI = "ÖDEME TAKİBİ BEKÇİSİ";
 const GOVDE = "src/lib/odeme-takibi.ts";
 const EYLEM = "src/app/bezirga/(ic)/firmalar/actions.ts";
-const LISTE = "src/app/bezirga/(ic)/firmalar/page.tsx";
+/* 06.10.2026 — liste rozeti tek etiket kaynağına taşındı; mutasyonun NİYETİ aynı
+   («geciken firma listede görünmez»), yeri değişti. */
+const LISTE = "src/lib/yonetim/durumlar.ts";
 const KART = "src/app/bezirga/(ic)/firmalar/[id]/page.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };

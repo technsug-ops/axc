@@ -10,6 +10,7 @@ import { UYGULAMA } from "@/lib/uygulama";
 import { yonetimOturumu } from "@/lib/yonetim-oturumu";
 
 import { YonetimGirisFormu } from "./giris-formu";
+import { YONETIM_ANA } from "@/lib/yonetim/menu";
 
 /** Giriş durumu her istekte taze okunmalı. */
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export async function generateMetadata() {
 export default async function YonetimGirisSayfasi({ searchParams }: { searchParams: Promise<{ parola?: string }> }) {
   const { parola } = await searchParams;
   const acik = await yonetimOturumu();
-  if (acik) redirect(acik.parolaDegismeli ? `${YONETIM_YOLU}/parola` : `${YONETIM_YOLU}/firmalar`);
+  if (acik) redirect(acik.parolaDegismeli ? `${YONETIM_YOLU}/parola` : YONETIM_ANA);
   const t = await getTranslations("Yonetim");
   return (
     <div className="flex min-h-svh items-center justify-center p-6">

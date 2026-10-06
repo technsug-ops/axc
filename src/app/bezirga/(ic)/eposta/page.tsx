@@ -5,6 +5,11 @@ import { bicimlendirici } from "@/lib/bicim";
 import { gidenEpostalar } from "@/lib/eposta";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
+import { sorunluEpostalar } from "@/lib/yonetim/durumlar";
+import { YONETIM_YOLU } from "@/lib/oturum-imza";
+import Link from "next/link";
+
+import { SayfaBasligi } from "../sayfa-basligi";
 
 export const dynamic = "force-dynamic";
 
@@ -18,16 +23,22 @@ export async function generateMetadata() {
  * olmalı»). Kaynak iz (`EPOSTA_GONDERILDI` · `EPOSTA_GONDERILEMEDI` ·
  * `EPOSTA_AYAR_YOK`); gönderilemeyenin sebebi TAM yazar (İlke #5).
  */
-export default async function GidenEpostalarSayfasi() {
+export default async function GidenEpostalarSayfasi({ searchParams }: { searchParams: Promise<{ durum?: string }> }) {
   await yonetimSayfasi();
   const t = await getTranslations("Yonetim");
   const bicim = await bicimlendirici();
-  const liste = await gidenEpostalar({ adet: 100 });
+  /* «sorunlu» süzgeci — «Bugün»deki satır ve menü rozetiyle AYNI ölçüt
+     (`sorunluEpostalar`): gönderilemeyen + ayarı olmayan, son 30 gün. */
+  const sorunlu = (await searchParams).durum === "sorunlu";
+  const liste = sorunlu ? await sorunluEpostalar() : await gidenEpostalar({ adet: 100 });
 
   return (
     <div className="max-w-4xl space-y-4">
-      <h1 className="text-2xl font-semibold">{t("gidenEpostalar")}</h1>
-      <p className="text-muted-foreground text-sm">{t("epostaListeNotu")}</p>
+      <SayfaBasligi baslik={t("gidenEpostalar")} aciklama={t("epostaListeNotu")} />
+      <nav className="flex flex-wrap gap-1.5">
+        <Link href={`${YONETIM_YOLU}/eposta`} aria-current={!sorunlu ? "true" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-3 text-sm no-underline ${!sorunlu ? "bg-foreground text-background" : "hover:bg-muted"}`}>{t("epostaSuzgecTumu")}</Link>
+        <Link href={`${YONETIM_YOLU}/eposta?durum=sorunlu`} aria-current={sorunlu ? "true" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-3 text-sm no-underline ${sorunlu ? "bg-foreground text-background" : `hover:bg-muted ${DURUM_YAZISI.olumsuz}`}`}>{t("epostaSuzgecSorunlu")}</Link>
+      </nav>
       <p className="text-muted-foreground text-sm">{t("epostaSayisi", { sayi: liste.length })}</p>
       {liste.length === 0 ? (
         <p className="text-muted-foreground text-sm">{t("epostaYok")}</p>

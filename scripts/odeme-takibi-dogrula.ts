@@ -191,8 +191,17 @@ async function main() {
   const kart = yorumsuz(kaynakOku("src/app/bezirga/(ic)/firmalar/[id]/page.tsx"));
   kontrol("firma kartı ödemeleri firmaOdemeleri(kart.id) ile okur", kart.includes("await firmaOdemeleri(kart.id)"));
   kontrol("firma kartı durumu kartın vadesinden hesaplar", kart.includes("odemeDurumu(kart.abonelik.vade, bugun)"));
+  /* 06.10.2026 — liste rozeti, «Bugün» ve menü rozeti tek etiket kaynağına taşındı
+     (`lib/yonetim/durumlar`). Kaynak taramak yerine SAF gövde ÇAĞRILIR (değer testi). */
+  const { etiketleriHesapla } = await import("../src/lib/yonetim/durumlar");
+  const etiketGunu = new Date(Date.UTC(2026, 9, 6));
+  const etiket = (vade: Date | null) =>
+    etiketleriHesapla({ aktif: true, uyariSonGun: null, uyariSebebi: null, askiSebebi: null, sonrakiOdemeGunu: vade, paketVar: true }, "TAM", false, etiketGunu);
+  kontrol("liste etiketi: dünkü vade → «ödeme gecikti»", etiket(new Date(Date.UTC(2026, 9, 5))).includes("ODEME_GECIKTI"));
+  kontrol("liste etiketi: 3 gün sonraki vade → «ödeme yaklaşıyor», gecikmiş DEĞİL", etiket(new Date(Date.UTC(2026, 9, 9))).includes("ODEME_YAKLASIYOR") && !etiket(new Date(Date.UTC(2026, 9, 9))).includes("ODEME_GECIKTI"));
+  kontrol("liste etiketi: abonelik yok → ödeme etiketi YOK", !etiket(null).some((e) => e.startsWith("ODEME_")));
   const liste = yorumsuz(kaynakOku("src/app/bezirga/(ic)/firmalar/page.tsx"));
-  kontrol("firmalar listesi rozeti firmanın vadesinden hesaplar", liste.includes("odemeDurumu(f.sonrakiOdemeGunu, bugun)"));
+  kontrol("firmalar listesi etiketleri tek kaynaktan okur (firmaOzetleri)", liste.includes("const tumu = await firmaOzetleri();"));
 
   const { readdirSync, statSync } = await import("node:fs");
   const { join } = await import("node:path");

@@ -1,6 +1,7 @@
 "use server";
 
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
+import { YONETIM_ANA } from "@/lib/yonetim/menu";
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -66,7 +67,7 @@ export async function yonetimGirisYap(
   await yonetimOturumuAc(kullanici.id);
   await izYaz({ action: "YONETIM_GIRIS", targetType: "User", targetId: kullanici.id, userId: kullanici.id, detail: JSON.stringify({ ip }) });
   // Parolası değişmeli ise doğrudan parola ekranı (kapı da yönlendirirdi; bir adım az).
-  redirect(kullanici.mustChangePassword ? `${YONETIM_YOLU}/parola` : `${YONETIM_YOLU}/firmalar`);
+  redirect(kullanici.mustChangePassword ? `${YONETIM_YOLU}/parola` : YONETIM_ANA);
 }
 
 export async function yonetimCikisYap() {

@@ -11,6 +11,7 @@ import { paketler } from "@/lib/paket/yonetim";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
 
 import { PaketBilgisiFormu } from "./paket-bilgisi-formu";
+import { SayfaBasligi } from "../sayfa-basligi";
 
 export const dynamic = "force-dynamic";
 
@@ -33,10 +34,7 @@ export default async function PaketlerSayfasi() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("paketler")}</h1>
-        <p className="text-muted-foreground text-sm">{t("paketlerAciklama")}</p>
-      </div>
+      <SayfaBasligi baslik={t("paketler")} aciklama={t("paketlerAciklama")} />
       <ul className="divide-y rounded-lg border">
         {liste.map((p) => (
           <li key={p.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 text-sm">

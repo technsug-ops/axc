@@ -1,21 +1,19 @@
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { FolderOpen, Plus } from "lucide-react";
+import { PanelRightOpen, Plus } from "lucide-react";
 
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { askiDurumu, bugunIs } from "@/lib/aski-sureci";
-import { kurulumDurumlari } from "@/lib/firma-acilisi";
-import { odemeDurumu } from "@/lib/odeme-takibi";
-import { kullanimGorunumu } from "@/lib/paket/kullanim-gorunumu";
-import { DURUM_YAZISI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
-import { sistemPrisma } from "@/lib/prisma";
+import { DURUM_YAZISI } from "@/lib/renkler";
+import { ETIKET_RENGI, etiketSayilari, firmaEtiketiMi, firmaOzetleri, FIRMA_ETIKETLERI, type FirmaEtiketi } from "@/lib/yonetim/durumlar";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
 
+import { SayfaBasligi } from "../sayfa-basligi";
+import { FirmaCekmecesi } from "./firma-cekmecesi";
 import { FirmaEylemleri } from "./firma-eylemleri";
 
 export const dynamic = "force-dynamic";
@@ -25,115 +23,109 @@ export async function generateMetadata() {
   return { title: t("firmalar") };
 }
 
+/** Liste adresi — arama, durum süzgeci ve açık çekmece birlikte taşınır. */
+function adres(g: { q?: string; durum?: string; ac?: string }): string {
+  const p = new URLSearchParams();
+  if (g.q) p.set("q", g.q);
+  if (g.durum) p.set("durum", g.durum);
+  if (g.ac) p.set("ac", g.ac);
+  const s = p.toString();
+  return `${YONETIM_YOLU}/firmalar${s ? `?${s}` : ""}`;
+}
+
 /**
- * FİRMALAR — Selliora yönetim katmanı (K303 4c-2). Bütün müşteri firmalar.
- * Yalnız KAYIT bilgisi (ad, kod, durum, üye sayısı) — ticari veri YOK
- * (kullanıcı kararı 04.10.2026: süper admin firmanın ticari ekranlarını
- * görmez). İlke #17: arama kutusu; sayı ekranda yazar.
+ * FİRMALAR — referans iskeletin `families` sayfası (HA-Kompass admin):
+ * süzgeç çipleri + arama + liste; satıra tıklayınca sayfa DEĞİŞMEZ, sağdan
+ * çekmece açılır (`?ac=`). Durum süzgeci «Bugün» ve menü rozetleriyle AYNI
+ * etiketten (`lib/yonetim/durumlar`) — sayı = liste (İlke #16).
+ * Yalnız KAYIT bilgisi — ticari veri YOK (kullanıcı kararı 04.10.2026).
+ * İlke #17: arama kutusu; kaç sonuç bulunduğu yazar.
  */
-export default async function FirmalarSayfasi({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function FirmalarSayfasi({ searchParams }: { searchParams: Promise<{ q?: string; durum?: string; ac?: string }> }) {
   await yonetimSayfasi();
-  const { q } = await searchParams;
-  const arama = (q ?? "").trim();
+  const sp = await searchParams;
+  const arama = (sp.q ?? "").trim();
+  const durum: FirmaEtiketi | undefined = firmaEtiketiMi(sp.durum) ? sp.durum : undefined;
   const t = await getTranslations("Yonetim");
+  const tf = await getTranslations("FirmaDurumu");
   const bicim = await bicimlendirici();
 
-  const [toplam, firmalar] = await Promise.all([
-    // SISTEM: yönetim katmanı firmalar-üstüdür — toplam firma sayısı.
-    sistemPrisma.company.count(),
-    // SISTEM: yönetim katmanı firmalar-üstüdür — firmaların KAYDI (ticari veri değil).
-    sistemPrisma.company.findMany({
-      where: arama ? { OR: [{ name: { contains: arama } }, { code: { contains: arama } }] } : {},
-      select: { id: true, name: true, code: true, isActive: true, createdAt: true, uyariSonGun: true, uyariSebebi: true, askiSebebi: true, sonrakiOdemeGunu: true, paket: { select: { ad: true } }, _count: { select: { uyelikler: true } } },
-      orderBy: { createdAt: "asc" },
-    }),
-  ]);
-  const durumlar = await kurulumDurumlari(firmalar.map((f) => f.id));
-  // Paket sınırı dolu/aşılmış firmalar — süper admin için satış fırsatı (rozet kartın paket bölümüne götürür).
-  const sinirDikkat = new Map(await Promise.all(firmalar.map(async (f) => [f.id, (await kullanimGorunumu(f.id)).dikkat.length] as const)));
-  const bugun = bugunIs();
+  const tumu = await firmaOzetleri();
+  const sayilar = etiketSayilari(tumu);
+  const aranan = arama.toLocaleLowerCase("tr");
+  const firmalar = tumu.filter(
+    (f) => (!durum || f.etiketler.includes(durum)) && (!aranan || `${f.ad} ${f.kod}`.toLocaleLowerCase("tr").includes(aranan)),
+  );
+  const acik = sp.ac && tumu.some((f) => f.id === sp.ac) ? sp.ac : undefined;
 
   return (
-    <div className="max-w-3xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold">{t("firmalar")}</h1>
-        <Button asChild className="min-h-11">
-          <Link href={`${YONETIM_YOLU}/firmalar/yeni`}>
-            <Plus />
-            {t("yeniFirma")}
+    <div className="space-y-4">
+      <SayfaBasligi
+        baslik={t("firmalar")}
+        aciklama={t("firmalarAciklama")}
+        eylemler={
+          <Button asChild className="min-h-11">
+            <Link href={`${YONETIM_YOLU}/firmalar/yeni`}>
+              <Plus />
+              {t("yeniFirma")}
+            </Link>
+          </Button>
+        }
+      />
+
+      {/* DURUM ÇİPLERİ — sayı = liste; seçili olan sıfır olsa da görünür */}
+      <nav aria-label={t("durumSuzgeci")} className="flex flex-wrap gap-1.5">
+        <Link href={adres({ q: arama })} aria-current={!durum ? "true" : undefined} className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm no-underline ${!durum ? "bg-foreground text-background" : "hover:bg-muted"}`}>
+          {t("tumu")} <b className="tabular-nums">{tumu.length}</b>
+        </Link>
+        {FIRMA_ETIKETLERI.filter((e) => (sayilar.get(e) ?? 0) > 0 || e === durum).map((e) => (
+          <Link key={e} href={adres({ q: arama, durum: e })} aria-current={durum === e ? "true" : undefined} className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm no-underline ${durum === e ? "bg-foreground text-background" : `hover:bg-muted ${DURUM_YAZISI[ETIKET_RENGI[e]]}`}`}>
+            {tf(e)} <b className="tabular-nums">{sayilar.get(e) ?? 0}</b>
           </Link>
-        </Button>
-      </div>
-      <KodAramaKutusu temelAdres={`${YONETIM_YOLU}/firmalar`} baslangic={arama} tasinanlar={{}} ipucu={t("firmaAramaIpucu")} />
+        ))}
+      </nav>
+
+      <KodAramaKutusu temelAdres={`${YONETIM_YOLU}/firmalar`} baslangic={arama} tasinanlar={durum ? { durum } : {}} ipucu={t("firmaAramaIpucu")} />
       <p className="text-muted-foreground text-sm">
-        {arama ? t("aramaSonucu", { bulunan: firmalar.length, toplam }) : t("firmaSayisi", { toplam })}
+        {arama || durum ? t("aramaSonucu", { bulunan: firmalar.length, toplam: tumu.length }) : t("firmaSayisi", { toplam: tumu.length })}
       </p>
+
       {firmalar.length === 0 ? (
-        <p className="text-muted-foreground text-sm">{arama ? t("aramaBos") : t("firmaYok")}</p>
+        <p className="text-muted-foreground text-sm">{arama || durum ? t("aramaBos") : t("firmaYok")}</p>
       ) : (
-        <ul className="divide-y rounded-lg border">
+        <ul className="bg-card divide-y rounded-xl border">
           {firmalar.map((f) => (
-            <li key={f.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 text-sm">
-              <Link href={`${YONETIM_YOLU}/firmalar/${f.id}`} className="min-w-40 font-medium underline-offset-4 hover:underline">
-                {f.name}
+            <li key={f.id} className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-3 text-sm ${acik === f.id ? "bg-muted" : ""}`}>
+              <Link href={adres({ q: arama, durum, ac: f.id })} scroll={false} className="min-w-40 font-medium underline-offset-4 hover:underline">
+                {f.ad}
               </Link>
-              <KopyalanabilirKod deger={f.code} etiket={t("firmaKodu")} />
-              {(() => {
-                const d = durumlar.get(f.id) ?? (f.isActive ? "TAM" : "PASIF");
-                return (
-                  <>
-                    <Badge variant={d === "TAM" ? "secondary" : d === "YARIM" ? "destructive" : "outline"}>
-                      {d === "TAM" ? t("aktif") : d === "YARIM" ? t("kurulumYarim") : t("pasif")}
-                    </Badge>
-                    {(() => {
-                      // Askı süreci rozeti (05.10.2026) — İstanbul gününe göre.
-                      const a = askiDurumu({ aktif: f.isActive, uyariSonGun: f.uyariSonGun, uyariSebebi: f.uyariSebebi, askiSebebi: f.askiSebebi }, bugun);
-                      if (a.tur === "UYARIDA") return <Badge variant="outline" className={DURUM_YAZISI.uyari}>{a.kalanGun === 0 ? t("durumUyaridaBugun") : t("durumUyarida", { kalan: a.kalanGun })}</Badge>;
-                      if (a.tur === "SURESI_DOLDU") return <Badge variant="destructive">{t("durumSuresiDoldu", { gecen: a.gecenGun })}</Badge>;
-                      return null;
-                    })()}
-                    {(() => {
-                      // Ödeme rozeti (06.10.2026) — tıklanınca kartın ödeme bölümü (İlke #16).
-                      const o = odemeDurumu(f.sonrakiOdemeGunu, bugun);
-                      if (o.tur !== "GECIKTI" && o.tur !== "YAKLASIYOR") return null;
-                      return (
-                        <Link href={`${YONETIM_YOLU}/firmalar/${f.id}#odemeler`} className="inline-flex min-h-11 items-center">
-                          <Badge variant={o.tur === "GECIKTI" ? "destructive" : "outline"} className={o.tur === "YAKLASIYOR" ? `${DURUM_YAZISI.uyari} underline-offset-4 hover:underline` : "underline-offset-4 hover:underline"}>
-                            {o.tur === "GECIKTI" ? t("odemeRozetGecikti", { gecen: o.gecenGun }) : t("odemeRozetYaklasiyor", { kalan: o.kalanGun })}
-                          </Badge>
-                        </Link>
-                      );
-                    })()}
-                    {(sinirDikkat.get(f.id) ?? 0) > 0 ? (
-                      <Link href={`${YONETIM_YOLU}/firmalar/${f.id}#paket`} className="inline-flex min-h-11 items-center">
-                        <Badge variant="outline" className={`${DURUM_YAZISI.uyari} underline-offset-4 hover:underline`}>{t("sinirRozeti", { sayi: sinirDikkat.get(f.id) ?? 0 })}</Badge>
-                      </Link>
-                    ) : null}
-                    {f.paket ? (
-                      <span className="text-muted-foreground">{t("paketRozeti", { ad: f.paket.ad })}</span>
-                    ) : (
-                      <Link href={`${YONETIM_YOLU}/firmalar/${f.id}#paket`} className="inline-flex min-h-11 items-center">
-                        <Badge variant="destructive" className="underline-offset-4 hover:underline">{t("paketsizRozet")}</Badge>
-                      </Link>
-                    )}
-                    <span className="text-muted-foreground">{t("uyeSayisi", { sayi: f._count.uyelikler })}</span>
-                    <span className="text-muted-foreground text-xs">{t("acilis", { tarih: bicim.tarih(f.createdAt) })}</span>
-                    <div className="ml-auto flex flex-wrap items-start gap-2">
-                      <Button asChild size="sm" variant="outline" className="min-h-11">
-                        <Link href={`${YONETIM_YOLU}/firmalar/${f.id}`}>
-                          <FolderOpen />
-                          {t("kartiAc")}
-                        </Link>
-                      </Button>
-                      <FirmaEylemleri firmaId={f.id} firmaAdi={f.name} durum={d} />
-                    </div>
-                  </>
-                );
-              })()}
+              <KopyalanabilirKod deger={f.kod} etiket={t("firmaKodu")} />
+              <span className="flex flex-wrap gap-1">
+                {f.etiketler.filter((e) => e !== "AKTIF").map((e) => (
+                  <Link key={e} href={adres({ q: arama, durum: e })} className="inline-flex min-h-11 items-center">
+                    <Badge variant="outline" className={`${DURUM_YAZISI[ETIKET_RENGI[e]]} underline-offset-4 hover:underline`}>{tf(e)}</Badge>
+                  </Link>
+                ))}
+                {f.etiketler.includes("AKTIF") && f.etiketler.length === 1 ? <Badge variant="secondary">{tf("AKTIF")}</Badge> : null}
+              </span>
+              <span className="text-muted-foreground">{f.paket ? t("paketRozeti", { ad: f.paket }) : null}</span>
+              <span className="text-muted-foreground">{t("uyeSayisi", { sayi: f.uyeSayisi })}</span>
+              <span className="text-muted-foreground text-xs">{t("acilis", { tarih: bicim.tarih(f.acilis) })}</span>
+              <div className="ml-auto flex flex-wrap items-start gap-2">
+                <Button asChild size="sm" variant="outline" className="min-h-11">
+                  <Link href={adres({ q: arama, durum, ac: f.id })} scroll={false}>
+                    <PanelRightOpen />
+                    {t("kartiAc")}
+                  </Link>
+                </Button>
+                <FirmaEylemleri firmaId={f.id} firmaAdi={f.ad} durum={f.kurulum} />
+              </div>
             </li>
           ))}
         </ul>
       )}
+
+      {acik ? <FirmaCekmecesi firmaId={acik} kapatAdresi={adres({ q: arama, durum })} /> : null}
     </div>
   );
 }

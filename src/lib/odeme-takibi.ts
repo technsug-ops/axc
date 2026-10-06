@@ -210,3 +210,43 @@ export async function firmaOdemeleri(firmaId: string) {
     toplamlar: [...toplamKurus.entries()].map(([paraBirimi, k]) => ({ paraBirimi, tutar: k / 100 })),
   };
 }
+
+/**
+ * Bütün firmaların ödeme durumu — yönetim «Ödemeler» sayfası (referans
+ * iskelet, 06.10.2026). Durum `odemeDurumu` ile — «Bugün»deki ve menü
+ * rozetindeki «gecikti» sayısıyla AYNI gövde (sayı = liste).
+ */
+export async function odemeGenelBakisi(an: Date = new Date()) {
+  const bugun = bugunIs(an);
+  const ayBasi = new Date(Date.UTC(bugun.getUTCFullYear(), bugun.getUTCMonth(), 1));
+  const [firmalar, buAy] = await Promise.all([
+    // SISTEM: yönetim katmanı — firmaların abonelik alanları ve son ödemesi.
+    sistemPrisma.company.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, code: true, aboneTutari: true, aboneParaBirimi: true, aboneDonemi: true, sonrakiOdemeGunu: true, paket: { select: { ad: true } }, odemeler: { where: { duzeltilenId: null }, orderBy: [{ odemeGunu: "desc" }, { createdAt: "desc" }], take: 1, select: { odemeGunu: true, tutar: true, paraBirimi: true } } },
+    }),
+    // SISTEM: yönetim katmanı — bu ayın ödeme defteri (ters kayıtlar dahil, toplamdan düşer).
+    sistemPrisma.firmaOdemesi.findMany({
+      where: { odemeGunu: { gte: ayBasi, lte: bugun } },
+      orderBy: [{ odemeGunu: "desc" }, { createdAt: "desc" }],
+      select: { id: true, odemeGunu: true, tutar: true, paraBirimi: true, yontem: true, duzeltilenId: true, firma: { select: { id: true, name: true } } },
+    }),
+  ]);
+  const toplam = new Map<string, number>();
+  for (const o of buAy) toplam.set(o.paraBirimi, (toplam.get(o.paraBirimi) ?? 0) + kurus(o.tutar));
+  return {
+    firmalar: firmalar.map((f) => ({
+      id: f.id,
+      ad: f.name,
+      kod: f.code,
+      paket: f.paket?.ad ?? null,
+      tutar: f.aboneTutari === null ? null : kurus(f.aboneTutari) / 100,
+      paraBirimi: f.aboneParaBirimi,
+      donem: f.aboneDonemi,
+      durum: odemeDurumu(f.sonrakiOdemeGunu, bugun),
+      sonOdeme: f.odemeler[0] ? { gun: f.odemeler[0].odemeGunu, tutar: kurus(f.odemeler[0].tutar) / 100, paraBirimi: f.odemeler[0].paraBirimi } : null,
+    })),
+    buAy: buAy.map((o) => ({ id: o.id, gun: o.odemeGunu, tutar: kurus(o.tutar) / 100, paraBirimi: o.paraBirimi, yontem: o.yontem, tersKayit: Boolean(o.duzeltilenId), firmaId: o.firma.id, firma: o.firma.name })),
+    buAyToplam: [...toplam].map(([paraBirimi, k]) => ({ paraBirimi, tutar: k / 100 })),
+  };
+}
