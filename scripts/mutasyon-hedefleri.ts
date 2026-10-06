@@ -383,4 +383,6 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "firma-acilisi-mutasyon:kontrol",
   /** K303 Model 2 (05.10.2026) — `hesap-modeli` oturum-firmasi, giriş, kullanıcılar ve firma açılışını mutasyona uğratıyor. */
   "hesap-modeli-mutasyon:kontrol",
+  /** K303 ödeme takibi (06.10.2026) — `odeme-takibi` firmalar listesini (yonetim-kapisi ile ortak) ve firma kartını mutasyona uğratıyor. */
+  "odeme-takibi-mutasyon:kontrol",
 ];

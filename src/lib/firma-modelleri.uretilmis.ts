@@ -217,6 +217,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
   "Company": {
     "firma": false,
     "iliskiler": {
+      "odemeler": {
+        "hedef": "FirmaOdemesi",
+        "liste": true
+      },
       "uyelikler": {
         "hedef": "UserCompanyRole",
         "liste": true
@@ -636,6 +640,32 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       "finansmanId",
       "faizGiderId",
       "reversesId"
+    ]
+  },
+  "FirmaOdemesi": {
+    "firma": false,
+    "iliskiler": {
+      "firma": {
+        "hedef": "Company",
+        "liste": false
+      },
+      "duzeltilen": {
+        "hedef": "FirmaOdemesi",
+        "liste": false
+      },
+      "duzeltme": {
+        "hedef": "FirmaOdemesi",
+        "liste": false
+      },
+      "yazan": {
+        "hedef": "User",
+        "liste": false
+      }
+    },
+    "yabanciAnahtarlar": [
+      "firmaId",
+      "duzeltilenId",
+      "yazanId"
     ]
   },
   "GecmisEkstre": {
@@ -1465,6 +1495,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       },
       "kapattigiDonemler": {
         "hedef": "MuhasebeDonemi",
+        "liste": true
+      },
+      "girdigiOdemeler": {
+        "hedef": "FirmaOdemesi",
         "liste": true
       },
       "iadeler": {

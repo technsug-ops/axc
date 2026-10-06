@@ -19,7 +19,7 @@ import { sistemPrisma } from "@/lib/prisma";
  * ============================================================================
  */
 
-export type EpostaTuru = "ASKI_UYARI" | "ASKI_UYARI_KALDIRILDI" | "ASKI_BASLADI" | "ASKI_KALDIRILDI";
+export type EpostaTuru = "ASKI_UYARI" | "ASKI_UYARI_KALDIRILDI" | "ASKI_BASLADI" | "ASKI_KALDIRILDI" | "ODEME_HATIRLATMA";
 
 export type Gonderici = { sendMail(m: { from: string; to: string; subject: string; text: string }): Promise<unknown> };
 

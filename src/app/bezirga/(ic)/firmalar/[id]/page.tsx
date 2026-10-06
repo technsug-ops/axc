@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { bicimlendirici } from "@/lib/bicim";
 import { askiDurumu, bugunIs, surecGecmisi, UYARI_EN_AZ_GUN, UYARI_EN_COK_GUN } from "@/lib/aski-sureci";
 import { firmaKarti } from "@/lib/firma-karti";
+import { gunMetni } from "@/lib/donem";
+import { firmaOdemeleri, odemeDurumu } from "@/lib/odeme-takibi";
 import type { FirmaAskiSebebi } from "@/generated/prisma/client";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
@@ -16,6 +18,7 @@ import { FirmaEylemleri } from "../firma-eylemleri";
 import { AskiSureci, type AskiGorunumu } from "./aski-sureci";
 import { FirmaAdiFormu } from "./firma-adi-formu";
 import { KartKullanicilari } from "./kart-kullanicilari";
+import { OdemeTakibi, type OdemeGorunumu } from "./odeme-takibi";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +63,14 @@ export default async function FirmaKartiSayfasi({
     : durum.tur === "SURESI_DOLDU" ? { tur: "SURESI_DOLDU", gecenGun: durum.gecenGun, sonGun: bicim.tarih(durum.sonGun), sebep: durum.sebep }
     : durum;
   const gecmis = await surecGecmisi(kart.id);
+  const bugun = bugunIs();
+  const od = odemeDurumu(kart.abonelik.vade, bugun);
+  const odemeGorunumu: OdemeGorunumu =
+    od.tur === "TANIMSIZ" ? od
+    : od.tur === "GECIKTI" ? { tur: "GECIKTI", gecenGun: od.gecenGun, vade: bicim.tarih(od.vade) }
+    : { tur: od.tur, kalanGun: od.kalanGun, vade: bicim.tarih(od.vade) };
+  const odemeler = await firmaOdemeleri(kart.id);
+  const ab = kart.abonelik;
   const aranan = arama.toLocaleLowerCase("tr");
   const gorunen = aranan
     ? kart.kullanicilar.filter((k) => `${k.ad ?? ""} ${k.eposta}`.toLocaleLowerCase("tr").includes(aranan))
@@ -119,6 +130,27 @@ export default async function FirmaKartiSayfasi({
             ...k,
             sonGiris: k.sonGiris ? bicim.tarihSaat(k.sonGiris) : null,
           }))}
+        />
+      </section>
+
+      {/* ÖDEMELER (06.10.2026) — elle takip; gecikme askı sürecine bağlanır */}
+      <section id="odemeler" className="scroll-mt-4 space-y-2">
+        <h2 className="text-lg font-semibold">{t("bolumOdemeler")}</h2>
+        <OdemeTakibi
+          firmaId={kart.id}
+          firmaAdi={kart.ad}
+          durum={odemeGorunumu}
+          abonelik={{
+            // Form varsayılanı Türkçe yazımla («1500,00») — `turkceSayi` geri okur.
+            tutar: ab.tutar === null ? "" : ab.tutar.toFixed(2).replace(".", ","),
+            tutarMetni: ab.tutar !== null && ab.paraBirimi ? bicim.para(ab.tutar, ab.paraBirimi) : null,
+            paraBirimi: ab.paraBirimi ?? "TRY",
+            donem: ab.donem ?? "AYLIK",
+            vade: ab.vade ? gunMetni(ab.vade) : "",
+          }}
+          bugun={gunMetni(bugun)}
+          satirlar={odemeler.satirlar.map((s) => ({ ...s, gun: bicim.tarih(s.gun), tutar: bicim.para(s.tutar, s.paraBirimi) }))}
+          toplamlar={odemeler.toplamlar.map((x) => bicim.para(x.tutar, x.paraBirimi))}
         />
       </section>
 

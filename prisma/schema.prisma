@@ -2801,6 +2801,8 @@ model User {
   /// acmaz, yabanci anahtar `MuhasebeDonemi` tarafinda. `User` tablosu
   /// DEGISMEZ — migration yalnizca yeni tabloyu yaratmali.
   kapattigiDonemler   MuhasebeDonemi[]  @relation("DonemKapatan")
+  /// K303 ödeme takibi — süper adminin girdiği ödeme kayıtları.
+  girdigiOdemeler     FirmaOdemesi[]    @relation("OdemeyiGiren")
   iadeler             Return[]          @relation("IadeGiren")
   /// K44 ② — geri aldığı iadeler. TERS İLİŞKİ: `User` tablosu DEĞİŞMEZ.
   iadeGeriAlmalari    Return[]          @relation("IadeGeriAlan")
@@ -3319,6 +3321,17 @@ model Company {
   askiSebebi    FirmaAskiSebebi?
   /// Sebep «DIGER» ise zorunlu açıklama; öteki sebeplerde isteğe bağlı not.
   askiAciklama  String?          @db.Text
+
+  /// ═══ ABONELİK (K303, kullanıcı kararı 06.10.2026: elle ödeme takibi) ═══════
+  /// Tutar FİRMA BAŞINA elle (paketler gelince öneri olur). Anayasa: para = Decimal
+  /// + para birimi. `null` = abonelik tanımlanmadı (takip yok, gecikme sayılmaz).
+  aboneTutari       Decimal?     @db.Decimal(14, 2)
+  aboneParaBirimi   Currency?
+  aboneDonemi       AboneDonemi?
+  /// Bir sonraki ödemenin son günü (İstanbul günü, UTC gece yarısı). Ödeme kaydı
+  /// girilince bir dönem ileri kayar; ters kayıt geri alır (kayıt önceki/yeni değeri taşır).
+  sonrakiOdemeGunu  DateTime?
+  odemeler          FirmaOdemesi[] @relation("FirmaOdemeleri")
 
   uyelikler UserCompanyRole[]
   /// Model 2 (05.10.2026): bu firmaya ait hesaplar.
@@ -4123,4 +4136,56 @@ model AiOzet {
   @@index([isGunu, createdAt])
 
   @@index([companyId])
+}
+
+/// K303 — abonelik dönemi (06.10.2026).
+enum AboneDonemi {
+  AYLIK
+  YILLIK
+}
+
+/// K303 — abonelik ödemesinin yolu. ⚠ Gider tarafındaki `OdemeYontemi` KULLANILMADI:
+/// oradaki KART firmanın kendi kredi kartına (`creditCardId`) bağlı bir anlam taşır.
+enum FirmaOdemeYontemi {
+  HAVALE
+  KART
+  NAKIT
+  DIGER
+}
+
+/// ═══ FİRMA ÖDEMESİ — elle ödeme kaydı (K303, kullanıcı kararı 06.10.2026) ═══════
+/// Süper admin «ödeme alındı» girer. Kayıt SİLİNMEZ, DEĞİŞTİRİLMEZ (anayasa: defter);
+/// yanlış kayıt TERS kayıtla (eksi tutar + `duzeltilenId`) düzeltilir.
+/// ⚠ Firma alanının adı bilerek `companyId` DEĞİL: kayıt yönetim katmanına aittir;
+/// süzgece girerse firmanın kendi ekranlarına sızar (`firma-modelleri-uret.ts`).
+/// ⚠ Kayıt sonraki ödeme gününün ÖNCEKİ ve YENİ değerini taşır — ters kayıt vadeyi
+/// doğru yere geri alır (anayasa: toplu yazımda önceki değer satır bazında saklanır).
+model FirmaOdemesi {
+  id String @id @default(cuid())
+
+  firmaId String
+  firma   Company @relation("FirmaOdemeleri", fields: [firmaId], references: [id], onDelete: Restrict)
+
+  /// Paranın geldiği gün (İstanbul günü).
+  odemeGunu  DateTime
+  tutar      Decimal           @db.Decimal(14, 2)
+  paraBirimi Currency
+  yontem     FirmaOdemeYontemi
+  aciklama   String?           @db.Text
+
+  /// Ters kayıtsa düzelttiği kayıt; bir kayıt en çok BİR kez düzeltilir.
+  duzeltilenId String?        @unique
+  duzeltilen   FirmaOdemesi?  @relation("OdemeDuzeltmesi", fields: [duzeltilenId], references: [id], onDelete: Restrict)
+  duzeltme     FirmaOdemesi?  @relation("OdemeDuzeltmesi")
+
+  /// Sonraki ödeme gününün bu kayıttan ÖNCEKİ ve SONRAKİ değeri.
+  vadeOnce  DateTime?
+  vadeSonra DateTime?
+
+  yazanId String
+  yazan   User   @relation("OdemeyiGiren", fields: [yazanId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@index([firmaId, odemeGunu])
 }

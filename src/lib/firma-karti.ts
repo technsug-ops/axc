@@ -68,6 +68,13 @@ export type FirmaKarti = {
     askiSebebi: string | null;
     aciklama: string | null;
   };
+  /** Abonelik (elle ödeme takibi, 06.10.2026) — tanımsızsa alanlar null. */
+  abonelik: {
+    tutar: number | null;
+    paraBirimi: string | null;
+    donem: string | null;
+    vade: Date | null;
+  };
   ayarlar: {
     maliyetYontemi: string;
     lotKipi: string;
@@ -93,6 +100,10 @@ export async function firmaKarti(firmaId: string): Promise<FirmaKarti | null> {
       uyariSebebi: true,
       askiSebebi: true,
       askiAciklama: true,
+      aboneTutari: true,
+      aboneParaBirimi: true,
+      aboneDonemi: true,
+      sonrakiOdemeGunu: true,
       _count: {
         select: {
           productListesi: true,
@@ -154,6 +165,12 @@ export async function firmaKarti(firmaId: string): Promise<FirmaKarti | null> {
       kullanici: f._count.uyelikler,
     },
     aski: { uyariSonGun: f.uyariSonGun, uyariSebebi: f.uyariSebebi, askiSebebi: f.askiSebebi, aciklama: f.askiAciklama },
+    abonelik: {
+      tutar: f.aboneTutari === null ? null : Math.round(Number(f.aboneTutari.toString()) * 100) / 100,
+      paraBirimi: f.aboneParaBirimi,
+      donem: f.aboneDonemi,
+      vade: f.sonrakiOdemeGunu,
+    },
     ayarlar: {
       maliyetYontemi: f.maliyetYontemi,
       lotKipi: f.lotKipi,
