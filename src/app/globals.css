@@ -22,7 +22,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
+    --font-heading: var(--font-baslik);
     --font-sans: var(--font-sans);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -248,6 +248,38 @@
     [data-slot="sidebar"] [data-slot="sidebar-group-label"] {
         height: 2.75rem;
     }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   YÖNETİM PANELİYLE AYNI ÇİZİM — kart, tablo başlığı, başlık yazısı, menü
+   ----------------------------------------------------------------------
+   Kullanıcı kararı 07.10.2026: firma ekranları da yönetim panelinin
+   (HA-Kompass referansı, `bezirga/yonetim.css`) görünümüne geçer — renk
+   VE çizim. Bileşen kodu değişmez; ölçü `data-slot` üzerinden tek yerde.
+   ⚠ İLKEL BİLEŞENLERE DOKUNULMADI (`ui/*`): satıcı kodu (bkz. menü notu).
+   ⚠ Kenarlık kalınlığı/koyuluğu 22.08 kararında kalır (bekçi kilitli);
+   referanstaki daha soluk çizgi yerine bir kademe koyu ton kullanılır.
+   ══════════════════════════════════════════════════════════════════════ */
+h1, h2, h3, [data-slot="card-title"] {
+    font-family: var(--font-baslik), var(--font-sans), system-ui, sans-serif;
+    letter-spacing: -0.01em;
+}
+[data-slot="card"] {
+    border-radius: 14px;
+    box-shadow: var(--se-golge-1);
+}
+[data-slot="table-head"] {
+    background: var(--se-baslik);
+    color: var(--muted-foreground);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+[data-slot="sidebar"] [data-slot="sidebar-group-label"] {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.6875rem;
 }
 
 @layer utilities {

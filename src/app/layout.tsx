@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
-import { Geist } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import { BookOpen, Home } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -40,7 +40,9 @@ import { bicimlendirici } from "@/lib/bicim";
 import { firmaKilitliEkranlari } from "@/lib/paket/erisim";
 import { duzendenCikar } from "@/lib/paket/ozellikler";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+/* Yazı: gövde Inter, başlık Poppins — yönetim paneliyle aynı (kullanıcı kararı 07.10.2026). */
+const govde = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-sans" });
+const baslik = Poppins({ subsets: ["latin", "latin-ext"], weight: ["600", "700"], variable: "--font-baslik" });
 
 /**
  * ⚠ TEMA REACT'TEN ÖNCE UYGULANIR — yoksa sayfa bir kare AÇIK temada
@@ -267,7 +269,7 @@ export default async function RootLayout({
     return (
       <html
         lang={dil}
-        className={cn("font-sans", geist.variable)}
+        className={cn("font-sans", govde.variable, baslik.variable)}
         /* Tema betiği `data-tema` ve `.dark` ekliyor; sunucu çıktısıyla
            istemci ilk karesi bu yüzden AYRIŞIR ve bu beklenen hâldir. */
         suppressHydrationWarning
@@ -311,7 +313,7 @@ export default async function RootLayout({
   return (
     <html
         lang={dil}
-        className={cn("font-sans", geist.variable)}
+        className={cn("font-sans", govde.variable, baslik.variable)}
         /* Tema betiği `data-tema` ve `.dark` ekliyor; sunucu çıktısıyla
            istemci ilk karesi bu yüzden AYRIŞIR ve bu beklenen hâldir. */
         suppressHydrationWarning
