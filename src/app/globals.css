@@ -22,7 +22,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-baslik);
+    --font-heading: var(--font-sans);
     --font-sans: var(--font-sans);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -99,9 +99,10 @@
      rozet 5-6px). Renk DEĞİL, o yüzden `--radius` burada KALIYOR.
    ══════════════════════════════════════════════════════════════════════ */
 :root {
-    /* 07.10.2026: yönetim paneli referansı — kutu 14px (eskisi 9px, Palet
-       Spesifikasyonu). Düğme ve girdi aşağıda 9px'te tutulur. */
-    --radius: 0.875rem;
+    /* 07.10.2026: Algoritmo referansı — kutu 16px (önce 9px Palet
+       Spesifikasyonu, aynı gün 14px yönetim paneli). Düğme 8px, girdi 6px
+       aşağıda data-slot kuralıyla. */
+    --radius: 1rem;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -253,48 +254,63 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   YÖNETİM PANELİYLE AYNI ÇİZİM — kart, tablo başlığı, başlık yazısı, menü
+   ALGORITMO ÇİZİMİ — kart, tablo başlığı, menü, düğme/girdi ölçüsü
    ----------------------------------------------------------------------
-   Kullanıcı kararı 07.10.2026: firma ekranları da yönetim panelinin
-   (HA-Kompass referansı, `bezirga/yonetim.css`) görünümüne geçer — renk
-   VE çizim. Bileşen kodu değişmez; ölçü `data-slot` üzerinden tek yerde.
-   ⚠ İLKEL BİLEŞENLERE DOKUNULMADI (`ui/*`): satıcı kodu (bkz. menü notu).
-   ⚠ Kenarlık kalınlığı/koyuluğu 22.08 kararında kalır (bekçi kilitli);
-   referanstaki daha soluk çizgi yerine bir kademe koyu ton kullanılır.
+   Kullanıcı kararı 07.10.2026: firma ekranlarının referansı Algoritmo
+   (insight.algoritmo.de ekran görüntüleri; «çizgileri inanılmaz hoşuma
+   gitti»). Aynı gün önce yönetim paneli (HA-Kompass) kalıbına geçilmişti;
+   o kalıp YALNIZ `/bezirga`da kalır.
+   ⭐ KART ÇERÇEVESİZ, GÖLGEYLE AYRIŞIR — kullanıcı kararı 07.10.2026
+   («Algoritmo gibi gölge»). 22.08.2026 kararı («kart kenarları görünmüyor,
+   belirginleşsin») BİLEREK değişti; gerekçesi aşağıda KUTU ÇERÇEVESİ
+   notunda duruyor. Tablo/girdi çizgileri kalır.
+   ⚠ İLKEL BİLEŞENLERE DOKUNULMADI (`ui/*`): ölçü `data-slot` ile tek yerde.
    ══════════════════════════════════════════════════════════════════════ */
 h1, h2, h3, [data-slot="card-title"] {
-    font-family: var(--font-baslik), var(--font-sans), system-ui, sans-serif;
     letter-spacing: -0.01em;
 }
-/* Kart: kenarlık `ring` (box-shadow) ile çiziliyor; gölge Tailwind'in kendi
-   gölge katmanına (`--tw-shadow`) yazılır ki halka EZİLMESİN. */
+/* Kart: kenarlık `ring` (box-shadow) idi; halka saydam, gölge Tailwind'in
+   gölge katmanına (`--tw-shadow`) yazılır. */
 [data-slot="card"] {
+    --tw-ring-color: transparent;
     --tw-shadow: var(--se-golge-1);
 }
-/* Düğme ve girdiler referansta 9px — kutudan daha az yuvarlak. */
-[data-slot="button"], [data-slot="input"], [data-slot="select-trigger"], [data-slot="textarea"] {
-    border-radius: 9px;
+[data-slot="button"] {
+    border-radius: 8px;
 }
-/* Elle yazılmış kutular (`rounded-lg border`, 300'e yakın yerde): referanstaki
-   hafif gölge. `components` katmanında — bir ekran kendi gölgesini yazdıysa
-   o kazanır. Boş-durum kutuları (kesikli çizgi) yükselmez. */
-@layer components {
-    :where(div, section, article, aside, details, li).rounded-lg.border:not(.border-dashed) {
-        box-shadow: var(--se-golge-1);
-    }
+[data-slot="input"], [data-slot="select-trigger"], [data-slot="textarea"] {
+    border-radius: 6px;
 }
 [data-slot="table-head"] {
     background: var(--se-baslik);
     color: var(--muted-foreground);
-    font-size: 0.72rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+/* Menü: Algoritmo'da aktif satır pembe yazı + açık pembe zemin + SAĞDA
+   4px pembe çizgi; grup başlığı küçük, büyük harf, aralıklı. */
+[data-slot="sidebar"] [data-slot="sidebar-menu-button"][data-active="true"] {
+    color: var(--se-vurgu);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    box-shadow: inset -4px 0 0 var(--se-vurgu);
+    border-radius: 0;
 }
 [data-slot="sidebar"] [data-slot="sidebar-group-label"] {
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+/* Elle yazılmış kutular (`rounded-lg border`, 300'e yakın yer): Algoritmo
+   kartı gibi çerçevesiz + gölge. `components` katmanında — ekran kendi
+   kenarlık rengini (durum şeridi vb.) yazdıysa o kazanır. Boş-durum kutuları
+   (kesikli çizgi) olduğu gibi kalır. */
+@layer components {
+    :where(div, section, article, aside, details, li).rounded-lg.border:not(.border-dashed) {
+        border-color: transparent;
+        box-shadow: var(--se-golge-1);
+        background-color: var(--card);
+    }
 }
 
 @layer utilities {

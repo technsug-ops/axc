@@ -2830,9 +2830,14 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       const [r, g, b] = hexKanal(hex);
       return 0.2126 * r + 0.7152 * g + 0.0722 * b;
     };
+    /* ⭐ KARAR DEĞİŞTİ — kullanıcı 07.10.2026, Algoritmo referansı: menü
+       BEYAZ (kart yüzeyi), zeminden AÇIK; aktif satır pembe. Yukarıdaki
+       22.08 gerekçesi («250px beyaz alan içerikten ayrışmıyordu») o günkü
+       zemine aitti: şimdi zemin gri, menü beyaz ve sağ çizgiyle ayrılıyor.
+       Ölçüt yönü çevrildi, SİLİNMEDİ: menü zeminle AYNI olamaz. */
     kontrol(
-      "kenar çubuğu zeminden belirgin KOYU (beyaz duvar değil)",
-      luma(kobaltDeger("--se-zemin")) - luma(kobaltDeger("--se-kabuk")) > 0.3,
+      "kenar çubuğu Algoritmo gibi beyaz — zeminden AÇIK (zeminle aynı değil)",
+      luma(kobaltDeger("--se-kabuk")) - luma(kobaltDeger("--se-zemin")) > 0.02,
       {
         zemin: luma(kobaltDeger("--se-zemin")).toFixed(2),
         kabuk: luma(kobaltDeger("--se-kabuk")).toFixed(2),
@@ -2890,15 +2895,23 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     const cizgiLuma = luma(kobaltDeger(
       /--border:\s*var\((--se-[a-z0-9-]+)\)/.exec(kopru)?.[1] ?? "--se-cizgi",
     ));
+    /* ⭐ KARAR DEĞİŞTİ — kullanıcı 07.10.2026 («Algoritmo gibi gölge»): kart
+       çerçeveyle değil GÖLGEYLE ayrışır; çizgi yalnız tablo/girdi/ayraçta
+       kalır. Eşik uydurulmadı: referansın KENDİ çizgisi (#E5E7EB) kadar
+       ayrışmak taban. 09.08/22.08 gerekçesi yukarıda duruyor. */
     kontrol(
-      "kenarlık karttan yeterince ayrışıyor (09.08.2026 kararı korunuyor)",
-      kartLuma - cizgiLuma >= 0.18,
+      "kenarlık karttan en az Algoritmo çizgisi (#E5E7EB) kadar ayrışıyor",
+      kartLuma - cizgiLuma >= kartLuma - luma("#E5E7EB"),
       { kart: kartLuma.toFixed(3), cizgi: cizgiLuma.toFixed(3), fark: (kartLuma - cizgiLuma).toFixed(3) },
     );
     /** Girdi çerçevesi kart kenarlığından DAHA koyu — tıklanabilir alan ayrışsın. */
     const girdiLuma = luma(kobaltDeger(
       /--input:\s*var\((--se-[a-z0-9-]+)\)/.exec(kopru)?.[1] ?? "--se-cizgi",
     ));
+    kontrol(
+      "  ...kart çerçevesiz ve GÖLGELİ (halka saydam + gölge katmanı)",
+      /\[data-slot="card"\]\s*\{[^}]*--tw-ring-color:\s*transparent;[^}]*--tw-shadow:\s*var\(--se-golge-1\)/.test(tema),
+    );
     kontrol(
       "  ...girdi çerçevesi kart kenarlığından koyu",
       girdiLuma < cizgiLuma,
@@ -3895,8 +3908,20 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * ⚠ LUMA DA PALETTEN. Aynı taşınma; kontrolün sorusu değişmedi ("kart
    * sayfadan AÇIK mı"), yalnız rakamın yeri değişti.
    */
+  /**
+   * ⚠ KÖPRÜ BLOĞUNDAN OKUNUR (07.10.2026). `acikTema` üst çubuğun yerel
+   * devrini de (`[data-kabuk="ust"]` → `--background: var(--se-kabuk)`)
+   * içeriyor ve o blok köprüden ÖNCE geliyor; `exec` ilk eşleşmeyi, yani
+   * KABUK rengini «sayfa zemini» sanıyordu. Kabuk koyuyken ölçüt tesadüfen
+   * doğru sonuç verdi; kabuk beyaza dönünce (Algoritmo kararı) yanlış yere
+   * baktığı göründü. Deponun bilinen tuzağı: desen dosyada iki kez geçiyor.
+   */
+  const acikKopru = (() => {
+    const bas = acikTema.indexOf("--background: var(--se-zemin)");
+    return bas === -1 ? "" : acikTema.slice(bas, acikTema.indexOf("}", bas));
+  })();
   const acikLuma = (ad: string) => {
-    const hex = paletHex(acikTema, ad, KOBALT);
+    const hex = paletHex(acikKopru, ad, KOBALT);
     if (hex === null) return NaN;
     const [r, g, b] = hexKanal(hex);
     /** Göz yeşile daha duyarlı — basit ağırlıklı parlaklık yeterli. */
@@ -3920,9 +3945,11 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      yönetim panelinin (HA-Kompass referansı, `bezirga/yonetim.css`) görünümüne
      geçti; orada kutu 14px, düğme/girdi 9px (globals.css data-slot kuralı).
      Eski 9px ölçütü yukarıdaki gerekçesiyle o referansa aitti. */
+  /* ⭐ Aynı gün ikinci kez: Algoritmo referansı (kullanıcı kararı 07.10.2026)
+     kutu 16px; düğme 8px, girdi 6px (globals.css data-slot kuralı). */
   kontrol(
-    "kart yarıçapı yönetim paneli referansındaki 14px (tek kaynaktan türüyor)",
-    Math.abs(yaricapPx - 14) < 0.5,
+    "kart yarıçapı Algoritmo referansındaki 16px (tek kaynaktan türüyor)",
+    Math.abs(yaricapPx - 16) < 0.5,
   );
   kontrol(
     "  ...kart bileşeni lg yarıçapı kullanıyor (xl referanstan yuvarlaktı)",
