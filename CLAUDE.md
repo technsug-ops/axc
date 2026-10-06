@@ -54,6 +54,12 @@ içindir, Halil testinin «gerçek veri» şartının yerine geçmez. Üç şart
 aynı gün dala taşınır · ② Axcali'nin açık Halil testleri paralel kapanır ·
 ③ pasif firma korumalı başlar. 28.09 gerekçesi SİLİNMEDİ — risk deneme
 kurulumuyla karşılanıyor. SaaS'a özel iş (kayıt, faturalama, plan) hâlâ AÇILMAZ.
+⏩ **KISMEN ÇEVRİLDİ — kullanıcı kararı 06.10.2026:** _«Ödeme alır hâle gelelim.»_ Seçenekler sunuldu;
+seçilen: **önce ELLE ödeme takibi** (firma başına abonelik tutarı/dönemi/son ödeme günü · süper
+adminin girdiği ödeme kaydı · gecikme rozeti · askı sürecine «ödeme gecikmesi» geçişi · hatırlatma
+e-postası), **kartla tahsilat SONRA** aynı kayıtların üstüne. Bu kadarı AÇILDI. **Hâlâ AÇILMAZ:** fatura
+kesme · kartla tahsilat · paket/plan satışı · kendi kendine kayıt (kayıt sayfası). Yukarıdaki gerekçe
+SİLİNMEDİ: ödeme takibi süper admin panelinin ⑦ maddesiydi ve «en sona, ayrı kararla» bekliyordu.
 
 Bu nedenle hiçbir firma/marka adı sistemin YAPISINA gömülmez.
 
