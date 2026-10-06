@@ -21,7 +21,8 @@ import { OZELLIKLER } from "@/lib/paket/ozellikler";
 import { firmaPaketiEylemi } from "../actions";
 import { OzellikSecici } from "../../ozellik-secici";
 
-type PaketSecenegi = { id: string; ad: string; firmayaOzel: boolean; ozellikler: string[] };
+type Sinirlar = { kanalHesabi: number | null; kullanici: number | null; aylikSiparis: number | null };
+type PaketSecenegi = { id: string; ad: string; firmayaOzel: boolean; ozellikler: string[]; sinirlar: Sinirlar };
 
 const SECIM_SINIFI = "border-input bg-background min-h-11 w-full rounded-md border px-3 text-sm";
 
@@ -36,7 +37,9 @@ export function FirmaPaketi({
   paketId,
   acik,
   paketler,
+  kullanim,
 }: {
+  kullanim: { kanalHesabi: number; kullanici: number; aylikSiparis: number };
   firmaId: string;
   firmaAdi: string;
   paketId: string | null;
@@ -57,6 +60,11 @@ export function FirmaPaketi({
   const sonra = hedef ? (hedef.firmayaOzel ? acik : hedef.ozellikler) : [];
   const kapanan = acik.filter((o) => !sonra.includes(o));
   const acilan = sonra.filter((o) => !acik.includes(o));
+  // Yeni paketin SINIRINI aşan mevcut kayıt (silinmez; yeni eklenemez). Individuel'de sınır firmada kalır.
+  const fazla = hedef && !hedef.firmayaOzel
+    ? (["kanalHesabi", "kullanici", "aylikSiparis"] as const).filter((a) => hedef.sinirlar[a] !== null && kullanim[a] > (hedef.sinirlar[a] as number))
+    : [];
+  const tps = useTranslations("PaketSiniri");
 
   return (
     <div className="space-y-3">
@@ -96,6 +104,9 @@ export function FirmaPaketi({
               {kapanan.length > 0 ? t("paketDegisimKapanan", { liste: kapanan.map((o) => to(o)).join(", ") }) : t("paketDegisimKapananYok")}{" "}
               {acilan.length > 0 ? t("paketDegisimAcilan", { liste: acilan.map((o) => to(o)).join(", ") }) : ""}{" "}
               {t("paketDegisimVeriNotu")}
+              {fazla.length > 0
+                ? ` ${t("paketDegisimSinirFazla", { liste: fazla.map((a) => `${tps(`etiket_${a}`)} ${kullanim[a]}/${hedef!.sinirlar[a]}`).join(", ") })}`
+                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

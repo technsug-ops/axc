@@ -19,7 +19,7 @@ import { epostaGonder, type EpostaTuru } from "@/lib/eposta";
 import { sistemPrisma } from "@/lib/prisma";
 import { UYGULAMA } from "@/lib/uygulama";
 import { aboneligiKaydet, odemeDurumu, odemeKaydet, odemeyiDuzelt } from "@/lib/odeme-takibi";
-import { firmaOzellikleriniKaydet, firmaPaketiniDegistir } from "@/lib/paket/yonetim";
+import { firmaOzellikleriniKaydet, firmaPaketiniDegistir, firmaSinirlariniKaydet } from "@/lib/paket/yonetim";
 
 /**
  * FİRMA YÖNETİMİ EYLEMLERİ (K303 4c-2). Her eylem yönetim kapısından geçer;
@@ -252,7 +252,11 @@ export async function firmaUyeligiDurumu(firmaId: string, kullaniciId: string): 
   try {
     const sonuc = await uyelikDurumunuDegistir(firmaId, kullaniciId, k.id);
     if (sonuc.durum === "HATA") {
-      return { hata: sonuc.hata === "SON_SAHIP" ? t("hataSonSahip", { eposta: sonuc.eposta ?? "" }) : t("hataUyeDegil") };
+      return {
+        hata: sonuc.hata === "SON_SAHIP" ? t("hataSonSahip", { eposta: sonuc.eposta ?? "" })
+          : sonuc.hata === "SINIR_DOLU" ? t("hataKullaniciSiniri", { kullanim: sonuc.kullanim ?? 0, sinir: sonuc.sinir ?? 0 })
+          : t("hataUyeDegil"),
+      };
     }
     revalidatePath(`${YONETIM_YOLU}/firmalar/${firmaId}`);
     return { tamam: t(sonuc.aktif ? "uyelikAktiflesti" : "uyelikPasifeAlindi", { eposta: sonuc.eposta }) };
@@ -399,5 +403,26 @@ export async function firmaOzellikleriEylemi(firmaId: string, secim: string[]): 
   } catch (hata) {
     console.error("[firma ozellikleri] beklenmeyen hata:", hata);
     return { hata: t("hataKaydedilemedi") };
+  }
+}
+
+/** Individuel firmanın adet sınırları — boş alan sınırsız. */
+export async function firmaSinirlariEylemi(_onceki: OdemeEylemDurumu, formData: FormData): Promise<OdemeEylemDurumu> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hatalar: [t(HATA_ANAHTARI.YETKISIZ)] };
+  const firmaId = String(formData.get("hedefId") ?? "");
+  try {
+    const r = await firmaSinirlariniKaydet(
+      firmaId,
+      { kanalHesabi: String(formData.get("kanalHesabi") ?? ""), kullanici: String(formData.get("kullanici") ?? ""), aylikSiparis: String(formData.get("aylikSiparis") ?? "") },
+      k.id,
+    );
+    if (r.durum === "HATA") return { hatalar: [t(r.hata === "SINIR_GECERSIZ" ? "hataSinirGecersiz" : r.hata === "OZEL_DEGIL" ? "hataPaketOzelDegil" : "hataFirmaYok")] };
+    kartiTazele(firmaId);
+    return { tamam: t("sinirlarKaydedildi") };
+  } catch (hata) {
+    console.error("[firma sinirlari] beklenmeyen hata:", hata);
+    return { hatalar: [t("hataKaydedilemedi")] };
   }
 }

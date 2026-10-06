@@ -25,7 +25,7 @@ import { kaynakOku } from "./kaynak-oku";
 
 console.log("\nPAKET BEKÇİSİ\n");
 
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let hata = 0;
@@ -271,6 +271,114 @@ async function main() {
   const alt = yorumsuz(kaynakOku("src/components/alt-cubuk.tsx"));
   kontrol("alt çubuk kapalı sekmeyi ATLAR ve sütun sayısı kalan sekmeden", alt.includes("const sekmeler = ALT_CUBUK_SEKMELERI.filter((s) => !(s in kilitli));") && alt.includes("{sekmeler.map((sekme) => {") && alt.includes("repeat(${sekmeler.length}, minmax(0, 1fr))"));
   kosanBolumler.push("uygulama");
+
+  /* ⑦ ADET SINIRLARI (06.10.2026) */
+  console.log("\n⑦ adet sınırları: kural, sayaç, kapı");
+  const S = await import("../src/lib/paket/sinirlar");
+  kontrol("sınırsızda her zaman eklenir", S.eklenebilirMi(999, null));
+  kontrol("1/2 → eklenir · 2/2 → EKLENMEZ", S.eklenebilirMi(1, 2) && !S.eklenebilirMi(2, 2));
+  kontrol("durum: 1/2 ALTINDA · 2/2 DOLU · 3/2 AŞILDI · sınırsız", S.sinirDurumu(1, 2) === "ALTINDA" && S.sinirDurumu(2, 2) === "DOLU" && S.sinirDurumu(3, 2) === "ASILDI" && S.sinirDurumu(5, null) === "SINIRSIZ");
+  const oku = (h: string) => { const r = S.sinirOku(h); return r.tamam ? r.deger : "HATA"; };
+  kontrol("form: boş → sınırsız · '3' → 3 · '0' → 0 · '-1' / 'abc' / '2,5' → HATA", oku("") === null && oku(" 3 ") === 3 && oku("0") === 0 && oku("-1") === "HATA" && oku("abc") === "HATA" && oku("2,5") === "HATA");
+
+  const ek7 = Date.now().toString(36).toUpperCase().slice(-5);
+  // SISTEM: geçici sınırlı paket + firmaya özel paket — sonunda silinir.
+  const SP = await sistemPrisma.paket.create({ data: { ad: `ZZSP${ek7}`, kanalHesabiSiniri: 1, kullaniciSiniri: 1, aylikSiparisSiniri: 10 }, select: { id: true } });
+  // SISTEM: geçici firmaya özel paket.
+  const SO = await sistemPrisma.paket.create({ data: { ad: `ZZSO${ek7}`, firmayaOzel: true, kanalHesabiSiniri: 99 }, select: { id: true } });
+  // SISTEM: geçici firma (sınırlı pakette).
+  const SF = await sistemPrisma.company.create({ data: { name: `ZZSF${ek7}`, code: `ZSF${ek7}`, paketId: SP.id }, select: { id: true } });
+  // SISTEM: paketsiz geçici firma.
+  const SN = await sistemPrisma.company.create({ data: { name: `ZZSN${ek7}`, code: `ZSN${ek7}` }, select: { id: true } });
+  // SISTEM: var olan bir kanal (salt okuma; kanal tablosu firmalar-üstü).
+  const kanal = await sistemPrisma.channel.findFirst({ select: { id: true } });
+  const kisiler7: string[] = [];
+  try {
+    kontrol("taban: kanal var", Boolean(kanal));
+    kontrol("hazır pakette sınır PAKETTEN okunur (1·1·10)", JSON.stringify(await S.firmaSinirlari(SF.id)) === JSON.stringify({ kanalHesabi: 1, kullanici: 1, aylikSiparis: 10 }));
+    kontrol("paketsiz firmada sınır 0 (açık kapı yok)", JSON.stringify(await S.firmaSinirlari(SN.id)) === JSON.stringify({ kanalHesabi: 0, kullanici: 0, aylikSiparis: 0 }));
+    // Sayaç: AKTİF SATIŞ hesabı sayılır; pasif satış ve aktif ALIŞ sayılmaz.
+    for (const [kod, satis, aktif] of [["S1", true, true], ["S2", true, false], ["A1", false, true]] as const) {
+      // SISTEM: geçici kanal hesabı (firmaya açıkça bağlı).
+      await sistemPrisma.channelAccount.create({ data: { companyId: SF.id, channelId: kanal!.id, code: `${kod}${ek7}`, name: kod, defaultCurrency: "TRY", satisIcin: satis, alisIcin: !satis, isActive: aktif } });
+    }
+    // Sayaç: AKTİF üyelik sayılır; pasif sayılmaz.
+    // SISTEM: geçici rol (üyelik için zorunlu).
+    const rol = await sistemPrisma.role.create({ data: { name: `ZZR${ek7}`, companyId: SF.id }, select: { id: true } });
+    for (const [ad, aktif] of [["u1", true], ["u2", false]] as const) {
+      // SISTEM: geçici kişi + üyelik.
+      const u = await sistemPrisma.user.create({ data: { email: `${ad}-${ek7.toLowerCase()}@bekci.test`, hesapFirmasiId: SF.id, passwordHash: "x" }, select: { id: true } });
+      kisiler7.push(u.id);
+      // SISTEM: geçici üyelik.
+      await sistemPrisma.userCompanyRole.create({ data: { userId: u.id, companyId: SF.id, roleId: rol.id, isActive: aktif } });
+    }
+    const k = await S.firmaKullanimi(SF.id);
+    kontrol("sayaç: satış hesabı 1 (pasif satış + aktif alış SAYILMAZ) · kullanıcı 1 (pasif SAYILMAZ)", k.kanalHesabi === 1 && k.kullanici === 1, k);
+    const g1 = await S.sertSinirKapisi(SF.id, "kanalHesabi");
+    kontrol("kapı: 1/1 satış hesabında yeni hesap DURUR (kullanım ve sınır söylenir)", !g1.gecer && g1.kullanim === 1 && g1.sinir === 1, g1);
+    const g2 = await S.sertSinirKapisi(SF.id, "kullanici");
+    kontrol("kapı: 1/1 kullanıcıda yeni kişi DURUR", !g2.gecer, g2);
+    // Ayrımın öteki yakası: 1/2 kullanıcıda BİR yer var — geçmeli (sınır bir eksikte durdurmamalı).
+    // SISTEM: geçici paketin kullanıcı sınırı 2.
+    await sistemPrisma.paket.update({ where: { id: SP.id }, data: { kullaniciSiniri: 2 } });
+    kontrol("kapı: 1/2 kullanıcıda yeni kişi GEÇER (sınıra kadar eklenebilir)", (await S.sertSinirKapisi(SF.id, "kullanici")).gecer);
+    // SISTEM: geri 1.
+    await sistemPrisma.paket.update({ where: { id: SP.id }, data: { kullaniciSiniri: 1 } });
+    // SISTEM: sınır kaldırılır (sınırsız).
+    await sistemPrisma.paket.update({ where: { id: SP.id }, data: { kanalHesabiSiniri: null } });
+    kontrol("kapı: sınırsız pakette geçer", (await S.sertSinirKapisi(SF.id, "kanalHesabi")).gecer);
+    // SISTEM: firmaya özel pakete geçiş — sınır firmadan okunur (firmada boş → sınırsız).
+    await sistemPrisma.company.update({ where: { id: SF.id }, data: { paketId: SO.id, sinirKullanici: 1 } });
+    const so = await S.firmaSinirlari(SF.id);
+    kontrol("firmaya özel pakette sınır FİRMADAN okunur (paketin 99'u yok sayılır)", so.kanalHesabi === null && so.kullanici === 1, so);
+    // Ortak üyelik gövdesi: pasif kişiyi yeniden açmak sınır doluyken DURUR.
+    const { uyelikDurumunuDegistir } = await import("../src/lib/kullanici-uyeligi");
+    const r = await uyelikDurumunuDegistir(SF.id, kisiler7[1]!, yazan!.id);
+    kontrol("üyelik: 1/1 doluyken pasif kişi YENİDEN AÇILAMAZ (SINIR_DOLU)", r.durum === "HATA" && r.hata === "SINIR_DOLU", r);
+  } finally {
+    // SISTEM: temizlik — üyelikler, kişiler, rol, hesaplar, izler, firmalar, paketler.
+    await sistemPrisma.userCompanyRole.deleteMany({ where: { companyId: SF.id } });
+    // SISTEM: temizlik.
+    await sistemPrisma.user.deleteMany({ where: { id: { in: kisiler7 } } });
+    // SISTEM: temizlik.
+    await sistemPrisma.role.deleteMany({ where: { companyId: SF.id } });
+    // SISTEM: temizlik.
+    await sistemPrisma.channelAccount.deleteMany({ where: { companyId: SF.id } });
+    // SISTEM: temizlik.
+    await sistemPrisma.auditLog.deleteMany({ where: { companyId: SF.id } });
+    // SISTEM: temizlik.
+    await sistemPrisma.company.deleteMany({ where: { id: { in: [SF.id, SN.id] } } });
+    // SISTEM: temizlik.
+    await sistemPrisma.paket.deleteMany({ where: { id: { in: [SP.id, SO.id] } } });
+    // SISTEM: ölçüm.
+    kontrol("geçici sınır firmaları ve paketleri silindi", (await sistemPrisma.company.count({ where: { id: { in: [SF.id, SN.id] } } })) === 0 && (await sistemPrisma.paket.count({ where: { id: { in: [SP.id, SO.id] } } })) === 0);
+  }
+
+  // Kapılar yerinde: SERT sınır yalnız kanal hesabı + kullanıcı yollarında; SATIŞTA HİÇ (yumuşak).
+  const kapiYerleri = tumu.filter((y) => yorumsuz(kaynakOku(y)).includes("sertSinirKapisi(")).filter((y) => y !== "src/lib/paket/sinirlar.ts").sort();
+  kontrol("sert kapı TAM bu yerlerde: kanal hesapları · kullanıcılar · üyelik gövdesi", kapiYerleri.join() === ["src/app/ayarlar/kanallar/actions.ts", "src/app/ayarlar/kullanicilar/actions.ts", "src/lib/kullanici-uyeligi.ts"].join(), kapiYerleri);
+  const kanalEylem = yorumsuz(kaynakOku("src/app/ayarlar/kanallar/actions.ts"));
+  // Koşul SONUCUYLA birlikte aranır (anayasa): kapı çağrısının varlığı yetmez, hangi
+  // durumda çağrıldığı da sabitlenir — koşulu bozan mutasyon çağrıyı yerinde bırakır.
+  for (const [ad, kosul] of [
+    ["kanalHesabiEkle", /if \(sonuc\.data\.rol === "SATIS"\) \{\s*const kapi = await sertSinirKapisi\(baglam\.companyId, "kanalHesabi"\);/],
+    ["kanalHesabiRolDegistir", /if \(rol === "SATIS" && !hesap\.satisIcin && hesap\.isActive\) \{\s*const kapi = await sertSinirKapisi\(baglam\.companyId, "kanalHesabi"\);/],
+    ["kanalHesabiDurumDegistir", /if \(!hesap\.isActive && hesap\.satisIcin\) \{\s*const kapi = await sertSinirKapisi\(baglam\.companyId, "kanalHesabi"\);/],
+  ] as const) {
+    const i = kanalEylem.indexOf(`export async function ${ad}(`);
+    const j = kanalEylem.indexOf("\nexport ", i + 10);
+    const g = i < 0 ? "" : kanalEylem.slice(i, j < 0 ? undefined : j);
+    const m = kosul.exec(g);
+    const iYaz = Math.max(g.indexOf("prisma.channelAccount.create("), g.indexOf("prisma.channelAccount.update("));
+    kontrol(`${ad}: sınır kapısı DOĞRU koşulda ve yazımdan ÖNCE`, g.length > 0 && m !== null && iYaz > m.index, { kosul: m !== null, iYaz });
+  }
+  const kulEylem = yorumsuz(kaynakOku("src/app/ayarlar/kullanicilar/actions.ts"));
+  const ke = kulEylem.slice(kulEylem.indexOf("export async function kullaniciEkle("), kulEylem.indexOf("export async function kullaniciRolDegistir("));
+  kontrol("kullaniciEkle: sınır kapısı kişi açılmadan ÖNCE", ke.indexOf('sertSinirKapisi(baglam.companyId, "kullanici")') >= 0 && ke.indexOf("tx.user.create(") > ke.indexOf('sertSinirKapisi(baglam.companyId, "kullanici")'));
+  const satisDosyalari = tumu.filter((y) => /satis|satislar/i.test(y) && yorumsuz(kaynakOku(y)).includes("aylikSiparis"));
+  kontrol("satış yolları aylık sipariş sınırına BAKMAZ (yumuşak sınır — satış hep girer)", satisDosyalari.length === 0, satisDosyalari);
+  kontrol("kök düzen aşılmış aylık sipariş için şerit çizer", kok.includes("const sinirSeridi = baglam ? await firmaSinirSeridi(baglam.companyId)") && kok.includes("{sinirSeridi}"));
+  kosanBolumler.push("sinirlar");
 
   await sistemPrisma.$disconnect();
   if (kosanBolumler.length !== BOLUM_SAYISI) {

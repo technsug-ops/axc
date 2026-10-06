@@ -11,6 +11,8 @@ import { firmaKarti } from "@/lib/firma-karti";
 import { gunMetni } from "@/lib/donem";
 import { firmaOdemeleri, odemeDurumu } from "@/lib/odeme-takibi";
 import { firmaPaketi, paketler } from "@/lib/paket/yonetim";
+import { kullanimGorunumu } from "@/lib/paket/kullanim-gorunumu";
+import { KullanimKutulari } from "@/components/kullanim-kutulari";
 import type { FirmaAskiSebebi } from "@/generated/prisma/client";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
@@ -21,6 +23,7 @@ import { FirmaAdiFormu } from "./firma-adi-formu";
 import { KartKullanicilari } from "./kart-kullanicilari";
 import { OdemeTakibi, type OdemeGorunumu } from "./odeme-takibi";
 import { FirmaPaketi } from "./firma-paketi";
+import { SinirFormu } from "../../sinir-formu";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +76,7 @@ export default async function FirmaKartiSayfasi({
     : { tur: od.tur, kalanGun: od.kalanGun, vade: bicim.tarih(od.vade) };
   const odemeler = await firmaOdemeleri(kart.id);
   const ab = kart.abonelik;
-  const [fp, tumPaketler] = await Promise.all([firmaPaketi(kart.id), paketler()]);
+  const [fp, tumPaketler, kg] = await Promise.all([firmaPaketi(kart.id), paketler(), kullanimGorunumu(kart.id)]);
   // Abonelik tanımsızsa paketin önerisi forma öneri olarak düşer (06.10: tutar firma başına elle kalır).
   const oneri = ab.tutar === null && fp?.paket?.onerilenTutar != null ? fp.paket : null;
   const aranan = arama.toLocaleLowerCase("tr");
@@ -146,8 +149,19 @@ export default async function FirmaKartiSayfasi({
           firmaAdi={kart.ad}
           paketId={fp?.paket?.id ?? null}
           acik={[...(fp?.acik ?? [])]}
-          paketler={tumPaketler.map((p) => ({ id: p.id, ad: p.ad, firmayaOzel: p.firmayaOzel, ozellikler: p.ozellikler }))}
+          paketler={tumPaketler.map((p) => ({ id: p.id, ad: p.ad, firmayaOzel: p.firmayaOzel, ozellikler: p.ozellikler, sinirlar: p.sinirlar }))}
+          kullanim={kg.kullanim}
         />
+        <h3 className="pt-2 text-sm font-semibold">{t("kullanimBaslik")}</h3>
+        <KullanimKutulari kullanim={kg.kullanim} sinirlar={kg.sinirlar} etiketler={kg.etiketler} durumlar={kg.durumlar} sinirsiz={kg.sinirsiz} />
+        {fp?.paket?.firmayaOzel ? (
+          <>
+            <p className="text-muted-foreground text-xs">{t("firmaSinirNotu")}</p>
+            <SinirFormu hedef={{ tur: "firma", id: kart.id }} baslangic={kg.sinirlar} />
+          </>
+        ) : (
+          <p className="text-muted-foreground text-xs">{t("paketSinirNotu")}</p>
+        )}
       </section>
 
       {/* ÖDEMELER (06.10.2026) — elle takip; gecikme askı sürecine bağlanır */}

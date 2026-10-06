@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { sertSinirKapisi } from "@/lib/paket/sinirlar";
 
 export type KanalHesabiDurumu = {
   hatalar?: string[];
@@ -55,7 +56,7 @@ export async function kanalHesabiEkle(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
-  await yetkiIste("ayar.yaz");
+  const baglam = await yetkiIste("ayar.yaz");
 
   const t = await getTranslations("KanalHesabi");
 
@@ -99,6 +100,12 @@ export async function kanalHesabiEkle(
     };
   }
 
+  // K303 ② — paketin kanal hesabı sınırı (sert): YALNIZ satış hesabı sayılır.
+  if (sonuc.data.rol === "SATIS") {
+    const kapi = await sertSinirKapisi(baglam.companyId, "kanalHesabi");
+    if (!kapi.gecer) return { hatalar: [t("sinirDolu", { kullanim: kapi.kullanim, sinir: kapi.sinir })] };
+  }
+
   try {
     await prisma.channelAccount.create({
       data: {
@@ -138,7 +145,7 @@ export async function kanalHesabiRolDegistir(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
-  await yetkiIste("ayar.yaz");
+  const baglam = await yetkiIste("ayar.yaz");
 
   const t = await getTranslations("KanalHesabi");
 
@@ -165,6 +172,12 @@ export async function kanalHesabiRolDegistir(
     return {
       hatalar: [t("rolKaldirilamazSatis", { sayi: hesap._count.sales })],
     };
+  }
+
+  // K303 ② — aktif alış hesabını SATIŞA çevirmek sayacı artırır (sert sınır).
+  if (rol === "SATIS" && !hesap.satisIcin && hesap.isActive) {
+    const kapi = await sertSinirKapisi(baglam.companyId, "kanalHesabi");
+    if (!kapi.gecer) return { hatalar: [t("sinirDolu", { kullanim: kapi.kullanim, sinir: kapi.sinir })] };
   }
 
   await prisma.channelAccount.update({
@@ -284,7 +297,7 @@ export async function kanalHesabiDurumDegistir(
   _oncekiDurum: KanalHesabiDurumu,
   formData: FormData,
 ): Promise<KanalHesabiDurumu> {
-  await yetkiIste("ayar.yaz");
+  const baglam = await yetkiIste("ayar.yaz");
 
   const t = await getTranslations("KanalHesabi");
 
@@ -293,6 +306,12 @@ export async function kanalHesabiDurumDegistir(
 
   const hesap = await prisma.channelAccount.findUnique({ where: { id } });
   if (!hesap) return { hatalar: [t("bulunamadi")] };
+
+  // K303 ② — pasif SATIŞ hesabını yeniden açmak sayacı artırır (sert sınır).
+  if (!hesap.isActive && hesap.satisIcin) {
+    const kapi = await sertSinirKapisi(baglam.companyId, "kanalHesabi");
+    if (!kapi.gecer) return { hatalar: [t("sinirDolu", { kullanim: kapi.kullanim, sinir: kapi.sinir })] };
+  }
 
   await prisma.channelAccount.update({
     where: { id },

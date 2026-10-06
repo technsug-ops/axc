@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
-import { paketIceriginiKaydet, paketKaydet, type PaketHatasi } from "@/lib/paket/yonetim";
+import { paketIceriginiKaydet, paketKaydet, paketSinirlariniKaydet, type PaketHatasi } from "@/lib/paket/yonetim";
 import { yonetimEylemi } from "@/lib/yonetim-oturumu";
 
 /**
@@ -87,4 +87,31 @@ export async function paketIcerigiEylemi(paketId: string, secim: string[]): Prom
     console.error("[paket icerigi] beklenmeyen hata:", hata);
     return { hata: t("hataKaydedilemedi") };
   }
+}
+
+/** Paketin adet sınırları — boş alan sınırsız. */
+export async function paketSinirlariEylemi(_onceki: PaketEylemDurumu, formData: FormData): Promise<PaketEylemDurumu> {
+  const t = await getTranslations("Yonetim");
+  const k = await yonetimEylemi();
+  if (!k) return { hatalar: [t(HATA.YETKISIZ)] };
+  const id = String(formData.get("hedefId") ?? "");
+  try {
+    const r = await paketSinirlariniKaydet(id, sinirGirdisi(formData), k.id);
+    if (r.durum === "HATA") return { hatalar: [t(r.hata === "SINIR_GECERSIZ" ? "hataSinirGecersiz" : r.hata === "FIRMAYA_OZEL" ? "hataPaketFirmayaOzel" : "hataPaketYok")] };
+    revalidatePath(`${YONETIM_YOLU}/paketler`);
+    revalidatePath(`${YONETIM_YOLU}/paketler/${id}`);
+    revalidatePath(`${YONETIM_YOLU}/firmalar`, "layout");
+    return { tamam: t("sinirlarKaydedildi") };
+  } catch (hata) {
+    console.error("[paket sinirlari] beklenmeyen hata:", hata);
+    return { hatalar: [t("hataKaydedilemedi")] };
+  }
+}
+
+function sinirGirdisi(formData: FormData) {
+  return {
+    kanalHesabi: String(formData.get("kanalHesabi") ?? ""),
+    kullanici: String(formData.get("kullanici") ?? ""),
+    aylikSiparis: String(formData.get("aylikSiparis") ?? ""),
+  };
 }

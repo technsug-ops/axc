@@ -10,6 +10,7 @@ import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
 
 import { OzellikSecici } from "../../ozellik-secici";
 import { PaketBilgisiFormu } from "../paket-bilgisi-formu";
+import { SinirFormu } from "../../sinir-formu";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,18 @@ export default async function PaketSayfasi({ params }: { params: Promise<{ id: s
           <>
             <p className="text-muted-foreground text-sm">{t("paketIcerigiNotu", { sayi: p.firmaSayisi })}</p>
             <OzellikSecici hedef={{ tur: "paket", id: p.id }} baslangic={p.ozellikler} />
+          </>
+        )}
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold">{t("bolumSinirlar")}</h2>
+        {p.firmayaOzel ? (
+          <p className="text-muted-foreground text-sm">{t("firmayaOzelSinirNotu")}</p>
+        ) : (
+          <>
+            <p className="text-muted-foreground text-sm">{t("sinirAciklama")}</p>
+            <SinirFormu hedef={{ tur: "paket", id: p.id }} baslangic={p.sinirlar} />
           </>
         )}
       </section>

@@ -1041,6 +1041,8 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -3280,9 +3282,14 @@ model Company {
   /// K303 ② paketler (kullanıcı kararı 30.09 + 06.10.2026). Paket içeriği VERİDİR.
   /// `null` = paketsiz (bekçi kırmızı yakar). Paket «firmaya özel» ise
   /// (Individuel) açık özellikler `ozellikler`den okunur, paketinkinden değil.
-  paketId    String?
-  paket      Paket?          @relation(fields: [paketId], references: [id], onDelete: Restrict)
-  ozellikler FirmaOzelligi[]
+  paketId           String?
+  paket             Paket?          @relation(fields: [paketId], references: [id], onDelete: Restrict)
+  ozellikler        FirmaOzelligi[]
+  /// Firmaya özel (Individuel) pakette ADET SINIRLARI (06.10.2026). Hazır pakette
+  /// sınır paketten okunur, bunlar yok sayılır. `null` = sınırsız.
+  sinirKanalHesabi  Int?
+  sinirKullanici    Int?
+  sinirAylikSiparis Int?
 
   uyelikler                    UserCompanyRole[]
   /// Model 2 (05.10.2026): bu firmaya ait hesaplar.
@@ -4154,6 +4161,13 @@ model Paket {
   onerilenTutar      Decimal?     @db.Decimal(14, 2)
   onerilenParaBirimi Currency?
   onerilenDonem      AboneDonemi?
+
+  /// ADET SINIRLARI (kullanıcı kararı 06.10.2026). `null` = sınırsız.
+  /// Kanal hesabı ve kullanıcı SERT (yeni ekleme durur, mevcut silinmez);
+  /// aylık sipariş YUMUŞAK (satış yine girer, uyarı + rozet — stok/kâr bozulmasın).
+  kanalHesabiSiniri  Int?
+  kullaniciSiniri    Int?
+  aylikSiparisSiniri Int?
 
   ozellikler PaketOzelligi[]
   firmalar   Company[]

@@ -24,6 +24,10 @@ const PROXY = "src/proxy.ts";
 const YETKI = "src/lib/yetki/index.ts";
 const ERISIM = "src/lib/paket/erisim.ts";
 const KOK = "src/app/layout.tsx";
+const SINIR = "src/lib/paket/sinirlar.ts";
+const UYELIK = "src/lib/kullanici-uyeligi.ts";
+const KANAL = "src/app/ayarlar/kanallar/actions.ts";
+const ODEME = "src/lib/odeme-takibi.ts";
 const ALT = "src/components/alt-cubuk.tsx";
 const HIZLI = "src/app/hizli-islemler.tsx";
 
@@ -58,7 +62,7 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: '  if (!fp.paket?.firmayaOzel) return { durum: "HATA", hata: "OZEL_DEGIL" };\n', koy: "",
     bozdugu: "etkisiz secim yazilir; ekran ne gosterdigini bilemez" },
   { ad: "FIRMAYA OZEL PAKETE ICERIK YAZILIYOR", yon: "KALDIRAN", dosya: YONETIM,
-    bul: '  if (p.firmayaOzel) return { durum: "HATA", hata: "FIRMAYA_OZEL" };\n', koy: "",
+    bul: '  if (p.firmayaOzel) return { durum: "HATA", hata: "FIRMAYA_OZEL" };\n  const once = new Set(p.ozellikler.map((o) => o.ozellik));', koy: "  const once = new Set(p.ozellikler.map((o) => o.ozellik));",
     bozdugu: "Individuel paketinde etkisiz icerik birikir" },
   { ad: "FIRMA SECIMINDE TANIMSIZ ANAHTAR", yon: "KALDIRAN", dosya: YONETIM,
     bul: '  if (secim.some((o) => !GECERLI.has(o))) return { durum: "HATA", hata: "OZELLIK_GECERSIZ" };\n  const fp = await firmaPaketi(firmaId);',
@@ -100,6 +104,31 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "BASIC'TE BARKOD YOK", yon: "KALDIRAN", dosya: KATALOG,
     bul: '"hesaplamaMotoru", "kartlar", "kanalTanimlari", "barkod"] },\n  { ad: "Silver"', koy: '"hesaplamaMotoru", "kartlar", "kanalTanimlari"] },\n  { ad: "Silver"',
     bozdugu: "06.10 karari delinir: API'siz firma her seyi elle yazar" },
+  // ── adet sınırları (06.10.2026) ──
+  { ad: "SERT KAPI HIC DURDURMUYOR", yon: "KALDIRAN", dosya: SINIR,
+    bul: "  if (sinir === null || k[tur] + artis <= sinir) return { gecer: true };", koy: "  if (sinir !== -1) return { gecer: true };",
+    bozdugu: "sinir dolu iken yeni hesap/kisi eklenir" },
+  { ad: "SERT KAPI BIR EKSIKTE DURDURUYOR", yon: "FAZLADAN", dosya: SINIR,
+    bul: "k[tur] + artis <= sinir) return { gecer: true };", koy: "k[tur] + artis < sinir) return { gecer: true };",
+    bozdugu: "sinira bir kala yeni ekleme reddedilir" },
+  { ad: "PASIF VE ALIS HESABI SAYILIYOR", yon: "FAZLADAN", dosya: SINIR,
+    bul: "where: { companyId: firmaId, isActive: true, satisIcin: true }", koy: "where: { companyId: firmaId }",
+    bozdugu: "alis/pasif hesap sinira sayilir, firma haksiz yere durur" },
+  { ad: "PAKETSIZ FIRMA SINIRSIZ", yon: "FAZLADAN", dosya: SINIR,
+    bul: "if (!f?.paket) return { kanalHesabi: 0, kullanici: 0, aylikSiparis: 0 };", koy: "if (!f?.paket) return { kanalHesabi: null, kullanici: null, aylikSiparis: null };",
+    bozdugu: "paketsiz firma sinirsiz kullanir" },
+  { ad: "INDIVIDUEL SINIRI PAKETTEN OKUNUYOR", yon: "KALDIRAN", dosya: SINIR,
+    bul: "  if (f.paket.firmayaOzel) return { kanalHesabi: f.sinirKanalHesabi, kullanici: f.sinirKullanici, aylikSiparis: f.sinirAylikSiparis };\n", koy: "",
+    bozdugu: "firmaya ozel sinir yok sayilir" },
+  { ad: "YENIDEN ACMA SINIRA BAKMIYOR", yon: "KALDIRAN", dosya: UYELIK,
+    bul: '  if (yeni) {\n    const k = await sertSinirKapisi(companyId, "kullanici");', koy: '  if (yeni && companyId === "-") {\n    const k = await sertSinirKapisi(companyId, "kullanici");',
+    bozdugu: "pasif kisi yeniden acilarak sinir asilir" },
+  { ad: "KANAL HESABI YENIDEN ACMA SINIRA BAKMIYOR", yon: "KALDIRAN", dosya: KANAL,
+    bul: "  if (!hesap.isActive && hesap.satisIcin) {", koy: "  if (!hesap.isActive && hesap.satisIcin && id === \"-\") {",
+    bozdugu: "pasif satis hesabi yeniden acilarak sinir asilir" },
+  { ad: "SERT KAPI ILGISIZ YERE EKLENDI", yon: "FAZLADAN", dosya: ODEME,
+    bul: "export const YAKLASIYOR_GUN = 7;", koy: 'export const YAKLASIYOR_GUN = 7;\nexport const _deneme = () => sertSinirKapisi("x", "kullanici");',
+    bozdugu: "yumusak kalmasi gereken bir yol sert sinira takilir" },
   { ad: "BEYANSIZ PAKET DISI SAYFA", yon: "KALDIRAN", dosya: KATALOG,
     bul: '  { onek: "/talepler", gerekce: "destek talebi — paket değişikliği de buradan istenir" },\n', koy: "",
     bozdugu: "yeni sayfa kimse karar vermeden paket disi kalir" },

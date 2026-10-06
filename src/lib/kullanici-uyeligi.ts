@@ -1,5 +1,6 @@
 import { sistemPrisma } from "@/lib/prisma";
 import { sistemiAcabilirMi } from "@/lib/yetki/izinler";
+import { sertSinirKapisi } from "@/lib/paket/sinirlar";
 
 /**
  * ============================================================================
@@ -21,7 +22,7 @@ import { sistemiAcabilirMi } from "@/lib/yetki/izinler";
  * ============================================================================
  */
 
-export type UyelikHatasi = "UYE_DEGIL" | "SON_SAHIP" | "SUPER_ADMIN";
+export type UyelikHatasi = "UYE_DEGIL" | "SON_SAHIP" | "SUPER_ADMIN" | "SINIR_DOLU";
 
 /** Kişinin BU firmadaki üyeliği — yoksa null (başka firmanın kişisi bulunmaz). */
 export async function firmaUyeligi(companyId: string, userId: string) {
@@ -62,13 +63,21 @@ export async function uyelikDurumunuDegistir(
   companyId: string,
   userId: string,
   yapanId: string,
-): Promise<{ durum: "TAMAM"; aktif: boolean; eposta: string } | { durum: "HATA"; hata: UyelikHatasi; eposta?: string }> {
+): Promise<{ durum: "TAMAM"; aktif: boolean; eposta: string } | { durum: "HATA"; hata: UyelikHatasi; eposta?: string; kullanim?: number; sinir?: number }> {
   const u = await firmaUyeligi(companyId, userId);
   if (!u) return { durum: "HATA", hata: "UYE_DEGIL" };
   if (u.isActive && !(await firmadaBaskaSahipVarMi(companyId, userId))) {
     return { durum: "HATA", hata: "SON_SAHIP", eposta: u.user.email };
   }
   const yeni = !u.isActive;
+  /* K303 ② — YENİDEN AÇMA kullanıcı sayısını artırır: paketin kullanıcı sınırı
+     doluysa durur (sert sınır; firma ayarları VE süper admin aynı kapıdan —
+     süper admin aşmak istiyorsa önce paketi/sınırı değiştirir). Pasife almak
+     her zaman serbest. */
+  if (yeni) {
+    const k = await sertSinirKapisi(companyId, "kullanici");
+    if (!k.gecer) return { durum: "HATA", hata: "SINIR_DOLU", eposta: u.user.email, kullanim: k.kullanim, sinir: k.sinir };
+  }
   // SISTEM: üyelik ve izi aynı işlemde; iz firmaya bağlı.
   await sistemPrisma.$transaction([
     // SISTEM: yalnız BU üyelik (kimliğiyle).

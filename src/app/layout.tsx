@@ -158,6 +158,24 @@ async function firmaUyariSeridi(companyId: string): Promise<React.ReactNode> {
   );
 }
 
+/**
+ * K303 ② — AYLIK SİPARİŞ SINIRI AŞILDI şeridi (YUMUŞAK sınır, kullanıcı kararı
+ * 06.10.2026): satış yine girer, firma her sayfada görür ve «Paketim»e gider.
+ * Hata menüyü/sayfayı düşüremez — okuma hatasında şerit çizilmez.
+ */
+async function firmaSinirSeridi(companyId: string): Promise<React.ReactNode> {
+  const { firmaKullanimi, firmaSinirlari, sinirDurumu } = await import("@/lib/paket/sinirlar");
+  const [k, s] = await Promise.all([firmaKullanimi(companyId), firmaSinirlari(companyId)]);
+  if (sinirDurumu(k.aylikSiparis, s.aylikSiparis) !== "ASILDI") return null;
+  const tp = await getTranslations("PaketSiniri");
+  return (
+    <div role="alert" className={`px-4 py-2 text-center text-sm font-medium ${DURUM_ZEMINI.uyari}`}>
+      {tp("seritAylikSiparis", { kullanim: k.aylikSiparis, sinir: s.aylikSiparis ?? 0 })}{" "}
+      <Link href="/paket" className="underline underline-offset-4">{tp("seritPaketim")}</Link>
+    </div>
+  );
+}
+
 export default async function RootLayout({
   children,
 }: {
@@ -229,6 +247,7 @@ export default async function RootLayout({
   const baglam = kullanici ? await yetkiBaglami().catch(() => null) : null;
   const hamDuzen = await menuDuzeni(baglam?.companyId ?? null);
   const uyariSeridi = baglam ? await firmaUyariSeridi(baglam.companyId) : null;
+  const sinirSeridi = baglam ? await firmaSinirSeridi(baglam.companyId).catch(() => null) : null;
   /* K303 ② — paketinde olmayan ekranlar menüde GÖRÜNMEZ (kullanıcı kararı
      06.10.2026). Düzen kaynağında süzülür; alt çubuk da aynı kümeyi atlar. */
   const kilitli = baglam ? await firmaKilitliEkranlari(baglam.companyId).catch(() => ({})) : {};
@@ -322,6 +341,7 @@ export default async function RootLayout({
       <body>
         {denemeSeridi}
         {uyariSeridi}
+        {sinirSeridi}
         <SwKayit />
         {/* Sözlük ve biçimler istemci bileşenlerine buradan akıyor. */}
         <NextIntlClientProvider>

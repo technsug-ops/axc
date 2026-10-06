@@ -52,10 +52,15 @@ async function main() {
 
   const ek = Date.now().toString(36).toUpperCase().slice(-5);
   const ozet = await parolaOzetle("bekci-gecici-parola");
+  /* K303 ② (06.10.2026): paketsiz firmanın sınırı 0'dır (açık kapı bırakılmaz) —
+     bu bekçi ÜYELİK davranışını ölçer, sınırı değil; firmalar SINIRSIZ geçici
+     pakete bağlanır. Sınırın kendisi `paket:dogrula`da ölçülür. */
+  // SISTEM: geçici sınırsız paket — sonunda silinir.
+  const P = await sistemPrisma.paket.create({ data: { ad: `ZZUYP${ek}` }, select: { id: true } });
   // SISTEM: geçici firmalar — sonunda silinir.
-  const Z = await sistemPrisma.company.create({ data: { name: `ZZUYZ${ek}`, code: `ZUZ${ek}`, isActive: true }, select: { id: true } });
+  const Z = await sistemPrisma.company.create({ data: { name: `ZZUYZ${ek}`, code: `ZUZ${ek}`, isActive: true, paketId: P.id }, select: { id: true } });
   // SISTEM: ikinci geçici firma.
-  const Y = await sistemPrisma.company.create({ data: { name: `ZZUYY${ek}`, code: `ZUY${ek}`, isActive: true }, select: { id: true } });
+  const Y = await sistemPrisma.company.create({ data: { name: `ZZUYY${ek}`, code: `ZUY${ek}`, isActive: true, paketId: P.id }, select: { id: true } });
   const kisiler: string[] = [];
   try {
     const sahipRolu = async (companyId: string) => {
@@ -127,6 +132,8 @@ async function main() {
     await sistemPrisma.role.deleteMany({ where: { companyId: { in: [Z.id, Y.id] } } });
     // SISTEM: temizlik.
     await sistemPrisma.company.deleteMany({ where: { id: { in: [Z.id, Y.id] } } });
+    // SISTEM: temizlik — geçici paket (firmalar silindikten SONRA; bağ Restrict).
+    await sistemPrisma.paket.delete({ where: { id: P.id } });
     // SISTEM: ölçüm.
     kontrol("geçici firmalar ve kişiler silindi", (await sistemPrisma.company.count({ where: { id: { in: [Z.id, Y.id] } } })) === 0 && (await sistemPrisma.user.count({ where: { id: { in: kisiler } } })) === 0);
   }

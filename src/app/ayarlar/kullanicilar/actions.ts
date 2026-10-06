@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
 import { baskaSahipVarMi } from "@/lib/yetki/koruma";
 import { firmaUyeligi, uyelikDurumunuDegistir } from "@/lib/kullanici-uyeligi";
+import { sertSinirKapisi } from "@/lib/paket/sinirlar";
 
 /**
  * ============================================================================
@@ -76,6 +77,10 @@ export async function kullaniciEkle(
     select: { id: true, isActive: true },
   });
   if (!rol || !rol.isActive) return { hatalar: [t("rolBulunamadi")] };
+
+  // K303 ② — paketin kullanıcı sınırı (sert): yeni kişi eklenmez, NEDENİ yazar.
+  const kapi = await sertSinirKapisi(baglam.companyId, "kullanici");
+  if (!kapi.gecer) return { hatalar: [t("sinirDolu", { kullanim: kapi.kullanim, sinir: kapi.sinir })] };
 
   // K303 (05.10.2026): yeni kişi OTURUMDAKİ firmaya üye olur. Eski hâl
   // «en eski aktif firma» seçiyordu (`company` firma süzgecinin dışında) —
@@ -176,7 +181,11 @@ export async function kullaniciDurumDegistir(
     const sonuc = await uyelikDurumunuDegistir(baglam.companyId, id, baglam.kullaniciId);
     if (sonuc.durum === "HATA") {
       return {
-        hatalar: [sonuc.hata === "SON_SAHIP" ? t("sonSahipPasif", { eposta: sonuc.eposta ?? "" }) : t("kayitBulunamadi")],
+        hatalar: [
+          sonuc.hata === "SON_SAHIP" ? t("sonSahipPasif", { eposta: sonuc.eposta ?? "" })
+          : sonuc.hata === "SINIR_DOLU" ? t("sinirDolu", { kullanim: sonuc.kullanim ?? 0, sinir: sonuc.sinir ?? 0 })
+          : t("kayitBulunamadi"),
+        ],
       };
     }
   } catch (e) {

@@ -614,7 +614,8 @@
     "grupRolsuzAciklama": "Bu hesaplar hiçbir formda listelenmez. Alış mı satış mı olduğunu seçin.",
     "grupRolsuzBos": "Rolü seçilmemiş hesap yok.",
     "ciftRolBosaldi": "{bos} kaydı kalmadı — taşıma tamam. Geriye yalnız işaret kaldı; hesabı {kalan} yapabilirsiniz.",
-    "ciftRolDuzelt": "{rol} yap"
+    "ciftRolDuzelt": "{rol} yap",
+    "sinirDolu": "Paketinizin satış hesabı sınırı dolu ({kullanim}/{sinir}). Yeni satış hesabı için paketinizi yükseltin ya da bir satış hesabını pasife alın. Alış hesapları sınıra sayılmaz."
   },
   "Kart": {
     "etiketZorunlu": "Kart etiketi zorunlu",
@@ -2880,7 +2881,8 @@
     "kayitBulunamadi": "Kayıt bulunamadı.",
     "kaydedilemedi": "Kaydedilemedi. Tekrar deneyin; sorun sürerse bildirin.",
     "sonSahipRol": "“{eposta}” sistemdeki tek tam yetkili kullanıcı — rolü düşürülemez. Önce ikinci bir tam yetkili kullanıcı ekleyin.",
-    "sonSahipPasif": "“{eposta}” sistemdeki tek tam yetkili kullanıcı — pasife alınamaz. Önce ikinci bir tam yetkili kullanıcı ekleyin."
+    "sonSahipPasif": "“{eposta}” sistemdeki tek tam yetkili kullanıcı — pasife alınamaz. Önce ikinci bir tam yetkili kullanıcı ekleyin.",
+    "sinirDolu": "Paketinizin kullanıcı sınırı dolu ({kullanim}/{sinir}). Yeni kullanıcı için paketinizi yükseltin ya da bir kullanıcıyı pasife alın — Paketim sayfasına bakın."
   },
   "Rol": {
     "baslik": "Roller",
@@ -5553,7 +5555,26 @@
     "paketOnerisiMetni": "Paket önerisi — {oneri}. Forma öneri olarak geldi; kaydetmeden önce değiştirebilirsiniz.",
     "paketRozeti": "Paket: {ad}",
     "paketsizRozet": "paketsiz",
-    "paketAcilisNotu": "Firma bu paketle açılır; sonra firma kartından değiştirilebilir. Individuel seçilirse özellikleri kartta işaretleyin."
+    "paketAcilisNotu": "Firma bu paketle açılır; sonra firma kartından değiştirilebilir. Individuel seçilirse özellikleri kartta işaretleyin.",
+    "hataKullaniciSiniri": "Firmanın kullanıcı sınırı dolu ({kullanim}/{sinir}). Yeniden açmak için önce paketi ya da sınırı değiştirin.",
+    "hataSinirGecersiz": "Sınır boş (sınırsız) ya da 0 veya pozitif bir tam sayı olmalı.",
+    "sinirlarKaydedildi": "Sınırlar kaydedildi.",
+    "sinirEtiketi_kanalHesabi": "Satış hesabı sınırı",
+    "sinirEtiketi_kullanici": "Kullanıcı sınırı",
+    "sinirEtiketi_aylikSiparis": "Aylık sipariş sınırı",
+    "sinirIpucu_kanalHesabi": "örn. 2",
+    "sinirIpucu_kullanici": "örn. 1",
+    "sinirIpucu_aylikSiparis": "örn. 300",
+    "sinirNotu": "Boş bırakılan alan sınırsızdır. Satış hesabı ve kullanıcı SERT sınırdır: dolunca yenisi eklenemez, mevcutlar silinmez. Aylık sipariş YUMUŞAK sınırdır: satış yine girer, firmaya uyarı ve size rozet çıkar.",
+    "sinirlariKaydet": "Sınırları kaydet",
+    "bolumSinirlar": "Adet sınırları",
+    "firmayaOzelSinirNotu": "Bu paket firmaya özel: sınırlar her firmanın kartında ayrı yazılır.",
+    "sinirAciklama": "Bu paketteki bütün firmalara uygulanır; değişiklik hemen geçerli olur.",
+    "kullanimBaslik": "Kullanım",
+    "firmaSinirNotu": "Paket firmaya özel: bu firmanın sınırlarını aşağıdan yazın.",
+    "paketSinirNotu": "Sınırlar paketten gelir; değiştirmek için Paketler'den paketin sınırlarını düzenleyin.",
+    "paketDegisimSinirFazla": "Yeni paketin sınırını aşan mevcut kayıt: {liste}. Bunlar silinmez ama yenisi eklenemez.",
+    "sinirRozeti": "sınır dolu ({sayi})"
   },
   "AskiSebebi": {
     "ODEME_GECIKMESI": "Ödeme gecikmesi",
@@ -5628,6 +5649,18 @@
     "acikBaslik": "Açık özellikler ({sayi})",
     "kapaliListeBaslik": "Paketinizde olmayanlar ({sayi})",
     "kapaliSatir": "{paketler}",
-    "hepAcikNotu": "Ayarlar, menü düzeni, dönemler ve bu sayfa her pakette açıktır."
+    "hepAcikNotu": "Ayarlar, menü düzeni, dönemler ve bu sayfa her pakette açıktır.",
+    "kullanimBaslik": "Kullanım",
+    "kullanimNotu": "Satış hesabı ve kullanıcı sınırı dolunca yenisi eklenemez. Aylık sipariş sınırı aşılsa da satışlarınız kaydedilir."
+  },
+  "PaketSiniri": {
+    "etiket_kanalHesabi": "Satış hesabı",
+    "etiket_kullanici": "Kullanıcı",
+    "etiket_aylikSiparis": "Bu ay sipariş",
+    "durumDolu": "sınır dolu",
+    "durumAsildi": "sınır aşıldı",
+    "sinirsiz": "sınırsız",
+    "seritAylikSiparis": "Bu ay paket sınırınızı aştınız: {kullanim}/{sinir} sipariş. Satışlarınız kaydedilmeye devam ediyor.",
+    "seritPaketim": "Paketim"
   }
 }

@@ -7,6 +7,8 @@ import { DURUM_KUTUSU } from "@/lib/renkler";
 import { OZELLIK_EKRANLARI, OZELLIKLER } from "@/lib/paket/ozellikler";
 import { firmaPaketi, paketler } from "@/lib/paket/yonetim";
 import { sayfaGirisi } from "@/lib/yetki";
+import { kullanimGorunumu } from "@/lib/paket/kullanim-gorunumu";
+import { KullanimKutulari } from "@/components/kullanim-kutulari";
 
 export async function generateMetadata() {
   const t = await getTranslations("Paketim");
@@ -26,7 +28,7 @@ export default async function PaketimSayfasi({ searchParams }: { searchParams: P
   const t = await getTranslations("Paketim");
   const to = await getTranslations("PaketOzelligi");
   const tm = await getTranslations("Menu");
-  const [fp, katalog] = await Promise.all([firmaPaketi(baglam.companyId), paketler()]);
+  const [fp, katalog, kg] = await Promise.all([firmaPaketi(baglam.companyId), paketler(), kullanimGorunumu(baglam.companyId)]);
   const acik = fp?.acik ?? new Set<string>();
   const hazir = katalog.filter((p) => !p.firmayaOzel);
   const hangiPaketlerde = (o: string) => hazir.filter((p) => p.ozellikler.includes(o)).map((p) => p.ad);
@@ -61,6 +63,12 @@ export default async function PaketimSayfasi({ searchParams }: { searchParams: P
           </Button>
         </div>
       ) : null}
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-semibold">{t("kullanimBaslik")}</h2>
+        <KullanimKutulari kullanim={kg.kullanim} sinirlar={kg.sinirlar} etiketler={kg.etiketler} durumlar={kg.durumlar} sinirsiz={kg.sinirsiz} />
+        <p className="text-muted-foreground text-xs">{t("kullanimNotu")}</p>
+      </section>
 
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">{t("acikBaslik", { sayi: acikListe.length })}</h2>

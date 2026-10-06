@@ -614,7 +614,8 @@
     "grupRolsuzAciklama": "",
     "grupRolsuzBos": "",
     "ciftRolBosaldi": "",
-    "ciftRolDuzelt": ""
+    "ciftRolDuzelt": "",
+    "sinirDolu": ""
   },
   "Kart": {
     "etiketZorunlu": "",
@@ -2880,7 +2881,8 @@
     "kayitBulunamadi": "",
     "kaydedilemedi": "",
     "sonSahipRol": "",
-    "sonSahipPasif": ""
+    "sonSahipPasif": "",
+    "sinirDolu": ""
   },
   "Rol": {
     "baslik": "",
@@ -5553,7 +5555,26 @@
     "paketOnerisiMetni": "",
     "paketRozeti": "",
     "paketsizRozet": "",
-    "paketAcilisNotu": ""
+    "paketAcilisNotu": "",
+    "hataKullaniciSiniri": "",
+    "hataSinirGecersiz": "",
+    "sinirlarKaydedildi": "",
+    "sinirEtiketi_kanalHesabi": "",
+    "sinirEtiketi_kullanici": "",
+    "sinirEtiketi_aylikSiparis": "",
+    "sinirIpucu_kanalHesabi": "",
+    "sinirIpucu_kullanici": "",
+    "sinirIpucu_aylikSiparis": "",
+    "sinirNotu": "",
+    "sinirlariKaydet": "",
+    "bolumSinirlar": "",
+    "firmayaOzelSinirNotu": "",
+    "sinirAciklama": "",
+    "kullanimBaslik": "",
+    "firmaSinirNotu": "",
+    "paketSinirNotu": "",
+    "paketDegisimSinirFazla": "",
+    "sinirRozeti": ""
   },
   "AskiSebebi": {
     "ODEME_GECIKMESI": "",
@@ -5628,6 +5649,18 @@
     "acikBaslik": "",
     "kapaliListeBaslik": "",
     "kapaliSatir": "",
-    "hepAcikNotu": ""
+    "hepAcikNotu": "",
+    "kullanimBaslik": "",
+    "kullanimNotu": ""
+  },
+  "PaketSiniri": {
+    "etiket_kanalHesabi": "",
+    "etiket_kullanici": "",
+    "etiket_aylikSiparis": "",
+    "durumDolu": "",
+    "durumAsildi": "",
+    "sinirsiz": "",
+    "seritAylikSiparis": "",
+    "seritPaketim": ""
   }
 }

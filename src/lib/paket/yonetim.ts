@@ -2,6 +2,7 @@ import { turkceSayi } from "@/lib/finansman/kural";
 import { sistemPrisma } from "@/lib/prisma";
 
 import { acikOzellikler, OZELLIKLER } from "./ozellikler";
+import { sinirOku } from "./sinirlar";
 
 /**
  * ============================================================================
@@ -32,7 +33,7 @@ export async function paketler() {
   // SISTEM: yönetim katmanı — paket kataloğu.
   const p = await sistemPrisma.paket.findMany({
     orderBy: [{ sira: "asc" }, { ad: "asc" }],
-    select: { id: true, ad: true, aciklama: true, sira: true, firmayaOzel: true, onerilenTutar: true, onerilenParaBirimi: true, onerilenDonem: true, ozellikler: { select: { ozellik: true } }, _count: { select: { firmalar: true } } },
+    select: { id: true, ad: true, aciklama: true, sira: true, firmayaOzel: true, onerilenTutar: true, onerilenParaBirimi: true, onerilenDonem: true, kanalHesabiSiniri: true, kullaniciSiniri: true, aylikSiparisSiniri: true, ozellikler: { select: { ozellik: true } }, _count: { select: { firmalar: true } } },
   });
   return p.map((x) => ({
     id: x.id,
@@ -45,6 +46,7 @@ export async function paketler() {
     onerilenDonem: x.onerilenDonem,
     ozellikler: x.ozellikler.map((o) => o.ozellik).filter((o) => GECERLI.has(o)),
     firmaSayisi: x._count.firmalar,
+    sinirlar: { kanalHesabi: x.kanalHesabiSiniri, kullanici: x.kullaniciSiniri, aylikSiparis: x.aylikSiparisSiniri },
   }));
 }
 
@@ -199,4 +201,58 @@ export async function firmaOzellikleriniKaydet(
     sistemPrisma.auditLog.create({ data: { action: "FIRMA_OZELLIKLERI_DEGISTI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ eklenen, cikan }) } }),
   ]);
   return { durum: "TAMAM", eklenen, cikan };
+}
+
+/* ═══ ADET SINIRLARI (06.10.2026) ═══════════════════════════════════════ */
+
+export type SinirHatasi = "SINIR_GECERSIZ" | "PAKET_YOK" | "FIRMAYA_OZEL" | "FIRMA_YOK" | "OZEL_DEGIL";
+
+function sinirlariOku(g: { kanalHesabi: string; kullanici: string; aylikSiparis: string }) {
+  const k = sinirOku(g.kanalHesabi), u = sinirOku(g.kullanici), s = sinirOku(g.aylikSiparis);
+  if (!k.tamam || !u.tamam || !s.tamam) return null;
+  return { kanalHesabi: k.deger, kullanici: u.deger, aylikSiparis: s.deger };
+}
+
+/** Hazır paketin sınırları (boş = sınırsız). Firmaya özel pakette sınır firma kartında. */
+export async function paketSinirlariniKaydet(
+  paketId: string,
+  g: { kanalHesabi: string; kullanici: string; aylikSiparis: string },
+  yapanId: string,
+): Promise<{ durum: "TAMAM" } | { durum: "HATA"; hata: SinirHatasi }> {
+  const yeni = sinirlariOku(g);
+  if (!yeni) return { durum: "HATA", hata: "SINIR_GECERSIZ" };
+  // SISTEM: paket.
+  const p = await sistemPrisma.paket.findUnique({ where: { id: paketId }, select: { firmayaOzel: true, kanalHesabiSiniri: true, kullaniciSiniri: true, aylikSiparisSiniri: true } });
+  if (!p) return { durum: "HATA", hata: "PAKET_YOK" };
+  if (p.firmayaOzel) return { durum: "HATA", hata: "FIRMAYA_OZEL" };
+  // SISTEM: sınırlar ve izi aynı işlemde.
+  await sistemPrisma.$transaction([
+    // SISTEM: paket sınırları.
+    sistemPrisma.paket.update({ where: { id: paketId }, data: { kanalHesabiSiniri: yeni.kanalHesabi, kullaniciSiniri: yeni.kullanici, aylikSiparisSiniri: yeni.aylikSiparis } }),
+    // SISTEM: iz.
+    sistemPrisma.auditLog.create({ data: { action: "PAKET_SINIRLARI_DEGISTI", targetType: "Paket", targetId: paketId, userId: yapanId, companyId: null, detail: JSON.stringify({ once: { kanalHesabi: p.kanalHesabiSiniri, kullanici: p.kullaniciSiniri, aylikSiparis: p.aylikSiparisSiniri }, yeni }) } }),
+  ]);
+  return { durum: "TAMAM" };
+}
+
+/** Individuel firmanın sınırları (boş = sınırsız). Hazır paketteki firmada sınır paketten gelir. */
+export async function firmaSinirlariniKaydet(
+  firmaId: string,
+  g: { kanalHesabi: string; kullanici: string; aylikSiparis: string },
+  yapanId: string,
+): Promise<{ durum: "TAMAM" } | { durum: "HATA"; hata: SinirHatasi }> {
+  const yeni = sinirlariOku(g);
+  if (!yeni) return { durum: "HATA", hata: "SINIR_GECERSIZ" };
+  // SISTEM: firma kimliğiyle.
+  const f = await sistemPrisma.company.findUnique({ where: { id: firmaId }, select: { sinirKanalHesabi: true, sinirKullanici: true, sinirAylikSiparis: true, paket: { select: { firmayaOzel: true } } } });
+  if (!f) return { durum: "HATA", hata: "FIRMA_YOK" };
+  if (!f.paket?.firmayaOzel) return { durum: "HATA", hata: "OZEL_DEGIL" };
+  // SISTEM: sınırlar ve izi aynı işlemde.
+  await sistemPrisma.$transaction([
+    // SISTEM: firmanın sınırları.
+    sistemPrisma.company.update({ where: { id: firmaId }, data: { sinirKanalHesabi: yeni.kanalHesabi, sinirKullanici: yeni.kullanici, sinirAylikSiparis: yeni.aylikSiparis } }),
+    // SISTEM: iz.
+    sistemPrisma.auditLog.create({ data: { action: "FIRMA_SINIRLARI_DEGISTI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ once: { kanalHesabi: f.sinirKanalHesabi, kullanici: f.sinirKullanici, aylikSiparis: f.sinirAylikSiparis }, yeni }) } }),
+  ]);
+  return { durum: "TAMAM" };
 }

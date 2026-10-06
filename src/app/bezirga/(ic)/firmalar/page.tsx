@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { askiDurumu, bugunIs } from "@/lib/aski-sureci";
 import { kurulumDurumlari } from "@/lib/firma-acilisi";
 import { odemeDurumu } from "@/lib/odeme-takibi";
+import { kullanimGorunumu } from "@/lib/paket/kullanim-gorunumu";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { bicimlendirici } from "@/lib/bicim";
 import { sistemPrisma } from "@/lib/prisma";
@@ -48,6 +49,8 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
     }),
   ]);
   const durumlar = await kurulumDurumlari(firmalar.map((f) => f.id));
+  // Paket sınırı dolu/aşılmış firmalar — süper admin için satış fırsatı (rozet kartın paket bölümüne götürür).
+  const sinirDikkat = new Map(await Promise.all(firmalar.map(async (f) => [f.id, (await kullanimGorunumu(f.id)).dikkat.length] as const)));
   const bugun = bugunIs();
 
   return (
@@ -101,6 +104,11 @@ export default async function FirmalarSayfasi({ searchParams }: { searchParams: 
                         </Link>
                       );
                     })()}
+                    {(sinirDikkat.get(f.id) ?? 0) > 0 ? (
+                      <Link href={`${YONETIM_YOLU}/firmalar/${f.id}#paket`} className="inline-flex min-h-11 items-center">
+                        <Badge variant="outline" className={`${DURUM_YAZISI.uyari} underline-offset-4 hover:underline`}>{t("sinirRozeti", { sayi: sinirDikkat.get(f.id) ?? 0 })}</Badge>
+                      </Link>
+                    ) : null}
                     {f.paket ? (
                       <span className="text-muted-foreground">{t("paketRozeti", { ad: f.paket.ad })}</span>
                     ) : (
