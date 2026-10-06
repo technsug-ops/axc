@@ -141,10 +141,15 @@ async function main() {
     kontrol("TRY toplamı ayrı: 100 (para birimleri karışmaz)", tr === 100, tr);
     kontrol("liste: 7 satır, düzeltilenler ve ters kayıtlar işaretli", liste.satirlar.length === 7 && liste.satirlar.filter((s) => s.tersKayit).length === 2 && liste.satirlar.filter((s) => s.duzeltildi).length === 2, liste.satirlar.length);
   } finally {
-    // SISTEM: temizlik — önce ters kayıtlar (öz bağ), sonra kalanlar.
-    await sistemPrisma.firmaOdemesi.deleteMany({ where: { firmaId: F.id, duzeltilenId: { not: null } } });
-    // SISTEM: temizlik.
-    await sistemPrisma.firmaOdemesi.deleteMany({ where: { firmaId: F.id } });
+    /* Temizlik KATMAN KATMAN: ters kayıtlar öz bağla zincir kurabilir (bir
+       mutasyon «tersin tersi»ni yazdırdığında 06.10'da tek seferlik silme FK'ye
+       takıldı ve geçici firma geride kaldı). Önce hiçbir kaydın göstermediği
+       satırlar silinir; zincir bitene kadar tekrarlanır. */
+    for (let tur = 0; tur < 50; tur++) {
+      // SISTEM: temizlik — başka kaydın düzelttiği OLMAYAN satırlar.
+      const r = await sistemPrisma.firmaOdemesi.deleteMany({ where: { firmaId: F.id, duzeltme: null } });
+      if (r.count === 0) break;
+    }
     // SISTEM: temizlik — geçici firmanın abonelik izi.
     await sistemPrisma.auditLog.deleteMany({ where: { action: "FIRMA_ABONELIK_KAYDEDILDI", targetId: F.id } });
     // SISTEM: temizlik.
