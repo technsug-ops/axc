@@ -99,7 +99,9 @@
      rozet 5-6px). Renk DEĞİL, o yüzden `--radius` burada KALIYOR.
    ══════════════════════════════════════════════════════════════════════ */
 :root {
-    --radius: 0.5625rem;
+    /* 07.10.2026: yönetim paneli referansı — kutu 14px (eskisi 9px, Palet
+       Spesifikasyonu). Düğme ve girdi aşağıda 9px'te tutulur. */
+    --radius: 0.875rem;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -264,9 +266,22 @@ h1, h2, h3, [data-slot="card-title"] {
     font-family: var(--font-baslik), var(--font-sans), system-ui, sans-serif;
     letter-spacing: -0.01em;
 }
+/* Kart: kenarlık `ring` (box-shadow) ile çiziliyor; gölge Tailwind'in kendi
+   gölge katmanına (`--tw-shadow`) yazılır ki halka EZİLMESİN. */
 [data-slot="card"] {
-    border-radius: 14px;
-    box-shadow: var(--se-golge-1);
+    --tw-shadow: var(--se-golge-1);
+}
+/* Düğme ve girdiler referansta 9px — kutudan daha az yuvarlak. */
+[data-slot="button"], [data-slot="input"], [data-slot="select-trigger"], [data-slot="textarea"] {
+    border-radius: 9px;
+}
+/* Elle yazılmış kutular (`rounded-lg border`, 300'e yakın yerde): referanstaki
+   hafif gölge. `components` katmanında — bir ekran kendi gölgesini yazdıysa
+   o kazanır. Boş-durum kutuları (kesikli çizgi) yükselmez. */
+@layer components {
+    :where(div, section, article, aside, details, li).rounded-lg.border:not(.border-dashed) {
+        box-shadow: var(--se-golge-1);
+    }
 }
 [data-slot="table-head"] {
     background: var(--se-baslik);
