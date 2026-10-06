@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
-import { Inter, Poppins } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import { BookOpen, Home } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -35,9 +35,9 @@ import { KABUK_RENKLERI, TEMA_ANAHTARI } from "@/lib/marka/renkler";
 import { UyariCani } from "@/components/uyari-cani";
 import { UYGULAMA } from "@/lib/uygulama";
 
-/* Yazı: gövde Inter, başlık Poppins — yönetim paneliyle aynı (kullanıcı kararı 07.10.2026). */
-const govde = Inter({ subsets: ["latin", "latin-ext"], variable: "--font-sans" });
-const baslik = Poppins({ subsets: ["latin", "latin-ext"], weight: ["600", "700"], variable: "--font-baslik" });
+/* Yazı: Algoritmo referansının geometrik grotesk'i (kullanıcı kararı 07.10.2026);
+   gövde ve başlık aynı aile, başlık yalnız kalınlıkla ayrışır. */
+const govde = Be_Vietnam_Pro({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-sans" });
 
 /**
  * ⚠ TEMA REACT'TEN ÖNCE UYGULANIR — yoksa sayfa bir kare AÇIK temada
@@ -173,7 +173,7 @@ export default async function RootLayout({
     return (
       <html
         lang={dil}
-        className={cn("font-sans", govde.variable, baslik.variable)}
+        className={cn("font-sans", govde.variable)}
         /* Tema betiği `data-tema` ve `.dark` ekliyor; sunucu çıktısıyla
            istemci ilk karesi bu yüzden AYRIŞIR ve bu beklenen hâldir. */
         suppressHydrationWarning
@@ -216,7 +216,7 @@ export default async function RootLayout({
   return (
     <html
         lang={dil}
-        className={cn("font-sans", govde.variable, baslik.variable)}
+        className={cn("font-sans", govde.variable)}
         /* Tema betiği `data-tema` ve `.dark` ekliyor; sunucu çıktısıyla
            istemci ilk karesi bu yüzden AYRIŞIR ve bu beklenen hâldir. */
         suppressHydrationWarning

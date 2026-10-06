@@ -18,86 +18,86 @@
    * 0,0568. Eşik uydurulmuş bir sayı değil, aynı paletten türetildi
    * (bkz. panel:dogrula).
    */
-  --se-zemin:            #F6F5F2;   /* sayfa arka planı */
+  --se-zemin:            #F4F5F8;   /* sayfa arka planı */
   --se-kart:             #FFFFFF;   /* kart, panel, tablo gövdesi */
   --se-kart-2:           #FFFFFF;   /* açılır menü, modal, ipucu */
-  --se-satir:            #FBFAF8;   /* zebra satır */
-  --se-baslik:           #F3F1EE;   /* tablo başlığı, bölüm şeridi */
-  --se-hover:            #F7F6F3;   /* satır üzerine gelme */
-  --se-secili:           #E3F2EF;   /* seçili satır */
+  --se-satir:            #FAFBFC;   /* zebra satır */
+  --se-baslik:           #F3F4F6;   /* tablo başlığı, bölüm şeridi */
+  --se-hover:            #F9FAFB;   /* satır üzerine gelme */
+  --se-secili:           #FDEFF2;   /* seçili satır */
 
   /* --- kabuk (kenar çubuğu, üst şerit) --- */
-  --se-kabuk:            #14302D;
-  --se-kabuk-secili:     #354C49;
-  --se-kabuk-hover:      #253F3C;
-  --se-kabuk-ink:        #FFFFFF;
-  --se-kabuk-ink2:       #9DB9B4;
-  --se-kabuk-cizgi:      #2C4542;
+  --se-kabuk:            #FFFFFF;
+  --se-kabuk-secili:     #FDEFF2;
+  --se-kabuk-hover:      #F9FAFB;
+  --se-kabuk-ink:        #374151;
+  --se-kabuk-ink2:       #6B7280;
+  --se-kabuk-cizgi:      #E5E7EB;
 
   /* --- mürekkep --- */
-  --se-ink:              #1F1B1C;   /* birincil metin, sayılar */
-  --se-ink-2:            #6B6560;   /* etiket, ikincil metin */
-  --se-ink-3:            #9C958F;   /* yer tutucu, üst veri */
+  --se-ink:              #1F2937;   /* birincil metin, sayılar */
+  --se-ink-2:            #6B7280;   /* etiket, ikincil metin */
+  --se-ink-3:            #9CA3AF;   /* yer tutucu, üst veri */
   --se-ink-ters:         #FFFFFF;   /* koyu dolgu üzeri metin */
 
   /* --- çizgi --- */
-  --se-cizgi:            #E7E4DF;   /* varsayılan saç teli */
-  --se-cizgi-2:          #CFCAC3;   /* girdi çerçevesi, vurgulu ayraç */
-  --se-cizgi-3:          #B5AEA6;   /* üzerine gelme */
+  --se-cizgi:            #E5E7EB;   /* varsayılan saç teli */
+  --se-cizgi-2:          #D1D5DB;   /* girdi çerçevesi, vurgulu ayraç */
+  --se-cizgi-3:          #B6BCC6;   /* üzerine gelme */
 
   /* --- vurgu: kimlik + eylem. BAŞKA HİÇBİR ANLAM TAŞIMAZ --- */
-  --se-vurgu:            #197A71;
-  --se-vurgu-hover:      #12605A;
-  --se-vurgu-aktif:      #0E4D48;
+  --se-vurgu:            #E5395F;
+  --se-vurgu-hover:      #D42D52;
+  --se-vurgu-aktif:      #B82446;
   --se-vurgu-on:         #FFFFFF;
-  --se-vurgu-bg:         #E3F2EF;
-  --se-vurgu-cizgi:      #A8D5CE;
+  --se-vurgu-bg:         #FDEFF2;
+  --se-vurgu-cizgi:      #F7B3C2;
 
   /* --- nötr rampa: anlamı OLMAYAN her yer --- */
   /* grafik dolgusu, ilerleme çubuğu, türetilmiş değer şeridi */
-  --se-notr:             #8C857E;
-  --se-notr-2:           #B9B2AA;
-  --se-notr-3:           #DAD5CF;
-  --se-notr-bg:          #EFEDE9;
+  --se-notr:             #64748B;
+  --se-notr-2:           #94A3B8;
+  --se-notr-3:           #CBD5E1;
+  --se-notr-bg:          #F3F4F6;
 
   /* --- semantik: kâr --- */
-  --se-kar:              #15803D;
-  --se-kar-bg:           #DFF3E6;
-  --se-kar-cizgi:        #A7D9B8;
+  --se-kar:              #3E9F45;
+  --se-kar-bg:           #EAF7E6;
+  --se-kar-cizgi:        #BFE5B5;
 
   /* --- semantik: zarar --- */
-  --se-zarar:            #C2410C;
-  --se-zarar-bg:         #FCE9DF;
-  --se-zarar-cizgi:      #F3C9B4;
+  --se-zarar:            #E5395F;
+  --se-zarar-bg:         #FDECEF;
+  --se-zarar-cizgi:      #F7B3C2;
 
   /* --- semantik: bilinmiyor / modellenmedi --- */
-  --se-bil:              #E3A83A;   /* şerit, çizgi, ikon */
-  --se-bil-ink:          #8A5A00;   /* açık zeminde metin */
-  --se-bil-bg:           #FBF0D9;
-  --se-bil-cizgi:        #EBD3A0;
+  --se-bil:              #F5A623;   /* şerit, çizgi, ikon */
+  --se-bil-ink:          #9A6100;   /* açık zeminde metin */
+  --se-bil-bg:           #FFF6E0;
+  --se-bil-cizgi:        #F7D9A0;
 
   /* --- semantik: çelişki (kaynak ile sistem uyuşmuyor) --- */
   /* zarar ile aynı ton, DOLU zemin ile ayrışır — hue sayısı artmasın */
-  --se-celiski:          #C2410C;
-  --se-celiski-bg:       #C2410C;
+  --se-celiski:          #E5395F;
+  --se-celiski-bg:       #E5395F;
   --se-celiski-on:       #FFFFFF;
 
   /* --- durum --- */
-  --se-odak:             #197A71;
-  --se-odak-golge:       0 0 0 3px #E3F2EF;
-  --se-pasif-bg:         #F0EEEA;
-  --se-pasif-ink:        #ABA49D;
+  --se-odak:             #E5395F;
+  --se-odak-golge:       0 0 0 3px #FDEFF2;
+  --se-pasif-bg:         #F0F1F3;
+  --se-pasif-ink:        #9CA3AF;
 
   /* --- gölge (sadece yüzen katman) --- */
-  --se-golge-1:          0 1px 2px rgba(20, 20, 20, 0.04), 0 2px 8px rgba(20, 20, 20, 0.04);
-  --se-golge-2:          0 4px 12px rgba(20, 20, 20, 0.08);
-  --se-golge-3:          0 12px 32px rgba(20, 20, 20, 0.12);
+  --se-golge-1:          0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --se-golge-2:          0 4px 12px rgba(16, 24, 40, 0.08);
+  --se-golge-3:          0 12px 32px rgba(16, 24, 40, 0.12);
 
   /* --- seçim ve kaydırma çubuğu --- */
-  --se-secim-bg:         #E3F2EF;
-  --se-secim-ink:        #1F1B1C;
-  --se-kaydirma:         #CFCAC3;
-  --se-kaydirma-hover:   #B5AEA6;
+  --se-secim-bg:         #FDEFF2;
+  --se-secim-ink:        #1F2937;
+  --se-kaydirma:         #D1D5DB;
+  --se-kaydirma-hover:   #B6BCC6;
 
   color-scheme: light;
 }
