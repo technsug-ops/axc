@@ -41,6 +41,7 @@ export function IstatistikKutusu({
   rozet,
   kiyas,
   altNot,
+  mini,
   className,
 }: {
   etiket: string;
@@ -57,24 +58,31 @@ export function IstatistikKutusu({
   kiyas?: React.ReactNode;
   /** Açıklama ya da ikincil bağlantı. */
   altNot?: React.ReactNode;
+  /**
+   * Sağ altta mini çubuklar (Algoritmo referansı, 07.10.2026; analiz §4.2).
+   * Dönemin kendi serisinden (`miniKovalar`) — ayrı sorgu yok. Boşsa çizilmez.
+   */
+  mini?: readonly number[];
   /** Izgara yerleşimi için (ör. telefonda `max-sm:col-span-3`, K270). */
   className?: string;
 }) {
   return (
-    <div className={`bg-card flex min-w-0 flex-col gap-1.5 rounded-lg border p-3 ${className ?? ""}`}>
-      <span className="text-muted-foreground min-w-0 text-xs break-words">
+    <div className={`bg-card relative flex min-w-0 flex-col gap-1.5 rounded-lg border p-3 ${mini && mini.length > 0 ? "pr-16" : ""} ${className ?? ""}`}>
+      {/* Algoritmo KPI başlığı: 13px, orta kalınlık (analiz §2.2). */}
+      <span className="text-muted-foreground min-w-0 text-[13px] font-medium break-words">
         {etiket}
       </span>
       <span
         /* K270 (kullanıcı 25.09.2026: «kartlar ve içindeki yazılar çok büyük»):
            telefonda rakam bir kademe küçük — yarım genişlikte kutuya sığsın. */
-        className={`min-w-0 font-semibold tabular-nums ${bas ? "text-3xl max-sm:text-xl" : "text-2xl max-sm:text-lg"}`}
+        className={`min-w-0 font-bold tabular-nums ${bas ? "text-3xl max-sm:text-xl" : "text-2xl max-sm:text-lg"}`}
       >
         {cocuk}
       </span>
       {rozet ? <span className="flex min-w-0">{rozet}</span> : null}
       {kiyas ? <span className="flex min-w-0">{kiyas}</span> : null}
       {altNot ? <span className="min-w-0 text-xs">{altNot}</span> : null}
+      {mini && mini.length > 0 ? <MiniCubuklar degerler={mini} /> : null}
     </div>
   );
 }
@@ -88,6 +96,26 @@ export function IstatistikKutusu({
  * Çipteki işaret (✓ − • →) paletten geliyor: renk tek başına konuşmaz, renk
  * körlüğünde ve siyah-beyaz çıktıda işaret ayakta kalır (kısıt #1).
  */
+/**
+ * MİNİ ÇUBUKLAR — sağ altta, eksensiz (analiz §4.2: 6px genişlik, 4px aralık).
+ * Boy en büyük MUTLAK değere göre; eksi kova (zarar) kırmızı çizilir ki
+ * «küçük artı» sanılmasın. Süs: ekran okuyucudan gizli, rakam zaten yazılı.
+ */
+export function MiniCubuklar({ degerler }: { degerler: readonly number[] }) {
+  const tavan = Math.max(...degerler.map((d) => Math.abs(d)), 0);
+  return (
+    <span className="absolute right-3 bottom-3 flex h-11 items-end gap-1" aria-hidden>
+      {degerler.map((d, i) => (
+        <span
+          key={i}
+          className={`w-1.5 rounded-sm ${d < 0 ? "bg-destructive" : "bg-primary/70"}`}
+          style={{ height: `${tavan > 0 ? Math.max(8, (Math.abs(d) / tavan) * 100) : 8}%` }}
+        />
+      ))}
+    </span>
+  );
+}
+
 export function UyariKarti({
   durum,
   baslik,

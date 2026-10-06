@@ -318,6 +318,12 @@ h1, h2, h3, [data-slot="card-title"] {
         box-shadow: var(--se-golge-1);
         background-color: var(--card);
     }
+    /* KART İÇİNDEKİ KUTU gölge almaz, ince çizgiyle ayrılır (analiz §4.2:
+       «kart içinde kart olduğundan gölge yok», 1px #EEF0F3). */
+    :is([data-slot="card"], .rounded-lg.border) :where(div, section, article, aside, details, li).rounded-lg.border:not(.border-dashed) {
+        border-color: var(--se-cizgi);
+        box-shadow: none;
+    }
 }
 
 @layer utilities {
