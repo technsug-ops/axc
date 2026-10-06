@@ -136,6 +136,7 @@ import {
   nakitTakvimiKur,
   type TakvimSatiri,
 } from "../src/lib/panel/nakit-takvimi";
+import { miniKovalar } from "../src/lib/panel/mini-seri";
 import { nakitEtkisi } from "../src/lib/nakit-isaret";
 import {
   ALIM_DURUM_RENGI,
@@ -4946,6 +4947,27 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     "  ...ve yuzde varsa yuzdeyi, yoksa mutlak farki",
     /d\.yuzde === null[\s\S]{0,80}?bicimle\(Math\.abs\(d\.mutlak\)\)[\s\S]{0,80}?bicim\.yuzde\(Math\.abs\(d\.yuzde\)\)/.test(rozet),
   );
+  /**
+   * *** EGILIM ROZETI (Algoritmo, 07.10.2026): renk HUKUMDEN, ok YONDEN.
+   * Mutasyonla bulundu: `iyi={!iyi}` (iade artisi YESIL) bekci YESIL kaldi —
+   * eski `DurumRozeti` hali de olculmuyordu. Simdi uc halka ayri sinanir.
+   */
+  kontrol(
+    "  ...egilim rozeti hukmu artisIyiMi'den, yonu degisimden",
+    /const iyi = d\.mutlak > 0 === artisIyiMi;[\s\S]{0,400}?<EgilimRozeti\s+iyi=\{iyi\}\s+yukari=\{d\.mutlak > 0\}/.test(rozet),
+  );
+  kontrol(
+    "  ...marj (puan) rozeti: artis iyi, yon puandan",
+    /<EgilimRozeti iyi=\{d\.puan > 0\} yukari=\{d\.puan > 0\}>/.test(sayfa),
+  );
+  {
+    const eg = kaynakOku("src/components/egilim-rozeti.tsx");
+    kontrol(
+      "  ...rozet bileseni: iyi = kar rengi, kotu = zarar rengi; ok yone bagli",
+      /iyi \? "bg-\[var\(--se-kar-bg\)\] text-\[var\(--se-kar\)\]" : "bg-\[var\(--se-zarar-bg\)\] text-\[var\(--se-zarar\)\]"/.test(eg) &&
+        /const Ok = yukari \? TrendingUp : TrendingDown;/.test(eg),
+    );
+  }
 }
 
 /**
@@ -6921,7 +6943,8 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("KPI izgarasi telefonda 6 sutun", /grid grid-cols-6 gap-2 sm:grid-cols-2 md:grid-cols-3/.test(sayfaT));
   /* Satir toplamlari 6: [ciro 6] [NET-1 3 · NET-2 3] [marj 2 · satis 2 · iade 2] — ESIT kutular. */
   const span = (desen: RegExp) => Number((desen.exec(sayfaT) ?? ["", "0"])[1]);
-  const ciroS = span(/<div className="bg-card min-w-0 space-y-1 rounded-lg border p-3 max-sm:col-span-(\d)">/);
+  /* 07.10.2026: ciro kutusu mini çubuk için `relative` + koşullu `pr-16` aldı (Algoritmo §4.2); çapa yeni yazıma taşındı, ölçüt aynı. */
+  const ciroS = span(/<div className=\{`bg-card relative min-w-0 space-y-1 rounded-lg border p-3 max-sm:col-span-(\d) \$\{miniVar \? "pr-16" : ""\}`\}>/);
   const net1S = span(/etiket=\{t\("net1"\)\}\s*className="max-sm:col-span-(\d)"/);
   const net2S = span(/etiket=\{t\("net2"\)\}\s*className="max-sm:col-span-(\d)"/);
   const marjS = span(/etiket=\{t\("net2Marji"\)\}\s*className="max-sm:col-span-(\d)"/);
@@ -6998,6 +7021,20 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("ekran işareti gövdeden alıyor ve MUTLAK tutarı biçimliyor",
     takvim.includes("= nakitEtkisi(yon, tutar);") && takvim.includes("{para(mutlak)}") && !takvim.includes("{para(tutar)}"));
+}
+
+/* ═══ MİNİ ÇUBUKLAR (Algoritmo §4.2, 07.10.2026) — dönem serisinden kovalar ═══
+   Örnek veri ayrımın iki yakasını gösterir: uzun seri bölünür, kısa seri
+   olduğu gibi döner (uydurma kova yok), toplam korunur. */
+{
+  console.log("\nAlgoritmo — mini çubuk kovaları");
+  const uzun = miniKovalar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 6);
+  kontrol("12 nokta → 6 kova, ardışık toplam", uzun.join() === "3,7,11,15,19,23", uzun);
+  const tek = miniKovalar([1, 2, 3, 4, 5, 6, 7], 6);
+  kontrol("  ...toplam korunur (7 nokta, eşit bölünmez)", tek.reduce((a, b) => a + b, 0) === 28 && tek.length === 6, tek);
+  const kisa = miniKovalar([5, -2, 9], 6);
+  kontrol("  ...kısa seri bölünmez, olduğu gibi döner (eksi kova korunur)", kisa.join() === "5,-2,9", kisa);
+  kontrol("  ...boş seri boş", miniKovalar([], 6).length === 0);
 }
 
 console.log("\n" + "=".repeat(70));

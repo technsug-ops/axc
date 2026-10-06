@@ -16,6 +16,7 @@ import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
 import { DurumRakami, DurumRozeti } from "@/components/durum-rozeti";
 import {
   IstatistikKutusu,
+  MiniCubuklar,
   PayCubugu,
   UyariKarti,
 } from "@/components/istatistik-kutusu";
@@ -58,6 +59,8 @@ import { kutuOranlari } from "@/lib/panel/kar-orani";
 import { payFarki } from "@/lib/panel/pay-farki";
 import { HalkaGrafik, HalkaKompakt, halkaDilimleriniTopla } from "@/components/halka-grafik";
 import { donemCiroNetSerisi } from "@/lib/panel/son-gun-serisi";
+import { miniKovalar } from "@/lib/panel/mini-seri";
+import { EgilimRozeti } from "@/components/egilim-rozeti";
 import { KANAL_RENKLERI, KANAL_RENGI_VARSAYILAN } from "@/lib/renkler";
 import { HIZLI_KIYAS } from "@/lib/karsilastirma";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
@@ -1534,23 +1537,23 @@ export default async function AnaSayfa({
     }
     const iyi = d.mutlak > 0 === artisIyiMi;
     return (
-      <DurumRozeti durum={iyi ? "olumlu" : "olumsuz"} isaretsiz>
+      /* 07.10.2026 — Algoritmo eğilim rozeti (analiz §4.2): ok dairesi + yüzde,
+         ardından önceki değer soluk. Yön oktan, hüküm renkten (artisIyiMi). */
+      <EgilimRozeti
+        iyi={iyi}
+        yukari={d.mutlak > 0}
+        ek={onceki === null ? null : `${tRapor("kiyasOncekiKisa")} ${bicimle(onceki)}`}
+      >
         {/*
           ⚠ BİÇİM DEMODAN (K253): «▲ %8 · önceki 29.150». Eskisi «▲ ₺2.330 · %8»
           idi. ORAN hükümdür, ÖNCEKİ DEĞER kanıtıdır; mutlak fark ikisinden
           türetilir ve rozette üçüncü sayı olarak gürültüydü. Yüzde
           kurulamıyorsa (önceki 0) mutlak fark yazılır — rozet boş kalmaz.
         */}
-        <span className="tabular-nums">
-          {d.mutlak > 0 ? "▲" : "▼"}{" "}
-          {d.yuzde === null
-            ? bicimle(Math.abs(d.mutlak))
-            : bicim.yuzde(Math.abs(d.yuzde))}
-          {onceki === null
-            ? ""
-            : ` · ${tRapor("kiyasOncekiKisa")} ${bicimle(onceki)}`}
-        </span>
-      </DurumRozeti>
+        {d.yuzde === null
+          ? bicimle(Math.abs(d.mutlak))
+          : bicim.yuzde(Math.abs(d.yuzde))}
+      </EgilimRozeti>
     );
   }
 
@@ -1580,12 +1583,9 @@ export default async function AnaSayfa({
       );
     }
     return (
-      <DurumRozeti durum={d.puan > 0 ? "olumlu" : "olumsuz"} isaretsiz>
-        <span className="tabular-nums">
-          {d.puan > 0 ? "▲" : "▼"}{" "}
-          {t("puanFarki", { puan: bicim.sayi(Math.abs(d.puan), 1) })}
-        </span>
-      </DurumRozeti>
+      <EgilimRozeti iyi={d.puan > 0} yukari={d.puan > 0}>
+        {t("puanFarki", { puan: bicim.sayi(Math.abs(d.puan), 1) })}
+      </EgilimRozeti>
     );
   }
 
@@ -2716,6 +2716,9 @@ export default async function AnaSayfa({
              * tanım. İki ekran aynı kavramı farklı hesaplasaydı hangisinin doğru
              * olduğu sorulurdu.
              */
+            /* Mini çubuklar (Algoritmo §4.2) yalnız grafiğin para biriminde:
+               seri `seciliPara` ile kuruldu, başka bloğa taşınmaz. */
+            const miniVar = blok.paraBirimi === seciliPara;
             const marjD = oranDegisimi(
               blok.toplamNet2,
               blok.toplamGelir,
@@ -2786,7 +2789,7 @@ export default async function AnaSayfa({
                       satır (brüt · iade düşümü · net). Kendi bileşeni var ve
                       panelin ciro gösterdiği dört yüzeyin hepsinde aynı
                       (mimar kararı 13.08.2026). */}
-                    <div className="bg-card min-w-0 space-y-1 rounded-lg border p-3 max-sm:col-span-6">
+                    <div className={`bg-card relative min-w-0 space-y-1 rounded-lg border p-3 max-sm:col-span-6 ${miniVar ? "pr-16" : ""}`}>
                       <span className="text-muted-foreground min-w-0 text-xs break-words">
                         {t("ciro")}
                       </span>
@@ -2810,6 +2813,7 @@ export default async function AnaSayfa({
                         kb?.toplamGelir ?? null,
                         (n) => bicim.para(n, blok.paraBirimi),
                       )}
+                      {miniVar ? <MiniCubuklar degerler={miniKovalar(ciroNet.map((n) => n.gelir))} /> : null}
                     </div>
                     {/* NET-1 VE NET-2 YAN YANA (kullanıcı isteği 14.08.2026:
                       "net kâr 1, 2"). İkisi arasındaki fark ÖDENECEK KDV'dir;
@@ -2843,6 +2847,7 @@ export default async function AnaSayfa({
                         <IstatistikKutusu
                           etiket={t("net2")}
                           className="max-sm:col-span-3"
+                          mini={miniVar ? miniKovalar(ciroNet.map((n) => n.net2)) : undefined}
                           bas
                           cocuk={bicim.para(blok.toplamNet2, blok.paraBirimi)}
                           rozet={karRozeti(blok.toplamNet2)}
@@ -2899,6 +2904,7 @@ export default async function AnaSayfa({
                     <IstatistikKutusu
                       etiket={t("satisAdedi")}
                       className={karGorunur ? "max-sm:col-span-2" : "max-sm:col-span-3"}
+                      mini={miniVar ? miniKovalar(ciroNet.map((n) => n.adet)) : undefined}
                       cocuk={
                         <Baglanti
                           href={satisAdresi(
