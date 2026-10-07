@@ -49,7 +49,6 @@ const HATA_ANAHTARI: Record<
 > = {
   BULUNAMADI: "onayHataBulunamadi",
   ICE_AKTARMA_DEGIL: "onayHataUygunDegil",
-  KARGOLANMIS: "onayHataKargolanmis",
   IPTALLI: "onayHataIptalli",
   ZATEN_ONAYLI: "onayHataZatenOnayli",
   TARIHSEL: "onayHataUygunDegil",

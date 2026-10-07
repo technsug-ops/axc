@@ -42,7 +42,6 @@ export type OnayCekirdekSonucu =
       kod:
         | "BULUNAMADI"
         | "ICE_AKTARMA_DEGIL"
-        | "KARGOLANMIS"
         | "IPTALLI"
         | "ZATEN_ONAYLI"
         | "TARIHSEL"
