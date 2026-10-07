@@ -482,10 +482,11 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "ROZETTEN ONCEKI DEGER DUSTU",
     yon: "KALDIRAN",
     dosya: SAYFA,
+    /* ÇAPA TAŞINDI (07.10.2026): önceki değer Algoritmo eğilim rozetinin `ek` alanına geçti; niyet aynı. */
     bul:
-      "            : ` · ${tRapor(\"kiyasOncekiKisa\")} ${bicimle(onceki)}`}",
+      "        ek={onceki === null ? null : `${tRapor(\"kiyasOncekiKisa\")} ${bicimle(onceki)}`}",
     koy:
-      "            : \"\"}",
+      "        ek={null}",
     bozdugu:
       "rozet yalniz «▲ %8» yazar - neye gore oldugu gorunmez, kanit dusmus olur",
   },
