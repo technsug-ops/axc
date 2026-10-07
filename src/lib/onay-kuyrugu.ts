@@ -46,9 +46,16 @@ export function onayAdresi(): string {
  * ⚠ "Stok bağı yok" OLAYIN İZİYLE ölçülür (SALE_OUT hareketi) — alan
  * doluluğuyla değil (K60-② dersi: alanın dolu olması olayı kanıtlamaz).
  */
+/**
+ * ⭐ KARGOLANMIŞ DA ADAY (kullanıcı kararı 07.10.2026). Eskiden `shippedAt: null`
+ * şartı vardı: kargolanmış siparişin stoğunun başka yoldan düşüldüğü varsayılmıştı.
+ * Kaçak radarı (`hb-enumerasyon`) siparişi ZATEN KARGODAYKEN yazınca bu varsayım
+ * bozuldu — 4664334412 stok düşülmeden, «maliyet yok» kaldı (stokta 1 fazla
+ * göründü). Ölçüt artık OLAYIN İZİ: stok bağı (SALE_OUT) yoksa kargoda olsa da
+ * aday; varsa (aşağıdaki NOT) girmez — çift düşüm emniyeti aynen.
+ */
 export const ONAY_ADAY_KOSULU = {
   importKaynak: { not: null },
-  shippedAt: null,
   /** Onayın ÖZ İZİ (K164-②): kolonu yalnız `siparisiOnayla` doldurur. */
   onaylandiAt: null,
   /** İkinci savunma — bağı BAŞKA yoldan kurulmuş satış da kuyruğa girmez. */
@@ -92,9 +99,10 @@ export function onayaUygunMu(satis: {
   saleOutSayisi: number;
 }):
   | { uygun: true }
-  | { uygun: false; sebep: "ICE_AKTARMA_DEGIL" | "KARGOLANMIS" | "IPTALLI" | "ZATEN_ONAYLI" | "TARIHSEL" } {
+  | { uygun: false; sebep: "ICE_AKTARMA_DEGIL" | "IPTALLI" | "ZATEN_ONAYLI" | "TARIHSEL" } {
   if (satis.importKaynak === null) return { uygun: false, sebep: "ICE_AKTARMA_DEGIL" };
-  if (satis.shippedAt !== null) return { uygun: false, sebep: "KARGOLANMIS" };
+  /* ⭐ 07.10.2026: «kargolanmış» artık RED SEBEBİ DEĞİL — stoğu düşülmemiş kargolu
+     sipariş de onaya girer (bkz. ONAY_ADAY_KOSULU). Ayırt edici olan stok bağıdır. */
   if (satis.iptalTarihi !== null) return { uygun: false, sebep: "IPTALLI" };
   /** İki ayrı soru, iki ayrı kontrol: ① onay İZİ var mı (öz iz) ·
    *  ② stok bağı BAŞKA yoldan kurulmuş mu (çift düşüm emniyeti). */
@@ -123,7 +131,6 @@ export function onayDurumuAnahtari(
 ): string {
   if (durum.uygun) return "onayDurumuBekliyor";
   if (durum.sebep === "ICE_AKTARMA_DEGIL") return "onayDurumuElle";
-  if (durum.sebep === "KARGOLANMIS") return "onayDurumuKargolandi";
   if (durum.sebep === "IPTALLI") return "onayDurumuIptalli";
   if (durum.sebep === "TARIHSEL") return "onayDurumuTarihsel";
   /** ZATEN_ONAYLI iki ayrı yoldan gelir: onay İZİ ya da stok bağı. */

@@ -1882,6 +1882,8 @@ kontrol(
     saleOutSayisi: 0,
   };
   kontrol("uygun aday GEÇER", onayaUygunMu(temel).uygun === true);
+  kontrol("kargolanmış ama stoğu düşülmemiş aday da GEÇER (07.10.2026, kaçak sipariş)",
+    onayaUygunMu({ ...temel, shippedAt: new Date("2026-09-04T12:00:00Z") }).uygun === true);
   const gunlu = onayaUygunMu({ ...temel, soldAt: new Date("2026-09-04T00:00:00.000Z") });
   kontrol(
     "TARİHSEL (güne damgalı) kuyruğa GİREMEZ — 425 kayıt kutuyu boğmasın (K49)",
@@ -2838,7 +2840,12 @@ console.log("\nONAY DURUMU ETİKETİ");
 
   kontrol("kuyruktaki satış → onay bekliyor", a({}) === "onayDurumuBekliyor");
   kontrol("elle girilen → onay gerekmez", a({ importKaynak: null }) === "onayDurumuElle");
-  kontrol("kargolanmış → akış dışında", a({ shippedAt: new Date() }) === "onayDurumuKargolandi");
+  /* ⭐ KURAL ÇEVRİLDİ (kullanıcı kararı 07.10.2026): «kargolanmış → akış dışında» ölçütü vardı.
+     Kaçak radarı siparişi kargodayken yazınca stok hiç düşülmüyordu (4664334412). Artık ayırt
+     edici olan STOK BAĞI: bağ yoksa kargoda da onay bekler, varsa «stoktan düşülmüş». */
+  kontrol("kargolanmış + stok bağı YOK → onay bekliyor", a({ shippedAt: new Date() }) === "onayDurumuBekliyor");
+  kontrol("kargolanmış + stok bağı VAR → stoktan düşülmüş (çift düşüm yok)",
+    a({ shippedAt: new Date(), saleOutSayisi: 1 }) === "onayDurumuStokDusuldu");
   kontrol("iptalli → iptal edildi", a({ iptalTarihi: new Date() }) === "onayDurumuIptalli");
   kontrol(
     "gün damgalı (tarihsel) → akış kurulmadan önce",
