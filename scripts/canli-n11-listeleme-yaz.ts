@@ -146,25 +146,29 @@ export async function n11ListelemeCekimKos(ayar: {
   console.log(`   hesap  N11/${hesap.name}  (externalId ${hesap.externalId})`);
 
   /* ═══ ③ ÇEVİRİ + ANAHTAR ═══════════════════════════════════════════ */
-  const kanal = new Map<string, { durum: string; kaynak: string; adet: number | null }>();
+  const kanal = new Map<string, { durum: string; kaynak: string; adet: number | null; ilan: string | null }>();
   const dagilim = new Map<string, number>();
   let anahtarsiz = 0;
   for (const l of listingler) {
     const anahtar = n11Anahtari(l);
     const { durum, kaynak } = n11ListelemeDurumu(l);
     const adet = n11Adedi(l.quantity);
+    /** İlan adresi kimliği (07.10.2026): `n11ProductId` — ölçüldü 20/20 dolu. */
+    const ilan = l.n11ProductId === null || l.n11ProductId === undefined || String(l.n11ProductId).trim() === "" ? null : String(l.n11ProductId).trim();
     dagilim.set(`${durum} · ${kaynak}`, (dagilim.get(`${durum} · ${kaynak}`) ?? 0) + 1);
     if (anahtar === "") {
       anahtarsiz++;
       continue;
     }
     const mevcut = kanal.get(anahtar);
-    if (mevcut === undefined) kanal.set(anahtar, { durum, kaynak, adet });
+    if (mevcut === undefined) kanal.set(anahtar, { durum, kaynak, adet, ilan });
     else {
       const enIyi = SIRA[durum] < SIRA[mevcut.durum] ? durum : mevcut.durum;
       const toplam =
         mevcut.adet === null && adet === null ? null : (mevcut.adet ?? 0) + (adet ?? 0);
-      kanal.set(anahtar, { durum: enIyi, kaynak: enIyi === durum ? kaynak : mevcut.kaynak, adet: toplam });
+      /* İki ilan farklı kimlik söylüyorsa link kurulmaz — biri seçilmez. */
+      const ortakIlan = mevcut.ilan === null ? ilan : ilan === null || ilan === mevcut.ilan ? mevcut.ilan : null;
+      kanal.set(anahtar, { durum: enIyi, kaynak: enIyi === durum ? kaynak : mevcut.kaynak, adet: toplam, ilan: ortakIlan });
     }
   }
   console.log("\n③ DURUM DAĞILIMI (durum · alt-iz)");
@@ -177,23 +181,23 @@ export async function n11ListelemeCekimKos(ayar: {
   /* ═══ ④ DEFTERLE EŞLEŞME ═══════════════════════════════════════════ */
   const satirlar = await prisma.channelSku.findMany({
     where: { channelAccountId: hesap.id },
-    select: { id: true, channelSku: true, listelemeDurumu: true, kanalAdet: true },
+    select: { id: true, channelSku: true, listelemeDurumu: true, kanalAdet: true, externalListingId: true },
   });
   let eslesen = 0;
   let degisecek = 0;
   let kanaldaYok = 0;
-  const yeniDurum = new Map<string, { durum: string; adet: number | null }>();
+  const yeniDurum = new Map<string, { durum: string; adet: number | null; ilan: string | null }>();
   for (const s of satirlar) {
     const bulunan = kanal.get(s.channelSku.trim());
     if (bulunan === undefined) {
       kanaldaYok++;
-      if (s.listelemeDurumu !== "YOK") yeniDurum.set(s.id, { durum: "YOK", adet: null });
+      if (s.listelemeDurumu !== "YOK" || s.externalListingId !== null) yeniDurum.set(s.id, { durum: "YOK", adet: null, ilan: null });
       continue;
     }
     eslesen++;
-    if (s.listelemeDurumu !== bulunan.durum || s.kanalAdet !== bulunan.adet) {
+    if (s.listelemeDurumu !== bulunan.durum || s.kanalAdet !== bulunan.adet || s.externalListingId !== bulunan.ilan) {
       degisecek++;
-      yeniDurum.set(s.id, { durum: bulunan.durum, adet: bulunan.adet });
+      yeniDurum.set(s.id, { durum: bulunan.durum, adet: bulunan.adet, ilan: bulunan.ilan });
     }
   }
   const defterAnahtarlari = new Set(satirlar.map((s) => s.channelSku.trim()));
@@ -231,7 +235,7 @@ export async function n11ListelemeCekimKos(ayar: {
   }
   const { hbListelemeDurumunuYaz } = await import("../src/lib/kanal-listeleme-hb-yaz");
   const y2 = await hbListelemeDurumunuYaz(
-    [...yeniDurum].map(([channelSkuId, v]) => ({ channelSkuId, durum: v.durum as never, adet: v.adet })),
+    [...yeniDurum].map(([channelSkuId, v]) => ({ channelSkuId, durum: v.durum as never, adet: v.adet, ilanKimligi: v.ilan })),
     KOSUM_KANALI,
     new Date(),
     satirlar.map((s) => s.id),

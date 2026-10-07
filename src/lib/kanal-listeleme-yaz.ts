@@ -21,6 +21,13 @@ import {
  *  `externalListingId` gibi alanlara DOKUNULMAZ; onların kendi kaynakları
  *  var ve buradan yazılsalardı iki kaynak sessizce çakışırdı.
  *
+ *  ⭐ ÇEVRİLDİ — `externalListingId` (07.10.2026, ilan adresi isteği): ölçüldü,
+ *  bu alanın HİÇBİR yazıcısı yoktu (0/2358 dolu) — «kendi kaynağı» varsayımı
+ *  bu alan için tutmuyordu. Pazaryerinin ürün kimliği kanalın CEVABIDIR, yani
+ *  doğal kaynağı tam bu okuma. Artık TY `contentId` buraya yazılır
+ *  (`lib/kanal-ilan-adresi.ts`). Gerekçe `commissionRate` ve `channelSku`
+ *  için AYNEN geçerli — onlar hâlâ yazılmaz.
+ *
  *  ── ⚠ EŞLEŞTİRME KİMLİKLE ────────────────────────────────────────────
  *  Kanal hesabı **`externalId`** ile bulunur (taramanın `saticiId`si), ADLA
  *  değil. Ölçüldü: `Trendyol/AXCALI` → `externalId = 870249` ve tarama da
@@ -157,12 +164,14 @@ export async function listelemeDurumunuYaz(
   }
 
   /** Kimlik → { durum, adet, kdv } — TEKİL listeleme başına. */
-  const kanal = new Map<string, { durum: ReturnType<typeof listelemeDurumu>; adet: number | null; kdv: number | null }>();
+  const kanal = new Map<string, { durum: ReturnType<typeof listelemeDurumu>; adet: number | null; kdv: number | null; ilan: string | null }>();
   for (const u of tarama.urunler) {
     const durum = listelemeDurumu(u);
     const adet = kanalAdedi(u.quantity);
     /** KDV oranı da «yok» ile «sıfır»ı ayırır — %0 gerçek bir orandır (ölçüldü: 1 ilan). */
     const kdv = kanalAdedi(u.kdvOrani);
+    /** İlan kimliği (TY contentId) — boşsa `null` (onaysız ilan vitrinde değil). */
+    const ilan = typeof u.icerikKimligi === "string" && u.icerikKimligi.trim() !== "" ? u.icerikKimligi.trim() : null;
     for (const k of kimlikleri(u)) {
       const mevcut = kanal.get(k);
       /**
@@ -170,7 +179,7 @@ export async function listelemeDurumunuYaz(
        * adet TOPLANIR. Ölçüldü — bugün böyle bir vaka YOK (1629 barkodun
        * 1629'u tekil), ama yarın doğarsa sessizce yanlış olmasın.
        */
-      if (mevcut === undefined) kanal.set(k, { durum, adet, kdv });
+      if (mevcut === undefined) kanal.set(k, { durum, adet, kdv, ilan });
       else {
         const enIyi = SIRA[durum] < SIRA[mevcut.durum] ? durum : mevcut.durum;
         const toplam =
@@ -179,7 +188,9 @@ export async function listelemeDurumunuYaz(
             : (mevcut.adet ?? 0) + (adet ?? 0);
         /** ⚠ İki ilan FARKLI oran söylüyorsa hüküm yok — biri seçilip yazılmaz. */
         const ortakKdv = mevcut.kdv === kdv ? kdv : null;
-        kanal.set(k, { durum: enIyi, adet: toplam, kdv: ortakKdv });
+        /** İlan kimliği de: iki ilan farklı kimlik söylüyorsa link kurulmaz (biri seçilmez). */
+        const ortakIlan = mevcut.ilan === null ? ilan : ilan === null || ilan === mevcut.ilan ? mevcut.ilan : null;
+        kanal.set(k, { durum: enIyi, adet: toplam, kdv: ortakKdv, ilan: ortakIlan });
       }
     }
   }
@@ -201,6 +212,7 @@ export async function listelemeDurumunuYaz(
       listelemeDurumu: true,
       kanalAdet: true,
       kanalKdvOrani: true,
+      externalListingId: true,
       variant: { select: { barcode: true } },
     },
   });
@@ -238,11 +250,12 @@ export async function listelemeDurumunuYaz(
 
     const k = kanal.get(bk);
     if (k === undefined) {
-      if (s.listelemeDurumu !== "YOK" || s.kanalAdet !== null || s.kanalKdvOrani !== null) {
+      if (s.listelemeDurumu !== "YOK" || s.kanalAdet !== null || s.kanalKdvOrani !== null || s.externalListingId !== null) {
         await prisma.channelSku.update({
           where: { id: s.id },
-          /* İlan yoksa oranı da yok — eski oran «bugün böyle» diye okunmasın. */
-          data: { listelemeDurumu: "YOK", kanalAdet: null, kanalKdvOrani: null, kanalOlcumAt: an },
+          /* İlan yoksa oranı da yok — eski oran «bugün böyle» diye okunmasın.
+             Linki de yok: ölü ilana giden adres «ilan var» sanılırdı. */
+          data: { listelemeDurumu: "YOK", kanalAdet: null, kanalKdvOrani: null, externalListingId: null, kanalOlcumAt: an },
         });
       }
       sonuc.yokIsaretlenen += 1;
@@ -250,13 +263,14 @@ export async function listelemeDurumunuYaz(
     }
     /** ⚠ DEĞİŞMEYEN SATIRA DOKUNULMAZ — damgası toplu sorguda tazelenecek. */
     const kayitliKdv = s.kanalKdvOrani === null ? null : Number(s.kanalKdvOrani.toString());
-    if (s.listelemeDurumu !== k.durum || s.kanalAdet !== k.adet || kayitliKdv !== k.kdv) {
+    if (s.listelemeDurumu !== k.durum || s.kanalAdet !== k.adet || kayitliKdv !== k.kdv || s.externalListingId !== k.ilan) {
       await prisma.channelSku.update({
         where: { id: s.id },
         data: {
           listelemeDurumu: k.durum,
           kanalAdet: k.adet,
           kanalKdvOrani: k.kdv,
+          externalListingId: k.ilan,
           kanalOlcumAt: an,
         },
       });

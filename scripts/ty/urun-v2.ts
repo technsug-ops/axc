@@ -64,6 +64,12 @@ export type NormalUrun = KanalUrunu & {
   satisFiyati: string;
   urunUrl: string;
   /**
+   * Trendyol İÇERİK kimliği (`contentId`, ürün düzeyi) — ilan adresinin
+   * tek belirleyeni (`lib/kanal-ilan-adresi.ts`). Ölçüldü 07.10.2026: onaylı
+   * uçta 20/20 dolu. ⚠ Onaysız uçta YOK (ürün vitrinde değil) → "".
+   */
+  icerikKimligi: string;
+  /**
    * Kanalın ilanda tuttuğu KDV oranı (`variants[].vatRate`, 30.09.2026).
    * ⚠ YALNIZ ONAYLI UÇTAN — onaysız uçta ölçülmedi, `undefined` kalır
    * («uç vermedi» ile «oran yok» aynı görünmesin; uydurulmaz).
@@ -106,6 +112,7 @@ function anaGorsel(ham: Record<string, unknown>): string {
 export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUrun[] {
   const productMainId = dize(ham.productMainId);
   const gorselUrl = anaGorsel(ham);
+  const icerikKimligi = dize(ham.contentId);
   const varyantlar = Array.isArray(ham.variants) ? ham.variants : [];
 
   if (varyantlar.length === 0) {
@@ -127,6 +134,7 @@ export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUru
         kategori: icAd(ham.category),
         satisFiyati: "",
         urunUrl: "",
+        icerikKimligi,
       },
     ];
   }
@@ -154,6 +162,7 @@ export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUru
       /** ⚠ FİYAT VARYANTTA — aynı içeriğin varyantları farklı fiyatlı olabilir. */
       satisFiyati: dize(fiyat.salePrice),
       urunUrl: dize(v.productUrl),
+      icerikKimligi,
       kdvOrani: sayiVeyaYok(v.vatRate),
     };
   });
@@ -200,6 +209,7 @@ export function onaysizUrunuNormallestir(ham: Record<string, unknown>): NormalUr
     satisFiyati: dize(ham.salePrice),
     /** ⛔ Onaysız uç `productUrl` GÖNDERMİYOR — ürün henüz vitrinde yok. */
     urunUrl: "",
+    icerikKimligi: "",
   };
 }
 

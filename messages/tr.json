@@ -5895,5 +5895,24 @@
     "kanalAov": "{tutar} · {siparis} sipariş",
     "odenecekKdv": "Ödenecek KDV",
     "hesaplanmayanCiro": "Kârı hesaplanmayan satış"
+  },
+  "ListeKanallari": {
+    "baslik": "Ürün listesinde gösterilecek pazaryerleri",
+    "sira": "{sira}. satır",
+    "bos": "— (boş)",
+    "linkYokEki": "{kanal} (link henüz kurulamıyor)",
+    "aciklama": "Ürünler listesindeki «Pazaryeri» sütununda bu kanallar bu sırayla görünür ve ilana giden link taşır. Hepsini boş bırakırsanız sütun listeden kalkar.",
+    "kaydet": "Kaydet",
+    "kaydedildi": "Kaydedildi — ürün listesi bu sırayla gösterecek.",
+    "kaydedildiBos": "Kaydedildi — hiç kanal seçilmedi, «Pazaryeri» sütunu gizlendi.",
+    "gecersizKanal": "Seçilen kanal sistemde yok ya da pasif.",
+    "tekrarKanal": "Aynı kanal iki satırda seçilemez.",
+    "kaydedilemedi": "Kaydedilemedi — lütfen tekrar deneyin."
+  },
+  "PazaryeriLinki": {
+    "sutun": "Pazaryeri",
+    "kayitYok": "kodu yok",
+    "linkYok": "link yok",
+    "ac": "{kanal} ilanını yeni sekmede aç"
   }
 }

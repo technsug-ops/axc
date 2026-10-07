@@ -25,6 +25,8 @@ import { prisma } from "@/lib/prisma";
 
 import { kanalHesabiDurumDegistir } from "./actions";
 import { KanalHesabiFormu } from "./kanal-hesabi-formu";
+import { ListeKanallariFormu } from "./liste-kanallari-formu";
+import { ILAN_ADRESI_KALIPLARI, listeKanallariCoz } from "@/lib/kanal-ilan-adresi";
 import { RolSecici } from "./rol-secici";
 import { HesapSilButonu } from "./sil-butonu";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -45,12 +47,12 @@ export async function generateMetadata() {
 }
 
 export default async function KanalHesaplariSayfasi() {
-  await sayfaIzni("ayar.yaz");
+  const baglam = await sayfaIzni("ayar.yaz");
 
-  const [kanallar, hesaplar] = await Promise.all([
+  const [kanallar, hesaplar, firma] = await Promise.all([
     prisma.channel.findMany({
       where: { isActive: true },
-      select: { id: true, name: true },
+      select: { id: true, name: true, code: true },
       orderBy: { name: "asc" },
     }),
     prisma.channelAccount.findMany({
@@ -68,7 +70,11 @@ export default async function KanalHesaplariSayfasi() {
       },
       orderBy: [{ channelId: "asc" }, { code: "asc" }],
     }),
+    prisma.company.findUnique({ where: { id: baglam.companyId }, select: { urunListesiKanallari: true } }),
   ]);
+  /* Ürünler listesindeki «Pazaryeri» sütununun kanalları (07.10.2026). */
+  const listeKanallari = listeKanallariCoz(firma?.urunListesiKanallari ?? null, kanallar.map((k) => k.code));
+  const tListe = await getTranslations("ListeKanallari");
 
   const t = await getTranslations("KanalHesabi");
 
@@ -149,6 +155,18 @@ export default async function KanalHesaplariSayfasi() {
           </p>
         </div>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{tListe("baslik")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ListeKanallariFormu
+            secili={listeKanallari}
+            kanallar={kanallar.map((k) => ({ code: k.code, name: k.name, linkVar: k.code in ILAN_ADRESI_KALIPLARI }))}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

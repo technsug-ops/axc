@@ -27,6 +27,12 @@ export type HbGuncelleme = {
   durum: KanalListelemeDurumu;
   /** `null` = adet ÖLÇÜLEMEDİ — sıfır DEĞİL. */
   adet: number | null;
+  /**
+   * Pazaryerinin ürün kimliği → `externalListingId` (ilan adresi, 07.10.2026).
+   * `undefined` = bu kanal göndermiyor, alana DOKUNULMAZ (HB: kanal kodu zaten
+   * HBCV kimliğinin kendisi). `null` = ilan yok → kimlik silinir.
+   */
+  ilanKimligi?: string | null;
 };
 
 export type HbYazimSonucu = {
@@ -82,6 +88,7 @@ export async function hbListelemeDurumunuYaz(
         data: {
           listelemeDurumu: g.durum,
           kanalAdet: g.adet,
+          ...(g.ilanKimligi === undefined ? {} : { externalListingId: g.ilanKimligi }),
           /** Ölçümün ANI — "bu rakam ne zaman doğruydu" sorusunun cevabı. */
           kanalOlcumAt: an,
         },
