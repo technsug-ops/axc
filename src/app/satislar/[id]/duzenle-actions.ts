@@ -1,5 +1,6 @@
 "use server";
 
+import { kargoTarifeTarihi } from "@/lib/kargo/tarife-tarihi";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 
@@ -180,6 +181,7 @@ export async function kargoTarifesiniOku(
     where: { id: saleId },
     select: {
       soldAt: true,
+      shippedAt: true,
       cargoCarrierId: true,
       channelAccount: { select: { channelId: true } },
     },
@@ -204,7 +206,8 @@ export async function kargoTarifesiniOku(
       channelId: satis.channelAccount.channelId,
       carrierId: satis.cargoCarrierId,
       desi: tamDesi,
-      effectiveFrom: { lte: satis.soldAt },
+      /* 07.10.2026: kargoya veriliş günü (yoksa sipariş günü) — `kargoTarifeTarihi`. */
+      effectiveFrom: { lte: kargoTarifeTarihi(satis) },
     },
     orderBy: { effectiveFrom: "desc" },
     select: { amount: true },

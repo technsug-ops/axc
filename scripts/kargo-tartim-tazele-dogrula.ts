@@ -3,6 +3,8 @@ import {
   kanalTahminiHesapla,
   kargoTartimGeldiTazele,
 } from "../src/lib/kargo-tartim-tazele";
+import { kargoTarifeTarihi } from "../src/lib/kargo/tarife-tarihi";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
@@ -188,6 +190,22 @@ async function main() {
   }
 
   await tarifePartisiTestleri();
+
+  /* ═══ ④ TARİFE TARİHİ — KARGOYA VERİLİŞ GÜNÜ (kullanıcı kararı 07.10.2026) ═══
+     TY tarifesi 05.10.2026'dan geçerli; 02.10 satılıp 06.10 kargolanan sipariş YENİ
+     fiyattan — örnek veri ayrımın iki yakasını gösterir (iki gün farklı tarafta). */
+  console.log("\n  ── TARİFE TARİHİ (kargoya veriliş, 07.10.2026)");
+  const sip = new Date("2026-10-02T20:25:00Z");
+  const kargo = new Date("2026-10-06T10:00:00Z");
+  kontrol("kargoya verilmişse tarife KARGO gününden", kargoTarifeTarihi({ soldAt: sip, shippedAt: kargo }).getTime() === kargo.getTime());
+  kontrol("  ...verilmemişse SİPARİŞ gününden", kargoTarifeTarihi({ soldAt: sip, shippedAt: null }).getTime() === sip.getTime());
+  const yorumsuzOku = (y: string) => kaynakOku(y).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+  kontrol("kâr yeniden hesabı tarifeyi kargo gününden seçer",
+    /effectiveFrom: \{ lte: kargoTarifeTarihi\(satis\) \}/.test(yorumsuzOku("src/lib/kar-yeniden.ts")));
+  kontrol("  ...satış düzenleme önerisi de",
+    /effectiveFrom: \{ lte: kargoTarifeTarihi\(satis\) \}/.test(yorumsuzOku("src/app/satislar/[id]/duzenle-actions.ts")));
+  kontrol("  ...gerçek desi tazelemesi de (damga kayıttan)",
+    /soldAt: kargoTarifeTarihi\(\{ soldAt: girdi\.soldAt, shippedAt: damga\?\.shippedAt \?\? null \}\)/.test(yorumsuzOku("src/lib/kargo-tartim-tazele.ts")));
 
   console.log(
     "\n" + (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") + ` (${gecen}/${gecen + hata})`,
