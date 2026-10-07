@@ -9,7 +9,10 @@
    pembe kimliği AYRI tema: `tema-pembe.css` («ikisi de olsun»). */
 
 :root,
-[data-tema="kobalt"] {
+[data-tema="kobalt"],
+/* 07.10.2026: kişisel tema kobalt yüzeyleri üstüne kurulur; vurgu ailesi ve
+   köşe `<html>` satır içi değişkenleriyle ezilir (lib/marka/kisisel-tema.ts). */
+[data-tema="kisisel"] {
 
   /* --- yüzey merdiveni (0 en koyu → 2 en açık) --- */
   /**

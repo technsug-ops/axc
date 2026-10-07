@@ -16,10 +16,9 @@
    ⚠ İKİ DOSYA DA YALNIZ DEĞER TANIMLAR, token ADLARI birebir aynıdır.
    Bileşen kodunda hiçbir değişiklik gerekmez — aşağıdaki köprü sayesinde. */
 @import "../styles/tema-kobalt.css";
-@import "../styles/tema-gece.css";
 @import "../styles/tema-kagit.css";
-/* 07.10.2026 «ikisi de olsun»: Algoritmo'nun birebir pembe kimliği seçilebilir tema. */
-@import "../styles/tema-pembe.css";
+/* 07.10.2026: gece («röntgen çekilmiş gibi») ve pembe («uymadı») temaları kullanıcı
+   kararıyla kaldırıldı; yerine renk + köşe seçilen KİŞİSEL tema (kobalt yüzeyleri). */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -278,10 +277,12 @@ h1, h2, h3, [data-slot="card-title"] {
     --tw-shadow: var(--se-golge-1);
 }
 [data-slot="button"] {
-    border-radius: 8px;
+    /* Kart köşesinin 2/3'ü (12px kartta 8px — analiz 2.3); kişisel temada
+       kart yuvarlaklığıyla birlikte ölçeklenir. */
+    border-radius: calc(var(--radius) * 2 / 3);
 }
 [data-slot="input"], [data-slot="select-trigger"], [data-slot="textarea"] {
-    border-radius: 8px;
+    border-radius: calc(var(--radius) * 2 / 3);
 }
 /* Menü 280px (analiz bölüm 3.1). İlkel bileşen genişliği satır içi stille
    veriyor; değişken burada ezilir — bileşen koduna dokunulmaz. */
@@ -365,13 +366,12 @@ h1, h2, h3, [data-slot="card-title"] {
    ══════════════════════════════════════════════════════════════════════ */
 :root,
 [data-tema="kobalt"],
-[data-tema="gece"],
+[data-tema="kisisel"],
 /* ⚠ ÜÇÜNCÜ TEMA KÖPRÜYE DE YAZILIR (24.08.2026). Yalnız `--se-*` dosyasını
    eklemek yetmez: shadcn token'ları bu seçiciden okuyor ve tema adı burada
    yoksa uygulama VARSAYILAN (kobalt) yüzeylerle çizilir — kağıt paleti
    yüklenir ama hiçbir yere bağlanmaz. */
-[data-tema="kagit"],
-[data-tema="pembe"] {
+[data-tema="kagit"] {
     /* --- yüzeyler --- */
     --background: var(--se-zemin);
     --foreground: var(--se-ink);

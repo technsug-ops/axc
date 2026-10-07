@@ -26,14 +26,15 @@ import { UYGULAMA } from "@/lib/uygulama";
  */
 export const TEMA_ANAHTARI = `${UYGULAMA.teknikAd}-tema`;
 
+/** Kişisel temanın kaydı (renk, köşe ve türetilmiş değişkenler) — iki yer okur. */
+export const KISISEL_ANAHTARI = `${UYGULAMA.teknikAd}-tema-kisisel`;
+
 /** Tema başına kabuk (sol menü / sistem çubuğu) zemini. */
 export const KABUK_RENKLERI = {
   /** `tema-kobalt.css` → `--se-kabuk` */
   kobalt: "#FFFFFF",
-  /* 07.10.2026: Algoritmo pembe teması — menü beyaz, sistem çubuğu da beyaz. */
-  pembe: "#FFFFFF",
-  /** `tema-gece.css` → `--se-kabuk` */
-  gece: "#08101E",
+  /* 07.10.2026: gece ve pembe kaldırıldı. Kişisel tema kobalt kabuğunu kullanır. */
+  kisisel: "#FFFFFF",
   /** `tema-kagit.css` → `--se-kabuk` */
   kagit: "#3A2E24",
 } as const;
