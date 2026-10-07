@@ -22,7 +22,7 @@
    * 0,0568. Eşik uydurulmuş bir sayı değil, aynı paletten türetildi
    * (bkz. panel:dogrula).
    */
-  --se-zemin:            #F4F6FA;   /* sayfa arka planı */
+  --se-zemin:            #FFFFFF;   /* sayfa arka planı */
   --se-kart:             #FFFFFF;   /* kart, panel, tablo gövdesi */
   --se-kart-2:           #FFFFFF;   /* açılır menü, modal, ipucu */
   --se-satir:            #FAFBFC;   /* zebra satır */
@@ -36,6 +36,7 @@
   --se-kabuk-hover:      #F7F8FA;
   --se-kabuk-ink:        #232B35;
   --se-kabuk-ink2:       #667380;
+  --se-kabuk-marka:      #12356B;   /* logo rengi menüde (07.10.2026) */
   --se-kabuk-cizgi:      #DCE0E6;
 
   /* --- mürekkep --- */

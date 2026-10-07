@@ -2837,9 +2837,18 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
        22.08 gerekçesi («250px beyaz alan içerikten ayrışmıyordu») o günkü
        zemine aitti: şimdi zemin gri, menü beyaz ve sağ çizgiyle ayrılıyor.
        Ölçüt yönü çevrildi, SİLİNMEDİ: menü zeminle AYNI olamaz. */
+    /* ⭐ ÜÇÜNCÜ ADIM — kullanıcı 07.10.2026 (ekran görüntüsüyle): «arkadaki gri
+       zemin beyaza dönsün, tüm sayfalarda». Zemin artık menüyle AYNI beyaz;
+       menüyü zeminden ayıran şey SAĞ ÇİZGİ (`--se-kabuk-cizgi`). Ölçüt o çizginin
+       beyazdan en az referans çizgisi (#E5E7EB) kadar ayrıştığını sınar. */
     kontrol(
-      "kenar çubuğu Algoritmo gibi beyaz — zeminden AÇIK (zeminle aynı değil)",
-      luma(kobaltDeger("--se-kabuk")) - luma(kobaltDeger("--se-zemin")) > 0.02,
+      "kenar çubuğu beyaz — zeminden SAĞ ÇİZGİYLE ayrılıyor (çizgi ≥ referans)",
+      luma(kobaltDeger("--se-kabuk")) >= luma(kobaltDeger("--se-zemin")) &&
+        luma(kobaltDeger("--se-kabuk")) - luma(kobaltDeger("--se-kabuk-cizgi")) >= luma("#FFFFFF") - luma("#E5E7EB"),
+    );
+    kontrol(
+      "  ...zemin kullanıcı kararıyla BEYAZ (07.10.2026)",
+      kobaltDeger("--se-zemin")?.toUpperCase() === "#FFFFFF",
       {
         zemin: luma(kobaltDeger("--se-zemin")).toFixed(2),
         kabuk: luma(kobaltDeger("--se-kabuk")).toFixed(2),
@@ -2937,8 +2946,11 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      *  Tema değişirse eşik de kendiliğinden değişir.
      * ════════════════════════════════════════════════════════════════════
      */
+    /* ⭐ KOBALT ÇIKTI — kullanıcı 07.10.2026: zemin BEYAZ, kart zeminle aynı ton;
+       kart GÖLGEYLE ayrışır (aşağıdaki «kart çerçevesiz ve GÖLGELİ» ölçütü).
+       23.08 gerekçesi («salt beyaz çıkıyor») gri zemin dönemine aitti ve
+       yukarıda duruyor; karar bilerek çevrildi. Gece için ölçüt aynen sürer. */
     for (const [ad, deger] of [
-      ["Kobalt", kobaltDeger],
       ["Gece", geceDeger],
     ] as const) {
       const kart = luma(deger("--se-kart"));
@@ -3929,10 +3941,13 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     /** Göz yeşile daha duyarlı — basit ağırlıklı parlaklık yeterli. */
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
+  /* 07.10.2026: zemin beyaz (kullanıcı kararı) — kart zeminden KOYU olamaz;
+     eşit olabilir, ayrımı gölge yapar. «Kart gömülmez» sözü korunuyor. */
   kontrol(
-    "açık temada KART sayfadan açık (kart yükselir, gömülmez)",
-    acikLuma("card") > acikLuma("background"),
+    "açık temada KART sayfadan koyu değil (kart gömülmez; beyaz zeminde gölgeyle ayrışır)",
+    acikLuma("card") >= acikLuma("background"),
   );
+
 
   /**
    * ÖLÇÜ SİSTEMİ — tasarım referansındaki köşe yarıçapları.

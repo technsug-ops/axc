@@ -350,9 +350,9 @@ export function AppSidebar({
               da koyu (kobalt · gece · kağıt), bu yüzden tek hâl yeter.
               Çizim `lib/marka/cizim.tsx`te; erişilebilir ad `UYGULAMA.ad`dan
               (tek sabit kuralı metin için geçerli, çizim için değil). */}
-          <MarkaIsareti className="size-8 shrink-0 text-white" />
+          <MarkaIsareti className="size-8 shrink-0 text-[var(--se-kabuk-marka)]" />
           <span className="flex min-w-0 flex-col gap-1">
-            <MarkaYazisi etiket={UYGULAMA.ad} className="h-5 w-auto self-start text-white" />
+            <MarkaYazisi etiket={UYGULAMA.ad} className="h-5 w-auto self-start text-[var(--se-kabuk-marka)]" />
             {/* Slogan kabuğun açık ikincil mürekkebiyle (kullanıcı 05.10.2026:
                 «açık font kullan»). `text-muted-foreground` sayfa gövdesinin
                 koyu grisiydi; sol menü onu üst çubuk gibi kabuk rengine
