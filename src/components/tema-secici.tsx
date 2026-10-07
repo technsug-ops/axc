@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  CIZGI_SEVIYELERI,
   HAZIR_RENKLER,
   KISISEL_DEGISKENLERI,
   KISISEL_VARSAYILAN,
@@ -88,8 +89,8 @@ function kisiselDegiskenleriYaz(kayit: KisiselKayit | null) {
 
 function kisiselOku(): KisiselKayit {
   try {
-    const ham = JSON.parse(localStorage.getItem(KISISEL_ANAHTARI) ?? "null") as { renk?: unknown; kose?: unknown } | null;
-    if (ham) return kisiselKayit(kisiselTema({ renk: ham.renk, kose: ham.kose }));
+    const ham = JSON.parse(localStorage.getItem(KISISEL_ANAHTARI) ?? "null") as { renk?: unknown; kose?: unknown; cizgi?: unknown } | null;
+    if (ham) return kisiselKayit(kisiselTema({ renk: ham.renk, kose: ham.kose, cizgi: ham.cizgi }));
   } catch {
     /* Bozuk ya da okunamayan kayıt: varsayılan kişisel temayla devam edilir ve
        panelde o renk/köşe görünür — kullanıcı neyin uygulandığını görür. */
@@ -169,9 +170,9 @@ export function TemaSecici() {
     yazDepoya(TEMA_ANAHTARI, yeni);
   };
 
-  const kisiselDegistir = (girdi: { renk?: string; kose?: number }) => {
+  const kisiselDegistir = (girdi: { renk?: string; kose?: number; cizgi?: number }) => {
     const onceki = kisisel ?? kisiselOku();
-    const kayit = kisiselKayit(kisiselTema({ renk: girdi.renk ?? onceki.renk, kose: girdi.kose ?? onceki.kose }));
+    const kayit = kisiselKayit(kisiselTema({ renk: girdi.renk ?? onceki.renk, kose: girdi.kose ?? onceki.kose, cizgi: girdi.cizgi ?? onceki.cizgi }));
     setKisisel(kayit);
     temayiUygula("kisisel", kayit);
     yazDepoya(TEMA_ANAHTARI, "kisisel");
@@ -199,7 +200,8 @@ export function TemaSecici() {
     kagit: KABUK_RENKLERI.kagit,
     kisisel: kisisel?.degiskenler["--se-vurgu"] ?? KISISEL_VARSAYILAN.renk,
   };
-  const sonuc = kisisel ? kisiselTema({ renk: kisisel.renk, kose: kisisel.kose }) : null;
+  const sonuc = kisisel ? kisiselTema({ renk: kisisel.renk, kose: kisisel.kose, cizgi: kisisel.cizgi }) : null;
+  const cizgiAdi = [t("temaCizgiYok"), t("temaCizgiInce"), t("temaCizgiOrta"), t("temaCizgiBelirgin"), t("temaCizgiKoyu")];
 
   return (
     <Popover onOpenChange={(acik) => { if (acik && !kisisel) setKisisel(kisiselOku()); }}>
@@ -295,6 +297,22 @@ export function TemaSecici() {
                 className="h-11 w-full accent-primary md:h-6"
               />
             </div>
+            <div>
+              <label htmlFor="tema-cizgi" className="mb-1.5 flex justify-between text-xs font-medium">
+                <span>{t("temaCizgi")}</span>
+                <span className="text-muted-foreground">{cizgiAdi[sonuc.cizgi]}</span>
+              </label>
+              <input
+                id="tema-cizgi"
+                type="range"
+                min={0}
+                max={CIZGI_SEVIYELERI.length - 1}
+                step={1}
+                value={sonuc.cizgi}
+                onChange={(e) => kisiselDegistir({ cizgi: Number(e.target.value) })}
+                className="h-11 w-full accent-primary md:h-6"
+              />
+            </div>
             {/* Önizleme — kart ve düğme o anki değişkenlerle çizilir. */}
             <div className="flex items-center justify-between gap-2 rounded-lg border bg-card p-3 shadow-sm">
               <span className="text-xs text-muted-foreground">{t("temaOnizleme")}</span>
@@ -305,7 +323,7 @@ export function TemaSecici() {
               variant="ghost"
               size="sm"
               className="min-h-11 w-full md:min-h-8"
-              onClick={() => kisiselDegistir({ renk: KISISEL_VARSAYILAN.renk, kose: KISISEL_VARSAYILAN.kose })}
+              onClick={() => kisiselDegistir({ renk: KISISEL_VARSAYILAN.renk, kose: KISISEL_VARSAYILAN.kose, cizgi: KISISEL_VARSAYILAN.cizgi })}
             >
               <RotateCcw className="size-3.5" />
               {t("temaVarsayilan")}

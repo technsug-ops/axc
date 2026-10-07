@@ -32,8 +32,17 @@
  * ============================================================================
  */
 
-export const KISISEL_VARSAYILAN = { renk: "#12356B", kose: 12 } as const;
+export const KISISEL_VARSAYILAN = { renk: "#12356B", kose: 12, cizgi: 0 } as const;
 export const KOSE_SINIRI = { alt: 0, ust: 20 } as const;
+/**
+ * Kart çizgisi belirginliği (kullanıcı isteği 08.10.2026: «kart çizgilerinin
+ * belirginliğini de düzenleyebilsin kişi»). Seviye 0 = Algoritmo düzeni
+ * (çerçevesiz, yalnız gölge). Çizgi metin mürekkebinin (#232B35) saydamlığıdır —
+ * renk değil ton: hangi vurgu seçilirse seçilsin nötr kalır, kâr/zarar şeridiyle
+ * karışmaz. Saydamlıklar kobalt çizgi basamaklarından: %8 ≈ #EEF0F3 (saç teli),
+ * %16 ≈ #DCE0E6 (girdi çerçevesi), %26 ≈ #C3C9D1, %38 belirgin.
+ */
+export const CIZGI_SEVIYELERI = [0, 0.08, 0.16, 0.26, 0.38] as const;
 /** WCAG AA — normal boy metin. */
 export const KONTRAST_ESIGI = 4.5;
 
@@ -63,6 +72,7 @@ export const KISISEL_DEGISKENLERI = [
   "--se-kabuk-secili",
   "--se-odak",
   "--se-odak-golge",
+  "--se-kart-cizgi",
   "--radius",
 ] as const;
 export type KisiselDegisken = (typeof KISISEL_DEGISKENLERI)[number];
@@ -153,6 +163,17 @@ export function koseSinirla(ham: unknown): number {
   return Math.round(Math.min(KOSE_SINIRI.ust, Math.max(KOSE_SINIRI.alt, n)));
 }
 
+export function cizgiSinirla(ham: unknown): number {
+  const n = typeof ham === "number" ? ham : Number(ham);
+  if (!Number.isFinite(n)) return KISISEL_VARSAYILAN.cizgi;
+  return Math.round(Math.min(CIZGI_SEVIYELERI.length - 1, Math.max(0, n)));
+}
+
+function cizgiDegeri(seviye: number): string {
+  const saydamlik = CIZGI_SEVIYELERI[seviye]!;
+  return saydamlik === 0 ? "transparent" : `rgba(35, 43, 53, ${saydamlik.toFixed(2)})`;
+}
+
 export type KisiselSonuc = {
   /** Kullanıcının seçtiği (geçerliyse) renk. */
   secilen: string;
@@ -161,14 +182,16 @@ export type KisiselSonuc = {
   koyulasti: boolean;
   anlamUyarisi: "kar" | "zarar" | null;
   kose: number;
+  cizgi: number;
   degiskenler: Record<KisiselDegisken, string>;
 };
 
-export function kisiselTema(girdi: { renk: unknown; kose: unknown }): KisiselSonuc {
+export function kisiselTema(girdi: { renk: unknown; kose: unknown; cizgi?: unknown }): KisiselSonuc {
   const secilen = gecerliRenk(girdi.renk) ? girdi.renk.toUpperCase() : KISISEL_VARSAYILAN.renk;
   const { renk: uygulanan, koyulasti } = okunurVurgu(secilen);
   const v = hexOku(uygulanan);
   const kose = koseSinirla(girdi.kose);
+  const cizgi = cizgiSinirla(girdi.cizgi ?? KISISEL_VARSAYILAN.cizgi);
   const bg = acikTon(v);
   return {
     secilen,
@@ -176,6 +199,7 @@ export function kisiselTema(girdi: { renk: unknown; kose: unknown }): KisiselSon
     koyulasti,
     anlamUyarisi: anlamRengineYakin(uygulanan),
     kose,
+    cizgi,
     degiskenler: {
       "--se-vurgu": uygulanan,
       "--se-vurgu-hover": hexYaz(karistir(v, SIYAH, 0.21)),
@@ -187,6 +211,7 @@ export function kisiselTema(girdi: { renk: unknown; kose: unknown }): KisiselSon
       "--se-kabuk-secili": bg,
       "--se-odak": uygulanan,
       "--se-odak-golge": `0 0 0 3px ${hexYaz(karistir(v, BEYAZ, 0.83))}`,
+      "--se-kart-cizgi": cizgiDegeri(cizgi),
       "--radius": `${kose / 16}rem`,
     },
   };
@@ -197,11 +222,11 @@ export function kisiselTema(girdi: { renk: unknown; kose: unknown }): KisiselSon
  * React'ten önce koşar ve türetmeyi ikinci kez (dize içinde) yazmak, aynı
  * hesabın iki kopyası olurdu. Betik yalnız uygular; hesap tek yerde.
  */
-export type KisiselKayit = { renk: string; kose: number; degiskenler: Record<string, string> };
+export type KisiselKayit = { renk: string; kose: number; cizgi: number; degiskenler: Record<string, string> };
 
 export function kisiselKayit(sonuc: KisiselSonuc): KisiselKayit {
-  return { renk: sonuc.secilen, kose: sonuc.kose, degiskenler: sonuc.degiskenler };
+  return { renk: sonuc.secilen, kose: sonuc.kose, cizgi: sonuc.cizgi, degiskenler: sonuc.degiskenler };
 }
 
 /** Başlık betiğinin değer süzgeci — betik dizesine aynen gömülür. */
-export const DEGER_DESENI_KAYNAGI = "^(#[0-9A-F]{6}|0 0 0 3px #[0-9A-F]{6}|[0-9.]+rem)$";
+export const DEGER_DESENI_KAYNAGI = "^(#[0-9A-F]{6}|0 0 0 3px #[0-9A-F]{6}|[0-9.]+rem|transparent|rgba\\(35, 43, 53, 0\\.[0-9]{2}\\))$";

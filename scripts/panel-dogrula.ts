@@ -2849,9 +2849,12 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       luma(kobaltDeger("--se-kabuk")) >= luma(kobaltDeger("--se-zemin")) &&
         luma(kobaltDeger("--se-kabuk")) - luma(kobaltDeger("--se-kabuk-cizgi")) >= luma("#FFFFFF") - luma("#E5E7EB"),
     );
+    /* ⏪ 08.10.2026: beyaz zemin geri alındı (kullanıcı: «neredeyse hiçbir kart
+       görünür değil»). Ölçüt çevrildi, SİLİNMEDİ: zemin karttan KOYU olmalı —
+       beyaz kart beyaz zeminde yalnız gölgeyle ayrışmıyor. */
     kontrol(
-      "  ...zemin kullanıcı kararıyla BEYAZ (07.10.2026)",
-      kobaltDeger("--se-zemin")?.toUpperCase() === "#FFFFFF",
+      "  ...zemin karttan KOYU (beyaz zemin 08.10.2026'da geri alındı)",
+      luma(kobaltDeger("--se-zemin")) < luma(kobaltDeger("--se-kart")),
       {
         zemin: luma(kobaltDeger("--se-zemin")).toFixed(2),
         kabuk: luma(kobaltDeger("--se-kabuk")).toFixed(2),
@@ -2918,8 +2921,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       /--input:\s*var\((--se-[a-z0-9-]+)\)/.exec(kopru)?.[1] ?? "--se-cizgi",
     ));
     kontrol(
-      "  ...kart çerçevesiz ve GÖLGELİ (halka saydam + gölge katmanı)",
-      /\[data-slot="card"\]\s*\{[^}]*--tw-ring-color:\s*transparent;[^}]*--tw-shadow:\s*var\(--se-golge-1\)/.test(tema),
+      "  ...kart varsayılan çerçevesiz ve GÖLGELİ (halka kişisel çizgiye bağlı, tanımsızsa saydam)",
+      /\[data-slot="card"\]\s*\{[^}]*--tw-ring-color:\s*var\(--se-kart-cizgi, transparent\);[^}]*--tw-shadow:\s*var\(--se-golge-1\)/.test(tema),
     );
     kontrol(
       "  ...girdi çerçevesi kart kenarlığından koyu",
@@ -2944,11 +2947,14 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      *  Tema değişirse eşik de kendiliğinden değişir.
      * ════════════════════════════════════════════════════════════════════
      */
+    /* ⏪ 08.10.2026: Kobalt yeniden ölçülüyor — beyaz zemin geri alındı (aşağıdaki
+       07.10 notu o günün kararıdır, gerekçesiyle duruyor). */
     /* ⭐ KOBALT ÇIKTI — kullanıcı 07.10.2026: zemin BEYAZ, kart zeminle aynı ton;
        kart GÖLGEYLE ayrışır (aşağıdaki «kart çerçevesiz ve GÖLGELİ» ölçütü).
        23.08 gerekçesi («salt beyaz çıkıyor») gri zemin dönemine aitti ve
        yukarıda duruyor; karar bilerek çevrildi. Gece için ölçüt aynen sürer. */
     for (const [ad, deger] of [
+      ["Kobalt", kobaltDeger],
       ["Kağıt", kagitDeger],
     ] as const) {
       const kart = luma(deger("--se-kart"));

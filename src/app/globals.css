@@ -273,7 +273,8 @@ h1, h2, h3, [data-slot="card-title"] {
 /* Kart: kenarlık `ring` (box-shadow) idi; halka saydam, gölge Tailwind'in
    gölge katmanına (`--tw-shadow`) yazılır. */
 [data-slot="card"] {
-    --tw-ring-color: transparent;
+    /* Kişisel temada kart çizgisi seçilebilir (08.10.2026); tanımsızsa çerçevesiz. */
+    --tw-ring-color: var(--se-kart-cizgi, transparent);
     --tw-shadow: var(--se-golge-1);
 }
 [data-slot="button"] {
@@ -315,7 +316,7 @@ h1, h2, h3, [data-slot="card-title"] {
    (kesikli çizgi) olduğu gibi kalır. */
 @layer components {
     :where(div, section, article, aside, details, li).rounded-lg.border:not(.border-dashed) {
-        border-color: transparent;
+        border-color: var(--se-kart-cizgi, transparent);
         box-shadow: var(--se-golge-1);
         background-color: var(--card);
     }
