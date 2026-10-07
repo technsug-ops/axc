@@ -4,6 +4,7 @@ import { kaynakOku } from "./kaynak-oku";
 import {
   DEGER_DESENI_KAYNAGI,
   HAZIR_RENKLER,
+  CIZGI_SEVIYELERI,
   KISISEL_DEGISKENLERI,
   KISISEL_VARSAYILAN,
   kisiselTema,
@@ -85,6 +86,15 @@ console.log("\n1) kural — değerle");
   kontrol("köşe üst sınır (99 → 20)", kisiselTema({ renk: "#12356B", kose: 99 }).kose === 20);
   kontrol("köşe sayı değilse varsayılan", kisiselTema({ renk: "#12356B", kose: "abc" }).kose === KISISEL_VARSAYILAN.kose);
   kontrol("köşe rem olarak yazılıyor (12 px → 0.75rem)", k["--radius"] === "0.75rem");
+  /* Kart çizgisi (08.10.2026): 0 = çerçevesiz (Algoritmo), seviye arttıkça
+     mürekkebin saydamlığı artar; renk değil ton. */
+  const cizgi = (c: unknown) => kisiselTema({ renk: "#12356B", kose: 12, cizgi: c });
+  kontrol("çizgi varsayılanı çerçevesiz", k["--se-kart-cizgi"] === "transparent" && cizgi(undefined).cizgi === 0);
+  kontrol("çizgi seviyesi sınırlı (9 → en koyu, −2 → yok)", cizgi(9).cizgi === CIZGI_SEVIYELERI.length - 1 && cizgi(-2).cizgi === 0);
+  kontrol("çizgi seviyeleri gittikçe belirginleşiyor",
+    CIZGI_SEVIYELERI.every((v, i) => i === 0 ? v === 0 : v > CIZGI_SEVIYELERI[i - 1]!) && CIZGI_SEVIYELERI.length >= 4);
+  kontrol("çizgi nötr mürekkep tonu (vurgudan bağımsız)",
+    kisiselTema({ renk: "#6B3FA0", kose: 12, cizgi: 2 }).degiskenler["--se-kart-cizgi"] === "rgba(35, 43, 53, 0.16)");
   kontrol("geçersiz renk varsayılana düşüyor", kisiselTema({ renk: "red; x", kose: 12 }).uygulanan === KISISEL_VARSAYILAN.renk);
   kontrol("kâr yeşiline yakın ton uyarı veriyor", kisiselTema({ renk: "#2F9E5B", kose: 12 }).anlamUyarisi === "kar");
   kontrol("zarar kırmızısına yakın ton uyarı veriyor", kisiselTema({ renk: "#C62828", kose: 12 }).anlamUyarisi === "zarar");
@@ -99,7 +109,7 @@ console.log("\n1) kural — değerle");
   /* Logo rengi MARKADIR (kılavuz: «renklerin yeri değiştirilmez»). */
   kontrol("logo rengi kişisel temaya GİRMİYOR", !(KISISEL_DEGISKENLERI as readonly string[]).includes("--se-kabuk-marka"));
   kontrol("kâr/zarar renkleri kişisel temaya GİRMİYOR",
-    !(KISISEL_DEGISKENLERI as readonly string[]).some((a) => /--se-(kar|zarar|celiski)/.test(a)));
+    !(KISISEL_DEGISKENLERI as readonly string[]).some((a) => /^--se-(kar|zarar|celiski)(-|$)/.test(a)));
 }
 kosanBolumler.push("kural");
 
@@ -124,11 +134,16 @@ console.log("\n2) zincir — betik · düğme · CSS");
     /\{sonuc\.koyulasti \? \(\s*<p[^>]*>\s*\{t\("temaKoyulasti", \{ secilen: sonuc\.secilen, uygulanan: sonuc\.uygulanan \}\)\}/.test(secici));
   kontrol("anlam uyarısı EKRANDA söyleniyor", /\{sonuc\.anlamUyarisi \? \(\s*<p[^>]*>\s*\{t\(sonuc\.anlamUyarisi === "kar" \? "temaKarYakin" : "temaZararYakin"\)\}/.test(secici));
   kontrol("köşe kaydırıcısı sınırlardan", secici.includes("min={KOSE_SINIRI.alt}") && secici.includes("max={KOSE_SINIRI.ust}"));
+  kontrol("çizgi kaydırıcısı seviyelerden ve kayda yazıyor",
+    secici.includes("max={CIZGI_SEVIYELERI.length - 1}") && secici.includes("onChange={(e) => kisiselDegistir({ cizgi: Number(e.target.value) })}"));
 
   const kobalt = kaynakOku("src/styles/tema-kobalt.css");
   kontrol("kişisel tema kobalt yüzeylerine bağlı", /\[data-tema="kobalt"\],\s*(\/\*[\s\S]*?\*\/\s*)?\[data-tema="kisisel"\] \{/.test(kobalt));
   const kopru = oku("src/app/globals.css");
   kontrol("köprü seçicisi kişiseli sayıyor", kopru.includes('[data-tema="kisisel"],'));
+  kontrol("kart halkası çizgi değişkenine bağlı", /\[data-slot="card"\] \{[^}]*--tw-ring-color: var\(--se-kart-cizgi, transparent\);/.test(kopru));
+  kontrol("elle yazılmış kutu çizgisi de aynı değişkene bağlı",
+    /\.rounded-lg\.border:not\(\.border-dashed\) \{\s*border-color: var\(--se-kart-cizgi, transparent\);/.test(kopru));
   kontrol("düğme ve girdi köşesi kart köşesine bağlı (sabit 8px değil)",
     (kopru.match(/border-radius: calc\(var\(--radius\) \* 2 \/ 3\);/g) ?? []).length === 2 && !/\[data-slot="button"\] \{\s*border-radius: 8px/.test(kopru));
   kontrol("kaldırılan tema dosyaları yok", !existsSync("src/styles/tema-gece.css") && !existsSync("src/styles/tema-pembe.css"));

@@ -44,6 +44,10 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "              {sonuc.koyulasti ? (", koy: "              {false ? (", bozdugu: "kullanici sectigi rengin degistigini bilmez" },
   { ad: "DUGME KOSESI SABIT", yon: "KALDIRAN", dosya: KURESEL,
     bul: "    border-radius: calc(var(--radius) * 2 / 3);\n}\n[data-slot=\"input\"]", koy: "    border-radius: 8px;\n}\n[data-slot=\"input\"]", bozdugu: "kose ayari dugmelere islemez" },
+  { ad: "KART CIZGISI BAGLI DEGIL", yon: "KALDIRAN", dosya: KURESEL,
+    bul: "    --tw-ring-color: var(--se-kart-cizgi, transparent);", koy: "    --tw-ring-color: transparent;", bozdugu: "cizgi ayari kartlara islemez" },
+  { ad: "CIZGI SEVIYESI SINIRSIZ", yon: "FAZLADAN", dosya: GOVDE,
+    bul: "  return Math.round(Math.min(CIZGI_SEVIYELERI.length - 1, Math.max(0, n)));", koy: "  return Math.round(n);", bozdugu: "olmayan seviye bos degisken yazar" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

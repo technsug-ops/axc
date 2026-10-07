@@ -310,7 +310,13 @@
     "temaKosePx": "{px} px",
     "temaOnizleme": "Önizleme",
     "temaOrnekDugme": "Kaydet",
-    "temaVarsayilan": "Varsayılana dön"
+    "temaVarsayilan": "Varsayılana dön",
+    "temaCizgi": "Kart çizgisi",
+    "temaCizgiYok": "Yok",
+    "temaCizgiInce": "İnce",
+    "temaCizgiOrta": "Orta",
+    "temaCizgiBelirgin": "Belirgin",
+    "temaCizgiKoyu": "Koyu"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",

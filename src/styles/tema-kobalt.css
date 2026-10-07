@@ -25,7 +25,13 @@
    * 0,0568. Eşik uydurulmuş bir sayı değil, aynı paletten türetildi
    * (bkz. panel:dogrula).
    */
-  --se-zemin:            #FFFFFF;   /* sayfa arka planı */
+  /* ⏪ 08.10.2026 GERİ ALINDI — kullanıcı (ekran görüntüsüyle): «neredeyse hiçbir
+     kart görünür değil; alttaki gri kısmı kaldırmak çok mantıklı olmadı.» 07.10'da
+     zemin beyaza çekilmişti («arkadaki gri zemin beyaza dönsün»); beyaz kart beyaz
+     zeminde yalnız 0,06'lık gölgeyle ayrışıyordu ve bu yetmedi. Önceki değer döndü;
+     23.08 gerekçesi (kart/sayfa ayrımı zebra ayrımından zayıf olamaz) yeniden
+     bekçide. Menü beyaz kalır, zeminden sağ çizgi + ton farkıyla ayrılır. */
+  --se-zemin:            #F4F6FA;   /* sayfa arka planı */
   --se-kart:             #FFFFFF;   /* kart, panel, tablo gövdesi */
   --se-kart-2:           #FFFFFF;   /* açılır menü, modal, ipucu */
   --se-satir:            #FAFBFC;   /* zebra satır */

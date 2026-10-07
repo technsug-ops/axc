@@ -310,7 +310,13 @@
     "temaKosePx": "",
     "temaOnizleme": "",
     "temaOrnekDugme": "",
-    "temaVarsayilan": ""
+    "temaVarsayilan": "",
+    "temaCizgi": "",
+    "temaCizgiYok": "",
+    "temaCizgiInce": "",
+    "temaCizgiOrta": "",
+    "temaCizgiBelirgin": "",
+    "temaCizgiKoyu": ""
   },
   "AlimDurumu": {
     "DRAFT": "",
