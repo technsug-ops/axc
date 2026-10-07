@@ -48,6 +48,10 @@ kontrol(
   firmaEslemesi("Trendyol", "Aras Kargo Marketplace") === "Aras Kargo",
 );
 kontrol(
+  "TY 'Trendyol Express Marketplace' → 'TEX' (07.10.2026, 44 satış takılmıştı)",
+  firmaEslemesi("Trendyol", "Trendyol Express Marketplace") === "TEX",
+);
+kontrol(
   "TY tanınmayan ad → null (uydurulmaz)",
   firmaEslemesi("Trendyol", "Sürat Kargo Marketplace") === null,
 );

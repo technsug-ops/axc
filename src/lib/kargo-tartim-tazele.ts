@@ -50,9 +50,16 @@ import { n11KargoMaliyeti } from "@/lib/n11-kargo-tarifesi";
  * ⚠ ÖLÇÜLDÜ (15.09.2026): TY bugüne kadar yalnız "Aras Kargo Marketplace"
  * bildirdi (576 satış); HB "Aras Kargo" ve "hepsiJET" bildirdi (41 satış).
  * Yeni bir ad görülürse harita GENİŞLETİLİR, tahmin edilmez.
+ *
+ * ⭐ GENİŞLETİLDİ (07.10.2026, kullanıcı bildirimi 11667421545): TY yeni bir
+ * ad bildirdi — "Trendyol Express Marketplace" (ölçüldü: 44 satış, hepsi gerçek
+ * desili ve kargosuz kalmıştı; haritada yoktu → FIRMA_BILINMIYOR → sessizce
+ * «kargo düşülmedi»). Karşılığı tarife tablosundaki `TEX` (Trendyol Express;
+ * TY tarifesinde 501 satır yüklü).
  */
 const TY_FIRMA_ESLEME: Record<string, string> = {
   "Aras Kargo Marketplace": "Aras Kargo",
+  "Trendyol Express Marketplace": "TEX",
 };
 const HB_FIRMA_ESLEME: Record<string, string> = {
   "Aras Kargo": "Aras Kargo",
