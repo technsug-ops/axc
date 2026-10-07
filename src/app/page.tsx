@@ -61,6 +61,7 @@ import { HalkaGrafik, HalkaKompakt, halkaDilimleriniTopla } from "@/components/h
 import { donemCiroNetSerisi } from "@/lib/panel/son-gun-serisi";
 import { miniKovalar } from "@/lib/panel/mini-seri";
 import { EgilimRozeti } from "@/components/egilim-rozeti";
+import { PanelBi } from "@/app/panel-bi";
 import { KANAL_RENKLERI, KANAL_RENGI_VARSAYILAN } from "@/lib/renkler";
 import { HIZLI_KIYAS } from "@/lib/karsilastirma";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
@@ -3584,6 +3585,9 @@ export default async function AnaSayfa({
             STOK   → stokta bekleyen                        (tek liste)
 
           Beş sekme üçe indi ve her sekme daha çok şey söylüyor. */}
+      {/* ALGORİTMO KIYASI (kullanıcı kararı 07.10.2026): paranın dağılımı · ABC ·
+          stok verimi. Kâr içerir — yalnız `satis.kar.gor`. Hesap `lib/panel/bi.ts`. */}
+      {karGorunur ? <PanelBi donem={donem} kanal={seciliKanal} para={seciliPara} an={an} /> : null}
       {/* K270: ürün analizi telefonda MENÜDE (`/rapor/urunler`) — onaylanan demo. */}
       <div className="max-md:hidden">
       <SekmeliBolum
