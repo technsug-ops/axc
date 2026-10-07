@@ -1,3 +1,4 @@
+import { kargoTarifeTarihi } from "@/lib/kargo/tarife-tarihi";
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import {
   komisyonKdvOrani as kesintiKomisyonKdvOrani,
@@ -231,7 +232,8 @@ export async function karOnizle(
         channelId: satis.channelAccount.channelId,
         carrierId: girdi.cargoCarrierId,
         desi: Math.max(0, Math.ceil(girdi.cargoDesi)),
-        effectiveFrom: { lte: satis.soldAt },
+        /* 07.10.2026: kargoya veriliş günü (yoksa sipariş günü) — `kargoTarifeTarihi`. */
+        effectiveFrom: { lte: kargoTarifeTarihi(satis) },
       },
       orderBy: { effectiveFrom: "desc" },
       select: { amount: true },

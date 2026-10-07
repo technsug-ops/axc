@@ -3,6 +3,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { canliYapilandirma } from "./canli-ortak";
 import { kanalTahminiHesapla, kargoTartimGeldiTazele } from "../src/lib/kargo-tartim-tazele";
+import { kargoTarifeTarihi } from "../src/lib/kargo/tarife-tarihi";
 
 /**
  * ============================================================================
@@ -48,6 +49,16 @@ const YAZ = process.argv.includes("--yaz");
  * olurdu. Süzgeç yoksa davranış AYNEN eskisi gibi.
  */
 const FIRMA = process.argv.find((a) => a.startsWith("--firma="))?.slice("--firma=".length) ?? null;
+/**
+ * ⭐ TARİH + KANAL SÜZGECİ (07.10.2026): yeni tarife sürümü (TY 05.10.2026) yüklenince
+ * yalnız o tarihten sonra satılmış ve o kanaldaki adaylar yeniden hesaplanır
+ * (`--baslangic=2026-10-05 --kanal=TRENDYOL`). Tarife satışın gününe göre seçildiği
+ * için eski satışlara dokunmak gereksizdir.
+ */
+const BASLANGIC = process.argv.find((a) => a.startsWith("--baslangic="))?.slice("--baslangic=".length) ?? null;
+const KANAL = process.argv.find((a) => a.startsWith("--kanal="))?.slice("--kanal=".length) ?? null;
+/** `--yalniz-degisen`: yeni tahmin eskisine kuruşuna eşitse yazılmaz (gereksiz kâr tazelemesi yok). */
+const YALNIZ_DEGISEN = process.argv.includes("--yalniz-degisen");
 const IS_MILADI = new Date("2025-08-01T00:00:00.000Z");
 
 async function main() {
@@ -69,13 +80,15 @@ async function main() {
       iptalTarihi: null,
       cargoAmount: null,
       kanalKargoDesi: { not: null },
-      soldAt: { gte: IS_MILADI },
+      soldAt: { gte: BASLANGIC ? new Date(`${BASLANGIC}T00:00:00.000Z`) : IS_MILADI },
       ...(FIRMA ? { kanalKargoFirmasi: FIRMA } : {}),
+      ...(KANAL ? { channelAccount: { channel: { code: KANAL } } } : {}),
     },
     select: {
       id: true,
       code: true,
       soldAt: true,
+      shippedAt: true,
       kanalKargoDesi: true,
       kanalKargoFirmasi: true,
       tahminiKargo: true,
@@ -103,7 +116,8 @@ async function main() {
       channelId: s.channelAccount.channelId,
       kanalKargoFirmasi: s.kanalKargoFirmasi,
       desi,
-      soldAt: s.soldAt,
+      /* Önizleme yazımla AYNI tarihten (kargoya veriliş, yoksa sipariş günü). */
+      soldAt: kargoTarifeTarihi(s),
     });
     const eskiTahmin = s.tahminiKargo === null ? null : Number(s.tahminiKargo.toString());
     const eskiNet2 = s.net2Amount === null ? null : Number(s.net2Amount.toString());
@@ -117,6 +131,7 @@ async function main() {
       );
       continue;
     }
+    if (YALNIZ_DEGISEN && eskiTahmin !== null && Math.abs(eskiTahmin - hesap.tutar) < 0.005) continue;
     tazelenebilir++;
     console.log(
       `  ${YAZ ? "→" : "○"} ${s.code}  ${kanalAdi}  desi=${desi}  firma=${hesap.carrierAdi}` +

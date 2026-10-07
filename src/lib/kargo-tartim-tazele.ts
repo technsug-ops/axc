@@ -1,3 +1,4 @@
+import { kargoTarifeTarihi } from "@/lib/kargo/tarife-tarihi";
 import { prisma } from "@/lib/prisma";
 import { izYaz } from "@/lib/iz";
 import { satisKarTazele } from "@/lib/kar-yeniden";
@@ -193,12 +194,15 @@ export async function kargoTartimGeldiTazele(
 ): Promise<TazeleSonucu> {
   if (girdi.cargoAmount !== null) return { yapildi: false, neden: "ZATEN_GERCEKLESEN" };
 
+  /* 07.10.2026: tarife KARGOYA VERİLİŞ gününe göre (`kargoTarifeTarihi`). Kargo damgası
+     kayıttan okunur — çağıranın elindeki satır damga yazılmadan önce okunmuş olabilir. */
+  const damga = await db.sale.findUnique({ where: { id: girdi.saleId }, select: { shippedAt: true } });
   const hesap = await kanalTahminiHesapla(db, {
     kanalAdi: girdi.kanalAdi,
     channelId: girdi.channelId,
     kanalKargoFirmasi: girdi.kanalKargoFirmasi,
     desi: girdi.kanalKargoDesi,
-    soldAt: girdi.soldAt,
+    soldAt: kargoTarifeTarihi({ soldAt: girdi.soldAt, shippedAt: damga?.shippedAt ?? null }),
   });
   if (!hesap.tamam) return { yapildi: false, neden: hesap.kod };
 
