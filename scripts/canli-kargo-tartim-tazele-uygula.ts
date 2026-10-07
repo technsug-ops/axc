@@ -40,6 +40,14 @@ import { kanalTahminiHesapla, kargoTartimGeldiTazele } from "../src/lib/kargo-ta
  */
 
 const YAZ = process.argv.includes("--yaz");
+/**
+ * ⭐ FİRMA SÜZGECİ (07.10.2026): `--firma="Trendyol Express Marketplace"` — yazımı
+ * yalnız o kanal firmasının siparişlerine daraltır. Niye: eşleme haritası o gün
+ * TY Express ile genişledi (44 takılı sipariş); öteki 384 adayın tahmini zaten
+ * aynıydı ve onları yeniden yazmak gereksiz bir toplu yazım (kâr tazelemesi dahil)
+ * olurdu. Süzgeç yoksa davranış AYNEN eskisi gibi.
+ */
+const FIRMA = process.argv.find((a) => a.startsWith("--firma="))?.slice("--firma=".length) ?? null;
 const IS_MILADI = new Date("2025-08-01T00:00:00.000Z");
 
 async function main() {
@@ -62,6 +70,7 @@ async function main() {
       cargoAmount: null,
       kanalKargoDesi: { not: null },
       soldAt: { gte: IS_MILADI },
+      ...(FIRMA ? { kanalKargoFirmasi: FIRMA } : {}),
     },
     select: {
       id: true,
