@@ -137,6 +137,7 @@ import {
   type TakvimSatiri,
 } from "../src/lib/panel/nakit-takvimi";
 import { miniKovalar } from "../src/lib/panel/mini-seri";
+import { abcSiniflari, devirHizi, maliyetSurucuculeri, stokGunu } from "../src/lib/panel/bi";
 import { nakitEtkisi } from "../src/lib/nakit-isaret";
 import {
   ALIM_DURUM_RENGI,
@@ -7021,6 +7022,36 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("ekran işareti gövdeden alıyor ve MUTLAK tutarı biçimliyor",
     takvim.includes("= nakitEtkisi(yon, tutar);") && takvim.includes("{para(mutlak)}") && !takvim.includes("{para(tutar)}"));
+}
+
+/* ═══ İŞ ZEKÂSI (Algoritmo kıyası, 07.10.2026) — saf gövde değer testleri ═══
+   Örnek veri ayrımın iki yakasını gösterir: kümülatif sınırın TAM üstüne düşen
+   ürün (önceki %80 → B), tek başına %90 yapan ürün (yine A), satışsız stok
+   (C'ye karışmaz), sıfır payda (null, 0 değil). */
+{
+  console.log("\nAlgoritmo — iş zekâsı gövdesi");
+  const sur = maliyetSurucuculeri(1000, [{ kod: "MALIYET", tutar: 400 }, { kod: "KOMISYON", tutar: 150 }, { kod: "KOMISYON", tutar: 30 }]);
+  kontrol("sürücüler: aynı kod toplanır, büyükten küçüğe, pay ciroya",
+    sur.length === 2 && sur[0]!.kod === "MALIYET" && sur[0]!.pay === 0.4 && sur[1]!.tutar === 180 && sur[1]!.pay === 0.18, sur);
+  kontrol("  ...ciro 0 → pay null (sıfır değil)", maliyetSurucuculeri(0, [{ kod: "KARGO", tutar: 5 }])[0]!.pay === null);
+  const abc = abcSiniflari([
+    { urunId: "u1", ciro: 500, stokDegeri: 10 }, { urunId: "u2", ciro: 300, stokDegeri: 10 }, { urunId: "u3", ciro: 100, stokDegeri: 10 },
+    { urunId: "u4", ciro: 60, stokDegeri: 10 }, { urunId: "u5", ciro: 40, stokDegeri: 10 }, { urunId: "u6", ciro: 0, stokDegeri: 77 },
+  ]);
+  kontrol("ABC: önceki kümülatif < %80 → A (u1,u2); tam %80'de başlayan → B",
+    abc.A.urunSayisi === 2 && abc.A.ciroPayi === 0.8 && abc.B.urunSayisi === 2 && abc.C.urunSayisi === 1, abc);
+  kontrol("  ...satışsız stoklu ürün C'ye KARIŞMAZ, ayrı satırda stok değeriyle",
+    abc.SATISSIZ.urunSayisi === 1 && abc.SATISSIZ.stokDegeri === 77 && abc.C.stokDegeri === 10, abc.SATISSIZ);
+  const tek = abcSiniflari([{ urunId: "x", ciro: 900, stokDegeri: 0 }, { urunId: "y", ciro: 100, stokDegeri: 0 }]);
+  kontrol("  ...tek başına %90 yapan ürün yine A; ardındaki (önceki %90) B", tek.A.urunSayisi === 1 && tek.B.urunSayisi === 1 && tek.C.urunSayisi === 0, tek);
+  kontrol("devir hızı: SMM ÷ stok; stok 0 → null", devirHizi(100, 50) === 2 && devirHizi(100, 0) === null);
+  kontrol("stok günü: stok ÷ (SMM/gün); SMM 0 → null", stokGunu(300, 300, 30) === 30 && stokGunu(300, 0, 30) === null);
+  const sayfaBi = kaynakOku("src/app/page.tsx");
+  kontrol("panel İŞ ZEKÂSI bloğu yalnız kâr izniyle çiziliyor",
+    sayfaBi.includes("{karGorunur ? <PanelBi donem={donem} kanal={seciliKanal} para={seciliPara} an={an} /> : null}"));
+  const biKaynak = kaynakOku("src/app/panel-bi.tsx");
+  kontrol("  ...dağılım yalnız HESAPLANMIŞ satışların kesintisinden (çift sayım yok)",
+    /kesintiler\.filter\(\(k\) => k\.sale\.profitStatus === "CALCULATED"\)/.test(biKaynak));
 }
 
 /* ═══ MİNİ ÇUBUKLAR (Algoritmo §4.2, 07.10.2026) — dönem serisinden kovalar ═══
