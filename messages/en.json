@@ -459,7 +459,10 @@
     "varyantSayisi": "",
     "alimGir": "",
     "tyKategoriSuzgeci": "",
-    "suzgeciKaldir": ""
+    "suzgeciKaldir": "",
+    "stoksuzlariGizle": "",
+    "stoksuzlarGizli": "",
+    "stoksuzlarGizliNot": ""
   },
   "UrunSil": {
     "dugme": "",

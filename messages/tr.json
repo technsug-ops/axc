@@ -459,7 +459,10 @@
     "varyantSayisi": "{sayi} varyant",
     "alimGir": "Alım gir",
     "tyKategoriSuzgeci": "Trendyol kategorisi: {ad} · yalnız aktif ürünler",
-    "suzgeciKaldir": "Süzgeci kaldır"
+    "suzgeciKaldir": "Süzgeci kaldır",
+    "stoksuzlariGizle": "Stokta olmayanları gizle",
+    "stoksuzlarGizli": "Stokta olmayanlar gizli — göster",
+    "stoksuzlarGizliNot": "Yalnız toplam stoğu 0'dan büyük ürünler listeleniyor."
   },
   "UrunSil": {
     "dugme": "Sil",
