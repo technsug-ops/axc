@@ -233,7 +233,11 @@ console.log("\n5) pazaryerine yazma yolu YOK");
      ölçüm (TY `vatRate`) — öteki üçüyle aynı sınıf: kanaldan OKUNUR, deftere yazılır,
      pazaryerine hiçbir şey yazmaz. Yasak olan hâlâ BİZİM alanlarımıza (oran, fiyat,
      kod) dokunmak. Bkz. `kdv-uyusmazligi.ts`. */
-  const izinli = new Set(["listelemeDurumu", "kanalAdet", "kanalOlcumAt", "kanalKdvOrani"]);
+  /* ⚠ ÖLÇÜT İKİNCİ KEZ GENİŞLEDİ (07.10.2026): `externalListingId` — pazaryerinin ürün
+     kimliği (TY contentId · N11 n11ProductId), kanalın CEVABI; ürünler listesindeki ilan
+     linkinin tabanı (`lib/kanal-ilan-adresi.ts`). Pazaryerine yazmaz, bizim alanlarımıza
+     (oran, fiyat, kod) dokunmaz — öteki ölçüm alanlarıyla aynı sınıf. */
+  const izinli = new Set(["listelemeDurumu", "kanalAdet", "kanalOlcumAt", "kanalKdvOrani", "externalListingId"]);
   const fazla = [...new Set(yazilanAlanlar)].filter((a) => !izinli.has(a));
   yakin("ChannelSku'ya yalnız kanal ölçüm alanları yazılıyor", fazla, []);
 }
@@ -536,7 +540,8 @@ console.log("\n8) zincir② — sıfır satır çizilir, iz her koşumda yazıl�
   dogru(
     "TY yazıcı DEĞİŞMEYEN satıra dokunmuyor",
     /* ⚠ 30.09.2026: koşula KDV oranı da girdi — «değişmeyene dokunma» sözü aynen duruyor. */
-    /if \(s\.listelemeDurumu !== k\.durum \|\| s\.kanalAdet !== k\.adet \|\| kayitliKdv !== k\.kdv\)/.test(tyYazici),
+    /* ⚠ 07.10.2026: koşula ilan kimliği de girdi — «değişmeyene dokunma» sözü aynen duruyor. */
+    /if \(s\.listelemeDurumu !== k\.durum \|\| s\.kanalAdet !== k\.adet \|\| kayitliKdv !== k\.kdv \|\| s\.externalListingId !== k\.ilan\)/.test(tyYazici),
   );
   dogru(
     "TY yazıcı KONTROL EDİLENİ toplu damgalıyor",

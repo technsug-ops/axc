@@ -139,6 +139,9 @@ export function gercekCakismaGruplari(npmAdlari: string[]): string[][] {
  * KIRMIZI yanar.
  */
 export const SIRALI_MUTASYON_GRUP: readonly string[] = [
+  /* 07.10.2026: ürün listesi + kanal yazıcıları + N11 betiği — n11-listeleme,
+     kdv-uyusmazligi ve vitrin denetimleriyle aynı dosyaları bozar. */
+  "ilan-adresi-mutasyon:kontrol",
   "aylik-marj-mutasyon:kontrol",
   /**
    * K236 (22.09.2026) — `kamera` ve `kare-tanisi` İKİSİ DE

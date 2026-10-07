@@ -65,7 +65,7 @@ console.log("\n2) TY ilanından deftere");
   const yaz = oku("src/lib/kanal-listeleme-yaz.ts");
   kontrol("tarama oranı kimlik haritasına girer", /const kdv = kanalAdedi\(u\.kdvOrani\);/.test(yaz));
   kontrol("iki ilan farklı oran söylerse hüküm yok", /const ortakKdv = mevcut\.kdv === kdv \? kdv : null;/.test(yaz));
-  kontrol("oran değişince satır yazılır (koşul + veri aynı blokta)", /kayitliKdv !== k\.kdv\) \{[\s\S]{0,300}kanalKdvOrani: k\.kdv,/.test(yaz));
+  kontrol("oran değişince satır yazılır (koşul + veri aynı blokta)", /kayitliKdv !== k\.kdv \|\| s\.externalListingId !== k\.ilan\) \{[\s\S]{0,300}kanalKdvOrani: k\.kdv,/.test(yaz));
   kontrol("ilan kalkınca oran da boşalır", /listelemeDurumu: "YOK", kanalAdet: null, kanalKdvOrani: null,/.test(yaz));
 }
 kosanBolumler.push("okuma-yazma");
