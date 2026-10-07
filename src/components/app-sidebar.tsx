@@ -25,7 +25,7 @@ import { ALT_OGELER, MENU_IKONLARI } from "@/lib/menu/ikonlar";
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
 import type { CozulmusDuzen } from "@/lib/menu/duzen";
 import { UYGULAMA } from "@/lib/uygulama";
-import { MarkaIsareti, MarkaYazisi } from "@/lib/marka/cizim";
+import { MarkaIkonu, MarkaYazisi } from "@/lib/marka/cizim";
 
 /**
  * Sol menü.
@@ -345,12 +345,13 @@ export function AppSidebar({
           onClick={menuyuKapat}
           className="hover:bg-sidebar-accent -mx-2 flex items-center gap-2.5 rounded-md px-2 py-1 transition-colors"
         >
-          {/* MARKA — Bezirga paketinin koyu zemin hâli (`isaret_ters` +
-              `yazi_ters`): beyaz «b» ve yazı, safran elmas. Kabuk üç temada
-              da koyu (kobalt · gece · kağıt), bu yüzden tek hâl yeter.
-              Çizim `lib/marka/cizim.tsx`te; erişilebilir ad `UYGULAMA.ad`dan
-              (tek sabit kuralı metin için geçerli, çizim için değil). */}
-          <MarkaIsareti className="size-8 shrink-0 text-[var(--se-kabuk-marka)]" />
+          {/* MARKA — kılavuzun ana kullanımı (Bezirga Logo ve Kullanım Kılavuzu
+              04.10.2026): kobalt kare ikon + yazı. Menü 07.10.2026'da beyaza döndü;
+              çıplak «b» işareti kılavuzdaki dört sürümün (ana · koyu zemin · tek renk
+              siyah · tek renk beyaz) hiçbiri değildi. 32 px → MİKRO çizim (s.4).
+              Yazı rengi temadan: açıkta kobalt, gecede beyaz (koyu zemin sürümü).
+              Çizim `lib/marka/cizim.tsx`te; erişilebilir ad `UYGULAMA.ad`dan. */}
+          <MarkaIkonu mikro className="size-8 shrink-0" />
           <span className="flex min-w-0 flex-col gap-1">
             <MarkaYazisi etiket={UYGULAMA.ad} className="h-5 w-auto self-start text-[var(--se-kabuk-marka)]" />
             {/* Slogan kabuğun açık ikincil mürekkebiyle (kullanıcı 05.10.2026:
