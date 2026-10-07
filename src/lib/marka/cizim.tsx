@@ -64,7 +64,21 @@ export function MarkaIsareti({ className }: { className?: string }) {
 }
 
 /** Kobalt yuvarlatılmış kare içinde işaret (`bezirga_ikon.svg`) — her zeminde okunur. */
-export function MarkaIkonu({ className }: { className?: string }) {
+/**
+ * Kare ikon. Kılavuz (04.10.2026, s.4): 16–32 px'de MİKRO çizim — `mikro`
+ * verilince 16 birimlik optik düzeltilmiş yollar kullanılır (sekme simgesiyle
+ * aynı eşik: `ikon.tsx` → MIKRO_SINIR 32).
+ */
+export function MarkaIkonu({ className, mikro = false }: { className?: string; mikro?: boolean }) {
+  if (mikro) {
+    return (
+      <svg viewBox="0 0 16 16" className={className} aria-hidden="true" focusable="false">
+        <rect width="16" height="16" rx="3.5" fill={MARKA_PALETI.kobalt} />
+        <path d={MIKRO_B_YOLU} fill={MARKA_PALETI.beyaz} />
+        <path d={MIKRO_ELMAS_YOLU} fill={MARKA_PALETI.safran} />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 256 256" className={className} aria-hidden="true" focusable="false">
       <rect width="256" height="256" rx="56" fill={MARKA_PALETI.kobalt} />
