@@ -5236,5 +5236,24 @@
     "hataKuralIhlali": "",
     "hataAnahtarYok": "",
     "kanaldaki": ""
+  },
+  "ListeKanallari": {
+    "baslik": "",
+    "sira": "",
+    "bos": "",
+    "linkYokEki": "",
+    "aciklama": "",
+    "kaydet": "",
+    "kaydedildi": "",
+    "kaydedildiBos": "",
+    "gecersizKanal": "",
+    "tekrarKanal": "",
+    "kaydedilemedi": ""
+  },
+  "PazaryeriLinki": {
+    "sutun": "",
+    "kayitYok": "",
+    "linkYok": "",
+    "ac": ""
   }
 }

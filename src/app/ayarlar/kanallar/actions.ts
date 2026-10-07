@@ -306,3 +306,40 @@ export async function kanalHesabiDurumDegistir(
       : t("aktiflestirildi", { ad: hesap.name }),
   };
 }
+
+/* ═══ ÜRÜN LİSTESİNDE GÖSTERİLECEK PAZARYERLERİ (kullanıcı isteği 07.10.2026) ═══
+   Firma, ürünler listesindeki «Pazaryeri» sütununda hangi kanalların hangi
+   sırayla görüneceğini seçer. Kayıt `Company.urunListesiKanallari` (JSON dizi).
+   ⚠ Kod listesi VERİTABANINDAN doğrulanır — formdan gelen bilinmeyen kod yazılmaz. */
+export type ListeKanallariDurumu = { hata?: string; basari?: string };
+
+export async function listeKanallariniKaydet(
+  _oncekiDurum: ListeKanallariDurumu,
+  formData: FormData,
+): Promise<ListeKanallariDurumu> {
+  const baglam = await yetkiIste("ayar.yaz");
+  const tListe = await getTranslations("ListeKanallari");
+  const gecerli = new Set(
+    (await prisma.channel.findMany({ where: { isActive: true }, select: { code: true } })).map((k) => k.code),
+  );
+  const secilen: string[] = [];
+  for (const ad of ["kanal1", "kanal2", "kanal3"]) {
+    const kod = String(formData.get(ad) ?? "").trim();
+    if (kod === "") continue;
+    if (!gecerli.has(kod)) return { hata: tListe("gecersizKanal") };
+    if (secilen.includes(kod)) return { hata: tListe("tekrarKanal") };
+    secilen.push(kod);
+  }
+  try {
+    await prisma.company.update({
+      where: { id: baglam.companyId },
+      data: { urunListesiKanallari: JSON.stringify(secilen) },
+    });
+  } catch (e) {
+    console.error("listeKanallariniKaydet", e);
+    return { hata: tListe("kaydedilemedi") };
+  }
+  revalidatePath("/urunler");
+  revalidatePath("/ayarlar/kanallar");
+  return { basari: secilen.length === 0 ? tListe("kaydedildiBos") : tListe("kaydedildi") };
+}

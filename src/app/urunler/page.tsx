@@ -35,6 +35,8 @@ import { urunStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
+import { PazaryeriLinkleri, type PazaryeriSatiri } from "@/components/pazaryeri-linkleri";
+import { ilanAdresi, listeKanallariCoz } from "@/lib/kanal-ilan-adresi";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -46,7 +48,7 @@ export default async function UrunlerSayfasi({
 }: {
   searchParams: Promise<{ q?: string; sayfa?: string; tyKategori?: string }>;
 }) {
-  await sayfaIzni("urun.gor");
+  const baglam = await sayfaIzni("urun.gor");
   /* K273-③: resimsiz kutuda "resim ekle" rozeti yalnız ürün düzenleme izniyle. */
   const resimEkleyebilir = await izinVarMi("urun.yaz");
   /* K284: şüpheli sayısı listeyle AYNI gövdeden; yalnız düzenleme izniyle (ekran urun.yaz ister). */
@@ -140,6 +142,47 @@ export default async function UrunlerSayfasi({
 
   // Stok hesabı tek yerde: src/lib/stok.ts (ledger toplamı).
   const stokHaritasi = await urunStoklari(urunler);
+
+  /**
+   * PAZARYERİ SÜTUNU (kullanıcı isteği 07.10.2026) — firmanın seçtiği kanallar
+   * (`Company.urunListesiKanallari`, Ayarlar → Kanallar) ve sayfadaki ANA
+   * varyantların SATIŞ hesabı kanal kodları. Adres saklanmaz; kanal kalıbından
+   * kurulur (`lib/kanal-ilan-adresi.ts`). Yalnız bu sayfanın satırları çekilir.
+   */
+  const anaIdleri = urunler.map((u) => u.variants[0]?.id).filter((x): x is string => Boolean(x));
+  const [firmaAyari, aktifKanallar, kanalKayitlari] = await Promise.all([
+    prisma.company.findUnique({ where: { id: baglam.companyId }, select: { urunListesiKanallari: true } }),
+    prisma.channel.findMany({ where: { isActive: true }, select: { code: true, name: true } }),
+    prisma.channelSku.findMany({
+      where: { variantId: { in: anaIdleri }, isActive: true, channelAccount: { satisIcin: true } },
+      select: {
+        variantId: true,
+        channelSku: true,
+        externalListingId: true,
+        channelAccount: { select: { externalId: true, channel: { select: { code: true } } } },
+      },
+    }),
+  ]);
+  const listeKanallari = listeKanallariCoz(firmaAyari?.urunListesiKanallari ?? null, aktifKanallar.map((k) => k.code));
+  const kanalAdlari = new Map(aktifKanallar.map((k) => [k.code, k.name]));
+  function pazaryeriSatirlari(variantId: string | undefined): PazaryeriSatiri[] {
+    return listeKanallari.map((kod) => {
+      const ad = kanalAdlari.get(kod) ?? kod;
+      const kayitlar = kanalKayitlari.filter((k) => k.variantId === variantId && k.channelAccount.channel.code === kod);
+      if (kayitlar.length === 0) return { kod, ad, durum: "KAYIT_YOK", adres: null };
+      for (const k of kayitlar) {
+        const adres = ilanAdresi(kod, { channelSku: k.channelSku, externalListingId: k.externalListingId, saticiId: k.channelAccount.externalId });
+        if (adres) return { kod, ad, durum: "LINK", adres };
+      }
+      return { kod, ad, durum: "LINK_YOK", adres: null };
+    });
+  }
+  const tPazaryeri = await getTranslations("PazaryeriLinki");
+  const pazaryeriMetni = {
+    kayitYok: tPazaryeri("kayitYok"),
+    linkYok: tPazaryeri("linkYok"),
+    ac: (kanal: string) => tPazaryeri("ac", { kanal }),
+  };
 
   /** Listede gösterilecek kodlar ilk (varsayılan) varyanttan gelir. */
   function anaVaryant(urun: (typeof urunler)[number]) {
@@ -254,6 +297,7 @@ export default async function UrunlerSayfasi({
                       ürün+marka · Firma SKU+barkod · stok+varyant sayısı.
                       Üç kimlik de listede DURUYOR ve kopyalanabiliyor. */}
                   <TableHead>{ortak("urun")}</TableHead>
+                  {listeKanallari.length > 0 ? <TableHead>{tPazaryeri("sutun")}</TableHead> : null}
                   <TableHead>{ortak("firmaSku")}</TableHead>
                   <TableHead className="text-right">
                     {t("sutunToplamStok")}
@@ -361,6 +405,11 @@ export default async function UrunlerSayfasi({
                         />
                         </div>
                       </TableCell>
+                      {listeKanallari.length > 0 ? (
+                        <TableCell>
+                          <PazaryeriLinkleri satirlar={pazaryeriSatirlari(ana?.id)} metin={pazaryeriMetni} />
+                        </TableCell>
+                      ) : null}
                       <TableCell>
                         {/* Firma SKU üstte, barkod altta: ikisi de kimlik
                             kodudur, ikisi de tık-kopyala taşır (#3, #4). */}
@@ -430,6 +479,9 @@ export default async function UrunlerSayfasi({
                   }
                   altBaslik={urun.brand ?? undefined}
                   alanlar={[
+                    ...(listeKanallari.length > 0
+                      ? [{ etiket: tPazaryeri("sutun"), deger: <PazaryeriLinkleri satirlar={pazaryeriSatirlari(ana?.id)} metin={pazaryeriMetni} /> }]
+                      : []),
                     {
                       etiket: ortak("firmaSku"),
                       deger: (

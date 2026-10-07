@@ -2954,6 +2954,12 @@ model Company {
    */
   menuDuzeni String? @db.Text
 
+  /// ÜRÜNLER LİSTESİNDE GÖSTERİLECEK PAZARYERLERİ (kullanıcı isteği 07.10.2026):
+  /// JSON dizi, kanal KODLARI sıralı (`["TRENDYOL","HEPSIBURADA","N11"]`).
+  /// `null` = hiç seçilmedi → varsayılan sıra; `[]` = bilerek boş → sütun yok.
+  /// Çözümü saf gövdede (`lib/kanal-ilan-adresi.ts` → `listeKanallariCoz`).
+  urunListesiKanallari String? @db.Text
+
   /**
    * ═══ MALİYET YÖNTEMİ (K115, 31.08.2026) ═══════════════════════════════
    * Kullanıcı kararı: firma hangi maliyet motorunu kullanacağını SEÇER.

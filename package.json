@@ -470,6 +470,8 @@
     "tur-secimi-mutasyon:kontrol": "tsx scripts/tur-secimi-mutasyon-kontrol.ts",
     "urun-etiketi:dogrula": "tsx scripts/urun-etiketi-dogrula.ts",
     "urun-etiketi-mutasyon:kontrol": "tsx scripts/urun-etiketi-mutasyon-kontrol.ts",
+    "ilan-adresi:dogrula": "tsx scripts/ilan-adresi-dogrula.ts",
+    "ilan-adresi-mutasyon:kontrol": "tsx scripts/ilan-adresi-mutasyon-kontrol.ts",
     "liste-aramasi:dogrula": "tsx scripts/liste-aramasi-dogrula.ts",
     "liste-aramasi-mutasyon:kontrol": "tsx scripts/liste-aramasi-mutasyon-kontrol.ts",
     "okuyucu-duzeltme-mutasyon:kontrol": "tsx scripts/okuyucu-duzeltme-mutasyon-kontrol.ts",
