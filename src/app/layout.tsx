@@ -31,7 +31,8 @@ import { yetkiBaglami } from "@/lib/yetki";
 import { BildirButonu } from "@/components/bildir-butonu";
 import { SwKayit } from "@/components/sw-kayit";
 import { TemaSecici } from "@/components/tema-secici";
-import { KABUK_RENKLERI, TEMA_ANAHTARI } from "@/lib/marka/renkler";
+import { KABUK_RENKLERI, KISISEL_ANAHTARI, TEMA_ANAHTARI } from "@/lib/marka/renkler";
+import { DEGER_DESENI_KAYNAGI, KISISEL_DEGISKENLERI } from "@/lib/marka/kisisel-tema";
 import { UyariCani } from "@/components/uyari-cani";
 import { UYGULAMA } from "@/lib/uygulama";
 import { denemeOrtamiMi } from "@/lib/deneme-ortami";
@@ -77,7 +78,14 @@ const govde = Rubik({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "6
  * okunuyor; eksik kalsaydı kağıt temasında çubuk lacivert kalırdı.
  */
 const KABUK_JSON = JSON.stringify(KABUK_RENKLERI);
-const TEMA_BETIGI = `(function(){var g=${KABUK_JSON};try{var t=localStorage.getItem(${JSON.stringify(TEMA_ANAHTARI)});if(!g[t]){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"gece":"kobalt";}var k=document.documentElement;k.setAttribute("data-tema",t);if(t==="gece"){k.classList.add("dark");}var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute("content",g[t]);}}catch(e){}})();`;
+/**
+ * ⚠ KİŞİSEL TEMA (07.10.2026): betik HESAPLAMAZ, yalnız UYGULAR. Değişkenler
+ * `lib/marka/kisisel-tema.ts`te türetilip depolamaya hazır yazılır; burada izin
+ * listesindeki adlar ve desene uyan değerler `<html>`e basılır. Hesabın ikinci
+ * bir kopyası (dize içinde) olsaydı iki yer ayrışırdı. Kayıtlı «gece»/«pembe»
+ * (kaldırıldı) tanınmaz ve Kobalt'a düşer; koyu sistem tercihi artık tema seçmez.
+ */
+const TEMA_BETIGI = `(function(){var g=${KABUK_JSON};try{var t=localStorage.getItem(${JSON.stringify(TEMA_ANAHTARI)});if(!g[t]){t="kobalt";}var k=document.documentElement;k.setAttribute("data-tema",t);if(t==="kisisel"){var o=JSON.parse(localStorage.getItem(${JSON.stringify(KISISEL_ANAHTARI)})||"null");var d=o&&o.degiskenler;var a=${JSON.stringify(KISISEL_DEGISKENLERI)};var r=new RegExp(${JSON.stringify(DEGER_DESENI_KAYNAGI)});if(d){for(var i=0;i<a.length;i++){var v=d[a[i]];if(typeof v==="string"&&r.test(v)){k.style.setProperty(a[i],v);}}}}var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute("content",g[t]);}}catch(e){}})();`;
 
 /**
  * Sekme başlıkları tek yerden yönetiliyor: alt sayfalar sadece kendi

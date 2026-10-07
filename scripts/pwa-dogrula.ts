@@ -1,5 +1,8 @@
 import { kaynakOku } from "./kaynak-oku";
-import { TEMALAR } from "../src/components/tema-secici";
+import { PALET_DOSYASI, TEMALAR } from "../src/components/tema-secici";
+
+/** Temanın palet dosyası — kişisel tema kobalt paletini kullanır (07.10.2026). */
+const paletYolu = (tema: (typeof TEMALAR)[number]) => `src/styles/tema-${PALET_DOSYASI[tema]}.css`;
 
 /**
  * ============================================================================
@@ -208,13 +211,19 @@ const renkler = yorumsuz(oku("src/lib/marka/renkler.ts"));
  * (Anayasa: "bekçi ölçütü elle tutulan liste değil, tersten kurulur".)
  */
 for (const tema of TEMALAR) {
-  const dosya = `src/styles/tema-${tema}.css`;
+  const dosya = paletYolu(tema);
   const paletten = /--se-kabuk:\s*(#[0-9A-Fa-f]{6})/
     .exec(oku(dosya))?.[1]
     ?.toUpperCase();
   const yazilan = new RegExp(`${tema}:\\s*"(#[0-9A-Fa-f]{6})"`)
     .exec(renkler)?.[1]
     ?.toUpperCase();
+  /* Palet dosyası temayı ADIYLA seçmeli — kişisel tema kobalt dosyasına
+     seçiciyle bağlanmazsa vurgu dışındaki yüzeyler tanımsız kalır. */
+  kontrol(
+    `${tema}: palet dosyası temayı seçicisinde taşıyor`,
+    oku(dosya).includes(`[data-tema="${tema}"]`),
+  );
   kontrol(
     `${tema}: kabuk rengi paletle aynı`,
     paletten !== undefined && paletten === yazilan,
@@ -236,7 +245,7 @@ for (const tema of TEMALAR) {
   kontrol(`kobalt token seti dolu (${temel.size})`, temel.size > 40);
   for (const tema of TEMALAR) {
     if (tema === "kobalt") continue;
-    const bu = tokenSeti(`src/styles/tema-${tema}.css`);
+    const bu = tokenSeti(paletYolu(tema));
     const eksik = [...temel].filter((t) => !bu.has(t));
     kontrol(`${tema}: eksik token YOK (${bu.size})`, eksik.length === 0, eksik);
   }
@@ -262,7 +271,7 @@ for (const tema of TEMALAR) {
     return 0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2];
   };
   for (const tema of TEMALAR) {
-    const metin = oku(`src/styles/tema-${tema}.css`);
+    const metin = oku(paletYolu(tema));
     const kart = /--se-kart:\s*(#[0-9A-Fa-f]{6})/.exec(metin)?.[1];
     if (!kart) {
       kontrol(`${tema}: kart rengi okunamadı`, false);
@@ -299,7 +308,7 @@ for (const tema of TEMALAR) {
     );
     kontrol(
       `  ...${tema}: paleti import ediliyor`,
-      kopru.includes(`tema-${tema}.css`),
+      kopru.includes(`tema-${PALET_DOSYASI[tema]}.css`),
     );
   }
 }
@@ -338,7 +347,7 @@ for (const tema of TEMALAR) {
     );
     for (const tema of TEMALAR) {
       const zemin = /--se-zemin:\s*(#[0-9A-Fa-f]{6})/.exec(
-        oku(`src/styles/tema-${tema}.css`),
+        oku(paletYolu(tema)),
       )?.[1];
       if (!zemin) {
         kontrol(`${tema}: zemin rengi okunamadı`, false);
@@ -357,15 +366,20 @@ for (const tema of TEMALAR) {
     /classList\.toggle\("dark", koyuMu\(tema\)\)/.test(secici),
   );
   /** Üç temada "öteki" yoktur — düğme DÖNGÜ olmalı. */
+  /* ⭐ ÖLÇÜT ESKİDİ, NİYET AYNI (07.10.2026): düğme döngü olmaktan çıkıp AÇILIR
+     PANEL oldu (kullanıcı: kişisel renk + köşe aynı yerde). Niyet — HER tema
+     seçilebilir, hiçbiri gizli kalmaz — artık panelin `TEMALAR` üstünden
+     çizilmesiyle sınanır: elle yazılmış üç düğme yeni temayı sessizce dışarıda
+     bırakırdı. Seçim de tek gövdeden (`temaSec(ad)`) geçer. */
   kontrol(
-    "tema düğmesi döngü (ikili anahtar değil)",
-    /sonrakiTema\(tema\)/.test(secici) &&
+    "tema paneli her temayı listeden çiziyor (elle düğme yok)",
+    /\{TEMALAR\.map\(\(ad\) => \([\s\S]{0,400}?onClick=\{\(\) => temaSec\(ad\)\}/.test(secici) &&
       !/tema === "gece" \? "kobalt" : "gece"/.test(secici),
   );
   /** Etiket ve ikon exhaustive: dördüncü tema derlenmeden eklenemez. */
   kontrol(
-    "hedef etiketi exhaustive Record",
-    /hedefEtiketi: Record<Tema, string>/.test(secici),
+    "tema adı exhaustive Record",
+    /temaAdi: Record<Tema, string>/.test(secici),
   );
   kontrol(
     "ikon eşlemesi exhaustive",

@@ -2727,7 +2727,10 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * sessizce "temiz" sayılmaz.
    */
   const KOBALT = kaynakOku("src/styles/tema-kobalt.css");
-  const GECE = kaynakOku("src/styles/tema-gece.css");
+  /* 07.10.2026: gece teması kaldırıldı (kullanıcı: «röntgen çekilmiş gibi»).
+     İkinci palet ölçütleri artık Kağıt üstünden koşar; niyet aynı — her
+     sabit palet aynı token setini ve aynı ayrım eşiklerini taşır. */
+  const KAGIT = kaynakOku("src/styles/tema-kagit.css");
 
   /** `#RRGGBB` → 0–1 aralığında üç kanal. */
   const hexKanal = (hex: string): [number, number, number] => [
@@ -2772,8 +2775,8 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     kroma(acikTema, "primary") > 0.05,
   );
   kontrol(
-    "  ...koyu temada da renkli",
-    kroma(acikTema, "primary", GECE) > 0.05,
+    "  ...kağıt temasında da renkli",
+    kroma(acikTema, "primary", KAGIT) > 0.05,
   );
   kontrol(
     "  ...aktif menü satırı da aksan tonunda (gri vurgu 'seçili' demiyor)",
@@ -2796,11 +2799,11 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     const adlar = (metin: string) =>
       new Set([...metin.matchAll(/^\s*(--se-[a-z0-9-]+):/gm)].map((m) => m[1]!));
     const kobaltAdlari = adlar(KOBALT);
-    const geceAdlari = adlar(GECE);
+    const kagitAdlari = adlar(KAGIT);
     kontrol("Kobalt paleti okundu", kobaltAdlari.size > 40, kobaltAdlari.size);
-    const eksikGece = [...kobaltAdlari].filter((a) => !geceAdlari.has(a));
-    const eksikKobalt = [...geceAdlari].filter((a) => !kobaltAdlari.has(a));
-    kontrol("iki palet AYNI token adlarını tanımlıyor", eksikGece.length === 0, eksikGece);
+    const eksikKagit = [...kobaltAdlari].filter((a) => !kagitAdlari.has(a));
+    const eksikKobalt = [...kagitAdlari].filter((a) => !kobaltAdlari.has(a));
+    kontrol("iki palet AYNI token adlarını tanımlıyor", eksikKagit.length === 0, eksikKagit);
     kontrol("  ...ters yönde de", eksikKobalt.length === 0, eksikKobalt);
 
     /**
@@ -2855,25 +2858,20 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       },
     );
 
-    /** Gece teması gerçekten KOYU olmalı — ad değil, ölçü. */
-    const geceDeger = (ad: string) => {
-      const m = new RegExp(`${ad}:\\s*(#[0-9A-Fa-f]{6})`).exec(GECE);
+    /* ⭐ 07.10.2026: «Gece teması gerçekten koyu» ve «gece paleti .dark sınıfına
+       bağlı» ölçütleri gece temasıyla birlikte kalktı (kullanıcı kararı).
+       Gerekçeleri `tema-secici.tsx` → KOYU_TEMALAR yorumunda ve `pwa:dogrula`
+       koyu/açık beyanında yaşıyor: koyu tema yeniden kurulursa o bekçi sınar.
+       Yerine: kaldırılan temalar köprüde ve dosyada KALMADI. */
+    const kagitDeger = (ad: string) => {
+      const m = new RegExp(`${ad}:\\s*(#[0-9A-Fa-f]{6})`).exec(KAGIT);
       return m ? m[1]! : null;
     };
+    const kopruKaldirilan = kaynakOku("src/app/globals.css");
     kontrol(
-      "Gece teması gerçekten koyu (zemin < 0,25 parlaklık)",
-      luma(geceDeger("--se-zemin")) < 0.25,
-      luma(geceDeger("--se-zemin")).toFixed(2),
+      "kaldırılan temalar (gece · pembe) köprüde ve içe aktarımda yok",
+      !/data-tema="(gece|pembe)"|tema-(gece|pembe)\.css/.test(kopruKaldirilan),
     );
-
-    /**
-     * ⚠ GECE PALETİ `.dark` SINIFINA DA BAĞLI OLMALI. Durum renkleri
-     * (`lib/renkler.ts`) koyu varyantlarını Tailwind'in `dark:` önekiyle
-     * taşıyor ve o önek `.dark` atasına bakıyor. Yalnız `data-tema`
-     * yazsaydık yüzeyler kararır, yeşil/kırmızı rozetler AÇIK tema
-     * tonunda kalırdı — koyu zeminde okunmazlardı.
-     */
-    kontrol("gece paleti .dark sınıfına da bağlı", GECE.includes('[data-tema="gece"], .dark'));
 
     /**
      * ⚠ KENARLIK KONTRASTI — ÇÖZÜLMÜŞ BİR SORUN GERİ GELDİĞİ İÇİN VAR.
@@ -2951,7 +2949,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
        23.08 gerekçesi («salt beyaz çıkıyor») gri zemin dönemine aitti ve
        yukarıda duruyor; karar bilerek çevrildi. Gece için ölçüt aynen sürer. */
     for (const [ad, deger] of [
-      ["Gece", geceDeger],
+      ["Kağıt", kagitDeger],
     ] as const) {
       const kart = luma(deger("--se-kart"));
       const zemin = luma(deger("--se-zemin"));
@@ -3041,7 +3039,7 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
        */
       for (const [ad, deger] of [
         ["Kobalt", kobaltDeger],
-        ["Gece", geceDeger],
+        ["Kağıt", kagitDeger],
       ] as const) {
         const kabuk = luma(deger("--se-kabuk"));
         const kenar = luma(deger("--se-kabuk-ink2"));
@@ -3585,7 +3583,15 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
      * sayfa bir kare açık temada çizilir, sonra karanlığa atlar.
      */
     kontrol("FOUC betiği var", duzen.includes("TEMA_BETIGI"));
-    kontrol("  ...betik .dark sınıfını da ekliyor", /classList\.add\("dark"\)/.test(duzen));
+    /* ⭐ 07.10.2026: koyu tema kalktı, betik artık `.dark` eklemiyor (KOYU_TEMALAR
+       boş). Yerine betiğin KİŞİSEL değişkenleri yalnız izin listesindeki adlara ve
+       desene uyan değerlere yazdığı sınanır — depodaki bozuk/yabancı bir kayıt
+       `<html>`e rastgele stil basamaz. */
+    kontrol(
+      "  ...betik kişisel değişkenleri izin listesi + desenle uyguluyor",
+      /if\(typeof v==="string"&&r\.test\(v\)\)\{k\.style\.setProperty\(a\[i\],v\);\}/.test(duzen) &&
+        duzen.includes("${JSON.stringify(KISISEL_DEGISKENLERI)}"),
+    );
     /**
      * ⚠ `try/catch` ŞART: gizli sekmede `localStorage` erişimi HATA
      * FIRLATIR (boş dönmez). Yakalanmazsa betik ölür ve tema hiç uygulanmaz.
@@ -3605,15 +3611,18 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       "  ...localStorage erişimi try/catch içinde",
       tryGovdesi.includes("localStorage"),
     );
+    /* ⭐ 07.10.2026: koyu sistem tercihi gece temasını seçiyordu; gece kalktı.
+       Tanınmayan ya da kaldırılmış tema adı (gece · pembe kaydı kalan cihaz)
+       Kobalt'a düşer — kaydı tanımayıp boş tema basmaz. */
     kontrol(
-      "  ...cihaz tercihi yedek olarak okunuyor",
-      duzen.includes("prefers-color-scheme"),
+      "  ...tanınmayan tema adı Kobalt'a düşüyor",
+      /if\(!g\[t\]\)\{t="kobalt";\}/.test(duzen) && !duzen.includes("prefers-color-scheme"),
     );
 
     const secici = kaynakOku("src/components/tema-secici.tsx");
     kontrol("seçici .dark sınıfını da çeviriyor", secici.includes('classList.toggle("dark"'));
     kontrol("  ...seçim localStorage'a yazılıyor", secici.includes("localStorage.setItem"));
-    kontrol("  ...ekran okuyucu etiketi sözlükten", /aria-label=\{etiket\}/.test(secici));
+    kontrol("  ...ekran okuyucu etiketi sözlükten", /aria-label=\{t\("temaAc", \{ tema: temaAdi\[tema\] \}\)\}/.test(secici));
   }
 
   /**
