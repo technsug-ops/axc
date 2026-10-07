@@ -34,6 +34,47 @@ export async function varyantStoklari(
   );
 }
 
+/**
+ * STOK SÜZGECİ (kullanıcı isteği 07.10.2026: «stok olmayan ürünleri gösterme
+ * butonu olsun»). Adres değeri `stok=var`; başka her değer = süzgeç yok.
+ */
+export const STOK_PARAMETRESI = "stok";
+export function stokSuzgeciCoz(ham: string | undefined): boolean {
+  return ham === "var";
+}
+
+/**
+ * Toplam stoğu > 0 olan ürünler — SAF. Ölçü listedeki «Toplam stok» sütunuyla
+ * AYNI: ürünün bütün varyantlarının defter toplamı (`urunStoklari`). Varyant
+ * düzeyinde süzülseydi eksi stoklu bir varyant artı stoklu kardeşini sıfırlayan
+ * ürünü «stokta» sayardı ve sayı ile sütun ayrışırdı.
+ */
+export function stokluUrunleriSec(
+  varyantToplamlari: readonly { variantId: string; toplam: number }[],
+  varyantUrunu: ReadonlyMap<string, string>,
+): string[] {
+  const urunToplami = new Map<string, number>();
+  for (const v of varyantToplamlari) {
+    const urunId = varyantUrunu.get(v.variantId);
+    if (!urunId) continue;
+    urunToplami.set(urunId, (urunToplami.get(urunId) ?? 0) + v.toplam);
+  }
+  return [...urunToplami].filter(([, t]) => t > 0).map(([id]) => id);
+}
+
+/** Toplam stoğu > 0 olan ürünlerin kimlikleri (liste + Excel aynı gövdeden). */
+export async function stokluUrunIdleri(): Promise<string[]> {
+  const gruplar = await prisma.stockMovement.groupBy({ by: ["variantId"], _sum: { quantityDelta: true } });
+  const varyantlar = await prisma.productVariant.findMany({
+    where: { id: { in: gruplar.map((g) => g.variantId) } },
+    select: { id: true, productId: true },
+  });
+  return stokluUrunleriSec(
+    gruplar.map((g) => ({ variantId: g.variantId, toplam: g._sum.quantityDelta ?? 0 })),
+    new Map(varyantlar.map((v) => [v.id, v.productId])),
+  );
+}
+
 /** Tek varyantın güncel stoğu. */
 export async function varyantStogu(varyantId: string): Promise<number> {
   const sonuc = await prisma.stockMovement.aggregate({

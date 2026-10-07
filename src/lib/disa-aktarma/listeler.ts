@@ -20,6 +20,7 @@ import { prisma } from "@/lib/prisma";
 import type { Sayfa } from "./xlsx";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { urunAramaKosulu } from "@/lib/urun-arama";
+import { STOK_PARAMETRESI, stokluUrunIdleri, stokSuzgeciCoz } from "@/lib/stok";
 import { stoguVarMi } from "@/lib/stok-siralama";
 import { supheliSatirlari } from "@/lib/supheli-urun-veri";
 import { markasizUrunler } from "@/lib/marka-kodu-veri";
@@ -486,7 +487,14 @@ async function urunlerSayfasi(p: Parametreler): Promise<Sayfa> {
      * Excel'e DÜŞMÜYORDU. «Eşdeğer kodlar ekranla aynı küme» gerekçesi
      * (K100) gövdede yaşamaya devam ediyor.
      */
-    where: { AND: [tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, (await urunAramaKosulu(arama)) ?? {}] },
+    /* 07.10.2026: «stokta olmayanları gizle» süzgeci de EKRANLA AYNI gövdeden (`stokluUrunIdleri`). */
+    where: {
+      AND: [
+        tyKategori ? tyKategoriUrunKosulu(tyKategori) : {},
+        (await urunAramaKosulu(arama)) ?? {},
+        stokSuzgeciCoz(p[STOK_PARAMETRESI]) ? { id: { in: await stokluUrunIdleri() } } : {},
+      ],
+    },
     include: {
       category: { select: { name: true } },
       variants: {

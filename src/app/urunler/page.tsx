@@ -31,7 +31,7 @@ import { prisma } from "@/lib/prisma";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaCoz } from "@/lib/sayfalama";
 import { urunAramaKosulu } from "@/lib/urun-arama";
-import { urunStoklari } from "@/lib/stok";
+import { STOK_PARAMETRESI, stokluUrunIdleri, stokSuzgeciCoz, urunStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
@@ -46,7 +46,7 @@ export async function generateMetadata() {
 export default async function UrunlerSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sayfa?: string; tyKategori?: string }>;
+  searchParams: Promise<{ q?: string; sayfa?: string; tyKategori?: string; stok?: string }>;
 }) {
   const baglam = await sayfaIzni("urun.gor");
   /* K273-③: resimsiz kutuda "resim ekle" rozeti yalnız ürün düzenleme izniyle. */
@@ -54,7 +54,9 @@ export default async function UrunlerSayfasi({
   /* K284: şüpheli sayısı listeyle AYNI gövdeden; yalnız düzenleme izniyle (ekran urun.yaz ister). */
   const supheli = resimEkleyebilir ? await supheliSayisi() : null;
 
-  const { q, sayfa, tyKategori: tyHam } = await searchParams;
+  const { q, sayfa, tyKategori: tyHam, stok: stokHam } = await searchParams;
+  /* «Stokta olmayanları gizle» (kullanıcı isteği 07.10.2026) — adreste `stok=var`. */
+  const yalnizStoklu = stokSuzgeciCoz(stokHam);
   const arama = (q ?? "").trim();
   /* K295: Trendyol kategori eşleşmesindeki «N ürün» buraya getirir — koşul ortak gövdeden. */
   const tyKategori = tyKategoriCoz(tyHam);
@@ -78,7 +80,23 @@ export default async function UrunlerSayfasi({
   // ÖNCE SAY, SONRA SAYFAYI ÇEK. Sayım olmadan "kaç sayfa var"
   // bilinemez; kullanıcı kararı gereği toplam sayı da ekranda yazıyor.
   /* ⚠ AND ile eklenir, spread ile değil — arama koşulu ezilmesin. */
-  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}] };
+  /* Stok süzgeci: ürün TOPLAM stoğu > 0 — «Toplam stok» sütunuyla aynı ölçü (`stokluUrunIdleri`). */
+  const stokKosulu = yalnizStoklu ? { id: { in: await stokluUrunIdleri() } } : {};
+  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu] };
+  /** Adreste taşınan süzgeçler — arama, sayfalama, Excel ve düğme aynı kümeyi kullanır. */
+  const tasinan = {
+    q: arama || undefined,
+    [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined,
+    [STOK_PARAMETRESI]: yalnizStoklu ? "var" : undefined,
+  };
+  const stokDugmesiAdresi = (() => {
+    const p = new URLSearchParams();
+    if (arama) p.set("q", arama);
+    if (tyKategori) p.set(TY_KATEGORI_PARAMETRESI, tyKategori);
+    if (!yalnizStoklu) p.set(STOK_PARAMETRESI, "var");
+    const d = p.toString();
+    return d ? `/urunler?${d}` : "/urunler";
+  })();
   const toplam = await prisma.product.count({ where: kosul });
   const sayfalama = sayfaCoz(sayfa, toplam);
 
@@ -250,7 +268,7 @@ export default async function UrunlerSayfasi({
           </Baglanti>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ExcelIndir liste="urunler" parametreler={{ q: arama, [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined }} />
+          <ExcelIndir liste="urunler" parametreler={tasinan} />
           <Button asChild>
             <Link href="/urunler/yeni">
               <Plus />
@@ -263,15 +281,29 @@ export default async function UrunlerSayfasi({
       <KodAramaKutusu
         temelAdres="/urunler"
         baslangic={arama}
-        tasinanlar={tyKategori ? { [TY_KATEGORI_PARAMETRESI]: tyKategori } : {}}
+        tasinanlar={{
+          ...(tyKategori ? { [TY_KATEGORI_PARAMETRESI]: tyKategori } : {}),
+          ...(yalnizStoklu ? { [STOK_PARAMETRESI]: "var" } : {}),
+        }}
         ipucu={t("aramaIpucu")}
       />
+
+      {/* STOK SÜZGECİ DÜĞMESİ (07.10.2026) — açıkken GÖRÜNÜR ve tek tıkla kalkar (İlke #5). */}
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <Button asChild variant={yalnizStoklu ? "default" : "outline"} size="sm" className="h-11 md:h-8">
+          <Link href={stokDugmesiAdresi} aria-pressed={yalnizStoklu}>
+            {yalnizStoklu ? t("stoksuzlarGizli") : t("stoksuzlariGizle")}
+          </Link>
+        </Button>
+        {yalnizStoklu ? <span className="text-muted-foreground">{t("stoksuzlarGizliNot")}</span> : null}
+      </div>
 
       {/* K295: süzgeç GÖRÜNÜR ve kaldırılabilir — liste neden kısa, sorusu cevapsız kalmasın (İlke #5). */}
       {tyKategori ? (
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <Badge variant="secondary">{t("tyKategoriSuzgeci", { ad: tyKategori })}</Badge>
-          <Baglanti href={arama ? `/urunler?q=${encodeURIComponent(arama)}` : "/urunler"} className="inline-flex min-h-11 items-center md:min-h-0">
+          {/* Stok süzgeci açıksa KALIR — yalnız TY kategorisi kalkar. */}
+          <Baglanti href={(() => { const p = new URLSearchParams(); if (arama) p.set("q", arama); if (yalnizStoklu) p.set(STOK_PARAMETRESI, "var"); const d = p.toString(); return d ? `/urunler?${d}` : "/urunler"; })()} className="inline-flex min-h-11 items-center md:min-h-0">
             {t("suzgeciKaldir")}
           </Baglanti>
         </div>
@@ -519,7 +551,7 @@ export default async function UrunlerSayfasi({
           <SayfalamaCubugu
             sayfalama={sayfalama}
             yol="/urunler"
-            parametreler={{ q: arama, [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined }}
+            parametreler={tasinan}
           />
         </>
       )}

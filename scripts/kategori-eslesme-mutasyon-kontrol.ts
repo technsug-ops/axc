@@ -61,9 +61,9 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "KATEGORI ADI KODLANMADAN ADRESE YAZILIYOR", yon: "FAZLADAN", dosya: SUZGEC,
     bul: "=${encodeURIComponent(tyKategori)}", koy: "=${tyKategori}", bozdugu: "'Lego & Yapi' adresi & isaretinde kesilir, yanlis kategori acilir" },
   { ad: "URUNLER SUZGECI ARAMAYI EZIYOR (spread)", yon: "FAZLADAN", dosya: URUNLER,
-    bul: "  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}] };", koy: "  const kosul = { ...suzgecArama, ...(tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}) };", bozdugu: "kategori acikken arama koşulu sessizce karisir" },
+    bul: "  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu] };", koy: "  const kosul = { ...suzgecArama, ...(tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}), ...stokKosulu };", bozdugu: "kategori acikken arama koşulu sessizce karisir" },
   { ad: "SAYFALAMA KATEGORIYI DUSURUYOR", yon: "KALDIRAN", dosya: URUNLER,
-    bul: "            parametreler={{ q: arama, [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined }}", koy: "            parametreler={{ q: arama }}", bozdugu: "2. sayfaya gecince suzgec kaybolur, baska liste acilir" },
+    bul: "    [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined,\n", koy: "", bozdugu: "2. sayfaya gecince suzgec kaybolur, baska liste acilir" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

@@ -124,16 +124,24 @@ console.log("\n3) kategori sayısı → ürün listesi (sayı = liste)");
   kontrol("eşleşme sayımı ortak tabandan", sayfa.includes("where: TY_KATEGORILI_URUN,"));
   kontrol("  ...«N ürün» bağlantı (sıfırda bağlantı YOK)", /s\.urun > 0 \? \(\s*<Baglanti href=\{tyKategoriListeAdresi\(s\.tyKategori\)\}>/.test(sayfa));
   const urunler = oku("src/app/urunler/page.tsx");
-  kontrol("Ürünler: süzgeç ortak koşulla, AND ile (arama ezilmez)", urunler.includes("const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}] };"));
+  /* ⚠ ÇAPA TAŞINDI (07.10.2026): AND dizisine stok süzgeci (`stokKosulu`) eklendi; ölçüt aynı — spread yok, arama ezilmez. */
+  kontrol("Ürünler: süzgeç ortak koşulla, AND ile (arama ezilmez)", urunler.includes("const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu] };"));
   kontrol("  ...sayım ve liste AYNI koşul", urunler.includes("prisma.product.count({ where: kosul })") && urunler.includes("where: kosul,"));
   kontrol("  ...süzgeç ekranda yazıyor ve kaldırılabilir", urunler.includes('t("tyKategoriSuzgeci", { ad: tyKategori })') && urunler.includes('t("suzgeciKaldir")'));
-  kontrol("  ...arama, sayfalama ve Excel süzgeci taşıyor", (urunler.match(/\[TY_KATEGORI_PARAMETRESI\]: tyKategori/g) ?? []).length === 3);
+  /* ⚠ ÖLÇÜT TAŞINDI (07.10.2026): sayfalama ve Excel artık TEK `tasinan` nesnesinden okuyor
+     (stok süzgeci de aynı yoldan taşınsın diye). Üç taşıma yeri aynen ölçülür: nesnede kategori,
+     nesne İKİ yerde kullanılıyor, yeni aramada `tasinanlar` kategoriyi taşıyor. */
+  kontrol("  ...arama, sayfalama ve Excel süzgeci taşıyor",
+    /const tasinan = \{\s*q: arama \|\| undefined,\s*\[TY_KATEGORI_PARAMETRESI\]: tyKategori \?\? undefined,/.test(urunler) &&
+      (urunler.match(/parametreler=\{tasinan\}/g) ?? []).length === 2 &&
+      /\.\.\.\(tyKategori \? \{ \[TY_KATEGORI_PARAMETRESI\]: tyKategori \} : \{\}\),/.test(urunler));
   kontrol("  ...başlıktaki kayıt sayısı TOPLAM (sayfa değil)", urunler.includes('ortak("kayitSayisi", { sayi: toplam })'));
   const excel = oku("src/lib/disa-aktarma/listeler.ts");
   /* ⚠ ÇAPA TAŞINDI (K302, 28.09.2026): Excel'in arama kısmı ortak gövdeye (`urunAramaKosulu`)
    * bağlandı; eski çapa `…: {}, arama` satırın o kısmını da içeriyordu. Kategori koşulu AYNEN
    * yerinde — ölçüt aynı şeyi (kategori süzgeci AND ile, aramayla birlikte) arıyor. */
-  kontrol("Excel aynı koşulla", excel.includes("where: { AND: [tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, (await urunAramaKosulu(arama)) ?? {}] },"));
+  /* ⚠ ÇAPA TAŞINDI (07.10.2026): Excel koşulu çok satırlı oldu (stok süzgeci eklendi); ölçüt aynı. */
+  kontrol("Excel aynı koşulla", /where: \{\s*AND: \[\s*tyKategori \? tyKategoriUrunKosulu\(tyKategori\) : \{\},\s*\(await urunAramaKosulu\(arama\)\) \?\? \{\},/.test(excel));
 }
 kosanBolumler.push("sayi-liste");
 

@@ -479,6 +479,8 @@
     "urun-etiketi-mutasyon:kontrol": "tsx scripts/urun-etiketi-mutasyon-kontrol.ts",
     "ilan-adresi:dogrula": "tsx scripts/ilan-adresi-dogrula.ts",
     "ilan-adresi-mutasyon:kontrol": "tsx scripts/ilan-adresi-mutasyon-kontrol.ts",
+    "stok-suzgeci:dogrula": "tsx scripts/stok-suzgeci-dogrula.ts",
+    "stok-suzgeci-mutasyon:kontrol": "tsx scripts/stok-suzgeci-mutasyon-kontrol.ts",
     "liste-aramasi:dogrula": "tsx scripts/liste-aramasi-dogrula.ts",
     "liste-aramasi-mutasyon:kontrol": "tsx scripts/liste-aramasi-mutasyon-kontrol.ts",
     "okuyucu-duzeltme-mutasyon:kontrol": "tsx scripts/okuyucu-duzeltme-mutasyon-kontrol.ts",
