@@ -40,7 +40,7 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "      kdvOrani: sayiVeyaYok(v.vatRate),\n", koy: "",
     bozdugu: "senkron oran yazmaz, uyari hic yanmaz" },
   { ad: "ORAN DEGISINCE YAZILMIYOR", yon: "KALDIRAN", dosya: YAZ,
-    bul: " || kayitliKdv !== k.kdv) {", koy: ") {",
+    bul: " || kayitliKdv !== k.kdv || s.externalListingId !== k.ilan) {", koy: " || s.externalListingId !== k.ilan) {",
     bozdugu: "ilan duzeltilse bile eski oran kalir, uyari sonmez" },
   { ad: "CAKISAN ILANDA BIRI SECILIYOR", yon: "FAZLADAN", dosya: YAZ,
     bul: "const ortakKdv = mevcut.kdv === kdv ? kdv : null;", koy: "const ortakKdv = kdv;",
