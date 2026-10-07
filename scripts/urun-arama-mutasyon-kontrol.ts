@@ -26,10 +26,11 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ZARARSIZ - govde yorumu", yon: "ZARARSIZ", dosya: GOVDE,
     bul: " * Boş arama → `undefined` (süzgeç yok).", koy: " * Boş arama → süzgeç yok.", bozdugu: "hicbir sey" },
   { ad: "EXCEL ESKI DAR KOSULA DONDU", yon: "KALDIRAN", dosya: LISTE,
-    bul: "(await urunAramaKosulu(arama)) ?? {}] },", koy: "(arama ? { OR: [{ name: { contains: arama } }, { variants: { some: { companySku: { contains: arama } } } }] } : {})] },",
+    /* ÇAPA TAŞINDI (07.10.2026): Excel koşulu stok süzgeciyle çok satırlı oldu; niyet aynı. */
+    bul: "        (await urunAramaKosulu(arama)) ?? {},\n", koy: "        (arama ? { OR: [{ name: { contains: arama } }, { variants: { some: { companySku: { contains: arama } } } }] } : {}),\n",
     bozdugu: "kanal SKU'suyla aranan urun Excel'e dusmez" },
   { ad: "EXCEL ARAMAYI YOK SAYIYOR", yon: "KALDIRAN", dosya: LISTE,
-    bul: "(await urunAramaKosulu(arama)) ?? {}] },", koy: "{}] },", bozdugu: "Excel aramadan bagimsiz butun urunleri indirir" },
+    bul: "        (await urunAramaKosulu(arama)) ?? {},\n", koy: "        {},\n", bozdugu: "Excel aramadan bagimsiz butun urunleri indirir" },
   { ad: "EKRAN GOVDEYI CAGIRMIYOR", yon: "KALDIRAN", dosya: EKRAN,
     bul: "  const suzgecArama = await urunAramaKosulu(arama);", koy: "  const suzgecArama = arama ? { OR: [{ name: { contains: arama } }] } : undefined;",
     bozdugu: "ekran ile Excel ayrisir" },
