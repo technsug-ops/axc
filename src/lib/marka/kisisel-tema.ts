@@ -32,7 +32,42 @@
  * ============================================================================
  */
 
-export const KISISEL_VARSAYILAN = { renk: "#12356B", kose: 12, cizgi: 0 } as const;
+export const KISISEL_VARSAYILAN = { renk: "#12356B", kose: 12, cizgi: 0, zemin: "gri", kart: "beyaz", yazi: "normal" } as const;
+
+/**
+ * ── ZEMİN · KART · YAZI (kullanıcı 08.10.2026: «zemin, kartların rengi gibi
+ * unsurları da içine almalı, biraz daha gelişmiş ayarlar») ─────────────────
+ * Yüzeyler SERBEST renk değil, HAZIR tonlardır: hepsi açık tondur ve birincil
+ * yazı (#232B35) her birinde ≥ 12:1 okunur — serbest renk seçici koyu ya da
+ * doygun bir zemine izin verir ve yazı, rozet, durum renkleri birlikte bozulur.
+ * Kart ile zemin AYRIŞMIYORSA (parlaklık farkı < AYRIM_ESIGI) çizgi kendiliğinden
+ * en az «İnce» olur ve ekranda söylenir — kart görünmez olmasın (08.10.2026
+ * şikâyeti: «neredeyse hiçbir kart görünür değil»).
+ */
+export const ZEMIN_SECENEKLERI = {
+  gri: "#F4F6FA",
+  beyaz: "#FFFFFF",
+  sicak: "#F5F2EC",
+  mavi: "#EDF2F9",
+  nane: "#EEF4F1",
+  tas: "#ECEDEF",
+} as const;
+export const KART_SECENEKLERI = {
+  beyaz: "#FFFFFF",
+  kirik: "#FDFBF7",
+  buz: "#FAFCFF",
+} as const;
+export type ZeminKodu = keyof typeof ZEMIN_SECENEKLERI;
+export type KartKodu = keyof typeof KART_SECENEKLERI;
+/** Yazı tabanı — «yüksek» koyu mürekkep; ikincil yazı her durumda eşiğe kadar koyulaşır. */
+export const YAZI_SECENEKLERI = {
+  normal: { ink: "#232B35", ink2: "#667380" },
+  yuksek: { ink: "#11161C", ink2: "#4A5561" },
+} as const;
+export type YaziKodu = keyof typeof YAZI_SECENEKLERI;
+/** Kart–zemin parlaklık farkı bunun altındaysa kart yalnız gölgeyle seçilemez.
+ *  Ölçüldü 08.10.2026: gri/beyaz 0,080 (görünür) · beyaz/beyaz 0 (görünmedi). */
+export const AYRIM_ESIGI = 0.03;
 export const KOSE_SINIRI = { alt: 0, ust: 20 } as const;
 /**
  * Kart çizgisi belirginliği (kullanıcı isteği 08.10.2026: «kart çizgilerinin
@@ -73,6 +108,10 @@ export const KISISEL_DEGISKENLERI = [
   "--se-odak",
   "--se-odak-golge",
   "--se-kart-cizgi",
+  "--se-zemin",
+  "--se-kart",
+  "--se-ink",
+  "--se-ink-2",
   "--radius",
 ] as const;
 export type KisiselDegisken = (typeof KISISEL_DEGISKENLERI)[number];
@@ -174,6 +213,20 @@ function cizgiDegeri(seviye: number): string {
   return saydamlik === 0 ? "transparent" : `rgba(35, 43, 53, ${saydamlik.toFixed(2)})`;
 }
 
+function kodSec<T extends string>(ham: unknown, secenekler: Record<T, unknown>, varsayilan: T): T {
+  return typeof ham === "string" && Object.prototype.hasOwnProperty.call(secenekler, ham) ? (ham as T) : varsayilan;
+}
+
+/** İkincil yazıyı iki yüzeye karşı da eşiğe kadar koyulaştırır (birincil yazı her açık tonda zaten ≥ 12:1). */
+function okunurIkincil(taban: string, yuzeyler: string[]): string {
+  const kaynak = hexOku(taban);
+  for (let oran = 0; oran <= 1.0001; oran += 0.04) {
+    const aday = hexYaz(karistir(kaynak, SIYAH, Math.min(oran, 1)));
+    if (yuzeyler.every((y) => kontrastOrani(aday, y) >= KONTRAST_ESIGI)) return aday;
+  }
+  return "#000000";
+}
+
 export type KisiselSonuc = {
   /** Kullanıcının seçtiği (geçerliyse) renk. */
   secilen: string;
@@ -183,15 +236,28 @@ export type KisiselSonuc = {
   anlamUyarisi: "kar" | "zarar" | null;
   kose: number;
   cizgi: number;
+  zemin: ZeminKodu;
+  kart: KartKodu;
+  yazi: YaziKodu;
+  /** Kart zeminden ayrışmadığı için çizgi kendiliğinden açıldı. */
+  cizgiZorunlu: boolean;
   degiskenler: Record<KisiselDegisken, string>;
 };
 
-export function kisiselTema(girdi: { renk: unknown; kose: unknown; cizgi?: unknown }): KisiselSonuc {
+export function kisiselTema(girdi: { renk: unknown; kose: unknown; cizgi?: unknown; zemin?: unknown; kart?: unknown; yazi?: unknown }): KisiselSonuc {
   const secilen = gecerliRenk(girdi.renk) ? girdi.renk.toUpperCase() : KISISEL_VARSAYILAN.renk;
   const { renk: uygulanan, koyulasti } = okunurVurgu(secilen);
   const v = hexOku(uygulanan);
   const kose = koseSinirla(girdi.kose);
-  const cizgi = cizgiSinirla(girdi.cizgi ?? KISISEL_VARSAYILAN.cizgi);
+  const zemin = kodSec<ZeminKodu>(girdi.zemin, ZEMIN_SECENEKLERI, KISISEL_VARSAYILAN.zemin);
+  const kart = kodSec<KartKodu>(girdi.kart, KART_SECENEKLERI, KISISEL_VARSAYILAN.kart);
+  const yazi = kodSec<YaziKodu>(girdi.yazi, YAZI_SECENEKLERI, KISISEL_VARSAYILAN.yazi);
+  const zeminRengi = ZEMIN_SECENEKLERI[zemin];
+  const kartRengi = KART_SECENEKLERI[kart];
+  const istenenCizgi = cizgiSinirla(girdi.cizgi ?? KISISEL_VARSAYILAN.cizgi);
+  const ayrisiyor = goreliParlaklik(kartRengi) - goreliParlaklik(zeminRengi) >= AYRIM_ESIGI;
+  const cizgiZorunlu = !ayrisiyor && istenenCizgi === 0;
+  const cizgi = cizgiZorunlu ? 1 : istenenCizgi;
   const bg = acikTon(v);
   return {
     secilen,
@@ -200,6 +266,10 @@ export function kisiselTema(girdi: { renk: unknown; kose: unknown; cizgi?: unkno
     anlamUyarisi: anlamRengineYakin(uygulanan),
     kose,
     cizgi,
+    zemin,
+    kart,
+    yazi,
+    cizgiZorunlu,
     degiskenler: {
       "--se-vurgu": uygulanan,
       "--se-vurgu-hover": hexYaz(karistir(v, SIYAH, 0.21)),
@@ -212,6 +282,10 @@ export function kisiselTema(girdi: { renk: unknown; kose: unknown; cizgi?: unkno
       "--se-odak": uygulanan,
       "--se-odak-golge": `0 0 0 3px ${hexYaz(karistir(v, BEYAZ, 0.83))}`,
       "--se-kart-cizgi": cizgiDegeri(cizgi),
+      "--se-zemin": zeminRengi,
+      "--se-kart": kartRengi,
+      "--se-ink": YAZI_SECENEKLERI[yazi].ink,
+      "--se-ink-2": okunurIkincil(YAZI_SECENEKLERI[yazi].ink2, [zeminRengi, kartRengi]),
       "--radius": `${kose / 16}rem`,
     },
   };
@@ -222,10 +296,12 @@ export function kisiselTema(girdi: { renk: unknown; kose: unknown; cizgi?: unkno
  * React'ten önce koşar ve türetmeyi ikinci kez (dize içinde) yazmak, aynı
  * hesabın iki kopyası olurdu. Betik yalnız uygular; hesap tek yerde.
  */
-export type KisiselKayit = { renk: string; kose: number; cizgi: number; degiskenler: Record<string, string> };
+export type KisiselKayit = { renk: string; kose: number; cizgi: number; zemin: string; kart: string; yazi: string; degiskenler: Record<string, string> };
 
 export function kisiselKayit(sonuc: KisiselSonuc): KisiselKayit {
-  return { renk: sonuc.secilen, kose: sonuc.kose, cizgi: sonuc.cizgi, degiskenler: sonuc.degiskenler };
+  /* Kullanıcının İSTEDİĞİ çizgi saklanır, zorunlu açılan değil: zemin değişip
+     kart yeniden ayrışınca çizgi kendiliğinden kalkabilsin. */
+  return { renk: sonuc.secilen, kose: sonuc.kose, cizgi: sonuc.cizgiZorunlu ? 0 : sonuc.cizgi, zemin: sonuc.zemin, kart: sonuc.kart, yazi: sonuc.yazi, degiskenler: sonuc.degiskenler };
 }
 
 /** Başlık betiğinin değer süzgeci — betik dizesine aynen gömülür. */

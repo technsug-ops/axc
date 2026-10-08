@@ -31,7 +31,7 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ESIK GEVSEDI", yon: "KALDIRAN", dosya: GOVDE,
     bul: "export const KONTRAST_ESIGI = 4.5;", koy: "export const KONTRAST_ESIGI = 3;", bozdugu: "sari bile gecer, beyaz yazi okunmaz" },
   { ad: "HER RENK KOYULASIYOR", yon: "FAZLADAN", dosya: GOVDE,
-    bul: "  for (let oran = 0; oran <= 1.0001; oran += 0.04) {", koy: "  for (let oran = 0.04; oran <= 1.0001; oran += 0.04) {", bozdugu: "secilen hazir renk bile degisir" },
+    bul: "  for (let oran = 0; oran <= 1.0001; oran += 0.04) {\n    const aday = karistir(kaynak, SIYAH, Math.min(oran, 1));", koy: "  for (let oran = 0.04; oran <= 1.0001; oran += 0.04) {\n    const aday = karistir(kaynak, SIYAH, Math.min(oran, 1));", bozdugu: "secilen hazir renk bile degisir" },
   { ad: "KOSE SINIRSIZ", yon: "FAZLADAN", dosya: GOVDE,
     bul: "  return Math.round(Math.min(KOSE_SINIRI.ust, Math.max(KOSE_SINIRI.alt, n)));", koy: "  return Math.round(n);", bozdugu: "kartlar daire olur" },
   { ad: "LOGO RENGI TEMAYA GIRDI", yon: "FAZLADAN", dosya: GOVDE,
@@ -48,6 +48,12 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "    --tw-ring-color: var(--se-kart-cizgi, transparent);", koy: "    --tw-ring-color: transparent;", bozdugu: "cizgi ayari kartlara islemez" },
   { ad: "CIZGI SEVIYESI SINIRSIZ", yon: "FAZLADAN", dosya: GOVDE,
     bul: "  return Math.round(Math.min(CIZGI_SEVIYELERI.length - 1, Math.max(0, n)));", koy: "  return Math.round(n);", bozdugu: "olmayan seviye bos degisken yazar" },
+  { ad: "AYRISMAYAN KART CIZGISIZ", yon: "KALDIRAN", dosya: GOVDE,
+    bul: "  const cizgiZorunlu = !ayrisiyor && istenenCizgi === 0;", koy: "  const cizgiZorunlu = false && !ayrisiyor && istenenCizgi === 0;", bozdugu: "beyaz kart beyaz zeminde gorunmez" },
+  { ad: "IKINCIL YAZI KOYULASMIYOR", yon: "KALDIRAN", dosya: GOVDE,
+    bul: "    if (yuzeyler.every((y) => kontrastOrani(aday, y) >= KONTRAST_ESIGI)) return aday;", koy: "    return aday;", bozdugu: "gri yazi koyu zeminde okunmaz" },
+  { ad: "YABANCI KOD KABUL", yon: "FAZLADAN", dosya: GOVDE,
+    bul: '  return typeof ham === "string" && Object.prototype.hasOwnProperty.call(secenekler, ham) ? (ham as T) : varsayilan;', koy: '  return typeof ham === "string" && ham in secenekler ? (ham as T) : varsayilan;', bozdugu: "constructor gibi kod zemini bozar" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
