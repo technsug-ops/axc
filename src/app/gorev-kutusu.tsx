@@ -215,8 +215,15 @@ export async function GorevKutusu({
   sayilar,
   ilerlemeler,
   ilerlemeAdresleri,
+  gomulu = false,
 }: {
   sayilar: Record<GorevAnahtari, number>;
+  /**
+   * GÖMÜLÜ (kullanıcı kararı 08.10.2026: Huni ile görev şeridi «benzer kartlar»,
+   * «ikisini tek şeritte birleştir»). Gömülüyken çerçeve/zemin çizilmez — şerit
+   * Huni satırının içinde, ayraçla ayrılmış ikinci grup olarak durur.
+   */
+  gomulu?: boolean;
   /** Görev başına ilerleme — bugün yalnız `kargoBekleyen`. */
   ilerlemeler?: Partial<Record<GorevAnahtari, number>>;
   /** İlerleme rakamının kendi süzülü listesi. */
@@ -278,7 +285,11 @@ export async function GorevKutusu({
        * Telefonda çipler sarar; yatay kaydırma yok (İlke #8).
        */
       /* Şerit yalnız masaüstünde (K270) — telefonda üstteki ızgara. */
-      className="bg-card flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border px-3 py-2 max-md:hidden"
+      className={
+        gomulu
+          ? "flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 max-md:hidden"
+          : "bg-card flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border px-3 py-2 max-md:hidden"
+      }
     >
       <span className="text-muted-foreground text-xs font-medium">
         {t("baslik")}

@@ -1121,6 +1121,32 @@ export default async function AnaSayfa({
    * Payda yoksa satır HİÇ ÇİZİLMEZ — "%0" yazmak "kâr yok" demektir, oysa
    * doğru cevap "hesaplanamıyor"dur.
    */
+  /**
+   * GÖREV ŞERİDİ TEK GÖVDE (08.10.2026) — iki yerde çizilir: dönemde satış
+   * varsa Huni satırının İÇİNDE (gömülü, «tek şerit» kararı), yoksa tek başına.
+   * Props tek yerde; iki kopya olsaydı adresler ayrışırdı (İlke #16).
+   */
+  function gorevSeridi(gomulu: boolean) {
+    return (
+      <GorevKutusu
+        gomulu={gomulu}
+        sayilar={gorevSayilari}
+        ilerlemeler={{ kargoBekleyen: paketlenen }}
+        /*
+          ⚠ ADRES KUTUNUN KENDİ HEDEFİNİ DARALTIYOR, DEĞİŞTİRMİYOR:
+          `kargo=bekleyen` korunuyor, üstüne `paket=hazirlanan`
+          ekleniyor. Yalnız `paket=hazirlanan` yazsaydık kargoya
+          VERİLMİŞ eski siparişler de listeye girer, liste rakamdan
+          büyük çıkardı — sayının tıklanınca kendini doğrulamaması
+          en sinsi hata olurdu.
+        */
+        ilerlemeAdresleri={{
+          kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
+        }}
+      />
+    );
+  }
+
   function oranSatirlari(
     kar: number,
     blok: (typeof bloklar)[number],
@@ -3055,7 +3081,15 @@ export default async function AnaSayfa({
                         </Baglanti>
                       </>
                     ) : null}
-                    <span className="text-muted-foreground max-sm:col-span-4">
+                    {/* TEK ŞERİT (kullanıcı kararı 08.10.2026): Huni (dönem bilgisi) ve
+                        «Bugün ne yapmalıyım» (bekleyen iş) aynı satırda, ince ayraçla.
+                        Yalnız ilk para bloğunda — görevler para biriminden bağımsız. */}
+                    {blokSirasi === 0 ? (
+                      <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 max-sm:col-span-4 md:border-l md:pl-2">
+                        {gorevSeridi(true)}
+                      </span>
+                    ) : null}
+                    <span className="text-muted-foreground max-sm:col-span-4 md:basis-full">
                       {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
                       <span className="block">{t("kargoEkseniNotu")}</span>
                       <span className="block">
@@ -3149,21 +3183,9 @@ export default async function AnaSayfa({
           tek satır; iki görev kartı ve 2/5 sütunu kalktı. İzinsiz kullanıcı
           da görür (operasyonel sayılar) — `karGorunur` kapısının DIŞINDA.
         */}
-        <GorevKutusu
-          sayilar={gorevSayilari}
-          ilerlemeler={{ kargoBekleyen: paketlenen }}
-          /*
-            ⚠ ADRES KUTUNUN KENDİ HEDEFİNİ DARALTIYOR, DEĞİŞTİRMİYOR:
-            `kargo=bekleyen` korunuyor, üstüne `paket=hazirlanan`
-            ekleniyor. Yalnız `paket=hazirlanan` yazsaydık kargoya
-            VERİLMİŞ eski siparişler de listeye girer, liste rakamdan
-            büyük çıkardı — sayının tıklanınca kendini doğrulamaması
-            en sinsi hata olurdu.
-          */
-          ilerlemeAdresleri={{
-            kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
-          }}
-        />
+        {/* 08.10.2026: dönemde satış varsa şerit Huni satırının İÇİNDE çizildi
+            (tek şerit); burada yalnız satışsız dönemde tek başına durur. */}
+        {bloklar.length === 0 ? gorevSeridi(false) : null}
         {/* HIZLI İŞLEMLER (K270) — yalnız telefonda; en sık dört iş. */}
         <HizliIslemler />
 
