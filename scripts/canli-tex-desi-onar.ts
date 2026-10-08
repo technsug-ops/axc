@@ -32,6 +32,8 @@ import { canliYapilandirma } from "./canli-ortak";
 const YAZ = process.argv.includes("--yaz");
 const ANLIK = process.argv.find((a) => a.startsWith("--anlik="))?.slice("--anlik=".length) ?? null;
 
+type TyPaket = { cargoDeci?: number; packageHistories?: { createdDate: number; status: string }[] };
+
 type Plan = {
   id: string; kod: string; channelId: string; kanalAdi: string; firma: string; soldAt: Date;
   eskiKanalDesi: number | null; eskiTahmin: number | null; eskiNet2: number | null;
@@ -61,8 +63,8 @@ async function main() {
     const planlar: Plan[] = [];
     for (const s of satislar) {
       if (!s.code || !s.kanalKargoFirmasi || !TEX_FIRMA_DESENI.test(s.kanalKargoFirmasi)) continue;
-      const r = (await apiGet(`/integration/order/sellers/${k.saticiId}/orders?orderNumber=${s.code}`, baslikKur(k))) as unknown as Record<string, any>;
-      const paketler: any[] = (r.veri ?? r.govde ?? r.data ?? r)?.content ?? [];
+      const r = (await apiGet(`/integration/order/sellers/${k.saticiId}/orders?orderNumber=${s.code}`, baslikKur(k))) as unknown as Record<string, { content?: TyPaket[] } | undefined> & { content?: TyPaket[] };
+      const paketler: TyPaket[] = (r.veri ?? r.govde ?? r.data ?? r)?.content ?? [];
       const urunDesi = urunDesisiToplami(
         s.items.map((i) => ({ adet: i.quantity, desi: i.variant.product.desi === null ? null : Number(i.variant.product.desi.toString()) })),
       );

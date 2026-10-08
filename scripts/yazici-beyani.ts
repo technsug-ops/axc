@@ -102,6 +102,16 @@ export const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string 
     bekcisi: "hakedis-yazici:dogrula",
   },
   {
+    dosya: "canli-tex-desi-onar.ts",
+    gerekce:
+      "08.10.2026 — GEÇMİŞ ONARIMI: Trendyol Express'te yapışan geçici 5 desi. " +
+      "`Sale.kanalKargoDesi` ve (tazeleme gövdesiyle) `tahminiKargo` yazar; TY API " +
+      "yalnız GET. `--yaz` + `--anlik` zorunlu (yazımdan ÖNCE anlık görüntü); " +
+      "satış satış, tekrar koşulabilir (ikinci koşum 0); `cargoAmount` dolu satışa " +
+      "dokunmaz; her satış `TEX_DESI_ONARIM` izi bırakır. Kural `ty-nihai-desi.ts`.",
+    bekcisi: "kargo-damgasi:dogrula",
+  },
+  {
     dosya: "canli-ty-kargo-gercek-olcum.ts",
     gerekce:
       "K220-② — TY gerçek kargo maliyeti: `Sale.cargoAmount` yazar. `--yaz` " +
