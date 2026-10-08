@@ -3904,11 +3904,14 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * NET-2 kutusunda — Melontik'in oranı NET-2 üzerinden, NET-1'e koymak
    * yanlış eşleme olurdu.
    */
+  /* ⏪ 08.10.2026: etiket kullanıcı kararıyla KALDIRILDI («Melontik falan o parantez
+     içindekilere gerek yok, direk ne olduğu yazsa yeter»). Ölçüt çevrildi: iki
+     kutu da oranları aynı gövdeden basar ve hiçbirinde Melontik etiketi kalmaz. */
   kontrol(
-    "Melontik eşleme etiketi YALNIZ NET-2 kutusunda",
-    panelKaynak.includes("oranSatirlari(blok.toplamNet2, blok, true)") &&
+    "NET kutularında Melontik etiketi YOK (kullanıcı kararı 08.10.2026)",
+    panelKaynak.includes("oranSatirlari(blok.toplamNet2, blok)") &&
       panelKaynak.includes("oranSatirlari(blok.toplamNet1, blok)") &&
-      !panelKaynak.includes("oranSatirlari(blok.toplamNet1, blok, true)"),
+      !panelKaynak.includes('t("melontikCiro")'),
   );
 
   kontrol(

@@ -1136,7 +1136,10 @@ export default async function AnaSayfa({
      * YALNIZ NET-2 KUTUSUNDA: Melontik'in oranı NET-2 üzerinden; etiketi
      * NET-1 kutusuna da koymak yanlış eşleme olurdu.
      */
-    melontikEsleme = false,
+    /* ⏪ 08.10.2026: Melontik eşleme etiketi KALDIRILDI — kullanıcı: «Melontik falan o
+       parantez içindekilere gerek yok, direk ne olduğu yazsa yeter». Yukarıdaki
+       15.08 gerekçesi (karşılaştırma sürtünmesi) o dönemin ihtiyacıydı; eşleme
+       tanımı (NET-2 / brüt ciro) değişmedi, yalnız ekranda yazılmıyor. */
   ) {
     const oranlar = kutuOranlari({
       kar,
@@ -1181,7 +1184,6 @@ export default async function AnaSayfa({
             )}{" "}
             <span className="text-muted-foreground break-words">
               {t("oranSatisa")}
-              {melontikEsleme ? ` ${t("melontikCiro")}` : ""}
             </span>
           </span>
         )}
@@ -2859,7 +2861,7 @@ export default async function AnaSayfa({
                           )}
                           altNot={
                             <span className="block max-sm:hidden">
-                              {oranSatirlari(blok.toplamNet2, blok, true)}
+                              {oranSatirlari(blok.toplamNet2, blok)}
                               <span className="text-muted-foreground block">
                                 {t("net2Aciklama")}
                               </span>
