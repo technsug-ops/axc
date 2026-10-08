@@ -21,6 +21,7 @@ import {
 import { iptalOnizle, iptalUygula } from "../src/lib/satis-iptali-veri";
 import { otomatikIptalAdayiMi } from "../src/lib/satis-iptali";
 import { kargoTartimGeldiTazele } from "../src/lib/kargo-tartim-tazele";
+import { TEX_FIRMA_DESENI, tyKanalDesisi, urunDesisiToplami } from "../src/lib/kargo/ty-nihai-desi";
 
 /**
  * ============================================================================
@@ -376,10 +377,10 @@ export async function tyCekimKos(ayar: {
      * ⚠ DOLULUK ÖLÇÜLDÜ (09.09.2026): `cargoDeci` 50 paketin 30'unda dolu —
      * yalnız KARGOYA VERİLMİŞ pakette. Boşluğu eksiklik değil, sınırdır.
      */
-    const kanalDesi =
-      typeof p.cargoDeci === "number" && Number.isFinite(p.cargoDeci) && p.cargoDeci > 0
-        ? p.cargoDeci
-        : null;
+    /* ⭐ 08.10.2026 — Trendyol Express'te kargodaki `cargoDeci=5` GEÇİCİDİR; teslimden
+       sonra gelen nihaidir (kullanıcı kuralı, ölçüm `src/lib/kargo/ty-nihai-desi.ts`).
+       Öncesinde `null`: tahmin ürünün kendi desisiyle yapılır. */
+    const kanalDesi = tyKanalDesisi({ cargoDeci: p.cargoDeci, kargoFirmasi, teslimEdildi: teslimAni !== null });
 
     const mevcut = adaylar.get(no);
     if (mevcut) {
@@ -533,6 +534,7 @@ export async function tyCekimKos(ayar: {
   let teslimYazilan = 0;
   let takipYazilan = 0;
   let tartimTazelenen = 0;
+  let urunDesisiyleTahmin = 0;
   for (const s of mevcutTeslim) {
     const a = adaylar.get(s.code ?? "");
     if (!a) continue;
@@ -581,6 +583,51 @@ export async function tyCekimKos(ayar: {
         prisma,
       );
       if (sonuc.yapildi) tartimTazelenen++;
+    }
+    /**
+     * ═══ TRENDYOL EXPRESS — NİHAİ DESİ GELENE KADAR ÜRÜN DESİSİYLE GEÇİCİ TAHMİN
+     * (kullanıcı kuralı 08.10.2026) ═══
+     * Kargodaki Trendyol Express paketinde kanal desisi yok sayılıyor (geçici 5,
+     * bkz. `ty-nihai-desi.ts`). Tahmin hiç yazılmamışsa ürünün kendi desisiyle
+     * (Σ ürün.desi × adet) yazılır; teslimde nihai desi gelince yukarıdaki blok
+     * onu tazeler. ⛔ `cargoAmount` (gerçekleşen) doluysa gövde dokunmaz;
+     * ürün desisi bilinmiyorsa YAZILMAZ — uydurulmuş desiyle tahmin kurulmaz.
+     */
+    const firmaAdi = veri.kanalKargoFirmasi ?? s.kanalKargoFirmasi;
+    if (
+      YAZ &&
+      veri.kanalKargoDesi === undefined &&
+      s.kanalKargoDesi === null &&
+      s.cargoAmount === null &&
+      s.tahminiKargo === null &&
+      s.iptalTarihi === null &&
+      firmaAdi !== null &&
+      TEX_FIRMA_DESENI.test(firmaAdi)
+    ) {
+      const kalemler = await prisma.saleItem.findMany({
+        where: { saleId: s.id },
+        select: { quantity: true, variant: { select: { product: { select: { desi: true } } } } },
+      });
+      const urunDesi = urunDesisiToplami(
+        kalemler.map((k) => ({ adet: k.quantity, desi: k.variant.product.desi === null ? null : Number(k.variant.product.desi.toString()) })),
+      );
+      if (urunDesi !== null) {
+        const sonuc = await kargoTartimGeldiTazele(
+          {
+            saleId: s.id,
+            channelId: hesap.channelId,
+            kanalAdi: hesap.channel.name,
+            kanalKargoFirmasi: firmaAdi,
+            kanalKargoDesi: urunDesi,
+            desiKaynagi: "URUN_DESISI",
+            cargoAmount: null,
+            tahminiKargo: null,
+            soldAt: s.soldAt,
+          },
+          prisma,
+        );
+        if (sonuc.yapildi) urunDesisiyleTahmin++;
+      }
     }
   }
 
@@ -668,6 +715,7 @@ export async function tyCekimKos(ayar: {
   console.log(`   TESLİM DAMGASI YAZILDI (yalnız BOŞ olanlara)     ${teslimYazilan}`);
   console.log(`   TAKİP/FİRMA TAZELENDİ (kanalın son beyanı)        ${takipYazilan}`);
   console.log(`   TARTIMLA KARGO TAHMİNİ TAZELENDİ (hâlâ tahmin aşamasındaysa) ${tartimTazelenen}`);
+  console.log(`   TRENDYOL EXPRESS — ÜRÜN DESİSİYLE GEÇİCİ TAHMİN (nihai desi bekleniyor) ${urunDesisiyleTahmin}`);
 
   // ═══ VARYANT KAPISI ═════════════════════════════════════════════════════
   /**

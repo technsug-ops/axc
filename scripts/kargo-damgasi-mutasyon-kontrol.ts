@@ -134,14 +134,40 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "      where: { code: no, channelAccountId: hesap.id },",
     bozdugu: "dolu bir teslim damgasi her cekimde kanalin gunuyle ezilir",
   },
+  /* ⏪ 08.10.2026: desi kanalın son beyanını izler (Trendyol Express geçici 5).
+     Eski «DOLU KANAL DESİSİ EZİLİYOR» mutasyonu kuralla birlikte çevrildi; niyet
+     (desi kararı ölçülsün) iki yönde korunuyor. */
   {
-    ad: "DOLU KANAL DESİSİ EZİLİYOR",
+    ad: "KANAL DESİSİ TAZELENMİYOR (geçici 5 yapışır)",
+    yon: "KALDIRAN",
+    dosya: GOVDE,
+    bul: '  if (kanal.kanalDesi !== null && Number(String(mevcut.kanalKargoDesi ?? "NaN")) !== kanal.kanalDesi) {',
+    koy: "  if (kanal.kanalDesi !== null && mevcut.kanalKargoDesi === null) {",
+    bozdugu: "trendyol express gecici 5 desisi nihai desi gelse de kalir",
+  },
+  {
+    ad: "AYNI DESİ HER TURDA YAZILIYOR",
     yon: "FAZLADAN",
     dosya: GOVDE,
-    bul: "  if (kanal.kanalDesi !== null && mevcut.kanalKargoDesi === null) {",
+    bul: '  if (kanal.kanalDesi !== null && Number(String(mevcut.kanalKargoDesi ?? "NaN")) !== kanal.kanalDesi) {',
     koy: "  if (kanal.kanalDesi !== null) {",
-    bozdugu:
-      "tasiyicinin TARTTIGI desi her cekimde yeniden yazilir; olculmus bir olay degistirilebilir olur",
+    bozdugu: "her 5 dakikada degismeyen desi yeniden yazilir ve tazeleme tetiklenir",
+  },
+  {
+    ad: "TEX GEÇİCİ 5 KABUL EDİLİYOR",
+    yon: "KALDIRAN",
+    dosya: "src/lib/kargo/ty-nihai-desi.ts",
+    bul: "  if (paket.kargoFirmasi !== null && TEX_FIRMA_DESENI.test(paket.kargoFirmasi) && !paket.teslimEdildi) return null;",
+    koy: "",
+    bozdugu: "kargodaki trendyol express paketine 5 desi yazilir",
+  },
+  {
+    ad: "TEX ÜRÜN DESİSİYLE TAHMİN YAZILMIYOR",
+    yon: "KALDIRAN",
+    dosya: TY,
+    bul: '            desiKaynagi: "URUN_DESISI",',
+    koy: "",
+    bozdugu: "nihai desi gelene kadar kargo tahmini bos kalir",
   },
   {
     /**
@@ -160,12 +186,12 @@ const MUTASYONLAR: Mutasyon[] = [
       "ice aktarma defterdeki kargo maliyetini yazmaya baslar; NET sessizce degisir",
   },
   {
-    ad: "HB DOLU KANAL DESİSİNİ EZİYOR",
+    ad: "HB DEĞİŞMEYEN DESİYİ HER TURDA YAZIYOR",
     yon: "FAZLADAN",
     dosya: HB,
-    bul: "      where: { code: no, channelAccountId: hesap.id, kanalKargoDesi: null },",
-    koy: "      where: { code: no, channelAccountId: hesap.id },",
-    bozdugu: "dolu bir kanal desisi her cekimde yeniden yazilir",
+    bul: "    if (s.kanalKargoDesi !== null && Number(s.kanalKargoDesi.toString()) === desi) continue;",
+    koy: "",
+    bozdugu: "hb degismeyen desiyi her cekimde yazar ve tazeler",
   },
   {
     ad: "TY KANAL DESİSİNİ HİÇ YAZMIYOR (taban düşer)",
