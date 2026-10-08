@@ -7,6 +7,12 @@ import {
   CIZGI_SEVIYELERI,
   KISISEL_DEGISKENLERI,
   KISISEL_VARSAYILAN,
+  KART_SECENEKLERI,
+  YAZI_SECENEKLERI,
+  ZEMIN_SECENEKLERI,
+  AYRIM_ESIGI,
+  kisiselKayit,
+  goreliParlaklik,
   kisiselTema,
   kontrastOrani,
   KONTRAST_ESIGI,
@@ -93,6 +99,34 @@ console.log("\n1) kural — değerle");
   kontrol("çizgi seviyesi sınırlı (9 → en koyu, −2 → yok)", cizgi(9).cizgi === CIZGI_SEVIYELERI.length - 1 && cizgi(-2).cizgi === 0);
   kontrol("çizgi seviyeleri gittikçe belirginleşiyor",
     CIZGI_SEVIYELERI.every((v, i) => i === 0 ? v === 0 : v > CIZGI_SEVIYELERI[i - 1]!) && CIZGI_SEVIYELERI.length >= 4);
+  /* Zemin · kart · yazı (08.10.2026): HER birleşimde birincil yazı ≥ 7:1,
+     ikincil yazı ≥ 4,5:1 — iki yüzeye karşı da. Ayrışmayan kart çizgi alır. */
+  {
+    const sorunlu: string[] = [];
+    let birlesim = 0;
+    for (const zemin of Object.keys(ZEMIN_SECENEKLERI))
+      for (const kart of Object.keys(KART_SECENEKLERI))
+        for (const yazi of Object.keys(YAZI_SECENEKLERI)) {
+          birlesim++;
+          const d = kisiselTema({ renk: "#12356B", kose: 12, zemin, kart, yazi }).degiskenler;
+          for (const yuzey of [d["--se-zemin"], d["--se-kart"]]) {
+            if (kontrastOrani(d["--se-ink"], yuzey) < 7) sorunlu.push(`${zemin}/${kart}/${yazi} ink`);
+            if (kontrastOrani(d["--se-ink-2"], yuzey) < KONTRAST_ESIGI) sorunlu.push(`${zemin}/${kart}/${yazi} ink-2 ${d["--se-ink-2"]}`);
+          }
+        }
+    kontrol(`her zemin·kart·yazı birleşiminde yazı okunur (${birlesim} birleşim)`, sorunlu.length === 0 && birlesim >= 30, sorunlu.slice(0, 5));
+  }
+  {
+    const ayni = kisiselTema({ renk: "#12356B", kose: 12, zemin: "beyaz", kart: "beyaz" });
+    kontrol("beyaz kart beyaz zeminde: çizgi KENDİLİĞİNDEN açılıyor", ayni.cizgiZorunlu && ayni.cizgi === 1 && ayni.degiskenler["--se-kart-cizgi"] !== "transparent");
+    kontrol("  ...kayda zorunlu değil İSTENEN çizgi yazılıyor", kisiselKayit(ayni).cizgi === 0);
+    const gri = kisiselTema({ renk: "#12356B", kose: 12, zemin: "gri", kart: "beyaz" });
+    kontrol("ayrışan birleşimde çizgi zorlanmıyor", !gri.cizgiZorunlu && gri.cizgi === 0);
+    kontrol("  ...ayrım eşiği iki yakayı ayırıyor", goreliParlaklik("#FFFFFF") - goreliParlaklik(ZEMIN_SECENEKLERI.gri) >= AYRIM_ESIGI && AYRIM_ESIGI > 0);
+    const yanlis = kisiselTema({ renk: "#12356B", kose: 12, zemin: "constructor", kart: "zz", yazi: "x" });
+    kontrol("bilinmeyen zemin/kart/yazı kodu varsayılana düşüyor", yanlis.zemin === "gri" && yanlis.kart === "beyaz" && yanlis.yazi === "normal" && yanlis.degiskenler["--se-zemin"] === "#F4F6FA");
+    kontrol("varsayılan kişisel zemin kobalt zeminiyle aynı", ZEMIN_SECENEKLERI[KISISEL_VARSAYILAN.zemin] === "#F4F6FA");
+  }
   kontrol("çizgi nötr mürekkep tonu (vurgudan bağımsız)",
     kisiselTema({ renk: "#6B3FA0", kose: 12, cizgi: 2 }).degiskenler["--se-kart-cizgi"] === "rgba(35, 43, 53, 0.16)");
   kontrol("geçersiz renk varsayılana düşüyor", kisiselTema({ renk: "red; x", kose: 12 }).uygulanan === KISISEL_VARSAYILAN.renk);

@@ -316,7 +316,22 @@
     "temaCizgiInce": "",
     "temaCizgiOrta": "",
     "temaCizgiBelirgin": "",
-    "temaCizgiKoyu": ""
+    "temaCizgiKoyu": "",
+    "temaZemin": "",
+    "temaZeminGri": "",
+    "temaZeminBeyaz": "",
+    "temaZeminSicak": "",
+    "temaZeminMavi": "",
+    "temaZeminNane": "",
+    "temaZeminTas": "",
+    "temaKartRengi": "",
+    "temaKartBeyaz": "",
+    "temaKartKirik": "",
+    "temaKartBuz": "",
+    "temaCizgiZorunlu": "",
+    "temaYazi": "",
+    "temaYaziNormal": "",
+    "temaYaziYuksek": ""
   },
   "AlimDurumu": {
     "DRAFT": "",

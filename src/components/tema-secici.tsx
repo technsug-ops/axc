@@ -9,6 +9,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   CIZGI_SEVIYELERI,
   HAZIR_RENKLER,
+  KART_SECENEKLERI,
+  YAZI_SECENEKLERI,
+  ZEMIN_SECENEKLERI,
+  type KartKodu,
+  type YaziKodu,
+  type ZeminKodu,
   KISISEL_DEGISKENLERI,
   KISISEL_VARSAYILAN,
   KOSE_SINIRI,
@@ -89,8 +95,8 @@ function kisiselDegiskenleriYaz(kayit: KisiselKayit | null) {
 
 function kisiselOku(): KisiselKayit {
   try {
-    const ham = JSON.parse(localStorage.getItem(KISISEL_ANAHTARI) ?? "null") as { renk?: unknown; kose?: unknown; cizgi?: unknown } | null;
-    if (ham) return kisiselKayit(kisiselTema({ renk: ham.renk, kose: ham.kose, cizgi: ham.cizgi }));
+    const ham = JSON.parse(localStorage.getItem(KISISEL_ANAHTARI) ?? "null") as { renk?: unknown; kose?: unknown; cizgi?: unknown; zemin?: unknown; kart?: unknown; yazi?: unknown } | null;
+    if (ham) return kisiselKayit(kisiselTema(ham as { renk: unknown; kose: unknown }));
   } catch {
     /* Bozuk ya da okunamayan kayıt: varsayılan kişisel temayla devam edilir ve
        panelde o renk/köşe görünür — kullanıcı neyin uygulandığını görür. */
@@ -170,9 +176,9 @@ export function TemaSecici() {
     yazDepoya(TEMA_ANAHTARI, yeni);
   };
 
-  const kisiselDegistir = (girdi: { renk?: string; kose?: number; cizgi?: number }) => {
+  const kisiselDegistir = (girdi: Partial<Pick<KisiselKayit, "renk" | "kose" | "cizgi" | "zemin" | "kart" | "yazi">>) => {
     const onceki = kisisel ?? kisiselOku();
-    const kayit = kisiselKayit(kisiselTema({ renk: girdi.renk ?? onceki.renk, kose: girdi.kose ?? onceki.kose, cizgi: girdi.cizgi ?? onceki.cizgi }));
+    const kayit = kisiselKayit(kisiselTema({ ...onceki, ...girdi }));
     setKisisel(kayit);
     temayiUygula("kisisel", kayit);
     yazDepoya(TEMA_ANAHTARI, "kisisel");
@@ -200,7 +206,12 @@ export function TemaSecici() {
     kagit: KABUK_RENKLERI.kagit,
     kisisel: kisisel?.degiskenler["--se-vurgu"] ?? KISISEL_VARSAYILAN.renk,
   };
-  const sonuc = kisisel ? kisiselTema({ renk: kisisel.renk, kose: kisisel.kose, cizgi: kisisel.cizgi }) : null;
+  const sonuc = kisisel ? kisiselTema(kisisel) : null;
+  const zeminAdi: Record<ZeminKodu, string> = {
+    gri: t("temaZeminGri"), beyaz: t("temaZeminBeyaz"), sicak: t("temaZeminSicak"), mavi: t("temaZeminMavi"), nane: t("temaZeminNane"), tas: t("temaZeminTas"),
+  };
+  const kartAdi: Record<KartKodu, string> = { beyaz: t("temaKartBeyaz"), kirik: t("temaKartKirik"), buz: t("temaKartBuz") };
+  const yaziAdi: Record<YaziKodu, string> = { normal: t("temaYaziNormal"), yuksek: t("temaYaziYuksek") };
   const cizgiAdi = [t("temaCizgiYok"), t("temaCizgiInce"), t("temaCizgiOrta"), t("temaCizgiBelirgin"), t("temaCizgiKoyu")];
 
   return (
@@ -217,7 +228,7 @@ export function TemaSecici() {
           {ikon[tema]}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80">
+      <PopoverContent className="max-h-[80vh] w-80 overflow-y-auto">
         <p className="mb-2 text-sm font-semibold">{t("temaBaslik")}</p>
         <div role="radiogroup" aria-label={t("temaBaslik")} className="grid grid-cols-3 gap-2">
           {TEMALAR.map((ad) => (
@@ -313,6 +324,59 @@ export function TemaSecici() {
                 className="h-11 w-full accent-primary md:h-6"
               />
             </div>
+            <div>
+              <p className="mb-1.5 text-xs font-medium">{t("temaZemin")}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(Object.keys(ZEMIN_SECENEKLERI) as ZeminKodu[]).map((kod) => (
+                  <button
+                    key={kod}
+                    type="button"
+                    onClick={() => kisiselDegistir({ zemin: kod })}
+                    aria-pressed={sonuc.zemin === kod}
+                    title={zeminAdi[kod]}
+                    aria-label={zeminAdi[kod]}
+                    className={cn("size-11 rounded-md border md:size-8", sonuc.zemin === kod && "ring-2 ring-primary")}
+                    style={{ background: ZEMIN_SECENEKLERI[kod] }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs font-medium">{t("temaKartRengi")}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(Object.keys(KART_SECENEKLERI) as KartKodu[]).map((kod) => (
+                  <button
+                    key={kod}
+                    type="button"
+                    onClick={() => kisiselDegistir({ kart: kod })}
+                    aria-pressed={sonuc.kart === kod}
+                    className={cn("min-h-11 rounded-md border px-2.5 text-xs md:min-h-8", sonuc.kart === kod && "ring-2 ring-primary")}
+                    style={{ background: KART_SECENEKLERI[kod] }}
+                  >
+                    {kartAdi[kod]}
+                  </button>
+                ))}
+              </div>
+              {sonuc.cizgiZorunlu ? (
+                <p className="mt-1.5 text-xs text-muted-foreground">{t("temaCizgiZorunlu")}</p>
+              ) : null}
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs font-medium">{t("temaYazi")}</p>
+              <div className="flex gap-1.5">
+                {(Object.keys(YAZI_SECENEKLERI) as YaziKodu[]).map((kod) => (
+                  <button
+                    key={kod}
+                    type="button"
+                    onClick={() => kisiselDegistir({ yazi: kod })}
+                    aria-pressed={sonuc.yazi === kod}
+                    className={cn("min-h-11 flex-1 rounded-md border px-2.5 text-xs md:min-h-8", sonuc.yazi === kod && "ring-2 ring-primary")}
+                  >
+                    {yaziAdi[kod]}
+                  </button>
+                ))}
+              </div>
+            </div>
             {/* Önizleme — kart ve düğme o anki değişkenlerle çizilir. */}
             <div className="flex items-center justify-between gap-2 rounded-lg border bg-card p-3 shadow-sm">
               <span className="text-xs text-muted-foreground">{t("temaOnizleme")}</span>
@@ -323,7 +387,7 @@ export function TemaSecici() {
               variant="ghost"
               size="sm"
               className="min-h-11 w-full md:min-h-8"
-              onClick={() => kisiselDegistir({ renk: KISISEL_VARSAYILAN.renk, kose: KISISEL_VARSAYILAN.kose, cizgi: KISISEL_VARSAYILAN.cizgi })}
+              onClick={() => kisiselDegistir({ ...KISISEL_VARSAYILAN })}
             >
               <RotateCcw className="size-3.5" />
               {t("temaVarsayilan")}

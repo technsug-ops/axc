@@ -316,7 +316,22 @@
     "temaCizgiInce": "İnce",
     "temaCizgiOrta": "Orta",
     "temaCizgiBelirgin": "Belirgin",
-    "temaCizgiKoyu": "Koyu"
+    "temaCizgiKoyu": "Koyu",
+    "temaZemin": "Sayfa zemini",
+    "temaZeminGri": "Gri",
+    "temaZeminBeyaz": "Beyaz",
+    "temaZeminSicak": "Sıcak",
+    "temaZeminMavi": "Açık mavi",
+    "temaZeminNane": "Nane",
+    "temaZeminTas": "Taş",
+    "temaKartRengi": "Kart rengi",
+    "temaKartBeyaz": "Beyaz",
+    "temaKartKirik": "Kırık beyaz",
+    "temaKartBuz": "Buz",
+    "temaCizgiZorunlu": "Kart bu zeminden ayrışmadığı için ince çizgi kendiliğinden eklendi.",
+    "temaYazi": "Yazı kontrastı",
+    "temaYaziNormal": "Normal",
+    "temaYaziYuksek": "Yüksek"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
