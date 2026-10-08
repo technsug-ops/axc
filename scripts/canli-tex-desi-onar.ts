@@ -91,7 +91,7 @@ async function main() {
 
     /* Kargodaki siparişte ürün desisi yoksa HİÇ dokunulmaz: geçici 5 silinip yerine bir şey
        konamaz; teslimde nihai desi gelince içe aktarma kendisi düzeltir. */
-    const degisecek = planlar.filter((p) => p.durum !== "OKUNAMADI" && p.tahminKaynagi !== null && (p.yeniKanalDesi !== p.eskiKanalDesi || p.yeniKanalDesi === null));
+    const degisecek = planlar.filter((p) => p.durum !== "OKUNAMADI" && p.tahminKaynagi !== null && (p.yeniKanalDesi !== p.eskiKanalDesi || (p.yeniKanalDesi === null && p.eskiTahmin === null)));
     const say = (f: (p: Plan) => boolean) => planlar.filter(f).length;
     console.log(`\nTRENDYOL EXPRESS DESİ ONARIMI · ${YAZ ? "⚠ YAZIM" : "KURU KOŞUM"}`);
     console.log(`  incelenen ${planlar.length} · teslim ${say((p) => p.durum === "TESLIM")} · kargoda ${say((p) => p.durum === "KARGODA")} · OKUNAMADI ${say((p) => p.durum === "OKUNAMADI")}`);
