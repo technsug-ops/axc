@@ -645,23 +645,27 @@ export async function hbCekimKos(ayar: {
    * bittikten SONRA, hâlâ `cargoAmount`ı boş olanların kargo tahmini bu
    * gerçek desiyle tazelenecek (bkz. dosya sonundaki tazeleme bloğu).
    */
-  const desiOncedenBosKodlar = new Set(
-    (
-      await prisma.sale.findMany({
-        where: { code: { in: [...kanalDesileri.keys()] }, channelAccountId: hesap.id, kanalKargoDesi: null },
-        select: { code: true },
-      })
-    )
-      .map((s) => s.code)
-      .filter((c): c is string => c !== null),
-  );
+  /* ⏪ 08.10.2026: «yalnız BOŞ olana» kuralı çevrildi — desi kanalın EN SON beyanını
+     izler (gerekçe ve ölçüm: `src/lib/kanal-kargo-damgasi.ts`, Trendyol Express'te
+     geçici 5 desi yapışıyordu). Kararın kapsamı HB'ye de taşındı; HB desisi
+     değişmiyorsa bu döngü hiçbir şey yazmaz. Adı korunan küme artık «boştan doluya
+     YA DA değeri değişen» kodlardır — tazeleme aynı kümeyi okur.
+     ⚠ `NOT: { kanalKargoDesi: desi }` YAZILMADI: nullable alanda NULL satırı da
+     sessizce eler (anayasa: «NOT süzgeci NULL satırı da atar»); karşılaştırma
+     bellekte yapılıyor. */
+  const mevcutDesiler = await prisma.sale.findMany({
+    where: { code: { in: [...kanalDesileri.keys()] }, channelAccountId: hesap.id },
+    select: { id: true, code: true, kanalKargoDesi: true },
+  });
+  const desiOncedenBosKodlar = new Set<string>();
   let desiYazilan = 0;
-  for (const [no, desi] of kanalDesileri) {
-    const guncel = await prisma.sale.updateMany({
-      where: { code: no, channelAccountId: hesap.id, kanalKargoDesi: null },
-      data: { kanalKargoDesi: desi },
-    });
-    desiYazilan += guncel.count;
+  for (const s of mevcutDesiler) {
+    const desi = s.code === null ? undefined : kanalDesileri.get(s.code);
+    if (desi === undefined || s.code === null) continue;
+    if (s.kanalKargoDesi !== null && Number(s.kanalKargoDesi.toString()) === desi) continue;
+    await prisma.sale.update({ where: { id: s.id }, data: { kanalKargoDesi: desi } });
+    desiOncedenBosKodlar.add(s.code);
+    desiYazilan++;
   }
 
   /**

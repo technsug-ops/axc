@@ -183,7 +183,19 @@ export function teslimGuncellemesi(
    * ve bu gövde SAF kalmalı (Decimal'i içeri almaz). Yalnız "dolu mu"
    * sorusu soruluyor, değeri okunmuyor.
    */
-  if (kanal.kanalDesi !== null && mevcut.kanalKargoDesi === null) {
+  /**
+   * ⏪ 08.10.2026 ÇEVRİLDİ — kullanıcı (Trendyol paneli ekran görüntüleriyle):
+   * «Trendyol'da 1 desi görünenler burada 5 desi kaydediyor, 5'i hepsine
+   * yapıştırmış.» ÖLÇÜLDÜ: Trendyol API'si Trendyol Express paketinde KARGODAYKEN
+   * `cargoDeci=5` (standart, geçici) veriyor, TESLİMDEN SONRA gerçek desiyi
+   * (11678375509 → 1 · 11676825942 → 1 · 11675284364 → 3). Yukarıdaki 09.09
+   * gerekçesi («tartım bir kez olur») doğru bir olgunun YANLIŞ okumasıydı:
+   * kanalın İLK bildirdiği değer tartım değil, yer tutucu olabiliyor. Desi artık
+   * takip/firma gibi kanalın EN SON beyanını izler. Kesinleşmiş kargo tutarı
+   * (`cargoAmount`) dolu siparişe yine dokunulmaz — o kapı `kargo-tartim-tazele`de.
+   * `null` yine yazılmaz: kanal bu turda susarsa eski desi silinmez.
+   */
+  if (kanal.kanalDesi !== null && Number(String(mevcut.kanalKargoDesi ?? "NaN")) !== kanal.kanalDesi) {
     veri.kanalKargoDesi = kanal.kanalDesi;
   }
   return veri;

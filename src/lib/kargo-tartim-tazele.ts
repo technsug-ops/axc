@@ -166,6 +166,8 @@ export type TazeleGirdisi = {
   /** Kanalın YENİ bildirdiği gerçek (tartılmış) desi — çağıran taraf bunun
    *  bu turda İLK KEZ dolduğunu zaten biliyor. */
   kanalKargoDesi: number;
+  /** 08.10.2026: Trendyol Express'te nihai desi gelene kadar ÜRÜN desisiyle geçici tahmin; iz bunu söyler. */
+  desiKaynagi?: "TARTIM" | "URUN_DESISI";
   cargoAmount: number | null;
   tahminiKargo: number | null;
   /**
@@ -219,6 +221,7 @@ export async function kargoTartimGeldiTazele(
           eskiTahmin,
           yeniTahmin: hesap.tutar,
           desi: girdi.kanalKargoDesi,
+          desiKaynagi: girdi.desiKaynagi ?? "TARTIM",
           firma: hesap.carrierAdi,
           kanal: girdi.kanalAdi,
         }),

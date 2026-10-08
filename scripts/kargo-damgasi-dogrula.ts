@@ -7,6 +7,7 @@ import {
   teslimGuncellemesi,
   teslimYazimiVarMi,
 } from "../src/lib/kanal-kargo-damgasi";
+import { tyKanalDesisi, urunDesisiToplami } from "../src/lib/kargo/ty-nihai-desi";
 import { kaynakOku } from "./kaynak-oku";
 
 /**
@@ -262,11 +263,29 @@ kontrol(
  * değer verilseydi "ezmedi" sonucu tesadüf olurdu — ezen bir gövde de aynı
  * sayıyı yazardı ve test yeşil kalırdı.
  */
+/* ⏪ 08.10.2026 ÇEVRİLDİ — «DOLU kanal desisi EZİLMEZ» ölçütü Trendyol Express'in
+   geçici 5 desisini kalıcı yapıyordu (kullanıcı: «5'i hepsine yapıştırmış»;
+   ölçüm `src/lib/kargo/ty-nihai-desi.ts`). Desi artık kanalın EN SON beyanını izler.
+   Örnek ayrımı gösteriyor: mevcut 5, kanal 1 — eski kural `undefined` verirdi. */
 kontrol(
-  "DOLU kanal desisi EZİLMEZ (kanal farklı desi söylese bile)",
+  "kanal YENİ bir desi bildirirse yazılır (geçici 5 → nihai 1)",
   teslimGuncellemesi(
     { ...BOS, kanalKargoDesi: 5 },
-    { teslimAni: null, takipBaglantisi: null, kargoFirmasi: null, kanalDesi: 7 },
+    { teslimAni: null, takipBaglantisi: null, kargoFirmasi: null, kanalDesi: 1 },
+  ).kanalKargoDesi === 1,
+);
+kontrol(
+  "  ...AYNI desi yeniden yazılmaz (gereksiz yazım yok)",
+  teslimGuncellemesi(
+    { ...BOS, kanalKargoDesi: 3 },
+    { teslimAni: null, takipBaglantisi: null, kargoFirmasi: null, kanalDesi: 3 },
+  ).kanalKargoDesi === undefined,
+);
+kontrol(
+  "  ...kanal SUSARSA eski desi silinmez",
+  teslimGuncellemesi(
+    { ...BOS, kanalKargoDesi: 3 },
+    { teslimAni: null, takipBaglantisi: null, kargoFirmasi: null, kanalDesi: null },
   ).kanalKargoDesi === undefined,
 );
 kontrol(
@@ -376,12 +395,15 @@ function atamaSatirlari(metin: string, alan: string): string[] {
  * yere kırmızı yanar, sonra "gevşetelim" denir ve ölçüt ölürdü.
  */
 const ALANLAR = [
-  { alan: "shippedAt", taban: 3, gerekce: "TY · HB · N11" },
-  { alan: "deliveredAt", taban: 3, gerekce: "TY · HB · N11" },
-  { alan: "kanalKargoDesi", taban: 2, gerekce: "TY · HB — N11 desi VERMİYOR (ölçüldü)" },
+  { alan: "shippedAt", taban: 3, gerekce: "TY · HB · N11", yalnizBosa: true },
+  { alan: "deliveredAt", taban: 3, gerekce: "TY · HB · N11", yalnizBosa: true },
+  /* ⏪ 08.10.2026: desi «yalnız boşa» sınıfından çıktı — kanalın son beyanını izler
+     (Trendyol Express geçici 5 desisi yapışıyordu). Onun kapısı «yalnız DEĞİŞTİYSE»;
+     ayrı ölçütte sınanıyor (TRENDYOL EXPRESS bölümü). */
+  { alan: "kanalKargoDesi", taban: 2, gerekce: "TY · HB — N11 desi VERMİYOR (ölçüldü)", yalnizBosa: false },
 ] as const;
 
-for (const { alan, taban, gerekce } of ALANLAR) {
+for (const { alan, taban, gerekce, yalnizBosa } of ALANLAR) {
   const yazanlar = ICE_AKTARMALAR.filter(
     (y) => atamaSatirlari(KAYNAKLAR.get(y)!, alan).length > 0,
   );
@@ -411,7 +433,7 @@ for (const { alan, taban, gerekce } of ALANLAR) {
      * yakalanıyor. _(Anayasa: "dize, davranışın vekilidir".)_
      */
     const yazimBasi = "data: { " + alan + ":";
-    if (metin.includes(yazimBasi)) {
+    if (yalnizBosa && metin.includes(yazimBasi)) {
       const i = metin.indexOf(yazimBasi);
       const pencere = metin.slice(Math.max(0, i - 260), i);
       kontrol(
@@ -499,6 +521,29 @@ for (const { alan, taban, gerekce } of ALANLAR) {
  * ⚠ LİSTE ELLE TUTULMUYOR: çağıranlar taranarak bulunuyor. Dördüncü kanal
  * eklenirse taban kendiliğinden büyür; kimsenin listeye eklemesi gerekmez.
  */
+/**
+ * ═══ TRENDYOL EXPRESS — DESİ TESLİMDEN SONRA NİHAİ (kullanıcı kuralı 08.10.2026) ═══
+ * Kargodayken gelen 5 geçici; teslimden sonra gelen nihai. Ayrımın iki yakası:
+ * aynı paket, aynı firma — yalnız teslim durumu farklı.
+ */
+{
+  const TEX = "Trendyol Express Marketplace";
+  kontrol("TEX kargodayken 5 → YOK SAYILIR", tyKanalDesisi({ cargoDeci: 5, kargoFirmasi: TEX, teslimEdildi: false }) === null);
+  kontrol("TEX teslimden sonra → nihai desi alınır", tyKanalDesisi({ cargoDeci: 1, kargoFirmasi: TEX, teslimEdildi: true }) === 1);
+  kontrol("Aras kargodayken de desi alınır (yalnız TEX geçici)", tyKanalDesisi({ cargoDeci: 2, kargoFirmasi: "Aras Kargo Marketplace", teslimEdildi: false }) === 2);
+  kontrol("boş/sıfır desi alınmaz", tyKanalDesisi({ cargoDeci: 0, kargoFirmasi: TEX, teslimEdildi: true }) === null && tyKanalDesisi({ cargoDeci: undefined, kargoFirmasi: null, teslimEdildi: true }) === null);
+  kontrol("ürün desisi toplamı Σ desi × adet, yukarı yuvarlı", urunDesisiToplami([{ desi: 1.5, adet: 2 }, { desi: 0.4, adet: 1 }]) === 4);
+  kontrol("  ...bir ürünün desisi yoksa toplam UYDURULMAZ", urunDesisiToplami([{ desi: 2, adet: 1 }, { desi: null, adet: 1 }]) === null);
+  const ty = KAYNAKLAR.get("scripts/canli-ty-ice-aktar.ts") ?? kaynakOku("scripts/canli-ty-ice-aktar.ts");
+  kontrol("TY içe aktarma desiyi kuraldan okuyor (teslim durumuyla)", ty.includes("const kanalDesi = tyKanalDesisi({ cargoDeci: p.cargoDeci, kargoFirmasi, teslimEdildi: teslimAni !== null });"));
+  kontrol("  ...TEX'te nihai desi gelene kadar ürün desisiyle tahmin yazılıyor",
+    /TEX_FIRMA_DESENI\.test\(firmaAdi\)[\s\S]{0,900}?kanalKargoDesi: urunDesi,\s*desiKaynagi: "URUN_DESISI",/.test(ty));
+  const hb = KAYNAKLAR.get("scripts/canli-hb-ice-aktar.ts") ?? kaynakOku("scripts/canli-hb-ice-aktar.ts");
+  kontrol("HB içe aktarma da desiyi kanalın son beyanına göre tazeliyor",
+    hb.includes("if (s.kanalKargoDesi !== null && Number(s.kanalKargoDesi.toString()) === desi) continue;") &&
+      hb.includes("await prisma.sale.update({ where: { id: s.id }, data: { kanalKargoDesi: desi } });"));
+}
+
 const govdeyiCagiranlar = ICE_AKTARMALAR.filter((y) =>
   KAYNAKLAR.get(y)!.includes("teslimGuncellemesi("),
 );
