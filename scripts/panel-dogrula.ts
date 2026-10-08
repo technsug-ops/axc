@@ -2588,7 +2588,9 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
    * BİÇİMİ değil DAVRANIŞI sınıyor: kutu çiziliyor mu ve önünde bir izin
    * kapısı var mı.
    */
-  const gorevKutusuYeri = panelSayfasi.indexOf("<GorevKutusu");
+  /* 08.10.2026: şerit gövdesi `gorevSeridi()` yardımcısında; ÇİZİLDİĞİ yer gömülü
+     çağrı. Ölçüt çağrı yerine bağlandı (ada değil). */
+  const gorevKutusuYeri = panelSayfasi.indexOf("{gorevSeridi(true)}");
   kontrol("görev kutusu panelde ÇİZİLİYOR", gorevKutusuYeri > 0);
   /**
    * ⚠ ÖLÇÜT YAPISAL OLDU (K254). ESKİ: «600 karakter öncesinde `karGorunur`
@@ -6972,8 +6974,12 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
 
   /* ── PANEL SAYFASI ── */
   const sayfaT = yorumsuz(kaynakOku("src/app/page.tsx"));
-  kontrol("hizli islemler gorev kutusunun HEMEN ALTINDA",
-    /<GorevKutusu[\s\S]{0,700}?\/>\s*<HizliIslemler \/>/.test(sayfaT));
+  /* 08.10.2026: görev şeridi Huni satırına gömüldü (tek şerit); tek başına hâli yalnız
+     satışsız dönemde. Niyet aynı: hızlı işlemler şeridin hemen ardından gelir. */
+  kontrol("hizli islemler gorev seridinin HEMEN ALTINDA",
+    /\{bloklar\.length === 0 \? gorevSeridi\(false\) : null\}\s*<HizliIslemler \/>/.test(sayfaT));
+  kontrol("  ...gorev seridi HUNI satirinin ICINDE (tek serit, yalniz ilk blokta)",
+    /\{blokSirasi === 0 \? \(\s*<span className="[^"]*md:border-l md:pl-2">\s*\{gorevSeridi\(true\)\}/.test(sayfaT));
   kontrol("KPI izgarasi telefonda 6 sutun", /grid grid-cols-6 gap-2 sm:grid-cols-2 md:grid-cols-3/.test(sayfaT));
   /* Satir toplamlari 6: [ciro 6] [NET-1 3 · NET-2 3] [marj 2 · satis 2 · iade 2] — ESIT kutular. */
   const span = (desen: RegExp) => Number((desen.exec(sayfaT) ?? ["", "0"])[1]);
