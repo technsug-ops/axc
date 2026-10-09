@@ -991,8 +991,10 @@ console.log("=".repeat(70));
     /cargoTahminMi = girdi\.cargoTutari\.tur === "TAHMIN";/.test(onizleBlok),
   );
   kontrol(
-    "TAZE tarife hesabı (cargoCarrierId+cargoDesi ile) HER ZAMAN cargoTahminMi=true yazar",
-    /\} else if \(girdi\.cargoCarrierId && girdi\.cargoDesi != null\) \{\s*\n\s*cargoTahminMi = true;/.test(
+    "TAZE tarife hesabı (cargoCarrierId+hesap desisi ile) HER ZAMAN cargoTahminMi=true yazar",
+    /* K326-② (09.10.2026): koşul HESAP desisine bakar (`hesapDesisi ?? cargoDesi`) — kayda
+       yazılan ürün tahmini boşken de tartım/küresel desiyle taze hesap yapılır, eskisi gibi. */
+    /\} else if \(girdi\.cargoCarrierId && \(girdi\.hesapDesisi \?\? girdi\.cargoDesi\) != null\) \{\s*\n\s*cargoTahminMi = true;/.test(
       onizleBlok,
     ),
   );
@@ -1013,10 +1015,23 @@ console.log("=".repeat(70));
     "satisKarTazele: kaynak GERÇEKLEŞEN/TAHMİNİ ayrımı tur'a BİREBİR taşınır",
     /tur: kargo\.kaynak === "GERCEKLESEN" \? "GERCEK" : "TAHMIN",/.test(tazeleBlok),
   );
+  /**
+   * ⛔ ÖLÇÜT ESKİDİ VE ÇEVRİLDİ (K326-②, 09.10.2026). Eski hâli
+   * `cargoDesi: desi.desi` arıyordu — yani `desiSecimi` SONUCUNUN (tartım ya da
+   * küresel ortanca 3) ürün tahmini alanına yazılmasını SABİTLİYORDU ve o
+   * davranış hatanın kendisiydi (Halil testi: kart 2, kayıt 3). Niyet aynı:
+   * hesap tek gövdeden, tartım önceliği kaymadan; yeni olan, kayda yalnız ürün
+   * tahmininin girmesi. (Anayasa: «bekçi ölçütü kuralı sabitler, davranışı
+   * değil».) Saf gövdenin DEĞER testi `kargo-kaynagi:dogrula`da.
+   */
   kontrol(
-    "satisKarTazele: desi de TEK gövdeden (desiSecimi) — TARTIM önceliği kaymadan",
-    /const desi = desiSecimi\(\{/.test(tazeleBlok) &&
-      /cargoDesi: desi\.desi,/.test(tazeleBlok),
+    "satisKarTazele: desi TEK gövdeden (tazelemeDesileri) — hesap tartım öncelikli, kayda yalnız ürün tahmini",
+    /const desi = tazelemeDesileri\(/.test(tazeleBlok) &&
+      /\n\s*cargoDesi: desi\.kayit,\s*\n\s*hesapDesisi: desi\.hesap,/.test(tazeleBlok),
+  );
+  kontrol(
+    "satisKarTazele: ürün tahmini Σ ürün desisi × adetten (urunDesisiToplami) kurulur",
+    /urunDesisiToplami\(\s*\n\s*satis\.items\.map\(/.test(tazeleBlok),
   );
 
   /**
