@@ -6,6 +6,7 @@ import {
   kargoKesintiDurumu,
   kargoTahminiMi,
   KURESEL_DESI_ORTANCASI,
+  tazelemeDesileri,
 } from "../src/lib/kargo-kaynagi";
 import { kaynakOku } from "./kaynak-oku";
 
@@ -135,6 +136,58 @@ kontrol(
   "küresel sayı ÖLÇÜLEN ORTANCA (3) — ortalama (4,04) DEĞİL",
   KURESEL_DESI_ORTANCASI === 3,
   KURESEL_DESI_ORTANCASI,
+);
+
+/* ═══ ②b KÂR TAZELENİRKEN: KAYDA YAZILAN ≠ HESAPTA KULLANILAN (K326-②) ═══ */
+/**
+ * ⛔ Halil testi 09.10.2026: `11691326264` ürün kartında desi 2, kayıtta 3 —
+ * küresel ortanca «ürün tahmini» alanına yazılıyordu; `11666523593` kartta 4,
+ * kayıtta 6 — tartım tahmini eziyordu. Örnekler AYRIMIN İKİ YAKASINI gösterir:
+ * ürün desisi (2) küresel ortancadan (3) FARKLI, tartım (6) tahminden (4) FARKLI.
+ */
+console.log("\n  ── KÂR TAZELEME: kayda ürün tahmini, hesaba üç basamak (K326-②)");
+kontrol(
+  "kayıtta tahmin yok + ürün desisi 2 → kayda 2, hesap 2 (küresel 3 DEĞİL) — 11691326264",
+  (() => {
+    const d = tazelemeDesileri({ kanalKargoDesi: null, cargoDesi: null }, 2);
+    return d.kayit === 2 && d.hesap === 2 && d.kaynak === "TAHMIN";
+  })(),
+);
+kontrol(
+  "tahmin 4 + tartım 6 → kayıt 4 KALIR, hesap 6 (tartım önceliği kaymaz) — 11666523593",
+  (() => {
+    const d = tazelemeDesileri({ kanalKargoDesi: 6, cargoDesi: 4 }, 4);
+    return d.kayit === 4 && d.hesap === 6 && d.kaynak === "TARTIM";
+  })(),
+);
+kontrol(
+  "kayıttaki tahmin ürün kartından ÖNCE gelir (kayıt 5, kart 2 → kayıt 5)",
+  (() => {
+    const d = tazelemeDesileri({ kanalKargoDesi: null, cargoDesi: 5 }, 2);
+    return d.kayit === 5 && d.hesap === 5;
+  })(),
+);
+/** ⚠ Bilinmeyen uydurulmaz: hesap küresele düşer ama kayda küresel YAZILMAZ. */
+kontrol(
+  "hiçbir şey bilinmiyorsa kayda null, hesap küresel ortanca",
+  (() => {
+    const d = tazelemeDesileri({ kanalKargoDesi: null, cargoDesi: null }, null);
+    return d.kayit === null && d.hesap === KURESEL_DESI_ORTANCASI && d.kaynak === "KURESEL";
+  })(),
+);
+kontrol(
+  "tartım var, tahmin ve kart yok → kayda null (tartım ürün tahmini sayılmaz), hesap tartım",
+  (() => {
+    const d = tazelemeDesileri({ kanalKargoDesi: 7, cargoDesi: null }, null);
+    return d.kayit === null && d.hesap === 7;
+  })(),
+);
+kontrol(
+  "kayıtta SIFIR tahmin bozuk sayılır → ürün desisine düşer",
+  (() => {
+    const d = tazelemeDesileri({ kanalKargoDesi: null, cargoDesi: 0 }, 2);
+    return d.kayit === 2 && d.hesap === 2;
+  })(),
 );
 
 /* ═══ ③ DEFTER DEĞİŞMEZLİĞİ — TAHMİN GERÇEĞİ EZMEZ ════════════════════ */

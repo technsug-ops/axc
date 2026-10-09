@@ -112,6 +112,43 @@ export function desiSecimi(satis: {
 }
 
 /**
+ * ============================================================================
+ *  KÂR TAZELENİRKEN İKİ AYRI DESİ — KAYDA YAZILAN ≠ HESAPTA KULLANILAN (K326-②)
+ * ----------------------------------------------------------------------------
+ *  Halil testi 09.10.2026: «tahmini desiler yanlış, ürünün kartındaki desi
+ *  değil» — `11691326264`: ürün kartında 2, kayıtta 3.
+ *
+ *  ⛔ KÖK: `satisKarTazele` `desiSecimi` SONUCUNU `cargoDesi`ye yazıyordu.
+ *  `cargoDesi` bu dosyanın kendi tanımında «bizim ürüne-özel tahminimiz
+ *  (Σ ürün desi)» — ama üstüne iki yabancı değer biniyordu:
+ *    · KÜRESEL ortanca (3): içe aktarma yeni satışa `cargoDesi` yazmıyor,
+ *      otomatik onay iki saniye sonra kârı tazeliyor → 3 «tahmin» oluyordu;
+ *    · TARTIM: kanal gerçek desiyi bildirince tahmin onunla eziliyordu
+ *      (`11666523593`: kart 4, kayıt 6) — «ne kadar yanılmışız» sorusu da
+ *      cevapsız kalıyordu (`kargo-tartim-tazele.ts`: cargoDesi HİÇ DEĞİŞMEZ).
+ *  (Anayasa: «şemadaki alan da bir iddiadır».)
+ *
+ *  ⭐ KURAL: kayda yazılan YALNIZ ürün tahminidir — kayıtta zaten varsa O,
+ *  yoksa Σ ürün desisi (`urunDesisi`; bilinmiyorsa `null`, uydurulmaz).
+ *  Hesap ise `desiSecimi`nin üç basamağıyla aynen yürür (tartım > tahmin >
+ *  küresel) — NET'e giren desi değişmez, yalnız yanlış alana yazılmaz.
+ * ============================================================================
+ */
+export function tazelemeDesileri(
+  satis: { kanalKargoDesi: number | null; cargoDesi: number | null },
+  urunDesisi: number | null,
+): { kayit: number | null; hesap: number; kaynak: DesiKaynagi } {
+  const kayit =
+    satis.cargoDesi !== null && satis.cargoDesi > 0
+      ? satis.cargoDesi
+      : urunDesisi !== null && urunDesisi > 0
+        ? urunDesisi
+        : null;
+  const secim = desiSecimi({ kanalKargoDesi: satis.kanalKargoDesi, cargoDesi: kayit });
+  return { kayit, hesap: secim.desi, kaynak: secim.kaynak };
+}
+
+/**
  * Ekranda gösterilecek mi — ⛔ "tahmini" ETİKETİ ZORUNLU.
  * Tahmini bir rakamı etiketsiz göstermek, sistemin bilmediği bir şeyi
  * biliyormuş gibi sunmaktır. _(Anayasa: "bir sayı etiketiyle taşınır".)_

@@ -5,7 +5,8 @@ import {
   siparisKesintiKurallari,
 } from "@/lib/siparis-kesintileri";
 import { kalemMaliyeti } from "@/lib/kalem-maliyeti";
-import { desiSecimi, kargoSecimi } from "@/lib/kargo-kaynagi";
+import { kargoSecimi, tazelemeDesileri } from "@/lib/kargo-kaynagi";
+import { urunDesisiToplami } from "@/lib/kargo/ty-nihai-desi";
 import { kdvDahilKargo } from "@/lib/kargo-kdv";
 import { karHesapla, type KarGirdisi, type KarSonucu,
   type KarDurumu,
@@ -91,7 +92,15 @@ export type YenidenHesaplaGirdisi = {
     commissionAmount: number | null;
   }[];
   cargoCarrierId: string | null;
+  /** Kayda YAZILAN desi — ürün tahmini (ya da kullanıcının ekranda girdiği desi). */
   cargoDesi: number | null;
+  /**
+   * K326-② (09.10.2026): tarife hesabında KULLANILAN desi, kayda yazılandan
+   * ayrıysa. Verilmezse `cargoDesi` kullanılır (ekranlar tek desi girer).
+   * `satisKarTazele` verir: hesap tartım > tahmin > küresel ile yürür ama
+   * tartım ya da küresel ortanca `cargoDesi`ye (ürün tahmini) YAZILMAZ.
+   */
+  hesapDesisi?: number | null;
   /** `tur: "YOK"` ise VE `cargoCarrierId`+`cargoDesi` doluysa, taze bir
    *  tarife hesabı yapılır — bu HER ZAMAN tahmindir (bkz. `cargoTahminMi`). */
   cargoTutari: CargoTutariBilgisi;
@@ -210,8 +219,9 @@ export async function karOnizle(
     // KDV DAHİL gelir; motor KDV hariç bekliyor.
     kargoTarifesi = kdvHaricKargo(girdi.cargoTutari.tutarKdvDahil);
     cargoTahminMi = girdi.cargoTutari.tur === "TAHMIN";
-  } else if (girdi.cargoCarrierId && girdi.cargoDesi != null) {
+  } else if (girdi.cargoCarrierId && (girdi.hesapDesisi ?? girdi.cargoDesi) != null) {
     cargoTahminMi = true;
+    const hesapDesisi = (girdi.hesapDesisi ?? girdi.cargoDesi)!;
     /**
      * ⛔ K201-4 (17.09.2026) — `orderBy` YOKTU. Tarife partileri EKLENEBİLİR
      * (eski effectiveFrom SİLİNMEZ, bkz. `canli-hb-kargo-tarifesi-yukle.ts`);
@@ -231,7 +241,7 @@ export async function karOnizle(
       where: {
         channelId: satis.channelAccount.channelId,
         carrierId: girdi.cargoCarrierId,
-        desi: Math.max(0, Math.ceil(girdi.cargoDesi)),
+        desi: Math.max(0, Math.ceil(hesapDesisi)),
         /* 07.10.2026: kargoya veriliş günü (yoksa sipariş günü) — `kargoTarifeTarihi`. */
         effectiveFrom: { lte: kargoTarifeTarihi(satis) },
       },
@@ -452,7 +462,13 @@ export async function satisKarTazele(
       /** Kaldırılmış kalemin komisyon düzeltmesi de olmaz. */
       items: {
         where: { ...KALEM_GECERLI },
-        select: { id: true, commissionRate: true },
+        select: {
+          id: true,
+          commissionRate: true,
+          /* K326-②: ürün tahmini desi kayıtta yoksa Σ ürün desisi × adet. */
+          quantity: true,
+          variant: { select: { product: { select: { desi: true } } } },
+        },
       },
     },
   });
@@ -480,11 +496,26 @@ export async function satisKarTazele(
    * kendi ürün tahminiyle hesaplar (canlı vaka: sipariş 4633427855, tartım
    * desi=3 dururken ürün tahmini desi=2 kullanıldı).
    */
-  const desi = desiSecimi({
-    kanalKargoDesi:
-      satis.kanalKargoDesi === null ? null : Number(satis.kanalKargoDesi.toString()),
-    cargoDesi: satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
-  });
+  /**
+   * ⛔ K326-② (09.10.2026) — KAYDA YAZILAN ≠ HESAPTA KULLANILAN. Eskiden
+   * `desiSecimi` sonucu `cargoDesi`ye yazılıyordu: ürün tahmini, tartımla ya
+   * da küresel ortancayla (3) eziliyordu (Halil testi: kart 2, kayıt 3).
+   * Hesap aynen tartım > tahmin > küresel; kayda yalnız ürün tahmini girer
+   * (`tazelemeDesileri`, saf gövde, değer testli).
+   */
+  const desi = tazelemeDesileri(
+    {
+      kanalKargoDesi:
+        satis.kanalKargoDesi === null ? null : Number(satis.kanalKargoDesi.toString()),
+      cargoDesi: satis.cargoDesi === null ? null : Number(satis.cargoDesi.toString()),
+    },
+    urunDesisiToplami(
+      satis.items.map((k) => ({
+        adet: k.quantity,
+        desi: k.variant.product.desi === null ? null : Number(k.variant.product.desi.toString()),
+      })),
+    ),
+  );
 
   return karYenidenYaz(
     {
@@ -496,7 +527,8 @@ export async function satisKarTazele(
       commissionAmount: null,
     })),
     cargoCarrierId: satis.cargoCarrierId,
-    cargoDesi: desi.desi,
+    cargoDesi: desi.kayit,
+    hesapDesisi: desi.hesap,
     /**
      * ⛔ KAYNAK GERÇEKLEŞEN DEĞİLSE `cargoAmount`A YAZILMAZ (K197-4/K201,
      * 15.09.2026 düzeltmesi — K201-2, 16.09.2026 — ve K202-2, 18.09.2026).

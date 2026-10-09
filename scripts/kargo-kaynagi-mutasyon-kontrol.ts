@@ -22,10 +22,16 @@ const GOVDE = "src/lib/kargo-kaynagi.ts";
 const N11 = "scripts/canli-n11-ice-aktar.ts";
 /** K243: desi ve kanal firmasi EKRANDA gorunmuyordu (veri defterde vardi). */
 const SATIS_DETAY = "src/app/satislar/[id]/page.tsx";
+/** K326-② (09.10.2026): kâr tazelemenin desisi — `kar:dogrula` sınar. */
+const KAR_YENIDEN = "src/lib/kar-yeniden.ts";
+const KAR_BEKCI = { yol: "scripts/kar-dogrula.ts", baslik: "BİRİM TESTLERİ — oran birimi" };
 
 type Mutasyon = {
   ad: string;
-  yon: "KALDIRAN" | "FAZLADAN";
+  /** ZARARSIZ (K326-②'de eklendi): harness'in iki yön sağlaması — YEŞİL kalmalı. */
+  yon: "KALDIRAN" | "FAZLADAN" | "ZARARSIZ";
+  /** Verilmezse kargo kaynağı bekçisi koşar. */
+  bekci?: { yol: string; baslik: string };
   dosya: string;
   bul: string;
   koy: string;
@@ -173,16 +179,86 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "                        (",
     bozdugu: "kargo rakami tabansiz kalir; KDV dahil mi haric mi sorusu yeniden dogar",
   },
+  /* ═══ K326-② (09.10.2026) — kayda ürün tahmini, hesaba üç basamak ═══ */
+  {
+    ad: "ZARARSIZ - tazelemeDesileri yorumu degisti",
+    yon: "ZARARSIZ",
+    dosya: GOVDE,
+    bul: " *  KÂR TAZELENİRKEN İKİ AYRI DESİ — KAYDA YAZILAN ≠ HESAPTA KULLANILAN (K326-②)",
+    koy: " *  KÂR TAZELENİRKEN İKİ AYRI DESİ — KAYDA YAZILAN ≠ HESAPTA KULLANILAN (K326-②) ·",
+    bozdugu: "-",
+  },
+  {
+    ad: "ZARARSIZ - satisKarTazele yorumu degisti",
+    yon: "ZARARSIZ",
+    dosya: KAR_YENIDEN,
+    bekci: KAR_BEKCI,
+    bul: "   * (`tazelemeDesileri`, saf gövde, değer testli).",
+    koy: "   * (`tazelemeDesileri`, saf gövde, değer testli) ·",
+    bozdugu: "-",
+  },
+  {
+    ad: "K326 KAYDA YINE HESAP DESISI YAZILIYOR (kuresel 3 / tartim tahmini eziyor)",
+    yon: "FAZLADAN",
+    dosya: GOVDE,
+    bul: "  return { kayit, hesap: secim.desi, kaynak: secim.kaynak };",
+    koy: "  return { kayit: secim.desi, hesap: secim.desi, kaynak: secim.kaynak };",
+    bozdugu: "urun karti 2 iken kayitta 3 (kuresel) ya da 6 (tartim) yazar - Halil'in bildirdigi ariza",
+  },
+  {
+    ad: "K326 URUN DESISI HIC KULLANILMIYOR",
+    yon: "KALDIRAN",
+    dosya: GOVDE,
+    bul: "      : urunDesisi !== null && urunDesisi > 0",
+    koy: "      : false",
+    bozdugu: "tahmini olmayan yeni siparis kuresel ortancaya duser; urun karti hic okunmaz",
+  },
+  {
+    ad: "K326 KART KAYITTAKI TAHMINI EZIYOR",
+    yon: "FAZLADAN",
+    dosya: GOVDE,
+    bul: "    satis.cargoDesi !== null && satis.cargoDesi > 0\n      ? satis.cargoDesi",
+    koy: "    urunDesisi !== null && urunDesisi > 0\n      ? urunDesisi",
+    bozdugu: "kullanicinin ekranda girdigi desi her kar tazelemesinde urun kartiyla ezilir",
+  },
+  {
+    ad: "K326 HESAP TARTIMI ATLIYOR (hesap = kayit)",
+    yon: "KALDIRAN",
+    dosya: GOVDE,
+    bul: "  const secim = desiSecimi({ kanalKargoDesi: satis.kanalKargoDesi, cargoDesi: kayit });",
+    koy: "  const secim = desiSecimi({ kanalKargoDesi: null, cargoDesi: kayit });",
+    bozdugu: "kanal gercek desiyi bildirdigi halde NET urun tahminiyle hesaplanir",
+  },
+  {
+    ad: "K326 satisKarTazele KAYDA HESAP DESISINI YAZIYOR",
+    yon: "FAZLADAN",
+    dosya: KAR_YENIDEN,
+    bekci: KAR_BEKCI,
+    bul: "    cargoDesi: desi.kayit,",
+    koy: "    cargoDesi: desi.hesap,",
+    bozdugu: "tartim ya da kuresel ortanca yine urun tahmini alanina yazilir",
+  },
+  {
+    ad: "K326 satisKarTazele URUN KARTINI OKUMUYOR",
+    yon: "KALDIRAN",
+    dosya: KAR_YENIDEN,
+    bekci: KAR_BEKCI,
+    bul: "    urunDesisiToplami(\n      satis.items.map((k) => ({",
+    koy: "    ((_x: unknown) => null)(\n      satis.items.map((k) => ({",
+    bozdugu: "yeni sipariste urun karti okunmaz, kayit bos kalir, hesap kuresele duser",
+  },
 ];
 
-function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
-  const r = spawnSync("npx tsx " + BEKCI, {
+function bekciyiKostur(m: Mutasyon): { kod: number; ciktiVar: boolean } {
+  const yol = m.bekci?.yol ?? BEKCI;
+  const baslik = m.bekci?.baslik ?? BEKCI_BASLIGI;
+  const r = spawnSync("npx tsx " + yol, {
     shell: true,
     encoding: "utf8",
     maxBuffer: 40 * 1024 * 1024,
   });
   const cikti = (r.stdout ?? "") + (r.stderr ?? "");
-  return { kod: r.status ?? 1, ciktiVar: cikti.includes(BEKCI_BASLIGI) };
+  return { kod: r.status ?? 1, ciktiVar: cikti.includes(baslik) };
 }
 
 console.log("");
@@ -212,11 +288,20 @@ for (const m of MUTASYONLAR) {
       bozuk.push(m.ad + "\n       mutasyon diske UYGULANMADI");
       continue;
     }
-    sonuc = bekciyiKostur();
+    sonuc = bekciyiKostur(m);
   } finally {
     dayanikliYaz(m.dosya, asil);
   }
 
+  if (m.yon === "ZARARSIZ") {
+    if (sonuc.kod === 0 && sonuc.ciktiVar) {
+      yakalanan++;
+      console.log("  OK  = " + m.ad + " (yeşil kaldı)");
+    } else {
+      bozuk.push(m.ad + "\n       zararsız mutasyon KIRMIZI yandı — yalancı kırmızı");
+    }
+    continue;
+  }
   const isaret = m.yon === "KALDIRAN" ? "-" : "+";
   if (sonuc.kod !== 0 && sonuc.ciktiVar) {
     yakalanan++;
@@ -242,6 +327,7 @@ if (bozuk.length) {
 
 const toplam = MUTASYONLAR.length;
 const kaldiran = MUTASYONLAR.filter((m) => m.yon === "KALDIRAN").length;
+const zararsiz = MUTASYONLAR.filter((m) => m.yon === "ZARARSIZ").length;
 console.log(
   "  " +
     yakalanan +
@@ -250,7 +336,9 @@ console.log(
     " mutasyon yakalandı   (- kaldıran " +
     kaldiran +
     " · + fazladan " +
-    (toplam - kaldiran) +
+    (toplam - kaldiran - zararsiz) +
+    " · = zararsız " +
+    zararsiz +
     ")",
 );
 if (kacan.length || bozuk.length) {

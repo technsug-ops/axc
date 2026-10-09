@@ -28,14 +28,37 @@
 **KÖK (08.10 düzeltmemin kusuru):** ① içe aktarma yeni satışa `cargoDesi` YAZMIYOR → ② otomatik onay iki saniye sonra kârı hesaplıyor; `desiSecimi` tartım da tahmin de boş görünce **KÜRESEL ortancaya (`KURESEL_DESI_ORTANCASI = 3`)** düşüyor ve `karYenidenYaz` o 3'ü `cargoDesi`ye YAZIYOR → ③ ürün desisiyle tahmin bloğu yalnız `tahminiKargo` BOŞKEN koşuyor; tahmin artık dolu → **hiç koşmuyor**. Ürün desisiyle tahmin sözü hiçbir yeni siparişte tutmuyor.
 **İKİNCİ KUSUR (şemadaki alan da bir iddiadır):** `cargoDesi` «ürün bazlı tahmin, hiç değişmez» diye beyanlı (`kargo-tartim-tazele.ts:31`) ama `karYenidenYaz` her yeniden hesapta üstüne `desiSecimi` sonucunu (tartım ya da küresel) yazıyor → `11666523593`: kart 4, kayıt 6.
 **Öneri (onay bekliyor):** ① satış sisteme ilk yazıldığında `cargoDesi` = Σ ürün desisi × adet (`urunDesisiToplami`; bilinmiyorsa null) · ② `karYenidenYaz` `cargoDesi`nin üstüne yazmasın (hesap tartım öncelikli kalır, yalnız tahmin korunur) · ③ geçmişte etkilenen satışlar önce SAYILIR (salt okuma); onarım sayı görülüp onay alındıktan sonra, anlık görüntüyle.
+─── ③ **09.10.2026 — MEKANİZMA YAZILDI (kullanıcı «düzelt»).** ⚠ Kök düzeltmesi: tahmini KARGO TUTARI doğruydu (`11691326264` ₺81,95 = ürün desisi 2 ile, `kargoTartimGeldiTazele`); yanlış olan yalnız `cargoDesi` alanıydı ve onu `satisKarTazele` yazıyordu. Saf gövde `kargo-kaynagi.ts` `tazelemeDesileri`: **kayda** yalnız ürün tahmini (kayıttaki > Σ ürün desisi × adet > null — küresel ve tartım YAZILMAZ) · **hesaba** `desiSecimi`nin üç basamağı aynen (NET'e giren desi değişmez). `karOnizle` tarife dalı `hesapDesisi ?? cargoDesi` okur (ekranlar tek desi girmeye devam eder). Bekçiler: `kargo-kaynagi:dogrula` 43/43 (6 yeni değer testi — iki Halil vakası birebir) · `kar:dogrula` 102/102 (eski ölçüt `cargoDesi: desi.desi` hatayı SABİTLİYORDU — çevrildi, gerekçesi dosyada) · `kargo-kaynagi-mutasyon:kontrol` **22/22** (harness'e ZARARSIZ yönü ve mutasyon başına bekçi eklendi: 2 zararsız yeşil · 6 yeni K326 mutasyonu kırmızı).
+**Geçmiş sayımı (canlı, salt okuma, iptalsiz 8.310 satış):** kayıt = kart **321** · kayıt boş + kart dolu **3.662** · ikisi de boş **3.423** · kayıt dolu + kart boş **142** · **kayıt = tartım (tazeleme ezmiş) 316** · **kayıt = 3, kart farklı (küresel olabilir) 373** (364'ü HB) · başka fark **73** (elle girilmiş ya da kart sonradan değişmiş — ayırt edilemez).
+**[KARAR BEKLİYOR — kullanıcı]:** geçmiş `cargoDesi` onarılsın mı? Mekanizma bundan sonrasını doğru yazıyor ve bir satışın kârı yeniden tazelendiğinde boş kayıt kendiliğinden kart desisiyle dolar. ⚠ Kart desisi 26.09'da toplu güncellendi — eski satışın o günkü desisi bilinmiyor; kartla doldurmak geçmişe bugünün değerini yazar.
+**Halil testi (deploy sonrası, canlı):** ① yarın gelen ilk Trendyol Express siparişini aç → detayda desi = ürün kartındaki desi (ör. kart 2 → 2, 3 DEĞİL) · tahmini kargo o desinin tarifesi · ② teslim edildikten sonra aynı sipariş → desi satırı Trendyol'un desisini gösterir (tartım), NET o desiyle · ③ `11691326264` (deploy'dan ÖNCE yazıldı) → desi hâlâ 3 görünür — BEKLENEN: kayıttaki değer korunur, eski kayıtların onarımı ayrı karar.
 
 ---
 
-## 🟢 K325 — HB KARGOSU HAKEDİŞTEN: GERÇEK KESİNTİ DEFTERE · 07.10.2026 · [KOŞTU e244fef — HALİL TESTİ GEÇTİ 09.10.2026; MİMAR ONAYI BEKLİYOR (hakedişte 112,80 ÷ 1,20 = 94,00 · 94,20 ÷ 1,20 = 78,50, kuruşuna)]
+## 🔴 K325 — HB KARGOSU HAKEDİŞTEN: GERÇEK KESİNTİ DEFTERE · 07.10.2026 · [KOŞTU e244fef — HALİL TESTİ 09.10 DÜŞTÜ: «hakedişte görünen rakamla bizde görünen tutmuyor»; kargo kuruşuna tutuyor, tutmayan hizmet bedeli + kampanyalı siparişte stopaj/ödeme gideri tabanı — ayrıca test tarifim yanlış tabandaydı]
 
 **Kullanıcı kararı 07.10.2026:** «Esas olan hakedişte kesilen kargo.»
 **Yazım** `canli-hakedis-kargo-yaz.ts`: HB hakediş dosyalarındaki KARGO kesintisi **÷1,20** (KDV hariç) → `cargoAmount` (gerçekleşen). **550 sipariş** yazıldı (07.10 18:25–18:36Z) · tahmini kargo yerinde KALDI (yan yana okunur) · **84 çok satırlı sipariş HÜKÜM YOK** (bir siparişte birden çok kargo satırı → hangisinin bu satışa ait olduğu ayırt edilemedi; yazılmadı) · anlık görüntü + satır başına `HAKEDIS_KARGO_YAZIM` izi (eski/yeni kargo, eski NET-2) · ikinci koşum **0**.
 **Halil testi (canlı):** ① Satışlar → `4063301553` → kargo **₺94,00 (gerçekleşen)**, yanında tahmin ₺89,92 · NET-2 **₺317,30** (eski ₺321,38) · ② `4346564169` → kargo **₺78,50**, tahmin ₺108,91 · NET-2 **₺442,66** (eski ₺412,25 — gerçek kargo tahminden düşükse NET yukarı çıkar) · ③ HB hakediş Excel'inde `4063301553` KARGO satırı **₺112,80** (= 94 × 1,20) olmalı.
+
+─── ② **09.10.2026 — HALİL TESTİ DÜŞTÜ (kullanıcı: «Hepsiburada hakedişte görünen rakamla bizde görünen rakamlar tutmuyor»).** ⚠ İlk okumamda geçti saymıştım (yalnız kargonun ÷1,20 tutmasına baktım) — kullanıcı düzeltti; testin hükmü kullanıcınındır.
+**Ölçüldü (canlı, salt okuma — kâr kaydı `SaleFee` ↔ hakediş `SettlementItem`, satır satır):**
+
+    4063301553   hakediş   bizim kâr kaydı
+      KARGO        112,80     112,80   ✓
+      KOMİSYON     176,22     176,22   ✓
+      STOPAJ         8,16       8,16   ✓
+      ÖDEME GİDERİ   7,84       7,83   kuruş yuvarlaması
+      HİZMET BEDELİ  YOK       12,60   ✗
+    4346564169   (sipariş tutarı 3.566,50 + kampanya indirimi +398,50 = 3.965)
+      KARGO         94,20      94,20   ✓
+      KOMİSYON     856,44     856,44   ✓
+      STOPAJ        29,72      33,04   ✗  HB matrahı 3.566,50 · bizimki 3.965
+      ÖDEME GİDERİ  28,54      31,72   ✗  aynı taban farkı
+      HİZMET BEDELİ  YOK       12,60   ✗
+
+**Üç ayrı şey:** ① **test tarifim yanlış tabandaydı** — ekran kargoyu KDV DAHİL gösteriyor (112,80 / 94,20), tarif KDV hariç (94,00 / 78,50) yazıyordu (anayasa: «para rakamı tabanıyla birlikte yazılır»; kayıt doğru, tarif yanlış). ② **hizmet bedeli:** iki siparişte de hakediş kesmiyor, motor ₺12,60 düşüyor — bilinen konu (20.08 ölçümü: 99 siparişin 14'ünde kesilmiş; koşul bulunamadığı için kural beyanla duruyor). ③ **YENİ BULGU — kampanyalı sipariş:** HB kampanya indirimini ayrı satırda ödüyor ve stopaj + ödeme giderini İNDİRİMLİ tutardan alıyor; motor indirimsiz tutardan alıyor → bu siparişte ₺6,50 fazla kesinti.
+**[KOMUT bekliyor — kullanıcı onayı]:** ② ve ③ için bütün HB hakediş satırlarında ölçüm (hizmet bedelinin koşulu · kampanyalı siparişte taban); kural ancak sayılar görüldükten sonra değişir.
 
 ---
 
