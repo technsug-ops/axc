@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -196,6 +197,52 @@ export function katmanB(
 }
 
 /**
+ * ============================================================================
+ *  DEPLOY EDİLMEYEN DAL — B KATMANI ENGEL DEĞİL BİLGİ (09.10.2026)
+ * ----------------------------------------------------------------------------
+ *  Çok firmalı dal (`k303-cok-firma`) GitHub'a yedek/görüntüleme için gidiyor;
+ *  Vercel onu `vercel.json` → `git.deploymentEnabled: { "<dal>": false }` ile
+ *  HİÇ derlemiyor. O dalda «migration canlıda koşmamış» (B) DOĞRU bir bilgidir
+ *  ama engellenecek bir deploy yoktur — push kapısı sonsuza kadar kırmızı kalırdı.
+ *
+ *  ⛔ DAR KAPSAM — emin olunamayan her durumda ENGEL kalır:
+ *  · yalnız TAM dal adı eşleşmesi (desen/glob KABUL EDİLMEZ — yanlış eşleşme
+ *    `main`i muaf tutabilirdi);
+ *  · dal adı bilinmiyorsa (ayrık HEAD, git yok) muafiyet YOK;
+ *  · A ve H katmanları HER dalda engeldir — bu yalnız B'yi bilgiye çevirir.
+ *  Genel `deploymentEnabled: false` hiçbir dalı deploy etmez → o da muaf.
+ * ============================================================================
+ */
+export function dalDeployKapaliMi(vercelYapilandirmasi: unknown, dal: string | null): boolean {
+  if (!dal) return false;
+  const git = (vercelYapilandirmasi as { git?: { deploymentEnabled?: unknown } } | null)?.git;
+  const ayar = git?.deploymentEnabled;
+  if (ayar === false) return true;
+  if (ayar === null || typeof ayar !== "object") return false;
+  return Object.prototype.hasOwnProperty.call(ayar, dal) && (ayar as Record<string, unknown>)[dal] === false;
+}
+
+/** Derlenen dal — Vercel'de kendi değişkeni, yerelde git. Bilinmiyorsa `null`. */
+function derlenenDal(): string | null {
+  const vercel = process.env.VERCEL_GIT_COMMIT_REF?.trim();
+  if (vercel) return vercel;
+  try {
+    const dal = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim();
+    return dal === "" || dal === "HEAD" ? null : dal;
+  } catch {
+    return null;
+  }
+}
+
+function vercelYapilandirmasi(): unknown {
+  try {
+    return JSON.parse(readFileSync("vercel.json", "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+/**
  * ⚠ `async` OLDU (K119a): yedek hedefi sondası dosya sistemine gidiyor ve
  * hedef arayüzü `Promise` döndürüyor. Senkron bırakıp sondayı atlamak,
  * ölçülmeyen bir katman bırakmak olurdu.
@@ -242,7 +289,15 @@ async function main() {
     for (const x of b) console.log(`  ✗  ${x.mesaj}`);
   }
 
-  const bulgular = [...a, ...h, ...b];
+  /* Deploy edilmeyen dalda B bilgidir (bkz. `dalDeployKapaliMi`); A ve H engel kalır. */
+  const dal = derlenenDal();
+  const bBilgi = b.length > 0 && dalDeployKapaliMi(vercelYapilandirmasi(), dal);
+  if (bBilgi) {
+    console.log(`  ⓘ  bu dal (${dal}) Vercel'de DEPLOY EDİLMEZ (vercel.json git.deploymentEnabled) —`);
+    console.log("     yukarıdaki B bulguları BİLGİDİR: canlıya giden bir derleme yok. A ve H yine engel.");
+  }
+
+  const bulgular = [...a, ...h, ...(bBilgi ? [] : b)];
   if (bulgular.length > 0) {
     console.log("\n────────────────────────────────────────────────────────");
     console.log("  BUILD DURDURULDU — kod, canlı şemasının ÖNÜNDE.");

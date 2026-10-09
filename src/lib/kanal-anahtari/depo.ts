@@ -1,4 +1,5 @@
 import { denemeOrtamiMi } from "@/lib/deneme-ortami";
+import { izKaydi } from "@/lib/iz";
 import { prisma } from "@/lib/prisma";
 
 import { desteklenenKanalMi, kimligiAc, kimlikKur, kimlikMetni, type KanalKimligi, type KimlikHatasi } from "./kimlik";
@@ -49,16 +50,14 @@ export async function anahtarKaydet(
       create: { companyId: hesap.companyId, channelAccountId, sifreli: paket, sonDort: son },
       update: { sifreli: paket, sonDort: son, sonDenemeAt: null, sonDenemeBasarili: null, sonHata: null },
     }),
-    prisma.auditLog.create({
-      data: {
+    izKaydi(prisma, {
         action: hesap.apiAnahtari ? "KANAL_ANAHTARI_DEGISTI" : "KANAL_ANAHTARI_KAYDEDILDI",
         targetType: "ChannelAccount",
         targetId: channelAccountId,
         userId: yapanId,
         // Yalnız tanıma bilgisi — anahtarın kendisi ASLA.
         detail: JSON.stringify({ kanal, hesap: hesap.name, sonDort: son }),
-      },
-    }),
+      }),
   ]);
   return { durum: "TAMAM", sonDort: son, yeni: !hesap.apiAnahtari };
 }
@@ -69,7 +68,7 @@ export async function anahtarKaldir(channelAccountId: string, yapanId: string): 
   if (!a) return { durum: "HATA", hata: "ANAHTAR_YOK" };
   await prisma.$transaction([
     prisma.kanalAnahtari.delete({ where: { id: a.id } }),
-    prisma.auditLog.create({ data: { action: "KANAL_ANAHTARI_KALDIRILDI", targetType: "ChannelAccount", targetId: channelAccountId, userId: yapanId, detail: JSON.stringify({ sonDort: a.sonDort }) } }),
+    izKaydi(prisma, { action: "KANAL_ANAHTARI_KALDIRILDI", targetType: "ChannelAccount", targetId: channelAccountId, userId: yapanId, detail: JSON.stringify({ sonDort: a.sonDort }) }),
   ]);
   return { durum: "TAMAM" };
 }

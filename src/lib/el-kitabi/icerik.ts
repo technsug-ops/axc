@@ -153,6 +153,13 @@ export const MENU_BOLUM: Record<string, string | null> = {
   kargoTarifesi: "kargoTarifesi",
   /** Kitabın KENDİSİ — kendi kendini anlatan bölüm açmak tekrar olurdu. */
   elKitabi: null,
+  /**
+   * K303 (yalnız çok firmalı dal) — firmanın abonelik paketi ekranı. Bilerek
+   * bölümü YOK (09.10.2026): paketler ve sınırları henüz SaaS katmanında
+   * şekilleniyor; anlatım canlıya geçişte yazılır, şimdi yazılan bölüm ekran
+   * değiştikçe bayatlardı. El kitabı borcu olarak K303 kaydında durur.
+   */
+  paketim: null,
 };
 
 const iki = (n: number) => String(n).padStart(2, "0");

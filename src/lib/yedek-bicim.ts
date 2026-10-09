@@ -31,8 +31,18 @@ export const YEDEK_TABLOLARI = [
    * ile ona bağlı. Eskiden `StockAdjustmentReason`dan sonra duruyordu (o gün
    * kimse ona bağlı değildi); öyle kalsaydı geri yükleme ilk firmalı tabloda
    * yabancı anahtarla düşerdi. `yedek:dogrula` sıra bekçisi yakaladı.
+   *
+   * ⚠ 09.10.2026 — `Paket` `Company`den ÖNCE: `Company.paketId` pakete bağlı
+   * (RESTRICT). Paket kimseye bağlı değil; `PaketOzelligi` yalnız pakete bağlı.
+   * Altı K303 tablosu yedekte HİÇ yoktu (kapsam bekçisi dalın ilk tam turunda
+   * yakaladı: Paket · PaketOzelligi · FirmaOzelligi · FirmaOdemesi ·
+   * KanalAnahtari · IkiAdimYedekKodu) — geri yüklemede sessizce kaybolurlardı.
    */
+  "Paket",
+  "PaketOzelligi",
   "Company",
+  /** Firmanın açık özellikleri — yalnız `Company`ye bağlı. */
+  "FirmaOzelligi",
   "Category",
   /** K283 — `Category`ye bağlı (categoryId, SetNull); kategoriden SONRA. */
   "TyKategoriEslesme",
@@ -51,6 +61,16 @@ export const YEDEK_TABLOLARI = [
   "ExpenseCategory",
   "Supplier",
   "User",
+  /**
+   * 09.10.2026 — `User`dan SONRA (ikisi de ona bağlı):
+   * · İki adımlı girişin yedek kodları — kodun kendisi DEĞİL, ÖZETİ (`ozet`)
+   *   saklanır; yedekte parola özetiyle (`User`) aynı sınıf.
+   * · Firma ödemeleri — `Company` + `User` (yazan) bağlı. Kendi içinde
+   *   düzeltme bağı var (`duzeltilenId`, RESTRICT): düzeltme satırı düzelttiği
+   *   satırdan SONRA yazılmalı — dökümün satır sırası buna dayanır.
+   */
+  "IkiAdimYedekKodu",
+  "FirmaOdemesi",
   "StockAdjustmentReason",
   "Role",
   // --- yetki: rol izinleri ve üyelikler ---
@@ -68,6 +88,12 @@ export const YEDEK_TABLOLARI = [
   "ChannelFee",
   "CargoTariff",
   "ChannelAccount",
+  /**
+   * 09.10.2026 — pazaryeri API anahtarı, `ChannelAccount`a bağlı → ondan SONRA.
+   * Anahtarın kendisi DEĞİL, ŞİFRELİ hâli (`sifreli`) saklanır; geri yüklenen
+   * anahtar ancak aynı şifreleme anahtarıyla (ortam değişkeni) açılır.
+   */
+  "KanalAnahtari",
   "ChannelSku",
   /**
    * KOMİSYON TARİFESİ — `ChannelAccount`tan SONRA (ona bağlı), kalemi de
@@ -168,11 +194,15 @@ export const YEDEK_TABLOLARI = [
  *       dilimli ileri tarife arşivden inmiyor), yani boşluk en pahalı
  *       yerdeydi. Ders bekçiye değil RUTİNE yazıldı: artık her teslimde
  *       `npm run bekci` bütün bekçileri koşuyor.
+ *   7 — K303 tabloları eklendi (09.10.2026, yalnız çok firmalı dal): Paket ·
+ *       PaketOzelligi · FirmaOzelligi · FirmaOdemesi · KanalAnahtari ·
+ *       IkiAdimYedekKodu. ⚠ YİNE AYNI DESEN: dal hiç tam turda koşmadığı için
+ *       kapsam bekçisinin kırmızısı görülmemişti; ilk push turu yakaladı.
  *
  * Sürüm 1 dosyalar OKUNABİLİR kalır; geri yükleme ekranı eksik tabloları
  * tek tek sayar ve uyarır — sessizce "tamam" demez.
  */
-export const YEDEK_SURUMU = 6;
+export const YEDEK_SURUMU = 7;
 
 /**
  * ============================================================================

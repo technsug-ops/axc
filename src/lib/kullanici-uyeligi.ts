@@ -1,4 +1,5 @@
 import { sistemPrisma } from "@/lib/prisma";
+import { izKaydi } from "@/lib/iz";
 import { sistemiAcabilirMi } from "@/lib/yetki/izinler";
 import { sertSinirKapisi } from "@/lib/paket/sinirlar";
 
@@ -83,16 +84,14 @@ export async function uyelikDurumunuDegistir(
     // SISTEM: yalnız BU üyelik (kimliğiyle).
     sistemPrisma.userCompanyRole.update({ where: { id: u.id }, data: { isActive: yeni } }),
     // SISTEM: iz bu firmaya yazılır.
-    sistemPrisma.auditLog.create({
-      data: {
+    izKaydi(sistemPrisma, {
         action: yeni ? "UYELIK_AKTIFLESTI" : "UYELIK_PASIFE_ALINDI",
         targetType: "UserCompanyRole",
         targetId: u.id,
         userId: yapanId,
         companyId,
         detail: JSON.stringify({ kullaniciId: userId }),
-      },
-    }),
+      }),
   ]);
   return { durum: "TAMAM", aktif: yeni, eposta: u.user.email };
 }

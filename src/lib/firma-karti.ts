@@ -1,4 +1,5 @@
 import { firmaKurulumDurumu, geciciParolaUret, type KurulumDurumu } from "@/lib/firma-acilisi";
+import { izKaydi } from "@/lib/iz";
 import { parolaOzetle } from "@/lib/parola";
 import { sistemPrisma } from "@/lib/prisma";
 
@@ -212,16 +213,14 @@ export async function firmaAdiniDegistir(
     // SISTEM: yönetim katmanı firmanın adını yazar.
     sistemPrisma.company.update({ where: { id: firmaId }, data: { name: s.ad } }),
     // SISTEM: iz firmalar-üstü (companyId null), hedef firma targetId'de.
-    sistemPrisma.auditLog.create({
-      data: {
+    izKaydi(sistemPrisma, {
         action: "FIRMA_ADI_DEGISTI",
         targetType: "Company",
         targetId: firmaId,
         userId: yapanId,
         companyId: null,
         detail: JSON.stringify({ eski: f.name, yeni: s.ad }),
-      },
-    }),
+      }),
   ]);
   return { durum: "TAMAM", degisti: true };
 }
@@ -264,16 +263,14 @@ export async function firmaKullanicisininParolasiniSifirla(
       data: { passwordHash: ozet, mustChangePassword: true, sessionVersion: { increment: 1 } },
     }),
     // SISTEM: iz firmalar-üstü; hangi firmanın kartından yapıldığı detayda.
-    sistemPrisma.auditLog.create({
-      data: {
+    izKaydi(sistemPrisma, {
         action: "YONETIM_PAROLA_SIFIRLADI",
         targetType: "User",
         targetId: kullaniciId,
         userId: yapanId,
         companyId: null,
         detail: JSON.stringify({ firmaId }),
-      },
-    }),
+      }),
   ]);
   return { durum: "TAMAM", geciciParola, eposta: uyelik.user.email };
 }

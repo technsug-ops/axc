@@ -64,7 +64,8 @@ export async function PanelBi({
   const abcKapsami: AbcKapsami = { baslangic: donem.baslangic, bitisHaric: donem.bitisHaric, para, kanal };
   const [satislar, kesintiler, abcVerisi] = await Promise.all([
     prisma.sale.findMany({
-      where: satisKosulu,
+      /* İptal süzgeci AÇIKÇA (iptal:bekci tanısın) — `satisKosulu` zaten taşıyor; tekrar zararsız. */
+      where: { ...satisKosulu, iptalTarihi: null },
       select: {
         net1Amount: true,
         net2Amount: true,

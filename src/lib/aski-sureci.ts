@@ -1,4 +1,5 @@
 import type { FirmaAskiSebebi } from "@/generated/prisma/client";
+import { izKaydi } from "@/lib/iz";
 import { gunDegeri, gunEkle, isTakvimGunu } from "@/lib/donem";
 import { firmaDurumunuDegistir, kurulumDurumlari } from "@/lib/firma-acilisi";
 import { sistemPrisma } from "@/lib/prisma";
@@ -98,16 +99,14 @@ export async function uyariBaslat(
     // SISTEM: firmanın süreç alanları.
     sistemPrisma.company.update({ where: { id: firmaId }, data: { uyariSonGun: sonGun, uyariSebebi: s.sebep, askiAciklama: s.aciklama } }),
     // SISTEM: iz firmalar-üstü, hedef firma targetId'de.
-    sistemPrisma.auditLog.create({
-      data: {
+    izKaydi(sistemPrisma, {
         action: "FIRMA_UYARI_BASLADI",
         targetType: "Company",
         targetId: firmaId,
         userId: yapanId,
         companyId: null,
         detail: JSON.stringify({ sebep: s.sebep, aciklama: s.aciklama, gun: g.gun, sonGun: sonGun.toISOString().slice(0, 10), onceki: once?.uyariSonGun ? { sonGun: once.uyariSonGun.toISOString().slice(0, 10), sebep: once.uyariSebebi } : null }),
-      },
-    }),
+      }),
   ]);
   return { durum: "TAMAM", sonGun, sebep: s.sebep };
 }
@@ -123,9 +122,7 @@ export async function uyariKaldir(firmaId: string, yapanId: string): Promise<{ d
     // SISTEM: süreç alanları temizlenir.
     sistemPrisma.company.update({ where: { id: firmaId }, data: { uyariSonGun: null, uyariSebebi: null, askiAciklama: null } }),
     // SISTEM: iz.
-    sistemPrisma.auditLog.create({
-      data: { action: "FIRMA_UYARI_KALDIRILDI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ sonGun: f.uyariSonGun.toISOString().slice(0, 10), sebep: f.uyariSebebi }) },
-    }),
+    izKaydi(sistemPrisma, { action: "FIRMA_UYARI_KALDIRILDI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ sonGun: f.uyariSonGun.toISOString().slice(0, 10), sebep: f.uyariSebebi }) }),
   ]);
   return { durum: "TAMAM" };
 }

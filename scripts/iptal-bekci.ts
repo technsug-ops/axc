@@ -142,6 +142,10 @@ const ISTISNALAR = new Map<string, string>([
     "src/app/satislar/[id]/iade/actions.ts:saleItem.findMany",
     "Doğrulama için KİMLİKLE gelen kalemlerin ürün adlarını okur (`where: { id: { in: [...] } }`). Liste/toplam değil, kullanıcının zaten seçtiği kalemler. Ayrıca iptalli satışa iade zaten engelli (bkz. `lib/iade.ts` içindeki iptal kontrolü).",
   ],
+  [
+    "src/app/satislar/[id]/gonderi-no-actions.ts:sale.findFirst",
+    "Gönderi numarası ÇAKIŞMA kontrolü (09.10.2026 beyan): veritabanındaki benzersizlik (`@@unique([companyId, shipmentCode])`) İPTAL EDİLMİŞ satırları da kapsar. Süzgeç eklenseydi iptalli bir satıştaki aynı numara görülmez, yazım ham benzersizlik hatasıyla düşerdi — bu sorgu tam o hatayı Türkçe söylemek için var. Ciro/NET üretmez.",
+  ],
 ]);
 
 type Bulgu = { dosya: string; satir: number; cagri: string };

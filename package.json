@@ -113,6 +113,8 @@
     "donem-mutasyon:kontrol": "tsx scripts/donem-mutasyon-kontrol.ts",
     "donem:dogrula": "tsx scripts/donem-dogrula.ts",
     "deploy:bekci": "tsx scripts/deploy-bekci.ts",
+    "deploy-dal:dogrula": "tsx scripts/deploy-dal-dogrula.ts",
+    "deploy-dal-mutasyon:kontrol": "tsx scripts/deploy-dal-mutasyon-kontrol.ts",
     "toplam:dogrula": "tsx scripts/toplam-dogrula.ts",
     "iptal:dogrula": "tsx scripts/iptal-dogrula.ts",
     "sayim:dogrula": "tsx scripts/sayim-dogrula.ts",

@@ -1,4 +1,5 @@
 import { turkceSayi } from "@/lib/finansman/kural";
+import { izKaydi } from "@/lib/iz";
 import { sistemPrisma } from "@/lib/prisma";
 
 import { acikOzellikler, OZELLIKLER } from "./ozellikler";
@@ -25,7 +26,7 @@ const GECERLI = new Set<string>(OZELLIKLER);
 
 function izYaz(action: string, targetType: string, targetId: string, yapanId: string, detay: unknown) {
   // SISTEM: paket izleri firmalar-üstü; hedef targetId'de.
-  return sistemPrisma.auditLog.create({ data: { action, targetType, targetId, userId: yapanId, companyId: null, detail: JSON.stringify(detay) } });
+  return izKaydi(sistemPrisma, { action, targetType, targetId, userId: yapanId, companyId: null, detail: JSON.stringify(detay) });
 }
 
 /** Bütün paketler — içerik, firma sayısı, öneri fiyatı. */
@@ -118,7 +119,7 @@ export async function paketIceriginiKaydet(
     // SISTEM: eklenen özellikler.
     sistemPrisma.paketOzelligi.createMany({ data: eklenen.map((ozellik) => ({ paketId, ozellik })) }),
     // SISTEM: iz.
-    sistemPrisma.auditLog.create({ data: { action: "PAKET_ICERIGI_DEGISTI", targetType: "Paket", targetId: paketId, userId: yapanId, companyId: null, detail: JSON.stringify({ eklenen, cikan }) } }),
+    izKaydi(sistemPrisma, { action: "PAKET_ICERIGI_DEGISTI", targetType: "Paket", targetId: paketId, userId: yapanId, companyId: null, detail: JSON.stringify({ eklenen, cikan }) }),
   ]);
   return { durum: "TAMAM", eklenen, cikan };
 }
@@ -172,7 +173,7 @@ export async function firmaPaketiniDegistir(
         ]
       : []),
     // SISTEM: iz.
-    sistemPrisma.auditLog.create({ data: { action: "FIRMA_PAKETI_DEGISTI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ once: once.paket?.ad ?? null, yeni: p.ad, kapanan, acilan, yenidenKurulan: kopyala.length }) } }),
+    izKaydi(sistemPrisma, { action: "FIRMA_PAKETI_DEGISTI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ once: once.paket?.ad ?? null, yeni: p.ad, kapanan, acilan, yenidenKurulan: kopyala.length }) }),
   ]);
   return { durum: "TAMAM", kapanan, acilan };
 }
@@ -198,7 +199,7 @@ export async function firmaOzellikleriniKaydet(
     // SISTEM: eklenen.
     sistemPrisma.firmaOzelligi.createMany({ data: eklenen.map((ozellik) => ({ firmaId, ozellik })) }),
     // SISTEM: iz.
-    sistemPrisma.auditLog.create({ data: { action: "FIRMA_OZELLIKLERI_DEGISTI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ eklenen, cikan }) } }),
+    izKaydi(sistemPrisma, { action: "FIRMA_OZELLIKLERI_DEGISTI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ eklenen, cikan }) }),
   ]);
   return { durum: "TAMAM", eklenen, cikan };
 }
@@ -230,7 +231,7 @@ export async function paketSinirlariniKaydet(
     // SISTEM: paket sınırları.
     sistemPrisma.paket.update({ where: { id: paketId }, data: { kanalHesabiSiniri: yeni.kanalHesabi, kullaniciSiniri: yeni.kullanici, aylikSiparisSiniri: yeni.aylikSiparis } }),
     // SISTEM: iz.
-    sistemPrisma.auditLog.create({ data: { action: "PAKET_SINIRLARI_DEGISTI", targetType: "Paket", targetId: paketId, userId: yapanId, companyId: null, detail: JSON.stringify({ once: { kanalHesabi: p.kanalHesabiSiniri, kullanici: p.kullaniciSiniri, aylikSiparis: p.aylikSiparisSiniri }, yeni }) } }),
+    izKaydi(sistemPrisma, { action: "PAKET_SINIRLARI_DEGISTI", targetType: "Paket", targetId: paketId, userId: yapanId, companyId: null, detail: JSON.stringify({ once: { kanalHesabi: p.kanalHesabiSiniri, kullanici: p.kullaniciSiniri, aylikSiparis: p.aylikSiparisSiniri }, yeni }) }),
   ]);
   return { durum: "TAMAM" };
 }
@@ -252,7 +253,7 @@ export async function firmaSinirlariniKaydet(
     // SISTEM: firmanın sınırları.
     sistemPrisma.company.update({ where: { id: firmaId }, data: { sinirKanalHesabi: yeni.kanalHesabi, sinirKullanici: yeni.kullanici, sinirAylikSiparis: yeni.aylikSiparis } }),
     // SISTEM: iz.
-    sistemPrisma.auditLog.create({ data: { action: "FIRMA_SINIRLARI_DEGISTI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ once: { kanalHesabi: f.sinirKanalHesabi, kullanici: f.sinirKullanici, aylikSiparis: f.sinirAylikSiparis }, yeni }) } }),
+    izKaydi(sistemPrisma, { action: "FIRMA_SINIRLARI_DEGISTI", targetType: "Company", targetId: firmaId, userId: yapanId, companyId: null, detail: JSON.stringify({ once: { kanalHesabi: f.sinirKanalHesabi, kullanici: f.sinirKullanici, aylikSiparis: f.sinirAylikSiparis }, yeni }) }),
   ]);
   return { durum: "TAMAM" };
 }

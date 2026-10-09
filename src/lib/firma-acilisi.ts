@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { izKaydi } from "@/lib/iz";
 
 import { firmaIstemcisi } from "@/lib/firma-istemcisi";
 import { firmaKoduNormalle } from "@/lib/oturum-firmasi";
@@ -102,12 +103,10 @@ export async function firmaAc(ham: FirmaAcilisGirdisi, yapanId: string, paketId:
   // SISTEM: firma PASİF doğar — ② bitene kadar kimse giremez, giriş kodu çözmez.
   const firma = await sistemPrisma.company.create({ data: { name: g.ad, code: g.kod, isActive: false, paketId }, select: { id: true } });
   // SISTEM: açılışın başladığı iz — yarım kurulumun yeniden hesaplanabilir ölçütü.
-  await sistemPrisma.auditLog.create({
-    data: {
+  await izKaydi(sistemPrisma, {
       action: BASLADI, targetType: "Company", targetId: firma.id, userId: yapanId, companyId: null,
       detail: JSON.stringify({ kod: g.kod, ad: g.ad, yoneticiEposta: g.yoneticiEposta, yoneticiAd: g.yoneticiAd }),
-    },
-  });
+    });
   return kurulumuYurut(firma.id, g, yapanId);
 }
 
@@ -200,12 +199,10 @@ async function kurulumuYurut(firmaId: string, g: FirmaAcilisGirdisi, yapanId: st
           create: { userId: yoneticiId, companyId: firma.id, roleId: sahip.id },
         });
         await tx.company.update({ where: { id: firma.id }, data: { isActive: true } });
-        await tx.auditLog.create({
-          data: {
+        await izKaydi(tx, {
             action: ACILDI, targetType: "Company", targetId: firma.id, userId: yapanId, companyId: null,
             detail: JSON.stringify({ kod: firma.code, yoneticiEposta: g.yoneticiEposta, yeniKullanici: !mevcut }),
-          },
-        });
+          });
       },
       { timeout: 30_000 },
     );
@@ -245,16 +242,14 @@ export async function firmaDurumunuDegistir(
         : { isActive: false, askiSebebi: aski!.sebep, askiAciklama: aski!.aciklama, uyariSonGun: null, uyariSebebi: null },
     }),
     // SISTEM: iz firmalar-üstü, hedef firma targetId'de.
-    sistemPrisma.auditLog.create({
-      data: {
+    izKaydi(sistemPrisma, {
         action: aktif ? "FIRMA_AKTIFLESTI" : "FIRMA_PASIFE_ALINDI",
         targetType: "Company",
         targetId: firmaId,
         userId: yapanId,
         companyId: null,
         detail: aktif ? null : JSON.stringify({ sebep: aski!.sebep, aciklama: aski!.aciklama }),
-      },
-    }),
+      }),
   ]);
   return { durum: "TAMAM" };
 }

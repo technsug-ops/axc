@@ -1,4 +1,5 @@
 import type { AboneDonemi, Currency, FirmaOdemeYontemi } from "@/generated/prisma/client";
+import { izKaydi } from "@/lib/iz";
 import { bugunIs } from "@/lib/aski-sureci";
 import { ayKaydir, gunMetninden } from "@/lib/donem";
 import { turkceSayi } from "@/lib/finansman/kural";
@@ -80,16 +81,14 @@ export async function aboneligiKaydet(
     // SISTEM: firmanın abonelik alanları.
     sistemPrisma.company.update({ where: { id: firmaId }, data: yeni }),
     // SISTEM: iz firmalar-üstü, hedef firma targetId'de.
-    sistemPrisma.auditLog.create({
-      data: {
+    izKaydi(sistemPrisma, {
         action: "FIRMA_ABONELIK_KAYDEDILDI",
         targetType: "Company",
         targetId: firmaId,
         userId: yapanId,
         companyId: null,
         detail: JSON.stringify({ once: { ...once, aboneTutari: once.aboneTutari?.toString() ?? null }, yeni }),
-      },
-    }),
+      }),
   ]);
   return { durum: "TAMAM" };
 }

@@ -58,6 +58,24 @@ export async function yedekUret(
 ): Promise<YedekDosyasi> {
   // Sıra YEDEK_TABLOLARI ile aynıdır — bağımlılık sırası.
   const tablolar: Record<string, unknown[]> = {
+    /**
+     * K303 TABLOLARI (09.10.2026) — listede de üreticide de YOKTU; dalın ilk
+     * tam bekçi turu yakaladı. Sıra `yedek-bicim.ts`te (Paket → Company).
+     */
+    Paket: await istemci.paket.findMany(),
+    PaketOzelligi: await istemci.paketOzelligi.findMany(),
+    FirmaOzelligi: await istemci.firmaOzelligi.findMany(),
+    /** Şifre ÖZETİ — kodun kendisi değil (parola özetiyle aynı sınıf). */
+    IkiAdimYedekKodu: await istemci.ikiAdimYedekKodu.findMany(),
+    /**
+     * ⚠ KİMLİK SIRASIYLA: tabloda kendi içinde düzeltme bağı var
+     * (`duzeltilenId`, RESTRICT) ve oluşturulma tarihi alanı yok; kimlik (cuid)
+     * zaman damgasıyla başladığı için yazılış sırasını verir — düzeltme satırı
+     * düzelttiğinden SONRA gelir, geri yükleme yabancı anahtarla düşmez.
+     */
+    FirmaOdemesi: await istemci.firmaOdemesi.findMany({ orderBy: { id: "asc" } }),
+    /** Pazaryeri anahtarı ŞİFRELİ hâliyle — açmak için aynı şifreleme anahtarı gerekir. */
+    KanalAnahtari: await istemci.kanalAnahtari.findMany(),
     Category: await istemci.category.findMany(),
     TyKategoriEslesme: await istemci.tyKategoriEslesme.findMany(),
     Brand: await istemci.brand.findMany(),

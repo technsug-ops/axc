@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { izKaydi } from "@/lib/iz";
 
 import { sistemPrisma } from "@/lib/prisma";
 
@@ -58,16 +59,14 @@ export async function epostaGonder(
     }
   }
   // SISTEM: giden e-posta izi firmalar-üstü yazılır; ilgili firma companyId'de.
-  await sistemPrisma.auditLog.create({
-    data: {
+  await izKaydi(sistemPrisma, {
       action: sonuc.durum === "GONDERILDI" ? "EPOSTA_GONDERILDI" : sonuc.durum === "AYAR_YOK" ? "EPOSTA_AYAR_YOK" : "EPOSTA_GONDERILEMEDI",
       targetType: "Eposta",
       targetId: e.firmaId,
       userId: e.yapanId,
       companyId: e.firmaId,
       detail: JSON.stringify({ kime: e.kime, konu: e.konu, tur: e.tur, hata: sonuc.hata ?? null }),
-    },
-  });
+    });
   return sonuc;
 }
 

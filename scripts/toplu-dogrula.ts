@@ -238,8 +238,14 @@ async function main() {
 }
 
 /* K303 3b: ortak istemci firmaya süzülür — bekçi yerel veritabanının firmasının BAĞLAMINDA koşar. */
-bekciFirmasiylaKos(() => main()).catch(async (e) => {
-  console.error("BEKLENMEYEN HATA:", e);
-  await prisma.$disconnect();
-  process.exitCode = 1;
-});
+/* ⚠ BAĞLANTI HER YOLDA KAPANIR (09.10.2026): `main` «ATLANDI» deyip erken
+   döndüğünde `$disconnect` hiç çağrılmıyordu; açık bağlantı havuzu süreci
+   ayakta tuttu ve bekçi 10+ dakika «takıldı» (boş test firmasında ölçüldü). */
+bekciFirmasiylaKos(() => main())
+  .catch((e) => {
+    console.error("BEKLENMEYEN HATA:", e);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

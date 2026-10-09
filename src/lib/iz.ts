@@ -110,3 +110,31 @@ export async function izYaz(
   });
   return satir.id;
 }
+
+/**
+ * ============================================================================
+ *  İZ KAYDI — TOPLU İŞLEM DİZİSİNE GİREN GİRİŞ (09.10.2026)
+ * ----------------------------------------------------------------------------
+ *  `izYaz` async: kullanıcıyı oturumdan çözer ve yazımı HEMEN başlatır; bu
+ *  yüzden `$transaction([a, b, iz])` dizisine konamaz. Sekiz K303 gövdesi bu
+ *  yüzden iz satırını çıplak `auditLog.create` ile yazıyordu (`iz:dogrula`
+ *  dalın ilk tam turunda yakaladı). Bu giriş aynı satırı TEMBEL (PrismaPromise)
+ *  döndürür: diziye girer, işlem yürütünce yazılır — iz yine TEK dosyadan.
+ *
+ *  ⚠ `userId` ZORUNLU ve AÇIK (`null` = bunu bir insan yapmadı): dizi içinde
+ *  oturuma bakılamaz. `companyId` YALNIZ VERİLDİYSE yazılır — verilmezse
+ *  firma süzgeçli istemcide süzgeç ekler (çıplak yazımların davranışı aynen).
+ * ============================================================================
+ */
+export function izKaydi(istemci: Istemci, veri: IzVerisi & { userId: string | null }) {
+  return istemci.auditLog.create({
+    data: {
+      action: veri.action,
+      userId: veri.userId,
+      ...(veri.companyId !== undefined ? { companyId: veri.companyId } : {}),
+      targetType: veri.targetType ?? null,
+      targetId: veri.targetId ?? null,
+      detail: veri.detail ?? null,
+    },
+  });
+}
