@@ -7086,8 +7086,10 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("devir hızı: SMM ÷ stok; stok 0 → null", devirHizi(100, 50) === 2 && devirHizi(100, 0) === null);
   kontrol("stok günü: stok ÷ (SMM/gün); SMM 0 → null", stokGunu(300, 300, 30) === 30 && stokGunu(300, 0, 30) === null);
   const sayfaBi = kaynakOku("src/app/page.tsx");
+  /* ⚠ ÇAPA TAŞINDI (09.10.2026): çağrı çok satıra yayıldı (`listeParametreleri` eklendi —
+     rakamlar kaynağına gider). Ölçüt aynı: blok kâr iznine bağlı ve izinsiz dalı boş. */
   kontrol("panel İŞ ZEKÂSI bloğu yalnız kâr izniyle çiziliyor",
-    sayfaBi.includes("{karGorunur ? <PanelBi donem={donem} kanal={seciliKanal} para={seciliPara} an={an} /> : null}"));
+    /\{karGorunur \? \(\s*<PanelBi\s+donem=\{donem\}[\s\S]{0,400}?\/>\s*\) : null\}/.test(sayfaBi));
   const biKaynak = kaynakOku("src/app/panel-bi.tsx");
   kontrol("  ...dağılım yalnız HESAPLANMIŞ satışların kesintisinden (çift sayım yok)",
     /kesintiler\.filter\(\(k\) => k\.sale\.profitStatus === "CALCULATED"\)/.test(biKaynak));

@@ -23,7 +23,7 @@ import { abcAdresi, abcSuzgeciCoz, ABC_PARAMETRESI } from "../src/lib/panel/abc-
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 3;
+const BOLUM_SAYISI = 4;
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -122,6 +122,33 @@ console.log("\n3) ekran");
   kontrol("Ürünler'de süzgeç şeridi görünür, kapsamı ve sayıyı yazar",
     /\{abc \? \(\s*<div[^>]*>\s*<Badge variant="secondary">\s*\{t\("abcSuzgeci", \{[\s\S]{0,400}?sayi: toplam,/.test(sayfa));
   kosanBolumler.push("ekran");
+}
+
+console.log("\n4) panelin öteki rakamları kaynağına (İlke #16, 09.10.2026)");
+{
+  /* Ölçüldü (demo, son 30 gün): ciro ₺1.245.440,08 · 378 sipariş · 380 adet · kanal 259/118/1 ·
+     stok ₺2.502.671,99 = envanter «Ödenen (KDV dahil)» — panel = liste, yedisinde de. */
+  const panel = oku("src/app/panel-bi.tsx");
+  kontrol("liste adresi ORTAK kurucudan, panelin parametreleriyle",
+    /const satisListesi = \(ek: Record<string, string \| undefined> = \{\}\) => suzgecAdresi\("\/satislar", listeParametreleri, ek\);/.test(panel) &&
+      /const hesaplananlar = satisListesi\(\{ kar: "tam" \}\);/.test(panel));
+  kontrol("  ...brüt ciro notu → dönem satışları", /<Link href=\{satisListesi\(\)\} className=\{kaynak\}>\{t\("dagilimNotu"/.test(panel));
+  kontrol("  ...her kesinti tutarı → kârı hesaplanmış satışlar (dağılımın kaynağı)",
+    /<Link href=\{hesaplananlar\} className=\{`tabular-nums \$\{kaynak\}`\}>\{tl\(s\.tutar\)\}<\/Link>/.test(panel));
+  kontrol("  ...ödenecek KDV ve kalan NET-2 → kârı hesaplanmış satışlar",
+    /href=\{hesaplananlar\}[^>]*>\{tl\(net1 - net2\)\}/.test(panel) && /href=\{hesaplananlar\}[^>]*>\{tl\(net2\)\}/.test(panel));
+  kontrol("  ...hesaplanmayan ciro → kârı EKSİK satışlar", /href=\{satisListesi\(\{ kar: "eksik" \}\)\}[^>]*>\{tl\(hesaplanmayanCiro\)\}/.test(panel));
+  kontrol("  ...sipariş sayısı → dönem satışları; adet → kârı hesaplanmış",
+    /<Link href=\{satisListesi\(\)\} className=\{kaynak\}>\{t\("aovNotu"/.test(panel) &&
+      /<Link href=\{hesaplananlar\} className=\{kaynak\}>\{t\("adetBasinaNet2Notu"/.test(panel));
+  kontrol("  ...stok devir hızı ve stok günü → envanter değeri",
+    (panel.match(/<Link href="\/envanter-degeri" className=\{kaynak\}>\{t\("(devirNotu|stokGunuNotu)"/g) ?? []).length === 2);
+  kontrol("  ...kanal satırı → o kanalın satışları (44 px)",
+    /href=\{satisListesi\(\{ kanal: kod \}\)\}\s*className="[^"]*min-h-11/.test(panel));
+  const anaSayfa = oku("src/app/page.tsx");
+  kontrol("panel ÇÖZÜLMÜŞ dönemi verir (kargosuz kutusuyla aynı kalıp)",
+    /listeParametreleri=\{\{ pencere: donemTuru, baslangic: parametreler\.baslangic, bitis: parametreler\.bitis, kanal: seciliKanal \|\| undefined \}\}/.test(anaSayfa));
+  kosanBolumler.push("öteki rakamlar");
 }
 
 console.log("\n" + "=".repeat(70));

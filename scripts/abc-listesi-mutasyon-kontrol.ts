@@ -48,6 +48,19 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "    [ABC_PARAMETRESI]: abc ? abcHam : undefined,\n", koy: "", bozdugu: "2. sayfada ya da Excel'de suzgec sessizce kalkar" },
   { ad: "EXCEL EKRANDAN FARKLI", yon: "KALDIRAN", dosya: EXCEL,
     bul: "          return abc ? { id: { in: await abcUrunIdleri(prisma, abc.kova, abc.kapsam) } } : {};", koy: "          return {};", bozdugu: "inen dosya tum urunleri icerir" },
+  /* ═══ panelin öteki rakamları (09.10.2026) ═══ */
+  { ad: "HESAPLANANLAR KAR SUZGECINI KAYBETTI", yon: "KALDIRAN", dosya: PANEL,
+    bul: "  const hesaplananlar = satisListesi({ kar: \"tam\" });", koy: "  const hesaplananlar = satisListesi();", bozdugu: "NET-2 tiklaninca karı hesaplanmamis satislar da acilir; sayi != liste" },
+  { ad: "KESINTI TUTARI BAGLANTISIZ", yon: "KALDIRAN", dosya: PANEL,
+    bul: "                  <Link href={hesaplananlar} className={`tabular-nums ${kaynak}`}>{tl(s.tutar)}</Link>", koy: "                  <span className=\"tabular-nums\">{tl(s.tutar)}</span>", bozdugu: "komisyon/kargo rakami kaynagina goturmez" },
+  { ad: "HESAPLANMAYAN CIRO YANLIS LISTEYE", yon: "FAZLADAN", dosya: PANEL,
+    bul: "satisListesi({ kar: \"eksik\" })", koy: "satisListesi({ kar: \"tam\" })", bozdugu: "eksik kar satiri hesaplanmis satislari acar" },
+  { ad: "STOK NOTU ENVANTERE GITMIYOR", yon: "KALDIRAN", dosya: PANEL,
+    bul: "              altNot={<Link href=\"/envanter-degeri\" className={kaynak}>{t(\"devirNotu\"", koy: "              altNot={<Link href=\"/stok\" className={kaynak}>{t(\"devirNotu\"", bozdugu: "stok degeri envanterle karsilastirilamaz" },
+  { ad: "KANAL SATIRI KANALI DUSURUYOR", yon: "KALDIRAN", dosya: PANEL,
+    bul: "                    href={satisListesi({ kanal: kod })}", koy: "                    href={satisListesi()}", bozdugu: "Trendyol 259 der, tum kanallarin 378'i acilir" },
+  { ad: "PANEL DONEMI VERMIYOR", yon: "KALDIRAN", dosya: "src/app/page.tsx",
+    bul: "listeParametreleri={{ pencere: donemTuru, baslangic: parametreler.baslangic, bitis: parametreler.bitis, kanal: seciliKanal || undefined }}", koy: "listeParametreleri={{ kanal: seciliKanal || undefined }}", bozdugu: "son 30 gunun 378'i tiklaninca tum zamanlarin satislari acilir" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
