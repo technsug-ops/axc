@@ -531,8 +531,10 @@ kontrol(
     "satışlar sayfası marj kümesini SAHİBİNDEN çözüyor ve koşula geçiriyor",
     /await marjSebepSatisIdleri\(/.test(sayfa) &&
       /* K164: imzaya onayIdleri eklendi — ölçütün özü (marj kümesi koşula
-         geçiyor) aynı, biçim güncellendi. */
-      /satisKosulu\(p, an, supheliIdler, paketliIdler, marjIdler, onayIdleri\)/.test(
+         geçiyor) aynı, biçim güncellendi.
+         K327 (09.10.2026): ilk argüman `p` → `pListe` (iptal varsayılanı
+         `satisListesiParametreleri`ten). Ölçüt ESKİDİ, kod değil — özü aynı. */
+      /satisKosulu\(pListe, an, supheliIdler, paketliIdler, marjIdler, onayIdleri\)/.test(
         sayfa,
       ),
   );
