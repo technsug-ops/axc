@@ -13,6 +13,19 @@
 
 ---
 
+## 🟢 K328 — PANEL ABC SATIRLARI ÜRÜN LİSTESİNE GİDER (YALNIZ k303 DALI) · 09.10.2026 · [DALDA d52c6ac — HALİL TESTİ GEÇTİ 09.10.2026 (demo adresi, kullanıcı «test tamam»); MİMAR ONAYI BEKLİYOR]
+
+⚠ **KİMLİK NOTU:** bu panonun `pano:sonraki`si «K320» öneriyor çünkü dal panosu `main`in 05.10 sonrası kayıtlarını almadı; `main`de K320–K327 DOLU → çakışmasın diye K328.
+**Kullanıcı (demo ekran görüntüsü):** «bunlara tıklandığında listeye gitmeli» — ABC kartının A/B/C/«dönemde satışı yok» satırları (İlke #16). Kart yalnız dalda (07.10 «Algoritmo kıyası» blokları, `a1786a48`); `main`de YOK.
+**Yapı:** `lib/panel/abc-kumesi.ts` — TEK yükleyici (`abcGirdileriniYukle`: dönem cirosu + bugünkü açık partilerden stok değeri; iptalsiz satış, `KALEM_GECERLI`); panel ve liste ikisi de onu çağırır, panelin kendi stok/ciro hesabı kaldırıldı · `bi.ts` `abcUyelikleri` sayıyla AYNI döngüden (`abcHesapla`) · adres `/urunler?abc=<sınıf>~<baş ms>~<bitiş-hariç ms>~<para>~<kanal>` — kapsam ÇÖZÜLMÜŞ hâliyle tek parametrede (panel ile Ürünler'in dönem varsayılanları farklı) · bozuk adres süzgeç uydurmaz (`null`) · Ürünler: `abcKosulu` AND ile, şerit (sınıf · tarih · kanal · sayı) + «Süzgeci kaldır», sayfalama/arama/stok düğmesi/Excel süzgeci taşır · sıfır satır bağlantı olmaz · 44 px.
+**Ölçüldü (demo, son 30 gün):** A 67 · B 43 · C 34 · satışsız 184 — panel = üyelik = liste, dördünde de (kullanıcının ekranıyla birebir).
+**Bekçi** `abc-listesi:dogrula` 28 · mutasyon **12/12** (1 zararsız yeşil) · panel 927 · firma süzgeci 314. Çapası kırılan ölçütler taşındı: `stok-suzgeci` 9 + 7/7 · `kategori-eslesme` 40 + 18/18. Dokunulan dosyalara çapalı 9 harness yeşil (ilan-adresi 25 · iptal-görünürlük 13 · kod-çözümü 19 · liste-araması 13 · marka-kodu 20 · sku-önizleme 18 · şüpheli-ürün 19 · ürün-analizi · ürün-arama 8/8).
+**Yolda düzeltilen (dalda önceden kırmızı):** `arama-dogrula` «shipmentCode BENZERSİZ» — K303'te benzersizlik firma içine taşınmıştı (`@@unique([companyId, shipmentCode])`), ölçüt alan-düzeyi `@unique` arıyordu → ölçüt iki biçimi de kabul eder, modelin TAMAMI okunur (bileşik anahtar 3000 karakterlik pencerenin dışındaydı). Mutasyonla sınandı (kaldırınca kırmızı) · 150/150.
+**AÇIK (bu işe ait değil):** `src/app/page.tsx` 1133–1134 lint `no-use-before-define` (`gorevSayilari`, `paketlenen`) — 08.10 «Huni» işinden; panel bugün açılıyor ama sıra değişirse çalışma anında düşebilir.
+**Deneme/demo sunucuları:** 17:55 derlemesiyle yeniden başlatıldı (3101 deneme · 3102 demo; Cloudflare tünelleri aynı adresle).
+
+---
+
 ## 🔶 K319 — GEÇİCİ PAROLAYLA GİREN KİŞİ PANELE DÜŞÜYORDU (ZORUNLU PAROLA DEĞİŞİMİ ATLANIYORDU) · 05.10.2026 · [YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı bulgusu (deneme, yeni firma TechNS):** «firma kuruldu ama şifre yenilenme istemedi». Ölçüldü: yönetici 14:10'da girdi, `mustChangePassword` HÂLÂ `true`; dünkü TST1'de de aynısı (fark edilmemiş).
