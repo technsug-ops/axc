@@ -20,6 +20,7 @@ import { prisma } from "@/lib/prisma";
 import type { Sayfa } from "./xlsx";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { urunAramaKosulu } from "@/lib/urun-arama";
+import { ABC_PARAMETRESI, abcSuzgeciCoz, abcUrunIdleri } from "@/lib/panel/abc-kumesi";
 import { STOK_PARAMETRESI, stokluUrunIdleri, stokSuzgeciCoz } from "@/lib/stok";
 import { stoguVarMi } from "@/lib/stok-siralama";
 import { supheliSatirlari } from "@/lib/supheli-urun-veri";
@@ -493,6 +494,11 @@ async function urunlerSayfasi(p: Parametreler): Promise<Sayfa> {
         tyKategori ? tyKategoriUrunKosulu(tyKategori) : {},
         (await urunAramaKosulu(arama)) ?? {},
         stokSuzgeciCoz(p[STOK_PARAMETRESI]) ? { id: { in: await stokluUrunIdleri() } } : {},
+        /* 09.10.2026: panelin ABC satırından gelen sınıf — ekranla AYNI gövde (`abcUrunIdleri`). */
+        await (async () => {
+          const abc = abcSuzgeciCoz(p[ABC_PARAMETRESI]);
+          return abc ? { id: { in: await abcUrunIdleri(prisma, abc.kova, abc.kapsam) } } : {};
+        })(),
       ],
     },
     include: {

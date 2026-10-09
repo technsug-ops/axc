@@ -607,9 +607,18 @@ console.log("");
    * döndürür ve hangisinin doğru olduğu bilinemez — depoda yanlış kutu
    * paketlenir.
    */
+  /*
+   * ⚠ ÖLÇÜT ESKİDİ VE ÇEVRİLDİ (09.10.2026, k303 dalı): çok firmalı yapıda
+   * benzersizlik FİRMA İÇİNDE — `@@unique([companyId, shipmentCode])` (iki
+   * firmanın aynı kargo numarasını taşıması meşru). Niyet aynı: bir firmanın
+   * okutması iki satış döndüremez. Ölçüt eski alan-düzeyi `@unique`u da kabul
+   * eder (tek firmalı `main` şeması). Bileşik anahtar modelin SONUNDA durduğu
+   * için yukarıdaki 3000 karakterlik pencere onu göremez — modelin TAMAMI okunur.
+   */
+  const saleTam = sema.slice(sema.indexOf("model Sale {"), sema.indexOf("\n}", sema.indexOf("model Sale {")));
   kontrol(
-    "shipmentCode BENZERSİZ (aynı kod iki satışa giremez)",
-    /shipmentCode\s+String\?\s+@unique/.test(saleBloku),
+    "shipmentCode BENZERSİZ (aynı kod iki satışa giremez — firma içinde)",
+    /shipmentCode\s+String\?\s+@unique/.test(saleBloku) || /@@unique\(\[companyId, shipmentCode\]\)/.test(saleTam),
   );
   kontrol(
     "  ...ve NULLABLE (boş bırakılabilir)",

@@ -61,7 +61,7 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "KATEGORI ADI KODLANMADAN ADRESE YAZILIYOR", yon: "FAZLADAN", dosya: SUZGEC,
     bul: "=${encodeURIComponent(tyKategori)}", koy: "=${tyKategori}", bozdugu: "'Lego & Yapi' adresi & isaretinde kesilir, yanlis kategori acilir" },
   { ad: "URUNLER SUZGECI ARAMAYI EZIYOR (spread)", yon: "FAZLADAN", dosya: URUNLER,
-    bul: "  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu] };", koy: "  const kosul = { ...suzgecArama, ...(tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}), ...stokKosulu };", bozdugu: "kategori acikken arama koşulu sessizce karisir" },
+    bul: "  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu, abcKosulu] };", koy: "  const kosul = { ...suzgecArama, ...(tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}), ...stokKosulu, ...abcKosulu };", bozdugu: "kategori acikken arama koşulu sessizce karisir" },
   { ad: "SAYFALAMA KATEGORIYI DUSURUYOR", yon: "KALDIRAN", dosya: URUNLER,
     bul: "    [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined,\n", koy: "", bozdugu: "2. sayfaya gecince suzgec kaybolur, baska liste acilir" },
 ];

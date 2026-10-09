@@ -7,8 +7,8 @@ import { bicimlendirici } from "@/lib/bicim";
 import type { Pencere } from "@/lib/donem";
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { abcSiniflari, ABC_SINIRLARI, devirHizi, maliyetSurucuculeri, oranVeyaBos, stokGunu } from "@/lib/panel/bi";
+import { abcAdresi, abcGirdileriniYukle, type AbcKapsami } from "@/lib/panel/abc-kumesi";
 import { prisma } from "@/lib/prisma";
-import { acikPartilerToplu } from "@/lib/stok";
 import type { Currency } from "@/generated/prisma/enums";
 
 /**
@@ -49,7 +49,11 @@ export async function PanelBi({
     iptalTarihi: null,
     ...(kanal ? { channelAccount: { channel: { code: kanal } } } : {}),
   };
-  const [satislar, kesintiler, partiler] = await Promise.all([
+  /* ABC + stok değeri ORTAK YÜKLEYİCİDEN (09.10.2026) — tıklanınca açılan liste
+     (`/urunler?abc=…`) aynı gövdeyi çağırır; ikisi ayrı hesaplasaydı «sayı = liste»
+     sözü sessizce bozulabilirdi. */
+  const abcKapsami: AbcKapsami = { baslangic: donem.baslangic, bitisHaric: donem.bitisHaric, para, kanal };
+  const [satislar, kesintiler, abcVerisi] = await Promise.all([
     prisma.sale.findMany({
       where: satisKosulu,
       select: {
@@ -72,25 +76,11 @@ export async function PanelBi({
       },
       select: { code: true, amount: true, sale: { select: { profitStatus: true } } },
     }),
-    acikPartilerToplu(prisma, null),
+    abcGirdileriniYukle(prisma, abcKapsami),
   ]);
 
-  /* ── Stok değeri (bugün): açık partilerin kalanı × birim maliyeti ── */
-  const varyantlar = await prisma.productVariant.findMany({
-    where: { id: { in: [...partiler.keys()] } },
-    select: { id: true, productId: true },
-  });
-  const urunu = new Map(varyantlar.map((v) => [v.id, v.productId]));
-  const stokDegeri = new Map<string, number>();
-  for (const [varyantId, liste] of partiler) {
-    const urunId = urunu.get(varyantId);
-    if (!urunId) continue;
-    for (const p of liste) {
-      if (p.birimMaliyet === null || p.birimMaliyetParaBirimi !== para) continue;
-      stokDegeri.set(urunId, (stokDegeri.get(urunId) ?? 0) + p.kalanAdet * Number(p.birimMaliyet));
-    }
-  }
-  const toplamStokDegeri = [...stokDegeri.values()].reduce((a, b) => a + b, 0);
+  /* ── Stok değeri (bugün): açık partilerin kalanı × birim maliyeti — ortak yükleyiciden ── */
+  const toplamStokDegeri = abcVerisi.toplamStokDegeri;
 
   /* ── Ciro, sipariş, adet — seçili para biriminin kalemleri ── */
   let ciro = 0;
@@ -99,7 +89,6 @@ export async function PanelBi({
   let net1 = 0;
   let hesaplanmayanCiro = 0;
   let net2Adet = 0;
-  const urunCirosu = new Map<string, number>();
   const kanalOzeti = new Map<string, { ad: string; ciro: number; siparis: number }>();
   for (const s of satislar) {
     const kalemler = s.items.filter((k) => k.unitPriceCurrency === para);
@@ -107,9 +96,6 @@ export async function PanelBi({
     const tutar = kalemler.reduce((tp, k) => tp + Number(k.unitPriceAmount) * k.quantity, 0);
     ciro += tutar;
     siparis += 1;
-    for (const k of kalemler) {
-      urunCirosu.set(k.variant.productId, (urunCirosu.get(k.variant.productId) ?? 0) + Number(k.unitPriceAmount) * k.quantity);
-    }
     const kn = s.channelAccount.channel;
     const ko = kanalOzeti.get(kn.code) ?? { ad: kn.name, ciro: 0, siparis: 0 };
     ko.ciro += tutar;
@@ -142,8 +128,7 @@ export async function PanelBi({
   const aov = oranVeyaBos(ciro, siparis);
   const adetBasinaNet2 = oranVeyaBos(net2, net2Adet);
 
-  const tumUrunler = new Set([...urunCirosu.keys(), ...stokDegeri.keys()]);
-  const abc = abcSiniflari([...tumUrunler].map((urunId) => ({ urunId, ciro: urunCirosu.get(urunId) ?? 0, stokDegeri: stokDegeri.get(urunId) ?? 0 })));
+  const abc = abcSiniflari(abcVerisi.girdiler);
 
   const tl = (n: number) => bicim.para(n, para);
   const kesintiAdi = (kod: string) => (tk.has(kod) ? tk(kod) : kod);
@@ -218,12 +203,34 @@ export async function PanelBi({
                 {(["A", "B", "C", "SATISSIZ"] as const).map((k) => (
                   <tr key={k} className="border-t">
                     <td className="py-2 pr-2">
-                      <span className={`inline-grid size-7 place-items-center rounded-full text-xs font-semibold ${k === "A" ? "bg-[var(--se-kar-bg)] text-[var(--se-kar)]" : k === "B" ? "bg-[var(--se-bil-bg)] text-[var(--se-bil-ink)]" : k === "C" ? "bg-[var(--se-zarar-bg)] text-[var(--se-zarar)]" : "bg-muted text-muted-foreground"}`}>
-                        {k === "SATISSIZ" ? "—" : k}
-                      </span>
-                      {k === "SATISSIZ" ? <span className="text-muted-foreground ml-2 text-xs">{t("abcSatissiz")}</span> : null}
+                      {/* SATIR KAYNAĞINA GÖTÜRÜR (İlke #16, kullanıcı 09.10.2026): sınıfın
+                          ürünleri Ürünler listesinde, panelle AYNI kapsamla (`abcAdresi`).
+                          Sıfır satır bağlantı OLMAZ — boş listeye götürmez. */}
+                      {abc[k].urunSayisi > 0 ? (
+                        <Link
+                          href={abcAdresi(k, abcKapsami)}
+                          aria-label={t("abcListeyiAc", { sinif: k === "SATISSIZ" ? t("abcSatissiz") : k, sayi: abc[k].urunSayisi })}
+                          className="text-primary inline-flex min-h-11 items-center underline-offset-4 hover:underline md:min-h-7"
+                        >
+                          <AbcRozeti k={k} />
+                          {k === "SATISSIZ" ? <span className="ml-2 text-xs">{t("abcSatissiz")}</span> : null}
+                        </Link>
+                      ) : (
+                        <span className="inline-flex items-center">
+                          <AbcRozeti k={k} />
+                          {k === "SATISSIZ" ? <span className="text-muted-foreground ml-2 text-xs">{t("abcSatissiz")}</span> : null}
+                        </span>
+                      )}
                     </td>
-                    <td className="py-2 pr-2 text-right tabular-nums">{abc[k].urunSayisi}</td>
+                    <td className="py-2 pr-2 text-right tabular-nums">
+                      {abc[k].urunSayisi > 0 ? (
+                        <Link href={abcAdresi(k, abcKapsami)} className="text-primary underline-offset-4 hover:underline">
+                          {abc[k].urunSayisi}
+                        </Link>
+                      ) : (
+                        abc[k].urunSayisi
+                      )}
+                    </td>
                     <td className="py-2 pr-2">
                       {k === "SATISSIZ" ? (
                         <span className="text-muted-foreground text-xs">{t("abcCiroYok")}</span>
@@ -284,5 +291,14 @@ export async function PanelBi({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/** ABC sınıf rozeti — bağlantılı ve bağlantısız satırda AYNI çizim. */
+function AbcRozeti({ k }: { k: "A" | "B" | "C" | "SATISSIZ" }) {
+  return (
+    <span className={`inline-grid size-7 place-items-center rounded-full text-xs font-semibold ${k === "A" ? "bg-[var(--se-kar-bg)] text-[var(--se-kar)]" : k === "B" ? "bg-[var(--se-bil-bg)] text-[var(--se-bil-ink)]" : k === "C" ? "bg-[var(--se-zarar-bg)] text-[var(--se-zarar)]" : "bg-muted text-muted-foreground"}`}>
+      {k === "SATISSIZ" ? "—" : k}
+    </span>
   );
 }

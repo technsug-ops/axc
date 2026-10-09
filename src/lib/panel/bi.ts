@@ -54,6 +54,24 @@ export type AbcSonucu = Record<AbcSinifi | "SATISSIZ", AbcSatiri>;
  * karıştırılsaydı «kuyruk» ile «hiç satmayan» aynı görünürdü.
  */
 export function abcSiniflari(urunler: readonly AbcGirdisi[]): AbcSonucu {
+  return abcHesapla(urunler).sonuc;
+}
+
+/** ABC sınıflarının ÜYELERİ — tıklanınca açılan liste (İlke #16, 09.10.2026). */
+export type AbcKovasi = AbcSinifi | "SATISSIZ";
+export const ABC_KOVALARI: readonly AbcKovasi[] = ["A", "B", "C", "SATISSIZ"];
+
+/**
+ * Ürün → sınıf. ⛔ SAYIYLA AYNI DÖNGÜDEN (`abcHesapla`): panelin «67 ürün»ü ile
+ * tıklanınca açılan listenin kümesi iki ayrı hesaptan gelseydi sessizce
+ * ayrışabilirdi (anayasa: «sayı = liste»). Sınıfsız ürün haritada YOKTUR.
+ */
+export function abcUyelikleri(urunler: readonly AbcGirdisi[]): Map<string, AbcKovasi> {
+  return abcHesapla(urunler).uyelik;
+}
+
+function abcHesapla(urunler: readonly AbcGirdisi[]): { sonuc: AbcSonucu; uyelik: Map<string, AbcKovasi> } {
+  const uyelik = new Map<string, AbcKovasi>();
   const bos = (): AbcSatiri => ({ urunSayisi: 0, ciro: 0, ciroPayi: null, stokDegeri: 0 });
   const sonuc: AbcSonucu = { A: bos(), B: bos(), C: bos(), SATISSIZ: bos() };
   const satanlar = urunler.filter((u) => u.ciro > 0).sort((a, b) => b.ciro - a.ciro || a.urunId.localeCompare(b.urunId));
@@ -63,6 +81,7 @@ export function abcSiniflari(urunler: readonly AbcGirdisi[]): AbcSonucu {
     const onceki = toplam > 0 ? kumulatif / toplam : 0;
     const sinif: AbcSinifi = onceki < ABC_SINIRLARI.A ? "A" : onceki < ABC_SINIRLARI.B ? "B" : "C";
     const s = sonuc[sinif];
+    uyelik.set(u.urunId, sinif);
     s.urunSayisi += 1;
     s.ciro += u.ciro;
     s.stokDegeri += u.stokDegeri;
@@ -70,11 +89,12 @@ export function abcSiniflari(urunler: readonly AbcGirdisi[]): AbcSonucu {
   }
   for (const u of urunler) {
     if (u.ciro > 0 || u.stokDegeri <= 0) continue;
+    uyelik.set(u.urunId, "SATISSIZ");
     sonuc.SATISSIZ.urunSayisi += 1;
     sonuc.SATISSIZ.stokDegeri += u.stokDegeri;
   }
   for (const k of ["A", "B", "C"] as const) sonuc[k].ciroPayi = toplam > 0 ? sonuc[k].ciro / toplam : null;
-  return sonuc;
+  return { sonuc, uyelik };
 }
 
 /**

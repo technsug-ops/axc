@@ -499,7 +499,10 @@
     "suzgeciKaldir": "Süzgeci kaldır",
     "stoksuzlariGizle": "Stokta olmayanları gizle",
     "stoksuzlarGizli": "Stokta olmayanlar gizli — göster",
-    "stoksuzlarGizliNot": "Yalnız toplam stoğu 0'dan büyük ürünler listeleniyor."
+    "stoksuzlarGizliNot": "Yalnız toplam stoğu 0'dan büyük ürünler listeleniyor.",
+    "abcSuzgeci": "ABC sınıfı {sinif} · {bas} – {bit} · {kanal} · {sayi} ürün (panelin hesabı)",
+    "abcSatissiz": "dönemde satışı yok",
+    "abcTumKanallar": "tüm kanallar"
   },
   "UrunSil": {
     "dugme": "Sil",
@@ -5928,7 +5931,8 @@
     "adetBasinaNet2Notu": "Kârı hesaplanmış {adet} adet",
     "kanalAov": "{tutar} · {siparis} sipariş",
     "odenecekKdv": "Ödenecek KDV",
-    "hesaplanmayanCiro": "Kârı hesaplanmayan satış"
+    "hesaplanmayanCiro": "Kârı hesaplanmayan satış",
+    "abcListeyiAc": "{sinif} sınıfındaki {sayi} ürünü listede aç"
   },
   "ListeKanallari": {
     "baslik": "Ürün listesinde gösterilecek pazaryerleri",

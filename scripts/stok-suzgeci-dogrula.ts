@@ -59,7 +59,8 @@ console.log("\n2) zincir — liste · Excel · adres");
   const liste = oku("src/app/urunler/page.tsx");
   kontrol("liste koşulu stoklu kimliklerden (ortak gövde)",
     /const stokKosulu = yalnizStoklu \? \{ id: \{ in: await stokluUrunIdleri\(\) \} \} : \{\};/.test(liste) &&
-      /const kosul = \{ AND: \[suzgecArama \?\? \{\}, tyKategori \? tyKategoriUrunKosulu\(tyKategori\) : \{\}, stokKosulu\] \};/.test(liste));
+      /* 09.10.2026: koşula ABC süzgeci eklendi (`abcKosulu`) — ölçüt eskidi, niyet aynı. */
+      /const kosul = \{ AND: \[suzgecArama \?\? \{\}, tyKategori \? tyKategoriUrunKosulu\(tyKategori\) : \{\}, stokKosulu, abcKosulu\] \};/.test(liste));
   kontrol("  ...sayım da AYNI koşulla (sayı = liste)", /prisma\.product\.count\(\{ where: kosul \}\)/.test(liste));
   kontrol("  ...Excel ve sayfalama süzgeci taşır", (liste.match(/parametreler=\{tasinan\}/g) ?? []).length === 2 &&
     /\[STOK_PARAMETRESI\]: yalnizStoklu \? "var" : undefined,/.test(liste));
