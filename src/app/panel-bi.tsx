@@ -9,6 +9,7 @@ import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { abcSiniflari, ABC_SINIRLARI, devirHizi, maliyetSurucuculeri, oranVeyaBos, stokGunu } from "@/lib/panel/bi";
 import { abcAdresi, abcGirdileriniYukle, type AbcKapsami } from "@/lib/panel/abc-kumesi";
 import { prisma } from "@/lib/prisma";
+import { suzgecAdresi } from "@/lib/suzgec";
 import type { Currency } from "@/generated/prisma/enums";
 
 /**
@@ -34,11 +35,19 @@ export async function PanelBi({
   kanal,
   para,
   an,
+  listeParametreleri,
 }: {
   donem: Pencere;
   kanal: string | null;
   para: Currency;
   an: Date;
+  /**
+   * RAKAM KAYNAĞINA GÖTÜRÜR (İlke #16, kullanıcı 09.10.2026): Satışlar listesinin
+   * süzgeci — panelin ÇÖZÜLMÜŞ dönemi + seçili kanal (`kargosuz` kutusuyla aynı
+   * kalıp). Ölçüldü (demo, son 30 gün): ciro ₺1.245.440,08 · 378 sipariş · 380 adet ·
+   * kanal 259/118/1 — panel = liste.
+   */
+  listeParametreleri: Record<string, string | undefined>;
 }) {
   const t = await getTranslations("PanelBi");
   const tk = await getTranslations("Kesinti");
@@ -131,6 +140,11 @@ export async function PanelBi({
   const abc = abcSiniflari(abcVerisi.girdiler);
 
   const tl = (n: number) => bicim.para(n, para);
+  /* Kaynak adresleri — Satışlar listesi ve envanter (stok değeri envanterin «Ödenen
+     (KDV dahil)» toplamıyla AYNI, ölçüldü 09.10: ₺2.502.671,99). */
+  const satisListesi = (ek: Record<string, string | undefined> = {}) => suzgecAdresi("/satislar", listeParametreleri, ek);
+  const hesaplananlar = satisListesi({ kar: "tam" });
+  const kaynak = "text-primary underline-offset-4 hover:underline";
   const kesintiAdi = (kod: string) => (tk.has(kod) ? tk(kod) : kod);
   const yok = t("hesaplanamaz");
 
@@ -140,7 +154,9 @@ export async function PanelBi({
       <Card className="min-w-0">
         <CardHeader>
           <CardTitle>{t("dagilimBaslik")}</CardTitle>
-          <p className="text-muted-foreground text-xs">{t("dagilimNotu", { ciro: tl(ciro) })}</p>
+          <p className="text-muted-foreground text-xs">
+            <Link href={satisListesi()} className={kaynak}>{t("dagilimNotu", { ciro: tl(ciro) })}</Link>
+          </p>
         </CardHeader>
         <CardContent>
           {suruculer.length === 0 ? (
@@ -151,7 +167,7 @@ export async function PanelBi({
                 <li key={s.kod} className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] items-center gap-3 text-sm">
                   <span className="truncate">{kesintiAdi(s.kod)}</span>
                   <PayCubugu oran={s.pay ?? 0} etiket={s.pay === null ? yok : bicim.yuzde(s.pay * 100)} />
-                  <span className="tabular-nums">{tl(s.tutar)}</span>
+                  <Link href={hesaplananlar} className={`tabular-nums ${kaynak}`}>{tl(s.tutar)}</Link>
                 </li>
               ))}
               {/* ÖDENECEK KDV = NET-1 − NET-2 (anayasa: NET-2, NET-1'den ödenecek KDV düşülmüş).
@@ -159,19 +175,19 @@ export async function PanelBi({
               <li className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] items-center gap-3 text-sm">
                 <span className="truncate">{t("odenecekKdv")}</span>
                 <PayCubugu oran={oranVeyaBos(net1 - net2, ciro) ?? 0} etiket={ciro > 0 ? bicim.yuzde(((net1 - net2) / ciro) * 100) : yok} />
-                <span className="tabular-nums">{tl(net1 - net2)}</span>
+                <Link href={hesaplananlar} className={`tabular-nums ${kaynak}`}>{tl(net1 - net2)}</Link>
               </li>
               {hesaplanmayanCiro > 0 ? (
                 <li className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] items-center gap-3 text-sm">
                   <span className="truncate">{t("hesaplanmayanCiro")}</span>
                   <PayCubugu oran={oranVeyaBos(hesaplanmayanCiro, ciro) ?? 0} etiket={bicim.yuzde((hesaplanmayanCiro / ciro) * 100)} />
-                  <span className="tabular-nums">{tl(hesaplanmayanCiro)}</span>
+                  <Link href={satisListesi({ kar: "eksik" })} className={`tabular-nums ${kaynak}`}>{tl(hesaplanmayanCiro)}</Link>
                 </li>
               ) : null}
               <li className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] items-center gap-3 border-t pt-2 text-sm font-medium">
                 <span>{t("net2Kalan")}</span>
                 <PayCubugu oran={Math.max(0, oranVeyaBos(net2, ciro) ?? 0)} etiket={ciro > 0 ? bicim.yuzde((net2 / ciro) * 100) : yok} />
-                <span className="tabular-nums">{tl(net2)}</span>
+                <Link href={hesaplananlar} className={`tabular-nums ${kaynak}`}>{tl(net2)}</Link>
               </li>
             </ul>
           )}
@@ -258,32 +274,37 @@ export async function PanelBi({
             <IstatistikKutusu
               etiket={t("devirHizi")}
               cocuk={devir === null ? yok : t("katSayisi", { kat: bicim.sayi(devir, 2) })}
-              altNot={<span className="text-muted-foreground">{t("devirNotu", { stok: tl(toplamStokDegeri), smm: tl(smm) })}</span>}
+              altNot={<Link href="/envanter-degeri" className={kaynak}>{t("devirNotu", { stok: tl(toplamStokDegeri), smm: tl(smm) })}</Link>}
             />
             <IstatistikKutusu
               etiket={t("stokGunu")}
               cocuk={gun === null ? yok : t("gunSayisi", { gun: bicim.sayi(gun, 0) })}
-              altNot={<span className="text-muted-foreground">{t("stokGunuNotu")}</span>}
+              altNot={<Link href="/envanter-degeri" className={kaynak}>{t("stokGunuNotu")}</Link>}
             />
             <IstatistikKutusu
               etiket={t("aov")}
               cocuk={aov === null ? yok : tl(aov)}
-              altNot={<span className="text-muted-foreground">{t("aovNotu", { siparis })}</span>}
+              altNot={<Link href={satisListesi()} className={kaynak}>{t("aovNotu", { siparis })}</Link>}
             />
             <IstatistikKutusu
               etiket={t("adetBasinaNet2")}
               cocuk={adetBasinaNet2 === null ? yok : tl(adetBasinaNet2)}
-              altNot={<span className="text-muted-foreground">{t("adetBasinaNet2Notu", { adet: net2Adet })}</span>}
+              altNot={<Link href={hesaplananlar} className={kaynak}>{t("adetBasinaNet2Notu", { adet: net2Adet })}</Link>}
             />
           </div>
           {kanalOzeti.size > 0 ? (
             <ul className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
               {[...kanalOzeti.entries()].map(([kod, k]) => (
-                <li key={kod} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
-                  <span className="truncate">{k.ad}</span>
-                  <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-                    {t("kanalAov", { tutar: tl(k.ciro / k.siparis), siparis: k.siparis })}
-                  </span>
+                <li key={kod}>
+                  <Link
+                    href={satisListesi({ kanal: kod })}
+                    className="hover:bg-accent/50 flex min-h-11 items-center justify-between gap-3 rounded-lg border px-3 py-2"
+                  >
+                    <span className="text-primary truncate underline-offset-4">{k.ad}</span>
+                    <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                      {t("kanalAov", { tutar: tl(k.ciro / k.siparis), siparis: k.siparis })}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>

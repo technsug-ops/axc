@@ -3615,7 +3615,16 @@ export default async function AnaSayfa({
           Beş sekme üçe indi ve her sekme daha çok şey söylüyor. */}
       {/* ALGORİTMO KIYASI (kullanıcı kararı 07.10.2026): paranın dağılımı · ABC ·
           stok verimi. Kâr içerir — yalnız `satis.kar.gor`. Hesap `lib/panel/bi.ts`. */}
-      {karGorunur ? <PanelBi donem={donem} kanal={seciliKanal} para={seciliPara} an={an} /> : null}
+      {karGorunur ? (
+        <PanelBi
+          donem={donem}
+          kanal={seciliKanal}
+          para={seciliPara}
+          an={an}
+          /* Rakamlar Satışlar listesine panelin ÇÖZÜLMÜŞ dönemiyle gider (kargosuz kutusuyla aynı kalıp). */
+          listeParametreleri={{ pencere: donemTuru, baslangic: parametreler.baslangic, bitis: parametreler.bitis, kanal: seciliKanal || undefined }}
+        />
+      ) : null}
       {/* K270: ürün analizi telefonda MENÜDE (`/rapor/urunler`) — onaylanan demo. */}
       <div className="max-md:hidden">
       <SekmeliBolum
