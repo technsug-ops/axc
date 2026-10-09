@@ -177,7 +177,7 @@ export default async function UrunlerSayfasi({
         variantId: true,
         channelSku: true,
         externalListingId: true,
-        channelAccount: { select: { externalId: true, channel: { select: { code: true } } } },
+        channelAccount: { select: { externalId: true, magazaAdi: true, channel: { select: { code: true } } } },
       },
     }),
   ]);
@@ -189,7 +189,7 @@ export default async function UrunlerSayfasi({
       const kayitlar = kanalKayitlari.filter((k) => k.variantId === variantId && k.channelAccount.channel.code === kod);
       if (kayitlar.length === 0) return { kod, ad, durum: "KAYIT_YOK", adres: null };
       for (const k of kayitlar) {
-        const adres = ilanAdresi(kod, { channelSku: k.channelSku, externalListingId: k.externalListingId, saticiId: k.channelAccount.externalId });
+        const adres = ilanAdresi(kod, { channelSku: k.channelSku, externalListingId: k.externalListingId, saticiId: k.channelAccount.externalId, magazaAdi: k.channelAccount.magazaAdi });
         if (adres) return { kod, ad, durum: "LINK", adres };
       }
       return { kod, ad, durum: "LINK_YOK", adres: null };

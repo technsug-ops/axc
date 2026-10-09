@@ -362,3 +362,39 @@ export async function listeKanallariniKaydet(
   revalidatePath("/ayarlar/kanallar");
   return { basari: secilen.length === 0 ? tListe("kaydedildiBos") : tListe("kaydedildi") };
 }
+
+/* ═══ MAĞAZA ADI — ilan linkindeki `?magaza=` (K320, kullanıcı kararı 09.10.2026) ═══
+   Pazaryerindeki mağaza adı satış hesabına yazılır (`ChannelAccount.magazaAdi`).
+   `name`den AYRI: o bir etikettir, yeniden adlandırılınca linkler bozulmasın.
+   Boş değer bilerek bir seçimdir → `null` (link mağaza belirtmez). Ad, linkte
+   bir parça olacağı için boşluk ve `?`/`&`/`/`/`#` kabul edilmez — sessizce
+   düzeltilmez, neden kaydedilmediği söylenir (İlke #5). */
+export type MagazaAdiDurumu = { hata?: string; basari?: string };
+
+export async function kanalHesabiMagazaAdiKaydet(
+  _oncekiDurum: MagazaAdiDurumu,
+  formData: FormData,
+): Promise<MagazaAdiDurumu> {
+  await yetkiIste("ayar.yaz");
+  const tMagaza = await getTranslations("MagazaAdi");
+
+  const id = String(formData.get("id") ?? "");
+  const ham = String(formData.get("magazaAdi") ?? "").trim();
+  if (!id) return { hata: tMagaza("bulunamadi") };
+  if (ham.length > 191) return { hata: tMagaza("cokUzun") };
+  if (/[\s?&/#]/.test(ham)) return { hata: tMagaza("gecersiz") };
+
+  const hesap = await prisma.channelAccount.findUnique({ where: { id }, select: { id: true, name: true, satisIcin: true } });
+  if (!hesap) return { hata: tMagaza("bulunamadi") };
+  if (!hesap.satisIcin) return { hata: tMagaza("yalnizSatis") };
+
+  try {
+    await prisma.channelAccount.update({ where: { id }, data: { magazaAdi: ham === "" ? null : ham } });
+  } catch (e) {
+    console.error("kanalHesabiMagazaAdiKaydet", e);
+    return { hata: tMagaza("kaydedilemedi") };
+  }
+  revalidatePath("/urunler");
+  revalidatePath("/ayarlar/kanallar");
+  return { basari: ham === "" ? tMagaza("kaydedildiBos", { ad: hesap.name }) : tMagaza("kaydedildi", { ad: hesap.name, magaza: ham }) };
+}

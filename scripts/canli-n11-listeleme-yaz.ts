@@ -136,7 +136,7 @@ export async function n11ListelemeCekimKos(ayar: {
   const saticiId = [...saticiIdleri][0]!;
   const hesap = await prisma.channelAccount.findFirst({
     where: { channel: { code: "N11" }, externalId: saticiId },
-    select: { id: true, name: true, externalId: true },
+    select: { id: true, name: true, externalId: true, magazaAdi: true },
   });
   if (!hesap) {
     console.log(`   ⛔ externalId=${saticiId} olan N11 hesabı YOK — adla aranmaz, açılması gerekir.`);
@@ -153,8 +153,12 @@ export async function n11ListelemeCekimKos(ayar: {
     const anahtar = n11Anahtari(l);
     const { durum, kaynak } = n11ListelemeDurumu(l);
     const adet = n11Adedi(l.quantity);
-    /** İlan adresi kimliği (07.10.2026): `n11ProductId` — ölçüldü 20/20 dolu. */
-    const ilan = l.n11ProductId === null || l.n11ProductId === undefined || String(l.n11ProductId).trim() === "" ? null : String(l.n11ProductId).trim();
+    /**
+     * İlan adresi kimliği: **`groupId`** (Halil testi 09.10.2026). İlk hâli
+     * `n11ProductId`ydi (07.10) ve link N11 ana sayfasına düşüyordu — kullanıcının
+     * kendi linkindeki sayı `groupId` çıktı (ölçüldü: 113/113 dolu).
+     */
+    const ilan = l.groupId === null || l.groupId === undefined || String(l.groupId).trim() === "" ? null : String(l.groupId).trim();
     dagilim.set(`${durum} · ${kaynak}`, (dagilim.get(`${durum} · ${kaynak}`) ?? 0) + 1);
     if (anahtar === "") {
       anahtarsiz++;
@@ -232,6 +236,21 @@ export async function n11ListelemeCekimKos(ayar: {
       hata: 0,
       yazdiMi: false,
     };
+  }
+  /**
+   * MAĞAZA ADI (K320, 09.10.2026) — ilan linkindeki `?magaza=`. Kanalın KENDİ
+   * cevabından (`sellerNickname`): tek değer gelmiyorsa YAZILMAZ (biri seçilmez).
+   * Kanalın son beyanı esastır; farklıysa güncellenir ve ekranda yazılır.
+   */
+  const takmaAdlar = new Set(listingler.map((l) => String(l.sellerNickname ?? "").trim()).filter((s) => s !== ""));
+  if (takmaAdlar.size === 1) {
+    const magaza = [...takmaAdlar][0]!;
+    if (hesap.magazaAdi !== magaza) {
+      await prisma.channelAccount.update({ where: { id: hesap.id }, data: { magazaAdi: magaza } });
+      console.log(`   mağaza adı: ${hesap.magazaAdi ?? "(boş)"} → ${magaza}`);
+    }
+  } else {
+    console.log(`   ⚠ mağaza adı yazılmadı — kanal ${takmaAdlar.size} farklı mağaza adı döndü`);
   }
   const { hbListelemeDurumunuYaz } = await import("../src/lib/kanal-listeleme-hb-yaz");
   const y2 = await hbListelemeDurumunuYaz(

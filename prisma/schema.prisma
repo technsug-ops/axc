@@ -992,6 +992,13 @@ model ChannelAccount {
   code       String // kanal içinde benzersiz kısa kod
   name       String // "TR Ana Mağaza"
   externalId String? // pazaryerindeki satıcı/mağaza kimliği
+  /// ── MAĞAZA ADI — pazaryeri ilan linkindeki `?magaza=` (K320, kullanıcı kararı 09.10.2026) ──
+  /// Pazaryerinin kendi linkindeki `?magaza=` değeri (HB ve N11; ad firma VERİSİDİR).
+  /// `name`den AYRI: `name` ekranda okunan bir ETİKETTİR, yeniden adlandırılınca
+  /// linkler sessizce bozulmasın. N11'de kanalın kendi cevabından (`sellerNickname`)
+  /// dolar; HB'nin ilan ucu bunu VERMİYOR (ölçüldü 09.10) → Kanal Hesapları'ndan yazılır.
+  /// Boşsa link mağaza belirtmez (pazaryeri öne çıkan satıcıyı açar).
+  magazaAdi String?
 
   /// ── API KİMLİĞİ — `externalId`DEN AYRI, VE AYRI OLMASI ZORUNLU (K184) ──
   ///
