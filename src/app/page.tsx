@@ -1121,31 +1121,6 @@ export default async function AnaSayfa({
    * Payda yoksa satır HİÇ ÇİZİLMEZ — "%0" yazmak "kâr yok" demektir, oysa
    * doğru cevap "hesaplanamıyor"dur.
    */
-  /**
-   * GÖREV ŞERİDİ TEK GÖVDE (08.10.2026) — iki yerde çizilir: dönemde satış
-   * varsa Huni satırının İÇİNDE (gömülü, «tek şerit» kararı), yoksa tek başına.
-   * Props tek yerde; iki kopya olsaydı adresler ayrışırdı (İlke #16).
-   */
-  function gorevSeridi(gomulu: boolean) {
-    return (
-      <GorevKutusu
-        gomulu={gomulu}
-        sayilar={gorevSayilari}
-        ilerlemeler={{ kargoBekleyen: paketlenen }}
-        /*
-          ⚠ ADRES KUTUNUN KENDİ HEDEFİNİ DARALTIYOR, DEĞİŞTİRMİYOR:
-          `kargo=bekleyen` korunuyor, üstüne `paket=hazirlanan`
-          ekleniyor. Yalnız `paket=hazirlanan` yazsaydık kargoya
-          VERİLMİŞ eski siparişler de listeye girer, liste rakamdan
-          büyük çıkardı — sayının tıklanınca kendini doğrulamaması
-          en sinsi hata olurdu.
-        */
-        ilerlemeAdresleri={{
-          kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
-        }}
-      />
-    );
-  }
 
   function oranSatirlari(
     kar: number,
@@ -1703,6 +1678,35 @@ export default async function AnaSayfa({
      */
     vitrinKutusunuTopla(),
   ]);
+
+  /**
+   * GÖREV ŞERİDİ TEK GÖVDE (08.10.2026) — iki yerde çizilir: dönemde satış
+   * varsa Huni satırının İÇİNDE (gömülü, «tek şerit» kararı), yoksa tek başına.
+   * Props tek yerde; iki kopya olsaydı adresler ayrışırdı (İlke #16).
+   * ⚠ BURADA, `gorevSayilari`/`paketlenen` hesaplandıktan SONRA tanımlı (09.10.2026):
+   * önceki yeri kullandığı değerlerden önceydi (lint `no-use-before-define`);
+   * çağrılar zaten aşağıda olduğu için davranış değişmedi.
+   */
+  function gorevSeridi(gomulu: boolean) {
+    return (
+      <GorevKutusu
+        gomulu={gomulu}
+        sayilar={gorevSayilari}
+        ilerlemeler={{ kargoBekleyen: paketlenen }}
+        /*
+          ⚠ ADRES KUTUNUN KENDİ HEDEFİNİ DARALTIYOR, DEĞİŞTİRMİYOR:
+          `kargo=bekleyen` korunuyor, üstüne `paket=hazirlanan`
+          ekleniyor. Yalnız `paket=hazirlanan` yazsaydık kargoya
+          VERİLMİŞ eski siparişler de listeye girer, liste rakamdan
+          büyük çıkardı — sayının tıklanınca kendini doğrulamaması
+          en sinsi hata olurdu.
+        */
+        ilerlemeAdresleri={{
+          kargoBekleyen: "/satislar?kargo=bekleyen&paket=hazirlanan",
+        }}
+      />
+    );
+  }
 
   const seri = aylikSeri(
     satislar,

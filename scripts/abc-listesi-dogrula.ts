@@ -73,7 +73,7 @@ console.log("\n1) kural — değerle");
     coz !== null && coz.kova === "B" && coz.kapsam.baslangic.getTime() === kapsam.baslangic.getTime() &&
       coz.kapsam.bitisHaric.getTime() === kapsam.bitisHaric.getTime() && coz.kapsam.para === "TRY" && coz.kapsam.kanal === "TRENDYOL", coz);
   const tumKanal = abcSuzgeciCoz(decodeURIComponent(abcAdresi("SATISSIZ", { ...kapsam, kanal: null }).split("=")[1] ?? ""));
-  kontrol("kanalsız kapsam → kanal null (tüm kanallar)", tumKanal?.kanal === undefined && tumKanal?.kapsam.kanal === null && tumKanal?.kova === "SATISSIZ");
+  kontrol("kanalsız kapsam → kanal null (tüm kanallar)", tumKanal !== null && tumKanal.kapsam.kanal === null && tumKanal.kova === "SATISSIZ");
   for (const [ad, ham] of [
     ["bilinmeyen sınıf", "D~1~2~TRY~"],
     ["bilinmeyen para", "A~1~2~USD~"],
