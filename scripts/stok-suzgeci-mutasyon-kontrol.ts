@@ -31,7 +31,7 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ADRES DEGERI SINIRSIZ", yon: "FAZLADAN", dosya: GOVDE,
     bul: '  return ham === "var";', koy: "  return Boolean(ham);", bozdugu: "stok=0 gibi bir adres de suzer" },
   { ad: "LISTE SUZMUYOR", yon: "KALDIRAN", dosya: LISTE,
-    bul: "tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu] };", koy: "tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}] };", bozdugu: "dugme hicbir sey gizlemez" },
+    bul: "tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu, abcKosulu] };", koy: "tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, abcKosulu] };", bozdugu: "dugme hicbir sey gizlemez" },
   { ad: "YENI ARAMA SUZGECI DUSURUYOR", yon: "KALDIRAN", dosya: LISTE,
     bul: '          ...(yalnizStoklu ? { [STOK_PARAMETRESI]: "var" } : {}),\n', koy: "", bozdugu: "arama yapinca stoksuzlar geri gelir" },
   { ad: "EXCEL SUZMUYOR", yon: "KALDIRAN", dosya: EXCEL,

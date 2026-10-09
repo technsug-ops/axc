@@ -31,6 +31,7 @@ import { prisma } from "@/lib/prisma";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaCoz } from "@/lib/sayfalama";
 import { urunAramaKosulu } from "@/lib/urun-arama";
+import { ABC_PARAMETRESI, abcSuzgeciCoz, abcUrunIdleri } from "@/lib/panel/abc-kumesi";
 import { STOK_PARAMETRESI, stokluUrunIdleri, stokSuzgeciCoz, urunStoklari } from "@/lib/stok";
 
 import { SilButonu } from "./sil-butonu";
@@ -46,7 +47,7 @@ export async function generateMetadata() {
 export default async function UrunlerSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sayfa?: string; tyKategori?: string; stok?: string }>;
+  searchParams: Promise<{ q?: string; sayfa?: string; tyKategori?: string; stok?: string; abc?: string }>;
 }) {
   const baglam = await sayfaIzni("urun.gor");
   /* K273-③: resimsiz kutuda "resim ekle" rozeti yalnız ürün düzenleme izniyle. */
@@ -54,7 +55,9 @@ export default async function UrunlerSayfasi({
   /* K284: şüpheli sayısı listeyle AYNI gövdeden; yalnız düzenleme izniyle (ekran urun.yaz ister). */
   const supheli = resimEkleyebilir ? await supheliSayisi() : null;
 
-  const { q, sayfa, tyKategori: tyHam, stok: stokHam } = await searchParams;
+  const { q, sayfa, tyKategori: tyHam, stok: stokHam, abc: abcHam } = await searchParams;
+  /* ABC sınıfı (09.10.2026) — panelin ABC satırından gelir; küme panelle AYNI gövdeden. */
+  const abc = abcSuzgeciCoz(abcHam);
   /* «Stokta olmayanları gizle» (kullanıcı isteği 07.10.2026) — adreste `stok=var`. */
   const yalnizStoklu = stokSuzgeciCoz(stokHam);
   const arama = (q ?? "").trim();
@@ -82,18 +85,21 @@ export default async function UrunlerSayfasi({
   /* ⚠ AND ile eklenir, spread ile değil — arama koşulu ezilmesin. */
   /* Stok süzgeci: ürün TOPLAM stoğu > 0 — «Toplam stok» sütunuyla aynı ölçü (`stokluUrunIdleri`). */
   const stokKosulu = yalnizStoklu ? { id: { in: await stokluUrunIdleri() } } : {};
-  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu] };
+  const abcKosulu = abc ? { id: { in: await abcUrunIdleri(prisma, abc.kova, abc.kapsam) } } : {};
+  const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu, abcKosulu] };
   /** Adreste taşınan süzgeçler — arama, sayfalama, Excel ve düğme aynı kümeyi kullanır. */
   const tasinan = {
     q: arama || undefined,
     [TY_KATEGORI_PARAMETRESI]: tyKategori ?? undefined,
     [STOK_PARAMETRESI]: yalnizStoklu ? "var" : undefined,
+    [ABC_PARAMETRESI]: abc ? abcHam : undefined,
   };
   const stokDugmesiAdresi = (() => {
     const p = new URLSearchParams();
     if (arama) p.set("q", arama);
     if (tyKategori) p.set(TY_KATEGORI_PARAMETRESI, tyKategori);
     if (!yalnizStoklu) p.set(STOK_PARAMETRESI, "var");
+    if (abc && abcHam) p.set(ABC_PARAMETRESI, abcHam);
     const d = p.toString();
     return d ? `/urunler?${d}` : "/urunler";
   })();
@@ -284,6 +290,7 @@ export default async function UrunlerSayfasi({
         tasinanlar={{
           ...(tyKategori ? { [TY_KATEGORI_PARAMETRESI]: tyKategori } : {}),
           ...(yalnizStoklu ? { [STOK_PARAMETRESI]: "var" } : {}),
+          ...(abc && abcHam ? { [ABC_PARAMETRESI]: abcHam } : {}),
         }}
         ipucu={t("aramaIpucu")}
       />
@@ -303,7 +310,26 @@ export default async function UrunlerSayfasi({
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <Badge variant="secondary">{t("tyKategoriSuzgeci", { ad: tyKategori })}</Badge>
           {/* Stok süzgeci açıksa KALIR — yalnız TY kategorisi kalkar. */}
-          <Baglanti href={(() => { const p = new URLSearchParams(); if (arama) p.set("q", arama); if (yalnizStoklu) p.set(STOK_PARAMETRESI, "var"); const d = p.toString(); return d ? `/urunler?${d}` : "/urunler"; })()} className="inline-flex min-h-11 items-center md:min-h-0">
+          <Baglanti href={(() => { const p = new URLSearchParams(); if (arama) p.set("q", arama); if (yalnizStoklu) p.set(STOK_PARAMETRESI, "var"); if (abc && abcHam) p.set(ABC_PARAMETRESI, abcHam); const d = p.toString(); return d ? `/urunler?${d}` : "/urunler"; })()} className="inline-flex min-h-11 items-center md:min-h-0">
+            {t("suzgeciKaldir")}
+          </Baglanti>
+        </div>
+      ) : null}
+
+      {/* ABC SÜZGECİ (09.10.2026) — panelin ABC satırından gelindi; süzgeç GÖRÜNÜR,
+          kapsamı (dönem · kanal) yazar ve tek tıkla kalkar (İlke #5, #16). */}
+      {abc ? (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <Badge variant="secondary">
+            {t("abcSuzgeci", {
+              sinif: abc.kova === "SATISSIZ" ? t("abcSatissiz") : abc.kova,
+              bas: bicim.tarih(abc.kapsam.baslangic),
+              bit: bicim.tarih(new Date(abc.kapsam.bitisHaric.getTime() - 1)),
+              kanal: abc.kapsam.kanal ?? t("abcTumKanallar"),
+              sayi: toplam,
+            })}
+          </Badge>
+          <Baglanti href={(() => { const p = new URLSearchParams(); if (arama) p.set("q", arama); if (yalnizStoklu) p.set(STOK_PARAMETRESI, "var"); if (tyKategori) p.set(TY_KATEGORI_PARAMETRESI, tyKategori); const d = p.toString(); return d ? `/urunler?${d}` : "/urunler"; })()} className="inline-flex min-h-11 items-center md:min-h-0">
             {t("suzgeciKaldir")}
           </Baglanti>
         </div>

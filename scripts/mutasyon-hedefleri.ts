@@ -144,6 +144,8 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "ilan-adresi-mutasyon:kontrol",
   /* 09.10.2026: satış/alım listesi + liste-suzgeci + Excel listesi + liste kartı — liste denetimleriyle aynı dosyalar. */
   "iptal-gorunurluk-mutasyon:kontrol",
+  /* 09.10.2026: panel-bi + ürünler sayfası + Excel listesi — panel ve liste denetimleriyle aynı dosyalar. */
+  "abc-listesi-mutasyon:kontrol",
   /* 07.10.2026: ürün listesi + Excel listesi + stok gövdesi — ilan-adresi ve liste denetimleriyle aynı dosyalar. */
   "stok-suzgeci-mutasyon:kontrol",
   /* 07.10.2026: layout.tsx (başlık betiği) + globals.css + tema-secici — panel ve kabuk denetimleriyle aynı dosyalar. */

@@ -125,7 +125,8 @@ console.log("\n3) kategori sayısı → ürün listesi (sayı = liste)");
   kontrol("  ...«N ürün» bağlantı (sıfırda bağlantı YOK)", /s\.urun > 0 \? \(\s*<Baglanti href=\{tyKategoriListeAdresi\(s\.tyKategori\)\}>/.test(sayfa));
   const urunler = oku("src/app/urunler/page.tsx");
   /* ⚠ ÇAPA TAŞINDI (07.10.2026): AND dizisine stok süzgeci (`stokKosulu`) eklendi; ölçüt aynı — spread yok, arama ezilmez. */
-  kontrol("Ürünler: süzgeç ortak koşulla, AND ile (arama ezilmez)", urunler.includes("const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu] };"));
+  /* ⚠ ÇAPA TAŞINDI (09.10.2026): AND dizisine ABC süzgeci (`abcKosulu`) eklendi; ölçüt aynı. */
+  kontrol("Ürünler: süzgeç ortak koşulla, AND ile (arama ezilmez)", urunler.includes("const kosul = { AND: [suzgecArama ?? {}, tyKategori ? tyKategoriUrunKosulu(tyKategori) : {}, stokKosulu, abcKosulu] };"));
   kontrol("  ...sayım ve liste AYNI koşul", urunler.includes("prisma.product.count({ where: kosul })") && urunler.includes("where: kosul,"));
   kontrol("  ...süzgeç ekranda yazıyor ve kaldırılabilir", urunler.includes('t("tyKategoriSuzgeci", { ad: tyKategori })') && urunler.includes('t("suzgeciKaldir")'));
   /* ⚠ ÖLÇÜT TAŞINDI (07.10.2026): sayfalama ve Excel artık TEK `tasinan` nesnesinden okuyor

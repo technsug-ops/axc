@@ -496,7 +496,10 @@
     "suzgeciKaldir": "",
     "stoksuzlariGizle": "",
     "stoksuzlarGizli": "",
-    "stoksuzlarGizliNot": ""
+    "stoksuzlarGizliNot": "",
+    "abcSuzgeci": "",
+    "abcSatissiz": "",
+    "abcTumKanallar": ""
   },
   "UrunSil": {
     "dugme": "",
@@ -5345,6 +5348,7 @@
     "adetBasinaNet2Notu": "",
     "kanalAov": "",
     "odenecekKdv": "",
-    "hesaplanmayanCiro": ""
+    "hesaplanmayanCiro": "",
+    "abcListeyiAc": ""
   }
 }
