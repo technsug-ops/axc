@@ -241,16 +241,14 @@ export async function n11ListelemeCekimKos(ayar: {
    * MAĞAZA ADI (K320, 09.10.2026) — ilan linkindeki `?magaza=`. Kanalın KENDİ
    * cevabından (`sellerNickname`): tek değer gelmiyorsa YAZILMAZ (biri seçilmez).
    * Kanalın son beyanı esastır; farklıysa güncellenir ve ekranda yazılır.
+   * Karar ve yazım `src/lib/kanal-magaza-adi.ts`te (betik doğrudan yazmaz).
    */
-  const takmaAdlar = new Set(listingler.map((l) => String(l.sellerNickname ?? "").trim()).filter((s) => s !== ""));
-  if (takmaAdlar.size === 1) {
-    const magaza = [...takmaAdlar][0]!;
-    if (hesap.magazaAdi !== magaza) {
-      await prisma.channelAccount.update({ where: { id: hesap.id }, data: { magazaAdi: magaza } });
-      console.log(`   mağaza adı: ${hesap.magazaAdi ?? "(boş)"} → ${magaza}`);
-    }
-  } else {
-    console.log(`   ⚠ mağaza adı yazılmadı — kanal ${takmaAdlar.size} farklı mağaza adı döndü`);
+  const { kanalMagazaAdiCoz, kanalMagazaAdiniYaz } = await import("../src/lib/kanal-magaza-adi");
+  const magaza = kanalMagazaAdiCoz(listingler.map((l) => l.sellerNickname));
+  if (magaza === null) {
+    console.log("   ⚠ mağaza adı yazılmadı — kanal tek bir mağaza adı döndürmedi");
+  } else if ((await kanalMagazaAdiniYaz(prisma, hesap, magaza)) !== null) {
+    console.log(`   mağaza adı: ${hesap.magazaAdi ?? "(boş)"} → ${magaza}`);
   }
   const { hbListelemeDurumunuYaz } = await import("../src/lib/kanal-listeleme-hb-yaz");
   const y2 = await hbListelemeDurumunuYaz(
