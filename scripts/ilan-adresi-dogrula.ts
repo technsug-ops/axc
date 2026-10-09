@@ -1,4 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
+import { kanalMagazaAdiCoz } from "../src/lib/kanal-magaza-adi";
 import { ilanAdresi, ILAN_ADRESI_KALIPLARI, listeKanallariCoz, LISTE_KANALI_TAVANI, MAGAZA_ADI_KULLANAN_KANALLAR, VARSAYILAN_LISTE_KANALLARI } from "../src/lib/kanal-ilan-adresi";
 
 /**
@@ -105,9 +106,16 @@ console.log("\n2) yazıcı zinciri");
   const n11 = oku("scripts/canli-n11-listeleme-yaz.ts");
   kontrol("N11 betiği groupId'yi kimlik olarak geçirir (n11ProductId DEĞİL — Halil testi 09.10)",
     /const ilan = l\.groupId === null[^\n]*String\(l\.groupId\)\.trim\(\);/.test(n11) && !/l\.n11ProductId/.test(n11) && /ilanKimligi: v\.ilan \}/.test(n11));
-  kontrol("  ...mağaza adını kanalın KENDİ cevabından (sellerNickname) yazar — yalnız TEK değer gelirse",
-    /new Set\(listingler\.map\(\(l\) => String\(l\.sellerNickname \?\? ""\)\.trim\(\)\)/.test(n11) &&
-      /if \(takmaAdlar\.size === 1\) \{[\s\S]{0,200}?if \(hesap\.magazaAdi !== magaza\) \{\s*await prisma\.channelAccount\.update\(\{ where: \{ id: hesap\.id \}, data: \{ magazaAdi: magaza \} \}\);/.test(n11));
+  kontrol("  ...mağaza adını kanalın KENDİ cevabından (sellerNickname) çözer ve ortak gövdeyle yazar",
+    /const magaza = kanalMagazaAdiCoz\(listingler\.map\(\(l\) => l\.sellerNickname\)\);/.test(n11) &&
+      /\(await kanalMagazaAdiniYaz\(prisma, hesap, magaza\)\)/.test(n11));
+  /* Karar SAF gövdede — değerle (ayrımın iki yakası: tek ad / çok ad / boş). */
+  kontrol("  ...TEK ad gelirse o ad (boşluk ve boş değer sayılmaz)", kanalMagazaAdiCoz(["AXC", " AXC ", "", null]) === "AXC");
+  kontrol("  ...birden çok FARKLI ad gelirse null (biri seçilmez)", kanalMagazaAdiCoz(["AXC", "BAŞKA"]) === null);
+  kontrol("  ...hiç ad gelmezse null", kanalMagazaAdiCoz([]) === null && kanalMagazaAdiCoz([undefined, ""]) === null);
+  const yazGovde = oku("src/lib/kanal-magaza-adi.ts");
+  kontrol("  ...yazım: ad yoksa ya da kayıtlıyla aynıysa YAZMAZ, farklıysa kanal hesabına yazar",
+    /if \(ad === null \|\| hesap\.magazaAdi === ad\) return null;\s*await db\.channelAccount\.update\(\{ where: \{ id: hesap\.id \}, data: \{ magazaAdi: ad \} \}\);/.test(yazGovde));
   kontrol("  ...kimlik farkı da DEĞİŞİKLİK sayılır (yalnız durum/adet değil)",
     /s\.externalListingId !== bulunan\.ilan\)/.test(n11));
   const hb = oku("scripts/canli-hb-listeleme-yaz.ts");

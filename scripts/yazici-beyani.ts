@@ -102,16 +102,6 @@ export const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string 
     bekcisi: "hakedis-yazici:dogrula",
   },
   {
-    dosya: "canli-n11-listeleme-yaz.ts",
-    gerekce:
-      "K320 (09.10.2026) — N11 ilan okuması: listeleme durumu/adet/ilan kimliği " +
-      "(`groupId`) ortak yazıcıdan (`kanal-listeleme-hb-yaz.ts`) geçer; DOĞRUDAN " +
-      "yazdığı tek alan `ChannelAccount.magazaAdi` — kanalın kendi cevabındaki " +
-      "`sellerNickname`, yalnız TEK değer gelirse ve kayıtlıdan farklıysa. N11 API " +
-      "yalnız GET; `--uygula` yoksa kuru koşum.",
-    bekcisi: "ilan-adresi:dogrula",
-  },
-  {
     dosya: "canli-tex-desi-onar.ts",
     gerekce:
       "08.10.2026 — GEÇMİŞ ONARIMI: Trendyol Express'te yapışan geçici 5 desi. " +
