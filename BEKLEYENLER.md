@@ -13,7 +13,7 @@
 
 ---
 
-## 🔶 K326 — TRENDYOL EXPRESS: GEÇİCİ 5 DESİ YAPIŞIYORDU · 08.10.2026 · [CANLIDA 791de92 · 8ac2594 — GEÇMİŞ ONARILDI 08.10 — HALİL TESTİ BEKLİYOR]
+## 🔴 K326 — TRENDYOL EXPRESS: GEÇİCİ 5 DESİ YAPIŞIYORDU · 08.10.2026 · [CANLIDA 791de92 · 8ac2594 — HALİL TESTİ 09.10: ① ③ GEÇTİ (nihai desi doğru) · ④ DÜŞTÜ — tahmini desi ürün kartından gelmiyor; DÜZELTME ONAY BEKLİYOR]
 
 **Kullanıcı:** «Trendyol'da 1 desi görünenler burada 5 desi kaydediyor.»
 **Ölçüldü (TY API, yalnız GET):** paket kargodayken `cargoDeci = 5` (geçici), teslimden sonra gerçek değer (örnekler 1 · 1 · 3).
@@ -23,9 +23,15 @@
 **Ölçüldü 08.10 (canlı, salt okuma):** TEX satış 51 · tahmini de gerçek kargosu da boş olan **0**.
 **Halil testi (canlı):** ① Satışlar → `11665736194` ara → detay: kargo firması Trendyol Express · desi **3** (eski 5) · tahmini kargo **₺93,63** (eski ₺107,98) · NET-2 **₺118,29** · ② aynı siparişi Trendyol satıcı panelinde aç → desi orada da 3 · ③ `11666523593` → desi **6** (gerçek desi büyükse yukarı da düzelir) · tahmini kargo **₺118,30** · NET-2 **₺301,12** · ④ bugün gelen, henüz teslim edilmemiş bir Trendyol Express siparişi → desi satırında 5 YAZMAZ; tahmin ürün desisiyle.
 
+─── ② **09.10.2026 — HALİL TESTİ ④ DÜŞTÜ (kullanıcı):** «Tahmini desiler yanlış, ürünün kartındaki desi değil · `11691326264` bugün gelen sipariş, ürün kartında desi 2, sipariş kaydında tahmini desi 3.»
+**Ölçüldü (canlı, salt okuma):** `11691326264` · kayıt 09.10 04:57:13Z · TEX, kargoda · `kanalKargoDesi` null (08.10 kuralı gereği) · ürün `OYU-FSP-0001` desi **2** · `cargoDesi` **3** · tahmini kargo ₺81,95 · `SIPARIS_ONAYI` (OTOMATIK_TEK_PARTI) **04:57:15Z**.
+**KÖK (08.10 düzeltmemin kusuru):** ① içe aktarma yeni satışa `cargoDesi` YAZMIYOR → ② otomatik onay iki saniye sonra kârı hesaplıyor; `desiSecimi` tartım da tahmin de boş görünce **KÜRESEL ortancaya (`KURESEL_DESI_ORTANCASI = 3`)** düşüyor ve `karYenidenYaz` o 3'ü `cargoDesi`ye YAZIYOR → ③ ürün desisiyle tahmin bloğu yalnız `tahminiKargo` BOŞKEN koşuyor; tahmin artık dolu → **hiç koşmuyor**. Ürün desisiyle tahmin sözü hiçbir yeni siparişte tutmuyor.
+**İKİNCİ KUSUR (şemadaki alan da bir iddiadır):** `cargoDesi` «ürün bazlı tahmin, hiç değişmez» diye beyanlı (`kargo-tartim-tazele.ts:31`) ama `karYenidenYaz` her yeniden hesapta üstüne `desiSecimi` sonucunu (tartım ya da küresel) yazıyor → `11666523593`: kart 4, kayıt 6.
+**Öneri (onay bekliyor):** ① satış sisteme ilk yazıldığında `cargoDesi` = Σ ürün desisi × adet (`urunDesisiToplami`; bilinmiyorsa null) · ② `karYenidenYaz` `cargoDesi`nin üstüne yazmasın (hesap tartım öncelikli kalır, yalnız tahmin korunur) · ③ geçmişte etkilenen satışlar önce SAYILIR (salt okuma); onarım sayı görülüp onay alındıktan sonra, anlık görüntüyle.
+
 ---
 
-## 🔶 K325 — HB KARGOSU HAKEDİŞTEN: GERÇEK KESİNTİ DEFTERE · 07.10.2026 · [KOŞTU e244fef — HALİL TESTİ BEKLİYOR]
+## 🟢 K325 — HB KARGOSU HAKEDİŞTEN: GERÇEK KESİNTİ DEFTERE · 07.10.2026 · [KOŞTU e244fef — HALİL TESTİ GEÇTİ 09.10.2026; MİMAR ONAYI BEKLİYOR (hakedişte 112,80 ÷ 1,20 = 94,00 · 94,20 ÷ 1,20 = 78,50, kuruşuna)]
 
 **Kullanıcı kararı 07.10.2026:** «Esas olan hakedişte kesilen kargo.»
 **Yazım** `canli-hakedis-kargo-yaz.ts`: HB hakediş dosyalarındaki KARGO kesintisi **÷1,20** (KDV hariç) → `cargoAmount` (gerçekleşen). **550 sipariş** yazıldı (07.10 18:25–18:36Z) · tahmini kargo yerinde KALDI (yan yana okunur) · **84 çok satırlı sipariş HÜKÜM YOK** (bir siparişte birden çok kargo satırı → hangisinin bu satışa ait olduğu ayırt edilemedi; yazılmadı) · anlık görüntü + satır başına `HAKEDIS_KARGO_YAZIM` izi (eski/yeni kargo, eski NET-2) · ikinci koşum **0**.
@@ -33,7 +39,7 @@
 
 ---
 
-## 🔶 K324 — KARGO TARİFESİ KARGOYA VERİLİŞ GÜNÜNE GÖRE + TY 05.10.2026 TARİFESİ · 07.10.2026 · [CANLIDA fbd47b5 — HALİL TESTİ BEKLİYOR]
+## 🟢 K324 — KARGO TARİFESİ KARGOYA VERİLİŞ GÜNÜNE GÖRE + TY 05.10.2026 TARİFESİ · 07.10.2026 · [CANLIDA fbd47b5 — HALİL TESTİ GEÇTİ 09.10.2026; MİMAR ONAYI BEKLİYOR]
 
 **Kullanıcı kararı 07.10.2026:** «Kargoya veriliş tarihi.» Önceki kural sipariş günüydü (K201-4). Trendyol PDF'i: «faturalandırma gönderinin çıkış yaptığı … fiyat listesine göre».
 **Ölçüm:** HB 10.09 tarife sınırını aşan 6 siparişte sipariş-günü tarifesi gerçek kesintiyle **0** kez, kargo-günü tarifesi **3** kez tuttu.
@@ -43,7 +49,7 @@
 
 ---
 
-## 🔶 K323 — KARGODA YAZILAN AKTARILAN SİPARİŞ STOK DÜŞMÜYORDU · 07.10.2026 · [CANLIDA dcb3455 — İLK VAKA ONAYLANDI 07.10 — HALİL TESTİ BEKLİYOR]
+## 🟢 K323 — KARGODA YAZILAN AKTARILAN SİPARİŞ STOK DÜŞMÜYORDU · 07.10.2026 · [CANLIDA dcb3455 — İLK VAKA ONAYLANDI 07.10 — HALİL TESTİ GEÇTİ 09.10.2026; MİMAR ONAYI BEKLİYOR]
 
 **Vaka:** HB `4664334412` sisteme kargoya verilmiş olarak düştü; onay kuyruğu «KARGOLANMIŞ» diye reddetti → stok düşmedi, maliyet yok kaldı.
 **Kullanıcı kararı 07.10.2026:** «Onaya girsin.»
@@ -53,7 +59,7 @@
 
 ---
 
-## 🔶 K322 — TRENDYOL EXPRESS KARGOSU HİÇ DÜŞMÜYORDU (44 SİPARİŞ) · 07.10.2026 · [CANLIDA f3a3aa0 — GEÇMİŞ TAZELENDİ 07.10 — HALİL TESTİ BEKLİYOR]
+## 🟢 K322 — TRENDYOL EXPRESS KARGOSU HİÇ DÜŞMÜYORDU (44 SİPARİŞ) · 07.10.2026 · [CANLIDA f3a3aa0 — GEÇMİŞ TAZELENDİ 07.10 — HALİL TESTİ GEÇTİ 09.10.2026; MİMAR ONAYI BEKLİYOR]
 
 **Kök:** kanalın firma adı «Trendyol Express Marketplace» eşleme haritasında yoktu → **44 sipariş** `FIRMA_BILINMIYOR` ile SESSİZCE kargosuz kaldı (NET olduğundan yüksek). Haritaya → TEX eklendi; geri dönük araca `--firma` süzgeci.
 **Kural (kullanıcı 07.10.2026):** kargo = giden firmanın o desideki tarifesi × netleşen desi + KDV.
@@ -62,20 +68,23 @@
 
 ---
 
-## 🔶 K321 — ÜRÜNLER: «STOKTA OLMAYANLARI GİZLE» · 07.10.2026 · [CANLIDA 7e81093 — HALİL TESTİ BEKLİYOR]
+## 🟢 K321 — ÜRÜNLER: «STOKTA OLMAYANLARI GİZLE» · 07.10.2026 · [CANLIDA 7e81093 — HALİL TESTİ GEÇTİ 09.10.2026; MİMAR ONAYI BEKLİYOR]
 
 **Kural:** toplam stok > 0 (stok sütunuyla AYNI ölçü, `lib/stok.ts`) · adreste `stok=var` · arama, sayfalama ve Excel AYNI gövdeden süzer (sayı = liste). Bekçi `stok-suzgeci:dogrula` + 7 mutasyon; kategori-eşleşme ve ürün-arama çapaları yeni koşula taşındı (`d6823af`, niyet aynı, 8/8).
 **Halil testi (canlı, telefon + bilgisayar):** ① Ürünler → «Stokta olmayanları gizle» → stok sütunu 0 olan satır KALMAZ · üstte «Yalnız toplam stoğu 0'dan büyük ürünler listeleniyor» · adres çubuğunda `stok=var` · ② bulunan sayı düşer; 2. sayfaya geç → süzgeç durur · ③ süzgeç açıkken bir ürün ara → yalnız stoklu sonuçlar · ④ «Excel indir» → satır sayısı ekrandaki sayıyla birebir · ⑤ «Stokta olmayanlar gizli — göster» → tam liste geri gelir.
 
 ---
 
-## 🔶 K320 — ÜRÜNLER: PAZARYERİ İLAN LİNKLERİ · 07.10.2026 · [CANLIDA ea46e7c · migration canlıda a2a2dae — HALİL TESTİ BEKLİYOR · HB ve N11 kalıbı DOĞRULANMADI]
+## 🔶 K320 — ÜRÜNLER: PAZARYERİ İLAN LİNKLERİ · 07.10.2026 · [CANLIDA ea46e7c · migration canlıda a2a2dae — HALİL TESTİ 09.10: ② TRENDYOL GEÇTİ · ③ HB DÜŞTÜ · ④ N11 DÜŞTÜ — kullanıcıdan örnek link bekleniyor]
 
 **Kullanıcı 07.10.2026:** Firma SKU'nun soluna pazaryeri linkleri; önce TY, HB, N11; sonraki pazaryerlerine hazır; satırları firma seçer. «Denemede görmeme gerek yok» → doğrudan canlı.
 **Yapı:** adres SAKLANMAZ, kimlik saklanır (`ChannelSku.externalListingId` — 07.10'a kadar YAZICISI YOKTU, 0/2358); link kanal başına tek kalıptan (`src/lib/kanal-ilan-adresi.ts`) · yeni pazaryeri = tek satır. Seçim `Company.urunListesiKanallari` (en fazla 3, boş dizi sütunu gizler, bozuk/boş → varsayılan). İki «yok» ayrı: «kodu yok» (o kanalda kanal kodu yok) · «link yok» (kod var, ilan kimliği yok). Bekçi `ilan-adresi:dogrula` + 9 mutasyon.
 **Ölçüldü 08.10 (canlı, salt okuma):** ilan kimliği TY **1.076/1.135** · N11 **109/109** · HB **0/1.136** (beklenen: HB linki kanal kodundan `HBCV…` kurulur, kimlik gerekmez) · firma seçimi boş → varsayılan TY · HB · N11.
 ⚠ **HB ve N11 kalıbı DOĞRULANMADI:** iki site betikten gelen isteğe 403 veriyor; doğru ürüne gittiği yalnız tarayıcıda görülebilir.
 **Halil testi (canlı):** ① Ürünler → Firma SKU'nun solunda «Pazaryeri» sütunu, satır başına Trendyol · Hepsiburada · N11 · ② bir üründe **Trendyol**'a tıkla → yeni sekmede O ürünün TY ilanı · ③ aynı üründe **Hepsiburada** → doğru ilan mı (⚠ doğrulanmamış kalıp) · ④ N11'de satılan bir üründe **N11** → doğru ilan mı (⚠ doğrulanmamış) · ⑤ N11'de olmayan üründe «N11 · kodu yok» (gri, link değil) · ⑥ Ayarlar → Kanallar → «Ürün listesinde gösterilecek pazaryerleri» → 1. satıra N11 koy, Kaydet → «Kaydedildi…» → Ürünler'de ilk satır N11 · ⑦ aynı kanalı iki satıra seç → «Aynı kanal iki satırda seçilemez» · ⑧ hepsini boş bırak → sütun kalkar; sonra eski sıraya geri dön · ⑨ telefonda link tek dokunuşla açılır.
+
+─── ② **09.10.2026 — HALİL TESTİ SONUCU (kullanıcı):** ② Trendyol → mağazamızın ürünü ✓ (kalıptaki `merchantId` işe yarıyor) · ③ **Hepsiburada → ürünün BUYBOX mağazasına** gidiyor — kalıp mağaza belirtmiyor · ④ **N11 → ana sayfaya** düşüyor — kalıp yanlış (`n11ProductId` adreste bu biçimde ürün açmıyor) · ⑥ **test tarifi YANLIŞTI:** ekranın menüdeki adı «Kanal Hesapları», varsayılan grubu «Ürün ve kanal» (adres `/ayarlar/kanallar`); tarif «Ayarlar → Kanallar» diyordu (K289'daki ders tekrarlandı: tarif menü adına bakılmadan yazıldı).
+**[BEKLİYOR — kullanıcı]:** ① HB'de kendi mağazamızda açılmış bir ürünün adres çubuğu linki · ② kendi N11 ürünümüzün linki. Kalıplar bu ÖRNEKLERDEN kurulacak — tahminle değil.
 
 ---
 
