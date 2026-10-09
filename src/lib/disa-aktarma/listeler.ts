@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { alimKosulu, satisKosulu } from "@/lib/liste-suzgeci";
+import { alimKosulu, satisKosulu, satisListesiParametreleri } from "@/lib/liste-suzgeci";
 import { TY_KATEGORI_PARAMETRESI, tyKategoriCoz, tyKategoriUrunKosulu } from "@/lib/ty-kategori-suzgeci";
 import {
   LISTE_PENCERELERI,
@@ -607,8 +607,9 @@ async function satislarSayfasi(p: Parametreler): Promise<Sayfa> {
   const ortak = await getTranslations("Ortak");
   const tSatis = await getTranslations("Satis");
   // EKRANLA AYNI KOŞUL KURUCUSU (lib/liste-suzgeci.ts): dosyada ekranda
-  // görünenden farklı bir liste çıkmasın.
-  const { kosul } = satisKosulu(p);
+  // görünenden farklı bir liste çıkmasın — iptallerin varsayılanı da ekranla
+  // AYNI gövdeden (`satisListesiParametreleri`, 09.10.2026).
+  const { kosul } = satisKosulu(satisListesiParametreleri(p));
 
   const satislar = await prisma.sale.findMany({
     where: kosul,
@@ -636,6 +637,9 @@ async function satislarSayfasi(p: Parametreler): Promise<Sayfa> {
       sayi(s.net2Amount),
       s.profitCurrency,
       s.profitStatus,
+      /* İPTAL TARİHİ (09.10.2026): iptal edilen satış dosyaya da girer — ekranda
+         üstü çizili, dosyada bu sütunla İŞARETLİ; toplayan biri ayırabilsin. */
+      s.iptalTarihi === null ? "" : gun(s.iptalTarihi),
     ]),
   );
 
@@ -655,6 +659,7 @@ async function satislarSayfasi(p: Parametreler): Promise<Sayfa> {
       "NET-2",
       ortak("paraBirimi"),
       ortak("durum"),
+      tSatis("iptalTarihiSutunu"),
     ],
     satirlar,
   };

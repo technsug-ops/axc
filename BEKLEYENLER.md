@@ -13,6 +13,16 @@
 
 ---
 
+## 🔶 K327 — İPTAL EDİLEN SATIŞ LİSTEDE ÜSTÜ ÇİZİLİ GÖRÜNÜR (ALIMLAR GİBİ) · 09.10.2026 · [KOD YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı:** «Trendyol'da iptal olan siparişin bizde hiç kaydı çıkmıyor. Bu normal mi» (`11687161720`) · «aldıklarımda iptal olan varsa o üzeri çizik olarak duruyor» → «evet».
+**Ölçüldü (canlı, salt okuma):** sipariş KAYITTAYDI — 08.10 16:25 geldi, 16:27 onaylandı; TY 09.10 11:18 iptal etti, sistem **11:19**'da kendiliğinden tespit etti (`SATIS_IPTAL`, geri dönen adet 1, ciro ₺875 · NET-2 ₺235,04 düşüldü). Kusur yalnız ekrandaydı: `satisKosulu` `iptal` boşken iptalleri atıyor ve Satışlar listesi bunu varsayılan kullanıyordu → arama «satış yok» diyordu.
+**Kural** `liste-suzgeci.ts` `satisListesiParametreleri` (saf): iptaller adreste yalnız NÖTR süzgeç varsa (arama · dönem · kanal · hesap · sayfa) varsayılan GÖRÜNÜR; görev/ölçüm süzgeçlerinde (kâr eksik · kargo · onay · marj · şüpheli · iade · paket) GİZLİ — onlar bir sayıdan açılır, «sayı = liste» (İlke #16). İZİN listesi: bilinmeyen süzgeç gizliye düşer. Açık seçim kazanır (`iptal=1` göster · `iptal=0` gizle; kutuya «İptalleri gizle» eklendi, kutu çözülmüş değeri yazar). ⛔ ORTAK koşulun varsayılanı DEĞİŞMEDİ (panel, rapor kaymaz). Toplamlar hep iptal hariç (değişmedi). Excel aynı gövdeyi çağırır + yeni «İptal tarihi» sütunu (dosyayı toplayan ayırabilsin). Telefon kartı da üstü çizili (`ListeKarti iptal`) — Alımlar dahil (İlke #10).
+**Bekçi** `iptal-gorunurluk:dogrula` **30/30** · mutasyon **13/13** (1 zararsız yeşil) · `suzgec` 152 · `iptal` 54 · `iptal:bekci` · çakışma 3 · tur seçimi 26 · i18n ✓ · kullanıcı kolaylığı ✓ · mobil doğrulama kullanıcıda.
+**Halil testi (deploy sonrası, canlı):** ① Satışlar → `11687161720` ara → satır GÖRÜNÜR, üstü çizili ve solgun, rozette iptal · ciro toplamı ve «N kayıt» bu satışı SAYMAZ · ② «İptaller» kutusu «İptalleri göster» yazar → «İptalleri gizle» seç → satır kalkar · ③ Panel → «kâr hesaplanamayan» ya da «kargo bekleyen» rakamına tıkla → açılan listede iptal edilmiş satır YOK, kutu «İptalleri gizle» der, satır sayısı paneldeki rakamla birebir · ④ Satışlar → «Bu ay» → Excel indir → son sütun «İptal tarihi»; iptal edilen satırlarda tarih dolu · ⑤ telefonda aynı arama → kart üstü çizili · ⑥ Alımlar'da iptal edilmiş bir alım telefonda da üstü çizili.
+
+---
+
 ## 🔴 K326 — TRENDYOL EXPRESS: GEÇİCİ 5 DESİ YAPIŞIYORDU · 08.10.2026 · [CANLIDA 791de92 · 8ac2594 — HALİL TESTİ 09.10: ① ③ GEÇTİ (nihai desi doğru) · ④ DÜŞTÜ — tahmini desi ürün kartından gelmiyor; DÜZELTME ONAY BEKLİYOR]
 
 **Kullanıcı:** «Trendyol'da 1 desi görünenler burada 5 desi kaydediyor.»
@@ -112,7 +122,7 @@
 ─── ③ **09.10.2026 — KALIPLAR ÖRNEKTEN KURULDU · MIGRATION CANLIDA.** **Ölçüldü (yalnız GET):** N11 ucu, 113 ilan — linkteki `120395634` **`groupId`** (113/113 dolu); bizim sakladığımız `n11ProductId` (774932795) DEĞİL · mağaza adı `sellerNickname` (113/113). HB ilan ucu mağaza adını **VERMİYOR** (`hepsiburadaSku · merchantSku · productId`).
 **Kullanıcı kararı:** mağaza adı ayrı alanda (hesap adı bir etikettir; yeniden adlandırılınca link sessizce bozulmasın). Alan `ChannelAccount.magazaAdi` — «vitrin» kelimesi bu depoda «pazaryerinde listelenmiş» demek (vitrin kutusu), iki kavram tek kelimede karışmasın diye `magazaAdi`. Migration `20261009120000_kanal_hesabi_magaza_adi` **canlıda koştu** (onaylı, damga 67).
 **Kod:** kalıp HB + N11 `?magaza={magazaAdi}` (boşsa ek YOK, kodlanır) · N11 kimliği `groupId` · N11 okuması mağaza adını kanalın cevabından yazar (yalnız TEK değer gelirse) · Kanal Hesapları → «Pazaryerindeki mağaza adı» kartı (yalnız adı kullanan kanalların aktif satış hesapları; küme kalıpların davranışından ölçülür) · eylem boşluk/`?&/#` reddeder, yalnız satış hesabına yazar. Bekçi `ilan-adresi:dogrula` **38/38** · mutasyon **23/23** (2 zararsız yeşil · 21 kırmızı). i18n ✓ · kullanıcı kolaylığı ✓ (44 px, görünür geri bildirim) · mobil doğrulama kullanıcıda.
-**Deploy sonrası iş:** N11 ilan okuması `--uygula` ile bir kez → 109 kimlik `groupId`'ye döner + mağaza adı yazılır.
+**Deploy sonrası iş:** ~~N11 ilan okuması `--uygula`~~ → **KOŞTU 09.10** (push `b534552` sonrası): 109 kimlik `groupId`'ye döndü (LEGO 43020 → `120395634`, kullanıcının linkiyle aynı) · N11 hesabına mağaza adı `AXCALI` yazıldı · ikinci kuru koşum değişecek **0**. HB mağaza adı BOŞ (beklenen — kullanıcı yazacak). Not: ilk push'ta `api:dogrula` ve `n11-listeleme:dogrula` haklı kırmızı yandı (betik doğrudan yazıyordu) → yazım `src/lib/kanal-magaza-adi.ts`e taşındı.
 **Halil testi (deploy sonrası):** ① Kanal Hesapları → «Pazaryerindeki mağaza adı» kartı · N11 kutusunda `AXCALI` · HB kutusu boş · ② HB kutusuna `AXCALI` → Kaydet → «Kaydedildi — … «AXCALI» mağazasını açacak» · ③ Ürünler → Emsan tencere seti → **Hepsiburada** → ilan BİZİM mağazamızla · ④ LEGO 43020 → **N11** → ürün sayfası (ana sayfa değil), bizim mağazamızla · ⑤ kutuya boşluklu ad → kırmızı uyarı, kaydedilmez · ⑥ telefonda aynı. ⚠ N11 linkinde ürün adı yerinde «x» var (uç adı vermiyor) — N11'in buna aldırmadığı yalnız ④ ile görülür.
 
 ---

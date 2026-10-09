@@ -1306,7 +1306,8 @@
     "kargolanacak": "Kargolanacak",
     "kargoyaVerildiIsaretle": "Kargoya verildi olarak işaretle",
     "karSuzgeciKargosuz": "Kargo düşülmeden hesaplananlar",
-    "kargoDusulmediRozeti": "kargo düşülmedi"
+    "kargoDusulmediRozeti": "kargo düşülmedi",
+    "iptalTarihiSutunu": "İptal tarihi"
   },
   "Kategori": {
     "adZorunlu": "Kategori adı zorunlu",
