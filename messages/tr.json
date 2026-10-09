@@ -5256,5 +5256,19 @@
     "kayitYok": "kodu yok",
     "linkYok": "link yok",
     "ac": "{kanal} ilanını yeni sekmede aç"
+  },
+  "MagazaAdi": {
+    "baslik": "Pazaryerindeki mağaza adı",
+    "aciklama": "Ürünler listesindeki pazaryeri linki ilanı bu mağazayla açar. Pazaryerinde kendi mağazanızın linkindeki «magaza=» değerini yazın. N11'de bu ad pazaryerinden kendiliğinden gelir; Hepsiburada adı göndermediği için buraya bir kez yazılır. Boş bırakılırsa link mağaza belirtmez ve pazaryeri öne çıkan satıcıyı açar.",
+    "etiket": "{kanal} — {hesap}",
+    "ipucu": "örn. linkteki magaza= değeri",
+    "kaydet": "Kaydet",
+    "kaydedildi": "Kaydedildi — {ad} hesabının linkleri «{magaza}» mağazasını açacak.",
+    "kaydedildiBos": "Kaydedildi — {ad} hesabının linkleri mağaza belirtmeyecek.",
+    "gecersiz": "Mağaza adında boşluk ve ? & / # karakterleri olamaz — linkteki «magaza=» değerini olduğu gibi yazın.",
+    "cokUzun": "Mağaza adı en fazla 191 karakter olabilir.",
+    "yalnizSatis": "Mağaza adı yalnız satış hesabına yazılır.",
+    "bulunamadi": "Hesap bulunamadı.",
+    "kaydedilemedi": "Kaydedilemedi — lütfen tekrar deneyin."
   }
 }

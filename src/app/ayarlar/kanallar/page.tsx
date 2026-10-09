@@ -26,7 +26,8 @@ import { prisma } from "@/lib/prisma";
 import { kanalHesabiDurumDegistir } from "./actions";
 import { KanalHesabiFormu } from "./kanal-hesabi-formu";
 import { ListeKanallariFormu } from "./liste-kanallari-formu";
-import { ILAN_ADRESI_KALIPLARI, listeKanallariCoz } from "@/lib/kanal-ilan-adresi";
+import { ILAN_ADRESI_KALIPLARI, listeKanallariCoz, MAGAZA_ADI_KULLANAN_KANALLAR } from "@/lib/kanal-ilan-adresi";
+import { MagazaAdiFormu } from "./magaza-adi-formu";
 import { RolSecici } from "./rol-secici";
 import { HesapSilButonu } from "./sil-butonu";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -57,7 +58,7 @@ export default async function KanalHesaplariSayfasi() {
     }),
     prisma.channelAccount.findMany({
       include: {
-        channel: { select: { name: true } },
+        channel: { select: { name: true, code: true } },
         _count: {
           select: {
             purchases: true,
@@ -75,6 +76,11 @@ export default async function KanalHesaplariSayfasi() {
   /* Ürünler listesindeki «Pazaryeri» sütununun kanalları (07.10.2026). */
   const listeKanallari = listeKanallariCoz(firma?.urunListesiKanallari ?? null, kanallar.map((k) => k.code));
   const tListe = await getTranslations("ListeKanallari");
+  const tMagaza = await getTranslations("MagazaAdi");
+  /* K320 (09.10.2026): linkinde `?magaza=` kullanan kanalların aktif satış hesapları. */
+  const magazaHesaplari = hesaplar.filter(
+    (h) => h.satisIcin && h.isActive && MAGAZA_ADI_KULLANAN_KANALLAR.includes(h.channel.code),
+  );
 
   const t = await getTranslations("KanalHesabi");
 
@@ -167,6 +173,23 @@ export default async function KanalHesaplariSayfasi() {
           />
         </CardContent>
       </Card>
+
+      {magazaHesaplari.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{tMagaza("baslik")}</CardTitle>
+            <p className="text-muted-foreground text-sm">{tMagaza("aciklama")}</p>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            {magazaHesaplari.map((h) => (
+              <MagazaAdiFormu
+                key={h.id}
+                hesap={{ id: h.id, etiket: tMagaza("etiket", { kanal: h.channel.name, hesap: h.name }), magazaAdi: h.magazaAdi }}
+              />
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

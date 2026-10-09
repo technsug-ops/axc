@@ -1,5 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
-import { ilanAdresi, ILAN_ADRESI_KALIPLARI, listeKanallariCoz, LISTE_KANALI_TAVANI, VARSAYILAN_LISTE_KANALLARI } from "../src/lib/kanal-ilan-adresi";
+import { ilanAdresi, ILAN_ADRESI_KALIPLARI, listeKanallariCoz, LISTE_KANALI_TAVANI, MAGAZA_ADI_KULLANAN_KANALLAR, VARSAYILAN_LISTE_KANALLARI } from "../src/lib/kanal-ilan-adresi";
 
 /**
  * ============================================================================
@@ -39,21 +39,40 @@ console.log("=".repeat(70));
 
 console.log("\n1) kural — değerle");
 {
-  const ty = ilanAdresi("TRENDYOL", { channelSku: "8690000000001", externalListingId: "1210365083", saticiId: "870249" });
-  kontrol("TY: contentId + satıcıdan adres", ty === "https://www.trendyol.com/abc/xyz-p-1210365083?merchantId=870249", ty);
+  /* K320 (09.10.2026): mağaza adı TEST VERİSİDİR, gerçek firma adı değil. */
+  const MAGAZA = "ornekmagaza";
+  const ty = ilanAdresi("TRENDYOL", { channelSku: "8690000000001", externalListingId: "1210365083", saticiId: "870249", magazaAdi: MAGAZA });
+  kontrol("TY: contentId + satıcıdan adres (mağaza adı KULLANILMAZ)", ty === "https://www.trendyol.com/abc/xyz-p-1210365083?merchantId=870249", ty);
   kontrol("  ...contentId yoksa adres YOK (barkoddan uydurulmaz)",
-    ilanAdresi("TRENDYOL", { channelSku: "8690000000001", externalListingId: null, saticiId: "870249" }) === null);
+    ilanAdresi("TRENDYOL", { channelSku: "8690000000001", externalListingId: null, saticiId: "870249", magazaAdi: null }) === null);
   kontrol("  ...sayısal olmayan kimlik adres üretmez",
-    ilanAdresi("TRENDYOL", { channelSku: "x", externalListingId: "abc", saticiId: null }) === null);
-  const hb = ilanAdresi("HEPSIBURADA", { channelSku: "HBCV00009BJWGJ", externalListingId: null, saticiId: null });
-  kontrol("HB: kanal kodu HBCV ise adres o koddan", hb === "https://www.hepsiburada.com/x-p-HBCV00009BJWGJ", hb);
+    ilanAdresi("TRENDYOL", { channelSku: "x", externalListingId: "abc", saticiId: null, magazaAdi: null }) === null);
+  /* Halil testi 09.10: mağaza belirtilmeyince HB ilanı buybox mağazasıyla açıyordu. */
+  const hb = ilanAdresi("HEPSIBURADA", { channelSku: "HBCV00009BJWGJ", externalListingId: null, saticiId: null, magazaAdi: MAGAZA });
+  kontrol("HB: kanal kodu + ?magaza= (kendi mağazamız açılır)", hb === "https://www.hepsiburada.com/x-p-HBCV00009BJWGJ?magaza=ornekmagaza", hb);
+  const hbBos = ilanAdresi("HEPSIBURADA", { channelSku: "HBCV00009BJWGJ", externalListingId: null, saticiId: null, magazaAdi: null });
+  kontrol("  ...mağaza adı boşsa EK YOK (uydurulmaz)", hbBos === "https://www.hepsiburada.com/x-p-HBCV00009BJWGJ", hbBos);
+  kontrol("  ...boşluktan ibaret mağaza adı da EK üretmez",
+    ilanAdresi("HEPSIBURADA", { channelSku: "HBCV00009BJWGJ", externalListingId: null, saticiId: null, magazaAdi: "  " }) === "https://www.hepsiburada.com/x-p-HBCV00009BJWGJ");
   kontrol("  ...HB kodu değilse (barkod) adres YOK",
-    ilanAdresi("HEPSIBURADA", { channelSku: "8690000000001", externalListingId: null, saticiId: null }) === null);
-  const n11 = ilanAdresi("N11", { channelSku: "EN10051201144", externalListingId: "770927284", saticiId: null });
-  kontrol("N11: n11ProductId'den adres", n11 === "https://www.n11.com/urun/x-770927284", n11);
-  kontrol("  ...kimlik yoksa adres YOK", ilanAdresi("N11", { channelSku: "EN1", externalListingId: null, saticiId: null }) === null);
-  kontrol("kalıbı olmayan kanal adres ÜRETMEZ", ilanAdresi("AMAZON", { channelSku: "B0X", externalListingId: "1", saticiId: null }) === null);
+    ilanAdresi("HEPSIBURADA", { channelSku: "8690000000001", externalListingId: null, saticiId: null, magazaAdi: MAGAZA }) === null);
+  /* Halil testi 09.10: n11ProductId ana sayfaya düşüyordu; adresteki kimlik groupId (120395634). */
+  const n11 = ilanAdresi("N11", { channelSku: "43020", externalListingId: "120395634", saticiId: null, magazaAdi: MAGAZA });
+  kontrol("N11: groupId + ?magaza=", n11 === "https://www.n11.com/urun/x-120395634?magaza=ornekmagaza", n11);
+  kontrol("  ...kimlik yoksa adres YOK", ilanAdresi("N11", { channelSku: "EN1", externalListingId: null, saticiId: null, magazaAdi: MAGAZA }) === null);
+  kontrol("  ...mağaza adı kodlanır (adres bozulmaz)",
+    ilanAdresi("N11", { channelSku: "x", externalListingId: "1", saticiId: null, magazaAdi: "a&b" }) === "https://www.n11.com/urun/x-1?magaza=a%26b");
+  kontrol("kalıbı olmayan kanal adres ÜRETMEZ", ilanAdresi("AMAZON", { channelSku: "B0X", externalListingId: "1", saticiId: null, magazaAdi: MAGAZA }) === null);
   kontrol("kalıp tabanı dolu (TY · HB · N11)", ["TRENDYOL", "HEPSIBURADA", "N11"].every((k) => k in ILAN_ADRESI_KALIPLARI));
+  /* Ekrandaki «mağaza adı» kutusu yalnız adı GERÇEKTEN kullanan kanallarda çıkar —
+     küme kalıpların DAVRANIŞINDAN ölçülür (elle liste ile kalıp ayrışmasın). */
+  const kullanan = Object.keys(ILAN_ADRESI_KALIPLARI).filter((kod) => {
+    const kayit = { channelSku: "HBCV00009BJWGJ", externalListingId: "1", saticiId: null, magazaAdi: MAGAZA };
+    return (ILAN_ADRESI_KALIPLARI[kod]!(kayit) ?? "").includes("magaza=" + MAGAZA);
+  });
+  kontrol("MAGAZA_ADI_KULLANAN_KANALLAR = adı linke koyan kalıplar (taban ≥2)",
+    kullanan.length >= 2 && JSON.stringify([...kullanan].sort()) === JSON.stringify([...MAGAZA_ADI_KULLANAN_KANALLAR].sort()),
+    { kalip: kullanan, beyan: MAGAZA_ADI_KULLANAN_KANALLAR });
 
   const tum = ["TRENDYOL", "HEPSIBURADA", "N11", "AMAZON", "PAZARAMA"];
   kontrol("seçim yok → varsayılan sıra TY · HB · N11",
@@ -84,8 +103,11 @@ console.log("\n2) yazıcı zinciri");
   kontrol("ortak (HB/N11) yazıcı kimliği yalnız GÖNDERİLDİYSE yazar",
     /\.\.\.\(g\.ilanKimligi === undefined \? \{\} : \{ externalListingId: g\.ilanKimligi \}\)/.test(ortak));
   const n11 = oku("scripts/canli-n11-listeleme-yaz.ts");
-  kontrol("N11 betiği n11ProductId'yi kimlik olarak geçirir",
-    /String\(l\.n11ProductId\)\.trim\(\)/.test(n11) && /ilanKimligi: v\.ilan \}/.test(n11));
+  kontrol("N11 betiği groupId'yi kimlik olarak geçirir (n11ProductId DEĞİL — Halil testi 09.10)",
+    /const ilan = l\.groupId === null[^\n]*String\(l\.groupId\)\.trim\(\);/.test(n11) && !/l\.n11ProductId/.test(n11) && /ilanKimligi: v\.ilan \}/.test(n11));
+  kontrol("  ...mağaza adını kanalın KENDİ cevabından (sellerNickname) yazar — yalnız TEK değer gelirse",
+    /new Set\(listingler\.map\(\(l\) => String\(l\.sellerNickname \?\? ""\)\.trim\(\)\)/.test(n11) &&
+      /if \(takmaAdlar\.size === 1\) \{[\s\S]{0,200}?if \(hesap\.magazaAdi !== magaza\) \{\s*await prisma\.channelAccount\.update\(\{ where: \{ id: hesap\.id \}, data: \{ magazaAdi: magaza \} \}\);/.test(n11));
   kontrol("  ...kimlik farkı da DEĞİŞİKLİK sayılır (yalnız durum/adet değil)",
     /s\.externalListingId !== bulunan\.ilan\)/.test(n11));
   const hb = oku("scripts/canli-hb-listeleme-yaz.ts");
@@ -99,7 +121,27 @@ console.log("\n3) ekran");
   kontrol("liste sütunu FİRMA SEÇİMİNDEN (Company.urunListesiKanallari)",
     /listeKanallariCoz\(firmaAyari\?\.urunListesiKanallari \?\? null, aktifKanallar\.map\(\(k\) => k\.code\)\)/.test(liste));
   kontrol("  ...adres KALIPTAN, satış hesabının satıcı kimliğiyle",
-    /ilanAdresi\(kod, \{ channelSku: k\.channelSku, externalListingId: k\.externalListingId, saticiId: k\.channelAccount\.externalId \}\)/.test(liste));
+    /ilanAdresi\(kod, \{ channelSku: k\.channelSku, externalListingId: k\.externalListingId, saticiId: k\.channelAccount\.externalId, magazaAdi: k\.channelAccount\.magazaAdi \}\)/.test(liste) &&
+      /channelAccount: \{ select: \{ externalId: true, magazaAdi: true,/.test(liste));
+  /* K320 (09.10.2026): mağaza adı kutusu — zincirin her halkası: çizilir · okur · doğrular · yazar. */
+  const ayar = oku("src/app/ayarlar/kanallar/page.tsx");
+  kontrol("Kanal Hesapları mağaza adı kutusunu adı kullanan kanalların satış hesaplarına çizer",
+    /h\.satisIcin && h\.isActive && MAGAZA_ADI_KULLANAN_KANALLAR\.includes\(h\.channel\.code\)/.test(ayar) &&
+      /\{magazaHesaplari\.map\(\(h\) => \(\s*<MagazaAdiFormu/.test(ayar));
+  const form = oku("src/app/ayarlar/kanallar/magaza-adi-formu.tsx");
+  kontrol("  ...form alanı adla gönderilir ve kayıtlı değeri GERİ VERİR",
+    /name="magazaAdi"\s+defaultValue=\{hesap\.magazaAdi \?\? ""\}/.test(form) && /name="id" value=\{hesap\.id\}/.test(form));
+  const tumEylem = oku("src/app/ayarlar/kanallar/actions.ts");
+  const magazaBasi = tumEylem.indexOf("export async function kanalHesabiMagazaAdiKaydet");
+  const magazaEylemi = magazaBasi >= 0 ? tumEylem.slice(magazaBasi) : "";
+  kontrol("  ...eylem izin ister, formu OKUR, linki bozacak karakteri reddeder, yalnız satış hesabına yazar",
+    magazaEylemi.length > 200 &&
+      /yetkiIste\("ayar\.yaz"\)/.test(magazaEylemi) &&
+      /String\(formData\.get\("magazaAdi"\) \?\? ""\)\.trim\(\)/.test(magazaEylemi) &&
+      /if \(\/\[\\s\?&\/#\]\/\.test\(ham\)\) return \{ hata: tMagaza\("gecersiz"\) \};/.test(magazaEylemi) &&
+      /if \(!hesap\.satisIcin\) return \{ hata: tMagaza\("yalnizSatis"\) \};/.test(magazaEylemi) &&
+      /data: \{ magazaAdi: ham === "" \? null : ham \}/.test(magazaEylemi));
+  kontrol("  ...kaydedince ürün listesi tazelenir (link hemen değişir)", /revalidatePath\("\/urunler"\);/.test(magazaEylemi));
   kontrol("  ...masaüstü tabloda ve telefon kartında ikisi de çizilir",
     (liste.match(/<PazaryeriLinkleri satirlar=\{pazaryeriSatirlari\(ana\?\.id\)\} metin=\{pazaryeriMetni\} \/>/g) ?? []).length === 2);
   const bilesen = oku("src/components/pazaryeri-linkleri.tsx");

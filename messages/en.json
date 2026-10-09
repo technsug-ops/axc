@@ -5256,5 +5256,19 @@
     "kayitYok": "",
     "linkYok": "",
     "ac": ""
+  },
+  "MagazaAdi": {
+    "baslik": "",
+    "aciklama": "",
+    "etiket": "",
+    "ipucu": "",
+    "kaydet": "",
+    "kaydedildi": "",
+    "kaydedildiBos": "",
+    "gecersiz": "",
+    "cokUzun": "",
+    "yalnizSatis": "",
+    "bulunamadi": "",
+    "kaydedilemedi": ""
   }
 }
