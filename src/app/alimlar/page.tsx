@@ -616,6 +616,7 @@ export default async function AlimlarSayfasi({
             {alimlar.map((alim) => (
               <ListeKarti
                 key={alim.id}
+                iptal={iptalliMi(alim)}
                 gorsel={<UrunGorseli ekleyebilir={resimEkleyebilir} variantId={alim.items[0]?.variantId ?? null} url={alim.items[0]?.variant.gorselUrl ?? null} kaynak={alim.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(alim)} boyut={48} />}
                 baslik={
                   /* Ürün → kârlılık kartı; belirsizken alım detayına düşer (mobilde

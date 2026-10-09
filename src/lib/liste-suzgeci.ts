@@ -141,6 +141,40 @@ export const KARGO_SUZGECLERI = [
   "bilinmiyor",
 ] as const;
 
+/**
+ * ============================================================================
+ *  SATIŞ LİSTESİNDE İPTALLERİN VARSAYILANI (kullanıcı kararı 09.10.2026)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı: «müşterinin iptal ettiği siparişler bizde hiç görünmüyor» —
+ *  `11687161720` kayıttaydı (iptal tespit edilmiş, stok geri dönmüş), yalnız
+ *  liste iptalleri VARSAYILAN olarak gizlediği için arama «satış yok» diyordu.
+ *  Alımlar'da iptal edilen kayıt listede üstü çizili duruyor; satışlar da öyle
+ *  olsun (İlke #10). Toplamlar DEĞİŞMEZ — iptal hep hariç (aşağıdaki koşul).
+ *
+ *  ⛔ ORTAK KOŞULUN VARSAYILANI DEĞİŞMEZ. `satisKosulu` panel, rapor ve Excel
+ *  dahil satış okuyan her yerin kapısıdır; `iptal` boşken iptalleri atar. Bu
+ *  fonksiyon YALNIZ satış LİSTESİ (ekran + onun Excel'i) için çağrılır.
+ *
+ *  ⭐ İZİN LİSTESİ, YASAK LİSTESİ DEĞİL: iptaller ancak adreste yalnız NÖTR
+ *  süzgeçler varsa (arama · dönem · kanal · hesap · sayfa) varsayılan olarak
+ *  görünür. Görev/ölçüm süzgeçleri (kâr eksik, kargo bekleyen, onay, marj,
+ *  şüpheli veri, iade, paket) bir SAYIDAN açılır — panelin sözü «sayı = liste»
+ *  (İlke #16) ve iptal edilen sipariş bir iş değildir; orada gizli kalır. Yarın
+ *  eklenen bilinmeyen bir süzgeç de güvenli tarafa (gizli) düşer.
+ *  Açık seçim her zaman kazanır: `iptal=1` göster, `iptal=0` gizle.
+ * ============================================================================
+ */
+export const IPTAL_GORUNUR_NOTR_SUZGECLER: readonly string[] = ["q", "pencere", "baslangic", "bitis", "kanal", "hesap", "sayfa", "iptal"];
+
+export function satisListesiParametreleri(p: SuzgecParametreleri): SuzgecParametreleri {
+  const secim = (p.iptal ?? "").trim();
+  if (secim === "1" || secim === "0") return { ...p, iptal: secim };
+  const yalnizNotr = Object.entries(p).every(
+    ([ad, deger]) => (deger ?? "").trim() === "" || IPTAL_GORUNUR_NOTR_SUZGECLER.includes(ad),
+  );
+  return { ...p, iptal: yalnizNotr ? "1" : "0" };
+}
+
 /** Satış listesi koşulu — ekran ve Excel aynı koşulu kullanır. */
 export function satisKosulu(
   p: SuzgecParametreleri,
@@ -338,7 +372,9 @@ export function satisKosulu(
      *  "düşülmez", HİÇ DOĞMAMIŞ sayılır ve kümeden çıkar.
      *
      *  VARSAYILAN GİZLİ, `?iptal=1` ile GÖRÜNÜR. Kayıt asla silinmez —
-     *  görünmemesi yok olması değildir.
+     *  görünmemesi yok olması değildir. ⚠ Bu, ORTAK koşulun varsayılanıdır
+     *  (panel, rapor). Satış LİSTESİ kendi varsayılanını
+     *  `satisListesiParametreleri` ile çözer (09.10.2026).
      *
      *  ⚠ BU SATIR TEK KAYNAKTIR. `prisma.sale` sorgusu yazan her yer bu
      *  koşuldan geçmek ZORUNDA; `iptal:bekci` bunu tarayıp süzgeçsiz

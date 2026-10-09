@@ -15,6 +15,7 @@ export function ListeKarti({
   altBaslik,
   alanlar,
   eylemler,
+  iptal = false,
 }: {
   baslik: ReactNode;
   /** K273: başlığın SOLUNDA ürün küçük resmi (`UrunGorseli`). */
@@ -23,13 +24,19 @@ export function ListeKarti({
   /** Etiket-değer çiftleri; değeri boş olanlar gösterilmez. */
   alanlar: { etiket: string; deger: ReactNode }[];
   eylemler?: ReactNode;
+  /**
+   * İPTAL EDİLMİŞ KAYIT (09.10.2026): masaüstü tablodaki satırla AYNI görünüm —
+   * başlık ve alanlar üstü çizili ve solgun (İlke #10). Düğmeler çizilmez:
+   * hâlâ basılabilirler, okunur kalmalılar.
+   */
+  iptal?: boolean;
 }) {
   /* EŞİT KUTU (K272): 3'ün katıysa 3 sütun, değilse 2; tek kalan kutu satırı
      doldurur — boş hücre yok (demo Telefon ⑤). */
   const ucSutun = alanlar.length % 3 === 0;
   return (
     <div className="bg-card min-w-0 space-y-2.5 rounded-xl border p-3">
-      <div className="flex items-start gap-2.5">
+      <div className={`flex items-start gap-2.5 ${iptal ? "line-through opacity-60" : ""}`}>
       {gorsel}
       <div className="min-w-0 flex-1 space-y-1">
         <div className="line-clamp-2 min-w-0 leading-tight font-medium break-words">{baslik}</div>
@@ -39,7 +46,7 @@ export function ListeKarti({
       </div>
       </div>
 
-      <dl className={`grid gap-1.5 text-sm ${ucSutun ? "grid-cols-3" : "grid-cols-2"}`}>
+      <dl className={`grid gap-1.5 text-sm ${ucSutun ? "grid-cols-3" : "grid-cols-2"} ${iptal ? "line-through opacity-60" : ""}`}>
         {alanlar.map((alan, i) => (
           <div
             key={alan.etiket}

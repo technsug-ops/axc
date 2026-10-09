@@ -49,7 +49,7 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { gunMetni } from "@/lib/donem";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
-import { pencereCoz, satisKosulu } from "@/lib/liste-suzgeci";
+import { pencereCoz, satisKosulu, satisListesiParametreleri } from "@/lib/liste-suzgeci";
 import {
   MARJ_SEBEPLERI,
   marjPencereden,
@@ -97,7 +97,8 @@ export default async function SatislarSayfasi({
     kargo?: string;
     /** "hazirlanan" | "bekleyen" — /okut ekranında paketlendi işareti. */
     paket?: string;
-    /** "1" → iptal edilenler de listelenir (varsayılan: gizli). */
+    /** "1" göster · "0" gizle · boş → `satisListesiParametreleri` çözer (09.10.2026:
+     *  aramada/dönemde GÖRÜNÜR, görev listesinde gizli; eskiden hep gizliydi). */
     iptal?: string;
     /** "ciro" | "sermaye" — marj göstergesinin ölçüsü. */
     marj?: string;
@@ -193,7 +194,13 @@ export default async function SatislarSayfasi({
   const onayIdleri = await onayBekleyenIdleri(prisma);
   const onayKumesi = new Set(onayIdleri);
 
-  const { kosul, pencere } = satisKosulu(p, an, supheliIdler, paketliIdler, marjIdler, onayIdleri);
+  /**
+   * İPTALLERİN VARSAYILANI (09.10.2026): arama/dönem/kanal listesinde iptal
+   * edilenler üstü çizili GÖRÜNÜR; görev listelerinde (sayıdan açılan) gizli.
+   * Karar tek gövdede — Excel de aynısını çağırır (`satisListesiParametreleri`).
+   */
+  const pListe = satisListesiParametreleri(p);
+  const { kosul, pencere } = satisKosulu(pListe, an, supheliIdler, paketliIdler, marjIdler, onayIdleri);
 
   // Süzgeç seçenekleri VERİDEN gelir: olmayan bir seçeneğe tıklanıp boş
   // liste görülmesin.
@@ -492,7 +499,10 @@ export default async function SatislarSayfasi({
     {
       ad: "iptal",
       etiket: tIpt("suzgecEtiketi"),
-      secenekler: [{ deger: "1", etiket: tIpt("suzgecGoster") }],
+      secenekler: [
+        { deger: "1", etiket: tIpt("suzgecGoster") },
+        { deger: "0", etiket: tIpt("suzgecGizle") },
+      ],
     },
   ];
 
@@ -669,7 +679,8 @@ export default async function SatislarSayfasi({
 
       <SuzgecCubugu
         temelAdres="/satislar"
-        mevcut={p}
+        /* İptal kutusu ÇÖZÜLMÜŞ değeri yazar — görev listesinde «gizli», aramada «göster». */
+        mevcut={{ ...p, iptal: pListe.iptal }}
         suzgecler={suzgecler}
         zaman={{
           secili: pencere.tur,
@@ -855,7 +866,8 @@ export default async function SatislarSayfasi({
                         : "",
                       /* İPTAL EDİLEN SATIŞ ÜSTÜ ÇİZİLİ VE SOLGUN: satır
                          okunmadan önce "bu sayılmıyor" anlaşılmalı. Kayıt
-                         silinmiyor, yalnız varsayılan olarak gizli. */
+                         silinmiyor; 09.10.2026'dan beri aramada ve dönem
+                         listesinde varsayılan olarak GÖRÜNÜR (toplama girmez). */
                       satis.iptalTarihi !== null
                         ? "line-through opacity-60"
                         : "",
@@ -1011,6 +1023,7 @@ export default async function SatislarSayfasi({
             {satislar.map((satis) => (
               <ListeKarti
                 key={satis.id}
+                iptal={satis.iptalTarihi !== null}
                 gorsel={<UrunGorseli ekleyebilir={resimEkleyebilir} variantId={satis.items[0]?.variant.id ?? null} url={satis.items[0]?.variant.gorselUrl ?? null} kaynak={satis.items[0]?.variant.gorselKaynak ?? null} ad={urunOzeti(satis)} boyut={48} />}
                 baslik={
                   <span className="flex flex-wrap items-center gap-2">
