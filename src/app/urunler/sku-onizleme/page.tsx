@@ -52,7 +52,7 @@ export default async function SkuOnizlemeSayfasi({ searchParams }: { searchParam
   const sorunlu = satirlar.filter((s) => s.yeniKod === null);
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("baslik")}</h1>

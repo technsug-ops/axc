@@ -54,7 +54,7 @@ export default async function UrunEtiketleriSayfasi({ searchParams }: { searchPa
   const olcuAdresi = (o: EtiketOlcusu) => `/urunler/etiketler?olcu=${o}${arama ? `&q=${encodeURIComponent(arama)}` : ""}`;
 
   return (
-    <div className="max-w-3xl space-y-5">
+    <div className="space-y-5">
       <div className="print:hidden">
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklama")}</p>

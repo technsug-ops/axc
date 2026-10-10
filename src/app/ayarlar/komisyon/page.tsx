@@ -97,7 +97,7 @@ export default async function KomisyonKapisiSayfasi() {
 
   return (
     /* K330-④ — sola hizalı, diğer sayfalarla aynı (kullanıcı 10.10.2026: «dağınık»). */
-    <div className="max-w-5xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground mt-1 text-sm">{t("aciklama")}</p>

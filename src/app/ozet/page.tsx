@@ -52,7 +52,7 @@ export default async function GunlukOzetSayfasi() {
   const paket = son ? (JSON.parse(son.girdiJson) as OzetVeriPaketi) : null;
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold">
           <Sparkles className="size-6" aria-hidden />

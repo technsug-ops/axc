@@ -57,7 +57,7 @@ export default async function GocSayfasi() {
   const cakismalar = kisaltmaCakismalari(hepsi);
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <header className="flex items-center gap-2">
         <ArrowRightLeft className="text-muted-foreground size-5" aria-hidden />
         <h1 className="text-xl font-semibold">{t("baslik")}</h1>

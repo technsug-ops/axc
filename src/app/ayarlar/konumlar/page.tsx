@@ -72,7 +72,7 @@ export default async function KonumlarSayfasi({ searchParams }: { searchParams: 
   const { gorunen, tamEslesme, benzerSayisi } = rafAramasi(konumlar, arama);
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="space-y-6">
       {/* K289: liste artık ARAMALI — alt sayfalardan aramasıyla geri dönülür (ListeyeDon). */}
       <ListeyiHatirla temel="/ayarlar/konumlar" etiket={tBaslik("rafKonumlari")} />
       <div className="flex flex-wrap items-center justify-between gap-3">

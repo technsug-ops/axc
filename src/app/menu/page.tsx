@@ -89,7 +89,7 @@ export default async function MenuSayfasi() {
   }
 
   return (
-    <div className="max-w-3xl space-y-3">
+    <div className="space-y-3">
       <h1 className="text-xl font-semibold">{t("baslik")}</h1>
 
       {/* Kod arayan her kutu kamera taşır (İlke #7) — ortak bileşen, çıplak input yok. */}

@@ -69,7 +69,7 @@ export default async function TarifeHesaplamaSayfasi({
 
   if (secim.durum === "BOS") {
     return (
-      <div className="max-w-5xl space-y-6">
+      <div className="space-y-6">
         <h1 className="text-2xl font-semibold">{t("baslik", { kanal: "—" })}</h1>
         <div className="rounded-lg border border-dashed p-10 text-center">
           <p className="font-medium">{t("bosBaslik")}</p>
@@ -155,7 +155,7 @@ export default async function TarifeHesaplamaSayfasi({
   const mevcut = { ...sp, pencere: tarife.id };
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">
           {t("baslik", { kanal: tarife.channelAccount?.channel.name ?? "—" })}

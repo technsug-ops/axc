@@ -251,7 +251,7 @@ export default async function KartSayfasi({
       ekranı aşabiliyor. Ekranı aşan yapışkan bir blok kendi içinde ikinci
       bir kaydırma ister — faydadan çok yük olurdu.
     */
-    <div className="mx-auto max-w-3xl xl:max-w-7xl">
+    <div className="mx-auto max-w-3xl xl:max-w-none">
       {/*
         ═══ KÜNYE IZGARANIN ÜSTÜNDE, TAM GENİŞLİKTE (K103-②) ═══
         ⛔ KULLANICI BULGUSU 30.08.2026: künye sol sütunun İÇİNDEYKEN sağdaki

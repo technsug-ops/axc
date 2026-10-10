@@ -36,7 +36,7 @@ export default async function HakedisYukleSayfasi() {
   }));
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div>
         <ListeyeDon href="/hakedis">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("yukleBaslik")}</h1>
