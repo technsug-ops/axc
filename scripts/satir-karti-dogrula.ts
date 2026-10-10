@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { SatirKarti, SatirListesi } from "../src/components/satir-karti";
 import { DURUM_EYLEMI_KABI, DURUM_EYLEMI_SINIFI, EYLEM_SINIFI } from "../src/components/satir-eylemi";
-import { DURUM_ZEMINI } from "../src/lib/renkler";
+import { DURUM_SERIDI, DURUM_ZEMINI } from "../src/lib/renkler";
 import { kaynakOku } from "./kaynak-oku";
 
 /**
@@ -131,19 +131,28 @@ console.log("\n1) ANATOMİ (gövde çağrılır, değer sınanır)");
   /**
    * ZEMİN — tabloda satır zemininin boyanmasının karşılığı (ör. kanalda
    * kapalı duran listeleme). Renk `lib/renkler` tokeninden; verilmezse YOK.
+   * ⚠ ÖLÇÜT ESKİDİ, NİYET AYNI (K330-③, kullanıcı kararı 10.10.2026): dikkat
+   * çeken satır artık ZEMİN değil SOL ŞERİT alır (`DURUM_SERIDI`) — tam boyalı
+   * satırlar kanal listelemesini turuncu bir duvara çeviriyordu. Eski ölçüt
+   * `DURUM_ZEMINI` arıyordu; ölçüt şeride taşındı ve ZEMİNİN geri dönmesi de
+   * ayrıca yasaklandı (iki yön).
    */
   kontrol(
-    "zemin verilince renk sınıfı satırda",
-    siniflar(SatirKarti({ baslik: "M", zemin: "uyari" })).some((c) => c.includes(DURUM_ZEMINI.uyari)),
+    "zemin verilince renk ŞERİDİ satırda",
+    siniflar(SatirKarti({ baslik: "M", zemin: "uyari" })).some((c) => c.includes(DURUM_SERIDI.uyari)),
   );
   kontrol(
-    "  ...verilmezse zemin YOK (her satır renkliyse hiçbiri vurgulu değildir)",
-    !siniflar(SatirKarti({ baslik: "M" })).some((c) => c.includes(DURUM_ZEMINI.uyari)),
+    "  ...satır ZEMİNİ boyanmaz (turuncu duvar geri dönmez)",
+    !siniflar(SatirKarti({ baslik: "M", zemin: "uyari" })).some((c) => c.includes(DURUM_ZEMINI.uyari)),
+  );
+  kontrol(
+    "  ...verilmezse şerit YOK (her satır renkliyse hiçbiri vurgulu değildir)",
+    !siniflar(SatirKarti({ baslik: "M" })).some((c) => c.includes(DURUM_SERIDI.uyari)),
   );
   kontrol(
     "  ...açılır satırda da geçerli",
     siniflar(SatirKarti({ baslik: "M", acilir: "d", zemin: "uyari" })).some((c) =>
-      c.includes(DURUM_ZEMINI.uyari),
+      c.includes(DURUM_SERIDI.uyari),
     ),
   );
 

@@ -479,7 +479,7 @@ function KapaliKutusu({
       href={adres}
       className={`col-span-2 flex min-h-[88px] flex-col justify-between rounded-lg border p-3 transition-colors hover:opacity-90 sm:col-span-1 ${DURUM_KUTUSU.uyari}`}
     >
-      <div className="flex items-center gap-1.5 text-xs">
+      <div className="flex items-center gap-1.5 text-[13px] font-medium">
         <PackageX className="size-3.5 shrink-0" />
         {baslik}
       </div>

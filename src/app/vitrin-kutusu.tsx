@@ -9,6 +9,7 @@ import { DURUM_YAZISI } from "@/lib/renkler";
 import { vitrinAdresi, type VitrinSatiri } from "@/lib/vitrin-kutusu";
 import { BAYAT_SAAT, kanalSorunluMu } from "@/lib/panel/vitrin-serhi";
 import type { VitrinKutusu as Veri } from "@/lib/panel/vitrin-verisi";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -211,7 +212,7 @@ export async function VitrinKutusu({ veri }: { veri: Veri[] }) {
                 {k.satirlar.map((s) => {
                   const govde = (
                     <>
-                      <span className="text-muted-foreground text-xs">
+                      <span className={KUTU_ETIKETI}>
                         {etiket[s.satir]}
                       </span>
                       {s.adet === 0 ? (
@@ -219,7 +220,7 @@ export async function VitrinKutusu({ veri }: { veri: Veri[] }) {
                           0 {"·"} {t("temiz")}
                         </span>
                       ) : (
-                        <span className="text-sm font-medium tabular-nums">
+                        <span className={`text-base ${KUTU_RAKAMI}`}>
                           {t("satirOzeti", {
                             adet: s.adet,
                             tutar: bicim.para(s.tutar, "TRY"),
@@ -261,7 +262,7 @@ export async function VitrinKutusu({ veri }: { veri: Veri[] }) {
                     href={vitrinAdresi("OLCULMEMIS", k.hesapId)}
                     className="hover:bg-muted/50 flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border border-dashed px-3 py-2"
                   >
-                    <span className="text-muted-foreground text-xs">
+                    <span className={KUTU_ETIKETI}>
                       {t("olculmemis")} {t("toplamaGirmez")}
                     </span>
                     <span className="text-muted-foreground text-sm tabular-nums">
@@ -278,7 +279,7 @@ export async function VitrinKutusu({ veri }: { veri: Veri[] }) {
                     href={vitrinAdresi("KAYIT_YOK", k.hesapId)}
                     className="hover:bg-muted/50 flex min-h-11 flex-col justify-center gap-0.5 rounded-lg border border-dashed px-3 py-2"
                   >
-                    <span className="text-muted-foreground text-xs">
+                    <span className={KUTU_ETIKETI}>
                       {t("kaydiYok")} {t("toplamaGirmez")}
                     </span>
                     <span className="text-muted-foreground text-sm tabular-nums">
