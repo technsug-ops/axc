@@ -54,7 +54,6 @@ export async function gorselleriYaz(
     select: {
       id: true,
       barcode: true,
-      companyId: true,
       gorselUrl: true,
       gorselKaynak: true,
       gorselKirikUrl: true,
@@ -62,8 +61,8 @@ export async function gorselleriYaz(
     },
   });
   const yazilacak: { id: string; url: string; kaynak: GorselKaynagi }[] = [];
-  /** K330 — galeri: firmasız varyant (companyId boş) yazılamaz — tablo firmaya bağlı. */
-  const galeriYazilacak: { id: string; companyId: string; kaynak: KanalGorselKaynagi; adresler: readonly string[] }[] = [];
+  /** K330 — galeri (tek firmalı canlı: firma alanı yok; çok firmalı dal kendi sürümünde firmayı da yazar). */
+  const galeriYazilacak: { id: string; kaynak: KanalGorselKaynagi; adresler: readonly string[] }[] = [];
   for (const v of varyantlar) {
     const aday = v.barcode ? tekil.get(v.barcode) : undefined;
     if (!aday) continue;
@@ -74,14 +73,13 @@ export async function gorselleriYaz(
     if (secim) yazilacak.push({ id: v.id, ...secim });
     const mevcutKaynak = (v.gorselGalerisi[0]?.kaynak ?? null) as GorselKaynagi | null;
     if (
-      v.companyId &&
       mevcutKaynak !== "ELLE" &&
       galeriYazilirMi(
         { kaynak: mevcutKaynak, adresler: v.gorselGalerisi.map((g) => g.url) },
         { kaynak: aday.kaynak, adresler: aday.galeri },
       )
     ) {
-      galeriYazilacak.push({ id: v.id, companyId: v.companyId, kaynak: aday.kaynak, adresler: aday.galeri });
+      galeriYazilacak.push({ id: v.id, kaynak: aday.kaynak, adresler: aday.galeri });
     }
   }
   const bu = yazilacak.slice(0, GORSEL_YAZIM_TAVANI);
@@ -103,7 +101,7 @@ export async function gorselleriYaz(
     await prisma.$transaction([
       prisma.varyantGorseli.deleteMany({ where: { variantId: g.id } }),
       prisma.varyantGorseli.createMany({
-        data: g.adresler.map((url, sira) => ({ companyId: g.companyId, variantId: g.id, sira, url, kaynak: g.kaynak })),
+        data: g.adresler.map((url, sira) => ({ variantId: g.id, sira, url, kaynak: g.kaynak })),
       }),
     ]);
     galeriYazilan++;
