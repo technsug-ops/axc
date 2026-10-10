@@ -63,6 +63,11 @@ console.log("\n1) kural — değerle");
   kontrol("  ...kimlik yoksa adres YOK", ilanAdresi("N11", { channelSku: "EN1", externalListingId: null, saticiId: null, magazaAdi: MAGAZA }) === null);
   kontrol("  ...mağaza adı kodlanır (adres bozulmaz)",
     ilanAdresi("N11", { channelSku: "x", externalListingId: "1", saticiId: null, magazaAdi: "a&b" }) === "https://www.n11.com/urun/x-1?magaza=a%26b");
+  /* Halil testi 10.10: N11 `?magaza=AXCALI` başka satıcıyı, `?magaza=axcali` mağazamızı açtı. HB büyük harfle çalışıyor. */
+  kontrol("N11: mağaza adı KÜÇÜK harfe çevrilir (Türkçe «ı» DEĞİL)",
+    ilanAdresi("N11", { channelSku: "x", externalListingId: "84558158", saticiId: null, magazaAdi: "AXCALI" }) === "https://www.n11.com/urun/x-84558158?magaza=axcali");
+  kontrol("HB: mağaza adı OLDUĞU GİBİ kalır (büyük harf çalışıyor)",
+    ilanAdresi("HEPSIBURADA", { channelSku: "HBCV00009BJWGJ", externalListingId: null, saticiId: null, magazaAdi: "AXCALI" }) === "https://www.hepsiburada.com/x-p-HBCV00009BJWGJ?magaza=AXCALI");
   kontrol("kalıbı olmayan kanal adres ÜRETMEZ", ilanAdresi("AMAZON", { channelSku: "B0X", externalListingId: "1", saticiId: null, magazaAdi: MAGAZA }) === null);
   kontrol("kalıp tabanı dolu (TY · HB · N11)", ["TRENDYOL", "HEPSIBURADA", "N11"].every((k) => k in ILAN_ADRESI_KALIPLARI));
   /* Ekrandaki «mağaza adı» kutusu yalnız adı GERÇEKTEN kullanan kanallarda çıkar —

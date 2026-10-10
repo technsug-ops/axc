@@ -48,7 +48,18 @@ export type IlanKaydi = {
 
 const kodla = (s: string) => encodeURIComponent(s.trim());
 /** `?magaza=` eki — mağaza adı boşsa EK YOK (uydurulmaz; pazaryeri öne çıkan satıcıyı açar). */
-const magazaEki = (k: IlanKaydi) => (k.magazaAdi && k.magazaAdi.trim() !== "" ? `?magaza=${kodla(k.magazaAdi)}` : "");
+const magazaEki = (k: IlanKaydi, kucukHarf = false) => {
+  if (!k.magazaAdi || k.magazaAdi.trim() === "") return "";
+  /**
+   * ⚠ N11 MAĞAZA ADINI KÜÇÜK HARFLE BEKLİYOR (Halil testi 10.10.2026): `?magaza=AXCALI`
+   * ürünü açtı ama öne çıkan BAŞKA satıcıyı gösterdi; `?magaza=axcali` mağazamızı açtı.
+   * HB büyük harfle çalışıyor (kullanıcının kendi linki `?magaza=AXCALI`) → yalnız N11.
+   * ⛔ `toLowerCase()` — `toLocaleLowerCase("tr")` DEĞİL: Türkçe kural «I»yı «ı» yapar
+   * ve `AXCALI` → `axcalı` olurdu (yine yanlış mağaza).
+   */
+  const ad = kucukHarf ? k.magazaAdi.toLowerCase() : k.magazaAdi;
+  return `?magaza=${kodla(ad)}`;
+};
 
 /** Kanal kodu → ilan adresi kalıbı. Yeni pazaryeri = buraya TEK satır. */
 export const ILAN_ADRESI_KALIPLARI: Readonly<Record<string, (k: IlanKaydi) => string | null>> = {
@@ -60,7 +71,7 @@ export const ILAN_ADRESI_KALIPLARI: Readonly<Record<string, (k: IlanKaydi) => st
     /^HB[A-Z0-9]{6,}$/.test(k.channelSku.trim()) ? `https://www.hepsiburada.com/x-p-${kodla(k.channelSku)}${magazaEki(k)}` : null,
   N11: (k) =>
     k.externalListingId && /^\d+$/.test(k.externalListingId.trim())
-      ? `https://www.n11.com/urun/x-${kodla(k.externalListingId)}${magazaEki(k)}`
+      ? `https://www.n11.com/urun/x-${kodla(k.externalListingId)}${magazaEki(k, true)}`
       : null,
 };
 
