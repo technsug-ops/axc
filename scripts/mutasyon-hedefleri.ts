@@ -224,6 +224,13 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    */
   "vitrin-mutasyon:kontrol",
   /**
+   * K329 (10.10.2026) — `yayin-boslugu` uyarı toplayıcısını (`uyari/topla.ts`)
+   * mutasyona uğratıyor; o dosyaya dokunan öteki harness'lerle paralel
+   * koşarsa biri ötekinin MUTANTINI asıl sanıp geri yazar.
+   * `mutasyon-cakisma:dogrula` push turunda yakaladı.
+   */
+  "yayin-boslugu-mutasyon:kontrol",
+  /**
    * K273 (25.09.2026) — `urun-gorseli` ortak liste bileşenini (`liste-karti.tsx`)
    * ve `/stok` sayfasını mutasyona uğratıyor. `satir-karti` aynı kartı,
    * `stok-siralama` aynı sayfayı hedefliyor; üçü paralel koşsa biri ötekinin
