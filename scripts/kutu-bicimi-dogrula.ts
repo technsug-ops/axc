@@ -1,5 +1,6 @@
 import { kaynakOku } from "./kaynak-oku";
 import { KUTU_ETIKETI, KUTU_RAKAMI } from "../src/lib/kutu-bicimi";
+import { DURUM_KUTUSU, DURUM_SERIDI } from "../src/lib/renkler";
 
 /**
  * ============================================================================
@@ -86,6 +87,11 @@ console.log("=".repeat(70));
     kontrol(`${ad}: rakam ortak biçimden`, /\$\{KUTU_RAKAMI\}/.test(blok));
     kontrol(`${ad}: eski küçük etiket geri dönmedi`, !/className="text-muted-foreground text-xs">\{(etiket|baslik)\}/.test(blok));
     kontrol(`${ad}: rakam yarı kalına geri dönmedi`, !/(text-2xl|leading-tight) font-semibold/.test(blok));
+  }
+  /* K330-③ — durum kutusu (sarı/kırmızı/yeşil kart) beyaz + sol şerit (kullanıcı kararı 10.10.2026). */
+  for (const d of ["uyari", "olumsuz", "olumlu", "bilgi"] as const) {
+    kontrol(`durum kutusu (${d}) şeritli`, DURUM_KUTUSU[d].includes(DURUM_SERIDI[d]));
+    kontrol(`  ...(${d}) beyaz zemin, pastel dolgu YOK`, DURUM_KUTUSU[d].includes("bg-card") && !/(^| )bg-\[#/.test(DURUM_KUTUSU[d]));
   }
   kosanBolumler.push("yazi");
 }

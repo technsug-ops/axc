@@ -3744,13 +3744,25 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
       console.log(`          ...ve ${kirliler.length - 10} dosya daha`);
     }
   }
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ, NİYET AYNI (K330-③, kullanıcı kararı 10.10.2026): kutu kabuğu
+   * artık K1 şerit + BEYAZ zemin + durum YAZI tonu — pastel zemin (K2) kutudan
+   * kalktı (rozetlerde kalır). Niyet korunuyor: yeni ton UYDURULMADI — yazı tonu
+   * `DURUM_ZEMINI`nin kendi yazı renginden; zeminin geri dönmesi de yasak (iki yön).
+   */
   kontrol(
-    "  ...kutu kabuğu K1+K2 bileşimi (yeni ton uydurulmadı)",
+    "  ...kutu kabuğu K1 şerit + beyaz + zeminin yazı tonu (yeni ton uydurulmadı)",
     DURUM_RENKLERI.every(
       (d) =>
         DURUM_KUTUSU[d].includes(DURUM_SERIDI[d]) &&
-        DURUM_KUTUSU[d].includes(DURUM_ZEMINI[d]),
+        DURUM_KUTUSU[d].includes("bg-card") &&
+        (DURUM_ZEMINI[d].match(/(?:^| )text-\S+/)?.[0]?.trim() ?? "@") !== "@" &&
+        DURUM_KUTUSU[d].includes((DURUM_ZEMINI[d].match(/(?:^| )text-\S+/)?.[0] ?? "@").trim()),
     ),
+  );
+  kontrol(
+    "  ...kutuda pastel ZEMİN yok (sarı/kırmızı duvar geri dönmez)",
+    DURUM_RENKLERI.every((d) => !/(^| )bg-\[#/.test(DURUM_KUTUSU[d])),
   );
   kontrol(
     "  ...pay çubuğu oranı kırpıyor (bozuk veri ekranı taşırmaz)",

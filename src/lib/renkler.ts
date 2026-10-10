@@ -105,12 +105,32 @@ export const DURUM_ZEMINI: Record<DurumRengi, string> = {
  * Yarıçap ve dolgu BURAYA GİRMEZ: çağıran yer `rounded-md p-3` gibi kendi
  * ölçüsünü verir. Kutunun rengi tek yerden, biçimi çağıran yerden gelir.
  */
+/**
+ * Durum kutusunun YAZI tonu — `DURUM_ZEMINI`nin yazı rengiyle AYNI (yeni ton yok);
+ * zemini olmadan, beyaz kart üstünde okunur.
+ */
+export const DURUM_KUTU_YAZISI: Record<DurumRengi, string> = {
+  olumlu: "text-[#0B5C47] dark:text-[#A9EBD4]",
+  olumsuz: "text-[#8F2424] dark:text-[#F6C2C2]",
+  uyari: "text-[#6F4108] dark:text-[#F3D5A2]",
+  bilgi: "text-[#134F8B] dark:text-[#B3D2F1]",
+  notr: "text-foreground dark:text-muted-foreground",
+};
+
+/**
+ * ⭐ K330-③ — KULLANICI KARARI 10.10.2026: durum kutusu artık DOLGULU DEĞİL —
+ * beyaz kart + SOL ŞERİT + durum tonunda yazı («buradaki sarı değiştirilse daha
+ * güzel olmaz mı? başka yerlerde de sarı kartlar var» → «Beyaz kart + sol şerit»).
+ * Liste satırlarının (`SatirKarti`) aynı gün aldığı karar; Algoritmo'nun dili.
+ * ⚠ ESKİ HÂL (silinmez): K1 şerit + K2 pastel zemin (`DURUM_ZEMINI`). Zemin
+ * ROZETLERDE (çip) kalır — küçük alanda doygunluk kuralı aynen geçerli.
+ */
 export const DURUM_KUTUSU: Record<DurumRengi, string> = {
-  olumlu: `${DURUM_SERIDI.olumlu} ${DURUM_ZEMINI.olumlu}`,
-  olumsuz: `${DURUM_SERIDI.olumsuz} ${DURUM_ZEMINI.olumsuz}`,
-  uyari: `${DURUM_SERIDI.uyari} ${DURUM_ZEMINI.uyari}`,
-  bilgi: `${DURUM_SERIDI.bilgi} ${DURUM_ZEMINI.bilgi}`,
-  notr: `${DURUM_SERIDI.notr} ${DURUM_ZEMINI.notr}`,
+  olumlu: `${DURUM_SERIDI.olumlu} bg-card ${DURUM_KUTU_YAZISI.olumlu}`,
+  olumsuz: `${DURUM_SERIDI.olumsuz} bg-card ${DURUM_KUTU_YAZISI.olumsuz}`,
+  uyari: `${DURUM_SERIDI.uyari} bg-card ${DURUM_KUTU_YAZISI.uyari}`,
+  bilgi: `${DURUM_SERIDI.bilgi} bg-card ${DURUM_KUTU_YAZISI.bilgi}`,
+  notr: `${DURUM_SERIDI.notr} bg-card ${DURUM_KUTU_YAZISI.notr}`,
 };
 
 /**
