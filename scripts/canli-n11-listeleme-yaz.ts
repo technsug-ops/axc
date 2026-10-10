@@ -265,14 +265,21 @@ export async function n11ListelemeCekimKos(ayar: {
   let gorsel: import("../src/lib/urun-gorseli-yaz").GorselYazimOzeti | { hata: string };
   try {
     const { gorselleriYaz } = await import("../src/lib/urun-gorseli-yaz");
+    const { galeriAdresleri } = await import("../src/lib/urun-gorseli");
     gorsel = await gorselleriYaz(
       listingler.map((l) => {
         const r = l as Record<string, unknown>;
         const g = Array.isArray(r.imageUrls) ? r.imageUrls[0] : undefined;
-        return { barkod: String(r.barcode ?? ""), url: typeof g === "string" ? g : "", kaynak: "N11" as const };
+        return {
+          barkod: String(r.barcode ?? ""),
+          url: typeof g === "string" ? g : "",
+          kaynak: "N11" as const,
+          /* K330 — bütün resimler (`imageUrls`), izinli sunucu + tekrarsız. */
+          galeri: galeriAdresleri(Array.isArray(r.imageUrls) ? r.imageUrls : [], "N11"),
+        };
       }),
     );
-    console.log(`   görsel: aday ${gorsel.aday} · eşleşen ${gorsel.eslesen} · yazılan ${gorsel.yazilan} · sırada ${gorsel.tavandaKalan}`);
+    console.log(`   görsel: aday ${gorsel.aday} · eşleşen ${gorsel.eslesen} · yazılan ${gorsel.yazilan} · sırada ${gorsel.tavandaKalan} · galeri yazılan ${gorsel.galeriYazilan} · sırada ${gorsel.galeriTavandaKalan}`);
   } catch (e) {
     console.error("   ⛔ görsel yazımı düştü:", e);
     gorsel = { hata: e instanceof Error ? e.message : String(e) };

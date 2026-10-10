@@ -273,8 +273,9 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     bekci: SIRALAMA,
     dosya: KART,
-    bul: 'className="mx-auto max-w-3xl xl:max-w-6xl"',
-    koy: 'className="mx-auto xl:max-w-6xl"',
+    /* K330 (10.10.2026): geniş ekran tavanı 6xl → 7xl (Algoritmo sayfası); çapa taşındı, niyet aynı. */
+    bul: 'className="mx-auto max-w-3xl xl:max-w-7xl"',
+    koy: 'className="mx-auto xl:max-w-7xl"',
     bozdugu: "telefonda satirlar kenardan kenara yayilir, okunabilir sutun genisligi gider",
   },
 
@@ -284,8 +285,9 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     bekci: SIRALAMA,
     dosya: KART,
-    bul: '      <div className="mb-6">',
-    koy: '      <div className="mb-6 xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]">',
+    /* K330 (10.10.2026): künye Algoritmo üst kartına alındı, sarmalayıcı `mb-6 space-y-6`; çapa taşındı, niyet aynı. */
+    bul: '      <div className="mb-6 space-y-6">',
+    koy: '      <div className="mb-6 space-y-6 xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]">',
     bozdugu:
       "sag kart sayfanin en tepesinden baslar, soldaki ilk kart kunyenin altindan — goz kayar",
   },

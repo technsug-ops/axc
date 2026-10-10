@@ -17,6 +17,24 @@ import { kartVerisiniTopla } from "@/lib/urun-karti-verisi";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 import { KanalDesiGuncelle } from "./kanal-desi-guncelle";
+import { pencereOlustur } from "@/lib/donem";
+import { pencereCoz } from "@/lib/liste-suzgeci";
+import { suzgecAdresi } from "@/lib/suzgec";
+import { kartAnalizi } from "@/lib/urun-karti-analiz";
+import {
+  DonemSecici,
+  GenelSekmesi,
+  IadeSekmesi,
+  KarMerdiveni,
+  OzetKutulari,
+  SekmeCubugu,
+  SiparisSekmesi,
+  TarihSatiri,
+  UstKpiler,
+  VaryantSekmesi,
+  kartSekmesiCoz,
+} from "./kart-panosu";
+import { UrunGalerisi } from "./urun-galerisi";
 import { TavsiyeAl } from "./tavsiye-al";
 import { yeterliVeriVarMi } from "@/lib/tavsiye/veri-toplama";
 
@@ -102,8 +120,10 @@ import {
 
 export default async function KartSayfasi({
   params,
+  searchParams,
 }: {
   params: Promise<{ variantId: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }) {
   await sayfaIzni("urun.gor");
   const karGorunur = await izinVarMi("satis.kar.gor");
@@ -111,6 +131,26 @@ export default async function KartSayfasi({
   const { variantId } = await params;
   const veri = await kartVerisiniTopla(variantId);
   if (veri === null) notFound();
+
+  /**
+   * K330 — ALGORİTMO ÜRÜN SAYFASI: dönem (adreste, varsayılan son 30 gün) ve
+   * sekme (adreste). Kâr sekmesi izinsiz kullanıcıya açılmaz → genel.
+   */
+  const sp = await searchParams;
+  const donemCozumu = pencereCoz({ pencere: sp.pencere, baslangic: sp.baslangic, bitis: sp.bitis });
+  const pencere = donemCozumu.pencere ?? pencereOlustur("SON_30_GUN", new Date());
+  const istenenSekme = kartSekmesiCoz(sp.sekme);
+  const sekme = istenenSekme === "kar" && !karGorunur ? "genel" : istenenSekme;
+  const analiz = await kartAnalizi(variantId, pencere, karGorunur);
+  if (analiz === null) notFound();
+  const kartTemeli = `/kart/${variantId}`;
+  const adresParametreleri: Record<string, string | undefined> = {
+    sekme: sekme === "genel" ? undefined : sekme,
+    pencere: donemCozumu.pencere ? sp.pencere : undefined,
+    baslangic: donemCozumu.tur === "OZEL" ? sp.baslangic : undefined,
+    bitis: donemCozumu.tur === "OZEL" ? sp.bitis : undefined,
+  };
+  const donemSorgusu = suzgecAdresi("", { ...adresParametreleri, sekme: undefined }, {});
 
   const t = await getTranslations("UrunKarti");
   const ortak = await getTranslations("Ortak");
@@ -171,7 +211,7 @@ export default async function KartSayfasi({
       ekranı aşabiliyor. Ekranı aşan yapışkan bir blok kendi içinde ikinci
       bir kaydırma ister — faydadan çok yük olurdu.
     */
-    <div className="mx-auto max-w-3xl xl:max-w-6xl">
+    <div className="mx-auto max-w-3xl xl:max-w-7xl">
       {/*
         ═══ KÜNYE IZGARANIN ÜSTÜNDE, TAM GENİŞLİKTE (K103-②) ═══
         ⛔ KULLANICI BULGUSU 30.08.2026: künye sol sütunun İÇİNDEYKEN sağdaki
@@ -184,7 +224,20 @@ export default async function KartSayfasi({
         AYNI ÇİZGİDEN başlıyor. Alt eylemler ve SKU satırı da aynı gerekçeyle
         ızgaranın dışında (İlke #10).
       */}
-      <div className="mb-6">
+      {/*
+        ═══ K330 — ALGORİTMO ÜST KARTI: resim · künye · dönem + iki KPI ═══
+        Künye (aşağıdaki h1 · kodlar · KDV/kategori/desi satırı) AYNEN korunuyor;
+        yalnız gri iç kutuya alındı. Izgara (K103) bu kartın ALTINDA kalır.
+      */}
+      <div className="mb-6 space-y-6">
+      <div className="rounded-lg border p-4">
+      <div className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)] 2xl:grid-cols-[auto_minmax(0,1fr)_380px]">
+        <UrunGalerisi
+          resimler={analiz.resimler}
+          kaynak={analiz.resimKaynagi}
+          ad={`${varyant.urunAdi}${varyant.varyantAdi ? ` — ${varyant.varyantAdi}` : ""}`}
+        />
+      <div className="min-w-0 space-y-3 rounded-lg bg-[var(--se-baslik)] p-4">
         <h1 className="text-xl font-semibold sm:text-2xl">
           {varyant.urunAdi}
           {varyant.varyantAdi ? ` — ${varyant.varyantAdi}` : ""}
@@ -266,10 +319,33 @@ export default async function KartSayfasi({
             {t("urunSayfasi")}
           </Baglanti>
         </div>
+        <TarihSatiri a={analiz} />
+      </div>
+        <div className="space-y-3 lg:col-span-2 2xl:col-span-1">
+          <div className="flex justify-end">
+            <DonemSecici temel={kartTemeli} mevcut={adresParametreleri} pencere={pencere} />
+          </div>
+          <UstKpiler a={analiz} para={para} />
+        </div>
+      </div>
+      </div>
+        <OzetKutulari a={analiz} para={para} karGorunur={karGorunur} />
+        <SekmeCubugu
+          temel={kartTemeli}
+          mevcut={adresParametreleri}
+          secili={sekme}
+          sayilar={{ siparisler: analiz.siparisToplam.satir, varyantlar: analiz.varyantlar.length }}
+          karGorunur={karGorunur}
+        />
       </div>
 
       <div className="xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] xl:items-start xl:gap-6">
       <div className="space-y-6">
+      {/* ═══ K330 — GENEL SEKMESİ: Algoritmo panosu, ardından mevcut stok/maliyet/parti/satış blokları ═══ */}
+      {sekme === "genel" ? (
+      <>
+      <GenelSekmesi a={analiz} para={para} karGorunur={karGorunur} />
+      <h2 className="text-base font-semibold">{t("ayrintiBaslik")}</h2>
       {/* ═══════════════════ STOK — HERKESE AÇIK ═══════════════════ */}
       <Bolum baslik={t("stokBaslik")} ikon={Boxes}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -520,6 +596,23 @@ export default async function KartSayfasi({
         )}
       </Bolum>
 
+      </>
+      ) : null}
+
+      {sekme === "siparisler" ? (
+        <SiparisSekmesi
+          a={analiz}
+          para={para}
+          karGorunur={karGorunur}
+          satisAdresi={suzgecAdresi("/satislar", {}, { q: varyant.sku, pencere: donemCozumu.pencere ? sp.pencere : "SON_30_GUN", baslangic: adresParametreleri.baslangic, bitis: adresParametreleri.bitis })}
+        />
+      ) : null}
+      {sekme === "varyantlar" ? <VaryantSekmesi a={analiz} para={para} karGorunur={karGorunur} temelSorgu={donemSorgusu} /> : null}
+
+      {/* ═══ K330 — KÂR RAPORU SEKMESİ: merdiven, ardından mevcut kârlılık ve tavsiye blokları ═══ */}
+      {sekme === "kar" ? (
+      <>
+      <KarMerdiveni a={analiz} para={para} />
       {/* ═══════════════════ KÂRLILIK — İZNE BAĞLI ═══════════════════
           Blok izinsiz kullanıcıya HİÇ ÇİZİLMEZ; rakam sunucudan çıkmaz. */}
       {karGorunur ? (
@@ -682,6 +775,13 @@ export default async function KartSayfasi({
         </Bolum>
       ) : null}
 
+      </>
+      ) : null}
+
+      {/* ═══ K330 — İADELER SEKMESİ: günlük iade, ardından mevcut risk bloğu ═══ */}
+      {sekme === "iadeler" ? (
+      <>
+      <IadeSekmesi a={analiz} para={para} />
       {/* ═══════════════════ RİSK — izne bağlı olanlar ayrı ═══════════════════ */}
       <Bolum baslik={t("riskBaslik")} ikon={TriangleAlert}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -720,6 +820,9 @@ export default async function KartSayfasi({
           ) : null}
         </div>
       </Bolum>
+
+      </>
+      ) : null}
 
       {/* Para birimi karışıksa kart tek rakam veremez — söylenir. */}
       {veri.paraBirimi === null && !ozet.hicSatilmamisMi ? (

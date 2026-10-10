@@ -606,14 +606,17 @@ model ProductVariant {
   /// (Trendyol → N11; ELLE hiç ezilmez). Görsel çalıştıkça SABİT; kırılınca
   /// sıra baştan işler. Boş = hiçbir kaynakta görsel bulunamadı (ekranda yer
   /// tutucu) — uydurulmaz.
-  gorselUrl      String?        @db.VarChar(500)
+  gorselUrl      String?          @db.VarChar(500)
   gorselKaynak   GorselKaynagi?
   /// Görselin yazıldığı an (kaynak değişince de güncellenir).
   gorselAt       DateTime?
   /// SON KIRIK ADRES. `gorselUrl` buna eşitse görsel kırıktır. Ayrı tutulur ki
   /// kaynak aynı bozuk adresi tekrar yolladığında öncelik kuralı onu geri
   /// getirmesin.
-  gorselKirikUrl String?        @db.VarChar(500)
+  gorselKirikUrl String?          @db.VarChar(500)
+  /// K330 — GALERİ: kanalın verdiği BÜTÜN resimler (sıralı). Ana resim yine
+  /// `gorselUrl`dır (öncelik kuralı aynen); galeri onun yanına gelir, yerine geçmez.
+  gorselGalerisi VaryantGorseli[]
 
   /// Depodaki raf konumu (opsiyonel).
   /// ŞU AN: varyant başına TEK konum — bilerek basit tutuldu.
@@ -998,7 +1001,7 @@ model ChannelAccount {
   /// linkler sessizce bozulmasın. N11'de kanalın kendi cevabından (`sellerNickname`)
   /// dolar; HB'nin ilan ucu bunu VERMİYOR (ölçüldü 09.10) → Kanal Hesapları'ndan yazılır.
   /// Boşsa link mağaza belirtmez (pazaryeri öne çıkan satıcıyı açar).
-  magazaAdi String?
+  magazaAdi  String?
 
   /// ── API KİMLİĞİ — `externalId`DEN AYRI, VE AYRI OLMASI ZORUNLU (K184) ──
   ///
@@ -1031,6 +1034,7 @@ model ChannelAccount {
   /// Boşsa o hesabın satışları için beklenen tarih ÜRETİLMEZ — tahmin
   /// edilmiş bir tarih göstermektense boş bırakılır.
   /**
+   * /**
    * /**
    * /**
    * /**
@@ -3372,6 +3376,7 @@ model Company {
   finansmanListesi             Finansman[]
   finansmanHareketiListesi     FinansmanHareketi[]
   finansmanBirimFiyatiListesi  FinansmanBirimFiyati[]
+  varyantGorseliListesi        VaryantGorseli[]
 
   @@index([isActive])
 }
@@ -4270,4 +4275,26 @@ model IkiAdimYedekKodu {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+/// K330 (10.10.2026) — ÜRÜN RESİM GALERİSİ. Trendyol bir ürün için 1–23 resim
+/// veriyor (ölçüldü 10.10: 300 içerik, çoğu 5–10); `ProductVariant.gorselUrl`
+/// yalnız İLKİNİ tutuyordu. Kârlılık kartı Algoritmo ölçüsünde büyük resim +
+/// küçük resimler gösterir. Kaynak her senkronda listeyi BÜTÜNÜYLE yeniler
+/// (kanalın kendi sırası); elle eklenen tek resim `gorselUrl`da kalır.
+/// Firma süzgecinin İÇİNDE (`companyId`).
+model VaryantGorseli {
+  id        String         @id @default(cuid())
+  companyId String
+  company   Company        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  /// Kanalın sırası, 0'dan.
+  sira      Int
+  url       String         @db.VarChar(500)
+  kaynak    GorselKaynagi
+  createdAt DateTime       @default(now())
+
+  @@unique([variantId, sira])
+  @@index([companyId])
 }

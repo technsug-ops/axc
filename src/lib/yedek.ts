@@ -76,6 +76,8 @@ export async function yedekUret(
     FirmaOdemesi: await istemci.firmaOdemesi.findMany({ orderBy: { id: "asc" } }),
     /** Pazaryeri anahtarı ŞİFRELİ hâliyle — açmak için aynı şifreleme anahtarı gerekir. */
     KanalAnahtari: await istemci.kanalAnahtari.findMany(),
+    /** K330 — resim galerisi (sıralı). */
+    VaryantGorseli: await istemci.varyantGorseli.findMany({ orderBy: [{ variantId: "asc" }, { sira: "asc" }] }),
     Category: await istemci.category.findMany(),
     TyKategoriEslesme: await istemci.tyKategoriEslesme.findMany(),
     Brand: await istemci.brand.findMany(),

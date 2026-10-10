@@ -83,6 +83,8 @@ export const YEDEK_TABLOLARI = [
   "VariantOption",
   /** K287 — eski kodlar; `ProductVariant`e bağlı (RESTRICT) → varyantlardan SONRA. */
   "EskiKod",
+  /** K330 — resim galerisi; `ProductVariant` + `Company`ye bağlı → varyantlardan SONRA. */
+  "VaryantGorseli",
   // --- kanal ağacı ---
   "PenaltyTariff",
   "ChannelFee",
@@ -198,11 +200,14 @@ export const YEDEK_TABLOLARI = [
  *       PaketOzelligi · FirmaOzelligi · FirmaOdemesi · KanalAnahtari ·
  *       IkiAdimYedekKodu. ⚠ YİNE AYNI DESEN: dal hiç tam turda koşmadığı için
  *       kapsam bekçisinin kırmızısı görülmemişti; ilk push turu yakaladı.
+ *   8 — VaryantGorseli eklendi (10.10.2026, K330, yalnız çok firmalı dal).
+ *       Liste ve üretici AYNI düzenlemede değişti (09.10 veri kaybının dersi:
+ *       listede olup üreticide olmayan tablo geri yükleme sınamasında BOŞALIR).
  *
  * Sürüm 1 dosyalar OKUNABİLİR kalır; geri yükleme ekranı eksik tabloları
  * tek tek sayar ve uyarır — sessizce "tamam" demez.
  */
-export const YEDEK_SURUMU = 7;
+export const YEDEK_SURUMU = 8;
 
 /**
  * ============================================================================

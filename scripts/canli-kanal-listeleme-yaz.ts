@@ -264,9 +264,15 @@ export async function tyListelemeCekimKos(ayar: {
     const { gorselleriYaz } = await import("../src/lib/urun-gorseli-yaz");
     gorsel = await gorselleriYaz(
       /* Tarama tipi ham kayıt (`Record<string, unknown>`); alanlar String ile okunur. */
-      t.urunler.map((u) => ({ barkod: String(u.barcode ?? ""), url: String(u.gorselUrl ?? ""), kaynak: "TRENDYOL" as const })),
+      t.urunler.map((u) => ({
+        barkod: String(u.barcode ?? ""),
+        url: String(u.gorselUrl ?? ""),
+        kaynak: "TRENDYOL" as const,
+        /* K330 — bütün resimler; normalleştiricide zaten süzüldü. */
+        galeri: Array.isArray(u.galeri) ? (u.galeri as string[]) : [],
+      })),
     );
-    console.log(`   görsel: aday ${gorsel.aday} · eşleşen ${gorsel.eslesen} · yazılan ${gorsel.yazilan} · sırada ${gorsel.tavandaKalan}`);
+    console.log(`   görsel: aday ${gorsel.aday} · eşleşen ${gorsel.eslesen} · yazılan ${gorsel.yazilan} · sırada ${gorsel.tavandaKalan} · galeri yazılan ${gorsel.galeriYazilan} · sırada ${gorsel.galeriTavandaKalan}`);
   } catch (e) {
     console.error("   ⛔ görsel yazımı düştü:", e);
     gorsel = { hata: e instanceof Error ? e.message : String(e) };

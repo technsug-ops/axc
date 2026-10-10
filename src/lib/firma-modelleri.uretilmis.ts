@@ -436,6 +436,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       "finansmanBirimFiyatiListesi": {
         "hedef": "FinansmanBirimFiyati",
         "liste": true
+      },
+      "varyantGorseliListesi": {
+        "hedef": "VaryantGorseli",
+        "liste": true
       }
     },
     "yabanciAnahtarlar": [
@@ -942,6 +946,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       "product": {
         "hedef": "Product",
         "liste": false
+      },
+      "gorselGalerisi": {
+        "hedef": "VaryantGorseli",
+        "liste": true
       },
       "location": {
         "hedef": "Location",
@@ -1652,6 +1660,22 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
     ]
   },
   "VariantOption": {
+    "firma": true,
+    "iliskiler": {
+      "company": {
+        "hedef": "Company",
+        "liste": false
+      },
+      "variant": {
+        "hedef": "ProductVariant",
+        "liste": false
+      }
+    },
+    "yabanciAnahtarlar": [
+      "variantId"
+    ]
+  },
+  "VaryantGorseli": {
     "firma": true,
     "iliskiler": {
       "company": {

@@ -175,3 +175,52 @@ export function elleGorselDenetle(ham: string): { url: string } | { hata: ElleGo
   }
   return { url };
 }
+
+/**
+ * ============================================================================
+ *  GALERİ (K330, 10.10.2026) — kanalın verdiği BÜTÜN resimler
+ * ----------------------------------------------------------------------------
+ *  Ana resim kuralı (`gorselSec`) AYNEN kalır; galeri onun yanına gelir.
+ *  Kaynak öncelikliyse (TY > N11) ya da aynı kaynaksa listenin TAMAMI
+ *  yenilenir; aynı liste yeniden gelirse YAZILMAZ (senkron boşuna yazmaz).
+ * ============================================================================
+ */
+/** Galeri tavanı — ölçüldü 10.10: 300 TY içeriğinde en çok 23 resim. */
+export const GALERI_TAVANI = 30;
+
+export type KanalGorselKaynagi = Exclude<GorselKaynagi, "ELLE">;
+
+/** Ham listeden galeri adresleri: izinli sunucu + https, tekrarsız, sıra korunur. */
+export function galeriAdresleri(ham: readonly unknown[], kaynak: KanalGorselKaynagi): string[] {
+  const sonuc: string[] = [];
+  for (const h of ham) {
+    const ad = typeof h === "string" ? h : h && typeof h === "object" ? (h as Record<string, unknown>).url : null;
+    if (typeof ad !== "string") continue;
+    const url = ad.trim();
+    if (url.length > ELLE_GORSEL_AZAMI_UZUNLUK || !gorselAdresiGecerliMi(url, kaynak) || sonuc.includes(url)) continue;
+    sonuc.push(url);
+    if (sonuc.length >= GALERI_TAVANI) break;
+  }
+  return sonuc;
+}
+
+/** Galeri yazılsın mı — boş aday YAZMAZ (var olanı silmez), aynı liste YAZMAZ, düşük öncelik YAZMAZ. */
+export function galeriYazilirMi(
+  mevcut: { kaynak: KanalGorselKaynagi | null; adresler: readonly string[] },
+  aday: { kaynak: KanalGorselKaynagi; adresler: readonly string[] },
+): boolean {
+  if (aday.adresler.length === 0) return false;
+  if (mevcut.kaynak !== null && GORSEL_ONCELIGI[aday.kaynak] > GORSEL_ONCELIGI[mevcut.kaynak]) return false;
+  const ayni =
+    mevcut.kaynak === aday.kaynak &&
+    mevcut.adresler.length === aday.adresler.length &&
+    mevcut.adresler.every((u, i) => u === aday.adresler[i]);
+  return !ayni;
+}
+
+/** Kartta gösterilecek sıra: ana resim önce, galeri ardından (tekrarsız). */
+export function kartResimleri(ana: string | null, galeri: readonly string[]): string[] {
+  const sonuc: string[] = [];
+  for (const u of [ana, ...galeri]) if (u && !sonuc.includes(u)) sonuc.push(u);
+  return sonuc;
+}
