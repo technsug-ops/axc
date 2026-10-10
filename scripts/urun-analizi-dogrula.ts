@@ -1,5 +1,6 @@
 import { kaynakOku } from "./kaynak-oku";
 import { acikSuzgecSayisi, analizOzetParcalari } from "../src/lib/rapor/analiz-ozeti";
+import { SEKME_SERIDI } from "../src/lib/kutu-bicimi";
 
 import {
   analizAdresi,
@@ -973,7 +974,11 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
   dogru("kap telefonda varsayılan KAPALI", kap.includes("useState(false)"));
   dogru("  ...masaüstünde HER ZAMAN açık, düğme yalnız telefonda", kap.includes('${acik ? "block" : "hidden"} space-y-4 md:block') && kap.includes('className="h-11 w-full justify-between md:hidden"'));
   const sayfa = kaynakOku("src/app/rapor/urunler/page.tsx");
-  dogru("eksen sekmeleri telefonda tek satır kayıyor", sayfa.includes('<div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">\n        {ANALIZ_EKSENLERI.map('));
+  /* K330-④ (10.10.2026): eksen sekmeleri ortak alt çizgili şeride (`SEKME_SERIDI`) geçti —
+     ölçüt eskidi, NİYET AYNI: telefonda tek satır kayar, sarmaz. */
+  dogru("eksen sekmeleri telefonda tek satır kayıyor",
+    sayfa.includes('<div className={SEKME_SERIDI}>\n        {ANALIZ_EKSENLERI.map(') &&
+      SEKME_SERIDI.includes("overflow-x-auto") && !SEKME_SERIDI.includes("flex-wrap"));
   kosanBolumler.push("k293-telefon-suzgec");
 }
 

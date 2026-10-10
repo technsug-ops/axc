@@ -67,6 +67,7 @@ import { AnalizSuzgeci as SuzgecCubugu } from "./analiz-suzgeci";
 import { UrunEtiketleri } from "./urun-etiketleri";
 
 import type { Currency } from "@/generated/prisma/enums";
+import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -310,7 +311,7 @@ export default async function UrunAnaliziSayfasi({
 
       {/* ── EKSEN SEKMELERİ — seçim ADRESTE yaşar ──
           K293: telefonda tek satır, yana kayar (panel dönem çipleriyle aynı). */}
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
+      <div className={SEKME_SERIDI}>
         {ANALIZ_EKSENLERI.map((e) => {
           const aktif = e === eksen;
           return (
@@ -351,12 +352,8 @@ export default async function UrunAnaliziSayfasi({
                 satir: satirSayisi,
               })}
               aria-current={aktif ? "page" : undefined}
-              className={
-                "inline-flex h-11 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
-                (aktif
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background hover:bg-muted")
-              }
+              /* K330-④ — alt çizgili sekme (ortak biçim). */
+              className={sekmeSinifi(aktif)}
             >
               {eksenEtiketi[e]}
             </Link>

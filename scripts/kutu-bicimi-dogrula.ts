@@ -1,5 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
-import { KUTU_ETIKETI, KUTU_RAKAMI } from "../src/lib/kutu-bicimi";
+import { KUTU_ETIKETI, KUTU_RAKAMI, SEKME_SERIDI, sekmeSinifi } from "../src/lib/kutu-bicimi";
 import { DURUM_KUTUSU, DURUM_SERIDI } from "../src/lib/renkler";
 
 /**
@@ -70,6 +70,8 @@ console.log("=".repeat(70));
     const derinlik2 = (once2.match(/\{/g) ?? []).length - (once2.match(/\}/g) ?? []).length;
     kontrol("kart başlığı kuralı KATMANDA (ekranın verdiği boyut kazanır)", baslikBas >= 0 && derinlik2 === 1 && /@layer components \{\s*$/.test(once2), { derinlik2 });
   }
+  kontrol("boş-durum kutusu (kesikli, ortalı, geniş) beyaz kart", /:where\(div, section\)\.border-dashed\.text-center:is\(\.p-6, \.p-8, \.p-10\) \{\s*border-style: solid;\s*border-color: var\(--se-kart-cizgi, transparent\);\s*box-shadow: var\(--se-golge-1\);/.test(css));
+  kontrol("kart dışındaki tablo beyaz kart", /\[data-slot="table-container"\] \{\s*background-color: var\(--card\);\s*border-radius: var\(--radius\);\s*box-shadow: var\(--se-golge-1\);/.test(css));
   kontrol("kart başlığı 16 px / 600", /\[data-slot="card-title"\] \{\s*font-size: 1rem;\s*line-height: 1\.5rem;\s*font-weight: 600;/.test(css));
   kontrol("liste kartı tema kuralına girer (rounded-lg border)", /className="bg-card min-w-0 space-y-2\.5 rounded-lg border p-3"/.test(kaynakOku("src/components/liste-karti.tsx")));
   kosanBolumler.push("tema");
@@ -102,6 +104,14 @@ console.log("=".repeat(70));
   for (const d of ["uyari", "olumsuz", "olumlu", "bilgi"] as const) {
     kontrol(`durum kutusu (${d}) şeritli`, DURUM_KUTUSU[d].includes(DURUM_SERIDI[d]));
     kontrol(`  ...(${d}) beyaz zemin, pastel dolgu YOK`, DURUM_KUTUSU[d].includes("bg-card") && !/(^| )bg-\[#/.test(DURUM_KUTUSU[d]));
+  }
+  {
+    kontrol("sekme alt çizgili, aktif vurgu renginde", sekmeSinifi(true).includes("border-b-2") && sekmeSinifi(true).includes("border-[var(--se-vurgu)]") && !sekmeSinifi(true).includes("bg-primary"));
+    kontrol("  ...pasif sekmede çizgi görünmez", sekmeSinifi(false).includes("border-transparent"));
+    kontrol("sekme şeridi tek satır kayar", SEKME_SERIDI.includes("overflow-x-auto") && !SEKME_SERIDI.includes("flex-wrap"));
+    for (const [ad, yol] of [["ortak sekme bileşeni", "src/components/sekmeli-bolum.tsx"], ["ürün analizi", "src/app/rapor/urunler/page.tsx"], ["kârlılık kartı", "src/app/kart/[variantId]/kart-panosu.tsx"]] as const) {
+      kontrol(`${ad} ortak sekme biçimini kullanır`, /className=\{sekmeSinifi\(/.test(yorumsuz(kaynakOku(yol))));
+    }
   }
   kosanBolumler.push("yazi");
 }

@@ -11,3 +11,15 @@
  */
 export const KUTU_ETIKETI = "text-muted-foreground text-[13px] font-medium";
 export const KUTU_RAKAMI = "font-bold tabular-nums";
+
+/**
+ * ALT ÇİZGİLİ SEKME (Algoritmo) — K330-④ (kullanıcı 10.10.2026: «bunlar da yeni
+ * stile çevir»). Ortak sekme bileşeni, ürün analizi ve kârlılık kartı BURADAN
+ * okur. Aktif sekme vurgu renginde alt çizgi + yazı (eski: dolu aksan hapı).
+ */
+export const SEKME_SERIDI = "flex gap-1 overflow-x-auto overflow-y-hidden border-b [scrollbar-width:none]";
+export function sekmeSinifi(aktif: boolean): string {
+  return `inline-flex h-11 shrink-0 items-center border-b-2 px-3 text-[13px] font-medium ${
+    aktif ? "border-[var(--se-vurgu)] text-[var(--se-vurgu)]" : "text-muted-foreground border-transparent hover:text-foreground"
+  }`;
+}

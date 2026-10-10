@@ -132,7 +132,8 @@ export function Yerlestirici() {
   };
 
   return (
-    <div className="max-w-3xl space-y-6">
+    /* K330-④ — form beyaz kartta (kullanıcı 10.10.2026: gri zemine dizilmiş form eski görünüm). */
+    <div className="max-w-3xl space-y-6 rounded-lg border p-4 sm:p-6">
       {/* ═══ ADIM 1 — RAF ═══════════════════════════════════════════════ */}
       <section className="space-y-2">
         <label htmlFor="raf-kutusu" className="text-sm font-medium">
