@@ -15,6 +15,7 @@ import { suzgecAdresi } from "@/lib/suzgec";
 import { SIPARIS_SATIR_TAVANI, type KartAnalizi } from "@/lib/urun-karti-analiz";
 
 import { DurumHalkasi, GunlukGrafik, MiniCizgi, StokFiyatGrafigi } from "./kart-grafikleri";
+import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -303,16 +304,14 @@ export async function SekmeCubugu({
   };
   const gorunen = KART_SEKMELERI.filter((s) => karGorunur || s !== "kar");
   return (
-    <nav className="flex gap-1 overflow-x-auto overflow-y-hidden border-b [scrollbar-width:none]" aria-label={t("sekmeGenel")}>
+    <nav className={SEKME_SERIDI} aria-label={t("sekmeGenel")}>
       {gorunen.map((s) => (
         <Link
           key={s}
           href={suzgecAdresi(temel, mevcut, { sekme: s === "genel" ? undefined : s })}
           scroll={false}
           aria-current={s === secili ? "page" : undefined}
-          className={`inline-flex h-11 shrink-0 items-center border-b-2 px-3 text-[13px] font-medium ${
-            s === secili ? "border-[var(--se-vurgu)] text-[var(--se-vurgu)]" : "text-muted-foreground border-transparent hover:text-foreground"
-          }`}
+          className={sekmeSinifi(s === secili)}
         >
           {adlar[s]}
         </Link>

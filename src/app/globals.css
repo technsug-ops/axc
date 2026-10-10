@@ -375,6 +375,34 @@ h1, h2, h3, [data-slot="card-title"] {
         box-shadow: none;
     }
 }
+/* ⑤ K330-④ (kullanıcı 10.10.2026: «bunlar da yeni stile çevir»):
+   · BOŞ-DURUM KUTUSU («henüz kayıt yok» — kesikli, ortalı, geniş iç boşluk, 33 yer)
+     beyaz kart olur. Kesikli çizginin ANLAM taşıdığı küçük kutular («toplama
+     girmez», izin yok notu) DIŞARIDA kalır — onlarda ortalama/geniş boşluk yok.
+   · KART DIŞINDAKİ TABLO (`Table` kabı) beyaz kart olur; zaten kart/kutu içindeyse
+     gölge almaz. */
+@layer components {
+    :where(div, section).border-dashed.text-center:is(.p-6, .p-8, .p-10) {
+        border-style: solid;
+        border-color: var(--se-kart-cizgi, transparent);
+        box-shadow: var(--se-golge-1);
+        background-color: var(--card);
+    }
+    :is([data-slot="card"], .rounded-lg.border) :where(div, section).border-dashed.text-center:is(.p-6, .p-8, .p-10) {
+        border-color: var(--se-cizgi);
+        box-shadow: none;
+    }
+    [data-slot="table-container"] {
+        background-color: var(--card);
+        border-radius: var(--radius);
+        box-shadow: var(--se-golge-1);
+    }
+    :is([data-slot="card"], .rounded-lg.border, .rounded-md.border) [data-slot="table-container"] {
+        background-color: transparent;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
 /* ③ KATMANDA: ekran başlığa kendi boyutunu verdiyse (rakam kutusu etiketi) O kazanır —
    katmansız yazıldığında küçük etiketleri de 16 px'e çıkarıyordu (Paket C'de görüldü). */
 @layer components {

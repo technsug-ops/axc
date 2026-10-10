@@ -260,7 +260,8 @@ export async function TarifeDurumu() {
               );
               return (
                 <div key={x.id} className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                  {/* K330-④ — pencere satırı kutu içinde (düz metin satırları «dağınık» görünüyordu). */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-2 text-sm">
                     <span className="tabular-nums">
                       {t("kapsamSatir", {
                         kanal: x.channelAccount?.channel.name ?? "—",
@@ -279,7 +280,7 @@ export async function TarifeDurumu() {
                     */}
                     <Link
                       href={`/tarife?pencere=${x.id}`}
-                      className="text-primary text-sm underline underline-offset-4"
+                      className="text-primary ml-auto text-sm underline underline-offset-4"
                     >
                       {tAyna("aynayiAc")}
                     </Link>

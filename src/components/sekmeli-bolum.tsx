@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -80,7 +81,7 @@ export function SekmeliBolum({
 
         {/* Tek sekme varsa çubuk çizilmez — tıklanacak bir seçim yok. */}
         {sekmeler.length > 1 ? (
-          <div className="flex flex-wrap gap-1">
+          <div className={SEKME_SERIDI}>
             {sekmeler.map((s) => (
               <Link
                 key={s.anahtar}
@@ -97,20 +98,9 @@ export function SekmeliBolum({
                  */
                 scroll={false}
                 aria-current={s.anahtar === aktif.anahtar ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm md:min-h-9 ${
-                  s.anahtar === aktif.anahtar
-                    ? /**
-                       * AKTİF SEKME AKSAN RENGİNDE — siyah değil.
-                       * 16.08.2026: renk sistemi turunda bu bileşen
-                       * atlanmıştı; sekme siyah dolgu kalmıştı. Uygulamanın
-                       * her yerinde "seçili olan" aksan mavisidir (süzgeç
-                       * düğmeleri, birincil butonlar, sol menü). Tek bir
-                       * yerde siyah kalması, aynı anlamın iki farklı renkle
-                       * söylenmesi olurdu (İlke #10).
-                       */
-                      "bg-primary text-primary-foreground border-primary"
-                    : "hover:bg-muted"
-                }`}
+                /* K330-④ — alt çizgili sekme (ortak biçim `sekmeSinifi`). Aktif hâl yine
+                   AKSAN renginde (16.08.2026 kararı korunuyor: siyah dolgu yok). */
+                className={sekmeSinifi(s.anahtar === aktif.anahtar)}
               >
                 {s.etiket}
               </Link>
