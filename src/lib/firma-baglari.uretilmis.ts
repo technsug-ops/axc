@@ -342,6 +342,11 @@ export const FIRMA_BAGLARI: readonly { tablo: string; alan: string; hedef: strin
     "tablo": "VariantOption",
     "alan": "variantId",
     "hedef": "ProductVariant"
+  },
+  {
+    "tablo": "VaryantGorseli",
+    "alan": "variantId",
+    "hedef": "ProductVariant"
   }
 ];
 export const BAG_KAPISI_DEGISKENI = "selliora_bag_kapisi_kapali";
