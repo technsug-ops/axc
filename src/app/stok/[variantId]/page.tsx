@@ -28,6 +28,7 @@ import { DuzeltmeFormu } from "./duzeltme-formu";
 import { acikPartilerToplu, varyantStogu } from "@/lib/stok";
 import { KART_PARTI_CAPASI, kalanMaliyetOzeti, partilerinParaBirimi } from "@/lib/kart-partileri";
 import { sonSayimTarihleri } from "@/lib/sayim-damgasi";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 export default async function VaryantHareketleriSayfasi({
   params,
@@ -180,7 +181,7 @@ export default async function VaryantHareketleriSayfasi({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-1">
-                <p className="text-3xl font-semibold">{stok}</p>
+                <p className={`text-3xl ${KUTU_RAKAMI}`}>{stok}</p>
                 {kalan.partiSayisi === 0 ? (
                   stok > 0 ? <p className="text-muted-foreground text-xs">{t("kalanPartiYok")}</p> : null
                 ) : (
@@ -208,26 +209,26 @@ export default async function VaryantHareketleriSayfasi({
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className={KUTU_ETIKETI}>
                 {t("mevcutStok")}
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-3xl font-semibold">{stok}</CardContent>
+            <CardContent className={`text-3xl ${KUTU_RAKAMI}`}>{stok}</CardContent>
           </Card>
         )}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className={KUTU_ETIKETI}>
               {ortak("raf")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">
+          <CardContent className={`text-2xl ${KUTU_RAKAMI}`}>
             {varyant.location ? varyant.location.code : "—"}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">{t("kodlar")}</CardTitle>
+            <CardTitle className={KUTU_ETIKETI}>{t("kodlar")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-xs">
             <div className="flex flex-wrap items-center gap-1">

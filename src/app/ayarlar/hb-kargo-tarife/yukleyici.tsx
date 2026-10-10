@@ -11,6 +11,7 @@ import { useBicim } from "@/lib/bicim-istemci";
 import { DURUM_YAZISI } from "@/lib/renkler";
 
 import { kargoTarifeOnizle, kargoTarifeyiYaz } from "./eylemler";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -134,9 +135,9 @@ export function Yukleyici() {
                 ["yeni", onizleme.rapor.yeni],
               ] as const
             ).map(([anahtar, deger]) => (
-              <div key={anahtar} className="bg-muted/40 rounded-md px-2.5 py-2">
-                <p className="text-muted-foreground text-xs">{t(anahtar)}</p>
-                <p className="text-base font-semibold tabular-nums">
+              <div key={anahtar} className="bg-card rounded-lg border px-3 py-2">
+                <p className={KUTU_ETIKETI}>{t(anahtar)}</p>
+                <p className={`text-base ${KUTU_RAKAMI}`}>
                   {bicim.sayi(deger)}
                 </p>
               </div>

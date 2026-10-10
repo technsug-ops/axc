@@ -15,6 +15,7 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 import {
   kalemBul,
   kalemTamTeyitliMi,
@@ -563,8 +564,8 @@ function KalemSatiri({ kalem }: { kalem: PaketKalemi }) {
 
         {/* ⚠ ADET VE RAF YAN YANA, KOMPAKT KUTUCUK (İlke #12). */}
         <div className="flex shrink-0 items-center gap-2">
-          <div className="bg-muted/40 rounded-md px-2.5 py-1.5 text-center">
-            <p className="text-muted-foreground text-xs">{t("adet")}</p>
+          <div className="bg-card rounded-lg border px-3 py-1.5 text-center">
+            <p className={KUTU_ETIKETI}>{t("adet")}</p>
             {/*
               K203 — OKUTULAN/TOPLAM HER ZAMAN GÖSTERİLİR (adet 1 olsa
               bile), çünkü İlke #10 aynı işlemin her yerde aynı görünmesini
@@ -572,16 +573,16 @@ function KalemSatiri({ kalem }: { kalem: PaketKalemi }) {
               sayaç neden yok" sorusunu üretirdi. `0/1` → `1/1` geçişi de
               tek okutmanın gerçekten SAYILDIĞINI gösterir.
             */}
-            <p className="text-base font-semibold tabular-nums">
+            <p className={`text-base ${KUTU_RAKAMI}`}>
               {kalem.teyitliAdet}/{kalem.adet}
             </p>
           </div>
-          <div className="bg-muted/40 rounded-md px-2.5 py-1.5 text-center">
-            <p className="text-muted-foreground flex items-center gap-1 text-xs">
+          <div className="bg-card rounded-lg border px-3 py-1.5 text-center">
+            <p className={`flex items-center gap-1 ${KUTU_ETIKETI}`}>
               <MapPin className="size-3" aria-hidden />
               {t("raf")}
             </p>
-            <p className="text-base font-semibold">
+            <p className={`text-base ${KUTU_RAKAMI}`}>
               {kalem.rafKodu ?? (
                 <span className={`text-sm ${DURUM_YAZISI.uyari}`}>
                   {t("rafYok")}

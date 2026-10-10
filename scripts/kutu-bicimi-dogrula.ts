@@ -60,6 +60,16 @@ console.log("=".repeat(70));
   kontrol("  ...gri dolgu kuralı KATMANSIZ (bg-* aracını ezer)", griBas >= 0 && seciciBas >= 0 && derinlik === 0, { derinlik });
   kontrol("bağlantı biçimindeki kutu da kart olur", /a\.rounded-lg\.border:not\(\.border-dashed\) \{\s*border-color: var\(--se-kart-cizgi, transparent\);\s*box-shadow: var\(--se-golge-1\);\s*background-color: var\(--card\);/.test(css));
   kontrol("  ...kart içindeki bağlantı kutusu gölge almaz", /a\.rounded-lg\.border:not\(\.border-dashed\) \{\s*border-color: var\(--se-cizgi\);\s*box-shadow: none;/.test(css));
+  {
+    /* Kart başlığı kuralı KATMANDA olmalı: ekranın verdiği boyut (rakam kutusu etiketi) kazansın.
+       Katmansız yazıldığında küçük etiketleri 16 px'e çıkarıyordu (Paket C'de görüldü, 10.10.2026). */
+    /* ⚠ ÖNCE DESEN SAYILDI: `[data-slot="card-title"] {` dosyada İKİ kez geçiyor (h1/h2 harf
+       aralığı kuralı da aynı seçiciyi taşıyor) — çapa boyut satırına bağlandı. */
+    const baslikBas = css.search(/\[data-slot="card-title"\] \{\s*font-size: 1rem;/);
+    const once2 = baslikBas >= 0 ? css.slice(0, baslikBas) : "";
+    const derinlik2 = (once2.match(/\{/g) ?? []).length - (once2.match(/\}/g) ?? []).length;
+    kontrol("kart başlığı kuralı KATMANDA (ekranın verdiği boyut kazanır)", baslikBas >= 0 && derinlik2 === 1 && /@layer components \{\s*$/.test(once2), { derinlik2 });
+  }
   kontrol("kart başlığı 16 px / 600", /\[data-slot="card-title"\] \{\s*font-size: 1rem;\s*line-height: 1\.5rem;\s*font-weight: 600;/.test(css));
   kontrol("liste kartı tema kuralına girer (rounded-lg border)", /className="bg-card min-w-0 space-y-2\.5 rounded-lg border p-3"/.test(kaynakOku("src/components/liste-karti.tsx")));
   kosanBolumler.push("tema");

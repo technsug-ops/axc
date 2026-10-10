@@ -11,6 +11,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaIzni } from "@/lib/yetki";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -112,32 +113,32 @@ export default async function DepoSayfasi() {
       <section className="max-w-3xl space-y-2">
         <h2 className="text-sm font-medium">{t("mevcutBaslik")}</h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <div className="bg-muted/40 rounded-md px-2.5 py-2">
-            <p className="text-muted-foreground text-xs">{t("tanimliRaf")}</p>
-            <p className="text-base font-semibold tabular-nums">{konumlar.length}</p>
+          <div className="bg-card rounded-lg border px-3 py-2">
+            <p className={KUTU_ETIKETI}>{t("tanimliRaf")}</p>
+            <p className={`text-base ${KUTU_RAKAMI}`}>{konumlar.length}</p>
           </div>
-          <div className="bg-muted/40 rounded-md px-2.5 py-2">
-            <p className="text-muted-foreground text-xs">{t("sablonaUyan")}</p>
-            <p className="text-base font-semibold tabular-nums">
+          <div className="bg-card rounded-lg border px-3 py-2">
+            <p className={KUTU_ETIKETI}>{t("sablonaUyan")}</p>
+            <p className={`text-base ${KUTU_RAKAMI}`}>
               {konumlar.length - uymayan.length}
             </p>
           </div>
-          <div className="bg-muted/40 rounded-md px-2.5 py-2">
-            <p className="text-muted-foreground text-xs">{t("sablonaUymayan")}</p>
-            <p className="text-base font-semibold tabular-nums">{uymayan.length}</p>
+          <div className="bg-card rounded-lg border px-3 py-2">
+            <p className={KUTU_ETIKETI}>{t("sablonaUymayan")}</p>
+            <p className={`text-base ${KUTU_RAKAMI}`}>{uymayan.length}</p>
           </div>
           {/*
             ⭐ BÖLÜME BAĞLI / BAĞLI DEĞİL — iki hâl AYRI kutuda.
             Tek sayıya indirilseydi hangi rafların bölümü olduğu görünmez,
             göçün ne kadar ilerlediği de ölçülemezdi.
           */}
-          <div className="bg-muted/40 rounded-md px-2.5 py-2">
-            <p className="text-muted-foreground text-xs">{t("bolumeBagli")}</p>
-            <p className="text-base font-semibold tabular-nums">{bolumluRaf}</p>
+          <div className="bg-card rounded-lg border px-3 py-2">
+            <p className={KUTU_ETIKETI}>{t("bolumeBagli")}</p>
+            <p className={`text-base ${KUTU_RAKAMI}`}>{bolumluRaf}</p>
           </div>
-          <div className="bg-muted/40 rounded-md px-2.5 py-2">
-            <p className="text-muted-foreground text-xs">{t("bolumsuz")}</p>
-            <p className="text-base font-semibold tabular-nums">{bolumsuzRaf}</p>
+          <div className="bg-card rounded-lg border px-3 py-2">
+            <p className={KUTU_ETIKETI}>{t("bolumsuz")}</p>
+            <p className={`text-base ${KUTU_RAKAMI}`}>{bolumsuzRaf}</p>
           </div>
         </div>
         {/*

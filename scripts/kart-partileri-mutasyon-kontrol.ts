@@ -110,8 +110,9 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "İZİNSİZ DAL MALİYET ÇİZİYOR",
     yon: "FAZLADAN",
     dosya: STOK,
-    bul: '<CardContent className="text-3xl font-semibold">{stok}</CardContent>',
-    koy: '<CardContent className="text-3xl font-semibold">{stok} {bicim.para(kalan.tutar, kalanPara)}</CardContent>',
+    /* K330-③ (10.10.2026): rakam ortak kutu biçimine bağlandı — çapa taşındı, niyet aynı. */
+    bul: "<CardContent className={`text-3xl ${KUTU_RAKAMI}`}>{stok}</CardContent>",
+    koy: "<CardContent className={`text-3xl ${KUTU_RAKAMI}`}>{stok} {bicim.para(kalan.tutar, kalanPara)}</CardContent>",
     bozdugu: "maliyet izni olmayan kişi kalan tutarı görür",
   },
   {

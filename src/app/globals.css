@@ -375,10 +375,14 @@ h1, h2, h3, [data-slot="card-title"] {
         box-shadow: none;
     }
 }
-[data-slot="card-title"] {
-    font-size: 1rem;
-    line-height: 1.5rem;
-    font-weight: 600;
+/* ③ KATMANDA: ekran başlığa kendi boyutunu verdiyse (rakam kutusu etiketi) O kazanır —
+   katmansız yazıldığında küçük etiketleri de 16 px'e çıkarıyordu (Paket C'de görüldü). */
+@layer components {
+    [data-slot="card-title"] {
+        font-size: 1rem;
+        line-height: 1.5rem;
+        font-weight: 600;
+    }
 }
 
 @layer utilities {

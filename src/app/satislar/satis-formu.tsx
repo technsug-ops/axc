@@ -1170,7 +1170,7 @@ export function SatisFormu({
               <div className="text-sm font-medium">{t("satisToplami")}</div>
               <div className="flex flex-wrap gap-3">
                 {toplamlar.map(([paraBirimi, tutar]) => (
-                  <div key={paraBirimi} className="rounded-md border px-3 py-2">
+                  <div key={paraBirimi} className="rounded-lg border px-3 py-2">
                     <div className="text-muted-foreground text-xs">
                       {paraBirimi}
                     </div>

@@ -23,6 +23,7 @@ import { prisma } from "@/lib/prisma";
 import { kalemToplamlari, toplamlariBirlestir } from "@/lib/tutar";
 
 import { kartDurumDegistir } from "../actions";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 export default async function KartDetaySayfasi({
   params,
@@ -90,11 +91,11 @@ export default async function KartDetaySayfasi({
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className={KUTU_ETIKETI}>
               {t("hesapKesim")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">
+          <CardContent className={`text-2xl ${KUTU_RAKAMI}`}>
             {kart.statementDay
               ? t("ayinGunu", { gun: kart.statementDay })
               : "—"}
@@ -102,21 +103,21 @@ export default async function KartDetaySayfasi({
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className={KUTU_ETIKETI}>
               {t("sonOdeme")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">
+          <CardContent className={`text-2xl ${KUTU_RAKAMI}`}>
             {kart.dueDay ? t("ayinGunu", { gun: kart.dueDay }) : "—"}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className={KUTU_ETIKETI}>
               {ortak("limit")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">
+          <CardContent className={`text-2xl ${KUTU_RAKAMI}`}>
             {kart.creditLimitAmount
               ? bicim.para(
                   kart.creditLimitAmount,
