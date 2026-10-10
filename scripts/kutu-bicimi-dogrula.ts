@@ -57,6 +57,8 @@ console.log("=".repeat(70));
   const once = css.slice(0, seciciBas);
   const derinlik = (once.match(/\{/g) ?? []).length - (once.match(/\}/g) ?? []).length;
   kontrol("  ...gri dolgu kuralı KATMANSIZ (bg-* aracını ezer)", griBas >= 0 && seciciBas >= 0 && derinlik === 0, { derinlik });
+  kontrol("bağlantı biçimindeki kutu da kart olur", /a\.rounded-lg\.border:not\(\.border-dashed\) \{\s*border-color: var\(--se-kart-cizgi, transparent\);\s*box-shadow: var\(--se-golge-1\);\s*background-color: var\(--card\);/.test(css));
+  kontrol("  ...kart içindeki bağlantı kutusu gölge almaz", /a\.rounded-lg\.border:not\(\.border-dashed\) \{\s*border-color: var\(--se-cizgi\);\s*box-shadow: none;/.test(css));
   kontrol("kart başlığı 16 px / 600", /\[data-slot="card-title"\] \{\s*font-size: 1rem;\s*line-height: 1\.5rem;\s*font-weight: 600;/.test(css));
   kontrol("liste kartı tema kuralına girer (rounded-lg border)", /className="bg-card min-w-0 space-y-2\.5 rounded-lg border p-3"/.test(kaynakOku("src/components/liste-karti.tsx")));
   kosanBolumler.push("tema");

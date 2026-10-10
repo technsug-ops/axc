@@ -359,6 +359,22 @@ h1, h2, h3, [data-slot="card-title"] {
 :where(div, section, article, aside, details, li, dl).border:is(.rounded-lg, .rounded-md).bg-muted\/40 {
     background-color: var(--card);
 }
+/* ④ BAĞLANTI BİÇİMİNDEKİ KUTU (`<a … rounded-lg border>`): tıklanınca listeyi açan
+   sayı kutuları (kanal listeleme, vitrin, panel). Üstteki kural yalnız div/section…
+   yakalıyordu; bağlantı kutuları gri zeminde çerçeveli kalıyordu (kullanıcı
+   10.10.2026: «burada değişen bir şey olmamış»). Durum rengi (`DURUM_KUTUSU`)
+   araç katmanında olduğu için yine kazanır. */
+@layer components {
+    a.rounded-lg.border:not(.border-dashed) {
+        border-color: var(--se-kart-cizgi, transparent);
+        box-shadow: var(--se-golge-1);
+        background-color: var(--card);
+    }
+    :is([data-slot="card"], .rounded-lg.border) a.rounded-lg.border:not(.border-dashed) {
+        border-color: var(--se-cizgi);
+        box-shadow: none;
+    }
+}
 [data-slot="card-title"] {
     font-size: 1rem;
     line-height: 1.5rem;
