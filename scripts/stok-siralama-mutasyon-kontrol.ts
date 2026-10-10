@@ -338,7 +338,8 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     bekci: SIRALAMA,
     dosya: KART,
-    bul: '        <Bolum baslik={t("fiyatDeneBaslik")} ikon={Calculator}>',
+    /* K330 (10.10.2026): Bolum `cerceve={false}` aldı (FiyatDene kendi kartını çiziyor) — çapa taşındı. */
+    bul: '        <Bolum baslik={t("fiyatDeneBaslik")} ikon={Calculator} cerceve={false}>',
     koy: "        <>",
     bozdugu: "sag sutun baslıksiz kalir ve kart yine soldaki basligin hizasina duser",
   },

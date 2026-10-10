@@ -3581,6 +3581,10 @@
     "hataYazilamadi": "Kayıt yazılamadı. Aynı kart ve dönem daha önce aktarılmış olabilir."
   },
   "UrunKarti": {
+    "karTumZaman": "Kârlılık — tüm satışlar",
+    "iadeTumZaman": "İade (tüm zamanlar)",
+    "tumZaman": "Tüm zamanlar",
+    "tumZamanDeger": "{satis} satış",
     "digerKanal": "Diğer ({sayi} kanal)",
     "resimYok": "Resim yok",
     "resimOnceki": "Önceki resim",
@@ -3654,7 +3658,7 @@
     "kanalFiyatYok": "Bu dönemde satış yok — fiyat gelişimi çizilemez.",
     "kanalFiyatNotu": "Gerçekleşen satış fiyatları (KDV dahil, günlük ortalama); satış olmayan gün boş kalır.",
     "ayrintiBaslik": "Stok ve maliyet ayrıntıları",
-    "merdivenBaslik": "Kâr raporu",
+    "merdivenBaslik": "Kâr raporu — seçili dönem",
     "merdivenAdet": "Satılan adet",
     "merdivenIptal": "İptal edilen adet",
     "merdivenIade": "İade edilen adet",

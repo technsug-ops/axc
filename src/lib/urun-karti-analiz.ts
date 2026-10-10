@@ -135,13 +135,12 @@ export async function kartAnalizi(variantId: string, pencere: Pencere, karGorunu
         select: { occurredAt: true, quantityDelta: true },
       }),
       prisma.stockMovement.aggregate({ where: { variantId }, _sum: { quantityDelta: true } }),
-      karGorunur
-        ? prisma.purchaseItem.findMany({
-            where: { variantId, purchase: { status: { not: "CANCELLED" } } },
-            select: { unitCostAmount: true, quantity: true, purchase: { select: { purchasedAt: true, receivedAt: true, code: true } } },
-            orderBy: { purchase: { purchasedAt: "asc" } },
-          })
-        : Promise.resolve([]),
+      /* Alış fiyatı geçmişi herkese açık — eski kartın «Maliyet ve hız» bölümü de açıktı. */
+      prisma.purchaseItem.findMany({
+        where: { variantId, purchase: { status: { not: "CANCELLED" } } },
+        select: { unitCostAmount: true, quantity: true, purchase: { select: { purchasedAt: true, receivedAt: true, code: true } } },
+        orderBy: { purchase: { purchasedAt: "asc" } },
+      }),
       prisma.productVariant.findMany({
         where: { productId: varyant.productId },
         select: { id: true, sku: true, name: true, barcode: true, gorselUrl: true },

@@ -132,7 +132,7 @@ export async function UstKpiler({ a, para }: { a: KartAnalizi; para: string }) {
 }
 
 /** Künye altındaki tarih satırı — Algoritmo «Aktiv seit · Erster/Letzter Verkauf». */
-export async function TarihSatiri({ a }: { a: KartAnalizi }) {
+export async function TarihSatiri({ a, tumZaman }: { a: KartAnalizi; tumZaman: { satis: number; adet: number } | null }) {
   const t = await getTranslations("UrunKarti");
   const bicim = await bicimlendirici();
   const simdi = new Date();
@@ -142,7 +142,7 @@ export async function TarihSatiri({ a }: { a: KartAnalizi }) {
     [t("sonSatisKisa"), a.sonSatis],
   ];
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {ogeler.map(([etiket, an]) => (
         <div key={etiket} className="min-w-0">
           <div className="text-muted-foreground text-[11px] font-medium uppercase">{etiket}</div>
@@ -151,6 +151,14 @@ export async function TarihSatiri({ a }: { a: KartAnalizi }) {
           </div>
         </div>
       ))}
+      {/* K330 — eski «Satış geçmişi» bloğunun tüm zaman sayıları (tekrar gösterge temizliği). */}
+      <div className="min-w-0">
+        <div className="text-muted-foreground text-[11px] font-medium uppercase">{t("tumZaman")}</div>
+        <div className="text-sm font-medium tabular-nums">
+          {/* Adet BURADA YOK: tüm zaman adedi kâr bloğunda (K102 — kâr cümlesinin ölçeği); iki yerde yazılmaz. */}
+          {tumZaman === null ? t("satisHicYok") : t("tumZamanDeger", { satis: tumZaman.satis })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -160,11 +168,21 @@ function KutuBasligi({ children }: { children: React.ReactNode }) {
 }
 
 /** Dört özet kutusu — fiyat · kâr özeti · stok kaç gün yeter · iadeler. */
-export async function OzetKutulari({ a, para, karGorunur }: { a: KartAnalizi; para: string; karGorunur: boolean }) {
+export async function OzetKutulari({
+  a,
+  para,
+  karGorunur,
+  sonAlim,
+}: {
+  a: KartAnalizi;
+  para: string;
+  karGorunur: boolean;
+  /** Eski «Son alım maliyeti» kutusu buraya taşındı — not (giriş tarihi · tedarikçi · kod · tükendi) AYNEN. */
+  sonAlim: { tutar: number | null; paraBirimi: string; not: string };
+}) {
   const t = await getTranslations("UrunKarti");
   const bicim = await bicimlendirici();
   const fiyatSerisi = a.gunluk.map((n) => (n.adet > 0 ? n.ciro / n.adet : null));
-  const sonAlis = a.alimFiyatlari[a.alimFiyatlari.length - 1] ?? null;
   const ortAlis =
     a.alimFiyatlari.length === 0
       ? null
@@ -183,21 +201,20 @@ export async function OzetKutulari({ a, para, karGorunur }: { a: KartAnalizi; pa
           </div>
           <MiniCizgi degerler={fiyatSerisi} />
         </div>
-        {karGorunur ? (
-          <>
-            <div className="space-y-1">
-              <div className="flex items-center justify-between gap-2 text-xs">
-                <span>{t("alisGecmisi")}</span>
-                <span className="font-semibold tabular-nums">{ortAlis === null ? t("alisHicYok") : `ø ${bicim.para(ortAlis, para)}`}</span>
-              </div>
-              <MiniCizgi degerler={a.alimFiyatlari.map((x) => x.birim)} renk="var(--se-vurgu)" />
-            </div>
-            <div className="flex items-center justify-between gap-2 border-t pt-2 text-xs">
-              <span>{t("sonAlisFiyati")}</span>
-              <span className="font-semibold tabular-nums">{sonAlis === null ? t("alisHicYok") : bicim.para(sonAlis.birim, para)}</span>
-            </div>
-          </>
-        ) : null}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <span>{t("alisGecmisi")}</span>
+            <span className="font-semibold tabular-nums">{ortAlis === null ? t("alisHicYok") : `ø ${bicim.para(ortAlis, para)}`}</span>
+          </div>
+          <MiniCizgi degerler={a.alimFiyatlari.map((x) => x.birim)} renk="var(--se-vurgu)" />
+        </div>
+        <div className="space-y-0.5 border-t pt-2 text-xs">
+          <div className="flex items-center justify-between gap-2">
+            <span>{t("sonAlisFiyati")}</span>
+            <span className="font-semibold tabular-nums">{sonAlim.tutar === null ? "?" : bicim.para(sonAlim.tutar, sonAlim.paraBirimi)}</span>
+          </div>
+          <div className="text-muted-foreground text-[11px]">{sonAlim.not}</div>
+        </div>
       </div>
 
       <div className="space-y-2 rounded-lg border p-4">
@@ -286,14 +303,14 @@ export async function SekmeCubugu({
   };
   const gorunen = KART_SEKMELERI.filter((s) => karGorunur || s !== "kar");
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b" aria-label={t("sekmeGenel")}>
+    <nav className="flex gap-1 overflow-x-auto overflow-y-hidden border-b [scrollbar-width:none]" aria-label={t("sekmeGenel")}>
       {gorunen.map((s) => (
         <Link
           key={s}
           href={suzgecAdresi(temel, mevcut, { sekme: s === "genel" ? undefined : s })}
           scroll={false}
           aria-current={s === secili ? "page" : undefined}
-          className={`-mb-px inline-flex h-11 shrink-0 items-center border-b-2 px-3 text-[13px] font-medium ${
+          className={`inline-flex h-11 shrink-0 items-center border-b-2 px-3 text-[13px] font-medium ${
             s === secili ? "border-[var(--se-vurgu)] text-[var(--se-vurgu)]" : "text-muted-foreground border-transparent hover:text-foreground"
           }`}
         >
@@ -343,7 +360,8 @@ export async function GenelSekmesi({ a, para, karGorunur }: { a: KartAnalizi; pa
             toplam={a.ciro}
             toplamMetni={bicim.para(a.ciro, para)}
             toplamEtiketi={t("toplam")}
-            yuzdeMetni={(o) => `%${bicim.sayi(Math.round(o * 1000) / 10)}`}
+            /* `HalkaKompakt` yüzdeyi 0–100 verir (`dilimYuzdesi`) — 0–1 sanılıp ×100 yapılınca «%10.000» yazıyordu. */
+            yuzdeMetni={(o) => `%${bicim.sayi(Math.round(o * 10) / 10)}`}
             bosMesaj={t("dagilimYok")}
             aciklama={t("kanalBaslik")}
           />
@@ -459,7 +477,7 @@ export async function KarMerdiveni({ a, para }: { a: KartAnalizi; para: string }
   if (m === null) return null;
   const yuzde = (n: number) => (m.ciro > 0 ? `%${bicim.sayi(Math.round((n / m.ciro) * 1000) / 10)}` : "");
   const satirlar: { ad: string; deger: string; yuzde?: string; ara?: boolean; eksi?: boolean; renk?: string }[] = [
-    { ad: t("merdivenAdet"), deger: bicim.sayi(a.adet) },
+    /* Satılan adet (dönem) üstteki göstergede — merdivende tekrar edilmez. */
     { ad: t("merdivenIptal"), deger: bicim.sayi(a.iptalAdet) },
     { ad: t("merdivenIade"), deger: bicim.sayi(a.iadeAdet) },
     { ad: t("merdivenCiro"), deger: bicim.para(m.ciro, para), ara: true },
@@ -683,14 +701,7 @@ export async function IadeSekmesi({ a, para }: { a: KartAnalizi; para: string })
           bosMesaj={t("iadeBos")}
         />
       )}
-      <div className="grid grid-cols-3 gap-3">
-        <IstatistikKutusu etiket={t("iadeAdedi")} cocuk={bicim.sayi(a.iadeAdet)} />
-        <IstatistikKutusu etiket={t("kpiAdet")} cocuk={bicim.sayi(a.adet)} />
-        <IstatistikKutusu
-          etiket={t("iadeOrani")}
-          cocuk={<span className={a.iadeAdet > 0 ? DURUM_YAZISI.olumsuz : ""}>{a.iadeOrani === null ? "?" : `%${bicim.sayi(Math.round(a.iadeOrani * 1000) / 10)}`}</span>}
-        />
-      </div>
+      {/* K330 — iade adedi/oranı üstteki «İadeler» kutusunda; burada tekrar edilmez. */}
     </section>
   );
 }

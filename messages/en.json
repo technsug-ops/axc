@@ -3581,6 +3581,10 @@
     "hataYazilamadi": ""
   },
   "UrunKarti": {
+    "karTumZaman": "",
+    "iadeTumZaman": "",
+    "tumZaman": "",
+    "tumZamanDeger": "",
     "digerKanal": "",
     "resimYok": "",
     "resimOnceki": "",

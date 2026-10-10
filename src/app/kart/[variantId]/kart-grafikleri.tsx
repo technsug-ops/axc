@@ -219,6 +219,11 @@ export function StokFiyatGrafigi({
         {yollar(noktalar.map((n, i) => [x(i), n.fiyat === null ? null : yFiyat(n.fiyat)] as const)).map((d, j) => (
           <path key={j} d={d} fill="none" stroke={RENK.net} strokeWidth={2} />
         ))}
+        {noktalar.map((n, i) =>
+          n.fiyat === null || !adlar.fiyat ? null : (
+            <circle key={`f${n.gun}`} cx={x(i)} cy={yFiyat(n.fiyat)} r={3} fill="white" stroke={RENK.net} strokeWidth={1.5} />
+          ),
+        )}
       </svg>
     </div>
   );
@@ -236,13 +241,16 @@ export function MiniCizgi({ degerler, renk = RENK.ciro, gen = 220, yuk = 36 }: {
   const ilk = degerler.findIndex((d) => d !== null);
   const son = degerler.length - 1 - [...degerler].reverse().findIndex((d) => d !== null);
   return (
-    <svg viewBox={`0 0 ${gen} ${yuk}`} className="h-9 w-full" aria-hidden preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${gen} ${yuk}`} className="h-auto w-full" aria-hidden>
       {yollar(degerler.map((d, i) => [x(i), d === null ? null : y(d)] as const)).map((d, j) => (
-        <path key={j} d={d} fill="none" stroke={renk} strokeWidth={2} vectorEffect="non-scaling-stroke" />
+        <path key={j} d={d} fill="none" stroke={renk} strokeWidth={2} />
       ))}
-      {[ilk, son].map((i) => (
-        <circle key={i} cx={x(i)} cy={y(degerler[i] as number)} r={3.5} fill="white" stroke={renk} strokeWidth={2} vectorEffect="non-scaling-stroke" />
-      ))}
+      {/* Seyrek satışta çizgi oluşmaz — her dolu nokta küçük işaretle görünür, uçlar büyük. */}
+      {degerler.map((d, i) =>
+        d === null ? null : (
+          <circle key={i} cx={x(i)} cy={y(d)} r={i === ilk || i === son ? 3.5 : 2} fill="white" stroke={renk} strokeWidth={i === ilk || i === son ? 2 : 1.5} />
+        ),
+      )}
     </svg>
   );
 }
@@ -256,7 +264,7 @@ export function DurumHalkasi({ oran, merkez, alt, renk = RENK.net }: { oran: num
     <div className="flex flex-col items-center gap-2 text-center">
       <svg viewBox="0 0 90 90" className="size-24" aria-hidden>
         <circle cx={45} cy={45} r={r} fill="none" stroke={RENK.cizgi} strokeWidth={8} />
-        <circle
+        {dolu > 0 ? <circle
           cx={45}
           cy={45}
           r={r}
@@ -266,7 +274,7 @@ export function DurumHalkasi({ oran, merkez, alt, renk = RENK.net }: { oran: num
           strokeLinecap="round"
           strokeDasharray={`${cevre * dolu} ${cevre}`}
           transform="rotate(-90 45 45)"
-        />
+        /> : null}
         <text x={45} y={50} textAnchor="middle" className="fill-foreground text-[15px] font-semibold">
           {merkez}
         </text>

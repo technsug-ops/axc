@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /.next-bekci/
+/.next-sunum/
 /out/
 
 # production
