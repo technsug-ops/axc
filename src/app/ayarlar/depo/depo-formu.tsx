@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -133,9 +134,9 @@ export function DepoFormu() {
                 ["zatenVar", sonuc.ozet.mevcut.length],
               ] as const
             ).map(([anahtar, deger]) => (
-              <div key={anahtar} className="bg-muted/40 rounded-md px-2.5 py-2">
-                <p className="text-muted-foreground text-xs">{t(anahtar)}</p>
-                <p className="text-base font-semibold tabular-nums">{deger}</p>
+              <div key={anahtar} className="bg-card rounded-lg border px-3 py-2">
+                <p className={KUTU_ETIKETI}>{t(anahtar)}</p>
+                <p className={`text-base ${KUTU_RAKAMI}`}>{deger}</p>
               </div>
             ))}
           </div>
