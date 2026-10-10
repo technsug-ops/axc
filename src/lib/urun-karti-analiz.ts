@@ -125,7 +125,8 @@ export async function kartAnalizi(variantId: string, pencere: Pencere, karGorunu
         select: { quantity: true, return: { select: { occurredAt: true } } },
       }),
       prisma.saleItem.aggregate({
-        where: { variantId, sale: { iptalTarihi: { gte: pencere.baslangic, lt: pencere.bitisHaric } } },
+        /* İptal edilen adet — kaldırılmış kalem SAYILMAZ (`kalem-gecerli` bekçisi yakaladı). */
+        where: { variantId, ...KALEM_GECERLI, sale: { iptalTarihi: { gte: pencere.baslangic, lt: pencere.bitisHaric } } },
         _sum: { quantity: true },
       }),
       prisma.stockMovement.aggregate({ where: { variantId, occurredAt: { lt: pencere.baslangic } }, _sum: { quantityDelta: true } }),
