@@ -78,6 +78,7 @@ const UYARI_BAGLAMI: Record<UyariAnahtari, string> = {
   tyKategoriKarsiliksiz: "Bizdeki karşılığı seçilmemiş Trendyol kategorisi (o ürünlere kategori yazılmıyor)",
   geceTuruSorunlu: "Gece bekçi turunda kırmızı denetim ya da koşmayan gece (teknik bakım)",
   kdvOraniUyusmuyor: "Trendyol ilanındaki KDV oranı ürün kartındakiyle uyuşmayan kanal SKU",
+  yayinBoslugu: "Canlı site ana daldaki son sürümün gerisinde (yayımlanmamış düzeltme)",
 };
 
 /**
