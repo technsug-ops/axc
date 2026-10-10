@@ -231,6 +231,14 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    */
   "yayin-boslugu-mutasyon:kontrol",
   /**
+   * K330 (10.10.2026) — `kart-analizi` kart sayfasını, resim kurallarını ve N11
+   * senkronunu mutasyona uğratıyor; `kart-partileri` · `stok-siralama` ·
+   * `urun-gorseli` aynı dosyalara dokunuyor.
+   */
+  "kart-analizi-mutasyon:kontrol",
+  /** K330 — `kart-analizi` N11 senkronuna da dokunuyor → N11 harness'i sıraya girer. */
+  "n11-listeleme-mutasyon:kontrol",
+  /**
    * K273 (25.09.2026) — `urun-gorseli` ortak liste bileşenini (`liste-karti.tsx`)
    * ve `/stok` sayfasını mutasyona uğratıyor. `satir-karti` aynı kartı,
    * `stok-siralama` aynı sayfayı hedefliyor; üçü paralel koşsa biri ötekinin

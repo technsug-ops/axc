@@ -1,4 +1,5 @@
 import type { KanalUrunu } from "../../src/lib/kanal-listeleme";
+import { galeriAdresleri } from "../../src/lib/urun-gorseli";
 
 /**
  * ============================================================================
@@ -45,6 +46,8 @@ export type NormalUrun = KanalUrunu & {
   barcode: string;
   /** K273: ürünün ANA görseli (`images[0].url`); yoksa boş. İçerik düzeyinde — varyantlar paylaşır. */
   gorselUrl: string;
+  /** K330: BÜTÜN resimler (`images[].url`, izinli sunucu, tekrarsız). İçerik düzeyinde. */
+  galeri: string[];
   stockCode: string;
   productMainId: string;
   /**
@@ -112,6 +115,7 @@ function anaGorsel(ham: Record<string, unknown>): string {
 export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUrun[] {
   const productMainId = dize(ham.productMainId);
   const gorselUrl = anaGorsel(ham);
+  const galeri = galeriAdresleri(Array.isArray(ham.images) ? ham.images : [], "TRENDYOL");
   const icerikKimligi = dize(ham.contentId);
   const varyantlar = Array.isArray(ham.variants) ? ham.variants : [];
 
@@ -127,6 +131,7 @@ export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUru
         quantity: undefined,
         barcode: "",
         gorselUrl,
+        galeri,
         stockCode: "",
         productMainId,
         redSebepleri: [],
@@ -154,6 +159,7 @@ export function onayliUrunuNormallestir(ham: Record<string, unknown>): NormalUru
       quantity: sayiVeyaYok(stok.quantity),
       barcode: dize(v.barcode),
       gorselUrl,
+      galeri,
       stockCode: dize(v.stockCode),
       productMainId,
       redSebepleri: [],
@@ -193,6 +199,7 @@ export function onaysizUrunuNormallestir(ham: Record<string, unknown>): NormalUr
     quantity: sayiVeyaYok(ham.quantity),
     barcode: dize(ham.barcode),
     gorselUrl: anaGorsel(ham),
+    galeri: galeriAdresleri(Array.isArray(ham.images) ? ham.images : [], "TRENDYOL"),
     stockCode: dize(ham.stockCode),
     productMainId: dize(ham.productMainId),
     redSebepleri: sebepler

@@ -57,6 +57,8 @@ export const YEDEK_TABLOLARI = [
   "VariantOption",
   /** K287 — eski kodlar; `ProductVariant`e bağlı (RESTRICT) → varyantlardan SONRA. */
   "EskiKod",
+  /** K330 — resim galerisi; `ProductVariant`e bağlı → varyantlardan SONRA. */
+  "VaryantGorseli",
   // --- kanal ağacı ---
   "PenaltyTariff",
   "ChannelFee",
@@ -162,11 +164,14 @@ export const YEDEK_TABLOLARI = [
  *       dilimli ileri tarife arşivden inmiyor), yani boşluk en pahalı
  *       yerdeydi. Ders bekçiye değil RUTİNE yazıldı: artık her teslimde
  *       `npm run bekci` bütün bekçileri koşuyor.
+ *   7 — VaryantGorseli eklendi (11.10.2026, K330 ürün resim galerisi).
+ *       Liste ve üretici AYNI düzenlemede değişti (09.10 veri kaybının dersi:
+ *       listede olup üreticide olmayan tablo geri yükleme sınamasında BOŞALIR).
  *
  * Sürüm 1 dosyalar OKUNABİLİR kalır; geri yükleme ekranı eksik tabloları
  * tek tek sayar ve uyarır — sessizce "tamam" demez.
  */
-export const YEDEK_SURUMU = 6;
+export const YEDEK_SURUMU = 7;
 
 /**
  * ============================================================================
