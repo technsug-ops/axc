@@ -3419,6 +3419,8 @@
     "baslik_tyKategoriKarsiliksiz": "",
     "eylem_tyKategoriKarsiliksiz": "",
     "baslik_geceTuruSorunlu": "",
+    "baslik_yayinBoslugu": "",
+    "eylem_yayinBoslugu": "",
     "eylem_geceTuruSorunlu": "",
     "baslik_kdvOraniUyusmuyor": "",
     "eylem_kdvOraniUyusmuyor": ""
@@ -4965,6 +4967,16 @@
     "aramaListeBaslik": ""
   },
   "GeceTuru": {
+    "yayinBaslik": "",
+    "yayinCanli": "",
+    "yayinAna": "",
+    "yayinItildi": "",
+    "yayinGUNCEL": "",
+    "yayinYAYIMLANIYOR": "",
+    "yayinGERIDE": "",
+    "yayinGERIDE_ne": "",
+    "yayinOLCULEMEDI_SURUM_BILGISI_YOK": "",
+    "yayinOLCULEMEDI_GITHUB_OKUNAMADI": "",
     "baslik": "",
     "aciklama": "",
     "izYok": "",

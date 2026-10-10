@@ -154,6 +154,9 @@ export const UYARI_ANAHTARLARI = [
   // ── 30.09.2026: Trendyol ilanındaki KDV oranı bizim oranımızla ayrışıyor —
   //    hangisinin yanlış olduğuna karar VERMEZ, baktırır (`kdv-uyusmazligi.ts`). ──
   "kdvOraniUyusmuyor",
+  // ── K329 (10.10.2026): canlı sürüm ana dalın gerisinde — push yeşil geçti ama
+  //    Vercel yayımlamadı (09.10: 28 saat eski kod, 19 satışa yanlış desi). ──
+  "yayinBoslugu",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -214,6 +217,8 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
   geceTuruSorunlu: "/ayarlar/gece-turu",
   /** İlke #16: adres SAHİBİNDEN — süzgeç sözleşmesi `kdv-uyusmazligi.ts`te. */
   kdvOraniUyusmuyor: KDV_UYUSMAZLIGI_ADRESI,
+  /** Yayın durumu gece turu ekranında (teknik bakım sayfası, aynı gövde). */
+  yayinBoslugu: "/ayarlar/gece-turu",
 };
 
 /**
@@ -259,6 +264,8 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   geceTuruSorunlu: "amber",
   /* Veri güvenilirliği: yanlış oran KDV ve stopaj hesabını sessizce kaydırır — amber. */
   kdvOraniUyusmuyor: "amber",
+  /* Düzeltme kodda ama canlıda değil: siparişler ESKİ kurallarla işleniyor — kırmızı. */
+  yayinBoslugu: "kirmizi",
 };
 
 /**
@@ -296,6 +303,8 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   geceTuruSorunlu: "ayar.yaz",
   /* Liste ekranı (`/kanal-sku`) `kanalsku.yaz` ister — açamayacağı uyarı gösterilmez. */
   kdvOraniUyusmuyor: "kanalsku.yaz",
+  /* Ekran `ayar.yaz` ister — teknik bakım uyarısı. */
+  yayinBoslugu: "ayar.yaz",
 };
 
 export type Uyari = {

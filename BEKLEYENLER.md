@@ -13,7 +13,18 @@
 
 ---
 
-## 🔶 K327 — İPTAL EDİLEN SATIŞ LİSTEDE ÜSTÜ ÇİZİLİ GÖRÜNÜR (ALIMLAR GİBİ) · 09.10.2026 · [KOD YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
+## 🔴 K329 — YAYIN BOŞLUĞU: CANLI SÜRÜM ANA DALIN GERİSİNDEYSE ÇAN KIRMIZI · 10.10.2026 · [KOD YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
+
+**Niye (kullanıcı onayı 10.10 «onayım var»):** K326 düzeltmesi 09.10 09:28'de GitHub'a gitti, Vercel üretimi `f520dbb`de kaldı; ~28 saat siparişleri ESKİ kod işledi ve 19 satışa yanlış desi yazıldı. Hiçbir şey kırmızı yanmadı — Halil testi buldu. «Push yeşil» ≠ «kod canlıda».
+**Ölçüm (iki kaynak, ikisi de kendi beyanı):** canlı sürüm = Vercel'in `VERCEL_GIT_COMMIT_SHA`sı · ana dal ucu = GitHub etkinlik ucu (son push/force-push/PR birleştirme VE **push anı** — commit tarihi değil; ölçüldü 10.10: uç kimliksiz okunuyor, saatte 60 sorgu hakkı). Depo/dal adı Vercel'den; koda gömülü depo YOK (firma bağımsız).
+**Durumlar:** GÜNCEL · YAYIMLANIYOR (push'tan sonra 15 dk pay — ölçülen derleme 45–84 sn, n=7; kuyruk ölçülemedi, pay geniş; gerçek boşluk 28 SAATTİ) · **GERİDE** (çan kırmızı, 1) · ÖLÇÜLEMEDİ (sürüm bilgisi yok / GitHub okunamadı — çana girmez, ekranda NEDENİYLE yazar; «güncel» SAYILMAZ). 5 dk önbellek, 4 sn zaman aşımı.
+**Ekran:** Ayarlar → Gece bekçi turu → en üstte «Canlı yayın» kutusu (durum · canlıdaki sürüm · GitHub'daki son sürüm, tık-kopyala · gönderilme saati · geride ise Vercel'de elle yayımlama tarifi). Çan oraya götürür.
+**Bekçi:** `yayin-boslugu:dogrula` 32/32 (09.10 vakası birebir · eşiğin iki yakası · ölçülemedi ≠ güncel · force/merge da uç) · `yayin-boslugu-mutasyon:kontrol` **13/13** (2 zararsız yeşil · 11 bozma kırmızı: pay kalkar · ölçülemedi güncel sayılır · depo adı gömülür · zaman aşımı kalkar …). `uyari:dogrula` 268 · `i18n:kontrol` temiz · `tur-secimi` 26 · `lint` temiz.
+**Halil testi (deploy sonrası):** ① Ayarlar → Gece bekçi turu → en üstte «Canlı yayın: **Güncel**» · canlıdaki sürüm = GitHub'daki son sürüm (ikisi aynı 7 karakter) · ② bir sonraki push'tan hemen sonra aynı ekran «Yayımlanıyor» der, birkaç dakika sonra «Güncel» · ③ (kendiliğinden olursa) Vercel yayımlamazsa 15 dk sonra panel çanında kırmızı «Canlı site son sürümün gerisinde» → tıklayınca bu kutu. ⚠ ③ tetiklenemeyen yol — gerçek boşluk beklenir; olmadan GEÇTİ sayılmaz.
+
+---
+
+## 🔶 K327 — İPTAL EDİLEN SATIŞ LİSTEDE ÜSTÜ ÇİZİLİ GÖRÜNÜR (ALIMLAR GİBİ) · 09.10.2026 · [CANLIDA b63ec03 — kullanıcının 10.10 ekran görüntüsünde iptal satırı üstü çizili + «İptalleri göster» GÖRÜLDÜ; tam Halil testi bekliyor]
 
 **Kullanıcı:** «Trendyol'da iptal olan siparişin bizde hiç kaydı çıkmıyor. Bu normal mi» (`11687161720`) · «aldıklarımda iptal olan varsa o üzeri çizik olarak duruyor» → «evet».
 **Ölçüldü (canlı, salt okuma):** sipariş KAYITTAYDI — 08.10 16:25 geldi, 16:27 onaylandı; TY 09.10 11:18 iptal etti, sistem **11:19**'da kendiliğinden tespit etti (`SATIS_IPTAL`, geri dönen adet 1, ciro ₺875 · NET-2 ₺235,04 düşüldü). Kusur yalnız ekrandaydı: `satisKosulu` `iptal` boşken iptalleri atıyor ve Satışlar listesi bunu varsayılan kullanıyordu → arama «satış yok» diyordu.

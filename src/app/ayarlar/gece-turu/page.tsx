@@ -6,6 +6,8 @@ import { bicimlendirici } from "@/lib/bicim";
 import { geceTuruKayitlari, geceTuruSorunu } from "@/lib/gece-turu-veri";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaIzni } from "@/lib/yetki";
+import { yayinDurumunuOlc } from "@/lib/yayin-boslugu";
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 
 /**
  * ============================================================================
@@ -31,6 +33,7 @@ export default async function GeceTuruSayfasi() {
   const kayitlar = await geceTuruKayitlari(14);
   const simdi = new Date();
   const sorun = geceTuruSorunu(kayitlar[0] ?? null, simdi);
+  const yayin = await yayinDurumunuOlc(simdi);
   const saatOnce = kayitlar[0] ? Math.floor((simdi.getTime() - kayitlar[0].zaman.getTime()) / 3600_000) : 0;
 
   return (
@@ -39,6 +42,36 @@ export default async function GeceTuruSayfasi() {
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklama")}</p>
       </div>
+
+      {/* K329 — canlı yayın: çandaki «yayın boşluğu» uyarısıyla AYNI gövde (`yayinDurumunuOlc`). */}
+      <Card>
+        <CardContent className="space-y-2 p-4">
+          <p className="text-sm font-medium">{t("yayinBaslik")}</p>
+          <p
+            className={`text-sm ${yayin.durum === "GUNCEL" ? DURUM_YAZISI.olumlu : yayin.durum === "GERIDE" ? DURUM_YAZISI.olumsuz : DURUM_YAZISI.uyari}`}
+          >
+            {yayin.durum === "OLCULEMEDI"
+              ? t(`yayinOLCULEMEDI_${yayin.neden}`)
+              : yayin.durum === "GERIDE"
+                ? t("yayinGERIDE", { dakika: yayin.dakika })
+                : t(`yayin${yayin.durum}`)}
+          </p>
+          {yayin.durum === "GERIDE" ? <p className="text-xs">{t("yayinGERIDE_ne")}</p> : null}
+          <div className="text-muted-foreground flex flex-wrap gap-x-6 gap-y-1 text-xs">
+            <span className="flex items-center gap-1">
+              {t("yayinCanli")}: <KopyalanabilirKod deger={yayin.canliSha?.slice(0, 7)} etiket={t("yayinCanli")} />
+            </span>
+            {yayin.durum !== "OLCULEMEDI" ? (
+              <span className="flex items-center gap-1">
+                {t("yayinAna")}: <KopyalanabilirKod deger={yayin.anaSha.slice(0, 7)} etiket={t("yayinAna")} />
+              </span>
+            ) : null}
+            {yayin.durum === "GERIDE" || yayin.durum === "YAYIMLANIYOR" ? (
+              <span>{t("yayinItildi", { zaman: bicim.tarihSaat(yayin.itildiAt) })}</span>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
 
       {sorun.gecikti ? (
         <div className={`rounded-md p-3 ${DURUM_KUTUSU.olumsuz}`}>

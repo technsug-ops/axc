@@ -3419,6 +3419,8 @@
     "baslik_tyKategoriKarsiliksiz": "{sayi} Trendyol kategorisinin karşılığı seçilmedi",
     "eylem_tyKategoriKarsiliksiz": "Karşılığını seç — o kategorideki ürünlere kategori yazılmıyor",
     "baslik_geceTuruSorunlu": "Gece bekçi turunda {sayi} sorun",
+    "baslik_yayinBoslugu": "Canlı site son sürümün gerisinde",
+    "eylem_yayinBoslugu": "Ayrıntıya bak — GitHub'daki son düzeltme canlıda değil; Vercel'den elle yayımlayın",
     "eylem_geceTuruSorunlu": "Ayrıntıya bak — kırmızı denetim ve onu bozan push yazıyor",
     "baslik_kdvOraniUyusmuyor": "{sayi} ilanda KDV oranı uyuşmuyor",
     "eylem_kdvOraniUyusmuyor": "Trendyol ilanı ile ürün kartının KDV oranı farklı — hangisi yanlışsa onu düzelt"
@@ -4965,6 +4967,16 @@
     "aramaListeBaslik": "Arama sonuçları ({sayi})"
   },
   "GeceTuru": {
+    "yayinBaslik": "Canlı yayın",
+    "yayinCanli": "Canlıdaki sürüm",
+    "yayinAna": "GitHub'daki son sürüm",
+    "yayinItildi": "Gönderildi: {zaman}",
+    "yayinGUNCEL": "Güncel — canlı site son sürümle çalışıyor.",
+    "yayinYAYIMLANIYOR": "Yayımlanıyor — son sürüm birkaç dakika önce gönderildi, Vercel'in yayımlaması bekleniyor.",
+    "yayinGERIDE": "Canlı site GERİDE — son sürüm {dakika} dakikadır yayımlanmadı. Siparişler eski kurallarla işleniyor olabilir.",
+    "yayinGERIDE_ne": "Vercel → axc → Deployments → «Create Deployment» → main → «Deploy to Production».",
+    "yayinOLCULEMEDI_SURUM_BILGISI_YOK": "Ölçülemedi — bu kurulum Vercel'de çalışmıyor, canlı sürüm bilgisi yok. Bu «güncel» demek DEĞİLDİR.",
+    "yayinOLCULEMEDI_GITHUB_OKUNAMADI": "Ölçülemedi — GitHub'daki son sürüm okunamadı (bağlantı ya da saatlik sorgu sınırı). Bu «güncel» demek DEĞİLDİR; birkaç dakika sonra yeniden bakın.",
     "baslik": "Gece bekçi turu",
     "aciklama": "Her push'ta bekçilerin hepsi ve yalnız değişen dosyalara dokunan mutasyon denetimleri koşar. Tam tur (bütün kontroller) her gece otomatik koşar; kırmızı çıkarsa hangi push'un bozduğunu kendisi bulur.",
     "izYok": "Henüz gece turu kaydı yok. İlk tur bu gece 00:30'da koşacak; ondan önceki geceler için «kayıt yok» bir sonuç değildir.",

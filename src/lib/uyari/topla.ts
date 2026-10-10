@@ -16,6 +16,7 @@ import { yedekOlcumu } from "./yedek";
 import type { Uyari } from "./turler";
 import { tyKategoriKarsiliksizSayisi } from "@/lib/kategori-eslesme-yaz";
 import { geceTuruSorunSayisi } from "@/lib/gece-turu-veri";
+import { yayinBosluguSayisiOlc } from "@/lib/yayin-boslugu";
 import { kdvUyusmayanKanalSkulari } from "@/lib/kdv-uyusmazligi";
 
 /**
@@ -315,6 +316,8 @@ export async function uyarilariTopla(
     geceTuruSorunlu: { sayi: await geceTuruSorunSayisi() },
     /** 30.09.2026 — `/kanal-sku?kdv=uyusmuyor` süzgeciyle AYNI gövde (sayı = liste). */
     kdvOraniUyusmuyor: { sayi: (await kdvUyusmayanKanalSkulari()).kimlikler.length },
+    /** K329 — gece turu ekranındaki yayın kutusuyla AYNI gövde (`yayinDurumunuOlc`). */
+    yayinBoslugu: { sayi: await yayinBosluguSayisiOlc() },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:
