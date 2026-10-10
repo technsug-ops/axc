@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { DURUM_ZEMINI, type DurumRengi } from "@/lib/renkler";
+import { DURUM_SERIDI, type DurumRengi } from "@/lib/renkler";
 
 /**
  * ============================================================================
@@ -110,7 +110,12 @@ export function SatirKarti({
   const temizBaglam = (baglam ?? []).filter(
     (b) => b !== null && b !== undefined && b !== false && b !== "",
   );
-  const zeminSinifi = zemin ? ` ${DURUM_ZEMINI[zemin]}` : "";
+  /**
+   * K330-③ (kullanıcı kararı 10.10.2026): dikkat çeken satır ZEMİNİ boyanmaz, SOLDA
+   * renkli şerit alır — satır beyaz kart kalır. Tam boyalı satırlar listeyi turuncu
+   * bir duvara çeviriyordu (kanal listeleme); taranabilirlik şeritle korunur.
+   */
+  const zeminSinifi = zemin ? ` ${DURUM_SERIDI[zemin]}` : "";
 
   const govde = (
     <>
