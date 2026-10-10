@@ -37,6 +37,7 @@ import {
 import { UrunGalerisi } from "./urun-galerisi";
 import { TavsiyeAl } from "./tavsiye-al";
 import { yeterliVeriVarMi } from "@/lib/tavsiye/veri-toplama";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -78,9 +79,9 @@ function Kutu({
   return (
     /* K330 — Algoritmo kutusu: beyaz, kart içindeyse ince çizgi (tema). */
     <div className="min-w-0 rounded-lg border bg-[var(--se-kart)] px-3 py-2.5">
-      <div className="text-muted-foreground text-[13px] font-medium">{etiket}</div>
+      <div className={KUTU_ETIKETI}>{etiket}</div>
       <div
-        className={`truncate text-xl font-bold tabular-nums ${vurgu ?? ""}`}
+        className={`truncate text-xl ${KUTU_RAKAMI} ${vurgu ?? ""}`}
       >
         {deger ?? "?"}
       </div>

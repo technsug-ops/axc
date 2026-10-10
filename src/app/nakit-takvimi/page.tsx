@@ -22,6 +22,7 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { nakitEtkisi } from "@/lib/nakit-isaret";
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { SatirKarti, SatirListesi } from "@/components/satir-karti";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -344,8 +345,8 @@ export default async function NakitTakvimiSayfasi({
 function Kutu({ etiket, deger }: { etiket: string; deger: string }) {
   return (
     <div className="bg-card flex min-w-0 flex-col gap-1.5 rounded-lg border p-4">
-      <span className="text-muted-foreground text-xs">{etiket}</span>
-      <span className="text-2xl font-semibold tabular-nums">{deger}</span>
+      <span className={KUTU_ETIKETI}>{etiket}</span>
+      <span className={`text-2xl ${KUTU_RAKAMI}`}>{deger}</span>
     </div>
   );
 }
