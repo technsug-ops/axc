@@ -96,7 +96,7 @@ export default async function TyKategoriEslesmeSayfasi({ searchParams }: { searc
   const secenekler = kategoriler.map((k) => ({ id: k.id, ad: k.name, kdv: String(Number(k.vatRate.toString())) }));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklama")}</p>

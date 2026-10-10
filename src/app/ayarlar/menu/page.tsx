@@ -67,7 +67,7 @@ export default async function MenuDuzeniSayfasi() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 p-4 md:p-6">
+    <div className="max-w-3xl space-y-4 p-4 md:p-6">
       <div>
         <ListeyeDon href="/">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-xl font-semibold">{t("baslik")}</h1>

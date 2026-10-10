@@ -91,7 +91,7 @@ export default async function YeniAlimSayfasi({
   }));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-6">
       <div>
         <ListeyeDon href="/alimlar">Alımlar</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">Yeni Alım</h1>

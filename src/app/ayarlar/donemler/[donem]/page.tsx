@@ -92,7 +92,7 @@ export default async function DonemRaporuSayfasi({
   const ayAdi = bicim.ayYil(new Date(Date.UTC(yil, ay - 1, 1)));
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-6">
       <div className="print:hidden">
         <ListeyeDon href="/ayarlar/donemler">{t("baslik")}</ListeyeDon>
       </div>
