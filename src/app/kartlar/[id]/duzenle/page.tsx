@@ -37,7 +37,7 @@ export default async function KartDuzenleSayfasi({
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-6">
       <div>
         <GeriBaglanti href={`/kartlar/${kart.id}`}>{kart.label}</GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">{t("kartiDuzenle")}</h1>

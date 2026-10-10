@@ -32,7 +32,7 @@ export default async function KonumDuzenleSayfasi({
   const t = await getTranslations("Raf");
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-6">
       <div>
         <ListeyeDon href="/ayarlar/konumlar">{t("baslik")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("rafiDuzenle")}</h1>
