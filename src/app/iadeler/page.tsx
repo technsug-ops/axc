@@ -77,6 +77,7 @@ import { BildirimDurumu } from "./bildirim-durumu";
 import { SayacRozeti, type SayacGorunumu } from "./sayac-rozeti";
 import { BildirimIptal } from "./bildirim-iptal";
 import { DegisimGonder } from "./degisim-gonder";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 import {
   KargolanacakKutusu,
   type AskidaSatir,
@@ -1666,8 +1667,8 @@ function Ozet({
         uyari ? `${DURUM_KUTUSU.uyari}` : ""
       }`}
     >
-      <div className="text-muted-foreground text-xs">{etiket}</div>
-      <div className="text-2xl font-semibold">{deger}</div>
+      <div className={KUTU_ETIKETI}>{etiket}</div>
+      <div className={`text-2xl ${KUTU_RAKAMI}`}>{deger}</div>
       {aciklama ? (
         <div className="text-muted-foreground text-xs">{aciklama}</div>
       ) : null}

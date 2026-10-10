@@ -10,6 +10,7 @@ import {
   type NakitTakvimi,
 } from "@/lib/panel/nakit-takvimi";
 import { DURUM_YAZISI, tutarDurumu, type DurumRengi } from "@/lib/renkler";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -175,9 +176,9 @@ function Kutu({
      * yani hizayı rozet değil RAKAM belirliyor.
      */
     <div className="flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg border p-3 text-center">
-      <div className="text-muted-foreground text-xs">{etiket}</div>
+      <div className={KUTU_ETIKETI}>{etiket}</div>
       <div
-        className={`text-[clamp(1.125rem,2.1vw,1.875rem)] leading-tight font-semibold break-words tabular-nums ${DURUM_YAZISI[durum]}`}
+        className={`text-[clamp(1.125rem,2.1vw,1.875rem)] leading-tight break-words ${KUTU_RAKAMI} ${DURUM_YAZISI[durum]}`}
       >
         {deger}
       </div>

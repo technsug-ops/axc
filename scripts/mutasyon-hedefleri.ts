@@ -238,6 +238,8 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "kart-analizi-mutasyon:kontrol",
   /** K330 — `kart-analizi` N11 senkronuna da dokunuyor → N11 harness'i sıraya girer. */
   "n11-listeleme-mutasyon:kontrol",
+  /** K330-③ — `kutu-bicimi` temayı (`globals.css`), liste kartını ve hakediş/iade/nakit ekranlarını mutasyona uğratıyor. */
+  "kutu-bicimi-mutasyon:kontrol",
   /**
    * K273 (25.09.2026) — `urun-gorseli` ortak liste bileşenini (`liste-karti.tsx`)
    * ve `/stok` sayfasını mutasyona uğratıyor. `satir-karti` aynı kartı,

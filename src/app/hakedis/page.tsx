@@ -54,6 +54,7 @@ import {
   type DurumRengi,
 } from "@/lib/renkler";
 import { IADE_GECERLI } from "@/lib/iade-geri-alma";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 export const dynamic = "force-dynamic";
 
@@ -1337,9 +1338,9 @@ function OzetKutusu({
 }) {
   return (
     <div className="flex min-w-0 flex-col justify-center gap-1 rounded-lg border p-3">
-      <div className="text-muted-foreground text-xs">{etiket}</div>
+      <div className={KUTU_ETIKETI}>{etiket}</div>
       <div
-        className={`text-[clamp(1.125rem,2vw,1.75rem)] leading-tight font-semibold break-words tabular-nums ${
+        className={`text-[clamp(1.125rem,2vw,1.75rem)] leading-tight break-words ${KUTU_RAKAMI} ${
           durum ? DURUM_YAZISI[durum] : ""
         }`}
       >

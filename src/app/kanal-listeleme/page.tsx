@@ -28,6 +28,7 @@ import { aramaKosulu, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { sayfaIzni } from "@/lib/yetki";
 import { VitrinKutusu } from "@/app/vitrin-kutusu";
 import { vitrinKutusunuTopla } from "@/lib/panel/vitrin-verisi";
+import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -449,8 +450,8 @@ function Kutu({
       href={adres}
       className="hover:bg-muted/50 flex min-h-[88px] flex-col justify-between rounded-lg border p-3 transition-colors"
     >
-      <div className="text-muted-foreground text-xs">{baslik}</div>
-      <div className="text-2xl font-semibold tabular-nums">{deger}</div>
+      <div className={KUTU_ETIKETI}>{baslik}</div>
+      <div className={`text-2xl ${KUTU_RAKAMI}`}>{deger}</div>
       {altMetin ? <div className="text-muted-foreground text-[11px]">{altMetin}</div> : null}
       <div className="text-primary text-xs">{acButon}</div>
     </Link>
@@ -482,7 +483,7 @@ function KapaliKutusu({
         <PackageX className="size-3.5 shrink-0" />
         {baslik}
       </div>
-      <div className="text-2xl font-semibold tabular-nums">{adet}</div>
+      <div className={`text-2xl ${KUTU_RAKAMI}`}>{adet}</div>
       <div className="text-xs font-medium tabular-nums">{tutar}</div>
       <div className="text-[11px] opacity-80">{aciklama}</div>
       <div className="text-primary text-xs">{acButon}</div>
