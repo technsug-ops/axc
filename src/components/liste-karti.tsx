@@ -35,7 +35,7 @@ export function ListeKarti({
      doldurur — boş hücre yok (demo Telefon ⑤). */
   const ucSutun = alanlar.length % 3 === 0;
   return (
-    <div className="bg-card min-w-0 space-y-2.5 rounded-xl border p-3">
+    <div className="bg-card min-w-0 space-y-2.5 rounded-lg border p-3">
       <div className={`flex items-start gap-2.5 ${iptal ? "line-through opacity-60" : ""}`}>
       {gorsel}
       <div className="min-w-0 flex-1 space-y-1">
