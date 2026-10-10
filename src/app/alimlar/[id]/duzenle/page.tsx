@@ -141,7 +141,7 @@ export default async function AlimDuzenleSayfasi({
   };
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div>
         <GeriBaglanti href={donusTasiyan(`/alimlar/${alim.id}`, donus)}>
           {alim.code}

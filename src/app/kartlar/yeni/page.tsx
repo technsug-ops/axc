@@ -15,7 +15,7 @@ export default async function YeniKartSayfasi() {
 
   const t = await getTranslations("Kart");
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div>
         <GeriBaglanti href="/kartlar">{t("baslik")}</GeriBaglanti>
         <h1 className="mt-1 text-2xl font-semibold">{t("yeniKart")}</h1>

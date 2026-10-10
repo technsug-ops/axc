@@ -43,7 +43,7 @@ export default async function DonemlerSayfasi() {
   const donemler = await donemListesi(new Date());
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div>
         <ListeyeDon href="/ayarlar">{t("ayarlaraDon")}</ListeyeDon>
         <h1 className="mt-1 text-2xl font-semibold">{t("baslik")}</h1>

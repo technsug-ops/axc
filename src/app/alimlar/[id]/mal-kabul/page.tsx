@@ -47,7 +47,7 @@ export default async function MalKabulSayfasi({
   const kapaliMi = alim.status === "CANCELLED" || alim.status === "RECEIVED";
   if (kapaliMi) {
     return (
-      <div className="max-w-2xl space-y-4">
+      <div className="space-y-4">
         <h1 className="text-2xl font-semibold">{t("yapilamazBaslik")}</h1>
         <p className="text-muted-foreground text-sm">
           {alim.status === "CANCELLED"
@@ -93,7 +93,7 @@ export default async function MalKabulSayfasi({
   const konumlar: KonumSecenegi[] = konumKayitlari;
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div>
         <GeriBaglanti href={donusTasiyan(`/alimlar/${alim.id}`, donus)}>
           {alim.code}

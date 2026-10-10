@@ -51,7 +51,7 @@ export default async function DuzeltmeNedenleriSayfasi() {
   const aktifSayi = nedenler.filter((n) => n.isActive).length;
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklamaMetni")}</p>

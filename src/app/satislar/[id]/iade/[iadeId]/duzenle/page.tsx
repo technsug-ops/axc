@@ -53,7 +53,7 @@ export default async function IadeDuzenleSayfasi({
   const degisimVar = iade.items.some((k) => k.exchangeVariantId !== null);
 
   return (
-    <div className="max-w-3xl space-y-4">
+    <div className="space-y-4">
       <GeriBaglanti href={`/satislar/${id}`}>{t("geri", { satis: iade.sale.code ?? "" })}</GeriBaglanti>
       <h1 className="text-xl font-semibold">{t("baslik")}</h1>
 

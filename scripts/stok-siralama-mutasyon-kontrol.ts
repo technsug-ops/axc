@@ -274,8 +274,8 @@ const MUTASYONLAR: Mutasyon[] = [
     bekci: SIRALAMA,
     dosya: KART,
     /* K330 (10.10.2026): geniş ekran tavanı 6xl → 7xl (Algoritmo sayfası); çapa taşındı, niyet aynı. */
-    bul: 'className="mx-auto max-w-3xl xl:max-w-7xl"',
-    koy: 'className="mx-auto xl:max-w-7xl"',
+    bul: 'className="mx-auto max-w-3xl xl:max-w-none"',
+    koy: 'className="mx-auto xl:max-w-none"',
     bozdugu: "telefonda satirlar kenardan kenara yayilir, okunabilir sutun genisligi gider",
   },
 

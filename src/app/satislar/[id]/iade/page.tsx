@@ -196,7 +196,7 @@ export default async function IadeSayfasi({
     .map(secenekYap);
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div>
         <GeriBaglanti href={`/satislar/${satis.id}`}>
           {satis.code ?? satis.id}
