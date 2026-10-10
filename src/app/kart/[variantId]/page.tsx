@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Boxes, Calculator, Layers, Lock, PackageSearch, Sparkles, TriangleAlert } from "lucide-react";
+import { Boxes, Calculator, Layers, Lock, Sparkles, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -76,10 +76,11 @@ function Kutu({
   vurgu?: string;
 }) {
   return (
-    <div className="bg-muted/40 min-w-0 rounded-lg border px-3 py-2">
-      <div className="text-muted-foreground text-xs">{etiket}</div>
+    /* K330 — Algoritmo kutusu: beyaz, kart içindeyse ince çizgi (tema). */
+    <div className="min-w-0 rounded-lg border bg-[var(--se-kart)] px-3 py-2.5">
+      <div className="text-muted-foreground text-[13px] font-medium">{etiket}</div>
       <div
-        className={`truncate text-lg font-semibold tabular-nums ${vurgu ?? ""}`}
+        className={`truncate text-xl font-bold tabular-nums ${vurgu ?? ""}`}
       >
         {deger ?? "?"}
       </div>
@@ -92,17 +93,20 @@ function Bolum({
   baslik,
   ikon: Ikon,
   id,
+  cerceve = true,
   children,
 }: {
   baslik: string;
   ikon?: typeof Boxes;
   /** Başka ekrandan doğrudan bu bölüme inmek için çapa (ör. `#acik-partiler`). */
   id?: string;
+  /** K330 — beyaz kart çerçevesi; içinde kendi kartı olan blok (Fiyat dene) `false` verir. */
+  cerceve?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-20 space-y-2">
-      <h2 className="flex items-center gap-2 text-sm font-medium">
+    <section id={id} className={`scroll-mt-20 space-y-3 ${cerceve ? "rounded-lg border bg-[var(--se-kart)] p-4" : ""}`}>
+      <h2 className="flex items-center gap-2 text-base font-semibold">
         {Ikon ? <Ikon className="size-4 shrink-0" /> : null}
         {baslik}
       </h2>
@@ -190,6 +194,41 @@ export default async function KartSayfasi({
    * Böylece bekçi kaynağı taramak yerine gövdeyi ÇAĞIRIP değerini ölçer.
    */
   const partiOzeti = partiToplami(veri.partiler, para);
+
+  /**
+   * K330 — SON ALIM tek yerde: Fiyat kutusunda (tekrar gösterge temizliği,
+   * kullanıcı 10.10.2026). Eski «Son alım maliyeti» kutusunun notu AYNEN:
+   */
+  /**
+   * "GİRİŞ" İBARESİ BİLİNÇLİ: burada yazan tarih malın STOĞA
+   * GİRDİĞİ gündür (mal kabul), siparişin verildiği gün değil.
+   * İkisi günlerce ayrışabiliyor; etiketsiz tarih kullanıcıyı
+   * alım tarihiyle karıştırıyordu.
+   *
+   * Alım kodu da yazar: aynı gün aynı üründen birden çok alım
+   * olabiliyor (ALM-TR-260814-01 ve -02 gibi) ve hangisinin
+   * okunduğu ekranda görünmeden doğrulanamaz.
+   */
+  const sonAlimNotu =
+    veri.sonAlimTarihi === null
+      ? t("alimYok")
+      : [
+          t("girisTarihi", {
+            tarih: bicim.tarih(veri.sonAlimTarihi),
+          }),
+          veri.sonAlimTedarikcisi ?? t("tedarikciKayitsiz"),
+          veri.sonAlimKodu,
+          /**
+           * ⚠ TÜKENMİŞ PARTİ SESSİZ KALMAZ (kullanıcı 21.08.2026).
+           * Eskiden stok bitince bu kutu "alım yok" derdi — alım
+           * VARDI, stok yoktu. Rakam artık geliyor; ama çerçevesiz
+           * gelseydi bu sefer ters yönde yanlış olurdu: mal elde
+           * sanılırdı. Rakam da, tükendiği de yazıyor.
+           */
+          veri.sonAlimAcikMi ? null : t("partiTukendi"),
+        ]
+          .filter(Boolean)
+          .join(" · ");
   const siradaki = siradakiPartiSirasi(veri.partiler.length);
 
 
@@ -319,7 +358,7 @@ export default async function KartSayfasi({
             {t("urunSayfasi")}
           </Baglanti>
         </div>
-        <TarihSatiri a={analiz} />
+        <TarihSatiri a={analiz} tumZaman={ozet.hicSatilmamisMi ? null : { satis: ozet.satisSayisi, adet: ozet.toplamAdet }} />
       </div>
         <div className="space-y-3 lg:col-span-2 2xl:col-span-1">
           <div className="flex justify-end">
@@ -329,7 +368,12 @@ export default async function KartSayfasi({
         </div>
       </div>
       </div>
-        <OzetKutulari a={analiz} para={para} karGorunur={karGorunur} />
+        <OzetKutulari
+          a={analiz}
+          para={para}
+          karGorunur={karGorunur}
+          sonAlim={{ tutar: veri.sonAlimMaliyeti, paraBirimi: veri.sonAlimParaBirimi ?? para, not: sonAlimNotu }}
+        />
         <SekmeCubugu
           temel={kartTemeli}
           mevcut={adresParametreleri}
@@ -346,10 +390,10 @@ export default async function KartSayfasi({
       <>
       <GenelSekmesi a={analiz} para={para} karGorunur={karGorunur} />
       <h2 className="text-base font-semibold">{t("ayrintiBaslik")}</h2>
+      <div className="grid gap-6 lg:grid-cols-2">
       {/* ═══════════════════ STOK — HERKESE AÇIK ═══════════════════ */}
       <Bolum baslik={t("stokBaslik")} ikon={Boxes}>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <Kutu etiket={t("eldeki")} deger={String(veri.eldekiAdet)} />
+        <div className="grid grid-cols-2 gap-2">
           <Kutu
             etiket={t("yas")}
             deger={
@@ -373,42 +417,7 @@ export default async function KartSayfasi({
 
       {/* ═══════════════════ MALİYET — HERKESE AÇIK ═══════════════════ */}
       <Bolum baslik={t("maliyetBaslik")}>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <Kutu
-            etiket={t("sonAlim")}
-            deger={p(veri.sonAlimMaliyeti, veri.sonAlimParaBirimi ?? para)}
-            /**
-             * "GİRİŞ" İBARESİ BİLİNÇLİ: burada yazan tarih malın STOĞA
-             * GİRDİĞİ gündür (mal kabul), siparişin verildiği gün değil.
-             * İkisi günlerce ayrışabiliyor; etiketsiz tarih kullanıcıyı
-             * alım tarihiyle karıştırıyordu.
-             *
-             * Alım kodu da yazar: aynı gün aynı üründen birden çok alım
-             * olabiliyor (ALM-TR-260814-01 ve -02 gibi) ve hangisinin
-             * okunduğu ekranda görünmeden doğrulanamaz.
-             */
-            not={
-              veri.sonAlimTarihi === null
-                ? t("alimYok")
-                : [
-                    t("girisTarihi", {
-                      tarih: bicim.tarih(veri.sonAlimTarihi),
-                    }),
-                    veri.sonAlimTedarikcisi ?? t("tedarikciKayitsiz"),
-                    veri.sonAlimKodu,
-                    /**
-                     * ⚠ TÜKENMİŞ PARTİ SESSİZ KALMAZ (kullanıcı 21.08.2026).
-                     * Eskiden stok bitince bu kutu "alım yok" derdi — alım
-                     * VARDI, stok yoktu. Rakam artık geliyor; ama çerçevesiz
-                     * gelseydi bu sefer ters yönde yanlış olurdu: mal elde
-                     * sanılırdı. Rakam da, tükendiği de yazıyor.
-                     */
-                    veri.sonAlimAcikMi ? null : t("partiTukendi"),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")
-            }
-          />
+        <div className="grid grid-cols-2 gap-2">
           <Kutu
             etiket={t("ortalamaMaliyet")}
             deger={p(ozet.ortalamaMaliyet)}
@@ -457,6 +466,8 @@ export default async function KartSayfasi({
           />
         </div>
       </Bolum>
+
+      </div>
 
       {/* ═══════════ AÇIK PARTİLER — MALİYETİN KAYNAĞI ═══════════ */}
       {/**
@@ -570,31 +581,8 @@ export default async function KartSayfasi({
         )}
       </Bolum>
 
-      {/* ═══════════════════ SATIŞ GEÇMİŞİ — HERKESE AÇIK ═══════════════════ */}
-      <Bolum baslik={t("satisBaslik")} ikon={PackageSearch}>
-        {ozet.hicSatilmamisMi ? (
-          /* Hiç satılmamış: rakam uydurulmaz, durum yazılır. */
-          <p className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
-            {t("hicSatilmamis")}
-          </p>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <Kutu etiket={t("kacKez")} deger={String(ozet.satisSayisi)} />
-              <Kutu etiket={t("toplamAdet")} deger={String(ozet.toplamAdet)} />
-              <Kutu
-                etiket={t("sonSatis")}
-                deger={
-                  ozet.sonSatis === null ? null : bicim.tarih(ozet.sonSatis)
-                }
-              />
-            </div>
-            <p className="text-muted-foreground text-xs">
-              {t("kanallar", { liste: ozet.kanallar.join(" · ") })}
-            </p>
-          </>
-        )}
-      </Bolum>
+      {/* K330 — «Satış geçmişi» bölümü kaldırıldı: son satış üst bölümde, tüm zaman
+          sayıları üst bölümde («tüm zamanlar»), kanallar dağılımda (tekrar gösterge yok). */}
 
       </>
       ) : null}
@@ -616,7 +604,7 @@ export default async function KartSayfasi({
       {/* ═══════════════════ KÂRLILIK — İZNE BAĞLI ═══════════════════
           Blok izinsiz kullanıcıya HİÇ ÇİZİLMEZ; rakam sunucudan çıkmaz. */}
       {karGorunur ? (
-        <Bolum baslik={t("karBaslik")}>
+        <Bolum baslik={t("karTumZaman")}>
           {ozet.hicSatilmamisMi ? (
             <p className="text-muted-foreground rounded-lg border border-dashed p-4 text-sm">
               {t("karYokHenuz")}
@@ -786,7 +774,7 @@ export default async function KartSayfasi({
       <Bolum baslik={t("riskBaslik")} ikon={TriangleAlert}>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <Kutu
-            etiket={t("iade")}
+            etiket={t("iadeTumZaman")}
             deger={
               ozet.iadeSayisi === 0
                 ? t("iadeYok")
@@ -846,7 +834,7 @@ export default async function KartSayfasi({
       {/* ⚠ BAŞLIK BURADA, KARTIN İÇİNDE DEĞİL — sol sütun da bölüm
           başlığıyla başlıyor; kartlar ancak böyle aynı hizada durur. */}
       {karGorunur ? (
-        <Bolum baslik={t("fiyatDeneBaslik")} ikon={Calculator}>
+        <Bolum baslik={t("fiyatDeneBaslik")} ikon={Calculator} cerceve={false}>
         <FiyatDene
           /**
            * Tarih ISO metne çevrilir: istemci bileşenine `Date` geçmek

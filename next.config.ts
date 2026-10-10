@@ -13,6 +13,13 @@ const nextIntlIle = createNextIntlPlugin("./src/i18n/request.ts");
  * üretimdeki tek gerçek kapı kaldırılmış olurdu.
  */
 const bekciDerlemesi = process.env.BEKCI_DERLEME === "1";
+/**
+ * DENEME SUNUMU (K330, 10.10.2026) — deneme/demo sunucuları (`next start`)
+ * KENDİ klasöründen çalışır. Önce `.next-bekci`den çalışıyorlardı ve push
+ * turundaki `derleme:dogrula` o klasörü yeniden derleyince açık sunucunun
+ * CSS/JS parçaları silindi (kullanıcı stilsiz sayfa gördü, 10.10.2026).
+ */
+const sunumDerlemesi = process.env.SUNUM_DERLEME === "1";
 
 const nextConfig: NextConfig = {
   /**
@@ -21,12 +28,12 @@ const nextConfig: NextConfig = {
    * pahalı — ölçüldü 30.08.2026: açıkken BELLEKTEN DÜŞÜYOR, kapalıyken
    * 122 sn'de çıkış 0.
    */
-  typescript: { ignoreBuildErrors: bekciDerlemesi },
+  typescript: { ignoreBuildErrors: bekciDerlemesi || sunumDerlemesi },
   /**
    * ⚠ AYRI ÇIKTI DİZİNİ: `.next`e yazsaydı açık bir `next dev` sunucusunun
    * yapısını ezer ve geliştirme ortası bozulurdu.
    */
-  ...(bekciDerlemesi ? { distDir: ".next-bekci" } : {}),
+  ...(bekciDerlemesi ? { distDir: ".next-bekci" } : sunumDerlemesi ? { distDir: ".next-sunum" } : {}),
   /**
    * TELEFONDAN TEST İÇİN GEREKLİ — sadece geliştirmeyi etkiler.
    *

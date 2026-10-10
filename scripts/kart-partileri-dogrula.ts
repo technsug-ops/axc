@@ -228,7 +228,8 @@ console.log("\n7) stok sayfası: bağlantı + izin kapısı");
   yakin("izinsiz dal bulundu ve stok rakamını çizer", izinsizDal.includes('{t("mevcutStok")}') && izinsizDal.includes("{stok}"), true);
   yakin("izinsiz dal: maliyet ÇİZİLMEZ, bağlantı YOK", !/kalan\.|<Link|bicim\.para/.test(izinsizDal), true);
   yakin("kartın parti bölümü çapayı taşır", /<Bolum baslik=\{t\("partiBaslik"\)\} ikon=\{Layers\} id=\{KART_PARTI_CAPASI\}>/.test(kart), true);
-  yakin("Bolum çapayı section'a yazar", kart.includes('<section id={id} className="scroll-mt-20 space-y-2">'), true);
+  /* K330 (10.10.2026): Bolum kart çerçevesi aldı (sınıf şablon dizesi) — ölçüt eskidi, niyet aynı: çapa section'da. */
+  yakin("Bolum çapayı section'a yazar", kart.includes("<section id={id} className={`scroll-mt-20 space-y-3"), true);
 }
 kosanBolumler.push("stok bağı");
 

@@ -420,7 +420,8 @@ console.log("\n§5 KÂR CÜMLESİ — satış fiyatı, maliyet ve adet bir arada
    * Pay bırakılarak 5200 seçildi; gövde büyürse bu satır yeniden ölçülür.
    * _(Anayasa: "kapsam daraltılır — VE pencere ÖLÇÜLÜR".)_
    */
-  const karBloku = blok(kart, 't("karBaslik")', 5200);
+  /* K330 (10.10.2026): blok «Kârlılık — tüm satışlar» başlığını aldı (seçili dönemin merdiveninden ayrılsın) — çapa taşındı. */
+  const karBloku = blok(kart, 't("karTumZaman")', 5200);
   kontrol("kâr bloğu bulundu", karBloku.length > 0);
   /**
    * ⛔ ÖLÜ DAL YASAĞI — DEPONUN EN SIK YALANCI YEŞİLİ.
