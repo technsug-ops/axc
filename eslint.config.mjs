@@ -65,6 +65,8 @@ const eslintConfig = defineConfig([
      * oldu, yeni bir bekçi başka bir kontrolü kör etti.)_
      */
     ".next-bekci/**",
+    /* K330 (10.10.2026): deneme/demo sunucularının derlemesi — lint onu tarayınca 292 sn sürüp kırmızı yandı. */
+    ".next-sunum/**",
   ]),
 ]);
 
