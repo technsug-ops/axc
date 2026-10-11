@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 import {
   jetonUret,
@@ -80,6 +81,28 @@ export async function oturumKapat() {
  * Kullanıcı pasife alındıysa veya `sessionVersion` artırıldıysa (parola
  * değişikliği / her yerden çıkış) jeton geçerli olsa bile null döner.
  */
+/**
+ * KULLANICI SATIRI — İSTEK BAŞINA BİR KEZ (K332, 11.10.2026).
+ * Yerleşim, yetki bağlamı ve parola kapısı aynı satırı ayrı ayrı okuyordu: her
+ * sayfa açılışında 3 ayrı gidiş-dönüş (ölçüldü, sorgu günlüğü). `cache()` aynı
+ * istek içinde tek okumaya indirir; istek bitince unutulur — bayat oturum
+ * taşınmaz. ⚠ Satırı güncelleyip AYNI istekte yeniden okuyan akış olmamalı
+ * (bugün yok: parola değişimi önce okur, sonra yazar, sonra yönlendirir).
+ */
+export const kullaniciSatiri = cache((id: string) =>
+  prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      isActive: true,
+      sessionVersion: true,
+      mustChangePassword: true,
+    },
+  }),
+);
+
 export async function oturumdakiKullanici(): Promise<OturumKullanicisi | null> {
   const cerezler = await cookies();
   const jeton = cerezler.get(OTURUM_CEREZI)?.value;
@@ -93,16 +116,7 @@ export async function oturumdakiKullanici(): Promise<OturumKullanicisi | null> {
   }
   if (!govde) return null;
 
-  const kullanici = await prisma.user.findUnique({
-    where: { id: govde.kullaniciId },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      isActive: true,
-      sessionVersion: true,
-    },
-  });
+  const kullanici = await kullaniciSatiri(govde.kullaniciId);
 
   if (!kullanici || !kullanici.isActive) return null;
   if (kullanici.sessionVersion !== govde.oturumSurumu) return null;

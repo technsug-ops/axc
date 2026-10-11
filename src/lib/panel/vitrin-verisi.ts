@@ -146,8 +146,59 @@ export async function vitrinKutusunuTopla(): Promise<VitrinKutusu[]> {
     };
   };
 
+  /**
+   * ⚡ ÖLÇÜMLER AYNI ANDA BAŞLAR (K332, 11.10.2026). Eskiden her hesap için 7
+   * sorgu TEK TEK beklenip hesaplar da SIRAYLA işleniyordu: 3 hesapta 21 basamak.
+   * Canlıda her basamak bir veritabanı gidiş-dönüşü — panelin en uzun zinciri
+   * buydu (gecikme taklidiyle ölçüldü: ~1,8 sn). Sorgular birbirinden bağımsız;
+   * sonuçlar ÖNCEDEN toplanır, aşağıdaki döngüler onları AYNI sırayla dizer.
+   */
+  const hesapOlcumleri = async (h: (typeof hesaplar)[number]) => {
+    const [satirSonuclari, kaydiYok, olculmemis, damga, sonIz] = await Promise.all([
+      Promise.all(
+        VITRIN_SATIRLARI.map((s) =>
+          olc({ where: vitrinKosulu({ kanalHesabiId: h.id, variantIdleri: stoklu, satir: s }) }),
+        ),
+      ),
+      olc({ where: kanalKaydiYokKosulu({ kanalHesabiId: h.id, variantIdleri: stoklu }) }),
+      olc({ where: olculmemisKosulu({ kanalHesabiId: h.id, variantIdleri: stoklu }) }),
+      /**
+       * ⚠ EN ESKİ ÖLÇÜM DAMGASI ALINIR, EN YENİSİ DEĞİL. Kutunun tamamı ancak
+       * en geç ölçülen satır kadar tazedir; en yenisini yazmak kutuyu olduğundan
+       * taze gösterirdi.
+       */
+      prisma.channelSku.aggregate({
+        where: { channelAccountId: h.id, kanalOlcumAt: { not: null } },
+        _min: { kanalOlcumAt: true },
+      }),
+      /**
+       * ⚠ EN SON İZ OKUNUR — "kaç kez düştü" değil "şu an durum ne" sorusu.
+       * Eski iz SİLİNMEZ, en yenisi geçerlidir (ledger disiplini izlere de işler).
+       *
+       * ⛔ VE İZ KANALINA GÖRE SÜZÜLÜR — 07.09.2026'DAKİ ARIZANIN ÇEKİRDEĞİ.
+       * Eskiden yalnız `action` ile aranıyordu ve o ad TEKTİ: kutu HB'yi çizip
+       * **TY'nin** koşum durumunu gösteriyordu. İzler artık kendi kanalını
+       * yazıyor (`kosumKanali`) ve her kutu kendi kanalınınkini okuyor.
+       *
+       * ⚠ SÜZGEÇ `action` İLE BİRLİKTE KURULUR: `detail` serbest metindir ve
+       * başka bir iz de kanal adını içerebilir; ikisi birlikte daraltıyor.
+       */
+      prisma.auditLog.findFirst({
+        where: {
+          action: KOSUM_IZI,
+          detail: { contains: `"kosumKanali":"${h.kanalAdi}"` },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { detail: true },
+      }),
+    ]);
+    return { satirSonuclari, kaydiYok, olculmemis, damga, sonIz };
+  };
+  const olcumler = await Promise.all(hesaplar.map(hesapOlcumleri));
+
   const kutular: VitrinKutusu[] = [];
   for (const h of hesaplar) {
+    const { satirSonuclari, kaydiYok, olculmemis, damga, sonIz } = olcumler[hesaplar.indexOf(h)]!;
     /**
      * ⛔ ÜÇ SATIR DA HER ZAMAN DÖNER — SIFIR OLANI DA.
      *
@@ -161,58 +212,18 @@ export async function vitrinKutusunuTopla(): Promise<VitrinKutusu[]> {
      */
     const satirlar: VitrinKutuSatiri[] = [];
     for (const s of VITRIN_SATIRLARI) {
-      const r = await olc({
-        where: vitrinKosulu({ kanalHesabiId: h.id, variantIdleri: stoklu, satir: s }),
-      });
+      const r = satirSonuclari[VITRIN_SATIRLARI.indexOf(s)]!;
       satirlar.push({ satir: s, adet: r.adet, tutar: r.tutar });
     }
     /** ⚠ ₺'YE GÖRE SIRALI — en pahalı iş en üstte; sıfırlar kendiliğinden altta. */
     satirlar.sort((a, b) => b.tutar - a.tutar);
 
-    const kaydiYok = await olc({
-      where: kanalKaydiYokKosulu({ kanalHesabiId: h.id, variantIdleri: stoklu }),
-    });
-
     /**
-     * ⛔ HİÇ KARŞILAŞTIRILMAMIŞ SATIRLAR — ÖLÇÜLDÜ VE GÖRÜNÜR KILINDI.
+     * (yukarıda ölçüldü) ⛔ HİÇ KARŞILAŞTIRILMAMIŞ SATIRLAR — ÖLÇÜLDÜ VE GÖRÜNÜR KILINDI.
      * 01.09.2026: 19 varyanta o sabah TY kodu eklendi, gece koşumu ondan sonra
      * koşmadı ve hepsi `BILINMIYOR` kaldı. Kutu onları hiçbir yerde saymıyordu;
      * kanalın kendi cevabına göre **10'u gerçekten satılamaz durumdaydı**.
      */
-    const olculmemis = await olc({
-      where: olculmemisKosulu({ kanalHesabiId: h.id, variantIdleri: stoklu }),
-    });
-
-    /**
-     * ⚠ EN ESKİ ÖLÇÜM DAMGASI ALINIR, EN YENİSİ DEĞİL. Kutunun tamamı ancak
-     * en geç ölçülen satır kadar tazedir; en yenisini yazmak kutuyu olduğundan
-     * taze gösterirdi.
-     */
-    const damga = await prisma.channelSku.aggregate({
-      where: { channelAccountId: h.id, kanalOlcumAt: { not: null } },
-      _min: { kanalOlcumAt: true },
-    });
-
-    /**
-     * ⚠ EN SON İZ OKUNUR — "kaç kez düştü" değil "şu an durum ne" sorusu.
-     * Eski iz SİLİNMEZ, en yenisi geçerlidir (ledger disiplini izlere de işler).
-     *
-     * ⛔ VE İZ KANALINA GÖRE SÜZÜLÜR — 07.09.2026'DAKİ ARIZANIN ÇEKİRDEĞİ.
-     * Eskiden yalnız `action` ile aranıyordu ve o ad TEKTİ: kutu HB'yi çizip
-     * **TY'nin** koşum durumunu gösteriyordu. İzler artık kendi kanalını
-     * yazıyor (`kosumKanali`) ve her kutu kendi kanalınınkini okuyor.
-     *
-     * ⚠ SÜZGEÇ `action` İLE BİRLİKTE KURULUR: `detail` serbest metindir ve
-     * başka bir iz de kanal adını içerebilir; ikisi birlikte daraltıyor.
-     */
-    const sonIz = await prisma.auditLog.findFirst({
-      where: {
-        action: KOSUM_IZI,
-        detail: { contains: `"kosumKanali":"${h.kanalAdi}"` },
-      },
-      orderBy: { createdAt: "desc" },
-      select: { detail: true },
-    });
     let basarisiz = false;
     let mesaj: string | null = null;
     if (sonIz?.detail) {

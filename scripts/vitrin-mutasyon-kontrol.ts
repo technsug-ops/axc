@@ -21,6 +21,7 @@ import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
  */
 
 const BEKCI = "scripts/vitrin-dogrula.ts";
+const VERI = "src/lib/panel/vitrin-verisi.ts";
 const BEKCI_BASLIGI = "ölçüt geçti";
 const PANEL = "src/app/page.tsx";
 const KANAL = "src/app/kanal-listeleme/page.tsx";
@@ -110,6 +111,22 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "      {false ? null : (",
     bozdugu:
       "acilacak liste yokken tiklanabilir gorunur; kullanici bos ekrana gider",
+  },
+  {
+    ad: "VITRIN SATIRLARI YENIDEN SIRALI",
+    yon: "KALDIRAN",
+    dosya: VERI,
+    bul: "      const r = satirSonuclari[VITRIN_SATIRLARI.indexOf(s)]!;",
+    koy: "      const r = await olc({ where: vitrinKosulu({ kanalHesabiId: h.id, variantIdleri: stoklu, satir: s }) });",
+    bozdugu: "panel her satiri tek tek bekler (K332), sonuc ayni oldugu icin kimse gormez",
+  },
+  {
+    ad: "VITRIN HESAPLARI YENIDEN SIRALI",
+    yon: "KALDIRAN",
+    dosya: VERI,
+    bul: "  const olcumler = await Promise.all(hesaplar.map(hesapOlcumleri));",
+    koy: "  const olcumler: Awaited<ReturnType<typeof hesapOlcumleri>>[] = [];\n  for (const x of hesaplar) olcumler.push(await hesapOlcumleri(x));",
+    bozdugu: "hesaplar tek tek olculur, panel saniyelerce bekler",
   },
 ];
 

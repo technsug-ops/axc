@@ -28,7 +28,7 @@ import { kaynakOku } from "./kaynak-oku";
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 9;
+const BOLUM_SAYISI = 10;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let kalan = 0;
@@ -798,6 +798,24 @@ console.log("\n9) çok kanallı kutu — hesap tekil değil, iz kendi kanalında
   dogru("bayatlık 'iz yok'tan ÖNCE", iBayat >= 0 && iIzYok >= 0 && iBayat < iIzYok);
 }
 kosanBolumler.push("çok kanal");
+
+/* ═══ EŞZAMANLILIK (K332, 11.10.2026) ═════════════════════════════════════
+   Vitrin ölçümleri eskiden hesap × satır SIRAYLA bekleniyordu (3 hesapta 21
+   basamak; canlıda her basamak bir veritabanı gidiş-dönüşü, panelin en uzun
+   zinciri). Geri dönerse sonuç DOĞRU kalır, yalnız panel yavaşlar — değer
+   testi göremez; kalıp ölçülür. */
+{
+  const yorumsuz4 = (m: string) => m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const veri4 = yorumsuz4(kaynakOku("src/lib/panel/vitrin-verisi.ts"));
+  dogru("hesap ölçümleri AYNI ANDA başlar", veri4.includes("const olcumler = await Promise.all(hesaplar.map(hesapOlcumleri));"));
+  const satirBas = veri4.indexOf("for (const s of VITRIN_SATIRLARI)");
+  const satirDongu = satirBas >= 0 ? veri4.slice(satirBas, veri4.indexOf("satirlar.sort", satirBas)) : "";
+  dogru("satır döngüsünde sıralı bekleme YOK", satirDongu.length > 0 && !/\bawait\b/.test(satirDongu));
+  const hesapBas = veri4.indexOf("for (const h of hesaplar)");
+  const hesapDongu = hesapBas >= 0 ? veri4.slice(hesapBas, veri4.indexOf("kutular.sort", hesapBas)) : "";
+  dogru("hesap döngüsünde sıralı bekleme YOK", hesapDongu.length > 0 && !/\bawait\b/.test(hesapDongu));
+}
+kosanBolumler.push("eşzamanlılık");
 
 console.log("\n" + "=".repeat(60));
 if (kosanBolumler.length !== BOLUM_SAYISI) {
