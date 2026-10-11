@@ -193,13 +193,21 @@ const GUN_MS = 24 * 60 * 60 * 1000;
  * `formatToParts` ile parça parça okunur — yerel ayarın gün/ay sırasına
  * bağımlılık kalmaz.
  */
+/**
+ * ⚠ BİÇİMLEYİCİ BİR KEZ KURULUR (K332, 11.10.2026). `new Intl.DateTimeFormat`
+ * pahalıdır (saat dilimi verisi her kurulumda yeniden çözülür); her çağrıda
+ * kurulunca panel 8.400 satışlık defterde bu satırda **2,3 sn** harcıyordu
+ * (yerel işlemci profili, canlı kopyası). Sonuç AYNI — yalnız tekrar kurulmuyor.
+ */
+let gunBicimleyici: Intl.DateTimeFormat | undefined;
 export function isTakvimGunu(an: Date): TakvimGunu {
-  const parcalar = new Intl.DateTimeFormat("en-US", {
+  gunBicimleyici ??= new Intl.DateTimeFormat("en-US", {
     timeZone: IS_SAAT_DILIMI,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(an);
+  });
+  const parcalar = gunBicimleyici.formatToParts(an);
 
   const al = (tur: Intl.DateTimeFormatPartTypes) =>
     Number(parcalar.find((p) => p.type === tur)?.value ?? "0");
@@ -240,8 +248,10 @@ export function gunDegeri({ yil, ay, gun }: TakvimGunu): Date {
  *  üzerinden ÖLÇÜLÜR — çalışma ortamının saat dilimi hiçbir yerde okunmaz.
  * ============================================================================
  */
+/** Bir kez kurulur — bkz. `isTakvimGunu` üstündeki not (K332). */
+let ofsetBicimleyici: Intl.DateTimeFormat | undefined;
 function isSaatDilimiOfsetiMs(an: Date): number {
-  const parcalar = new Intl.DateTimeFormat("en-CA", {
+  ofsetBicimleyici ??= new Intl.DateTimeFormat("en-CA", {
     timeZone: IS_SAAT_DILIMI,
     year: "numeric",
     month: "2-digit",
@@ -250,7 +260,8 @@ function isSaatDilimiOfsetiMs(an: Date): number {
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
-  }).formatToParts(an);
+  });
+  const parcalar = ofsetBicimleyici.formatToParts(an);
   const al = (tur: Intl.DateTimeFormatPartTypes) =>
     Number(parcalar.find((x) => x.type === tur)?.value ?? "0");
   const yerel = Date.UTC(

@@ -8,7 +8,7 @@ import {
   donemKorumasi,
 } from "../src/lib/donem-korumasi";
 import { betikDonemKarari, donemIstisnaIzi } from "../src/lib/donem-kapisi";
-import { PENCERE_TURLERI, gunMetni, pencereOlustur } from "../src/lib/donem";
+import { PENCERE_TURLERI, gunMetni, isTakvimGunu, pencereOlustur } from "../src/lib/donem";
 import { kiyasPenceresi } from "../src/lib/karsilastirma";
 import { israrGecerliMi } from "../src/lib/sayim-korumasi";
 import { kaynakOku } from "./kaynak-oku";
@@ -26,7 +26,7 @@ import { kaynakOku } from "./kaynak-oku";
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let kalan = 0;
@@ -412,6 +412,31 @@ console.log("6) PENCERE SINIRI — İstanbul gece yarısı");
   );
 }
 kosanBolumler.push("pencere sınırı");
+
+// ═══════════════════════════════════════════════════════════════════════
+// BİÇİMLEYİCİ BİR KEZ KURULUR (K332, 11.10.2026) — telefonda geçişler ~2 sn;
+// panel 8.400 satışlık defterde `new Intl.DateTimeFormat`ı her çağrıda kurarak
+// 2,3 sn harcıyordu (yerel işlemci profili). Sonuç değişmeden 18× hız. Geri
+// dönerse SONUÇLAR DOĞRU KALIR, yalnız ekran yavaşlar — değer testi göremez;
+// bu yüzden kalıp ölçülür + sonucun aynı kaldığı değerle sınanır.
+// ═══════════════════════════════════════════════════════════════════════
+{
+  for (const [yol, en] of [["src/lib/donem.ts", 2], ["src/lib/bicim-ortak.ts", 1], ["src/lib/komisyon/tarife-okuyucu.ts", 1]] as const) {
+    const kod = yorumsuz(kaynakOku(yol));
+    const tum = (kod.match(/new Intl\.DateTimeFormat\(/g) ?? []).length;
+    const birKez = (kod.match(/\w+Bicimleyici \?\?= new Intl\.DateTimeFormat\(/g) ?? []).length;
+    kontrol(`${yol}: tarih biçimleyici yalnız BİR KEZ kurulur (${birKez}/${tum}, en az ${en})`, tum === birKez && birKez >= en);
+  }
+  const referans = (an: Date) => {
+    const p = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Istanbul", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(an);
+    const al = (t: string) => Number(p.find((x) => x.type === t)?.value ?? "0");
+    return `${al("year")}-${al("month")}-${al("day")}`;
+  };
+  const anlar = ["1985-06-30T21:30:00Z", "2005-03-27T00:30:00Z", "2015-10-25T21:59:59Z", "2016-09-07T21:00:00Z", "2026-09-06T22:19:00Z", "2026-12-31T21:00:00Z", "2026-12-31T20:59:59Z"];
+  const uyusan = anlar.filter((a) => { const g = isTakvimGunu(new Date(a)); return `${g.yil}-${g.ay}-${g.gun}` === referans(new Date(a)); }).length;
+  kontrol(`İstanbul günü önbellekli biçimleyiciyle AYNI (${uyusan}/${anlar.length}, yaz saati yılları dahil)`, uyusan === anlar.length);
+}
+kosanBolumler.push("bicimleyici");
 
 // ═══════════════════════════════════════════════════════════════════════
 console.log("");

@@ -95,8 +95,10 @@ const PENCERE_DESENI =
  * kullanılmaz (anayasa kuralı) ve sabit +3 YAZILMAZ: yaz saati uygulaması
  * geri gelirse sabit ofset her tarifeyi sessizce bir saat kaydırırdı.
  */
+/** Bir kez kurulur (K332, 11.10.2026) — kurulum pahalı, sonuç aynı. */
+let ofsetBicimleyici: Intl.DateTimeFormat | undefined;
 function istanbulOfsetiMs(an: Date): number {
-  const parcalar = new Intl.DateTimeFormat("en-US", {
+  ofsetBicimleyici ??= new Intl.DateTimeFormat("en-US", {
     timeZone: "Europe/Istanbul",
     year: "numeric",
     month: "2-digit",
@@ -105,7 +107,8 @@ function istanbulOfsetiMs(an: Date): number {
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
-  }).formatToParts(an);
+  });
+  const parcalar = ofsetBicimleyici.formatToParts(an);
   const al = (tur: string) =>
     Number(parcalar.find((p) => p.type === tur)?.value ?? 0);
   const yerel = Date.UTC(

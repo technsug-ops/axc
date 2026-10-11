@@ -176,6 +176,10 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "pazaryerinin ODEME donemi ile muhasebe donemi karisir — kanalin takvimine gore beyan uretilir",
   },
+  { ad: "GUN BICIMLEYICISI HER CAGRIDA KURULUYOR", yon: "KALDIRAN", dosya: "src/lib/donem.ts",
+    bul: "  gunBicimleyici ??= new Intl.DateTimeFormat(", koy: "  gunBicimleyici = new Intl.DateTimeFormat(", bozdugu: "panel 2,3 sn yavaslar (K332), sonuc ayni oldugu icin kimse gormez" },
+  { ad: "GIRDI BICIMLEYICISI HER CAGRIDA KURULUYOR", yon: "KALDIRAN", dosya: "src/lib/bicim-ortak.ts",
+    bul: "  girdiBicimleyici ??= new Intl.DateTimeFormat(", koy: "  girdiBicimleyici = new Intl.DateTimeFormat(", bozdugu: "form tarihi her cizimde pahali kurulum" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
