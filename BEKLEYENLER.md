@@ -13,6 +13,13 @@
 
 ---
 
+## 🔶 K330 — ALGORİTMO TASARIMI + YENİ KÂRLILIK KARTI CANLIYA (dal → main) · 11.10.2026 · [CANLI MIGRATION KOŞTU · PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
+Kullanıcı kararı 10–11.10: «normal orijinal canlıya almak istiyorum» → seçenek «önce yalnız tasarım, çok firma ayrı gün». `k303-cok-firma` dalından YALNIZ tasarım/panel/kart değişiklikleri alındı (≈30 commit; çok firma kodu ALINMADI — süzgeç, süper admin, paketler, giriş firma kodu dalda kalır).
+· Alınanlar: Algoritmo görünümü + kişisel tema (tarayıcıda saklanır, veritabanı yok) · panel iş zekası (paranın dağılımı, ABC → ürün listesi, devir hızı, stok günü, ortalama sipariş), Huni+görev şeridi, sade NET kutuları · kârlılık kartı (208px resim + galeri, dönem kıyası, sekmeler, tekrar göstergeler temizlendi) · bütün kutular tek kart · sayfalar tam genişlik.
+· **Uyarlama:** `VaryantGorseli` canlıda FİRMA ALANSIZ (`20261010120000_varyant_gorseli`, canlıda koştu 11.10, 68 migration); dal kendi sürümünde `companyId` taşır — çok firma geçişinde bu tablo da firma alanı alır. Yedek sürümü 7 (dalda 8). Galeri yazıcısı firmasız. Demo galeri betiği taşınmadı.
+· Taşıma turunda bulunan, dalda çözülmüş üç düzeltme de alındı: panel iptal süzgeci açık (f4365804 parçası) · panel sıra/lint (af42201e) · panel mutasyon çapası (7728d808). Tam tur: 228 bekçi, kırmızı kalan yalnız deploy:bekci (migration bekliyordu).
+**Halil testi (bezirga.com, telefon + bilgisayar):** a) Panel → kutularda eğilim rozeti, «Paranın dağılımı» ve ABC; ABC'de bir sınıfa dokun → ürün listesi o sınıfla açılır · b) Ürünler → bir ürün → Kârlılık kartı: üstte büyük resim + küçük resimler (resim yoksa boş kutu), dönem seçici, sekmeler (Genel · Siparişler · Kâr · Varyantlar · İadeler) · c) Kârlılık kartında NET-2 rakamı eski karttakiyle aynı · d) Herhangi bir ayar sayfası iki yana tam genişlik · e) Üst çubukta tema düğmesi → Kişisel → renk seç, sayfa yenilenince kalır. ⚠ Galeri, kanal çekimi ürünü bir sonraki tazelediğinde dolar (ilk gün tek resim görünebilir).
+
 ## 🔴 K329 — YAYIN BOŞLUĞU: CANLI SÜRÜM ANA DALIN GERİSİNDEYSE ÇAN KIRMIZI · 10.10.2026 · [KOD YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Niye (kullanıcı onayı 10.10 «onayım var»):** K326 düzeltmesi 09.10 09:28'de GitHub'a gitti, Vercel üretimi `f520dbb`de kaldı; ~28 saat siparişleri ESKİ kod işledi ve 19 satışa yanlış desi yazıldı. Hiçbir şey kırmızı yanmadı — Halil testi buldu. «Push yeşil» ≠ «kod canlıda».
