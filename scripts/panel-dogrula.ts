@@ -138,6 +138,7 @@ import {
 } from "../src/lib/panel/nakit-takvimi";
 import { miniKovalar } from "../src/lib/panel/mini-seri";
 import { ustOkumaPenceresi } from "../src/app/panel-satir";
+import { telefonMu } from "../src/lib/panel/cihaz";
 import { abcSiniflari, devirHizi, maliyetSurucuculeri, stokGunu } from "../src/lib/panel/bi";
 import { nakitEtkisi } from "../src/lib/nakit-isaret";
 import {
@@ -7169,11 +7170,47 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   const grafikK = yorumsuzK(kaynakOku("src/app/panel-aylik-grafik.tsx"));
   kontrol("sayfa: grafik bölümü Suspense İÇİNDE, okuması SÖZ olarak veriliyor",
     /<Suspense\s+fallback=\{[\s\S]{0,200}?\}>\s*<PanelAylikGrafik\s+veriSozu=\{grafikVerisiSozu\}/.test(sayfaK));
-  kontrol("  ...grafik okuması BEKLENMEDEN başlatılıyor (await yok)",
-    /const grafikVerisiSozu = Promise\.all\(\[/.test(sayfaK));
+  /* ⚠ ÖLÇÜT DEĞİŞTİ (12.10.2026): okuma artık telefonda HİÇ başlatılmıyor —
+     tanım koşullu, söze dördüncü bir yerden (telefon dalı, `=== null`) bakılıyor.
+     Kural aynı: söz hiçbir yerde BEKLENMEZ. */
+  kontrol("  ...grafik okuması BEKLENMEDEN başlatılıyor (await yok; telefonda hiç)",
+    /const grafikVerisiSozu = !grafikOkunur \? null : Promise\.all\(\[/.test(sayfaK));
   const sozKullanimi = (sayfaK.match(/\bgrafikVerisiSozu\b/g) ?? []).length;
-  kontrol("  ...sayfa grafik sözüne YALNIZ üç yerde dokunuyor (tanım · hata yutma · bölüme verme) — bekleme yok",
-    sozKullanimi === 3 && !/await[^;]{0,200}?grafikVerisiSozu/.test(sayfaK), sozKullanimi);
+  kontrol("  ...sayfa grafik sözüne YALNIZ dört yerde dokunuyor (tanım · hata yutma · telefon dalı · bölüme verme) — bekleme yok",
+    sozKullanimi === 4 && !/await[^;]{0,200}?grafikVerisiSozu/.test(sayfaK), sozKullanimi);
+
+  /* ═══ TELEFONDA 12 AYLIK OKUMA YOK (12.10.2026) ═══
+     Ölçüt cihaz TÜRÜ: yalnız «mobile» elenir; tablet, masaüstü ve tanınmayan
+     tarayıcı grafiği görür (şüphede okunur). Örnek veri iki yakayı da gösterir. */
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const ANDROID = "Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36";
+  const IPAD = "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const MASAUSTU = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36";
+  kontrol("telefon: iPhone ve Android telefon SAYILIR", telefonMu(IPHONE) && telefonMu(ANDROID));
+  kontrol("  ...iPad (tablet) telefon SAYILMAZ — yatayda grafik orada çizilir", !telefonMu(IPAD));
+  kontrol("  ...masaüstü telefon SAYILMAZ", !telefonMu(MASAUSTU));
+  kontrol("  ...boş / tanınmayan satır telefon SAYILMAZ (şüphede okunur)",
+    !telefonMu(null) && !telefonMu(undefined) && !telefonMu("") && !telefonMu("curl/8.0"));
+  kontrol("sayfa: karar isteğin tarayıcı satırından veriliyor",
+    /const grafikOkunur = !telefonMu\(\(await headers\(\)\)\.get\("user-agent"\)\);/.test(sayfaK));
+  kontrol("  ...telefon dalı boş kalmaz, NEDENİNİ söyler (İlke #5)",
+    /\{grafikVerisiSozu === null \? \(\s*<p className="[^"]*max-md:hidden">\{t\("grafikTelefondaYok"\)\}<\/p>\s*\) : \(/.test(sayfaK));
+
+  /* ═══ MARJ SINIFLANDIRMASI İSTEK BAŞINA BİR KEZ (12.10.2026) ═══
+     Panel bu sınıflandırmayı iki yerden istiyor (kutu + şerh); dönem yokken
+     ikisi de defterin tamamını okuyordu (yerel ölçüm 270 → 252 sorgu, çıktı
+     birebir). `cache` istek dışında doğrudan çağırdığı için değer testi
+     tekilleşmeyi göremez — ölçüt BAĞA bakar: dış kapıların ikisi de önbellekli
+     yoldan geçer, çıplak sınıflandırma YALNIZ önbelleğin içinde çağrılır,
+     anahtar nesne değil SAYI (aynı pencere iki ayrı nesneyle gelse de tek iş). */
+  const serhK = yorumsuzK(kaynakOku("src/lib/ice-aktarma-serhi.ts"));
+  kontrol("marj: şerh ve süzgeç kümesi ÖNBELLEKLİ yoldan",
+    (serhK.match(/await istekteSiniflandir\(db, pencere\)/g) ?? []).length === 2);
+  kontrol("  ...çıplak sınıflandırma YALNIZ önbelleğin içinde",
+    (serhK.match(/\bmarjSiniflandir\(/g) ?? []).length === 2 &&
+      /cache\(\s*\(db: [^)]*\) =>\s*marjSiniflandir\(/.test(serhK));
+  kontrol("  ...önbellek anahtarı pencerenin ANLARI (sayı), nesne değil",
+    /siniflandirOnbellekli\(db, pencere\?\.bas\.getTime\(\) \?\? null, pencere\?\.son\.getTime\(\) \?\? null\)/.test(serhK));
   kontrol("  ...bölüm kendi okumasını BEKLİYOR", /const \{ satislar, iadeler \} = await veriSozu;/.test(grafikK));
   kontrol("üst okuma DAR aralıkta (satış + iade, iki yer)",
     (sayfaK.match(/soldAt: \{ gte: ustBaslangic, lt: ustBitisHaric \}/g) ?? []).length === 2);

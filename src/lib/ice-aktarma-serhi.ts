@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import type { PrismaClient } from "@/generated/prisma/client";
 
@@ -287,14 +289,14 @@ export async function marjSebepSatisIdleri(
   sebep: MarjSebebi,
   pencere?: { bas: Date; son: Date },
 ): Promise<string[]> {
-  return [...sebepKumesi(await marjSiniflandir(db, pencere), sebep)];
+  return [...sebepKumesi(await istekteSiniflandir(db, pencere), sebep)];
 }
 
 export async function marjSerhi(
   db: Pick<PrismaClient, "saleItem" | "purchaseItem">,
   pencere?: { bas: Date; son: Date },
 ): Promise<MarjSerhi> {
-  const s = await marjSiniflandir(db, pencere);
+  const s = await istekteSiniflandir(db, pencere);
   return {
     alimYok: s.alimsizlar.size,
     donemDisi: s.donemDisilar.size,
@@ -306,6 +308,30 @@ export async function marjSerhi(
     baglıMarj: s.ciroBagli > 0 ? (s.net / s.ciroBagli) * 100 : null,
     ekranMarji: s.ciroHepsi > 0 ? (s.net / s.ciroHepsi) * 100 : null,
   };
+}
+
+/**
+ * ⚡ AYNI İSTEKTE BİR KEZ (K332, ölçüldü 12.10.2026). Panel bu sınıflandırmayı
+ * İKİ yerden istiyor — kutunun «marj basılabilir mi» sorusu (`page.tsx`) ve
+ * şerh (`MarjSerhi`) — ve adreste dönem yokken ikisinin penceresi de BOŞ:
+ * defterin tamamı iki kez okunuyordu (yerel ölçüm: beş sorgu ikişer kez,
+ * ~600 ms veritabanı işi; panel tek açılışta 270 sorgu atıyordu).
+ * React `cache` istek kapsamlıdır: istek bitince sonuç düşer, iki istek
+ * birbirinin sonucunu görmez. Anahtar pencerenin ANLARI (sayı) — nesne
+ * kimliği değil; aynı pencere iki ayrı nesneyle gelse de bir kez hesaplanır,
+ * farklı pencere ayrı hesaplanır. Sonuç çağıranlarca DEĞİŞTİRİLMEZ (yalnız
+ * sayılır ya da kopyalanır) — paylaşmak güvenli. İstek dışında (betik,
+ * bekçi) `cache` doğrudan çağırır.
+ */
+const siniflandirOnbellekli = cache(
+  (db: Pick<PrismaClient, "saleItem" | "purchaseItem">, bas: number | null, son: number | null) =>
+    marjSiniflandir(db, bas === null || son === null ? undefined : { bas: new Date(bas), son: new Date(son) }),
+);
+function istekteSiniflandir(
+  db: Pick<PrismaClient, "saleItem" | "purchaseItem">,
+  pencere?: { bas: Date; son: Date },
+): Promise<MarjSiniflari> {
+  return siniflandirOnbellekli(db, pencere?.bas.getTime() ?? null, pencere?.son.getTime() ?? null);
 }
 
 async function marjSiniflandir(

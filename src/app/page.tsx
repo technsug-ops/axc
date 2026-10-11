@@ -20,27 +20,10 @@ import {
   PayCubugu,
   UyariKarti,
 } from "@/components/istatistik-kutusu";
-import { KatlanirBolum } from "@/components/katlanir-bolum";
 import { SekmeliBolum } from "@/components/sekmeli-bolum";
-import { IsiHaritasi, type IsiSatiri } from "@/components/isi-haritasi";
-import { OranTablosu, oran, type OranSatiri } from "@/components/oran-tablosu";
-import {
-  KarsilastirmaGrafigi,
-  type KarsilastirmaSerisi,
-} from "@/components/karsilastirma-grafigi";
-import { TekSeriliGrafik, type TekNokta } from "@/components/tek-serili-grafik";
-import { envanterSerisi } from "@/lib/panel/envanter-serisi";
 import { SuzgecCubugu } from "@/components/suzgec-cubugu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
 import {
   ayKaydir,
@@ -66,7 +49,6 @@ import { KANAL_RENKLERI, KANAL_RENGI_VARSAYILAN } from "@/lib/renkler";
 import { HIZLI_KIYAS } from "@/lib/karsilastirma";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
 import {
-  karEksikAyAdresi,
   karEksikKanalAdresi,
   kargosuzParametreleri,
   pencereCoz,
@@ -74,9 +56,6 @@ import {
   teslimParametreleri,
 } from "@/lib/liste-suzgeci";
 import {
-  aylikMarj,
-  aylikSeri,
-  type AyNoktasi,
   panelHesapla,
   type PanelIadesi,
   type PanelKargosu,
@@ -183,6 +162,8 @@ import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 import { panelIadesiKur, panelSatisiKur } from "./panel-satir";
 import { GRAFIK_AY_SAYISI, PanelAylikGrafik } from "./panel-aylik-grafik";
 import { ustOkumaPenceresi } from "./panel-satir";
+import { headers } from "next/headers";
+import { telefonMu } from "@/lib/panel/cihaz";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -400,8 +381,11 @@ export default async function AnaSayfa({
    * 12 AYLIK GRAFİĞİN OKUMASI — beklenmez, `PanelAylikGrafik`e söz olarak
    * verilir ve bölüm `Suspense` içinde arkadan dolar. Ürün bilgisi YOK (grafik
    * kullanmıyor); dönüştürme üst kısımla ORTAK (`panel-satir.ts`).
+   * ⚡ TELEFONDA HİÇ BAŞLATILMAZ (12.10.2026) — bölüm orada gizli; gerekçe ve
+   * ölçüm `lib/panel/cihaz.ts`te.
    */
-  const grafikVerisiSozu = Promise.all([
+  const grafikOkunur = !telefonMu((await headers()).get("user-agent"));
+  const grafikVerisiSozu = !grafikOkunur ? null : Promise.all([
     prisma.sale.findMany({
       where: {
         soldAt: { gte: veriBaslangic, lt: veriBitisHaric },
@@ -472,7 +456,7 @@ export default async function AnaSayfa({
     satislar: satisKayitlari.map(panelSatisiKur),
     iadeler: iadeKayitlari12.map(panelIadesiKur),
   }));
-  grafikVerisiSozu.catch(() => {});
+  grafikVerisiSozu?.catch(() => {});
 
   /**
    * SÜZGEÇ ÇUBUĞUNUN KANAL VE PARA SEÇENEKLERİ — 12 aylık aralıkta satış olan
@@ -4031,7 +4015,12 @@ export default async function AnaSayfa({
 
       {/* ⚡ 12 AYLIK GRAFİK ARKADAN DOLAR (K332, kullanıcı fikri 11.10.2026): üst kısım
           kendi dar okumasıyla hemen çizilir; bu bölüm kendi okumasını bekler. Telefonda
-          zaten gizli (K270) — artık paneli de bekletmiyor. */}
+          zaten gizli (K270) — artık paneli de bekletmiyor. Telefondan gelen istekte
+          okuma hiç yapılmaz (12.10.2026); telefon yatay tutulup alan görünürse boş
+          kalmaz, nedenini söyler (İlke #5). */}
+      {grafikVerisiSozu === null ? (
+        <p className="text-muted-foreground text-sm max-md:hidden">{t("grafikTelefondaYok")}</p>
+      ) : (
       <Suspense fallback={<div className="max-md:hidden"><Skeleton className="h-96" /></div>}>
         <PanelAylikGrafik
           veriSozu={grafikVerisiSozu}
@@ -4043,6 +4032,7 @@ export default async function AnaSayfa({
           parametreler={parametreler}
         />
       </Suspense>
+      )}
     </div>
   );
 }

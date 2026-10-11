@@ -1092,8 +1092,9 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "SAYFA GRAFIK OKUMASINI TANIMDA BEKLIYOR",
     yon: "FAZLADAN",
     dosya: SAYFA,
-    bul: "const grafikVerisiSozu = Promise.all([",
-    koy: "const grafikVerisiSozu = await Promise.all([",
+    /* Çapa 12.10.2026'da taşındı: tanım telefon koşulunu taşıyor (niyet aynı). */
+    bul: "const grafikVerisiSozu = !grafikOkunur ? null : Promise.all([",
+    koy: "const grafikVerisiSozu = !grafikOkunur ? null : await Promise.all([",
     bozdugu: "akis bosa duser - ust kisim grafigi bekler",
   },
   {
@@ -1111,6 +1112,55 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } }, ...IADE_GECERLI }",
     koy: "where: { createdAt: { gte: veriBaslangic, lt: veriBitisHaric }, ...IADE_GECERLI }",
     bozdugu: "K185-3 atfi bozulur - iade orani tablosu pay/payda farkli aydan",
+  },
+  /* 12.10.2026 — telefonda 12 aylık okuma yok · marj sınıflandırması istek başına bir kez. */
+  {
+    ad: "TABLET DE TELEFON SAYILDI",
+    yon: "FAZLADAN",
+    dosya: "src/lib/panel/cihaz.ts",
+    bul: 'return userAgentFromString(tarayiciSatiri).device.type === "mobile";',
+    koy: 'return userAgentFromString(tarayiciSatiri).device.type !== undefined;',
+    bozdugu: "tablet yatayda grafigi gorecekken bos alan gorur",
+  },
+  {
+    ad: "TANINMAYAN TARAYICI TELEFON SAYILDI",
+    yon: "FAZLADAN",
+    dosya: "src/lib/panel/cihaz.ts",
+    bul: "if (!tarayiciSatiri) return false;",
+    koy: "if (!tarayiciSatiri) return true;",
+    bozdugu: "tarayici satiri gelmeyen bilgisayar grafigi hic gormez",
+  },
+  {
+    ad: "SAYFA CIHAZI YOK SAYIYOR (telefonda yine okunur)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: 'const grafikOkunur = !telefonMu((await headers()).get("user-agent"));',
+    koy: "const grafikOkunur = true;",
+    bozdugu: "telefon gizli grafigin 12 aylik okumasini yine bekler",
+  },
+  {
+    ad: "TELEFON DALI SESSIZ (neden yazmiyor)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: '{t("grafikTelefondaYok")}',
+    koy: "{null}",
+    bozdugu: "yatay telefonda grafik alani bos kalir, nedeni yazmaz (Ilke #5)",
+  },
+  {
+    ad: "MARJ SERHI ONBELLEKSIZ (defter iki kez okunur)",
+    yon: "KALDIRAN",
+    dosya: "src/lib/ice-aktarma-serhi.ts",
+    bul: "const s = await istekteSiniflandir(db, pencere);",
+    koy: "const s = await marjSiniflandir(db, pencere);",
+    bozdugu: "panel bes agir sorguyu yine iki kez atar",
+  },
+  {
+    ad: "MARJ ONBELLEK ANAHTARI NESNE (tekillesmez)",
+    yon: "FAZLADAN",
+    dosya: "src/lib/ice-aktarma-serhi.ts",
+    bul: "siniflandirOnbellekli(db, pencere?.bas.getTime() ?? null, pencere?.son.getTime() ?? null)",
+    koy: "siniflandirOnbellekli(db, pencere as never, null)",
+    bozdugu: "ayni pencere iki nesneyle gelince iki kez hesaplanir",
   },
 ];
 
