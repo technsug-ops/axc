@@ -54,6 +54,12 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "    if (yuzeyler.every((y) => kontrastOrani(aday, y) >= KONTRAST_ESIGI)) return aday;", koy: "    return aday;", bozdugu: "gri yazi koyu zeminde okunmaz" },
   { ad: "YABANCI KOD KABUL", yon: "FAZLADAN", dosya: GOVDE,
     bul: '  return typeof ham === "string" && Object.prototype.hasOwnProperty.call(secenekler, ham) ? (ham as T) : varsayilan;', koy: '  return typeof ham === "string" && ham in secenekler ? (ham as T) : varsayilan;', bozdugu: "constructor gibi kod zemini bozar" },
+  { ad: "RENK GIRISI DEGISIMI YAZMIYOR", yon: "KALDIRAN", dosya: SECICI,
+    bul: "      onChange={(e) => kisiselDegistir({ renk: e.target.value })}\n      tabIndex={-1}", koy: "      tabIndex={-1}", bozdugu: "secilen ozel renk uygulanmaz" },
+  { ad: "PALET DUGMESI GIRISI ACMIYOR", yon: "KALDIRAN", dosya: SECICI,
+    bul: "                  htmlFor={OZEL_RENK_GIRISI}\n", koy: "", bozdugu: "palete dokununca hicbir sey acilmaz" },
+  { ad: "RENK GIRISI PANELE GERI DONDU", yon: "FAZLADAN", dosya: SECICI,
+    bul: '                  <span className="sr-only">{t("temaKendiRengin")}</span>\n                </label>', koy: '                  <span className="sr-only">{t("temaKendiRengin")}</span>\n                  <input type="color" onChange={(e) => kisiselDegistir({ renk: e.target.value })} className="absolute inset-0 opacity-0" />\n                </label>', bozdugu: "telefonda panel kapanir, renk ulasmaz (11.10 bulgusu)" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
