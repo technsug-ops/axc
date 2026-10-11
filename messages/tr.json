@@ -329,7 +329,8 @@
     "temaYazi": "Yazı kontrastı",
     "temaYaziNormal": "Normal",
     "temaYaziYuksek": "Yüksek",
-    "sayfaYukleniyor": "Sayfa yükleniyor…"
+    "sayfaYukleniyor": "Sayfa yükleniyor…",
+    "onbellekNotu": "{saat} itibarıyla hesaplandı · en fazla {dakika} dk önce"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",

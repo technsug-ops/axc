@@ -41,6 +41,16 @@ import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 /** Süzgeçlerin geldiği yer: sayfanın searchParams'ı. */
 export type SuzgecParametreleri = Record<string, string | undefined>;
 
+/** Satışlar sayfasının süzgeçsiz açılış dönemi (kullanıcı kararı 11.10.2026, K332). */
+export const SATIS_VARSAYILAN_PENCERE = "BU_AY" as const satisfies PencereTuru;
+
+/**
+ * AÇIK «TÜM ZAMANLAR» — süzgeçsiz satış adresi «Bu ay»a yönlendirildiği için
+ * «tüm kayıtlar» BOŞ pencereyle istenemez; bu değerle istenir. `pencereCoz`
+ * onu süzgeçsiz çözer.
+ */
+export const TUM_ZAMANLAR = "TUM";
+
 export type PencereCozumu = {
   /** Boş metin = ZAMAN SÜZGECİ KAPALI (tüm kayıtlar). */
   tur: PencereTuru | "";
@@ -59,6 +69,16 @@ export type PencereCozumu = {
  * yeterli bir sebep; süzgeç eklemek, kayıt gizlemek anlamına gelmemeli.
  * Dönem GÖRÜNÜR bir seçim olarak duruyor ve seçildiğinde rozeti çıkıyor.
  *
+ * ⏩ SATIŞLAR İÇİN ÇEVRİLDİ — kullanıcı kararı 11.10.2026 (K332): satışlar
+ * sayfası **süzgeçsiz açılınca «Bu ay»** gösterir (hız: «tüm zamanlar» her
+ * açılışta 8.400 satışın toplamını baştan hesaplıyordu). Yukarıdaki 13.08
+ * gerekçesi SİLİNMEDİ ve hâlâ geçerli olduğu için karşılandı: dönem ADRESE
+ * yazılır (`?pencere=BU_AY` yönlendirmesi, `satislar/page.tsx`) ve rozetiyle
+ * GÖRÜNÜR; rozetin çarpısı satışlarda `TUM_ZAMANLAR` yazar → tüm kayıtlar.
+ * Bu gövde DEĞİŞMEDİ: boş pencere hâlâ «tüm zamanlar» — Alımlar, İadeler,
+ * Panel ve süzgeçli satış listeleri (panel sayısından açılanlar: sayı = liste)
+ * eskisi gibi.
+ *
  * GEÇERSİZ DEĞER DE KAPALIYA DÜŞER, hata vermez: kullanıcı adresi elle
  * kurcalayabilir ya da eski bir yer imi açabilir.
  *
@@ -69,7 +89,7 @@ export function pencereCoz(
   an: Date = new Date(),
 ): PencereCozumu {
   const istenen = (p.pencere ?? "").trim();
-  if (istenen === "") return { tur: "", pencere: null, aralik: undefined };
+  if (istenen === "" || istenen === TUM_ZAMANLAR) return { tur: "", pencere: null, aralik: undefined };
 
   if (!(LISTE_PENCERELERI as readonly string[]).includes(istenen)) {
     return { tur: "", pencere: null, aralik: undefined };

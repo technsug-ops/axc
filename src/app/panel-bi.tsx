@@ -9,6 +9,9 @@ import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { abcSiniflari, ABC_SINIRLARI, devirHizi, maliyetSurucuculeri, oranVeyaBos, stokGunu } from "@/lib/panel/bi";
 import { abcAdresi, abcGirdileriniYukle, type AbcKapsami } from "@/lib/panel/abc-kumesi";
 import { prisma } from "@/lib/prisma";
+import { kisaOnbellek, PANEL_ONBELLEK_MS } from "@/lib/kisa-onbellek";
+import { yetkiBaglami } from "@/lib/yetki";
+import { OnbellekNotu } from "@/components/onbellek-notu";
 import { suzgecAdresi } from "@/lib/suzgec";
 import type { Currency } from "@/generated/prisma/enums";
 
@@ -62,7 +65,14 @@ export async function PanelBi({
      (`/urunler?abc=…`) aynı gövdeyi çağırır; ikisi ayrı hesaplasaydı «sayı = liste»
      sözü sessizce bozulabilirdi. */
   const abcKapsami: AbcKapsami = { baslangic: donem.baslangic, bitisHaric: donem.bitisHaric, para, kanal };
-  const [satislar, kesintiler, abcVerisi] = await Promise.all([
+  /* ⏱ KISA ÖNBELLEK (K332, kullanıcı kararı 11.10.2026): iş zekası blokları en
+     fazla `PANEL_ONBELLEK_MS` eski olabilir; ne zaman hesaplandığı blokta YAZAR.
+     Anahtar firma + dönem sınırları + kanal + para birimi — farklı seçim karışmaz. */
+  const biFirmasi = (await yetkiBaglami())?.companyId ?? "-";
+  const biOnbellegi = await kisaOnbellek(
+    `bi:${biFirmasi}:${donem.baslangic.getTime()}:${donem.bitisHaric.getTime()}:${kanal ?? ""}:${para}`,
+    PANEL_ONBELLEK_MS,
+    () => Promise.all([
     prisma.sale.findMany({
       /* İptal süzgeci AÇIKÇA (iptal:bekci tanısın) — `satisKosulu` zaten taşıyor; tekrar zararsız. */
       where: { ...satisKosulu, iptalTarihi: null },
@@ -87,7 +97,9 @@ export async function PanelBi({
       select: { code: true, amount: true, sale: { select: { profitStatus: true } } },
     }),
     abcGirdileriniYukle(prisma, abcKapsami),
-  ]);
+  ]),
+  );
+  const [satislar, kesintiler, abcVerisi] = biOnbellegi.deger;
 
   /* ── Stok değeri (bugün): açık partilerin kalanı × birim maliyeti — ortak yükleyiciden ── */
   const toplamStokDegeri = abcVerisi.toplamStokDegeri;
@@ -312,6 +324,9 @@ export async function PanelBi({
           ) : null}
         </CardContent>
       </Card>
+      <div className="xl:col-span-2">
+        <OnbellekNotu an={biOnbellegi.an} />
+      </div>
     </div>
   );
 }

@@ -488,6 +488,8 @@
     "kisisel-tema-mutasyon:kontrol": "tsx scripts/kisisel-tema-mutasyon-kontrol.ts",
     "yukleniyor:dogrula": "tsx scripts/yukleniyor-dogrula.ts",
     "yukleniyor-mutasyon:kontrol": "tsx scripts/yukleniyor-mutasyon-kontrol.ts",
+    "kisa-onbellek:dogrula": "tsx scripts/kisa-onbellek-dogrula.ts",
+    "kisa-onbellek-mutasyon:kontrol": "tsx scripts/kisa-onbellek-mutasyon-kontrol.ts",
     "liste-aramasi:dogrula": "tsx scripts/liste-aramasi-dogrula.ts",
     "liste-aramasi-mutasyon:kontrol": "tsx scripts/liste-aramasi-mutasyon-kontrol.ts",
     "okuyucu-duzeltme-mutasyon:kontrol": "tsx scripts/okuyucu-duzeltme-mutasyon-kontrol.ts",

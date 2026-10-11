@@ -79,8 +79,15 @@ export function SuzgecCubugu({
   yapiskan = false,
   zamanSabit = false,
   kiyas,
+  tumZamanDegeri = "",
 }: {
   temelAdres: string;
+  /**
+   * Dönem rozetinin çarpısının yazdığı değer. Varsayılan boş = «tüm zamanlar».
+   * Süzgeçsiz açılışı başka döneme yönlendiren ekran (Satışlar → «Bu ay»,
+   * K332) açık «tüm zamanlar» değerini verir; yoksa çarpı varsayılana döner.
+   */
+  tumZamanDegeri?: string;
   /** Sayfanın tüm searchParams'ı — dokunulmayanlar korunur. */
   mevcut: Record<string, string | undefined>;
   suzgecler: SuzgecTanimi[];
@@ -430,7 +437,7 @@ export function SuzgecCubugu({
                   type="button"
                   aria-label={t("kaldir")}
                   className="hover:text-destructive"
-                  onClick={() => git({ pencere: "", baslangic: "", bitis: "" })}
+                  onClick={() => git({ pencere: tumZamanDegeri, baslangic: "", bitis: "" })}
                 >
                   <X className="size-3" />
                 </button>

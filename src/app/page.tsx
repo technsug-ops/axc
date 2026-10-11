@@ -146,7 +146,9 @@ import {
   analizAdresi as urunAnaliziAdresi,
   yogunlasmaAdresi,
 } from "@/lib/rapor/urun-analizi";
-import { izinVarMi, sayfaGirisi } from "@/lib/yetki";
+import { izinVarMi, sayfaGirisi, yetkiBaglami } from "@/lib/yetki";
+import { kisaOnbellek, PANEL_ONBELLEK_MS } from "@/lib/kisa-onbellek";
+import { OnbellekNotu } from "@/components/onbellek-notu";
 import {
   bandinVaryantlari,
   siralamaGecerliMi,
@@ -374,6 +376,8 @@ export default async function AnaSayfa({
    * alınır; hesap DEĞİŞMEZ. `.catch` yalnız «yakalanmamış ret» uyarısını önler —
    * hata kaybolmaz, `await` edildiği yerde yine fırlar.
    */
+  /** Önbellek anahtarının firması — `yetkiBaglami` istek başına bir kez okunur (ek sorgu yok). */
+  const panelFirmasi = (await yetkiBaglami())?.companyId ?? "-";
   const gorevBlokuSozu = Promise.all([
     gorevSayilariniTopla(),
 
@@ -406,7 +410,9 @@ export default async function AnaSayfa({
      * "rafta duran mal ŞU AN satılabiliyor mu" sorusu bugünün sorusudur.
      * Döneme bağlansaydı dönem daraldığında liste sessizce kısalırdı.
      */
-    vitrinKutusunuTopla(),
+    /* ⏱ KISA ÖNBELLEK (K332, kullanıcı kararı 11.10.2026): kanal karşılaştırması
+       en fazla `PANEL_ONBELLEK_MS` eski olabilir; anahtar firmayı taşır. */
+    kisaOnbellek(`vitrin:${panelFirmasi}`, PANEL_ONBELLEK_MS, vitrinKutusunuTopla),
   ]);
   gorevBlokuSozu.catch(() => {});
   const satisHesaplariSozu = prisma.channelAccount.findMany({
@@ -1693,8 +1699,9 @@ export default async function AnaSayfa({
    *  - Takvim İLERİYE bakar; dönem süzgeci geçmişi süzer. Aynı düğmeye
    *    bağlansalardı "bugün" seçilince takvim boşalırdı. Ekranda da yazıyor.
    */
-  const [gorevSayilari, paketlenen, alim, kiyasAlim, vitrin] =
+  const [gorevSayilari, paketlenen, alim, kiyasAlim, vitrinOnbellegi] =
     await gorevBlokuSozu;
+  const vitrin = vitrinOnbellegi.deger;
 
   /**
    * GÖREV ŞERİDİ TEK GÖVDE (08.10.2026) — iki yerde çizilir: dönemde satış
@@ -3378,6 +3385,7 @@ export default async function AnaSayfa({
           {/* K270: afiş telefonda yok (onaylanan demo) — kanal listeleme ekranında ve masaüstünde duruyor. */}
           <div className="min-w-0 xl:col-span-3 max-md:hidden">
             <VitrinSerhi veri={vitrin} />
+            {vitrin.length > 0 ? <OnbellekNotu an={vitrinOnbellegi.an} /> : null}
           </div>
           <div className="min-w-0 xl:col-span-2">
             <OzetKutusu />

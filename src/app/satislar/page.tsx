@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
@@ -49,7 +50,13 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { gunMetni } from "@/lib/donem";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
-import { pencereCoz, satisKosulu, satisListesiParametreleri } from "@/lib/liste-suzgeci";
+import {
+  pencereCoz,
+  SATIS_VARSAYILAN_PENCERE,
+  satisKosulu,
+  satisListesiParametreleri,
+  TUM_ZAMANLAR,
+} from "@/lib/liste-suzgeci";
 import {
   MARJ_SEBEPLERI,
   marjPencereden,
@@ -119,6 +126,13 @@ export default async function SatislarSayfasi({
   const karGorunur = await izinVarMi("satis.kar.gor");
 
   const p = await searchParams;
+  /**
+   * ⏩ SÜZGEÇSİZ AÇILIŞ «BU AY» (kullanıcı kararı 11.10.2026, K332 — hız).
+   * Yalnız HİÇ parametre yokken: panel sayısından açılan süzgeçli listeler
+   * (kargo, onay, kâr eksik…) tüm zamanlara bakmaya devam eder — sayı = liste.
+   * Dönem ADRESE yazılır ki rozetiyle görünsün ve Excel aynı dönemi alsın.
+   */
+  if (Object.keys(p).length === 0) redirect(`/satislar?pencere=${SATIS_VARSAYILAN_PENCERE}`);
   const arama = (p.q ?? "").trim();
 
   /**
@@ -702,6 +716,8 @@ export default async function SatislarSayfasi({
         /* İptal kutusu ÇÖZÜLMÜŞ değeri yazar — görev listesinde «gizli», aramada «göster». */
         mevcut={{ ...p, iptal: pListe.iptal }}
         suzgecler={suzgecler}
+        /* Rozet çarpısı satışlarda AÇIK «tüm zamanlar» yazar — boş pencere «Bu ay»a döner. */
+        tumZamanDegeri={TUM_ZAMANLAR}
         zaman={{
           secili: pencere.tur,
           aralikMetni,
