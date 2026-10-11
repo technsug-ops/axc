@@ -21,6 +21,8 @@ const GORSEL = "src/lib/urun-gorseli.ts";
 const YAZICI = "src/lib/urun-gorseli-yaz.ts";
 const SAYFA = "src/app/kart/[variantId]/page.tsx";
 const PANO = "src/app/kart/[variantId]/kart-panosu.tsx";
+const GRAFIK = "src/app/kart/[variantId]/kart-grafikleri.tsx";
+const KUTU = "src/components/istatistik-kutusu.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -57,6 +59,18 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "          galeri: galeriAdresleri(Array.isArray(r.imageUrls) ? r.imageUrls : [], \"N11\"),\n", koy: "", bozdugu: "N11 urunlerinde galeri hic dolmaz" },
   { ad: "KAR SEKMESI IZINSIZE ACIK", yon: "FAZLADAN", dosya: SAYFA,
     bul: "  const sekme = istenenSekme === \"kar\" && !karGorunur ? \"genel\" : istenenSekme;", koy: "  const sekme = istenenSekme;", bozdugu: "adresle kar raporu izinsize acilir" },
+  { ad: "KUCUK GRAFIK YENIDEN ORANTILI", yon: "KALDIRAN", dosya: GRAFIK,
+    bul: '<div className="relative w-full" style={{ height: yukseklik }}>', koy: '<div className="relative w-full">', bozdugu: "genis ekranda satirdan tasar" },
+  { ad: "FIYAT NOKTASI RAKAMSIZ", yon: "KALDIRAN", dosya: GRAFIK,
+    bul: "{fiyatEtiketli.has(i) ? (", koy: "{false ? (", bozdugu: "yesil noktalarin fiyati okunmaz" },
+  { ad: "KANAL TABLOSU DEGERSIZ", yon: "KALDIRAN", dosya: PANO,
+    bul: "<MiniCizgi degerler={k.noktalar} bicimle={(n) => bicim.para(n, para)} />", koy: "<MiniCizgi degerler={k.noktalar} />", bozdugu: "kanal fiyati noktalari rakamsiz" },
+  { ad: "STOK KUTUSU YUKARI YAPISIK", yon: "KALDIRAN", dosya: PANO,
+    bul: '<div className="my-auto grid grid-cols-2 items-center gap-2 text-center">', koy: '<div className="grid grid-cols-2 items-center gap-2 text-center">', bozdugu: "icerik ustte, alti bos" },
+  { ad: "TELEFONDA SAG PAY GERI", yon: "FAZLADAN", dosya: KUTU,
+    bul: '${miniVar ? "sm:pr-16" : ""}', koy: '${miniVar ? "pr-16" : ""}', bozdugu: "dar kutuda etiket harf harf kirilir" },
+  { ad: "TEK KOVADA CUBUK", yon: "FAZLADAN", dosya: KUTU,
+    bul: "mini.length >= 2", koy: "mini.length > 0", bozdugu: "tek gunluk donemde anlamsiz tek cubuk" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

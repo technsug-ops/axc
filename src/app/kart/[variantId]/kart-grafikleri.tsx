@@ -64,7 +64,10 @@ export function GrafikLejanti({ ogeler }: { ogeler: readonly Lejant[] }) {
   );
 }
 
-const G = { gen: 900, yuk: 260, sol: 64, sag: 40, ust: 12, alt: 28 } as const;
+const G = { gen: 900, yuk: 260, sol: 64, sag: 40, ust: 12, alt: 28 } as const;
+
+/** İki fiyat yazısı arasındaki en küçük yatay mesafe (grafik birimi; «₺5.300,00» ~50 birim). */
+const FIYAT_ETIKET_ARALIGI = 56;
 
 /**
  * GÜNLÜK GRAFİK — ciro ve NET-2 çubuk (sol eksen, para), adet ve iade çizgi
@@ -181,6 +184,17 @@ export function StokFiyatGrafigi({
   const x = (i: number) => G.sol + adim * i + adim / 2;
   const etiketAraligi = Math.max(1, Math.ceil(noktalar.length / 6));
   const sayiEtiketi = noktalar.length <= 35;
+  /* Fiyat noktasının rakamı (kullanıcı 11.10.2026: «yeşillerde rakam yok, anlaşılmıyor»).
+     Yan yana günlerde yazılar üst üste binmesin diye bir öncekinden FIYAT_ETIKET_ARALIGI
+     birimden yakın noktaya yazı konmaz — o noktanın fiyatı üstüne gelince (title) okunur. */
+  const fiyatEtiketli = new Set<number>();
+  let sonEtiketX = -Infinity;
+  noktalar.forEach((n, i) => {
+    if (n.fiyat === null || !adlar.fiyat) return;
+    if (x(i) - sonEtiketX < FIYAT_ETIKET_ARALIGI) return;
+    fiyatEtiketli.add(i);
+    sonEtiketX = x(i);
+  });
   return (
     <div className="space-y-2">
       <GrafikLejanti ogeler={[{ ad: adlar.stok, renk: RENK.stok }, ...(adlar.fiyat ? [{ ad: adlar.fiyat, renk: RENK.net, cizgi: true }] : [])]} />
@@ -221,7 +235,16 @@ export function StokFiyatGrafigi({
         ))}
         {noktalar.map((n, i) =>
           n.fiyat === null || !adlar.fiyat ? null : (
-            <circle key={`f${n.gun}`} cx={x(i)} cy={yFiyat(n.fiyat)} r={3} fill="white" stroke={RENK.net} strokeWidth={1.5} />
+            <g key={`f${n.gun}`}>
+              <circle cx={x(i)} cy={yFiyat(n.fiyat)} r={3} fill="white" stroke={RENK.net} strokeWidth={1.5}>
+                <title>{`${bicimleGun(n.gun)} · ${adlar.fiyat}: ${bicimlePara(n.fiyat)}`}</title>
+              </circle>
+              {fiyatEtiketli.has(i) ? (
+                <text x={x(i)} y={Math.max(G.ust + 8, yFiyat(n.fiyat) - 7)} textAnchor="middle" className="text-[10px] font-semibold" fill={RENK.net}>
+                  {bicimlePara(n.fiyat)}
+                </text>
+              ) : null}
+            </g>
           ),
         )}
       </svg>
@@ -229,29 +252,74 @@ export function StokFiyatGrafigi({
   );
 }
 
-/** Küçük çizgi (kanal fiyatı, alış fiyatı geçmişi) — eksen yok, boşluk korunur. */
-export function MiniCizgi({ degerler, renk = RENK.ciro, gen = 220, yuk = 36 }: { degerler: readonly (number | null)[]; renk?: string; gen?: number; yuk?: number }) {
+/**
+ * Küçük çizgi (kanal fiyatı, alış fiyatı geçmişi) — eksen yok, boşluk korunur.
+ *
+ * ⚠ SABİT YÜKSEKLİK (kullanıcı 11.10.2026: «pc'de grafikler tam oturmamış», «noktalar
+ * yukarı yaslanmış, değeri okunmuyor»). Eski hâl `viewBox` + `h-auto` idi: geniş
+ * ekranda grafik ORANTILI büyüyor, noktalar satırın dışına taşıyordu. Artık çizgi
+ * yatayda esner (`preserveAspectRatio="none"`, kalınlık sabit), noktalar HTML olarak
+ * yüzdelik konumda durur — daire bozulmaz. `bicimle` verilirse İLK ve SON noktanın
+ * değeri yazılır; her noktanın değeri üstüne gelince okunur.
+ */
+export function MiniCizgi({
+  degerler,
+  renk = RENK.ciro,
+  bicimle,
+  yukseklik = 52,
+}: {
+  degerler: readonly (number | null)[];
+  renk?: string;
+  bicimle?: (n: number) => string;
+  yukseklik?: number;
+}) {
   const dolu = degerler.filter((d): d is number => d !== null);
   if (dolu.length === 0) return null;
   const min = Math.min(...dolu);
   const max = Math.max(...dolu);
   const yay = max - min || 1;
-  const x = (i: number) => (degerler.length === 1 ? gen / 2 : 4 + ((gen - 8) * i) / (degerler.length - 1));
-  const y = (v: number) => (max === min ? yuk / 2 : 4 + (yuk - 8) * (1 - (v - min) / yay));
+  const ust = bicimle ? 18 : 6;
+  const alt = 6;
+  const x = (i: number) => (degerler.length === 1 ? 50 : 4 + (92 * i) / (degerler.length - 1));
+  const y = (v: number) => (max === min ? ust + (yukseklik - ust - alt) / 2 : ust + (yukseklik - ust - alt) * (1 - (v - min) / yay));
   const ilk = degerler.findIndex((d) => d !== null);
   const son = degerler.length - 1 - [...degerler].reverse().findIndex((d) => d !== null);
+  /* İlk ve son yazı birbirine çok yakınsa yalnız SON yazılır (üst üste binmesin). */
+  const etiketler = bicimle ? (ilk === son || x(son) - x(ilk) < 30 ? [son] : [ilk, son]) : [];
   return (
-    <svg viewBox={`0 0 ${gen} ${yuk}`} className="h-auto w-full" aria-hidden>
-      {yollar(degerler.map((d, i) => [x(i), d === null ? null : y(d)] as const)).map((d, j) => (
-        <path key={j} d={d} fill="none" stroke={renk} strokeWidth={2} />
-      ))}
+    <div className="relative w-full" style={{ height: yukseklik }}>
+      <svg viewBox={`0 0 100 ${yukseklik}`} preserveAspectRatio="none" className="absolute inset-0 size-full" aria-hidden>
+        {yollar(degerler.map((d, i) => [x(i), d === null ? null : y(d)] as const)).map((d, j) => (
+          <path key={j} d={d} fill="none" stroke={renk} strokeWidth={2} vectorEffect="non-scaling-stroke" />
+        ))}
+      </svg>
       {/* Seyrek satışta çizgi oluşmaz — her dolu nokta küçük işaretle görünür, uçlar büyük. */}
-      {degerler.map((d, i) =>
-        d === null ? null : (
-          <circle key={i} cx={x(i)} cy={y(d)} r={i === ilk || i === son ? 3.5 : 2} fill="white" stroke={renk} strokeWidth={i === ilk || i === son ? 2 : 1.5} />
-        ),
-      )}
-    </svg>
+      {degerler.map((d, i) => {
+        if (d === null) return null;
+        const uc = i === ilk || i === son;
+        return (
+          <span
+            key={i}
+            title={bicimle ? bicimle(d) : undefined}
+            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+            style={{ left: `${x(i)}%`, top: y(d), width: uc ? 9 : 6, height: uc ? 9 : 6, border: `${uc ? 2 : 1.5}px solid ${renk}` }}
+          />
+        );
+      })}
+      {etiketler.map((i) => {
+        const d = degerler[i]!;
+        const konum = x(i) < 15 ? "translateX(-4px)" : x(i) > 85 ? "translateX(calc(-100% + 4px))" : "translateX(-50%)";
+        return (
+          <span
+            key={`e${i}`}
+            className="absolute text-[10px] font-semibold whitespace-nowrap tabular-nums"
+            style={{ left: `${x(i)}%`, top: Math.max(0, y(d) - 18), transform: konum, color: renk }}
+          >
+            {bicimle!(d)}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 

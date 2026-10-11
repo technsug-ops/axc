@@ -200,14 +200,14 @@ export async function OzetKutulari({
             <span>{t("ortSatisFiyati")}</span>
             <span className="font-semibold tabular-nums">{a.ortalamaFiyat === null ? "?" : `ø ${bicim.para(a.ortalamaFiyat, para)}`}</span>
           </div>
-          <MiniCizgi degerler={fiyatSerisi} />
+          <MiniCizgi degerler={fiyatSerisi} bicimle={(n) => bicim.para(n, para)} />
         </div>
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-2 text-xs">
             <span>{t("alisGecmisi")}</span>
             <span className="font-semibold tabular-nums">{ortAlis === null ? t("alisHicYok") : `ø ${bicim.para(ortAlis, para)}`}</span>
           </div>
-          <MiniCizgi degerler={a.alimFiyatlari.map((x) => x.birim)} renk="var(--se-vurgu)" />
+          <MiniCizgi degerler={a.alimFiyatlari.map((x) => x.birim)} renk="var(--se-vurgu)" bicimle={(n) => bicim.para(n, para)} />
         </div>
         <div className="space-y-0.5 border-t pt-2 text-xs">
           <div className="flex items-center justify-between gap-2">
@@ -218,8 +218,11 @@ export async function OzetKutulari({
         </div>
       </div>
 
-      <div className="space-y-2 rounded-lg border p-4">
+      {/* İçerik kutunun ORTASINA oturur (kullanıcı 11.10.2026: «yukarı yaslanmış») — dört kutu
+          aynı satırda en uzun olanın boyuna uzar, kısa içerik üstte kalıp altı boş görünüyordu. */}
+      <div className="flex flex-col gap-2 rounded-lg border p-4">
         <KutuBasligi>{t("kutuKar")}</KutuBasligi>
+        <div className="my-auto space-y-2">
         {!karGorunur ? (
           <p className="text-muted-foreground text-xs">{t("karIzinYok")}</p>
         ) : m === null || m.dahilKalem === 0 ? (
@@ -243,11 +246,12 @@ export async function OzetKutulari({
         {karGorunur && m !== null && m.haricKalem > 0 ? (
           <p className="text-muted-foreground text-[11px]">{t("merdivenHaric", { sayi: m.haricKalem })}</p>
         ) : null}
+        </div>
       </div>
 
-      <div className="space-y-2 rounded-lg border p-4">
+      <div className="flex flex-col gap-2 rounded-lg border p-4">
         <KutuBasligi>{t("kutuStok")}</KutuBasligi>
-        <div className="grid grid-cols-2 items-center gap-2 text-center">
+        <div className="my-auto grid grid-cols-2 items-center gap-2 text-center">
           <div>
             <div className="text-muted-foreground text-xs">{t("eldekiKisa")}</div>
             <div className="text-3xl font-semibold tabular-nums">{bicim.sayi(a.eldekiAdet)}</div>
@@ -261,9 +265,9 @@ export async function OzetKutulari({
         </div>
       </div>
 
-      <div className="space-y-2 rounded-lg border p-4">
+      <div className="flex flex-col gap-2 rounded-lg border p-4">
         <KutuBasligi>{t("kutuIade")}</KutuBasligi>
-        <div className="grid grid-cols-2 gap-2 text-center">
+        <div className="my-auto grid grid-cols-2 gap-2 text-center">
           <div>
             <div className="text-muted-foreground text-xs">{t("iadeAdedi")}</div>
             <div className="text-3xl font-semibold tabular-nums">{bicim.sayi(a.iadeAdet)}</div>
@@ -454,7 +458,7 @@ export async function GenelSekmesi({ a, para, karGorunur }: { a: KartAnalizi; pa
                 <tr key={k.kanal} className="border-t">
                   <td className="py-2 pl-1">{k.kanal}</td>
                   <td className="w-1/2 px-3 max-sm:hidden">
-                    <MiniCizgi degerler={k.noktalar} />
+                    <MiniCizgi degerler={k.noktalar} bicimle={(n) => bicim.para(n, para)} />
                   </td>
                   <td className="text-right tabular-nums">{bicim.para(k.ortalama, para)}</td>
                   <td className="pr-1 text-right font-semibold tabular-nums">{bicim.para(k.son, para)}</td>

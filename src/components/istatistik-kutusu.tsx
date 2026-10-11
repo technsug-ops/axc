@@ -66,8 +66,12 @@ export function IstatistikKutusu({
   /** Izgara yerleşimi için (ör. telefonda `max-sm:col-span-3`, K270). */
   className?: string;
 }) {
+  /* Tek kovalık seri (ör. «Bugün») bir eğilim anlatmaz — çubuk çizilmez (kullanıcı 11.10.2026).
+     ⚠ TELEFONDA SAĞ PAY YOK: üçlü sıradaki dar kutuda 64 px'lik pay etiketi harf harf
+     kırıyordu («Satı/ş/aded/i»); orada çubuklar yazının ALTINA akar. */
+  const miniVar = mini !== undefined && mini.length >= 2;
   return (
-    <div className={`bg-card relative flex min-w-0 flex-col gap-1.5 rounded-lg border p-3 ${mini && mini.length > 0 ? "pr-16" : ""} ${className ?? ""}`}>
+    <div className={`bg-card relative flex min-w-0 flex-col gap-1.5 rounded-lg border p-3 ${miniVar ? "sm:pr-16" : ""} ${className ?? ""}`}>
       {/* Algoritmo KPI başlığı: 13px, orta kalınlık (analiz §2.2). */}
       <span className="text-muted-foreground min-w-0 text-[13px] font-medium break-words">
         {etiket}
@@ -82,7 +86,7 @@ export function IstatistikKutusu({
       {rozet ? <span className="flex min-w-0">{rozet}</span> : null}
       {kiyas ? <span className="flex min-w-0">{kiyas}</span> : null}
       {altNot ? <span className="min-w-0 text-xs">{altNot}</span> : null}
-      {mini && mini.length > 0 ? <MiniCubuklar degerler={mini} /> : null}
+      {miniVar ? <MiniCubuklar degerler={mini} telefondaAkista /> : null}
     </div>
   );
 }
@@ -101,10 +105,13 @@ export function IstatistikKutusu({
  * Boy en büyük MUTLAK değere göre; eksi kova (zarar) kırmızı çizilir ki
  * «küçük artı» sanılmasın. Süs: ekran okuyucudan gizli, rakam zaten yazılı.
  */
-export function MiniCubuklar({ degerler }: { degerler: readonly number[] }) {
+export function MiniCubuklar({ degerler, telefondaAkista = false }: { degerler: readonly number[]; telefondaAkista?: boolean }) {
   const tavan = Math.max(...degerler.map((d) => Math.abs(d)), 0);
   return (
-    <span className="absolute right-3 bottom-3 flex h-11 items-end gap-1" aria-hidden>
+    <span
+      className={`absolute right-3 bottom-3 flex h-11 items-end gap-1 ${telefondaAkista ? "max-sm:static max-sm:mt-auto max-sm:h-7 max-sm:self-end" : ""}`}
+      aria-hidden
+    >
       {degerler.map((d, i) => (
         <span
           key={i}

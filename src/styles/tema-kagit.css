@@ -73,6 +73,11 @@
   --se-kabuk-ink2:       #C7B7A2;
   --se-kabuk-marka:      #FFFFFF;   /* logo rengi menüde (07.10.2026) */
   --se-kabuk-cizgi:      #55432F;
+  /* Sol menü (11.10.2026, Kobalt'ta koyulaştı) — Kağıt'ta menü zaten koyu: kabukla AYNI. */
+  --se-menu:             #3A2E24;
+  --se-menu-secili:      #4C3C2F;
+  --se-menu-ink2:        #C7B7A2;
+  --se-menu-cizgi:       #55432F;
 
   /* --- mürekkep --- */
   --se-ink:              #1F1C17;   /* birincil metin, sayılar */

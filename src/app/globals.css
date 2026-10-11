@@ -514,13 +514,14 @@ h1, h2, h3, [data-slot="card-title"] {
        MAVİYE dönüyor. "Sayfalar çok beyaz" şikâyetinin en büyük tek
        kalemi buydu: ekranın solunda 250px'lik beyaz bir alan vardı ve
        içerikten hiç ayrışmıyordu. */
-    --sidebar: var(--se-kabuk);
+    /* Sol menü kendi tonundan (`--se-menu*`, 11.10.2026) — üst çubuk kabukta kalır. */
+    --sidebar: var(--se-menu);
     --sidebar-foreground: var(--se-kabuk-ink);
-    --sidebar-primary: var(--se-kabuk-secili);
+    --sidebar-primary: var(--se-menu-secili);
     --sidebar-primary-foreground: var(--se-kabuk-ink);
-    --sidebar-accent: var(--se-kabuk-secili);
+    --sidebar-accent: var(--se-menu-secili);
     --sidebar-accent-foreground: var(--se-kabuk-ink);
-    --sidebar-border: var(--se-kabuk-cizgi);
+    --sidebar-border: var(--se-menu-cizgi);
     --sidebar-ring: var(--se-odak);
 
     /* --- grafik: NÖTR RAMPA ---
