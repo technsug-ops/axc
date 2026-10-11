@@ -13,6 +13,12 @@
 
 ---
 
+## 🔴 K332 — TELEFONDA GEÇİŞLER ~2 SN · 11.10.2026 · [ÖLÇÜMDE — gezinme ölçümü TEST İÇİN AÇILDI, ÜRETİM ÖZELLİĞİ DEĞİL]
+Kullanıcı: «mobilde tıklamalara geç reaksiyon» → ① kök yükleniyor ekranı (`src/app/loading.tsx`, canlı `4621d0d`): dokunuş artık anında gri iskelet verir — kullanıcı 11.10 gördü; **bekleme yine ~2 sn**.
+· Ölçüldü (11.10, yerel üretim sunucusu + yerel veritabanı, `scripts/tmp/hiz-olcum.ts`, salt okuma): sayfa çizimi 0,1–0,25 sn · sorgu sayısı 11–74 (kârlılık kartı 74, İadeler 62, satış/alım 32) · gezinme cevabı ~320 KB (her sayfada aynı taban — sözlüğün tamamı 351 KB istemciye veriliyor; gezinmede tekrar gidip gitmediği bu yöntemle ÖLÇÜLEMEDİ). Canlı (oturumsuz `/giris`, Frankfurt): ilk bayt 0,15–0,3 sn. **2 sn bu rakamlarla AÇIKLANMIYOR.**
+· ② Telefonda ölçüm: `src/components/gezinme-olcumu.tsx` — yalnız `?hiz=1` ile açılır, tarayıcının kendi kaydından toplam / sunucu bekleme / indirme / KB; sunucuya HİÇBİR ŞEY yazmaz. **Ölçüm bitince bileşen + yerleşimdeki satır + sözlük bölümü (`GezinmeOlcumu`) KALDIRILIR.**
+**Halil testi:** telefonda `bezirga.com/?hiz=1` aç → sol altta «Gezinme ölçümü» kutusu → Panel · Satışlar · Alımlar · Ürünler · bir kârlılık kartı arasında 10–15 kez gez (bir kez de birkaç dakika ara verip) → kutunun ekran görüntüsünü gönder.
+
 ## 🔴 K331 — VERCEL GÖNDERİMİ KENDİLİĞİNDEN YAYINA ALMIYOR · 11.10.2026 · [AÇIK — SEBEP BİLİNMİYOR; GEÇİCİ: elle yayın]
 Ölçüldü (Vercel dağıtım listesi, 11.10.2026): `main`e giden **5 gönderimin hiçbiri** kendiliğinden dağıtım başlatmadı — `d31417af` · `34695136` (10.10) · `6fd8c322` · `e8862897` · `3aa0505e` (11.10). Son kendiliğinden dağıtım `9670b2de` (10.10). Hata/iptal kaydı YOK: dağıtım hiç oluşmuyor. Proje ayarında yayını durduran bir şey görülmedi (`vercel.json`da `ignoreCommand`/`deploymentEnabled` yok). K326'nın «yayın boşluğu» bu.
 · **Geçici yol:** her gönderimden sonra dağıtım listesine bakılır, gerekirse dağıtım elle başlatılır (Vercel API, `gitSource` = `main` + tam sha) ve ardından `canli:yetki`. 11.10'da iki kez yapıldı: `6fd8c322` · `3aa0505e` — ikisi de READY, `bezirga.com`a bağlandı.

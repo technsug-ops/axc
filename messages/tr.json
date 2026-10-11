@@ -5462,5 +5462,16 @@
     "odenecekKdv": "Ödenecek KDV",
     "hesaplanmayanCiro": "Kârı hesaplanmayan satış",
     "abcListeyiAc": "{sinif} sınıfındaki {sayi} ürünü listede aç"
+  },
+  "GezinmeOlcumu": {
+    "baslik": "Gezinme ölçümü (milisaniye)",
+    "temizle": "Temizle",
+    "bos": "Bir sayfaya dokunun — süresi burada görünür.",
+    "sayfa": "Sayfa",
+    "toplam": "Toplam",
+    "bekleme": "Sunucu",
+    "indirme": "İndirme",
+    "boyut": "KB",
+    "not": "Toplam = dokunuştan sayfanın dolmasına. Sunucu = cevabın gelmesi. * = sayfa dokunmadan önce yüklenmişti. Kapatmak için adrese ?hiz=0 yazın."
   }
 }

@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default async function Yukleniyor() {
   const t = await getTranslations("Ortak");
   return (
-    <div className="space-y-4" role="status" aria-live="polite">
+    <div className="space-y-4" role="status" aria-live="polite" data-yukleniyor>
       <span className="sr-only">{t("sayfaYukleniyor")}</span>
       <Skeleton className="h-8 w-56" />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
