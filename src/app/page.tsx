@@ -365,6 +365,61 @@ export default async function AnaSayfa({
     ),
   );
 
+  /**
+   * ⚡ ÖNDEN BAŞLAT (K332, 11.10.2026) — aşağıdaki büyük okumayla AYNI ANDA.
+   * Görev bloğu (görev sayıları · paketleme · alım · kıyas alımı · vitrin),
+   * satış hesapları ve muhasebe dönemi bu okumaya BAĞLI DEĞİL; eskiden ondan
+   * sonra SIRAYLA bekleniyordu (canlıda her basamak bir veritabanı
+   * gidiş-dönüşü — gecikme taklidiyle ölçüldü). Sonuçlar kullanıldıkları yerde
+   * alınır; hesap DEĞİŞMEZ. `.catch` yalnız «yakalanmamış ret» uyarısını önler —
+   * hata kaybolmaz, `await` edildiği yerde yine fırlar.
+   */
+  const gorevBlokuSozu = Promise.all([
+    gorevSayilariniTopla(),
+
+    /* K47 tarife kapsamı K266 ile çana taşındı (`lib/uyari/topla.ts`). */
+
+    /**
+     * PAKETLEME İLERLEMESİ — "kargoya verilecek 15 · paketlenen 1".
+     *
+     * ⚠ AYRI SAYI, AYRI GÖREV DEĞİL. Bu bir iş kalemi değil, var olan
+     * `kargoBekleyen` görevinin ne kadarının hazır olduğu. Yeni bir görev
+     * anahtarı açsaydık dört exhaustive haritaya birden dokunmak gerekirdi
+     * ve panelde 0'ken de duran bir satır daha doğardı.
+     */
+    paketlenenSiparisSayisi(),
+    /**
+     * ALIM ADEDİ — dönem kartının ilk kutusu (kullanıcı isteği
+     * 20–21.08.2026: _"burası da günlük bir emek"_).
+     *
+     * ⚠ DÖNEM SÜZGECİNE BAĞLI, "bugün"e sabit DEĞİL. Kart "Seçili dönem"
+     * diyor; içindeki tek kutu süzgeci dinlemeseydi kullanıcı dönemi
+     * değiştirdiğinde beş rakam oynar, biri donar kalırdı. Günlük emeği
+     * görmek için süzgeç "Bugün" seçilir — o zaman altısı da bugünü
+     * gösterir.
+     */
+    donemAlimi(donem),
+    kiyasPencere ? donemAlimi(kiyasPencere) : Promise.resolve(null),
+
+    /**
+     * VİTRİN KUTUSU (K121) — DÖNEM SÜZGECİNDEN BAĞIMSIZ ve bu bilinçli:
+     * "rafta duran mal ŞU AN satılabiliyor mu" sorusu bugünün sorusudur.
+     * Döneme bağlansaydı dönem daraldığında liste sessizce kısalırdı.
+     */
+    vitrinKutusunuTopla(),
+  ]);
+  gorevBlokuSozu.catch(() => {});
+  const satisHesaplariSozu = prisma.channelAccount.findMany({
+    where: { isActive: true, satisIcin: true },
+    select: {
+      defaultCurrency: true,
+      channel: { select: { code: true, name: true } },
+    },
+  });
+  satisHesaplariSozu.catch(() => {});
+  const muhasebeDonemiSozu = donemOzeti(new Date());
+  muhasebeDonemiSozu.catch(() => {});
+
   const [
     kayitlar,
     iadeKayitlari,
@@ -773,13 +828,8 @@ export default async function AnaSayfa({
    * ciro satırı olmaz. Para birimi hesapla birlikte geliyor ki sıfır kart
    * DOĞRU para bloğuna düşsün — TRY bloğuna EUR kanalı eklenmez.
    */
-  const satisHesaplari = await prisma.channelAccount.findMany({
-    where: { isActive: true, satisIcin: true },
-    select: {
-      defaultCurrency: true,
-      channel: { select: { code: true, name: true } },
-    },
-  });
+  /* Önden başlatıldı (K332) — sorgu yukarıda, `satisHesaplariSozu`. */
+  const satisHesaplari = await satisHesaplariSozu;
 
   /** para birimi → o para biriminde satış yapan kanallar. */
   const paraBirimineGoreKanallar = new Map<string, Map<string, string>>();
@@ -914,7 +964,7 @@ export default async function AnaSayfa({
   /** ⚠ AD `muhasebeDonemi` — `donem` bu dosyada ZATEN pencereyi (BU_AY,
    *  SON_3_AY) gösteriyor. Aynı kelimeyi iki kavram için kullanmak, bugün
    *  anayasaya yazılan dersin değişken düzeyindeki hâli olurdu. */
-  const muhasebeDonemi = await donemOzeti(new Date());
+  const muhasebeDonemi = await muhasebeDonemiSozu;
 
   /** ⭐ TY ÇEKİM ROZETİ (04.09.2026) — zamanlayıcı kaçarsa EKRAN söyler;
    *  saf gövde + iz okuması ayrı (bkz. lib/panel/ty-cekim-yasi.ts). */
@@ -1644,40 +1694,7 @@ export default async function AnaSayfa({
    *    bağlansalardı "bugün" seçilince takvim boşalırdı. Ekranda da yazıyor.
    */
   const [gorevSayilari, paketlenen, alim, kiyasAlim, vitrin] =
-    await Promise.all([
-    gorevSayilariniTopla(),
-
-    /* K47 tarife kapsamı K266 ile çana taşındı (`lib/uyari/topla.ts`). */
-
-    /**
-     * PAKETLEME İLERLEMESİ — "kargoya verilecek 15 · paketlenen 1".
-     *
-     * ⚠ AYRI SAYI, AYRI GÖREV DEĞİL. Bu bir iş kalemi değil, var olan
-     * `kargoBekleyen` görevinin ne kadarının hazır olduğu. Yeni bir görev
-     * anahtarı açsaydık dört exhaustive haritaya birden dokunmak gerekirdi
-     * ve panelde 0'ken de duran bir satır daha doğardı.
-     */
-    paketlenenSiparisSayisi(),
-    /**
-     * ALIM ADEDİ — dönem kartının ilk kutusu (kullanıcı isteği
-     * 20–21.08.2026: _"burası da günlük bir emek"_).
-     *
-     * ⚠ DÖNEM SÜZGECİNE BAĞLI, "bugün"e sabit DEĞİL. Kart "Seçili dönem"
-     * diyor; içindeki tek kutu süzgeci dinlemeseydi kullanıcı dönemi
-     * değiştirdiğinde beş rakam oynar, biri donar kalırdı. Günlük emeği
-     * görmek için süzgeç "Bugün" seçilir — o zaman altısı da bugünü
-     * gösterir.
-     */
-    donemAlimi(donem),
-    kiyasPencere ? donemAlimi(kiyasPencere) : Promise.resolve(null),
-
-    /**
-     * VİTRİN KUTUSU (K121) — DÖNEM SÜZGECİNDEN BAĞIMSIZ ve bu bilinçli:
-     * "rafta duran mal ŞU AN satılabiliyor mu" sorusu bugünün sorusudur.
-     * Döneme bağlansaydı dönem daraldığında liste sessizce kısalırdı.
-     */
-    vitrinKutusunuTopla(),
-  ]);
+    await gorevBlokuSozu;
 
   /**
    * GÖREV ŞERİDİ TEK GÖVDE (08.10.2026) — iki yerde çizilir: dönemde satış
