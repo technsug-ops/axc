@@ -1045,21 +1045,32 @@ const MUTASYONLAR: Mutasyon[] = [
       "halka ic olcusune kuculur ve kanal sayisiyla oynar - kullanicinin yakaladigi",
   },
   /* K332 — 12 aylık grafik arkadan dolar (kullanıcı fikri 11.10.2026). */
+  /* K333 (11.10.2026): ilk sürümdeki «pay 30 güne düştü» mutasyonu, pay
+     kaldırıldığı için «pay GERİ GELDİ» yönüne çevrildi — niyet aynı:
+     üst okuma aralığı sessizce kaymasın. */
   {
-    ad: "UST OKUMA PAYI 30 GUNE DUSTU (31 gunluk ay kovasi tasar)",
-    yon: "KALDIRAN",
+    ad: "UST OKUMAYA PAY GERI GELDI (gereksiz 31 gun okunur)",
+    yon: "FAZLADAN",
     dosya: "src/app/panel-satir.ts",
-    bul: "export const UST_OKUMA_PAYI_MS = 31 * 24 * 60 * 60 * 1000;",
-    koy: "export const UST_OKUMA_PAYI_MS = 30 * 24 * 60 * 60 * 1000;",
-    bozdugu: "operasyon tablosunun kenar kovasi eksik satis sayar - rakam sessizce degisir",
+    bul: "baslangic: new Date(Math.max(veri.baslangic.getTime(), enErken)),",
+    koy: "baslangic: new Date(Math.max(veri.baslangic.getTime(), enErken - 31 * 24 * 60 * 60 * 1000)),",
+    bozdugu: "panel yine fazladan bir ay okur - hiz kazanci sessizce kaybolur",
   },
   {
     ad: "UST OKUMA 12 AYLIK ARALIGI ASIYOR (baslangic kirpilmiyor)",
     yon: "KALDIRAN",
     dosya: "src/app/panel-satir.ts",
-    bul: "baslangic: new Date(Math.max(veri.baslangic.getTime(), enErken - UST_OKUMA_PAYI_MS)),",
-    koy: "baslangic: new Date(enErken - UST_OKUMA_PAYI_MS),",
-    bozdugu: "eskiden okunmayan satis kovaya girer - hiz isi rakam degistirir",
+    bul: "baslangic: new Date(Math.max(veri.baslangic.getTime(), enErken)),",
+    koy: "baslangic: new Date(enErken),",
+    bozdugu: "12 aylik grafigin okumadigi satis ust kisma girer",
+  },
+  {
+    ad: "UST OKUMA 12 AYLIK ARALIGI ASIYOR (bitis kirpilmiyor)",
+    yon: "KALDIRAN",
+    dosya: "src/app/panel-satir.ts",
+    bul: "bitisHaric: new Date(Math.min(veri.bitisHaric.getTime(), enGec)),",
+    koy: "bitisHaric: new Date(enGec),",
+    bozdugu: "12 aylik grafigin okumadigi satis ust kisma girer",
   },
   {
     ad: "PENCERESIZ CAGRIDA BOS KAPI KALKTI (Infinity tarih)",

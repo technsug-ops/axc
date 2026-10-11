@@ -7145,17 +7145,21 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   const veri = { baslangic: G("2025-11-01"), bitisHaric: G("2026-11-01") };
   const donemP = { baslangic: G("2026-03-01"), bitisHaric: G("2026-04-01") };
   const kiyasP = { baslangic: G("2026-02-01"), bitisHaric: G("2026-03-01") };
+  /* ⚠ ÖLÇÜT DEĞİŞTİ (K333, 11.10.2026): ilk sürümde iki yanda TAM 31 gün pay
+     sınanıyordu — pay operasyon tablosunun dönem dışı günleri kenar kovaya
+     sayan eski davranışını korumak içindi. K333 o davranışı düzeltti, pay
+     kaldırıldı; ölçüt artık «TAM kapsar, fazlasını okumaz» der. */
   const ortada = ustOkumaPenceresi(veri, [donemP, kiyasP]);
-  kontrol("pencere: dönem+kıyası kapsar, iki yanda TAM 31 gün pay",
-    ortada.baslangic.getTime() === G("2026-02-01").getTime() - 31 * GUN &&
-      ortada.bitisHaric.getTime() === G("2026-04-01").getTime() + 31 * GUN, ortada);
-  const kenar = ustOkumaPenceresi(veri, [{ baslangic: G("2025-11-10"), bitisHaric: G("2026-10-20") }]);
+  kontrol("pencere: dönem+kıyası TAM kapsar, pay YOK (K333)",
+    ortada.baslangic.getTime() === G("2026-02-01").getTime() &&
+      ortada.bitisHaric.getTime() === G("2026-04-01").getTime(), ortada);
+  const kenar = ustOkumaPenceresi(veri, [{ baslangic: G("2025-10-01"), bitisHaric: G("2026-12-01") }]);
   kontrol("  ...12 aylık VERİ aralığını iki yanda da AŞAMAZ (kırpılır)",
     kenar.baslangic.getTime() === veri.baslangic.getTime() && kenar.bitisHaric.getTime() === veri.bitisHaric.getTime(), kenar);
   const kiyassiz = ustOkumaPenceresi(veri, [donemP, null]);
   kontrol("  ...kıyas yoksa yalnız dönemden",
-    kiyassiz.baslangic.getTime() === G("2026-03-01").getTime() - 31 * GUN &&
-      kiyassiz.bitisHaric.getTime() === G("2026-04-01").getTime() + 31 * GUN, kiyassiz);
+    kiyassiz.baslangic.getTime() === G("2026-03-01").getTime() &&
+      kiyassiz.bitisHaric.getTime() === G("2026-04-01").getTime(), kiyassiz);
   const bos = ustOkumaPenceresi(veri, []);
   kontrol("  ...pencere yoksa veri aralığının tamamı (daralma yok)",
     bos.baslangic.getTime() === veri.baslangic.getTime() && bos.bitisHaric.getTime() === veri.bitisHaric.getTime(), bos);

@@ -379,16 +379,17 @@ export default async function AnaSayfa({
    * yalnız grafik bölümünde kullanılıyordu. O bölüm artık kendi okumasıyla
    * ARKADAN doluyor (`PanelAylikGrafik`); üst kısım bu dar aralığı okur.
    *
-   * ⚠ İKİ YANDA 31 GÜN PAY: operasyon grafiği satışları hafta/ay KOVASINA
-   * koyar ve dönemin İLK ve SON kovası dönem dışındaki günleri de kapsayabilir;
-   * bugünkü davranış o günlerin satışını o kovaya sayar. Pay en geniş kovayı
-   * (ay ≤ 31 gün) karşılar — çıktı aynı kalır. Ve aralık 12 aylık okuma
-   * aralığını AŞAMAZ: aşsaydı eskiden okunmayan satış kovaya girerdi.
-   * ⚠ ÖLÇÜLDÜ (11.10.2026): yalnız başta pay varken özel aralıkta (03.11.2025–
-   * 17.02.2026, aylık kova) son satır «01.02–17.02 · Satış» 497 → 360 oldu: ESKİ
-   * davranış 18–28 Şubat'ın 137 satışını da o satıra sayıyordu (etiketle
-   * çelişen, bu işten BAĞIMSIZ bir kusur — panoda K333). Hız işi rakam
-   * değiştirmez; pay iki yana kondu, kusur ayrıca kullanıcıya soruldu.
+   * ── PAY YOK — VE NİYE BİR GÜN VARDI (eski gerekçe silinmez) ──
+   * İLK SÜRÜMDE (11.10.2026, K332) iki yanda 31 GÜN PAY vardı: operasyon
+   * grafiği dönemin İLK ve SON kovasına dönem dışındaki günlerin satışını da
+   * sayıyordu; pay o davranışı aynen korumak içindi — «hız işi rakam
+   * değiştirmez». ÖLÇÜLDÜ: pay yalnız baştayken özel aralıkta (03.11.2025–
+   * 17.02.2026, aylık kova) son satır «01.02–17.02 · Satış» 497 → 360 oldu;
+   * 137'si 18–28 Şubat satışıydı. Bu etiketle çelişen ayrı bir KUSURDU (K333).
+   * K333 KAPANDI (kullanıcı kararı 11.10.2026 «evet düzelt»): operasyon serisi
+   * artık pencere dışı kaydı kovaya sokmuyor (`operasyonSerisi` → `noktasi`),
+   * dolayısıyla payın koruduğu bir şey kalmadı ve kaldırıldı. Aralık hâlâ 12
+   * aylık okuma aralığını AŞAMAZ.
    */
   const { baslangic: ustBaslangic, bitisHaric: ustBitisHaric } = ustOkumaPenceresi(
     { baslangic: veriBaslangic, bitisHaric: veriBitisHaric },

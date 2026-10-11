@@ -114,13 +114,11 @@ export function panelIadesiKur(iade: PanelIadeGirdisi): PanelIadesi {
 
 export type Pencere = { baslangic: Date; bitisHaric: Date };
 
-/** Kova payı: en geniş operasyon kovası bir aydır (≤ 31 gün). */
-export const UST_OKUMA_PAYI_MS = 31 * 24 * 60 * 60 * 1000;
-
 /**
- * ÜST KISMIN OKUMA ARALIĞI (K332) — dönem ve kıyas pencerelerini kapsar, iki
- * yanda bir kova (31 gün) pay bırakır, ama 12 aylık VERİ aralığını AŞAMAZ.
- * Gerekçe `page.tsx`teki çağrının üstünde. Saf: bekçi değerini sınar.
+ * ÜST KISMIN OKUMA ARALIĞI (K332) — dönem ve kıyas pencerelerini TAM kapsar,
+ * 12 aylık VERİ aralığını AŞAMAZ. Pay yok: ilk sürümdeki 31 günlük pay K333
+ * ile gereksizleşti (gerekçesi `page.tsx`teki çağrının üstünde). Saf: bekçi
+ * değerini sınar.
  */
 export function ustOkumaPenceresi(
   veri: Pencere,
@@ -131,7 +129,7 @@ export function ustOkumaPenceresi(
   const enErken = Math.min(...dolu.map((p) => p.baslangic.getTime()));
   const enGec = Math.max(...dolu.map((p) => p.bitisHaric.getTime()));
   return {
-    baslangic: new Date(Math.max(veri.baslangic.getTime(), enErken - UST_OKUMA_PAYI_MS)),
-    bitisHaric: new Date(Math.min(veri.bitisHaric.getTime(), enGec + UST_OKUMA_PAYI_MS)),
+    baslangic: new Date(Math.max(veri.baslangic.getTime(), enErken)),
+    bitisHaric: new Date(Math.min(veri.bitisHaric.getTime(), enGec)),
   };
 }

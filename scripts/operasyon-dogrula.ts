@@ -645,15 +645,16 @@ console.log("\nDÖRDÜNCÜ SERİ — SATIN ALINAN (K126)");
    */
   const g = (t: string) => new Date(t + "T09:00:00.000Z");
   const noktalar = operasyonSerisi({
-    pencere: {
-      baslangic: g("2026-08-01"),
-      bitisHaric: g("2026-08-04"),
-      sonGun: g("2026-08-03"),
-      /** ⚠ EKSEN ETİKET ÇAPASINDAN OKUNUR (07.09.2026) — `as never` tip
-       *  kontrolünü atladığı için eksik alan `tsc`ye görünmüyordu. */
-      ilkGun: g("2026-08-01"),
-      tur: "OZEL",
-    } as never,
+    /**
+     * ⚠ PENCERE GERÇEK GÖVDEDEN (K333, 11.10.2026). Eskiden elle kuruluyordu
+     * (`as never`) ve gün çapaları 09:00'du — `pencereOlustur` böyle bir
+     * pencere ÜRETMEZ. Kayma iki şey doğuruyordu: eksen 04.08'e taşıyor ve
+     * pencere DIŞINDA bir dördüncü nokta çiziliyordu («dört nokta» beklentisi
+     * bunu sabitlemişti — K333'ün kendisi); K333 kapısı gelince de 01.08
+     * siparişleri «pencereden önce» sayılıp düştü. Gerçek pencere 01–03.08:
+     * ÜÇ nokta.
+     */
+    pencere: pencereOlustur("OZEL", AN, { baslangic: "2026-08-01", bitis: "2026-08-03" }),
     kirilim: "GUN",
     siparisler: [
       { tarih: g("2026-08-01"), tutar: 100 },
@@ -672,23 +673,23 @@ console.log("\nDÖRDÜNCÜ SERİ — SATIN ALINAN (K126)");
    */
   kontrol("sipariş kendi gününe düşüyor", noktalar[0]?.siparisAdet === 2);
   kontrol("  ...ve tutarı toplanıyor", noktalar[0]?.siparisTutar === 150);
-  /** ⚠ Pencere yarı açık ama kova üretimi son günü de kapsıyor: 4 nokta. */
-  kontrol("dört nokta üretildi", noktalar.length === 4, noktalar.length);
+  /** Pencere 01–03.08 → üç nokta; pencere DIŞINDA nokta yok (K333). */
+  kontrol("üç nokta üretildi (01–03.08)", noktalar.length === 3, noktalar.length);
   kontrol("sipariş MAL KABUL gününe düşmüyor", noktalar[2]?.siparisAdet === 0);
   kontrol("mal kabul kendi gününde", noktalar[2]?.alimAdet === 1);
 
   const adet = serileriKur(noktalar, "adet");
   kontrol("adet kipinde sipariş serisi VAR", adet.siparis !== null);
-  kontrol("  ...değerleri doğru", JSON.stringify(adet.siparis) === "[2,0,0,0]");
+  kontrol("  ...değerleri doğru", JSON.stringify(adet.siparis) === "[2,0,0]");
   /**
    * ⛔ TOPLAM DÖRT KALEMİ DE SAYAR. Sipariş + mal kabul ÇİFT SAYIM DEĞİLDİR:
    * aynı alım iki AYRI GÜNDE iki AYRI iş üretir.
    */
-  kontrol("toplam sipariş kalemini İÇERİYOR", JSON.stringify(adet.toplam) === "[2,2,1,0]");
+  kontrol("toplam sipariş kalemini İÇERİYOR", JSON.stringify(adet.toplam) === "[2,2,1]");
 
   const ciro = serileriKur(noktalar, "ciro");
   kontrol("ciro kipinde sipariş serisi VAR", ciro.siparis !== null);
-  kontrol("  ...tutar ekseninde", JSON.stringify(ciro.siparis) === "[150,0,0,0]");
+  kontrol("  ...tutar ekseninde", JSON.stringify(ciro.siparis) === "[150,0,0]");
 
   /**
    * ⛔ KDV KİPİNDE SİPARİŞ SERİSİ YOK — VE BU BİR EKSİKLİK DEĞİL.
@@ -702,6 +703,57 @@ console.log("\nDÖRDÜNCÜ SERİ — SATIN ALINAN (K126)");
   kontrol("  ...ve tutarını", toplam.siparisTutar === 150);
   /** ⛔ SİPARİŞ DE İŞTİR: "kaç iş yaptım" dört kalemi birden sayar. */
   kontrol("işlem adedi sipariş kalemini İÇERİYOR", toplam.islemAdedi === 5);
+}
+
+// ===========================================================================
+console.log("\nK333) PENCERE DIŞI KAYIT KENAR KOVAYA GİRMEZ (kullanıcı kararı 11.10.2026)");
+// ===========================================================================
+{
+  /**
+   * Vaka: özel aralık 03.11.2025–17.02.2026, aylık kova → son satır
+   * «01.02–17.02 · Satış 497» idi; 137'si 18–28 Şubat satışıydı. Etiket ve
+   * tıklanınca açılan liste 360 diyordu (İlke #16 «sayı = liste»).
+   * Örnek veri ayrımın İKİ yakasını gösterir: kenar kovanın aynı ayında hem
+   * içeride hem dışarıda kayıt var; ve SAAT DİLİMİ sınırı — UTC'de 17 Şubat
+   * olup İstanbul'da 18 Şubat olan kayıt DIŞARIDA, UTC'de 9 Ocak olup
+   * İstanbul'da 10 Ocak olan kayıt İÇERİDE.
+   * ⚠ DÖRT LİSTE AYRI AYRI: her döngü kendi kapısından geçiyor; tek listeyle
+   * sınansaydı bir döngüyü eski hâline döndüren mutasyon kaçardı.
+   */
+  const pencere = pencereOlustur("OZEL", AN, { baslangic: "2026-01-10", bitis: "2026-02-17" });
+  const tarihler = [
+    "2026-01-05T09:00:00Z", // DIŞARIDA — ilk kovanın ayında, pencereden önce
+    "2026-01-09T22:30:00Z", // İÇERİDE — İstanbul'da 10 Ocak 01:30
+    "2026-01-12T09:00:00Z", // İÇERİDE
+    "2026-02-17T09:00:00Z", // İÇERİDE — son gün
+    "2026-02-17T22:30:00Z", // DIŞARIDA — İstanbul'da 18 Şubat 01:30
+    "2026-02-25T09:00:00Z", // DIŞARIDA — son kovanın ayında, pencereden sonra
+  ].map((t) => new Date(t));
+  const seri = operasyonSerisi({
+    pencere,
+    kirilim: "AY",
+    siparisler: tarihler.map((tarih) => ({ tarih, tutar: 10 })),
+    alimlar: tarihler.map((tarih) => ({ tarih, tutar: 10, kdv: 1 })),
+    satislar: tarihler.map((tarih) => ({ tarih, gelir: 10, kdv: 1 })),
+    kargolar: tarihler.map((tarih) => ({ tarih, gelir: 10 })),
+  });
+  kontrol("iki kova (Ocak · Şubat)", seri.length === 2, seri.length);
+  const [ilk, son] = [seri[0]!, seri[seri.length - 1]!];
+  const beklenen = (n: typeof ilk, ad: string, alanlar: [number, number, number, number]) =>
+    kontrol(
+      `${ad}: sipariş · mal kabul · satış · kargo yalnız pencere İÇİNDEKİLER`,
+      n.siparisAdet === alanlar[0] && n.alimAdet === alanlar[1] && n.satisAdet === alanlar[2] && n.kargoAdet === alanlar[3],
+      [n.siparisAdet, n.alimAdet, n.satisAdet, n.kargoAdet],
+    );
+  beklenen(ilk, "ilk kova (10.01–31.01)", [2, 2, 2, 2]);
+  beklenen(son, "son kova (01.02–17.02)", [1, 1, 1, 1]);
+  kontrol("  ...tutarlar da yalnız içeridekiler (ilk kova)",
+    ilk.siparisTutar === 20 && ilk.alimTutar === 20 && ilk.satisCiro === 20 && ilk.kargoCiro === 20 && ilk.alimKdv === 2 && ilk.satisKdv === 2, ilk);
+  const t = operasyonToplami(seri);
+  kontrol("dönem toplamı = pencere içindeki kayıt (satış 3, işlem 12)", t.satisAdet === 3 && t.islemAdedi === 12, t);
+  /** Sayı = liste: noktanın taşıdığı aralık pencerenin içinde ve sayılan günleri kapsıyor. */
+  kontrol("  ...son kova etiketi 01.02–17.02 (sayılanla aynı aralık)",
+    son.baslangic.getTime() === g("2026-02-01").getTime() && son.sonGun.getTime() === g("2026-02-17").getTime());
 }
 
 console.log("");
