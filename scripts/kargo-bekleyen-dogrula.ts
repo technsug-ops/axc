@@ -37,7 +37,7 @@ const ISTISNALAR = new Map<string, string>([
   ],
   [
     "src/app/page.tsx",
-    "PANEL SORGUSU: `{ shippedAt: null }` bir OR dalıdır ve amacı kargo bekleyeni bulmak DEĞİL — dönem dışı kalanları da çekip `kargoHali` üç kovaya ayırabilsin diye kümeyi GENİŞLETİYOR. Daraltmak, BİLİNMİYOR kovasını hiç göremezdi.",
+    "PANEL SORGUSU: `{ shippedAt: null }` bir OR dalıdır ve amacı kargo bekleyeni bulmak DEĞİL — dönem dışı kalanları da çekip `kargoHali` üç kovaya ayırabilsin diye kümeyi GENİŞLETİYOR. Daraltmak, BİLİNMİYOR kovasını hiç göremezdi. ⚡ K332 (11.10.2026): sorgu ikiye bölündü — kargolanmışlar tam, bekleyenler (`shippedAt: null`) yalnız kova alanlarıyla (kalemsiz; ciro okunmuyor). Küme AYNI, hüküm yine `kargoHali`.",
   ],
   [
     "src/lib/onay-kuyrugu.ts",
@@ -182,6 +182,22 @@ for (const [ad, yol] of OKUYUCULAR) {
     /\.\.\.KARGO_BEKLEYEN|\?\s*KARGO_BEKLEYEN\s*:|veKosullari\.push\(KARGO_BEKLEYEN\)/.test(kod),
     yol + " içeri alıyor ama yaymıyor — ölü import",
   );
+}
+
+// ── ④ PANEL BEKLEYEN OKUMASI HAFİF (K332, 11.10.2026) ────────────────────
+// Panelin bekleyen dalı yalnız KOVA için okunur (sayı); ciro okunmaz. Eskiden
+// tarihi bilinmeyen binlerce geçmiş satışı bütün kalemleriyle çekiyordu. Geri
+// gelirse rakam DOĞRU kalır, panel sessizce yavaşlar — kalıp ölçülür.
+{
+  const panelKod = kaynakOku("src/app/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const bas = panelKod.indexOf("where: { iptalTarihi: null, shippedAt: null },");
+  const blok = bas >= 0 ? panelKod.slice(bas, panelKod.indexOf("}),", panelKod.indexOf("take: 1,", bas))) : "";
+  kontrol("④ panel bekleyen dalı ayrı ve HAFİF sorgu", blok.length > 0, "bekleyen sorgusu bulunamadı");
+  kontrol("④ bekleyen dalı kalemden yalnız İLK para birimini okur",
+    /items: \{\s*where: \{ \.\.\.KALEM_GECERLI \},\s*select: \{ unitPriceCurrency: true \},\s*orderBy: \{ id: "asc" \},\s*take: 1,/.test(blok) &&
+      !/unitPriceAmount|quantity/.test(blok),
+    "bekleyen dalı kalem tutarlarını yeniden çekiyor — ciro orada okunmuyor");
+  kontrol("④ bekleyenin cirosu sıfır yazılır (okunmadığı açık)", /kargolar\.push\(\{[\s\S]{0,400}?gelir: 0,/.test(panelKod));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

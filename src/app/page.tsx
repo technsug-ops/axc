@@ -570,56 +570,84 @@ export default async function AnaSayfa({
      * cevaplanamaz. Sorgu genişledi, gerekçesi burada — ileride biri
      * "niye ağır" diye sorduğunda cevabı aramak zorunda kalmasın.
      */
-    prisma.sale.findMany({
-      where: {
-        // İptal edilen satış kargolanmadı sayılır — kutuya girmez.
-        iptalTarihi: null,
-        OR: [
-          { shippedAt: { gte: donem.baslangic, lt: donem.bitisHaric } },
-          ...(kiyasPencere
-            ? [
-                {
-                  shippedAt: {
-                    gte: kiyasPencere.baslangic,
-                    lt: kiyasPencere.bitisHaric,
+    /**
+     * ⚡ İKİYE BÖLÜNDÜ (K332, 11.10.2026). Eskiden tek sorgu `{ shippedAt: null }`
+     * dalıyla tarihi bilinmeyen BİNLERCE geçmiş satışı (K60: ~5.600) BÜTÜN
+     * kalemleriyle her açılışta çekiyordu; oysa bekleyen satırların yalnız SAYISI
+     * kullanılıyor (`panelHesapla` → `kargoHali` → kova sayacı), cirosu hiç
+     * okunmuyor. Kargolanmışlar eskisi gibi tam; bekleyenler yalnız kovayı
+     * belirleyen alanlarla. Kova hükmü DEĞİŞMEDİ — yine tek gövde `kargoHali`.
+     */
+    Promise.all([
+      prisma.sale.findMany({
+        where: {
+          // İptal edilen satış kargolanmadı sayılır — kutuya girmez.
+          iptalTarihi: null,
+          OR: [
+            { shippedAt: { gte: donem.baslangic, lt: donem.bitisHaric } },
+            ...(kiyasPencere
+              ? [
+                  {
+                    shippedAt: {
+                      gte: kiyasPencere.baslangic,
+                      lt: kiyasPencere.bitisHaric,
+                    },
                   },
-                },
-              ]
-            : []),
-          { shippedAt: null },
-        ],
-      },
-      select: {
-        shippedAt: true,
-        /**
-         * K60 — `shippedAt = null` iki ayrı şey anlatıyor ve ayırt edici
-         * veri bu ikisi. Bkz. `panel.ts` → `kargoHali`.
-         */
-        importKaynak: true,
-        /** K188-③ — hâl artık ONAY damgasından; kargo numarası hâli
-         *  belirlemiyor (476 numaralı siparişin yalnız 45'i kargolanmış). */
-        onaylandiAt: true,
-        profitCurrency: true,
-        channelAccount: {
-          select: { channel: { select: { code: true, name: true } } },
+                ]
+              : []),
+          ],
         },
-        /**
-         * ⚠ `take: 1` KALDIRILDI. Eskiden tek kalem yetiyordu (yalnız para
-         * birimi lazımdı); ciro için TÜM kalemler gerekiyor. `take: 1` kalsa
-         * çok kalemli sipariş cirosunun yalnız ilk satırını sayardı — sessiz
-         * ve ekranda "makul" görünen bir eksiklik.
-         */
-        items: {
-          /** ⛔ KALDIRILMIŞ KALEM CİROYA GİRMEZ (K78). */
-          where: { ...KALEM_GECERLI },
-          select: {
-            unitPriceCurrency: true,
-            unitPriceAmount: true,
-            quantity: true,
+        select: {
+          shippedAt: true,
+          /**
+           * K60 — `shippedAt = null` iki ayrı şey anlatıyor ve ayırt edici
+           * veri bu ikisi. Bkz. `panel.ts` → `kargoHali`.
+           */
+          importKaynak: true,
+          /** K188-③ — hâl artık ONAY damgasından; kargo numarası hâli
+           *  belirlemiyor (476 numaralı siparişin yalnız 45'i kargolanmış). */
+          onaylandiAt: true,
+          profitCurrency: true,
+          channelAccount: {
+            select: { channel: { select: { code: true, name: true } } },
+          },
+          /**
+           * ⚠ `take: 1` KALDIRILDI. Eskiden tek kalem yetiyordu (yalnız para
+           * birimi lazımdı); ciro için TÜM kalemler gerekiyor. `take: 1` kalsa
+           * çok kalemli sipariş cirosunun yalnız ilk satırını sayardı — sessiz
+           * ve ekranda "makul" görünen bir eksiklik.
+           */
+          items: {
+            /** ⛔ KALDIRILMIŞ KALEM CİROYA GİRMEZ (K78). */
+            where: { ...KALEM_GECERLI },
+            select: {
+              unitPriceCurrency: true,
+              unitPriceAmount: true,
+              quantity: true,
+            },
           },
         },
-      },
-    }),
+      }),
+      prisma.sale.findMany({
+        where: { iptalTarihi: null, shippedAt: null },
+        select: {
+          shippedAt: true,
+          importKaynak: true,
+          onaylandiAt: true,
+          profitCurrency: true,
+          channelAccount: {
+            select: { channel: { select: { code: true, name: true } } },
+          },
+          /** Yalnız para birimi yedeği için İLK geçerli kalem (kâr para birimi boşsa). */
+          items: {
+            where: { ...KALEM_GECERLI },
+            select: { unitPriceCurrency: true },
+            orderBy: { id: "asc" },
+            take: 1,
+          },
+        },
+      }),
+    ]),
 
     /**
      * MALİYET SATIRLARI — kâr oranlarının paydası.
@@ -683,7 +711,8 @@ export default async function AnaSayfa({
    * gönderilmemiş). Bu yüzden kargo kendi hafif sorgusuyla geliyor:
    * yalnız sevkiyat tarihi, kanal ve para birimi çekiliyor.
    */
-  const kargolar: PanelKargosu[] = kargoKayitlari.map((k) => {
+  const [kargoCikanKayitlari, kargoBekleyenKayitlari] = kargoKayitlari;
+  const kargolar: PanelKargosu[] = kargoCikanKayitlari.map((k) => {
     const paraBirimi: Currency =
       k.profitCurrency ?? k.items[0]?.unitPriceCurrency ?? "TRY";
     return {
@@ -710,6 +739,18 @@ export default async function AnaSayfa({
         ),
     };
   });
+  /** Bekleyenler (K332): yalnız kova için — ciro OKUNMUYOR (yalnız kargolanmışınki okunur). */
+  for (const k of kargoBekleyenKayitlari) {
+    kargolar.push({
+      kanalKodu: k.channelAccount.channel.code,
+      kanalAdi: k.channelAccount.channel.name,
+      paraBirimi: k.profitCurrency ?? k.items[0]?.unitPriceCurrency ?? "TRY",
+      kargoTarihi: k.shippedAt,
+      importKaynak: k.importKaynak,
+      onaylandiAt: k.onaylandiAt,
+      gelir: 0,
+    });
+  }
 
   const satislar: PanelSatisi[] = kayitlar.map((satis) => {
     // Satışın para birimi: kâr snapshot'ındaki birim, yoksa ilk kalemin.
