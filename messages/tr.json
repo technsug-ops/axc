@@ -328,7 +328,8 @@
     "temaCizgiZorunlu": "Kart bu zeminden ayrışmadığı için ince çizgi kendiliğinden eklendi.",
     "temaYazi": "Yazı kontrastı",
     "temaYaziNormal": "Normal",
-    "temaYaziYuksek": "Yüksek"
+    "temaYaziYuksek": "Yüksek",
+    "sayfaYukleniyor": "Sayfa yükleniyor…"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
