@@ -180,6 +180,11 @@ import {
 } from "@/lib/kanal-sirasi";
 import { KanalSiraCubugu } from "./kanal-sira-cubugu";
 import { IADE_GECERLI } from "@/lib/iade-geri-alma";
+import { panelIadesiKur, panelSatisiKur } from "./panel-satir";
+import { GRAFIK_AY_SAYISI, PanelAylikGrafik } from "./panel-aylik-grafik";
+import { ustOkumaPenceresi } from "./panel-satir";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * ============================================================================
@@ -211,8 +216,7 @@ import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 
 export const dynamic = "force-dynamic";
 
-/** Grafikte kaç ay görünecek (bu ay dahil). */
-const GRAFIK_AY_SAYISI = 12;
+/** Grafikte kaç ay görünecek: `GRAFIK_AY_SAYISI`, `panel-aylik-grafik.tsx`te (K332 — bölüm oraya taşındı). */
 
 /** Ürün listelerinde kaç satır. Panelde yer sınırlı; detay listelere gider. */
 const LISTE_SATIRI = 5;
@@ -368,6 +372,153 @@ export default async function AnaSayfa({
   );
 
   /**
+   * ⚡ ÜST KISMIN DAR OKUMASI (K332, kullanıcı fikri 11.10.2026: «açıldıktan
+   * sonra çekse son 12 ay verilerini»). Üst kısmın bütün hesapları (dönem
+   * blokları, kıyas, zarar, ürün listeleri, operasyon ve ciro-NET serileri)
+   * satırları DÖNEM/KIYAS penceresiyle süzüyor — 12 aylık listenin geri kalanı
+   * yalnız grafik bölümünde kullanılıyordu. O bölüm artık kendi okumasıyla
+   * ARKADAN doluyor (`PanelAylikGrafik`); üst kısım bu dar aralığı okur.
+   *
+   * ⚠ İKİ YANDA 31 GÜN PAY: operasyon grafiği satışları hafta/ay KOVASINA
+   * koyar ve dönemin İLK ve SON kovası dönem dışındaki günleri de kapsayabilir;
+   * bugünkü davranış o günlerin satışını o kovaya sayar. Pay en geniş kovayı
+   * (ay ≤ 31 gün) karşılar — çıktı aynı kalır. Ve aralık 12 aylık okuma
+   * aralığını AŞAMAZ: aşsaydı eskiden okunmayan satış kovaya girerdi.
+   * ⚠ ÖLÇÜLDÜ (11.10.2026): yalnız başta pay varken özel aralıkta (03.11.2025–
+   * 17.02.2026, aylık kova) son satır «01.02–17.02 · Satış» 497 → 360 oldu: ESKİ
+   * davranış 18–28 Şubat'ın 137 satışını da o satıra sayıyordu (etiketle
+   * çelişen, bu işten BAĞIMSIZ bir kusur — panoda K333). Hız işi rakam
+   * değiştirmez; pay iki yana kondu, kusur ayrıca kullanıcıya soruldu.
+   */
+  const { baslangic: ustBaslangic, bitisHaric: ustBitisHaric } = ustOkumaPenceresi(
+    { baslangic: veriBaslangic, bitisHaric: veriBitisHaric },
+    [donem, kiyasPencere],
+  );
+
+  /**
+   * 12 AYLIK GRAFİĞİN OKUMASI — beklenmez, `PanelAylikGrafik`e söz olarak
+   * verilir ve bölüm `Suspense` içinde arkadan dolar. Ürün bilgisi YOK (grafik
+   * kullanmıyor); dönüştürme üst kısımla ORTAK (`panel-satir.ts`).
+   */
+  const grafikVerisiSozu = Promise.all([
+    prisma.sale.findMany({
+      where: {
+        soldAt: { gte: veriBaslangic, lt: veriBitisHaric },
+        iptalTarihi: null,
+      },
+      select: {
+        soldAt: true,
+        net1Amount: true,
+        net2Amount: true,
+        profitCurrency: true,
+        profitStatus: true,
+        channelAccount: {
+          select: {
+            id: true,
+            name: true,
+            channel: { select: { code: true, name: true } },
+          },
+        },
+        items: {
+          where: { ...KALEM_GECERLI },
+          select: {
+            quantity: true,
+            unitPriceAmount: true,
+            unitPriceCurrency: true,
+            vatRate: true,
+          },
+        },
+      },
+    }),
+    prisma.return.findMany({
+      where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } }, ...IADE_GECERLI },
+      select: {
+        /**
+         * ⛔ `occurredAt` SEÇİLMİYOR — atıf satışın gününe geçince kimse
+         * okumaz oldu. Duran bir alan masum değildir: onu gören biri
+         * _"demek ki iadenin kendi tarihi de kullanılıyor"_ diye okur ve
+         * üstüne akıl yürütür. İhtiyaç doğduğu gün geri eklenir.
+         * _(Kullanıcı kuralı 07.09.2026: "ölü kod bırakmadan".)_
+         */
+        net1Amount: true,
+        net2Amount: true,
+        profitCurrency: true,
+        profitStatus: true,
+        /**
+         * CİRO DÜŞÜMÜNÜN KAYNAĞI — `KAYIP_GELIR` satırları.
+         * `/iadeler` ekranı da aynı yerden okuyor; iki ekran aynı rakamı
+         * üretsin diye kaynak ORTAK. Değişimde bu satır hiç oluşmadığı için
+         * "değişim ciroyu düşürmez" kuralı kendiliğinden geçerli olur —
+         * ayrı bir istisna yazmak gerekmedi.
+         */
+        fees: { select: { code: true, amount: true } },
+        sale: {
+          select: {
+            /** ⛔ ATIF TARİHİ — iade satışın ayına yazılır (K185-③). */
+            soldAt: true,
+            channelAccount: {
+              select: {
+                id: true,
+                name: true,
+                channel: { select: { code: true, name: true } },
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]).then(([satisKayitlari, iadeKayitlari12]) => ({
+    satislar: satisKayitlari.map(panelSatisiKur),
+    iadeler: iadeKayitlari12.map(panelIadesiKur),
+  }));
+  grafikVerisiSozu.catch(() => {});
+
+  /**
+   * SÜZGEÇ ÇUBUĞUNUN KANAL VE PARA SEÇENEKLERİ — 12 aylık aralıkta satış olan
+   * kanallar ve para birimleri (eskiden 12 aylık satır listesinden türetiliyordu).
+   * Satırların TAMAMI çekilmez: hesap+para birimi başına İLK satış yeter.
+   * Para biriminin satır kuralı aynı (`panelSatisiKur`): kâr para birimi, yoksa
+   * ilk geçerli kalemin. ⚠ SIRA AÇIK: en eski satışın para birimi önce
+   * (varsayılan para birimi listenin ilkidir; eski liste veritabanının dönüş
+   * sırasına bırakılmıştı).
+   */
+  const secenekSozu = Promise.all([
+    prisma.sale.findMany({
+      where: {
+        soldAt: { gte: veriBaslangic, lt: veriBitisHaric },
+        iptalTarihi: null,
+        profitCurrency: { not: null },
+      },
+      distinct: ["channelAccountId", "profitCurrency"],
+      orderBy: { soldAt: "asc" },
+      select: {
+        soldAt: true,
+        profitCurrency: true,
+        channelAccount: { select: { channel: { select: { code: true, name: true } } } },
+      },
+    }),
+    prisma.sale.findMany({
+      where: {
+        soldAt: { gte: veriBaslangic, lt: veriBitisHaric },
+        iptalTarihi: null,
+        profitCurrency: null,
+      },
+      orderBy: { soldAt: "asc" },
+      select: {
+        soldAt: true,
+        channelAccount: { select: { channel: { select: { code: true, name: true } } } },
+        items: {
+          where: { ...KALEM_GECERLI },
+          select: { unitPriceCurrency: true },
+          orderBy: { id: "asc" },
+          take: 1,
+        },
+      },
+    }),
+  ]);
+  secenekSozu.catch(() => {});
+
+  /**
    * ⚡ ÖNDEN BAŞLAT (K332, 11.10.2026) — aşağıdaki büyük okumayla AYNI ANDA.
    * Görev bloğu (görev sayıları · paketleme · alım · kıyas alımı · vitrin),
    * satış hesapları ve muhasebe dönemi bu okumaya BAĞLI DEĞİL; eskiden ondan
@@ -436,7 +587,7 @@ export default async function AnaSayfa({
     prisma.sale.findMany({
       // İPTAL EDİLEN SATIŞ CİROYA GİRMEZ (bkz. lib/liste-suzgeci.ts).
       where: {
-        soldAt: { gte: veriBaslangic, lt: veriBitisHaric },
+        soldAt: { gte: ustBaslangic, lt: ustBitisHaric },
         iptalTarihi: null,
       },
       select: {
@@ -510,7 +661,7 @@ export default async function AnaSayfa({
      * dönemde yapılır. İki atıf gerekçeli ayrışır ve fark EKRANDA yazar.
      */
     prisma.return.findMany({
-      where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } }, ...IADE_GECERLI },
+      where: { sale: { soldAt: { gte: ustBaslangic, lt: ustBitisHaric } }, ...IADE_GECERLI },
       select: {
         /**
          * ⛔ `occurredAt` SEÇİLMİYOR — atıf satışın gününe geçince kimse
@@ -752,75 +903,9 @@ export default async function AnaSayfa({
     });
   }
 
-  const satislar: PanelSatisi[] = kayitlar.map((satis) => {
-    // Satışın para birimi: kâr snapshot'ındaki birim, yoksa ilk kalemin.
-    // (Rapor ekranıyla birebir aynı kural — iki ekran farklı ciro göstermesin.)
-    const paraBirimi: Currency =
-      satis.profitCurrency ?? satis.items[0]?.unitPriceCurrency ?? "TRY";
+  const satislar: PanelSatisi[] = kayitlar.map(panelSatisiKur);
 
-    const gelir = satis.items
-      .filter((k) => k.unitPriceCurrency === paraBirimi)
-      .reduce(
-        (t2, k) => t2 + Number(k.unitPriceAmount.toString()) * k.quantity,
-        0,
-      );
-
-    /**
-     * ⚠ KDV KALEM KALEM — tek oranla çarpılmaz. Bir siparişte %20 kulaklık
-     * ile %1 kitap birlikte olabilir; sipariş toplamına tek oran uygulamak
-     * ikisini de yanlış hesaplardı.
-     * ⚠ TUTAR KDV DAHİL: kdv = satır − satır/(1+oran).
-     */
-    const kdv = satis.items
-      .filter((k) => k.unitPriceCurrency === paraBirimi)
-      .reduce((t, k) => {
-        const satir = Number(k.unitPriceAmount.toString()) * k.quantity;
-        const oran = k.vatRate === null ? 0 : Number(k.vatRate.toString());
-        return t + (oran === 0 ? 0 : satir - satir / (1 + oran / 100));
-      }, 0);
-
-    return {
-      kanalKodu: satis.channelAccount.channel.code,
-      kanalAdi: satis.channelAccount.channel.name,
-      hesapId: satis.channelAccount.id,
-      hesapAdi: satis.channelAccount.name,
-      tarih: satis.soldAt,
-      paraBirimi,
-      gelir,
-      kdv,
-      net1:
-        satis.net1Amount === null ? null : Number(satis.net1Amount.toString()),
-      net2:
-        satis.net2Amount === null ? null : Number(satis.net2Amount.toString()),
-      durum: satis.profitStatus,
-    };
-  });
-
-  const iadeler: PanelIadesi[] = iadeKayitlari.map((iade) => ({
-    kanalKodu: iade.sale.channelAccount.channel.code,
-    kanalAdi: iade.sale.channelAccount.channel.name,
-    hesapId: iade.sale.channelAccount.id,
-    hesapAdi: iade.sale.channelAccount.name,
-    /**
-     * ⛔ ATIF SATIŞIN GÜNÜNE — iadenin kendi gününe DEĞİL (K185-③).
-     * İadenin kendi tarihi kaybolmuyor: `/iadeler` listesi onu gösteriyor,
-     * çünkü orada sorulan şey "bu iade ne zaman oldu"dur. Burada sorulan
-     * ise "bu iade hangi ayın cirosunu düşürür" — ve cevabı satışın ayıdır.
-     */
-    tarih: iade.sale.soldAt,
-    // Rapor ekranıyla aynı kural: iadenin para birimi kâr snapshot'ından.
-    paraBirimi: iade.profitCurrency ?? "TRY",
-    net1: iade.net1Amount === null ? null : Number(iade.net1Amount.toString()),
-    net2: iade.net2Amount === null ? null : Number(iade.net2Amount.toString()),
-    durum: iade.profitStatus,
-    // Mutlak değer: satır defterde negatif duruyor (gider işareti), ekranda
-    // "−X iade" diye zaten eksiyle yazılıyor. İki kez eksiye düşmesin.
-    iadeTutari: Math.abs(
-      iade.fees
-        .filter((f) => f.code === "KAYIP_GELIR")
-        .reduce((t2, f) => t2 + Number(f.amount.toString()), 0),
-    ),
-  }));
+  const iadeler: PanelIadesi[] = iadeKayitlari.map(panelIadesiKur);
 
   /**
    * ÜRÜN LİSTELERİNİN HAM VERİSİ — satış KALEMLERİ.
@@ -905,13 +990,28 @@ export default async function AnaSayfa({
    * değişmesin. _(Anayasa: "kararın kapsamı, uygulandığı yerle sınırlı
    * sayılmaz" — var olan bir karar yeni ekranda uygulanmamıştı.)_
    */
+  const [secenekHesapli, secenekHesapsiz] = await secenekSozu;
+  const secenekSatirlari = [
+    ...secenekHesapli.map((r) => ({
+      tarih: r.soldAt,
+      kod: r.channelAccount.channel.code,
+      ad: r.channelAccount.channel.name,
+      para: r.profitCurrency as Currency,
+    })),
+    ...secenekHesapsiz.map((r) => ({
+      tarih: r.soldAt,
+      kod: r.channelAccount.channel.code,
+      ad: r.channelAccount.channel.name,
+      para: (r.items[0]?.unitPriceCurrency ?? "TRY") as Currency,
+    })),
+  ].sort((a, b) => a.tarih.getTime() - b.tarih.getTime());
   const kanalSecenekleri = [
-    ...new Map(satislar.map((s) => [s.kanalKodu, s.kanalAdi])).entries(),
+    ...new Map(secenekSatirlari.map((s) => [s.kod, s.ad])).entries(),
   ].sort(
     (a, b) => kanalSirasi(a[0]) - kanalSirasi(b[0]) || a[1].localeCompare(b[1], "tr"),
   );
 
-  const paraSecenekleri = [...new Set(satislar.map((s) => s.paraBirimi))];
+  const paraSecenekleri = [...new Set(secenekSatirlari.map((s) => s.para))];
 
   const seciliKanal =
     parametreler.kanal &&
@@ -1773,242 +1873,6 @@ export default async function AnaSayfa({
     );
   }
 
-  const seri = aylikSeri(
-    satislar,
-    { yil: bugun.yil, ay: bugun.ay },
-    GRAFIK_AY_SAYISI,
-    seciliKanal,
-    seciliPara,
-    iadeler,
-  );
-
-  const noktalar: GrafikNoktasi[] = seri.map((nokta) => {
-    const tarih = gunDegeri({ yil: nokta.yil, ay: nokta.ay, gun: 1 });
-    const tam = bicim.ayYil(tarih);
-    return {
-      // "Ağustos 2026" -> "Ağustos"; yıl eksende gereksiz yer kaplar.
-      etiket: tam.split(" ")[0] ?? tam,
-      tamEtiket: tam,
-      gelir: nokta.gelir,
-      net2: nokta.net2,
-    };
-  });
-
-  /**
-   * TABLO EN YENİDEN ESKİYE (kullanıcı kararı 14.08.2026).
-   *
-   * GRAFİK ile TABLO farklı sıra ister ve bu bir tutarsızlık değil:
-   *   grafik → zaman ekseni soldan sağa akar, eski solda kalmalı
-   *   tablo  → okumaya en üstten başlanır, oradaki ay BU AY olmalı
-   *
-   * Etiket burada nokta ile EŞLEŞTİRİLİYOR: eskiden `noktalar[i]` ile
-   * dizin üzerinden bulunuyordu ve sıra değişince ay adları satırlardan
-   * KAYARDI — sessiz ve fark edilmesi zor bir hata.
-   */
-  const aylikSatirlar = seri
-    .map((nokta, i) => ({ nokta, etiket: noktalar[i]?.tamEtiket ?? "" }))
-    .reverse();
-
-  /**
-   * ═══ İADE ORANI SATIRLARI — KANAL × AY (K182, 07.09.2026) ═════════════
-   *
-   * ⛔ HÜCRE ORAN DEĞİL, ORANIN İKİ TARAFI. Oranı burada hesaplayıp tabloya
-   * vermek toplam satırını imkânsız kılardı: oranlar toplanmaz, PAY ve PAYDA
-   * toplanır. Tablo bölmeyi kendi yapıyor.
-   *
-   * ⚠ EK SORGU YOK — `aylikSeri` bellekteki listeyi süzüyor; `isiSatirlari`
-   * ile aynı desen.
-   *
-   * ⛔ KANAL SÜZGECİ UYGULANMAZ — tablonun işi kanalları KARŞILAŞTIRMAK.
-   */
-  const iadeSerileri = kanalSecenekleri.map(([kod, ad]) => ({
-    /** ⚠ KOD DA TAŞINIYOR: grafik serisinin anahtarı ADDAN değil KİMLİKTEN. */
-    kod,
-    ad,
-    seri: aylikSeri(
-      satislar,
-      { yil: bugun.yil, ay: bugun.ay },
-      GRAFIK_AY_SAYISI,
-      kod,
-      seciliPara,
-      iadeler,
-    ),
-  }));
-  const iadeAdetSatirlari: OranSatiri[] = iadeSerileri.map((k) => ({
-    ad: k.ad,
-    hucreler: k.seri.map((n) => ({ pay: n.iadeAdedi, payda: n.adet })),
-  }));
-  const iadeTutarSatirlari: OranSatiri[] = iadeSerileri.map((k) => ({
-    ad: k.ad,
-    hucreler: k.seri.map((n) => ({ pay: n.iadeTutari, payda: n.gelir })),
-  }));
-
-  /**
-   * ═══ İADE ORANI ÇİZGİ GRAFİĞİ (kullanıcı isteği 07.09.2026) ═══════════
-   * _"Bu sayfa çizgi grafikle desteklensin."_
-   *
-   * ⛔ ORAN TABLONUN GÖVDESİNDEN — `oran()` aynı dosyadan geliyor. İkinci bir
-   * bölme yazsaydım tablo ile grafik sessizce ayrışırdı ve hangisinin doğru
-   * olduğu ancak yan yana konunca görülürdü.
-   * ⛔ TOPLAM SERİSİ DE AYNI KURAL: oranlar toplanmaz — PAY ve PAYDA toplanır,
-   * sonra bölünür. Tablonun toplam satırıyla birebir aynı sayı.
-   * ⚠ `null` ay (o kanalda hiç satış yok) çizgiyi KESER, sıfıra çekmez.
-   */
-  const iadeOraniSerileri: KarsilastirmaSerisi[] = [
-    ...iadeSerileri.map((k) => ({
-      anahtar: `kanal-${k.kod}`,
-      ad: k.ad,
-      birim: t("birimYuzde"),
-      birimTuru: "YUZDE" as const,
-      paraBirimi: null,
-      degerler: k.seri.map((n) => oran({ pay: n.iadeAdedi, payda: n.adet })),
-    })),
-    {
-      anahtar: "toplam",
-      ad: t("toplam"),
-      birim: t("birimYuzde"),
-      birimTuru: "YUZDE" as const,
-      paraBirimi: null,
-      degerler: seri.map((_, ay) =>
-        oran(
-          iadeSerileri.reduce(
-            (topla, k) => ({
-              pay: topla.pay + (k.seri[ay]?.iadeAdedi ?? 0),
-              payda: topla.payda + (k.seri[ay]?.adet ?? 0),
-            }),
-            { pay: 0, payda: 0 },
-          ),
-        ),
-      ),
-    },
-  ];
-
-  /**
-   * ═══ KARŞILAŞTIRMA SERİLERİ (K182, 07.09.2026) ════════════════════════
-   *
-   * ⛔ `birim` ALANI SÜS DEĞİL, KAPIDIR: grafik aynı birimden olmayan
-   * serileri BİRLİKTE ÇİZMEZ. Ciro (₺1,7 Mn) ile satış adedi (511) aynı
-   * eksende olsaydı adet çizgisi tabanda düz görünür ve "adet değişmiyor"
-   * derdi — oysa 321'den 511'e çıkmış.
-   *
-   * ⚠ EK SORGU YOK: hepsi zaten hesaplanmış `seri`den okunuyor.
-   */
-  const karsilastirmaSerileri: KarsilastirmaSerisi[] = [
-    { anahtar: "ciro", ad: t("ciro"), birim: seciliPara, al: (n: AyNoktasi) => n.gelir },
-    { anahtar: "net1", ad: t("net1"), birim: seciliPara, al: (n: AyNoktasi) => n.net1 },
-    { anahtar: "net2", ad: t("net2"), birim: seciliPara, al: (n: AyNoktasi) => n.net2 },
-    {
-      anahtar: "iadeTutar",
-      ad: t("iadeTutariSerisi"),
-      birim: seciliPara,
-      al: (n: AyNoktasi) => n.iadeTutari,
-    },
-    {
-      anahtar: "adet",
-      ad: t("satisAdedi"),
-      birim: t("birimAdet"),
-      al: (n: AyNoktasi) => n.adet,
-    },
-    {
-      anahtar: "iadeAdet",
-      ad: t("iadeAdediSerisi"),
-      birim: t("birimAdet"),
-      al: (n: AyNoktasi) => n.iadeAdedi,
-    },
-  ].map((k) => ({
-    anahtar: k.anahtar,
-    ad: k.ad,
-    birim: k.birim,
-    degerler: seri.map((n) => k.al(n)),
-    /**
-     * ⛔ FONKSİYON GEÇİLMEZ — 07.09.2026'da tam bu yüzden sekme 500 verdi
-     * ("Bu ekran çizilemedi"). Grafik `"use client"` bir bileşen ve
-     * sunucudan istemciye **fonksiyon serileştirilemez**. Seri yalnız
-     * BİRİMİNİ söyler; biçimi istemci kendi `useBicim()` kancasından çözer.
-     * ⚠ Ön-biçimleme de çözmezdi: eksen işaretleri SEÇİME bağlı olarak
-     * istemcide hesaplanıyor, sunucuda değerleri henüz bilinmiyor.
-     */
-    birimTuru: (k.birim === seciliPara ? "PARA" : "SAYI") as "PARA" | "SAYI",
-    paraBirimi: k.birim === seciliPara ? seciliPara : null,
-  }));
-
-  /* ═══════════════ AYLIK GRAFİK SEKMELERİ (K117, 31.08.2026) ═══════════
-     Kullanıcı isteği: envanter gelişimi · satış adedi ısı haritası ·
-     ortalama kâr marjı — ve sekme değişince ALTTAKİ TABLO da değişsin. */
-  const GRAFIK_SEKMELERI = [
-    "para",
-    "envanter",
-    "adet",
-    "marj",
-    /** K182 (kullanıcı isteği 07.09.2026): iade oranları — kanal kanal. */
-    "iade",
-    /** K182: seri seçmeli karşılaştırma. */
-    "karsilastirma",
-  ] as const;
-  const grafikSekmesi = GRAFIK_SEKMELERI.includes(
-    parametreler.grafik as (typeof GRAFIK_SEKMELERI)[number],
-  )
-    ? (parametreler.grafik as (typeof GRAFIK_SEKMELERI)[number])
-    : "para";
-  const grafikAdresi = (deger: string) =>
-    suzgecAdresi("/", parametreler, { grafik: deger });
-
-  /**
-   * ⛔ ENVANTER SERİSİ YALNIZ KENDİ SEKMESİNDE ÇEKİLİYOR.
-   * Ölçüldü (31.08.2026, canlı): 12 ay sonu fotoğrafı **2950 ms**, fotoğraf
-   * başına ~246 ms. Koşulsuz çağrılsaydı panelin HER açılışına 3 saniye
-   * eklenirdi — üstelik kullanıcıların çoğu bu sekmeyi hiç açmadan.
-   */
-  const envanterAylari =
-    grafikSekmesi === "envanter"
-      ? await envanterSerisi({ yil: bugun.yil, ay: bugun.ay }, GRAFIK_AY_SAYISI)
-      : null;
-
-  const envanterNoktalari: TekNokta[] = (envanterAylari ?? []).map((a) => {
-    const tam = bicim.ayYil(gunDegeri({ yil: a.yil, ay: a.ay, gun: 1 }));
-    return {
-      etiket: tam.split(" ")[0] ?? tam,
-      tamEtiket: tam,
-      /**
-       * ⚠ HİÇ MALI OLMAYAN AY `null`, SIFIR DEĞİL — ama burada sıfır GERÇEK
-       * sıfırdır: parti yoksa envanter yoktur ve bu ölçülmüş bir bilgidir.
-       * `deger` doğrudan geçiyor.
-       */
-      deger: a.deger,
-    };
-  });
-
-  /**
-   * ORTALAMA KÂR MARJI — NET-2 BAZLI (kullanıcı isteği 31.08.2026).
-   * Hesap `aylikMarj` saf gövdesinde; burada yalnız ekrana çevriliyor.
-   */
-  const marjNoktalari: TekNokta[] = seri.map((nokta, i) => ({
-    etiket: noktalar[i]?.etiket ?? "",
-    tamEtiket: noktalar[i]?.tamEtiket ?? "",
-    deger: aylikMarj(nokta),
-  }));
-
-  /**
-   * SATIŞ ADEDİ ISI HARİTASI — AY × KANAL.
-   *
-   * ⚠ EK SORGU YOK: `aylikSeri` zaten bellekteki `satislar` listesini süzüyor;
-   * kanal başına yeniden çağırmak yalnız o listeyi bir kez daha geziyor.
-   *
-   * ⛔ KANAL SÜZGECİ BURADA UYGULANMAZ — VE BU BİLİNÇLİ. Haritanın işi
-   * kanalları KARŞILAŞTIRMAK; üstteki süzgeç tek kanala indirilmişse harita
-   * tek satıra düşer ve hiçbir şey söylemez. Sekme başlığında da yazıyor.
-   */
-  const isiSatirlari: IsiSatiri[] = kanalSecenekleri.map(([kod, ad]) => ({
-    ad,
-    hucreler: aylikSeri(
-      satislar,
-      { yil: bugun.yil, ay: bugun.ay },
-      GRAFIK_AY_SAYISI,
-      kod,
-      seciliPara,
-      iadeler,
-    ).map((n) => n.adet),
-  }));
 
   /**
    * ── GÜNLÜK OPERASYON SERİSİ (kullanıcı isteği 21.08.2026) ───────────────
@@ -4164,391 +4028,20 @@ export default async function AnaSayfa({
           ("hangi ürün ne durumda") bakan diğer listelerle aynı yere ait.
           İçeriği yukarıdaki sekme dizisinde. */}
 
-      {/* ==================== AYLIK GRAFİK — SEKMELİ ====================
-          K117 (kullanıcı isteği 31.08.2026): tek bir para grafiği yerine
-          dört görünüm. İLKE #13 GEREĞİ SEKME, AYRI BLOK DEĞİL: dördü de
-          "son 12 ayda ne oldu" sorusuna bakıyor ve aynı anda
-          karşılaştırılmaları GEREKMİYOR — envanter değeri ile satış adedi
-          yan yana konsa ikisi de küçülürdü. Seçim adreste durur.
-
-          ⛔ VE SEKME BURADA YER KAZANMANIN KOLAY YOLU DEĞİL: birlikte
-          okunması gereken rakamlar (ciro ile NET-2) AYNI sekmede kaldı. */}
-      {/* K270: 12 aylık grafik ve alt tabloları telefonda yok — Raporlar menüde. */}
-      <div className="max-md:hidden">
-      <SekmeliBolum
-        baslik={t("grafikBaslik", { ay: GRAFIK_AY_SAYISI })}
-        secili={grafikSekmesi}
-        sekmeler={[
-          {
-            anahtar: "para",
-            etiket: t("grafikSekmePara"),
-            adres: grafikAdresi("para"),
-            icerik: (
-              <div className="min-w-0 space-y-4">
-                <p className="text-muted-foreground text-sm">
-                  {t("grafikNotu")}
-                </p>
-          <CizgiGrafik
-            noktalar={noktalar}
-            gelirAdi={t("ciro")}
-            net2Adi={t("net2")}
-            bicimle={(deger) => bicim.para(deger, seciliPara)}
-            bicimleKisa={(deger) => bicim.paraKisa(deger, seciliPara)}
-            bosMesaj={t("grafikBos")}
-            net2Goster={karGorunur}
-          />
-
-          {/* Grafiğin okunabilir hâli — dokunmatik cihazda ve ekran
-              okuyucuda ASIL kaynak budur (bkz. cizgi-grafik.tsx). Bu yüzden
-              SİLİNMEZ; `<details>` ekran okuyucuda "genişlet" olarak
-              tanınır, erişilebilirlik kaybı olmaz. */}
-          <KatlanirBolum
-            baslik={t("aylikRakamlar")}
-            notu={t("aylikRakamlarNotu")}
-          >
-            <div className="overflow-x-auto rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("ay")}</TableHead>
-                    <TableHead className="text-right">
-                      {t("satisAdedi")}
-                    </TableHead>
-                    <TableHead className="text-right">{t("ciro")}</TableHead>
-                    {karGorunur ? (
-                      <TableHead className="text-right">{t("net1")}</TableHead>
-                    ) : null}
-                    {karGorunur ? (
-                      <TableHead className="text-right">{t("net2")}</TableHead>
-                    ) : null}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {aylikSatirlar.map(({ nokta, etiket }) => (
-                    <TableRow key={`${nokta.yil}-${nokta.ay}`}>
-                      <TableCell className="whitespace-nowrap">
-                        {etiket}
-                      </TableCell>
-                      <TableCell className="text-right">{nokta.adet}</TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        <CiroSunumu
-                          brut={bicim.para(nokta.gelir, seciliPara)}
-                          iade={
-                            nokta.iadeTutari > 0
-                              ? bicim.para(nokta.iadeTutari, seciliPara)
-                              : null
-                          }
-                          net={bicim.para(
-                            nokta.gelir - nokta.iadeTutari,
-                            seciliPara,
-                          )}
-                        />
-                      </TableCell>
-                      {karGorunur ? (
-                        <TableCell className="text-muted-foreground text-right whitespace-nowrap">
-                          {bicim.para(nokta.net1, seciliPara)}
-                        </TableCell>
-                      ) : null}
-                      {karGorunur ? (
-                        <TableCell className="text-right whitespace-nowrap">
-                          {bicim.para(nokta.net2, seciliPara)}
-                          {/* K170-②: bu ayda devreden KDV — yalnız > 0 iken
-                              (kanal kutusuyla AYNI desen, İlke #10). */}
-                          {nokta.devreden > 0 ? (
-                            <span className="text-muted-foreground block text-xs">
-                              {t("devredenKdvKisa", {
-                                tutar: bicim.para(nokta.devreden, seciliPara),
-                              })}
-                            </span>
-                          ) : null}
-                          {nokta.iadeAdedi > 0 ? (
-                            <span className="text-muted-foreground block text-xs">
-                              {t("kanalIade", { sayi: nokta.iadeAdedi })}
-                            </span>
-                          ) : null}
-                          {/* ⛔ AKSAKLIK SAYISI KAYNAĞINA GÖTÜRÜR (İlke #16).
-                              Ay penceresi `OZEL` aralıkla veriliyor; bitiş
-                              günü DAHİL (bkz. `pencereOlustur`). */}
-                          {nokta.hesaplanamayanAdet > 0 ? (
-                            <Link
-                              href={karEksikAyAdresi(nokta.yil, nokta.ay)}
-                              className="text-muted-foreground hover:text-foreground block text-xs underline underline-offset-2"
-                            >
-                              {t("kanalEksik", {
-                                sayi: nokta.hesaplanamayanAdet,
-                              })}
-                            </Link>
-                          ) : null}
-                        </TableCell>
-                      ) : null}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-                </KatlanirBolum>
-              </div>
-            ),
-          },
-          {
-            anahtar: "envanter",
-            etiket: t("grafikSekmeEnvanter"),
-            adres: grafikAdresi("envanter"),
-            icerik: (
-              <div className="min-w-0 space-y-4">
-                <p className="text-muted-foreground text-sm">
-                  {t("envanterGrafikNotu")}
-                </p>
-                <TekSeriliGrafik
-                  seriAdi={t("grafikSekmeEnvanter")}
-                  noktalar={envanterNoktalari}
-                  bicimle={(deger) => bicim.para(deger, "TRY")}
-                  bicimleKisa={(deger) => bicim.paraKisa(deger, "TRY")}
-                  bosMesaj={t("grafikBos")}
-                />
-                <KatlanirBolum
-                  baslik={t("envanterRakamlari")}
-                  notu={t("aylikRakamlarNotu")}
-                >
-                  <div className="overflow-x-auto rounded-lg border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t("ay")}</TableHead>
-                          <TableHead className="text-right">
-                            {t("envanterDegeri")}
-                          </TableHead>
-                          <TableHead className="text-right">
-                            {t("envanterAdedi")}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {[...(envanterAylari ?? [])].reverse().map((a) => (
-                          <TableRow key={`${a.yil}-${a.ay}`}>
-                            <TableCell className="whitespace-nowrap">
-                              {bicim.ayYil(
-                                gunDegeri({ yil: a.yil, ay: a.ay, gun: 1 }),
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right whitespace-nowrap">
-                              {bicim.para(a.deger, "TRY")}
-                              {/* ⛔ K116③ — BİLİNMEYEN GÖRÜNÜR, UYDURULMAZ.
-                                  Maliyeti bilinmeyen parti toplama SIFIR
-                                  olarak karışmaz; kaç adet olduğu YAZAR.
-                                  Karışsaydı envanter olduğundan düşük
-                                  görünür ve düşüşün sebebi görünmezdi. */}
-                              {a.bilinmeyenAdet > 0 ? (
-                                <span className="text-muted-foreground block text-xs">
-                                  {t("envanterBilinmeyen", {
-                                    adet: a.bilinmeyenAdet,
-                                  })}
-                                </span>
-                              ) : null}
-                            </TableCell>
-                            <TableCell className="text-right whitespace-nowrap">
-                              {bicim.sayi(a.adet)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </KatlanirBolum>
-              </div>
-            ),
-          },
-          {
-            anahtar: "adet",
-            etiket: t("grafikSekmeAdet"),
-            adres: grafikAdresi("adet"),
-            icerik: (
-              <div className="min-w-0 space-y-4">
-                <p className="text-muted-foreground text-sm">
-                  {t("isiHaritasiNotu")}
-                </p>
-                {/* ⚠ ISI HARİTASI ZATEN TABLODUR — altına ikinci bir tablo
-                    konmadı. Her hücrede rakam yazıyor; renk tek başına bilgi
-                    taşımaz (renk körlüğü ve siyah-beyaz çıktı). */}
-                <IsiHaritasi
-                  sutunlar={noktalar.map((n) => n.etiket)}
-                  satirlar={isiSatirlari}
-                  bicimle={(deger) => bicim.sayi(deger)}
-                  bosMesaj={t("grafikBos")}
-                  satirToplamiEtiketi={t("toplam")}
-                  sutunToplamiEtiketi={t("toplam")}
-                />
-              </div>
-            ),
-          },
-          {
-            anahtar: "iade",
-            etiket: t("grafikSekmeIade"),
-            adres: grafikAdresi("iade"),
-            icerik: (
-              <div className="min-w-0 space-y-6">
-                <p className="text-muted-foreground text-sm">
-                  {t("iadeOraniNotu")}
-                </p>
-
-                {/* ═══ ÇİZGİ GRAFİK (kullanıcı isteği 07.09.2026) ═══
-                    ⛔ TABLONUN GÖVDESİNDEN BESLENİYOR (`oran()`): ikinci bir
-                    bölme yazılsaydı grafik ile tablo sessizce ayrışırdı.
-                    ⚠ Aynı bileşen karşılaştırma sekmesinde de kullanılıyor —
-                    seri seçimi, karışık birim kapısı ve `null` kesmesi
-                    bedavaya geliyor; ikinci bir grafik gövdesi yazılmadı. */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">{t("iadeOraniGrafik")}</h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t("iadeOraniGrafikNotu")}
-                  </p>
-                  <KarsilastirmaGrafigi
-                    etiketler={noktalar.map((n) => n.etiket)}
-                    seriler={iadeOraniSerileri}
-                    baslangicSecim={["toplam"]}
-                    bosMesaj={t("grafikBos")}
-                    karisikBirimMesaji={t("karsilastirmaKarisikBirim")}
-                    secimBosMesaji={t("karsilastirmaSecimBos")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">{t("iadeOraniAdet")}</h3>
-                  <OranTablosu
-                    sutunlar={noktalar.map((n) => n.etiket)}
-                    satirlar={iadeAdetSatirlari}
-                    bicimleOran={(d) => bicim.yuzde(d)}
-                    /* ⭐ ORAN KAYNAĞINI YANINDA TAŞIR: "kaçta kaç". */
-                    bicimleAyrinti={(h) =>
-                      `${bicim.sayi(h.pay)}/${bicim.sayi(h.payda)}`
-                    }
-                    toplamEtiketi={t("toplam")}
-                    bosMesaj={t("grafikBos")}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">{t("iadeOraniTutar")}</h3>
-                  <OranTablosu
-                    sutunlar={noktalar.map((n) => n.etiket)}
-                    satirlar={iadeTutarSatirlari}
-                    bicimleOran={(d) => bicim.yuzde(d)}
-                    bicimleAyrinti={(h) =>
-                      `${bicim.paraKisa(h.pay, seciliPara)}/${bicim.paraKisa(
-                        h.payda,
-                        seciliPara,
-                      )}`
-                    }
-                    toplamEtiketi={t("toplam")}
-                    bosMesaj={t("grafikBos")}
-                  />
-                </div>
-              </div>
-            ),
-          },
-          {
-            anahtar: "karsilastirma",
-            etiket: t("grafikSekmeKarsilastirma"),
-            adres: grafikAdresi("karsilastirma"),
-            icerik: (
-              <div className="min-w-0 space-y-4">
-                <p className="text-muted-foreground text-sm">
-                  {t("karsilastirmaNotu")}
-                </p>
-                <KarsilastirmaGrafigi
-                  etiketler={noktalar.map((n) => n.etiket)}
-                  seriler={karsilastirmaSerileri}
-                  /* Açılış: kullanıcının verdiği örnek — Ciro ve NET-2. */
-                  baslangicSecim={["ciro", "net2"]}
-                  bosMesaj={t("grafikBos")}
-                  karisikBirimMesaji={t("karsilastirmaKarisikBirim")}
-                  secimBosMesaji={t("karsilastirmaSecimBos")}
-                />
-              </div>
-            ),
-          },
-          {
-            anahtar: "marj",
-            etiket: t("grafikSekmeMarj"),
-            adres: grafikAdresi("marj"),
-            icerik: (
-              <div className="min-w-0 space-y-4">
-                <p className="text-muted-foreground text-sm">
-                  {t("marjGrafikNotu")}
-                </p>
-                <TekSeriliGrafik
-                  seriAdi={t("grafikSekmeMarj")}
-                  noktalar={marjNoktalari}
-                  bicimle={(deger) => bicim.yuzde(deger)}
-                  bicimleKisa={(deger) => bicim.yuzde(deger)}
-                  bosMesaj={t("grafikBos")}
-                />
-                <KatlanirBolum
-                  baslik={t("marjRakamlari")}
-                  notu={t("aylikRakamlarNotu")}
-                >
-                  <div className="overflow-x-auto rounded-lg border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t("ay")}</TableHead>
-                          <TableHead className="text-right">
-                            {t("marjNetCiro")}
-                          </TableHead>
-                          <TableHead className="text-right">
-                            {t("net2")}
-                          </TableHead>
-                          <TableHead className="text-right">
-                            {t("marjSutunu")}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {aylikSatirlar.map(({ nokta, etiket }) => {
-                          const marj = aylikMarj(nokta);
-                          return (
-                            <TableRow key={etiket}>
-                              <TableCell className="whitespace-nowrap">
-                                {etiket}
-                              </TableCell>
-                              {/* ⚠ PAYDA EKRANDA YAZAR: kullanıcı marjı bu
-                                  iki sütunu bölerek DOĞRULAYABİLMELİ. Payda
-                                  gizli kalsaydı yüzde denetlenemez bir sayı
-                                  olurdu (İlke #16). */}
-                              <TableCell className="text-right whitespace-nowrap">
-                                {bicim.para(
-                                  nokta.hesaplananGelir -
-                                    nokta.hesaplananIadeTutari,
-                                  seciliPara,
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right whitespace-nowrap">
-                                {bicim.para(nokta.net2, seciliPara)}
-                              </TableCell>
-                              <TableCell className="text-right whitespace-nowrap">
-                                {/* ⛔ HESAPLANAMAYAN AY "%0" DEĞİL "—":
-                                    sıfır "ölçtüm, sıfır çıktı" demektir. */}
-                                {marj === null ? (
-                                  <span className="text-muted-foreground">
-                                    {t("marjYok")}
-                                  </span>
-                                ) : (
-                                  bicim.yuzde(marj)
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </KatlanirBolum>
-              </div>
-            ),
-          },
-        ]}
-      />
-      </div>
+      {/* ⚡ 12 AYLIK GRAFİK ARKADAN DOLAR (K332, kullanıcı fikri 11.10.2026): üst kısım
+          kendi dar okumasıyla hemen çizilir; bu bölüm kendi okumasını bekler. Telefonda
+          zaten gizli (K270) — artık paneli de bekletmiyor. */}
+      <Suspense fallback={<div className="max-md:hidden"><Skeleton className="h-96" /></div>}>
+        <PanelAylikGrafik
+          veriSozu={grafikVerisiSozu}
+          bugun={bugun}
+          seciliKanal={seciliKanal}
+          seciliPara={seciliPara}
+          kanalSecenekleri={kanalSecenekleri}
+          karGorunur={karGorunur}
+          parametreler={parametreler}
+        />
+      </Suspense>
     </div>
   );
 }

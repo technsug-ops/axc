@@ -1044,6 +1044,63 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "halka ic olcusune kuculur ve kanal sayisiyla oynar - kullanicinin yakaladigi",
   },
+  /* K332 — 12 aylık grafik arkadan dolar (kullanıcı fikri 11.10.2026). */
+  {
+    ad: "UST OKUMA PAYI 30 GUNE DUSTU (31 gunluk ay kovasi tasar)",
+    yon: "KALDIRAN",
+    dosya: "src/app/panel-satir.ts",
+    bul: "export const UST_OKUMA_PAYI_MS = 31 * 24 * 60 * 60 * 1000;",
+    koy: "export const UST_OKUMA_PAYI_MS = 30 * 24 * 60 * 60 * 1000;",
+    bozdugu: "operasyon tablosunun kenar kovasi eksik satis sayar - rakam sessizce degisir",
+  },
+  {
+    ad: "UST OKUMA 12 AYLIK ARALIGI ASIYOR (baslangic kirpilmiyor)",
+    yon: "KALDIRAN",
+    dosya: "src/app/panel-satir.ts",
+    bul: "baslangic: new Date(Math.max(veri.baslangic.getTime(), enErken - UST_OKUMA_PAYI_MS)),",
+    koy: "baslangic: new Date(enErken - UST_OKUMA_PAYI_MS),",
+    bozdugu: "eskiden okunmayan satis kovaya girer - hiz isi rakam degistirir",
+  },
+  {
+    ad: "PENCERESIZ CAGRIDA BOS KAPI KALKTI (Infinity tarih)",
+    yon: "KALDIRAN",
+    dosya: "src/app/panel-satir.ts",
+    bul: "  if (dolu.length === 0) return veri;",
+    koy: "",
+    bozdugu: "Math.min() bos listede Infinity doner, gecersiz tarihle sorgu kurulur",
+  },
+  {
+    ad: "SAYFA GRAFIK OKUMASINI BEKLIYOR (bolume verirken)",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: "veriSozu={grafikVerisiSozu}",
+    koy: "veriSozu={Promise.resolve(await grafikVerisiSozu)}",
+    bozdugu: "panel yine 12 ayi bekleyip acilir - rakam ayni, hiz gider, kimse fark etmez",
+  },
+  {
+    ad: "SAYFA GRAFIK OKUMASINI TANIMDA BEKLIYOR",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: "const grafikVerisiSozu = Promise.all([",
+    koy: "const grafikVerisiSozu = await Promise.all([",
+    bozdugu: "akis bosa duser - ust kisim grafigi bekler",
+  },
+  {
+    ad: "UST SATIS OKUMASI YINE 12 AY (daraltma geri alindi)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "soldAt: { gte: ustBaslangic, lt: ustBitisHaric },",
+    koy: "soldAt: { gte: veriBaslangic, lt: veriBitisHaric },",
+    bozdugu: "ust kisim yine 12 ayi okur - hiz kazanci sessizce kaybolur",
+  },
+  {
+    ad: "GRAFIK IADESI IADENIN KENDI GUNUNE YAZILIYOR",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: "where: { sale: { soldAt: { gte: veriBaslangic, lt: veriBitisHaric } }, ...IADE_GECERLI }",
+    koy: "where: { createdAt: { gte: veriBaslangic, lt: veriBitisHaric }, ...IADE_GECERLI }",
+    bozdugu: "K185-3 atfi bozulur - iade orani tablosu pay/payda farkli aydan",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
