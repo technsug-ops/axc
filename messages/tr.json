@@ -2438,6 +2438,7 @@
     "kanalEksik": "{sayi} satış hesaplanamadı",
     "grafikBaslik": "Son {ay} ay",
     "grafikTelefondaYok": "Son 12 aylık grafik telefonda yüklenmez (panel daha hızlı açılsın diye). Bilgisayardan ya da tabletten açınca görünür.",
+    "urunAnaliziTelefondaYok": "Ürün analizi telefonda yüklenmez (panel daha hızlı açılsın diye). Menüdeki «Ürün analizi» sayfasından ya da bilgisayardan açınca görünür.",
     "grafikNotu": "Dolu çizgi NET-2, kesikli çizgi ciro. Kaydı olmayan ay da eksende durur — çizgi o ayı atlamaz.",
     "grafikBos": "Seçilen süzgeçte gösterilecek satış yok.",
     "tumKanallar": "Tüm kanallar",

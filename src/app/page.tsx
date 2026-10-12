@@ -562,10 +562,51 @@ export default async function AnaSayfa({
   const muhasebeDonemiSozu = donemOzeti(new Date());
   muhasebeDonemiSozu.catch(() => {});
 
+  /**
+   * ⚡ YAŞLANMA VERİSİ — TELEFONDA YOK, BİLGİSAYARDA 2 DK ÖNBELLEK (K332,
+   * kullanıcı onayı 12.10.2026). Bütün açık partilerin kalan adedi panelin en
+   * ağır iki sorgusundan biri (yerel ölçüm ~330–400 ms) ve yalnız ÜRÜN
+   * ANALİZİ bölümünü besliyor (stokta bekleyen listesi · bağlı sermaye · ölü
+   * sermaye rozeti) — görev kutusu ve bugünün rakamları BUNDAN OKUMAZ (onlar
+   * canlı kalır, kullanıcı kararı 11.10). Bölüm telefonda gizli (K270): orada
+   * okuma yapılmaz. Bilgisayarda en fazla `PANEL_ONBELLEK_MS` eski olabilir ve
+   * bölüm hesaplandığı saati yazar. Sıralama (yaş/sermaye) önbellekten SONRA
+   * uygulanır — sıralama değişince yeniden okunmaz. Anahtar firmayı taşır.
+   */
+  const yaslanmaVerisiSozu = !grafikOkunur
+    ? null
+    : kisaOnbellek(`yaslanma:${panelFirmasi}`, PANEL_ONBELLEK_MS, async () => {
+        /* Stok ve envanter ekranlarıyla AYNI motor (`acikPartilerToplu`). Panel
+           kendi FIFO'sunu yazsaydı iki tanım doğar ve bir gün "stokta 4 var"
+           diyen ekran ile "3 var" diyen panel yan yana dururdu. */
+        const partiler = await acikPartilerToplu(prisma, null);
+        const idler = [...partiler.keys()];
+        const varyantlar =
+          idler.length === 0
+            ? []
+            : await prisma.productVariant.findMany({
+                where: { id: { in: idler } },
+                select: {
+                  id: true,
+                  sku: true,
+                  product: {
+                    select: {
+                      id: true,
+                      name: true,
+                      vatRateOverride: true,
+                      category: { select: { name: true, vatRate: true } },
+                    },
+                  },
+                },
+              });
+        return { partiler, varyantlar };
+      });
+  yaslanmaVerisiSozu?.catch(() => {});
+
   const [
     kayitlar,
     iadeKayitlari,
-    partiHaritasi,
+    yaslanmaOnbellegi,
     kargoKayitlari,
     maliyetKayitlari,
   ] = await Promise.all([
@@ -682,14 +723,8 @@ export default async function AnaSayfa({
         },
       },
     }),
-    /**
-     * YAŞLANMA — AÇIK FIFO PARTİLERİ.
-     *
-     * Stok ve envanter ekranlarıyla AYNI motor (`acikPartilerToplu`). Panel
-     * kendi FIFO'sunu yazsaydı iki tanım doğar ve bir gün "stokta 4 var"
-     * diyen ekran ile "3 var" diyen panel yan yana dururdu.
-     */
-    acikPartilerToplu(prisma, null),
+    /** YAŞLANMA — AÇIK FIFO PARTİLERİ (yukarıdaki söz: telefonda null, bilgisayarda 2 dk önbellek). */
+    yaslanmaVerisiSozu ?? Promise.resolve(null),
 
     /**
      * KARGO — KENDİ EKSENİ, KENDİ SORGUSU.
@@ -1503,25 +1538,9 @@ export default async function AnaSayfa({
   const siralamaOlcutu: SiralamaOlcutu =
     karGorunur && siralamaGecerliMi(istenenSirala) ? istenenSirala : "yas";
 
-  const partiVaryantlari = [...partiHaritasi.keys()];
-  const varyantBilgileri =
-    partiVaryantlari.length === 0
-      ? []
-      : await prisma.productVariant.findMany({
-          where: { id: { in: partiVaryantlari } },
-          select: {
-            id: true,
-            sku: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
-                vatRateOverride: true,
-                category: { select: { name: true, vatRate: true } },
-              },
-            },
-          },
-        });
+  /* Telefonda okunmadı (bölüm orada çizilmiyor) → boş; bilgisayarda önbellekten. */
+  const partiHaritasi = yaslanmaOnbellegi?.deger.partiler ?? new Map<string, never[]>();
+  const varyantBilgileri = yaslanmaOnbellegi?.deger.varyantlar ?? [];
 
   const yaslanmaGirdileri: YaslanmaGirdisi[] = varyantBilgileri.map((v) => ({
     variantId: v.id,
@@ -3540,7 +3559,12 @@ export default async function AnaSayfa({
           listeParametreleri={{ pencere: donemTuru, baslangic: parametreler.baslangic, bitis: parametreler.bitis, kanal: seciliKanal || undefined }}
         />
       ) : null}
-      {/* K270: ürün analizi telefonda MENÜDE (`/rapor/urunler`) — onaylanan demo. */}
+      {/* K270: ürün analizi telefonda MENÜDE (`/rapor/urunler`) — onaylanan demo.
+          Telefondan gelen istekte yaşlanma verisi okunmaz (12.10.2026); bölüm
+          boş verilerle ÇİZİLMEZ — yatay telefonda görünürse nedenini söyler. */}
+      {yaslanmaOnbellegi === null ? (
+        <p className="text-muted-foreground text-sm max-md:hidden">{t("urunAnaliziTelefondaYok")}</p>
+      ) : (
       <div className="max-md:hidden">
       <SekmeliBolum
         baslik={t("urunAnaliziBaslik")}
@@ -3727,6 +3751,8 @@ export default async function AnaSayfa({
                           </DurumRozeti>
                         )}
                       </div>
+                      {/* ⏱ Ölü sermaye önbellekteki yaşlanma verisinden (K332). */}
+                      <OnbellekNotu an={yaslanmaOnbellegi.an} />
 
                       {/* YOĞUNLAŞMA CÜMLESİ — abartısız, yorum kullanıcının.
                           Panel yalnız dağılımı dürüstçe söyler.
@@ -3934,6 +3960,7 @@ export default async function AnaSayfa({
             etiket: t("yaslanmaBaslik"),
             adres: analizAdresi("stok"),
             icerik: (
+              <>
               <PanelListesi
                 baslik={t("yaslanmaBaslik")}
                 notu={t("yaslanmaNotu")}
@@ -4001,11 +4028,15 @@ export default async function AnaSayfa({
                   </>
                 }
               />
+              {/* ⏱ Liste ve sermaye önbellekten — ne zaman hesaplandığı yazar (K332). */}
+              <OnbellekNotu an={yaslanmaOnbellegi.an} />
+              </>
             ),
           },
         ]}
       />
       </div>
+      )}
 
       {/* Yaşlanma listesi ARTIK AYRI BLOK DEĞİL — "Ürün analizi" kartının
           bir sekmesi (14.08.2026). Tam genişlikte ayrı bir kart olarak

@@ -1162,6 +1162,39 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "siniflandirOnbellekli(db, pencere as never, null)",
     bozdugu: "ayni pencere iki nesneyle gelince iki kez hesaplanir",
   },
+  /* 12.10.2026 — yaşlanma verisi telefonda yok, bilgisayarda 2 dk önbellek. */
+  {
+    ad: "YASLANMA TELEFONDA DA OKUNUYOR",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "const yaslanmaVerisiSozu = !grafikOkunur\n    ? null\n    : kisaOnbellek(",
+    koy: "const yaslanmaVerisiSozu = false\n    ? null\n    : kisaOnbellek(",
+    bozdugu: "telefon gizli bolumun en agir sorgusunu yine bekler",
+  },
+  {
+    ad: "YASLANMA ONBELLEKSIZ (dogrudan okuma geri geldi)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "yaslanmaVerisiSozu ?? Promise.resolve(null),",
+    koy: "acikPartilerToplu(prisma, null).then((partiler) => ({ deger: { partiler, varyantlar: [] }, an: new Date() })),",
+    bozdugu: "her acilista butun partiler yeniden okunur",
+  },
+  {
+    ad: "TELEFONDA URUN ANALIZI BOS VERIYLE CIZILIYOR",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: '<p className="text-muted-foreground text-sm max-md:hidden">{t("urunAnaliziTelefondaYok")}</p>',
+    koy: "null",
+    bozdugu: "yatay telefonda 'stok yok' gibi gorunen bos bolum, nedeni yazmaz",
+  },
+  {
+    ad: "STOKTA BEKLEYEN SAATI YAZMIYOR",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "              {/* ⏱ Liste ve sermaye önbellekten — ne zaman hesaplandığı yazar (K332). */}\n              <OnbellekNotu an={yaslanmaOnbellegi.an} />\n",
+    koy: "",
+    bozdugu: "2 dk eski liste taze gibi gorunur",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

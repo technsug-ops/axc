@@ -7196,6 +7196,23 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("  ...telefon dalı boş kalmaz, NEDENİNİ söyler (İlke #5)",
     /\{grafikVerisiSozu === null \? \(\s*<p className="[^"]*max-md:hidden">\{t\("grafikTelefondaYok"\)\}<\/p>\s*\) : \(/.test(sayfaK));
 
+  /* ═══ YAŞLANMA VERİSİ — TELEFONDA YOK, BİLGİSAYARDA 2 DK ÖNBELLEK (12.10.2026) ═══
+     Kullanıcı onayı. Bütün açık partilerin kalan adedi yalnız ÜRÜN ANALİZİ
+     bölümünü besler (telefonda gizli, K270). Ölçülen: okuma telefonda HİÇ
+     başlamaz; bilgisayarda önbellekten gelir ve hesaplandığı saati iki yerde
+     yazar; telefonda bölüm boş verilerle ÇİZİLMEZ, nedenini söyler. */
+  kontrol("yaşlanma: okuma telefonda başlamaz, bilgisayarda 2 dk önbellekten (firma anahtarlı)",
+    /const yaslanmaVerisiSozu = !grafikOkunur\s*\?\s*null\s*:\s*kisaOnbellek\(`yaslanma:\$\{panelFirmasi\}`, PANEL_ONBELLEK_MS,/.test(sayfaK));
+  kontrol("  ...açık parti okuması sayfada YALNIZ önbelleğin içinde (tek yer)",
+    (sayfaK.match(/acikPartilerToplu\(/g) ?? []).length === 1 &&
+      /kisaOnbellek\(`yaslanma:[\s\S]{0,400}?acikPartilerToplu\(prisma, null\)/.test(sayfaK));
+  kontrol("  ...okuma dizisi önbellekli sözü bekler (telefonda null)",
+    /yaslanmaVerisiSozu \?\? Promise\.resolve\(null\),/.test(sayfaK));
+  kontrol("  ...telefonda ürün analizi boş verilerle ÇİZİLMEZ, nedenini söyler (İlke #5)",
+    /\{yaslanmaOnbellegi === null \? \(\s*<p className="[^"]*max-md:hidden">\{t\("urunAnaliziTelefondaYok"\)\}<\/p>\s*\) : \(\s*<div className="max-md:hidden">/.test(sayfaK));
+  kontrol("  ...önbellekten gelen iki yer (stokta bekleyen · ölü sermaye) hesaplandığı saati yazar",
+    (sayfaK.match(/<OnbellekNotu an=\{yaslanmaOnbellegi\.an\} \/>/g) ?? []).length === 2);
+
   /* ═══ MARJ SINIFLANDIRMASI İSTEK BAŞINA BİR KEZ (12.10.2026) ═══
      Panel bu sınıflandırmayı iki yerden istiyor (kutu + şerh); dönem yokken
      ikisi de defterin tamamını okuyordu (yerel ölçüm 270 → 252 sorgu, çıktı
