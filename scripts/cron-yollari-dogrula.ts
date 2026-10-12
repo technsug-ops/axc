@@ -119,6 +119,22 @@ for (const dosya of cekimRotalari) {
   );
 }
 
+/* 4) SICAK TUTMA UCU SAYFALARLA AYNI PARÇADA (K332, 12.10.2026).
+   Vercel farklı ayarlı yolları AYRI sunucu parçasında toplar; çekim uçları
+   `maxDuration = 60` taşıdığı için dakikalık çağrıları paneli uyandırmıyor.
+   Sıcak tutma ucu bu yüzden HİÇBİR çalışma ayarı taşımaz — taşırsa ayrı
+   parçaya düşer ve sessizce işe yaramaz. Ve işi SALT OKUMA, tek SELECT 1. */
+console.log("\n4) SICAK TUTMA UCU (K332)");
+{
+  const yol = routeDosyalari.find((d) => urlYolu(d) === "/api/cron/sicak");
+  kontrol("sıcak tutma ucu var", yol !== undefined);
+  const kod = yol ? kaynakOku(yol).replace(/\/\*[\s\S]*?\*\//g, " ") : "";
+  kontrol("  ...sayfalarla aynı parçada: çalışma ayarı YOK (maxDuration · runtime · preferredRegion)",
+    kod.length > 0 && !/export const (maxDuration|runtime|preferredRegion|regions)\b/.test(kod));
+  kontrol("  ...yalnız tek SELECT 1, yazma yok",
+    /await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
+}
+
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
 else {

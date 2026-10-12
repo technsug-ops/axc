@@ -66,6 +66,9 @@ const ACIK_YOLLAR = [
   // aynı CRON_SECRET kapısı. Dördüncü kez öğretilmesine gerek kalmadı —
   // `cron-yollari:dogrula` bu satır eklenmeden push'u DURDURDU.
   "/api/cron/listeleme-cekim",
+  // K332 (12.10.2026) — sıcak tutma ucu: aynı sınıf, aynı CRON_SECRET kapısı;
+  // sayfa sunucusunu ve veritabanı bağlantısını uyanık tutar.
+  "/api/cron/sicak",
   // A3/K50-a — canlı ölçüm ucu: yerel makineden canlı DB'ye TCP seviyesinde
   // erişilemediği için Vercel'in kendi havuzundan koşuyor; aynı sınıf, aynı
   // sır kapısı. ⛔ BU SATIR DA EKSİKTİ (10.09.2026'da HB ile birlikte
