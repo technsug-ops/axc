@@ -1,5 +1,7 @@
 import { cache } from "react";
 
+import { istemciKuruluMu } from "@/lib/prisma";
+
 /**
  * ============================================================================
  *  SÜRE İZİ — TEST İÇİN AÇILDI, ÜRETİM ÖZELLİĞİ DEĞİL (K332, 12.10.2026)
@@ -20,10 +22,21 @@ import { cache } from "react";
  * ============================================================================
  */
 
-type Iz = { t0: number; kimlik: string; adimlar: string[] };
+type Iz = { t0: number; kimlik: string; adimlar: string[]; surecYasiSn: number; istemciHazirdi: boolean };
 
+/**
+ * İkinci tur (12.10.2026): yavaş açılışların «sunucu yeni uyandı» mı (süreç
+ * yaşı saniyeler, istemci kurulmamış) yoksa «sunucu ayaktaydı, bağlantı
+ * düşmüştü» mü (süreç eski, istemci hazır) olduğunu ayırmak için.
+ */
 const istekIzi = cache(
-  (): Iz => ({ t0: performance.now(), kimlik: Math.random().toString(36).slice(2, 8), adimlar: [] }),
+  (): Iz => ({
+    t0: performance.now(),
+    kimlik: Math.random().toString(36).slice(2, 8),
+    adimlar: [],
+    surecYasiSn: Math.round(process.uptime()),
+    istemciHazirdi: istemciKuruluMu(),
+  }),
 );
 
 /** Adımın istek başından bu yana kaçıncı ms'de bittiğini not eder. */
@@ -35,5 +48,7 @@ export function sureIsareti(ad: string): void {
 /** O ana kadarki notları tek satır olarak sunucu kaydına yazar. */
 export function sureIziniYaz(bolum: string, ek: Record<string, string | number | boolean> = {}): void {
   const iz = istekIzi();
-  console.log(`[sure-izi] ${JSON.stringify({ bolum, kimlik: iz.kimlik, ...ek, adimlar: iz.adimlar.join(" ") })}`);
+  console.log(
+    `[sure-izi] ${JSON.stringify({ bolum, kimlik: iz.kimlik, surecYasiSn: iz.surecYasiSn, istemciHazirdi: iz.istemciHazirdi, ...ek, adimlar: iz.adimlar.join(" ") })}`,
+  );
 }

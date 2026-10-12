@@ -57,6 +57,11 @@ function createPrismaClient(): PrismaClient {
 
 let istemci: PrismaClient | undefined;
 
+/** ⏱ SÜRE İZİ — TEST İÇİN AÇILDI (K332, kaldırılacak): istemci bu süreçte kuruldu mu. */
+export function istemciKuruluMu(): boolean {
+  return istemci !== undefined;
+}
+
 function istemciyiAl(): PrismaClient {
   if (istemci) return istemci;
 
