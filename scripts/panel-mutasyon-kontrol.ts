@@ -1150,8 +1150,9 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "MARJ SERHI ONBELLEKSIZ (defter iki kez okunur)",
     yon: "KALDIRAN",
     dosya: "src/lib/ice-aktarma-serhi.ts",
-    bul: "const s = await istekteSiniflandir(db, pencere);",
-    koy: "const s = await marjSiniflandir(db, pencere);",
+    /* Çapa 12.10.2026'da taşındı: sonuç artık { deger, an } (2 dk önbellek). */
+    bul: "const { deger: s, an } = await istekteSiniflandir(db, pencere);",
+    koy: "const { deger: s, an } = { deger: await marjSiniflandir(db, pencere), an: new Date() };",
     bozdugu: "panel bes agir sorguyu yine iki kez atar",
   },
   {
@@ -1194,6 +1195,23 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "              {/* ⏱ Liste ve sermaye önbellekten — ne zaman hesaplandığı yazar (K332). */}\n              <OnbellekNotu an={yaslanmaOnbellegi.an} />\n",
     koy: "",
     bozdugu: "2 dk eski liste taze gibi gorunur",
+  },
+  /* 12.10.2026 — marj sınıflandırması istekler arası 2 dk önbellek (kullanıcı kararı). */
+  {
+    ad: "MARJ ANAHTARINDAN FIRMA DUSTU",
+    yon: "FAZLADAN",
+    dosya: "src/lib/ice-aktarma-serhi.ts",
+    bul: "`marj:${await onbellekFirmasi()}:",
+    koy: "`marj:",
+    bozdugu: "cok firmada bir firmanin marj uyarisi otekine gider",
+  },
+  {
+    ad: "MARJ SERHI SAATI YAZMIYOR",
+    yon: "KALDIRAN",
+    dosya: "src/components/marj-serhi.tsx",
+    bul: "<OnbellekNotu an={s.hesaplandi} />",
+    koy: "",
+    bozdugu: "2 dk eski oran taze gibi gorunur",
   },
 ];
 

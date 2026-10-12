@@ -12,6 +12,7 @@ import {
 import { pencereCoz } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 import { DURUM_KUTUSU } from "@/lib/renkler";
+import { OnbellekNotu } from "@/components/onbellek-notu";
 import { sureIsareti, sureIziniYaz } from "@/lib/sure-izi";
 
 /**
@@ -107,6 +108,8 @@ export async function MarjSerhi({
             {t("marjBagliOlan", { oran: bicim.yuzde(s.baglıMarj) })}
           </span>
         )}
+        {/* ⏱ 2 dk önbellekten (K332) — eski bir oran taze gibi görünmesin. */}
+        <OnbellekNotu an={s.hesaplandi} />
       </div>
     </div>
   );

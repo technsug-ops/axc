@@ -7223,9 +7223,15 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   const serhK = yorumsuzK(kaynakOku("src/lib/ice-aktarma-serhi.ts"));
   kontrol("marj: şerh ve süzgeç kümesi ÖNBELLEKLİ yoldan",
     (serhK.match(/await istekteSiniflandir\(db, pencere\)/g) ?? []).length === 2);
-  kontrol("  ...çıplak sınıflandırma YALNIZ önbelleğin içinde",
+  /* ⚠ ÖLÇÜT GÜNCELLENDİ (12.10.2026, kullanıcı kararı «2 dk önbellek»): istek içi
+     `cache` artık istekler arası `kisaOnbellek`i sarıyor — iki katman da ölçülür;
+     çıplak sınıflandırma yine YALNIZ ikisinin içinde. */
+  kontrol("  ...çıplak sınıflandırma YALNIZ önbelleğin içinde (istek içi + 2 dk, firma anahtarlı)",
     (serhK.match(/\bmarjSiniflandir\(/g) ?? []).length === 2 &&
-      /cache\(\s*\(db: [^)]*\) =>\s*marjSiniflandir\(/.test(serhK));
+      /cache\(\s*async \(db: [^)]*\)[^=]*=>\s*kisaOnbellek\(`marj:\$\{await onbellekFirmasi\(\)\}:[^`]*`, PANEL_ONBELLEK_MS, \(\) =>\s*marjSiniflandir\(/.test(serhK));
+  const serhBilesenK = yorumsuzK(kaynakOku("src/components/marj-serhi.tsx"));
+  kontrol("  ...şerh hesaplandığı saati yazar (eski oran taze görünmesin)",
+    /<OnbellekNotu an=\{s\.hesaplandi\} \/>/.test(serhBilesenK) && /hesaplandi: an,/.test(serhK));
   kontrol("  ...önbellek anahtarı pencerenin ANLARI (sayı), nesne değil",
     /siniflandirOnbellekli\(db, pencere\?\.bas\.getTime\(\) \?\? null, pencere\?\.son\.getTime\(\) \?\? null\)/.test(serhK));
   kontrol("  ...bölüm kendi okumasını BEKLİYOR", /const \{ satislar, iadeler \} = await veriSozu;/.test(grafikK));

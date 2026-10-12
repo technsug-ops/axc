@@ -1,5 +1,7 @@
 import { cache } from "react";
 
+import { kisaOnbellek, PANEL_ONBELLEK_MS, type OnbellekSonucu } from "@/lib/kisa-onbellek";
+
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import type { PrismaClient } from "@/generated/prisma/client";
 
@@ -198,6 +200,8 @@ export type MarjSerhi = {
   kapsanmayanPay: number;
   /** Maliyeti olmayan satış / toplam satış — ekranda yazılır. */
   kapsanmayanSatis: number;
+  /** Sınıflandırmanın HESAPLANDIĞI an — 2 dk önbellek (K332); şerh bunu yazar. */
+  hesaplandi: Date;
   toplamSatis: number;
 };
 
@@ -289,15 +293,16 @@ export async function marjSebepSatisIdleri(
   sebep: MarjSebebi,
   pencere?: { bas: Date; son: Date },
 ): Promise<string[]> {
-  return [...sebepKumesi(await istekteSiniflandir(db, pencere), sebep)];
+  return [...sebepKumesi((await istekteSiniflandir(db, pencere)).deger, sebep)];
 }
 
 export async function marjSerhi(
   db: Pick<PrismaClient, "saleItem" | "purchaseItem">,
   pencere?: { bas: Date; son: Date },
 ): Promise<MarjSerhi> {
-  const s = await istekteSiniflandir(db, pencere);
+  const { deger: s, an } = await istekteSiniflandir(db, pencere);
   return {
+    hesaplandi: an,
     alimYok: s.alimsizlar.size,
     donemDisi: s.donemDisilar.size,
     kapsanmayanPay:
@@ -323,14 +328,36 @@ export async function marjSerhi(
  * sayılır ya da kopyalanır) — paylaşmak güvenli. İstek dışında (betik,
  * bekçi) `cache` doğrudan çağırır.
  */
+/**
+ * ⏱ VE İSTEKLER ARASI 2 DK ÖNBELLEK (kullanıcı kararı 12.10.2026, K332).
+ * Ölçüldü (yerel, tek başına): defter-geneli sınıflandırma panel açılışı başına
+ * ~480 ms — panelin en ağır tek bloğu. Oranlar dakikadan dakikaya pek değişmez
+ * (bütün geçmiş defter). Vitrin ve iş zekâsıyla AYNI ortak önbellek
+ * (`kisaOnbellek`, `PANEL_ONBELLEK_MS`); şerh hesaplandığı saati yazar.
+ * ⚠ Şerh sayısı ile `/satislar?marjsebep=…` listesi AYNI önbellekten okur —
+ * sayı = liste (İlke #16) önbellekle de korunur. Hata önbelleğe yazılmaz.
+ * ⚠ Anahtar FİRMAYI taşır (çok-firma hazırlığı); istek dışında (betik) firma
+ * okunamazsa «-».
+ */
+async function onbellekFirmasi(): Promise<string> {
+  try {
+    const { yetkiBaglami } = await import("@/lib/yetki");
+    return (await yetkiBaglami())?.companyId ?? "-";
+  } catch {
+    /* İstek dışında (betik/bekçi) oturum yoktur — anahtar firmasız kurulur. */
+    return "-";
+  }
+}
 const siniflandirOnbellekli = cache(
-  (db: Pick<PrismaClient, "saleItem" | "purchaseItem">, bas: number | null, son: number | null) =>
-    marjSiniflandir(db, bas === null || son === null ? undefined : { bas: new Date(bas), son: new Date(son) }),
+  async (db: Pick<PrismaClient, "saleItem" | "purchaseItem">, bas: number | null, son: number | null): Promise<OnbellekSonucu<MarjSiniflari>> =>
+    kisaOnbellek(`marj:${await onbellekFirmasi()}:${bas ?? "-"}:${son ?? "-"}`, PANEL_ONBELLEK_MS, () =>
+      marjSiniflandir(db, bas === null || son === null ? undefined : { bas: new Date(bas), son: new Date(son) }),
+    ),
 );
 function istekteSiniflandir(
   db: Pick<PrismaClient, "saleItem" | "purchaseItem">,
   pencere?: { bas: Date; son: Date },
-): Promise<MarjSiniflari> {
+): Promise<OnbellekSonucu<MarjSiniflari>> {
   return siniflandirOnbellekli(db, pencere?.bas.getTime() ?? null, pencere?.son.getTime() ?? null);
 }
 
