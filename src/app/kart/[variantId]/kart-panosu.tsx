@@ -184,6 +184,15 @@ export async function OzetKutulari({
   const t = await getTranslations("UrunKarti");
   const bicim = await bicimlendirici();
   const fiyatSerisi = a.gunluk.map((n) => (n.adet > 0 ? n.ciro / n.adet : null));
+  /* Küçük çizginin uç yazıları (12.10.2026): satış günleri dönem içinde → gg.aa;
+     alımlar aylara yayılır → yıl da yazar. Tek nokta çizgi değil, metindir. */
+  const gunKisa = (gun: string) => {
+    const d = gunMetninden(gun);
+    return d ? bicim.tarih(d).slice(0, 5) : gun;
+  };
+  const satisGunleri = a.gunluk.map((n) => gunKisa(n.gun));
+  const tekSatis = fiyatSerisi.flatMap((f, i) => (f === null ? [] : [{ f, i }]));
+  const alimTarihleri = a.alimFiyatlari.map((x) => bicim.tarih(x.an));
   const ortAlis =
     a.alimFiyatlari.length === 0
       ? null
@@ -200,14 +209,25 @@ export async function OzetKutulari({
             <span>{t("ortSatisFiyati")}</span>
             <span className="font-semibold tabular-nums">{a.ortalamaFiyat === null ? "?" : `ø ${bicim.para(a.ortalamaFiyat, para)}`}</span>
           </div>
-          <MiniCizgi degerler={fiyatSerisi} bicimle={(n) => bicim.para(n, para)} />
+          <MiniCizgi
+            degerler={fiyatSerisi}
+            tarihler={satisGunleri}
+            bicimle={(n) => bicim.para(n, para)}
+            tekMetni={tekSatis.length === 1 ? t("tekSatisGunu", { tarih: satisGunleri[tekSatis[0]!.i] ?? "", fiyat: bicim.para(tekSatis[0]!.f, para) }) : undefined}
+          />
         </div>
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-2 text-xs">
             <span>{t("alisGecmisi")}</span>
             <span className="font-semibold tabular-nums">{ortAlis === null ? t("alisHicYok") : `ø ${bicim.para(ortAlis, para)}`}</span>
           </div>
-          <MiniCizgi degerler={a.alimFiyatlari.map((x) => x.birim)} renk="var(--se-vurgu)" bicimle={(n) => bicim.para(n, para)} />
+          <MiniCizgi
+            degerler={a.alimFiyatlari.map((x) => x.birim)}
+            tarihler={alimTarihleri}
+            renk="var(--se-vurgu)"
+            bicimle={(n) => bicim.para(n, para)}
+            tekMetni={a.alimFiyatlari.length === 1 ? t("tekAlim", { tarih: alimTarihleri[0] ?? "", fiyat: bicim.para(a.alimFiyatlari[0]!.birim, para) }) : undefined}
+          />
         </div>
         <div className="space-y-0.5 border-t pt-2 text-xs">
           <div className="flex items-center justify-between gap-2">
@@ -458,7 +478,7 @@ export async function GenelSekmesi({ a, para, karGorunur }: { a: KartAnalizi; pa
                 <tr key={k.kanal} className="border-t">
                   <td className="py-2 pl-1">{k.kanal}</td>
                   <td className="w-1/2 px-3 max-sm:hidden">
-                    <MiniCizgi degerler={k.noktalar} bicimle={(n) => bicim.para(n, para)} />
+                    <MiniCizgi degerler={k.noktalar} tarihler={a.gunluk.map((n) => kisa(n.gun))} bicimle={(n) => bicim.para(n, para)} />
                   </td>
                   <td className="text-right tabular-nums">{bicim.para(k.ortalama, para)}</td>
                   <td className="pr-1 text-right font-semibold tabular-nums">{bicim.para(k.son, para)}</td>

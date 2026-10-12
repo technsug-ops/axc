@@ -3592,6 +3592,8 @@
     "kutuFiyat": "Fiyat",
     "ortSatisFiyati": "Ortalama satış fiyatı",
     "alisGecmisi": "Alış fiyatı geçmişi",
+    "tekSatisGunu": "tek satış günü · {tarih} · {fiyat}",
+    "tekAlim": "tek alım · {tarih} · {fiyat}",
     "sonAlisFiyati": "Son alış fiyatı",
     "alisHicYok": "alım kaydı yok",
     "kutuKar": "Kâr özeti",

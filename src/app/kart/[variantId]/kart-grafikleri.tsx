@@ -64,9 +64,9 @@ export function GrafikLejanti({ ogeler }: { ogeler: readonly Lejant[] }) {
   );
 }
 
-const G = { gen: 900, yuk: 260, sol: 64, sag: 40, ust: 12, alt: 28 } as const;
-
-/** İki fiyat yazısı arasındaki en küçük yatay mesafe (grafik birimi; «₺5.300,00» ~50 birim). */
+const G = { gen: 900, yuk: 260, sol: 64, sag: 40, ust: 12, alt: 28 } as const;
+
+/** İki fiyat yazısı arasındaki en küçük yatay mesafe (grafik birimi; «₺5.300,00» ~50 birim). */
 const FIYAT_ETIKET_ARALIGI = 56;
 
 /**
@@ -262,63 +262,81 @@ export function StokFiyatGrafigi({
  * yüzdelik konumda durur — daire bozulmaz. `bicimle` verilirse İLK ve SON noktanın
  * değeri yazılır; her noktanın değeri üstüne gelince okunur.
  */
+/**
+ * KÜÇÜK FİYAT ÇİZGİSİ — NOKTALAR BİRLEŞİR (kullanıcı kararı 12.10.2026).
+ *
+ * ⚠ ESKİ HÂL VE NİYE DEĞİŞTİ (eski gerekçe silinmez): ilk sürüm, dosya
+ * başındaki kurala uyup değeri olmayan günü çizgide BOŞLUK bırakıyordu. Seyrek
+ * satışlı üründe bu, eksensiz birkaç yüzen yuvarlak ve üst üste binen fiyat
+ * yazıları demekti — kullanıcı «anlamsız işaretler» dedi. Birleştirmek SIFIR
+ * ÇİZMEK DEĞİLDİR (o kuralın korumaya çalıştığı yanılgı «fiyat çöktü» idi):
+ * çizgi yalnız fiyatı OLAN noktalardan geçer, aradaki boş günlere değer
+ * uydurulmaz. Kural günlük satış grafiğinde (`GunlukGrafik`) aynen geçerli.
+ *
+ * · Yüzen etiket YOK — üst üste biniyordu. İlk ve son nokta çizginin ALTINDA,
+ *   solda ve sağda yazar (tarih verilmişse tarihle).
+ * · Tek nokta çizgi DEĞİLDİR: çizilmez; `tekMetni` (yoksa değerin kendisi) yazar.
+ */
 export function MiniCizgi({
   degerler,
   renk = RENK.ciro,
   bicimle,
-  yukseklik = 52,
+  tarihler,
+  tekMetni,
+  yukseklik = 40,
 }: {
   degerler: readonly (number | null)[];
   renk?: string;
   bicimle?: (n: number) => string;
+  /** `degerler` ile AYNI sırada — ilk/son noktanın tarihi altta yazar. */
+  tarihler?: readonly string[];
+  /** Yalnız bir nokta varsa çizgi yerine yazılacak metin. */
+  tekMetni?: string;
   yukseklik?: number;
 }) {
-  const dolu = degerler.filter((d): d is number => d !== null);
-  if (dolu.length === 0) return null;
-  const min = Math.min(...dolu);
-  const max = Math.max(...dolu);
+  const dolular = degerler.flatMap((d, i) => (d === null ? [] : [{ i, d }]));
+  if (dolular.length === 0) return null;
+  if (dolular.length === 1) {
+    const metin = tekMetni ?? (bicimle ? bicimle(dolular[0]!.d) : null);
+    return metin === null ? null : <p className="text-muted-foreground text-[11px] tabular-nums">{metin}</p>;
+  }
+  const ilk = dolular[0]!;
+  const son = dolular[dolular.length - 1]!;
+  const min = Math.min(...dolular.map((n) => n.d));
+  const max = Math.max(...dolular.map((n) => n.d));
   const yay = max - min || 1;
-  const ust = bicimle ? 18 : 6;
+  const ust = 6;
   const alt = 6;
-  const x = (i: number) => (degerler.length === 1 ? 50 : 4 + (92 * i) / (degerler.length - 1));
+  const x = (i: number) => 4 + (92 * i) / Math.max(1, degerler.length - 1);
   const y = (v: number) => (max === min ? ust + (yukseklik - ust - alt) / 2 : ust + (yukseklik - ust - alt) * (1 - (v - min) / yay));
-  const ilk = degerler.findIndex((d) => d !== null);
-  const son = degerler.length - 1 - [...degerler].reverse().findIndex((d) => d !== null);
-  /* İlk ve son yazı birbirine çok yakınsa yalnız SON yazılır (üst üste binmesin). */
-  const etiketler = bicimle ? (ilk === son || x(son) - x(ilk) < 30 ? [son] : [ilk, son]) : [];
+  /* Yalnız DOLU noktalardan geçen tek yol — boş günler atlanır, değer uydurulmaz. */
+  const yol = dolular.map((n, j) => `${j === 0 ? "M" : "L"}${x(n.i).toFixed(1)},${y(n.d).toFixed(1)}`).join("");
+  const ucYazisi = (n: { i: number; d: number }) =>
+    [tarihler?.[n.i], bicimle ? bicimle(n.d) : null].filter((s): s is string => Boolean(s)).join(" · ");
   return (
-    <div className="relative w-full" style={{ height: yukseklik }}>
-      <svg viewBox={`0 0 100 ${yukseklik}`} preserveAspectRatio="none" className="absolute inset-0 size-full" aria-hidden>
-        {yollar(degerler.map((d, i) => [x(i), d === null ? null : y(d)] as const)).map((d, j) => (
-          <path key={j} d={d} fill="none" stroke={renk} strokeWidth={2} vectorEffect="non-scaling-stroke" />
-        ))}
-      </svg>
-      {/* Seyrek satışta çizgi oluşmaz — her dolu nokta küçük işaretle görünür, uçlar büyük. */}
-      {degerler.map((d, i) => {
-        if (d === null) return null;
-        const uc = i === ilk || i === son;
-        return (
-          <span
-            key={i}
-            title={bicimle ? bicimle(d) : undefined}
-            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
-            style={{ left: `${x(i)}%`, top: y(d), width: uc ? 9 : 6, height: uc ? 9 : 6, border: `${uc ? 2 : 1.5}px solid ${renk}` }}
-          />
-        );
-      })}
-      {etiketler.map((i) => {
-        const d = degerler[i]!;
-        const konum = x(i) < 15 ? "translateX(-4px)" : x(i) > 85 ? "translateX(calc(-100% + 4px))" : "translateX(-50%)";
-        return (
-          <span
-            key={`e${i}`}
-            className="absolute text-[10px] font-semibold whitespace-nowrap tabular-nums"
-            style={{ left: `${x(i)}%`, top: Math.max(0, y(d) - 18), transform: konum, color: renk }}
-          >
-            {bicimle!(d)}
-          </span>
-        );
-      })}
+    <div className="space-y-0.5">
+      <div className="relative w-full" style={{ height: yukseklik }}>
+        <svg viewBox={`0 0 100 ${yukseklik}`} preserveAspectRatio="none" className="absolute inset-0 size-full" aria-hidden>
+          <path d={yol} fill="none" stroke={renk} strokeWidth={2} vectorEffect="non-scaling-stroke" />
+        </svg>
+        {dolular.map((n) => {
+          const uc = n.i === ilk.i || n.i === son.i;
+          return (
+            <span
+              key={n.i}
+              title={ucYazisi(n) || undefined}
+              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+              style={{ left: `${x(n.i)}%`, top: y(n.d), width: uc ? 8 : 5, height: uc ? 8 : 5, border: `${uc ? 2 : 1.5}px solid ${renk}` }}
+            />
+          );
+        })}
+      </div>
+      {bicimle || tarihler ? (
+        <div className="text-muted-foreground flex justify-between gap-2 text-[10px] tabular-nums">
+          <span>{ucYazisi(ilk)}</span>
+          <span className="font-semibold" style={{ color: renk }}>{ucYazisi(son)}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
