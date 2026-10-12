@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { AlertTriangle, PackageX } from "lucide-react";
 
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";

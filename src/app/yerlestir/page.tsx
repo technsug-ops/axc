@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { MapPin } from "lucide-react";
 
 import { Yerlestirici } from "@/app/yerlestir/yerlestirici";

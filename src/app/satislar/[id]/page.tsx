@@ -1,6 +1,6 @@
 import { kalemGecerliMi } from "@/lib/kalem-gecerli";
 import { KalemKaldir, KalemKaldirmaGeriAl } from "./kalem-kaldir";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { PartiMaliyetDuzelt } from "./parti-maliyet-duzelt";
 import { notFound } from "next/navigation";

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { getTranslations } from "next-intl/server";
 import { AlertTriangle, ArrowRight, CalendarClock } from "lucide-react";
 

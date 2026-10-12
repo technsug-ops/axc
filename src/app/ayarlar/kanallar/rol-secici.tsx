@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { startTransition, useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { ExternalLink } from "lucide-react";

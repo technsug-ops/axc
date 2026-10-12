@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { ArrowRightLeft } from "lucide-react";
 
 import { GocFormu } from "@/app/ayarlar/depo/goc/goc-formu";

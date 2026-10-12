@@ -1,7 +1,7 @@
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { Eye, PackagePlus, Pencil, Plus } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";

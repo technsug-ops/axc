@@ -5,7 +5,7 @@
  * bu ekran o kumenin disinda. Istisna SAYIYLA birlikte okunuyor: sutun
  * eklenirse beyan bayatlar ve bekci kirmizi yanar.
  */
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { sayfaIzni } from "@/lib/yetki";
 import { notFound } from "next/navigation";
 import { Pencil, PackageCheck } from "lucide-react";

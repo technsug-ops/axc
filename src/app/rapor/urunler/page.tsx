@@ -6,7 +6,7 @@
  * K43 · gercek cihazda bakilacak 02.09.2026.
  */
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { TriangleAlert } from "lucide-react";
 
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";

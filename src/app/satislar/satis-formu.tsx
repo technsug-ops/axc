@@ -1,7 +1,7 @@
 "use client";
 
 import { DonemIsrarBloku } from "@/components/donem-israr-bloku";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Trash2, ExternalLink } from "lucide-react";

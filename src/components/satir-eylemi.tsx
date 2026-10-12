@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

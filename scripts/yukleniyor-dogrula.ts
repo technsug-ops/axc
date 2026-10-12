@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 
 import { kaynakOku } from "./kaynak-oku";
 import tr from "../messages/tr.json";
@@ -20,7 +20,7 @@ import en from "../messages/en.json";
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 2;
+const BOLUM_SAYISI = 3;
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -58,6 +58,41 @@ const kaynak = existsSync(YOL) ? yorumsuz(kaynakOku(YOL)) : "";
   kontrol("tr sözlüğünde metin DOLU", typeof trM === "string" && trM.trim().length > 0, trM);
   kontrol("en sözlüğünde anahtar var (iskelet)", typeof (en as { Ortak?: Record<string, string> }).Ortak?.sayfaYukleniyor === "string");
   kosanBolumler.push("soylenis");
+}
+
+/* ═══ ③ ÖNCEDEN YÜKLEME YALNIZ NİYETLE (K332, 12.10.2026) ═══
+   Canlı kayıt: bilgisayarda sayfa başına ~140 istek — ekrana giren her `<Link>`
+   önceden yükleniyordu (satır başına 3 + menünün tamamı) ve 3 bağlantılık
+   veritabanını tıkıyordu. Ölçüt DESEN YASAĞI (dosya listesi değil): `src`
+   altında `next/link` yalnız beyanlı iki yerde; yarın eklenen ekran da yakalanır. */
+{
+  const ISTISNALAR = new Map([
+    ["src/components/niyetli-baglanti.tsx", "ortak bileşenin kendisi"],
+    ["src/components/alt-cubuk.tsx", "telefon alt çubuğu, 4 ana bağlantı — ekrana girince yükleme ucuz, telefondaki hızlı geçişi korur"],
+  ]);
+  const dosyalar: string[] = [];
+  const gez = (k: string) => {
+    for (const ad of readdirSync(k)) {
+      const yol = `${k}/${ad}`;
+      if (statSync(yol).isDirectory()) gez(yol);
+      else if (/\.tsx?$/.test(ad)) dosyalar.push(yol);
+    }
+  };
+  gez("src");
+  const dogrudan = dosyalar.filter((y) => /from\s+["']next\/link["']/.test(yorumsuz(kaynakOku(y))));
+  const ihlal = dogrudan.filter((y) => !ISTISNALAR.has(y));
+  const ortak = dosyalar.filter((y) => /import Link from "@\/components\/niyetli-baglanti";/.test(kaynakOku(y)));
+  kontrol("taban DOLU — ortak bağlantıyı kullanan en az 80 dosya", ortak.length >= 80, ortak.length);
+  kontrol("`next/link` yalnız beyanlı istisnalarda (desen yasağı)", ihlal.length === 0, ihlal);
+  kontrol("  ...beyanlı istisnalar gerçekten kullanıyor (beyan bayatlamadı)", [...ISTISNALAR.keys()].every((y) => dogrudan.includes(y)), dogrudan);
+  const nb = yorumsuz(kaynakOku("src/components/niyetli-baglanti.tsx"));
+  kontrol("ortak bağlantı istemci bileşeni", /^\s*["']use client["']/.test(kaynakOku("src/components/niyetli-baglanti.tsx")));
+  kontrol("  ...niyet görülene kadar ÖNCEDEN YÜKLEME YOK, açık verilen değere dokunmaz",
+    /prefetch=\{acikVerildi \? prefetch : niyet \? null : false\}/.test(nb) && /const acikVerildi = prefetch === true \|\| prefetch === false;/.test(nb));
+  kontrol("  ...niyet üç yoldan: fare · dokunma · klavye odağı (çağıranın olayı da korunur)",
+    (nb.match(/setNiyet\(true\);/g) ?? []).length === 3 &&
+      /onMouseEnter\?\.\(e\)/.test(nb) && /onTouchStart\?\.\(e\)/.test(nb) && /onFocus\?\.\(e\)/.test(nb));
+  kosanBolumler.push("onyukleme");
 }
 
 console.log("=".repeat(70));

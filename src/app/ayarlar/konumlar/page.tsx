@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { Merge, Pencil, QrCode, TriangleAlert } from "lucide-react";
 
 import { DurumDegistirButonu } from "@/components/durum-degistir-butonu";

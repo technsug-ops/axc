@@ -19,7 +19,17 @@ const EKRAN = "src/app/loading.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
+const NB = "src/components/niyetli-baglanti.tsx";
 const MUTASYONLAR: Mutasyon[] = [
+  /* K332 (12.10.2026) — önceden yükleme yalnız niyetle. */
+  { ad: "BIR EKRAN YINE DOGRUDAN next/link", yon: "FAZLADAN", dosya: "src/components/baglanti.tsx",
+    bul: 'import Link from "@/components/niyetli-baglanti";', koy: 'import Link from "next/link";', bozdugu: "o ekrandaki her baglanti yine ekrana girince yuklenir" },
+  { ad: "ORTAK BAGLANTI EKRANA GIRINCE YUKLUYOR", yon: "FAZLADAN", dosya: NB,
+    bul: "prefetch={acikVerildi ? prefetch : niyet ? null : false}", koy: "prefetch={acikVerildi ? prefetch : null}", bozdugu: "sayfa basina ~140 istek geri gelir" },
+  { ad: "DOKUNMA NIYETI YOK (telefon)", yon: "KALDIRAN", dosya: NB,
+    bul: "      onTouchStart={(e) => {\n        setNiyet(true);\n", koy: "      onTouchStart={(e) => {\n", bozdugu: "telefonda dokunusta onceden yukleme baslamaz" },
+  { ad: "ACIK VERILEN prefetch EZILIYOR", yon: "FAZLADAN", dosya: NB,
+    bul: "const acikVerildi = prefetch === true || prefetch === false;", koy: "const acikVerildi = false;", bozdugu: "cagiranin bilincli tercihi sessizce yok sayilir" },
   { ad: "ZARARSIZ - yorum", yon: "ZARARSIZ", dosya: EKRAN,
     bul: " *  ⚠ SUNUCUNUN HIZINI DEĞİŞTİRMEZ", koy: " *  ⚠ SUNUCUNUN HIZINI DEGISTIRMEZ", bozdugu: "hicbir sey" },
   { ad: "VARSAYILAN DISA AKTARIM YOK", yon: "KALDIRAN", dosya: EKRAN,

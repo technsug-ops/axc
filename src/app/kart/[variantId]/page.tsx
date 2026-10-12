@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { notFound } from "next/navigation";
 import { Boxes, Calculator, Layers, Lock, Sparkles, TriangleAlert } from "lucide-react";
 

@@ -1,5 +1,5 @@
 import { TriangleAlert } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { getTranslations } from "next-intl/server";
 
 import { bicimlendirici } from "@/lib/bicim";

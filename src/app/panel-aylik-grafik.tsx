@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import type { Currency } from "@/generated/prisma/enums";
 import { bicimlendirici } from "@/lib/bicim";
 import type { TakvimGunu } from "@/lib/donem";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { CiroSunumu } from "@/components/ciro-sunumu";
 import { CizgiGrafik, type GrafikNoktasi } from "@/components/cizgi-grafik";
 import { KatlanirBolum } from "@/components/katlanir-bolum";

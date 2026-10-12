@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { Warehouse } from "lucide-react";
 
 import { DepoFormu } from "@/app/ayarlar/depo/depo-formu";

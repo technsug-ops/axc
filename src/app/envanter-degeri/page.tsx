@@ -6,7 +6,7 @@
  * eklenirse beyan bayatlar ve bekci kirmizi yanar.
  */
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, TriangleAlert } from "lucide-react";

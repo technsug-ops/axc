@@ -7,7 +7,7 @@
  */
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { Eye, Pencil, Landmark, Plus } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";

@@ -1,5 +1,5 @@
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { NakitOzeti } from "@/app/nakit-ozeti";
 import { HakedisOzeti } from "@/app/hakedis-ozeti";

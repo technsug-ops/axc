@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { ChevronRight } from "lucide-react";
 import { tabloNoktalari } from "@/lib/tablo-sirasi";
 

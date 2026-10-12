@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 

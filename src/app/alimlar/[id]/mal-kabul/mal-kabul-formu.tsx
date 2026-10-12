@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { gecTeslimMi } from "@/lib/uyari/gec-teslim";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { SAYIM_ISRAR_SEBEPLERI } from "@/lib/sayim-korumasi";

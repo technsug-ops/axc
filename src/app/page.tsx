@@ -1,6 +1,6 @@
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { donemOzeti } from "@/lib/muhasebe-donemi";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { getTranslations } from "next-intl/server";
 import {
   ArrowRight,

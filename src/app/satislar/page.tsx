@@ -7,7 +7,7 @@ import { onayBekleyenIdleri } from "@/lib/onay-kuyrugu";
 import { supheliVeriBulgusu } from "@/lib/uyari/faz2-veri";
 import { DogrulaButonu } from "./dogrula-butonu";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { Eye, Plus, TriangleAlert, Undo2 } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";

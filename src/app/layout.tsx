@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import "./globals.css";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { Rubik } from "next/font/google";
 import { BookOpen, Home } from "lucide-react";
 import { NextIntlClientProvider } from "next-intl";

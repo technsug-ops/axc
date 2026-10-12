@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { ArrowRight, Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
