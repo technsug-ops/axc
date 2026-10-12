@@ -1108,7 +1108,11 @@ export default async function SatisDetaySayfasi({
                     <span className="font-medium">
                       {iz.action === "SATIS_IPTAL_GERI_ALINDI"
                         ? tGeri("iz_SATIS_IPTAL_GERI_ALINDI")
-                        : tDuz(`iz_${iz.action}`)}
+                        : /* Sözlükte karşılığı olmayan yeni bir kayıt türü HATA vermez,
+                             kodunu yazar (12.10.2026: üç tür eksikti, sunucu hata basıyordu). */
+                          tDuz.has(`iz_${iz.action}`)
+                          ? tDuz(`iz_${iz.action}`)
+                          : tDuz("izBilinmeyen", { kod: iz.action })}
                     </span>
                     <span className="text-muted-foreground text-xs">
                       {bicim.tarih(iz.createdAt)} ·{" "}

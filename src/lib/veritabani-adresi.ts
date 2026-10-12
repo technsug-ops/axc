@@ -57,9 +57,21 @@
  *  Park sayısını düşürmenin çalışan yolu `minimumIdle=1`'dir:
  *  ölçüldü, havuz 3 yerine 1 bağlantı park ediyor.
  */
+/**
+ * ⚠ `minimumIdle` 1 → 3 (K332, 12.10.2026) — YUKARIDAKİ GEREKÇE SİLİNMEDİ,
+ * KAPSAMI DEĞİŞTİ. İsraf sınır 10 iken gerçekti (örnek başına 10 park, kota
+ * 25). Sınır 3 iken sabit havuz örnek başına en fazla 3 bağlantı tutar →
+ * 25 ÷ 3 ≈ 8 örnek sığar. Ölçüldü (canlı, 12.10): bağlantıyı YENİDEN kurmak
+ * ~0,54 sn (`/api/cron/sicak` ilk çağrı 560 ms, sonrakiler 21 ms). Panel aynı
+ * anda 3 bağlantı kullanıyor; 1 park edildiğinde öteki ikisi panelin içinde
+ * sıfırdan kuruluyordu. Sürücü belgesi de sabit havuzu öneriyor
+ * («Recommendation is to use fixed pool»). Bağlantıların KAS'ın 120 sn'lik
+ * `wait_timeout`una düşmemesi için sıcak tutma ucu dakikada bir ÜÇÜNÜ birden
+ * kullanır. ⛔ `minimumIdle=0` YASAĞI AYNEN GEÇERLİ.
+ */
 const UYGULAMA_HAVUZU = {
   connectionLimit: "3",
-  minimumIdle: "1",
+  minimumIdle: "3",
   idleTimeout: "60",
 } as const;
 

@@ -131,8 +131,9 @@ console.log("\n4) SICAK TUTMA UCU (K332)");
   const kod = yol ? kaynakOku(yol).replace(/\/\*[\s\S]*?\*\//g, " ") : "";
   kontrol("  ...sayfalarla aynı parçada: çalışma ayarı YOK (maxDuration · runtime · preferredRegion)",
     kod.length > 0 && !/export const (maxDuration|runtime|preferredRegion|regions)\b/.test(kod));
-  kontrol("  ...yalnız tek SELECT 1, yazma yok",
-    /await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
+  /* 12.10.2026: tek yoklama → AYNI ANDA üç (havuzun üç bağlantısı da canlı kalsın). */
+  kontrol("  ...yalnız SELECT 1 (havuzun üç bağlantısına aynı anda), yazma yok",
+    /\[0, 1, 2\]\.map\(async \(\) => \{[\s\S]{0,120}?await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
 }
 
 console.log("\n" + "=".repeat(70));

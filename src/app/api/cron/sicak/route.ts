@@ -19,8 +19,8 @@ import { prisma } from "@/lib/prisma";
  *  hâle gelir (bekçi: `cron-yollari:dogrula`).
  *
  *  · Kapı: diğer çekim uçlarıyla AYNI `CRON_SECRET`; yanlış/boş sır 404.
- *  · İş: tek `SELECT 1` — havuzdaki bağlantıyı taze tutar (KAS boştaki
- *    bağlantıyı 120 sn'de, bizim havuz 60 sn'de kapatıyor). Hiçbir şey yazmaz.
+ *  · İş: aynı anda üç `SELECT 1` — havuzun üç bağlantısını da taze tutar
+ *    (KAS boştaki bağlantıyı 120 sn'de kapatıyor). Hiçbir şey yazmaz.
  *  · Tetik: cron-job.org, dakikada bir (kullanıcı hesabında kurulur).
  * ============================================================================
  */
@@ -35,8 +35,16 @@ export async function GET(istek: NextRequest) {
   }
   const bas = performance.now();
   try {
-    await prisma.$queryRawUnsafe("SELECT 1");
-    return NextResponse.json({ durum: "SICAK", veritabaniMs: Math.round(performance.now() - bas), surecYasiSn: Math.round(process.uptime()) });
+    /* Havuzun ÜÇ bağlantısının üçü de kullanılsın diye AYNI ANDA üç yoklama
+       (havuz sınırı `veritabani-adresi.ts` → 3). Tek yoklama yalnız birini canlı tutardı. */
+    const sureler = await Promise.all(
+      [0, 1, 2].map(async () => {
+        const b = performance.now();
+        await prisma.$queryRawUnsafe("SELECT 1");
+        return Math.round(performance.now() - b);
+      }),
+    );
+    return NextResponse.json({ durum: "SICAK", veritabaniMs: Math.round(performance.now() - bas), baglantiMs: sureler, surecYasiSn: Math.round(process.uptime()) });
   } catch (hata) {
     /* Yakalanmamış hata teşhisi siler (anayasa) — TAM loglanır, dışarıya kod döner. */
     console.error("[sicak] veritabanı yoklaması düştü:", hata);
