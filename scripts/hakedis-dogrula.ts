@@ -1250,6 +1250,24 @@ console.log("\n9) ÖDEME ÖZETİ — pazaryeri paneli düzeni (22.09.2026)");
   kontrol("EKRAN: toplam SÜZÜLMÜŞ kümenin tamamından (sayfa diliminden değil)", /odemeToplamlari\(odemelerSuzulmus\)/.test(sayfa));
   kontrol("EKRAN: sayfa dilimi süzülmüş kümeden kesiliyor", /odemelerSuzulmus\.slice\(/.test(sayfa));
   kontrol("EKRAN: geçmiş grup anahtarı ortak gövdeden (kendi formülü yok)", /gecmisOdemeAnahtari\(\{/.test(sayfa) && !/EMIR:\$\{/.test(sayfa));
+  /*
+   * ⚡ SATIŞLAR YALNIZ «KONTROL» SEKMESİNDE OKUNUR (K332, 13.10.2026). Canlı:
+   * bütün satışlar 8.370 satır ~0,45 sn + maliyet kayıtları; yerelde Özet
+   * ~2,5 → ~0,9 sn, çıktı bayt bayt aynı. İKİ YÖN: okuma koşula bağlı (kaldıran
+   * mutasyon kırmızı) VE karşılaştırmadan türeyen hiçbir değer Kontrol sekmesinin
+   * DIŞINDA çizilmez — çizilseydi öteki sekmede sessizce «0» görünürdü.
+   */
+  kontrol("EKRAN: satışlar yalnız Kontrol sekmesi açıkken okunur",
+    /sekmeSecili !== SEKME_KONTROL \? Promise\.resolve\(\[\]\) : prisma\.sale\.findMany\(/.test(sayfa));
+  const cizimBas = sayfa.indexOf("\n  return (");
+  const kontrolSekmesi = sayfa.indexOf("anahtar: SEKME_KONTROL,");
+  const kontrolSonrasi = sayfa.indexOf("anahtar:", kontrolSekmesi + 1);
+  const disari = cizimBas < 0 || kontrolSekmesi < 0 ? "" :
+    sayfa.slice(cizimBas, kontrolSekmesi) + (kontrolSonrasi < 0 ? "" : sayfa.slice(kontrolSonrasi));
+  kontrol("  ...karşılaştırmadan türeyen değer (karsilastirma · sorunlu) Kontrol sekmesi DIŞINDA çizilmez",
+    cizimBas >= 0 && kontrolSekmesi > cizimBas &&
+      /\{karsilastirma\.length > 0 \?/.test(sayfa.slice(kontrolSekmesi)) &&
+      !/\b(karsilastirma|sorunlu)\b/.test(disari));
   const bilesen = yorumsuz("src/app/hakedis/odeme-ozeti.tsx");
   kontrol(
     "BİLEŞEN: arama ortak kod kutusundan, sayfanın okuduğu parametreyle (kamera — İlke #7); çıplak input yok",

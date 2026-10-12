@@ -185,7 +185,11 @@ export default async function HakedisSayfasi({
         orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
       }),
       // Karşılaştırma için: kâr snapshot'ı + maliyet kesintisi.
-      prisma.sale.findMany({
+      /* ⚡ YALNIZ «Kontrol» SEKMESİ AÇIKKEN (K332, 13.10.2026). Karşılaştırma
+         yalnız o sekmede çizilir (`SekmeliBolum` yalnız seçili sekmeyi çizer);
+         öteki sekmelerde bütün satışlar (canlı 8.370 satır, ~0,45 sn) + maliyet
+         kayıtları boşuna okunuyordu. */
+      sekmeSecili !== SEKME_KONTROL ? Promise.resolve([]) : prisma.sale.findMany({
         where: {
           // İptal edilen satıştan hakediş beklenmez.
           iptalTarihi: null,

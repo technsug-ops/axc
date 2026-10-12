@@ -49,6 +49,23 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "  const odemeToplamlariSuzulmus = odemeToplamlari(odemelerSuzulmus.slice(0, 50));",
     bozdugu: "ikinci sayfaya gecince toplam degisir; ekran suzgecin degil sayfanin toplamini soyler (Ilke #15)",
   },
+  /* 13.10.2026 (K332) — satışlar yalnız «Kontrol» sekmesinde okunur. */
+  {
+    ad: "SATISLAR HER SEKMEDE OKUNUYOR - kosul kaldirildi",
+    yon: "KALDIRAN",
+    dosya: EKRAN,
+    bul: "sekmeSecili !== SEKME_KONTROL ? Promise.resolve([]) : prisma.sale.findMany({",
+    koy: "prisma.sale.findMany({",
+    bozdugu: "Ozet ve Detay sekmeleri butun satislari (~8.400 satir, canlida ~0,45 sn) bosuna okur",
+  },
+  {
+    ad: "KARSILASTIRMA SAYISI OZETTE - o sekmede okuma yok",
+    yon: "FAZLADAN",
+    dosya: EKRAN,
+    bul: "deger={String(geciken.length)}",
+    koy: "deger={String(geciken.length + sorunlu.length)}",
+    bozdugu: "Ozet sekmesinde satislar okunmadigi icin sorunlu sayisi sessizce 0 olur",
+  },
   {
     ad: "ARAMA YANLIS PARAMETREYE YAZIYOR - sayfa hic okumuyor",
     yon: "KALDIRAN",
