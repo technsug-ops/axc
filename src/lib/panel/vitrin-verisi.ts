@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { KOSUM_IZI } from "@/lib/kanal-listeleme-yaz";
-import { acikPartilerToplu } from "@/lib/stok";
+import { acikPartilerIstekte } from "@/lib/panel/acik-partiler-istekte";
 import {
   VITRIN_SATIRLARI,
   kanalKaydiYokKosulu,
@@ -123,23 +123,38 @@ export async function vitrinKutusunuTopla(): Promise<VitrinKutusu[]> {
     .map((g) => g.variantId);
   if (stoklu.length === 0) return [];
 
-  /** Envanter değeri — FIFO gövdesinden, ikinci bir hesap yazılmadan. */
-  const partiler = await acikPartilerToplu(prisma, stoklu);
-  const deger = new Map<string, number>();
-  for (const [vid, liste] of partiler) {
-    let t = 0;
-    for (const p of liste) {
-      /** ⚠ Maliyeti bilinmeyen parti tutara GİRMEZ — sıfır sayılmaz. */
-      if (p.birimMaliyet !== null) t += p.kalanAdet * Number(p.birimMaliyet);
+  /**
+   * Envanter değeri — FIFO gövdesinden, ikinci bir hesap yazılmadan.
+   * ⚡ K332 (12.10.2026): aynı istekteki ORTAK okumadan (yaşlanma ve iş zekâsıyla
+   * paylaşılır; eskiden üç blok ayrı ayrı okuyordu) ve kanal sayımlarıyla AYNI
+   * ANDA — sayımlar partileri beklemez, tutar en sonda toplanır. Ortak okuma
+   * BÜTÜN varyantları getirir; burada eskisi gibi YALNIZ stoklu olanlar sayılır
+   * (`acikPartilerToplu` varyant süzgeci yalnız kapsamı daraltıyordu, hesabı değil).
+   */
+  const stokluKume = new Set(stoklu);
+  const degerSozu = acikPartilerIstekte().then((partiler) => {
+    const deger = new Map<string, number>();
+    for (const [vid, liste] of partiler) {
+      if (!stokluKume.has(vid)) continue;
+      let t = 0;
+      for (const p of liste) {
+        /** ⚠ Maliyeti bilinmeyen parti tutara GİRMEZ — sıfır sayılmaz. */
+        if (p.birimMaliyet !== null) t += p.kalanAdet * Number(p.birimMaliyet);
+      }
+      deger.set(vid, t);
     }
-    deger.set(vid, t);
-  }
+    return deger;
+  });
+  degerSozu.catch(() => {});
 
   const olc = async (kosul: Parameters<typeof prisma.productVariant.findMany>[0]) => {
-    const vs = await prisma.productVariant.findMany({
-      ...kosul,
-      select: { id: true },
-    });
+    const [vs, deger] = await Promise.all([
+      prisma.productVariant.findMany({
+        ...kosul,
+        select: { id: true },
+      }),
+      degerSozu,
+    ]);
     return {
       adet: vs.length,
       tutar: vs.reduce((t, v) => t + (deger.get(v.id) ?? 0), 0),

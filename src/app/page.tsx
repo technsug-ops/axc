@@ -108,7 +108,7 @@ import {
   karDurumu,
   type DurumRengi,
 } from "@/lib/renkler";
-import { acikPartilerToplu } from "@/lib/stok";
+import { acikPartilerIstekte } from "@/lib/panel/acik-partiler-istekte";
 import { GorevKutusu } from "./gorev-kutusu";
 import { HizliIslemler } from "./hizli-islemler";
 import { OzetKutusu } from "./ozet-kutusu";
@@ -654,7 +654,8 @@ export default async function AnaSayfa({
         /* Stok ve envanter ekranlarıyla AYNI motor (`acikPartilerToplu`). Panel
            kendi FIFO'sunu yazsaydı iki tanım doğar ve bir gün "stokta 4 var"
            diyen ekran ile "3 var" diyen panel yan yana dururdu. */
-        const partiler = await acikPartilerToplu(prisma, null);
+        /* Aynı istekteki ortak okuma (K332): iş zekâsı ve vitrin de bunu kullanır. */
+        const partiler = await acikPartilerIstekte();
         const idler = [...partiler.keys()];
         const varyantlar =
           idler.length === 0

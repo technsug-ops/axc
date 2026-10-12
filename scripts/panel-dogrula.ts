@@ -7203,9 +7203,24 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
      yazar; telefonda bölüm boş verilerle ÇİZİLMEZ, nedenini söyler. */
   kontrol("yaşlanma: okuma telefonda başlamaz, bilgisayarda 2 dk önbellekten (firma anahtarlı)",
     /const yaslanmaVerisiSozu = !grafikOkunur\s*\?\s*null\s*:\s*kisaOnbellek\(`yaslanma:\$\{panelFirmasi\}`, PANEL_ONBELLEK_MS,/.test(sayfaK));
-  kontrol("  ...açık parti okuması sayfada YALNIZ önbelleğin içinde (tek yer)",
-    (sayfaK.match(/acikPartilerToplu\(/g) ?? []).length === 1 &&
-      /kisaOnbellek\(`yaslanma:[\s\S]{0,400}?acikPartilerToplu\(prisma, null\)/.test(sayfaK));
+  /* ⚠ ÖLÇÜT GÜNCELLENDİ (12.10.2026): okuma artık AYNI İSTEKTE ORTAK (`acikPartilerIstekte`)
+     — yaşlanma, iş zekâsı ve vitrin aynı açılışta üç kez okuyordu. Niyet aynı: sayfada
+     tek yerde ve önbelleğin içinde. */
+  kontrol("  ...açık parti okuması sayfada YALNIZ önbelleğin içinde (tek yer, ortak okuma)",
+    !/acikPartilerToplu\(/.test(sayfaK) &&
+      (sayfaK.match(/acikPartilerIstekte\(/g) ?? []).length === 1 &&
+      /kisaOnbellek\(`yaslanma:[\s\S]{0,400}?await acikPartilerIstekte\(\)/.test(sayfaK));
+  const ortakK = yorumsuzK(kaynakOku("src/lib/panel/acik-partiler-istekte.ts"));
+  const vitrinK = yorumsuzK(kaynakOku("src/lib/panel/vitrin-verisi.ts"));
+  const biK = yorumsuzK(kaynakOku("src/app/panel-bi.tsx"));
+  kontrol("açık partiler: üç blok AYNI istekteki ortak okumayı kullanır (yaşlanma · iş zekâsı · vitrin)",
+    /export const acikPartilerIstekte = cache\(\(\)[^=]*=> acikPartilerToplu\(prisma, null\)\);/.test(ortakK) &&
+      /abcGirdileriniYukle\(prisma, abcKapsami, acikPartilerIstekte\(\)\)/.test(biK) &&
+      /const degerSozu = acikPartilerIstekte\(\)\.then\(/.test(vitrinK) && !/acikPartilerToplu\(/.test(vitrinK));
+  kontrol("  ...vitrin yalnız STOKLU ürünleri sayar ve sayımlar partileri beklemez",
+    /if \(!stokluKume\.has\(vid\)\) continue;/.test(vitrinK) &&
+      /* İLK iş aynı anda bekleme olmalı — önüne «önce partileri bekle» konursa kırmızı (mutasyonla bulundu). */
+      /const olc = async \(kosul: [^)]*\) => \{\s*const \[vs, deger\] = await Promise\.all\(\[\s*prisma\.productVariant\.findMany\(/.test(vitrinK));
   kontrol("  ...okuma dizisi önbellekli sözü bekler (telefonda null)",
     /yaslanmaVerisiSozu \?\? Promise\.resolve\(null\),/.test(sayfaK));
   kontrol("  ...telefonda ürün analizi boş verilerle ÇİZİLMEZ, nedenini söyler (İlke #5)",

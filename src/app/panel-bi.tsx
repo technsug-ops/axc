@@ -8,6 +8,7 @@ import type { Pencere } from "@/lib/donem";
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { abcSiniflari, ABC_SINIRLARI, devirHizi, maliyetSurucuculeri, oranVeyaBos, stokGunu } from "@/lib/panel/bi";
 import { abcAdresi, abcGirdileriniYukle, type AbcKapsami } from "@/lib/panel/abc-kumesi";
+import { acikPartilerIstekte } from "@/lib/panel/acik-partiler-istekte";
 import { prisma } from "@/lib/prisma";
 import { kisaOnbellek, PANEL_ONBELLEK_MS } from "@/lib/kisa-onbellek";
 import { yetkiBaglami } from "@/lib/yetki";
@@ -97,7 +98,7 @@ export async function PanelBi({
       },
       select: { code: true, amount: true, sale: { select: { profitStatus: true } } },
     }),
-    abcGirdileriniYukle(prisma, abcKapsami),
+    abcGirdileriniYukle(prisma, abcKapsami, acikPartilerIstekte()),
   ]),
   );
   const [satislar, kesintiler, abcVerisi] = biOnbellegi.deger;

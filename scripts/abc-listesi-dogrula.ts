@@ -92,7 +92,7 @@ console.log("\n1) kural — değerle");
 console.log("\n2) bağ — panel ve liste aynı gövde");
 {
   const panel = oku("src/app/panel-bi.tsx");
-  kontrol("panel girdiyi ORTAK yükleyiciden alır", /abcGirdileriniYukle\(prisma, abcKapsami\)/.test(panel) && /const abc = abcSiniflari\(abcVerisi\.girdiler\);/.test(panel));
+  kontrol("panel girdiyi ORTAK yükleyiciden alır", /abcGirdileriniYukle\(prisma, abcKapsami, acikPartilerIstekte\(\)\)/.test(panel) && /const abc = abcSiniflari\(abcVerisi\.girdiler\);/.test(panel));
   kontrol("  ...panelde kendi stok/ciro hesabı KALMADI (ikinci ölçüt yok)", !/acikPartilerToplu/.test(panel) && !/urunCirosu/.test(panel));
   kontrol("  ...kapsam panelin çözülmüş döneminden",
     /const abcKapsami: AbcKapsami = \{ baslangic: donem\.baslangic, bitisHaric: donem\.bitisHaric, para, kanal \};/.test(panel));

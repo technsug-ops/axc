@@ -1213,6 +1213,39 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "",
     bozdugu: "2 dk eski oran taze gibi gorunur",
   },
+  /* 12.10.2026 — açık partiler aynı istekte ORTAK okuma (yaşlanma · iş zekâsı · vitrin). */
+  {
+    ad: "IS ZEKASI ACIK PARTILERI YINE KENDISI OKUYOR",
+    yon: "FAZLADAN",
+    dosya: "src/app/panel-bi.tsx",
+    bul: "abcGirdileriniYukle(prisma, abcKapsami, acikPartilerIstekte()),",
+    koy: "abcGirdileriniYukle(prisma, abcKapsami),",
+    bozdugu: "ayni acilista butun partiler iki-uc kez okunur",
+  },
+  {
+    ad: "YASLANMA ACIK PARTILERI YINE KENDISI OKUYOR",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: "        const partiler = await acikPartilerIstekte();",
+    koy: "        const partiler = await acikPartilerToplu(prisma, null);",
+    bozdugu: "ayni acilista butun partiler iki-uc kez okunur",
+  },
+  {
+    ad: "VITRIN STOKLU SUZGECI KALKTI",
+    yon: "KALDIRAN",
+    dosya: "src/lib/panel/vitrin-verisi.ts",
+    bul: "if (!stokluKume.has(vid)) continue;",
+    koy: "",
+    bozdugu: "vitrin tutarina stokta olmayan urunlerin partileri karisir",
+  },
+  {
+    ad: "VITRIN SAYIMLARI PARTILERI BEKLIYOR",
+    yon: "FAZLADAN",
+    dosya: "src/lib/panel/vitrin-verisi.ts",
+    bul: "const [vs, deger] = await Promise.all([",
+    koy: "const bekle = await degerSozu; void bekle;\n    const [vs, deger] = await Promise.all([",
+    bozdugu: "sayimlar yine parti okumasini bekler, vitrin yavaslar",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

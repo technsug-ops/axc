@@ -2,7 +2,7 @@ import type { Currency } from "@/generated/prisma/enums";
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { abcUyelikleri, ABC_KOVALARI, type AbcGirdisi, type AbcKovasi } from "@/lib/panel/bi";
 import type { prisma as prismaIstemcisi } from "@/lib/prisma";
-import { acikPartilerToplu } from "@/lib/stok";
+import { acikPartilerToplu, type Parti } from "@/lib/stok";
 
 /**
  * ============================================================================
@@ -59,6 +59,7 @@ export function abcSuzgeciCoz(ham: string | undefined): { kova: AbcKovasi; kapsa
 export async function abcGirdileriniYukle(
   db: typeof prismaIstemcisi,
   k: AbcKapsami,
+  partilerSozu?: Promise<Map<string, Parti[]>>,
 ): Promise<{ girdiler: AbcGirdisi[]; toplamStokDegeri: number }> {
   const [kalemler, partiler] = await Promise.all([
     db.saleItem.findMany({
@@ -73,7 +74,8 @@ export async function abcGirdileriniYukle(
       },
       select: { quantity: true, unitPriceAmount: true, variant: { select: { productId: true } } },
     }),
-    acikPartilerToplu(db, null),
+    /* Panel çağrısı aynı istekteki ortak okumayı verir (K332); vermeyen (ABC listesi) kendisi okur. */
+    partilerSozu ?? acikPartilerToplu(db, null),
   ]);
   const ciro = new Map<string, number>();
   for (const kl of kalemler) {
