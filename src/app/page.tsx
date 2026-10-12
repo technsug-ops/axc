@@ -220,6 +220,74 @@ export async function generateMetadata() {
   return { title: tBaslik("panel") };
 }
 
+/**
+ * ⚡ KARGO BEKLEYENLER — GRUPLU SAYIM (K332, 12.10.2026).
+ *
+ * Panel bekleyen dalından yalnız SAYI kullanır (`kargoHali` kovası × kanal ×
+ * para birimi); eskiden ~7.300 satışın her biri tek tek okunuyordu (canlıda
+ * 7.281 satır → yalnız 6 grup). Artık veritabanı gruplar ve sayfa HER GRUP
+ * İÇİN TEK TEMSİLCİ kaydı grup sayısı kadar listeye koyar.
+ *
+ * ⛔ KOVA KURALI SQL'E İKİNCİ KEZ YAZILMADI: gruplama, kuralın okuduğu
+ * alanların KENDİSİNE göre (aktarım kaynağı · onaylı mı) yapılır; hüküm yine
+ * tek sahibi `kargoHali` (aynı soruya iki cevap olmaz). Temsilcinin
+ * `onaylandiAt`i grubun EN SON onay anıdır — kural yalnız boş olup olmadığına
+ * bakar. ⚠ Kâr para birimi BOŞ olan satış (bugün 0) eskisi gibi tek tek
+ * okunur: para birimi ilk geçerli kalemden gelir, gruplanamaz.
+ */
+async function bekleyenKargolariOku() {
+  /* `iptalTarihi: null` ÇAĞRI YERİNDE yazılır — `iptal:bekci` ortak sabitin içini göremez. */
+  const [hesaplar, onayli, onaysiz, parasiz] = await Promise.all([
+    prisma.channelAccount.findMany({ select: { id: true, channel: { select: { code: true, name: true } } } }),
+    prisma.sale.groupBy({
+      by: ["channelAccountId", "profitCurrency", "importKaynak"],
+      where: { iptalTarihi: null, shippedAt: null, profitCurrency: { not: null }, onaylandiAt: { not: null } },
+      _count: { _all: true },
+      _max: { onaylandiAt: true },
+    }),
+    prisma.sale.groupBy({
+      by: ["channelAccountId", "profitCurrency", "importKaynak"],
+      where: { iptalTarihi: null, shippedAt: null, profitCurrency: { not: null }, onaylandiAt: null },
+      _count: { _all: true },
+    }),
+    prisma.sale.findMany({
+      where: { iptalTarihi: null, shippedAt: null, profitCurrency: null },
+      select: {
+        shippedAt: true,
+        importKaynak: true,
+        onaylandiAt: true,
+        profitCurrency: true,
+        channelAccount: { select: { channel: { select: { code: true, name: true } } } },
+        /** Yalnız para birimi yedeği için İLK geçerli kalem (kâr para birimi boşsa). */
+        items: {
+          where: { ...KALEM_GECERLI },
+          select: { unitPriceCurrency: true },
+          orderBy: { id: "asc" },
+          take: 1,
+        },
+      },
+    }),
+  ]);
+  const kanal = new Map(hesaplar.map((h) => [h.id, h.channel]));
+  const temsilciler = [
+    ...onayli.map((g) => ({ g, onaylandiAt: g._max.onaylandiAt })),
+    ...onaysiz.map((g) => ({ g, onaylandiAt: null })),
+  ].flatMap(({ g, onaylandiAt }) => {
+    const ch = kanal.get(g.channelAccountId);
+    if (!ch) return [];
+    const temsilci = {
+      shippedAt: null,
+      importKaynak: g.importKaynak,
+      onaylandiAt,
+      profitCurrency: g.profitCurrency,
+      channelAccount: { channel: ch },
+      items: [] as { unitPriceCurrency: Currency }[],
+    };
+    return Array.from({ length: g._count._all }, () => temsilci);
+  });
+  return [...temsilciler, ...parasiz];
+}
+
 export default async function AnaSayfa({
   searchParams,
   /**
@@ -806,25 +874,7 @@ export default async function AnaSayfa({
           },
         },
       }),
-      prisma.sale.findMany({
-        where: { iptalTarihi: null, shippedAt: null },
-        select: {
-          shippedAt: true,
-          importKaynak: true,
-          onaylandiAt: true,
-          profitCurrency: true,
-          channelAccount: {
-            select: { channel: { select: { code: true, name: true } } },
-          },
-          /** Yalnız para birimi yedeği için İLK geçerli kalem (kâr para birimi boşsa). */
-          items: {
-            where: { ...KALEM_GECERLI },
-            select: { unitPriceCurrency: true },
-            orderBy: { id: "asc" },
-            take: 1,
-          },
-        },
-      }),
+      bekleyenKargolariOku(),
     ]),
 
     /**

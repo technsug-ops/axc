@@ -37,7 +37,7 @@ const ISTISNALAR = new Map<string, string>([
   ],
   [
     "src/app/page.tsx",
-    "PANEL SORGUSU: `{ shippedAt: null }` bir OR dalıdır ve amacı kargo bekleyeni bulmak DEĞİL — dönem dışı kalanları da çekip `kargoHali` üç kovaya ayırabilsin diye kümeyi GENİŞLETİYOR. Daraltmak, BİLİNMİYOR kovasını hiç göremezdi. ⚡ K332 (11.10.2026): sorgu ikiye bölündü — kargolanmışlar tam, bekleyenler (`shippedAt: null`) yalnız kova alanlarıyla (kalemsiz; ciro okunmuyor). Küme AYNI, hüküm yine `kargoHali`.",
+    "PANEL SORGUSU: `{ shippedAt: null }` bir OR dalıdır ve amacı kargo bekleyeni bulmak DEĞİL — dönem dışı kalanları da çekip `kargoHali` üç kovaya ayırabilsin diye kümeyi GENİŞLETİYOR. Daraltmak, BİLİNMİYOR kovasını hiç göremezdi. ⚡ K332 (11.10.2026): sorgu ikiye bölündü — kargolanmışlar tam, bekleyenler (`shippedAt: null`) yalnız kova alanlarıyla (kalemsiz; ciro okunmuyor). Küme AYNI, hüküm yine `kargoHali`. ⚡ 12.10.2026: bekleyenler artık veritabanında GRUPLANIYOR (`bekleyenKargolariOku`, `shippedAt: null` grup koşulunda); kâr para birimi boş olanlar tek tek.",
   ],
   [
     "src/lib/onay-kuyrugu.ts",
@@ -189,12 +189,23 @@ for (const [ad, yol] of OKUYUCULAR) {
 // tarihi bilinmeyen binlerce geçmiş satışı bütün kalemleriyle çekiyordu. Geri
 // gelirse rakam DOĞRU kalır, panel sessizce yavaşlar — kalıp ölçülür.
 {
+  /* ⚠ ÖLÇÜT GÜNCELLENDİ (12.10.2026): bekleyen dalı artık TEK TEK okunmuyor, veritabanında
+     GRUPLANIYOR (`bekleyenKargolariOku`; canlıda 7.281 satır → 6 grup). Niyet aynı: dal
+     HAFİF kalır, kova hükmü yine tek sahibi `kargoHali`, sayı kaybolmaz. */
   const panelKod = kaynakOku("src/app/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ");
-  const bas = panelKod.indexOf("where: { iptalTarihi: null, shippedAt: null },");
-  const blok = bas >= 0 ? panelKod.slice(bas, panelKod.indexOf("}),", panelKod.indexOf("take: 1,", bas))) : "";
-  kontrol("④ panel bekleyen dalı ayrı ve HAFİF sorgu", blok.length > 0, "bekleyen sorgusu bulunamadı");
-  kontrol("④ bekleyen dalı kalemden yalnız İLK para birimini okur",
-    /items: \{\s*where: \{ \.\.\.KALEM_GECERLI \},\s*select: \{ unitPriceCurrency: true \},\s*orderBy: \{ id: "asc" \},\s*take: 1,/.test(blok) &&
+  const bas = panelKod.indexOf("async function bekleyenKargolariOku()");
+  const blok = bas >= 0 ? panelKod.slice(bas, panelKod.indexOf("\nexport default async function AnaSayfa", bas)) : "";
+  kontrol("④ panel bekleyen dalı ayrı ve HAFİF (gruplu sayım)", blok.length > 0 && /bekleyenKargolariOku\(\),/.test(panelKod), "bekleyen okuması bulunamadı");
+  kontrol("④ gruplama kuralın OKUDUĞU alanlara göre (kaynak · onaylı mı), kanal ve para birimi",
+    (blok.match(/by: \["channelAccountId", "profitCurrency", "importKaynak"\]/g) ?? []).length === 2 &&
+      /onaylandiAt: \{ not: null \}/.test(blok) && /onaylandiAt: null/.test(blok));
+  kontrol("④ kova kuralı SQL'e İKİNCİ KEZ yazılmadı (OR yok, hüküm kargoHali'de)",
+    !/OR:/.test(blok) && !/kargoBekliyorMu|KARGO_BEKLEYEN/.test(blok));
+  kontrol("④ sayı kaybolmaz: temsilci grup sayısı kadar listeye girer",
+    /Array\.from\(\{ length: g\._count\._all \}, \(\) => temsilci\)/.test(blok));
+  kontrol("④ kâr para birimi BOŞ olan satış tek tek okunur, kalemden yalnız İLK para birimi",
+    /where: \{ iptalTarihi: null, shippedAt: null, profitCurrency: null \}/.test(blok) &&
+      /items: \{\s*where: \{ \.\.\.KALEM_GECERLI \},\s*select: \{ unitPriceCurrency: true \},\s*orderBy: \{ id: "asc" \},\s*take: 1,/.test(blok) &&
       !/unitPriceAmount|quantity/.test(blok),
     "bekleyen dalı kalem tutarlarını yeniden çekiyor — ciro orada okunmuyor");
   kontrol("④ bekleyenin cirosu sıfır yazılır (okunmadığı açık)", /kargolar\.push\(\{[\s\S]{0,400}?gelir: 0,/.test(panelKod));
