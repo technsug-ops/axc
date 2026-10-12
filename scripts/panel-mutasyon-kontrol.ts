@@ -1176,8 +1176,8 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "YASLANMA ONBELLEKSIZ (dogrudan okuma geri geldi)",
     yon: "KALDIRAN",
     dosya: SAYFA,
-    bul: "yaslanmaVerisiSozu ?? Promise.resolve(null),",
-    koy: "acikPartilerToplu(prisma, null).then((partiler) => ({ deger: { partiler, varyantlar: [] }, an: new Date() })),",
+    bul: "kisaOnbellek(`yaslanma:${panelFirmasi}`, PANEL_ONBELLEK_MS, async () => {",
+    koy: "((f: () => Promise<{ partiler: Map<string, never[]>; varyantlar: never[] }>) => f().then((deger) => ({ deger, an: new Date() })))(async () => {",
     bozdugu: "her acilista butun partiler yeniden okunur",
   },
   {
@@ -1192,9 +1192,26 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "STOKTA BEKLEYEN SAATI YAZMIYOR",
     yon: "KALDIRAN",
     dosya: SAYFA,
-    bul: "              {/* ⏱ Liste ve sermaye önbellekten — ne zaman hesaplandığı yazar (K332). */}\n              <OnbellekNotu an={yaslanmaOnbellegi.an} />\n",
+    bul: "                    {/* ⏱ Liste ve sermaye önbellekten — ne zaman hesaplandığı yazar (K332). */}\n                    <OnbellekNotu an={yaslanmaAn} />\n",
     koy: "",
     bozdugu: "2 dk eski liste taze gibi gorunur",
+  },
+  /* 12.10.2026 — yaşlanma arkadan dolar; üst kısım onu beklemez (K332). */
+  {
+    ad: "ANA OKUMA YASLANMAYI YINE BEKLIYOR",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: '  sureIsareti("ana-okuma");\n',
+    koy: '  await yaslanmaHesabiSozu;\n  sureIsareti("ana-okuma");\n',
+    bozdugu: "ust kisim butun acik partileri bekler (canli izde 0,5-1,5 sn)",
+  },
+  {
+    ad: "OLU SERMAYE ROZETI AYRI OKUMADAN",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: "                        <ArkadanDolan\n                          soz={yaslanmaHesabiSozu}\n",
+    koy: "                        <ArkadanDolan\n                          soz={(yaslanmaVerisiSozu ?? Promise.reject()).then(() => ({ yaslanmaAn: new Date(), oluKalemler: [], oluSermaye: { toplam: 0, kalem: 0, hesaplanamayan: 0 } }))}\n",
+    bozdugu: "rozet listeyle ayni sozden okumaz; sayi = liste bozulur",
   },
   /* 12.10.2026 — marj sınıflandırması istekler arası 2 dk önbellek (kullanıcı kararı). */
   {

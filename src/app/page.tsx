@@ -128,6 +128,7 @@ import {
 import { izinVarMi, sayfaGirisi, yetkiBaglami } from "@/lib/yetki";
 import { kisaOnbellek, PANEL_ONBELLEK_MS } from "@/lib/kisa-onbellek";
 import { OnbellekNotu } from "@/components/onbellek-notu";
+import { ArkadanDolan } from "@/components/arkadan-dolan";
 import {
   bandinVaryantlari,
   siralamaGecerliMi,
@@ -682,7 +683,6 @@ export default async function AnaSayfa({
   const [
     kayitlar,
     iadeKayitlari,
-    yaslanmaOnbellegi,
     kargoKayitlari,
     maliyetKayitlari,
   ] = await Promise.all([
@@ -799,9 +799,9 @@ export default async function AnaSayfa({
         },
       },
     }),
-    /** YAŞLANMA — AÇIK FIFO PARTİLERİ (yukarıdaki söz: telefonda null, bilgisayarda 2 dk önbellek). */
-    yaslanmaVerisiSozu ?? Promise.resolve(null),
-
+    /* YAŞLANMA BURADA BEKLENMEZ (12.10.2026) — söz `yaslanmaHesabiSozu`na bağlanır,
+       iki bölüm `Suspense` içinde bekler; ana okuma onu beklerse üst kısım yine
+       bütün açık partileri bekler (canlı izde 0,5–1,5 sn). */
     /**
      * KARGO — KENDİ EKSENİ, KENDİ SORGUSU.
      *
@@ -1600,92 +1600,109 @@ export default async function AnaSayfa({
   const siralamaOlcutu: SiralamaOlcutu =
     karGorunur && siralamaGecerliMi(istenenSirala) ? istenenSirala : "yas";
 
-  /* Telefonda okunmadı (bölüm orada çizilmiyor) → boş; bilgisayarda önbellekten. */
-  const partiHaritasi = yaslanmaOnbellegi?.deger.partiler ?? new Map<string, never[]>();
-  const varyantBilgileri = yaslanmaOnbellegi?.deger.varyantlar ?? [];
-
-  const yaslanmaGirdileri: YaslanmaGirdisi[] = varyantBilgileri.map((v) => ({
-    variantId: v.id,
-    partiler: partiHaritasi.get(v.id) ?? [],
-    // KDV oranı TEK KAYNAKTAN: ürün istisnası > kategori > varsayılan %20.
-    kdvOrani: kdvOraniniCoz(v.product).oran,
-  }));
-
-  const yaslanma = yaslanmaListesi(
-    yaslanmaGirdileri,
-    gunDegeri(bugun),
-    siralamaOlcutu,
-  );
-  const varyantKimligi = new Map(
-    varyantBilgileri.map((v) => [
-      v.id,
-      { sku: v.sku, urunAdi: v.product.name, urunId: v.product.id },
-    ]),
-  );
-
-  /** Bağlı sermaye toplamı — yalnız TRY; çevirim yapılmaz. */
-  const sermaye = sermayeToplami(yaslanma, "TRY");
-
-  /**
-   * ÖLÜ SERMAYE — 60+ GÜNDÜR RAFTA (Panel Aşama 3, madde 4).
-   *
-   * Yaşlanma listesi Paket 1'den beri var; eksik olan HÜKÜMDÜ. "Neyi
-   * kesmeliyim" sorusunun iki yarısı yan yana durmalı: zarara giden
-   * satışlar (para kaybı) ve ölü sermaye (para tutsak).
-   *
-   * Ölçüt `YAS_BANTLARI.kirmiziGun` (61) — aynı sabit rozetleri de
-   * boyuyor, ikinci bir eşik uydurulmadı.
-   *
-   * DÖNEM SÜZGECİNDEN ETKİLENMEZ: "bugün depoda ne bekliyor" sorusu geçmiş
-   * bir tarih aralığıyla daralmaz (aynı ilke yaşlanma listesinde de yazılı).
-   */
-  const oluKalemler = bandinVaryantlari(yaslanma, "KIRMIZI");
   /** Rozetin hedefi — /stok yaş süzgeci. Kod tek yerden okunuyor. */
   const oluSermayeAdresi = `/stok?yas=${YAS_SUZGEC_KODU.KIRMIZI}`;
-  const oluSermaye = sermayeToplami(
-    yaslanma.filter((y) => y.bant === "KIRMIZI"),
-    "TRY",
-  );
 
-  const yaslanmaSatirlari: PanelListeSatiri[] = yaslanma
-    .slice(0, YASLANMA_SATIRI)
-    .map((s) => {
-      const kimlik = varyantKimligi.get(s.variantId);
-      return {
-        anahtar: s.variantId,
-        urunAdi: kimlik?.urunAdi ?? s.variantId,
-        urunId: kimlik?.urunId ?? null,
-        sku: kimlik?.sku ?? "",
-        // Birincil değer YAŞ: ölçüt bu (mimar kararı 14.08.2026).
-        deger: t("yasGun", { sayi: s.yasGun }),
-        altDeger:
-          s.sermayeKdvHaric !== null &&
-          s.sermayeParaBirimi !== null &&
-          karGorunur
-            ? t("yaslanmaAlt", {
-                adet: s.adet,
-                tutar: bicim.para(s.sermayeKdvHaric, s.sermayeParaBirimi),
-              })
-            : karGorunur && s.sermayeKdvHaric === null
-              ? t("yaslanmaSermayeYok", { adet: s.adet })
-              : t("adetDegeri", { sayi: s.adet }),
-        rozet: (
-          <BantRozeti
-            bant={s.bant}
-            metin={
-              s.bant === "KIRMIZI"
-                ? t("bantKirmizi", { gun: YAS_BANTLARI.kirmiziGun - 1 })
-                : s.bant === "AMBER"
-                  ? t("bantAmber", {
-                      alt: YAS_BANTLARI.amberGun,
-                      ust: YAS_BANTLARI.kirmiziGun - 1,
-                    })
-                  : t("bantNotr", { gun: YAS_BANTLARI.amberGun - 1 })
-            }
-          />
-        ),
-      };
-    });
+  /**
+   * ⚡ YAŞLANMA ARKADAN DOLAR (K332, 12.10.2026). Canlı süre izi: bilgisayarda
+   * ana okuma 0,85–2,2 sn, telefonda (yaşlanma okunmuyor) 0,4–0,7 sn — fark
+   * önbellek boşken bütün açık partilerin okunmasıydı ve panel açılışları
+   * çoğunlukla 2 dakikadan seyrek olduğu için önbellek hep boş geliyordu.
+   * Hesap artık bir SÖZ: «stokta bekleyen» listesi ve «ölü sermaye» rozeti
+   * `Suspense` içinde bu sözü bekler, sayfanın üstü beklemez. İkisi AYNI
+   * sözden okur (sayı = liste). Telefonda söz yok (`null`), bölüm çizilmez.
+   */
+  const yaslanmaHesabiSozu =
+    yaslanmaVerisiSozu === null
+      ? null
+      : yaslanmaVerisiSozu.then((yaslanmaOnbellegi) => {
+      const partiHaritasi = yaslanmaOnbellegi.deger.partiler;
+      const varyantBilgileri = yaslanmaOnbellegi.deger.varyantlar;
+
+      const yaslanmaGirdileri: YaslanmaGirdisi[] = varyantBilgileri.map((v) => ({
+        variantId: v.id,
+        partiler: partiHaritasi.get(v.id) ?? [],
+        // KDV oranı TEK KAYNAKTAN: ürün istisnası > kategori > varsayılan %20.
+        kdvOrani: kdvOraniniCoz(v.product).oran,
+      }));
+
+      const yaslanma = yaslanmaListesi(
+        yaslanmaGirdileri,
+        gunDegeri(bugun),
+        siralamaOlcutu,
+      );
+      const varyantKimligi = new Map(
+        varyantBilgileri.map((v) => [
+          v.id,
+          { sku: v.sku, urunAdi: v.product.name, urunId: v.product.id },
+        ]),
+      );
+
+      /** Bağlı sermaye toplamı — yalnız TRY; çevirim yapılmaz. */
+      const sermaye = sermayeToplami(yaslanma, "TRY");
+
+      /**
+       * ÖLÜ SERMAYE — 60+ GÜNDÜR RAFTA (Panel Aşama 3, madde 4).
+       *
+       * Yaşlanma listesi Paket 1'den beri var; eksik olan HÜKÜMDÜ. "Neyi
+       * kesmeliyim" sorusunun iki yarısı yan yana durmalı: zarara giden
+       * satışlar (para kaybı) ve ölü sermaye (para tutsak).
+       *
+       * Ölçüt `YAS_BANTLARI.kirmiziGun` (61) — aynı sabit rozetleri de
+       * boyuyor, ikinci bir eşik uydurulmadı.
+       *
+       * DÖNEM SÜZGECİNDEN ETKİLENMEZ: "bugün depoda ne bekliyor" sorusu geçmiş
+       * bir tarih aralığıyla daralmaz (aynı ilke yaşlanma listesinde de yazılı).
+       */
+      const oluKalemler = bandinVaryantlari(yaslanma, "KIRMIZI");
+      const oluSermaye = sermayeToplami(
+        yaslanma.filter((y) => y.bant === "KIRMIZI"),
+        "TRY",
+      );
+
+      const yaslanmaSatirlari: PanelListeSatiri[] = yaslanma
+        .slice(0, YASLANMA_SATIRI)
+        .map((s) => {
+          const kimlik = varyantKimligi.get(s.variantId);
+          return {
+            anahtar: s.variantId,
+            urunAdi: kimlik?.urunAdi ?? s.variantId,
+            urunId: kimlik?.urunId ?? null,
+            sku: kimlik?.sku ?? "",
+            // Birincil değer YAŞ: ölçüt bu (mimar kararı 14.08.2026).
+            deger: t("yasGun", { sayi: s.yasGun }),
+            altDeger:
+              s.sermayeKdvHaric !== null &&
+              s.sermayeParaBirimi !== null &&
+              karGorunur
+                ? t("yaslanmaAlt", {
+                    adet: s.adet,
+                    tutar: bicim.para(s.sermayeKdvHaric, s.sermayeParaBirimi),
+                  })
+                : karGorunur && s.sermayeKdvHaric === null
+                  ? t("yaslanmaSermayeYok", { adet: s.adet })
+                  : t("adetDegeri", { sayi: s.adet }),
+            rozet: (
+              <BantRozeti
+                bant={s.bant}
+                metin={
+                  s.bant === "KIRMIZI"
+                    ? t("bantKirmizi", { gun: YAS_BANTLARI.kirmiziGun - 1 })
+                    : s.bant === "AMBER"
+                      ? t("bantAmber", {
+                          alt: YAS_BANTLARI.amberGun,
+                          ust: YAS_BANTLARI.kirmiziGun - 1,
+                        })
+                      : t("bantNotr", { gun: YAS_BANTLARI.amberGun - 1 })
+                }
+              />
+            ),
+          };
+        });
+
+          return { yaslanmaAn: yaslanmaOnbellegi.an, yaslanma, sermaye, oluKalemler, oluSermaye, yaslanmaSatirlari };
+        });
+  yaslanmaHesabiSozu?.catch(() => {});
 
   /** Süzgeç düğmesi — bağlantıdır, istemci JavaScript'i gerektirmez. */
   function suzgecDugmesi(etiket: string, adres: string, seciliMi: boolean) {
@@ -2541,7 +2558,7 @@ export default async function AnaSayfa({
   sureIziniYaz("panel-govde", {
     telefon: !grafikOkunur,
     vitrinAn: vitrinOnbellegi.an.toISOString(),
-    yaslanmaAn: yaslanmaOnbellegi === null ? "-" : yaslanmaOnbellegi.an.toISOString(),
+    yaslanma: yaslanmaHesabiSozu === null ? "-" : "arkadan",
   });
 
   return (
@@ -3634,7 +3651,7 @@ export default async function AnaSayfa({
       {/* K270: ürün analizi telefonda MENÜDE (`/rapor/urunler`) — onaylanan demo.
           Telefondan gelen istekte yaşlanma verisi okunmaz (12.10.2026); bölüm
           boş verilerle ÇİZİLMEZ — yatay telefonda görünürse nedenini söyler. */}
-      {yaslanmaOnbellegi === null ? (
+      {yaslanmaHesabiSozu === null ? (
         <p className="text-muted-foreground text-sm max-md:hidden">{t("urunAnaliziTelefondaYok")}</p>
       ) : (
       <div className="max-md:hidden">
@@ -3794,37 +3811,47 @@ export default async function AnaSayfa({
                       {/* ÖLÜ SERMAYE — zararın YANINDA duruyor: "neyi
                           kesmeliyim" sorusunun iki yarısı (para kaybı ve
                           para tutsak) birlikte okunur. Sıfırsa gizlenmez. */}
-                      <div className="flex">
-                        {oluKalemler.length > 0 ? (
-                          <DurumRozeti durum="olumsuz" isaretsiz>
-                            {/* HEDEF: /stok'un YAŞ SÜZGECİ — panelin kendi
-                                sekmesi DEĞİL. O2 testi tam burada düştü:
-                                `analizAdresi("stok")` aynı sayfanın sekmesine
-                                gidiyordu, yani rozet eyleme götürmüyor,
-                                sayfayı başa atıyordu. */}
-                            <Baglanti href={oluSermayeAdresi}>
-                              {t("oluSermaye", {
-                                gun: YAS_BANTLARI.kirmiziGun,
-                                /* SAYI KÜMEDEN OKUNUYOR. `sermayeToplami.kalem`
-                                   yalnız maliyeti BİLİNEN kalemleri sayar;
-                                   liste ise bandı tutan HEPSİNİ gösterecek.
-                                   İkisi ayrışmasın diye sayı da aynı kümeden
-                                   geliyor (Halil maddesi c). */
-                                kalem: oluKalemler.length,
-                                tutar: bicim.para(oluSermaye.toplam, "TRY"),
-                              })}
-                            </Baglanti>
-                          </DurumRozeti>
-                        ) : (
-                          <DurumRozeti durum="olumlu" isaretsiz>
-                            {t("oluSermayeYok", {
-                              gun: YAS_BANTLARI.kirmiziGun,
-                            })}
-                          </DurumRozeti>
-                        )}
-                      </div>
-                      {/* ⏱ Ölü sermaye önbellekteki yaşlanma verisinden (K332). */}
-                      <OnbellekNotu an={yaslanmaOnbellegi.an} />
+                      {/* ⚡ Arkadan dolar — üst kısım yaşlanma hesabını beklemez (K332). */}
+                      <Suspense fallback={<Skeleton className="h-7 w-56" />}>
+                        <ArkadanDolan
+                          soz={yaslanmaHesabiSozu}
+                          ciz={({ yaslanmaAn, oluKalemler, oluSermaye }) => (
+                            <>
+                          <div className="flex">
+                            {oluKalemler.length > 0 ? (
+                              <DurumRozeti durum="olumsuz" isaretsiz>
+                                {/* HEDEF: /stok'un YAŞ SÜZGECİ — panelin kendi
+                                    sekmesi DEĞİL. O2 testi tam burada düştü:
+                                    `analizAdresi("stok")` aynı sayfanın sekmesine
+                                    gidiyordu, yani rozet eyleme götürmüyor,
+                                    sayfayı başa atıyordu. */}
+                                <Baglanti href={oluSermayeAdresi}>
+                                  {t("oluSermaye", {
+                                    gun: YAS_BANTLARI.kirmiziGun,
+                                    /* SAYI KÜMEDEN OKUNUYOR. `sermayeToplami.kalem`
+                                       yalnız maliyeti BİLİNEN kalemleri sayar;
+                                       liste ise bandı tutan HEPSİNİ gösterecek.
+                                       İkisi ayrışmasın diye sayı da aynı kümeden
+                                       geliyor (Halil maddesi c). */
+                                    kalem: oluKalemler.length,
+                                    tutar: bicim.para(oluSermaye.toplam, "TRY"),
+                                  })}
+                                </Baglanti>
+                              </DurumRozeti>
+                            ) : (
+                              <DurumRozeti durum="olumlu" isaretsiz>
+                                {t("oluSermayeYok", {
+                                  gun: YAS_BANTLARI.kirmiziGun,
+                                })}
+                              </DurumRozeti>
+                            )}
+                          </div>
+                          {/* ⏱ Ölü sermaye önbellekteki yaşlanma verisinden (K332). */}
+                          <OnbellekNotu an={yaslanmaAn} />
+                            </>
+                          )}
+                        />
+                      </Suspense>
 
                       {/* YOĞUNLAŞMA CÜMLESİ — abartısız, yorum kullanıcının.
                           Panel yalnız dağılımı dürüstçe söyler.
@@ -4032,77 +4059,85 @@ export default async function AnaSayfa({
             etiket: t("yaslanmaBaslik"),
             adres: analizAdresi("stok"),
             icerik: (
-              <>
-              <PanelListesi
-                baslik={t("yaslanmaBaslik")}
-                notu={t("yaslanmaNotu")}
-                satirlar={yaslanmaSatirlari}
-                bosMesaj={t("yaslanmaBos")}
-                skuEtiketi={t("sku")}
-                genis
-                ustEylem={
-                  // Sermaye sıralaması MALİYET bilgisidir; kâr göremeyene kapalı.
-                  karGorunur ? (
-                    <SiralamaDugmeleri
-                      secenekler={[
-                        {
-                          etiket: t("siralaYas"),
-                          adres: siralamaAdresi("yas"),
-                          seciliMi: siralamaOlcutu === "yas",
-                        },
-                        {
-                          etiket: t("siralaSermaye"),
-                          adres: siralamaAdresi("sermaye"),
-                          seciliMi: siralamaOlcutu === "sermaye",
-                        },
-                      ]}
+              /* ⚡ Arkadan dolar — üst kısım yaşlanma hesabını beklemez (K332). */
+              <Suspense fallback={<Skeleton className="h-64" />}>
+                <ArkadanDolan
+                  soz={yaslanmaHesabiSozu}
+                  ciz={({ yaslanmaAn, yaslanma, sermaye, yaslanmaSatirlari }) => (
+                    <>
+                    <PanelListesi
+                      baslik={t("yaslanmaBaslik")}
+                      notu={t("yaslanmaNotu")}
+                      satirlar={yaslanmaSatirlari}
+                      bosMesaj={t("yaslanmaBos")}
+                      skuEtiketi={t("sku")}
+                      genis
+                      ustEylem={
+                        // Sermaye sıralaması MALİYET bilgisidir; kâr göremeyene kapalı.
+                        karGorunur ? (
+                          <SiralamaDugmeleri
+                            secenekler={[
+                              {
+                                etiket: t("siralaYas"),
+                                adres: siralamaAdresi("yas"),
+                                seciliMi: siralamaOlcutu === "yas",
+                              },
+                              {
+                                etiket: t("siralaSermaye"),
+                                adres: siralamaAdresi("sermaye"),
+                                seciliMi: siralamaOlcutu === "sermaye",
+                              },
+                            ]}
+                          />
+                        ) : null
+                      }
+                      altNot={
+                        <>
+                          {/* KULLANICI UYARISI (14.08.2026): en yaşlı kalem en
+                              pahalı kalem DEĞİLDİR. Ölçüm: 95 günlük kalem
+                              4.796,63 ₺ tutarken 14 günlük kalem 37.789,50 ₺
+                              tutuyordu. İki sıralama bu yüzden var. */}
+                          {t("yaslanmaUyari")}
+                          {karGorunur && sermaye.kalem > 0 ? (
+                            <>
+                              {" "}
+                              {t("yaslanmaSermayeToplami", {
+                                tutar: bicim.para(sermaye.toplam, "TRY"),
+                                kalem: sermaye.kalem,
+                              })}
+                            </>
+                          ) : null}
+                          {karGorunur && sermaye.hesaplanamayan > 0 ? (
+                            <>
+                              {" "}
+                              {t("yaslanmaHesaplanamayan", {
+                                sayi: sermaye.hesaplanamayan,
+                              })}
+                            </>
+                          ) : null}
+                          {/**
+                           * BURAYA BAĞLANTI KONMUYOR — bilinçli. "Tamamını gör"
+                           * `/stok`'a giderdi ama o ekranda YAŞ SÜTUNU YOK:
+                           * kullanıcı soruyu cevaplayamayan bir listeye düşerdi.
+                           * Sayı söyleniyor, yanıltıcı bağlantı verilmiyor.
+                           */}
+                          {yaslanma.length > YASLANMA_SATIRI ? (
+                            <>
+                              {" "}
+                              {t("yaslanmaKalan", {
+                                sayi: yaslanma.length - YASLANMA_SATIRI,
+                              })}
+                            </>
+                          ) : null}
+                        </>
+                      }
                     />
-                  ) : null
-                }
-                altNot={
-                  <>
-                    {/* KULLANICI UYARISI (14.08.2026): en yaşlı kalem en
-                        pahalı kalem DEĞİLDİR. Ölçüm: 95 günlük kalem
-                        4.796,63 ₺ tutarken 14 günlük kalem 37.789,50 ₺
-                        tutuyordu. İki sıralama bu yüzden var. */}
-                    {t("yaslanmaUyari")}
-                    {karGorunur && sermaye.kalem > 0 ? (
-                      <>
-                        {" "}
-                        {t("yaslanmaSermayeToplami", {
-                          tutar: bicim.para(sermaye.toplam, "TRY"),
-                          kalem: sermaye.kalem,
-                        })}
-                      </>
-                    ) : null}
-                    {karGorunur && sermaye.hesaplanamayan > 0 ? (
-                      <>
-                        {" "}
-                        {t("yaslanmaHesaplanamayan", {
-                          sayi: sermaye.hesaplanamayan,
-                        })}
-                      </>
-                    ) : null}
-                    {/**
-                     * BURAYA BAĞLANTI KONMUYOR — bilinçli. "Tamamını gör"
-                     * `/stok`'a giderdi ama o ekranda YAŞ SÜTUNU YOK:
-                     * kullanıcı soruyu cevaplayamayan bir listeye düşerdi.
-                     * Sayı söyleniyor, yanıltıcı bağlantı verilmiyor.
-                     */}
-                    {yaslanma.length > YASLANMA_SATIRI ? (
-                      <>
-                        {" "}
-                        {t("yaslanmaKalan", {
-                          sayi: yaslanma.length - YASLANMA_SATIRI,
-                        })}
-                      </>
-                    ) : null}
-                  </>
-                }
-              />
-              {/* ⏱ Liste ve sermaye önbellekten — ne zaman hesaplandığı yazar (K332). */}
-              <OnbellekNotu an={yaslanmaOnbellegi.an} />
-              </>
+                    {/* ⏱ Liste ve sermaye önbellekten — ne zaman hesaplandığı yazar (K332). */}
+                    <OnbellekNotu an={yaslanmaAn} />
+                    </>
+                  )}
+                />
+              </Suspense>
             ),
           },
         ]}

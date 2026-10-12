@@ -7221,12 +7221,23 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     /if \(!stokluKume\.has\(vid\)\) continue;/.test(vitrinK) &&
       /* İLK iş aynı anda bekleme olmalı — önüne «önce partileri bekle» konursa kırmızı (mutasyonla bulundu). */
       /const olc = async \(kosul: [^)]*\) => \{\s*const \[vs, deger\] = await Promise\.all\(\[\s*prisma\.productVariant\.findMany\(/.test(vitrinK));
-  kontrol("  ...okuma dizisi önbellekli sözü bekler (telefonda null)",
-    /yaslanmaVerisiSozu \?\? Promise\.resolve\(null\),/.test(sayfaK));
+  /* ⚠ ÖLÇÜT ÇEVRİLDİ (12.10.2026, K332): eskiden «okuma dizisi önbellekli sözü bekler»
+     diyordu. Canlı süre izi: bilgisayarda ana okuma 0,85–2,2 sn, telefonda 0,4–0,7 sn —
+     fark üst kısmın yaşlanmayı beklemesiydi. Artık ana okuma onu BEKLEMEZ; iki bölüm
+     `Suspense` içinde AYNI sözü bekler. */
+  const anaOkumaBas = sayfaK.indexOf("] = await Promise.all([\n    prisma.sale.findMany({");
+  const anaOkumaSon = sayfaK.indexOf('sureIsareti("ana-okuma");');
+  kontrol("  ...ana okuma yaşlanma sözünü BEKLEMEZ (üst kısım bütün partileri beklemez)",
+    anaOkumaBas >= 0 && anaOkumaSon > anaOkumaBas &&
+      !/yaslanmaVerisiSozu|yaslanmaHesabiSozu/.test(sayfaK.slice(anaOkumaBas, anaOkumaSon)));
+  kontrol("  ...hesap tek SÖZ: önbellekli okumaya bağlı, telefonda null",
+    /const yaslanmaHesabiSozu =\s*yaslanmaVerisiSozu === null\s*\?\s*null\s*:\s*yaslanmaVerisiSozu\.then\(/.test(sayfaK));
+  kontrol("  ...iki bölüm (ölü sermaye · stokta bekleyen) Suspense içinde AYNI sözü bekler",
+    (sayfaK.match(/<Suspense fallback=\{<Skeleton className="[^"]+" \/>\}>\s*<ArkadanDolan\s*soz=\{yaslanmaHesabiSozu\}/g) ?? []).length === 2);
   kontrol("  ...telefonda ürün analizi boş verilerle ÇİZİLMEZ, nedenini söyler (İlke #5)",
-    /\{yaslanmaOnbellegi === null \? \(\s*<p className="[^"]*max-md:hidden">\{t\("urunAnaliziTelefondaYok"\)\}<\/p>\s*\) : \(\s*<div className="max-md:hidden">/.test(sayfaK));
+    /\{yaslanmaHesabiSozu === null \? \(\s*<p className="[^"]*max-md:hidden">\{t\("urunAnaliziTelefondaYok"\)\}<\/p>\s*\) : \(\s*<div className="max-md:hidden">/.test(sayfaK));
   kontrol("  ...önbellekten gelen iki yer (stokta bekleyen · ölü sermaye) hesaplandığı saati yazar",
-    (sayfaK.match(/<OnbellekNotu an=\{yaslanmaOnbellegi\.an\} \/>/g) ?? []).length === 2);
+    (sayfaK.match(/<OnbellekNotu an=\{yaslanmaAn\} \/>/g) ?? []).length === 2);
 
   /* ═══ MARJ SINIFLANDIRMASI İSTEK BAŞINA BİR KEZ (12.10.2026) ═══
      Panel bu sınıflandırmayı iki yerden istiyor (kutu + şerh); dönem yokken
