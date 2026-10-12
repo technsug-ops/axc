@@ -14,6 +14,7 @@ import { yetkiBaglami } from "@/lib/yetki";
 import { OnbellekNotu } from "@/components/onbellek-notu";
 import { suzgecAdresi } from "@/lib/suzgec";
 import type { Currency } from "@/generated/prisma/enums";
+import { sureIsareti, sureIziniYaz } from "@/lib/sure-izi";
 
 /**
  * ============================================================================
@@ -160,6 +161,10 @@ export async function PanelBi({
   const kaynak = "text-primary underline-offset-4 hover:underline";
   const kesintiAdi = (kod: string) => (tk.has(kod) ? tk(kod) : kod);
   const yok = t("hesaplanamaz");
+
+  /* ⏱ SÜRE İZİ — TEST İÇİN AÇILDI (K332, kaldırılacak). */
+  sureIsareti("bi");
+  sureIziniYaz("panel-bi", { biAn: biOnbellegi.an.toISOString() });
 
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-2">
