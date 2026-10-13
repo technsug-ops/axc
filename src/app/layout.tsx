@@ -1,3 +1,4 @@
+import { KullanimIzi } from "@/components/kullanim-izi";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -364,6 +365,8 @@ export default async function RootLayout({
                 {/* TELEFON ALT BARI (K270): sabit, beş sekme; `pb-24` yukarıda onun
                     içindir — içerik barın arkasına kaymaz. Masaüstünde yok (`md:hidden`). */}
                 <AltCubuk />
+                {/* KULLANIM İZİ (13.10.2026): hiçbir şey çizmez; sayfa açılışı + tıklama → `/api/kullanim`. */}
+                <KullanimIzi />
               </SidebarInset>
             </SidebarProvider>
           </TooltipProvider>
