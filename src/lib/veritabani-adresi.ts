@@ -89,7 +89,7 @@ export const ARKA_PLAN_HAVUZU = {
 } as const;
 
 /** İşaret anahtarı — kuran: `lib/arka-plan-havuzu.ts` (içe alındığı her yerde). */
-export const ARKA_PLAN_ISARETI = Symbol.for("selliora.arkaPlanHavuzu");
+export const ARKA_PLAN_ISARETI = Symbol.for("veritabani.arkaPlanHavuzu");
 
 /** Bu sunucu kopyası arka plan havuzuyla mı kurulmalı? Yan etkisiz okuma. */
 export function arkaPlanHavuzuMu(): boolean {

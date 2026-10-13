@@ -171,7 +171,7 @@ console.log("\n5) ARKA PLAN HAVUZU (K332)");
   const sonra = uygulamaHavuzu();
   kontrol("  ...değer: işaret yokken sayfa havuzu (3), varken arka plan havuzu (2 · boşta 1)",
     once.connectionLimit === "3" && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "2" && sonra.minimumIdle === "1", { once, sonra });
-  kontrol("  ...⛔ minimumIdle=0 yasağı arka plan havuzunda da", ARKA_PLAN_HAVUZU.minimumIdle !== "0");
+  kontrol("  ...⛔ minimumIdle=0 yasağı arka plan havuzunda da", Number(ARKA_PLAN_HAVUZU.minimumIdle) >= 1);
 }
 
 console.log("\n" + "=".repeat(70));
