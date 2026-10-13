@@ -169,8 +169,24 @@ console.log("\n5) ARKA PLAN HAVUZU (K332)");
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- ölçüm sırası: işaret TAM burada kurulmalı
   require("../src/lib/arka-plan-havuzu");
   const sonra = uygulamaHavuzu();
-  kontrol("  ...değer: işaret yokken sayfa havuzu (3), varken arka plan havuzu (2 · boşta 1)",
-    once.connectionLimit === "3" && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "2" && sonra.minimumIdle === "1", { once, sonra });
+  /* ⚠ 13.10.2026: arka plan sınırı 2 → 3 (çekirdekler 10'la yazılmıştı; 2 iç içe işlemde
+     kuyruk kilidi riski). İki havuzu artık AYIRAN değer `minimumIdle` (3 ↔ 1). */
+  kontrol("  ...değer: işaret yokken sayfa havuzu (3 · boşta 3), varken arka plan havuzu (3 · boşta 1)",
+    once.connectionLimit === "3" && once.minimumIdle === "3" && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1", { once, sonra });
+  /* ⛔ ÇEKİRDEKLER UYGULAMANIN İSTEMCİSİNİ KULLANMIYOR (bulgu 13.10.2026): çekim uçları
+     `scripts/` altındaki çekirdekleri çağırıyor ve onlar kendi istemcisini HAM adresle
+     kuruyordu — sürücü varsayılanı 10 bağlantı; canlıdaki «10»lar buydu, işaret oraya
+     ULAŞMIYORDU. Küme uçların içe alma satırlarından türetilir (elle liste yok). */
+  const cekirdekler = [...new Set(cekimUclari.flatMap((d) =>
+    [...yorumsuz(d).matchAll(/from "(?:\.\.\/)+(scripts\/[\w-]+)"/g)].map((m) => `${m[1]}.ts`)))];
+  kontrol("  ...uçların çağırdığı betik çekirdeği bulundu (taban DOLU)", cekirdekler.length >= 8, cekirdekler);
+  const ciplak = cekirdekler.flatMap((d) =>
+    [...yorumsuz(d).matchAll(/new PrismaMariaDb\(([^)]*\)?)\)/g)]
+      .filter((m) => !/^havuzluAdres\(\w+, ARKA_PLAN_HAVUZU\)$/.test(m[1]))
+      .map((m) => `${d}: new PrismaMariaDb(${m[1]})`));
+  const kurulumlu = cekirdekler.filter((d) => /new PrismaMariaDb\(/.test(yorumsuz(d)));
+  kontrol("  ...çekirdekte istemci YALNIZ arka plan havuzuyla kurulur (çıplak adres yok)",
+    kurulumlu.length >= 6 && ciplak.length === 0, { kurulumlu: kurulumlu.length, ciplak });
   kontrol("  ...⛔ minimumIdle=0 yasağı arka plan havuzunda da", Number(ARKA_PLAN_HAVUZU.minimumIdle) >= 1);
 }
 

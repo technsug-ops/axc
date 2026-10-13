@@ -20,7 +20,7 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
-import { betikAdresi } from "../src/lib/veritabani-adresi";
+import { ARKA_PLAN_HAVUZU, betikAdresi, havuzluAdres } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { apiGet, baslikKur, kimlikOku, tumSayfalar, UCLAR } from "./ty/istemci";
 import { izYaz } from "../src/lib/iz";
@@ -71,7 +71,9 @@ export async function tyKargoGercekYazKos(ayar: {
     }
     dbAdresi = betikAdresi(c.veri.ham);
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(dbAdresi) });
+  /* Arka plan havuzu (K332, 13.10.2026): ham adreste sürücü varsayılanı 10 bağlantı açıyordu;
+     canlıda dakika başı tepe 25 = max_user_connections. Adreste yazılı ayara dokunulmaz (betik yolu 1'de kalır). */
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(dbAdresi, ARKA_PLAN_HAVUZU)) });
 
   console.log("\n" + "=".repeat(100));
   console.log("TY GERÇEK KARGO MALİYETİ " + (YAZ ? "⚠ YAZIM (yalnız boş kalemler)" : "(KURU KOŞUM, ölçer)"));

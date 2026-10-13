@@ -3,7 +3,7 @@
  *  ARKA PLAN HAVUZU İŞARETİ (K332, 13.10.2026)
  * ----------------------------------------------------------------------------
  *  Bu modülü İÇE ALAN uç, sunucu kopyasının veritabanı havuzunu küçük kurdurur
- *  (`ARKA_PLAN_HAVUZU`: en fazla 2 bağlantı, boşta 1). İstemci tembel kurulur
+ *  (`ARKA_PLAN_HAVUZU`: en fazla 3 bağlantı, boşta 1). İstemci tembel kurulur
  *  (`lib/prisma.ts`), bu yüzden işaret ilk sorgudan önce okunur.
  *
  *  NİYE: canlıda 6 dk izleme (13.10.2026) — açık bağlantı normalde 4, ama

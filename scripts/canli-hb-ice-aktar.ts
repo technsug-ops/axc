@@ -1,5 +1,6 @@
 /** BETIK SINIFI: SUREKLI. Kanala YAZMAZ (GET); deftere yalniz --yaz ile yazar. */
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { ARKA_PLAN_HAVUZU, havuzluAdres } from "../src/lib/veritabani-adresi";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { hbHesabiCoz, hbHesapHatasi, HB_KANAL_ADI } from "../src/lib/kanal-hesabi-hb";
@@ -246,7 +247,9 @@ export async function hbCekimKos(ayar: {
     console.log("\n⛔ CANLI ADRES OKUNAMADI\n");
     return { atlandi: "VERITABANI" };
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(adres) });
+  /* Arka plan havuzu (K332, 13.10.2026): ham adreste sürücü varsayılanı 10 bağlantı açıyordu;
+     canlıda dakika başı tepe 25 = max_user_connections. Adreste yazılı ayara dokunulmaz (betik yolu 1'de kalır). */
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(adres, ARKA_PLAN_HAVUZU)) });
   const baslik = baslikKur(k);
   const okumaAni = new Date();
   const partiKimligi = `hb-${okumaAni.toISOString().slice(0, 19).replace(/[-:T]/g, "")}`;

@@ -1,4 +1,5 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { ARKA_PLAN_HAVUZU, havuzluAdres } from "../src/lib/veritabani-adresi";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { otomatikOnaylaKuyruk } from "../src/lib/onay-kuyrugu";
@@ -237,7 +238,9 @@ export async function tyCekimKos(ayar: {
     }
     dbAdresi = c.veri.ham;
   }
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(dbAdresi) });
+  /* Arka plan havuzu (K332, 13.10.2026): ham adreste sürücü varsayılanı 10 bağlantı açıyordu;
+     canlıda dakika başı tepe 25 = max_user_connections. Adreste yazılı ayara dokunulmaz (betik yolu 1'de kalır). */
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(dbAdresi, ARKA_PLAN_HAVUZU)) });
   const baslik = baslikKur(k);
   const son = Date.now();
   const bas = son - GUN * GUN_MS;

@@ -80,10 +80,12 @@ const UYGULAMA_HAVUZU = {
  * arka plan işleri için. Gerekçe ve ölçüm `lib/arka-plan-havuzu.ts`te.
  * minimumIdle 1 : 12.10 öncesi ölçülmüş çalışan değer (yukarıdaki gerekçe);
  *                 ⛔ 0 YASAĞI burada da geçerli.
- * connectionLimit 2 : bir `$transaction` sürerken ikinci bir okuma kilitlenmesin.
+ * connectionLimit 3 : uygulamanın 12.10'a kadar aylarca çalıştığı değer; çekim
+ *                     çekirdekleri 10'la yazılmıştı, 2'ye inmek iç içe işlemde
+ *                     (`$transaction` + dışarıdan okuma) kuyruk kilidi riski taşırdı.
  */
 export const ARKA_PLAN_HAVUZU = {
-  connectionLimit: "2",
+  connectionLimit: "3",
   minimumIdle: "1",
   idleTimeout: "60",
 } as const;
