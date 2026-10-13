@@ -322,6 +322,10 @@ console.log("\n2b) KORUMASIZ API UCU BEKÇİSİ");
  */
 const API_ISTISNALARI = new Map<string, string>([
   [
+    "src/app/api/kullanim/route.ts",
+    "K334 kullanım izi: HER rolün kullanımı ölçülür, bu yüzden bir izne bağlanmaz — ama oturum ŞART: girişsiz istek kapıda 401 (proxy), uç da oturum yoksa hiçbir şey yazmaz. Yalnız oturumun KENDİ firması ve kullanıcısı adına yazar (tarayıcının söylediği kimlik yok sayılır), hiçbir şey OKUMAZ/döndürmez (hep 204). Kapı ve kimlik kaynağı kullanim:dogrula'da mutasyonla sınandı.",
+  ],
+  [
     "src/app/api/yedek/otomatik/route.ts",
     "Vercel Cron çağırır; kendi CRON_SECRET koruması var, tarayıcı oturumu taşıyamaz",
   ],

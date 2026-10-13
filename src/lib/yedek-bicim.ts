@@ -51,6 +51,8 @@ export const YEDEK_TABLOLARI = [
   "RolePermission",
   "UserCompanyRole",
   "AuditLog",
+  /** K334 — kullanım izi; `User` ve `Company`ye bağlı (SetNull) → ikisinden SONRA. Veri sahipliği: ölçüm de müşterinin verisidir. */
+  "KullanimOlayi",
   // --- ürün ağacı ---
   "Product",
   "ProductVariant",
