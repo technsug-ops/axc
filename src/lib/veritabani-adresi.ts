@@ -76,6 +76,32 @@ const UYGULAMA_HAVUZU = {
 } as const;
 
 /**
+ * ARKA PLAN HAVUZU (K332, 13.10.2026) — çekim uçları gibi `maxDuration` taşıyan
+ * arka plan işleri için. Gerekçe ve ölçüm `lib/arka-plan-havuzu.ts`te.
+ * minimumIdle 1 : 12.10 öncesi ölçülmüş çalışan değer (yukarıdaki gerekçe);
+ *                 ⛔ 0 YASAĞI burada da geçerli.
+ * connectionLimit 2 : bir `$transaction` sürerken ikinci bir okuma kilitlenmesin.
+ */
+export const ARKA_PLAN_HAVUZU = {
+  connectionLimit: "2",
+  minimumIdle: "1",
+  idleTimeout: "60",
+} as const;
+
+/** İşaret anahtarı — kuran: `lib/arka-plan-havuzu.ts` (içe alındığı her yerde). */
+export const ARKA_PLAN_ISARETI = Symbol.for("selliora.arkaPlanHavuzu");
+
+/** Bu sunucu kopyası arka plan havuzuyla mı kurulmalı? Yan etkisiz okuma. */
+export function arkaPlanHavuzuMu(): boolean {
+  return (globalThis as unknown as Record<symbol, boolean | undefined>)[ARKA_PLAN_ISARETI] === true;
+}
+
+/** İstemcinin havuz ayarı — işaret yoksa sayfaların ayarı. */
+export function uygulamaHavuzu(): Record<string, string> {
+  return arkaPlanHavuzuMu() ? ARKA_PLAN_HAVUZU : UYGULAMA_HAVUZU;
+}
+
+/**
  * Adrese havuz ayarlarını ekler. **Adreste açıkça yazılmış bir parametreye
  * DOKUNULMAZ** — acil durumda ortam değişkeninden müdahale edebilmek için
  * bu kapı açık bırakıldı.

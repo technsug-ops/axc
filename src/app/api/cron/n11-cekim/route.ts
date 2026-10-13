@@ -1,3 +1,5 @@
+// Arka plan işi: küçük veritabanı havuzu (K332 — gerekçe lib/arka-plan-havuzu.ts).
+import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
 
 import { n11CekimKos } from "../../../../../scripts/canli-n11-ice-aktar";

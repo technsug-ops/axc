@@ -1,3 +1,5 @@
+// Arka plan işi: küçük veritabanı havuzu (K332 — gerekçe lib/arka-plan-havuzu.ts).
+import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
 
 import { hbListelemeCekimKos } from "../../../../../scripts/canli-hb-listeleme-yaz";

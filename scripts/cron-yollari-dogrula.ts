@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
+import { ARKA_PLAN_HAVUZU, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
 
 /**
  * ============================================================================
@@ -134,6 +135,43 @@ console.log("\n4) SICAK TUTMA UCU (K332)");
   /* 12.10.2026: tek yoklama → AYNI ANDA üç (havuzun üç bağlantısı da canlı kalsın). */
   kontrol("  ...yalnız SELECT 1 (havuzun üç bağlantısına aynı anda), yazma yok",
     /\[0, 1, 2\]\.map\(async \(\) => \{[\s\S]{0,120}?await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
+}
+
+/* ═══ 5) ARKA PLAN HAVUZU (K332, 13.10.2026) ═══
+   Canlıda bağlantı tepe değeri 25 = `max_user_connections`; kaynak, aynı
+   saniyede başlayan çekim kopyalarıydı (her biri 3 park). Çekimler işareti
+   içe alır ve küçük havuz kurdurur. ⛔ İşaret YALNIZ `maxDuration` taşıyan
+   uçlarda olabilir: taşımayan uç sayfalarla aynı kopyada koşar ve işaret
+   orada sayfaların havuzunu da küçültürdü. Küme elle tutulmaz, dosyalardan
+   türetilir (iki yön: çekimde EKSİK işaret · sayfa kopyasında FAZLA işaret). */
+console.log("\n5) ARKA PLAN HAVUZU (K332)");
+{
+  const yorumsuz = (yol: string) => kaynakOku(yol).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
+  const ISARET = /^\s*import "@\/lib\/arka-plan-havuzu";/m;
+  const maxDurationlu = (yol: string) => /export const maxDuration\s*=/.test(yorumsuz(yol));
+  const cekimUclari = routeDosyalari.filter((d) => urlYolu(d).startsWith("/api/cron/") && maxDurationlu(d));
+  kontrol("maxDuration taşıyan çekim ucu bulundu (taban DOLU)", cekimUclari.length >= 7, cekimUclari.map(urlYolu));
+  const eksik = cekimUclari.filter((d) => !ISARET.test(yorumsuz(d))).map(urlYolu);
+  kontrol("  ...her çekim ucu arka plan işaretini içe alıyor", eksik.length === 0, eksik);
+  const tumKaynaklar = (kok: string): string[] =>
+    readdirSync(kok).flatMap((isim) => {
+      const tam = join(kok, isim);
+      if (statSync(tam).isDirectory()) return tumKaynaklar(tam);
+      return /\.(ts|tsx)$/.test(isim) ? [tam.replace(/\\/g, "/")] : [];
+    });
+  const isaretliler = tumKaynaklar("src").filter((d) => /["']@\/lib\/arka-plan-havuzu["']/.test(yorumsuz(d)));
+  const yanlisYer = isaretliler.filter((d) => !(d.endsWith("/route.ts") && maxDurationlu(d)));
+  kontrol("  ...işaret YALNIZ maxDuration taşıyan uçlarda (sayfa kopyasına sızmaz)", isaretliler.length >= 7 && yanlisYer.length === 0, yanlisYer);
+  const prismaK = yorumsuz("src/lib/prisma.ts");
+  kontrol("  ...istemci havuzu işarete göre seçiyor; prisma.ts işareti KURMUYOR",
+    /havuzluAdres\(url, uygulamaHavuzu\(\)\)/.test(prismaK) && !/arka-plan-havuzu/.test(prismaK));
+  const once = uygulamaHavuzu();
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- ölçüm sırası: işaret TAM burada kurulmalı
+  require("../src/lib/arka-plan-havuzu");
+  const sonra = uygulamaHavuzu();
+  kontrol("  ...değer: işaret yokken sayfa havuzu (3), varken arka plan havuzu (2 · boşta 1)",
+    once.connectionLimit === "3" && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "2" && sonra.minimumIdle === "1", { once, sonra });
+  kontrol("  ...⛔ minimumIdle=0 yasağı arka plan havuzunda da", ARKA_PLAN_HAVUZU.minimumIdle !== "0");
 }
 
 console.log("\n" + "=".repeat(70));

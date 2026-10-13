@@ -31,7 +31,7 @@
 
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
-import { havuzluAdres } from "@/lib/veritabani-adresi";
+import { havuzluAdres, uygulamaHavuzu } from "@/lib/veritabani-adresi";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -62,7 +62,9 @@ function createPrismaClient(): PrismaClient {
    * parametreleri sürücü kaçışlar. Açılmadan önce 14 sayfanın çıktısı eski ve
    * yeni sürümde karşılaştırıldı (rakam farkı yok — pano K332).
    */
-  return new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(url), { useTextProtocol: true }) });
+  // Çekim uçları (`maxDuration` taşıyan) `lib/arka-plan-havuzu.ts`i içe alır ve
+  // küçük havuz kurdurur (K332, 13.10.2026); sayfalar `UYGULAMA_HAVUZU`nda kalır.
+  return new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(url, uygulamaHavuzu()), { useTextProtocol: true }) });
 }
 
 let istemci: PrismaClient | undefined;
