@@ -165,7 +165,6 @@ import { GRAFIK_AY_SAYISI, PanelAylikGrafik } from "./panel-aylik-grafik";
 import { ustOkumaPenceresi } from "./panel-satir";
 import { headers } from "next/headers";
 import { telefonMu } from "@/lib/panel/cihaz";
-import { sureIsareti, sureIziniYaz } from "@/lib/sure-izi";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -338,12 +337,7 @@ export default async function AnaSayfa({
   // kapıların içinde yaşıyor ve girişten sonra ilk açılan sayfa panel
   // olduğu için geçici parolayla giren kişi parolasını değiştirmeden
   // panele düşüyordu. Niyet aynı (izin istemez), kapı `sayfaGirisi`.
-  /* ⏱ SÜRE İZİ — TEST İÇİN AÇILDI (K332, kaldırılacak): istek başı + veritabanı
-     yoklaması (tek SELECT 1; döndüğü an gidiş-dönüş + bağlantı sırası beklemesi). */
-  sureIsareti("basla");
-  prisma.$queryRawUnsafe("SELECT 1").then(() => sureIsareti("db-yoklama"), () => sureIsareti("db-yoklama-hata"));
   await sayfaGirisi();
-  sureIsareti("giris");
 
   // PANEL HERKESE AÇIK ama NET DEĞİL. 13.08.2026'da kullanıcı yakaladı:
   // satış listesinde marj gizliydi, panelde TOPLU görünüyordu.
@@ -364,7 +358,6 @@ export default async function AnaSayfa({
   /** KDV mahsubu şerhi ÜÇ ekranda geçiyor — tek sözlükten okunur. */
   const tOrtak = await getTranslations("Ortak");
   const bicim = await bicimlendirici();
-  sureIsareti("ceviri");
 
   const an = new Date();
   const bugun = isTakvimGunu(an);
@@ -910,7 +903,6 @@ export default async function AnaSayfa({
       },
     }),
   ]);
-  sureIsareti("ana-okuma");
 
   /**
    * PARA BİRİMİ BAŞINA KDV HARİÇ MALİYET.
@@ -1041,7 +1033,6 @@ export default async function AnaSayfa({
    */
   /* Önden başlatıldı (K332) — sorgu yukarıda, `satisHesaplariSozu`. */
   const satisHesaplari = await satisHesaplariSozu;
-  sureIsareti("satis-hesaplari");
 
   /** para birimi → o para biriminde satış yapan kanallar. */
   const paraBirimineGoreKanallar = new Map<string, Map<string, string>>();
@@ -1071,7 +1062,6 @@ export default async function AnaSayfa({
    * sayılmaz" — var olan bir karar yeni ekranda uygulanmamıştı.)_
    */
   const [secenekHesapli, secenekHesapsiz] = await secenekSozu;
-  sureIsareti("secenekler");
   const secenekSatirlari = [
     ...secenekHesapli.map((r) => ({
       tarih: r.soldAt,
@@ -1193,7 +1183,6 @@ export default async function AnaSayfa({
    *  SON_3_AY) gösteriyor. Aynı kelimeyi iki kavram için kullanmak, bugün
    *  anayasaya yazılan dersin değişken düzeyindeki hâli olurdu. */
   const muhasebeDonemi = await muhasebeDonemiSozu;
-  sureIsareti("muhasebe");
 
   /** ⭐ TY ÇEKİM ROZETİ (04.09.2026) — zamanlayıcı kaçarsa EKRAN söyler;
    *  saf gövde + iz okuması ayrı (bkz. lib/panel/ty-cekim-yasi.ts). */
@@ -1925,7 +1914,6 @@ export default async function AnaSayfa({
    */
   const [gorevSayilari, paketlenen, alim, kiyasAlim, vitrinOnbellegi] =
     await gorevBlokuSozu;
-  sureIsareti("gorev");
   const vitrin = vitrinOnbellegi.deger;
 
   /**
@@ -2551,15 +2539,6 @@ export default async function AnaSayfa({
       ) : null}
     </>
   ) : null;
-
-  /* ⏱ SÜRE İZİ — TEST İÇİN AÇILDI (K332, kaldırılacak). Önbelleğin hesaplandığı an: kaydın
-     kendi zamanına yakınsa bu istekte hesaplandı, eskiyse önbellekten geldi. */
-  sureIsareti("govde");
-  sureIziniYaz("panel-govde", {
-    telefon: !grafikOkunur,
-    vitrinAn: vitrinOnbellegi.an.toISOString(),
-    yaslanma: yaslanmaHesabiSozu === null ? "-" : "arkadan",
-  });
 
   return (
     <div className="min-w-0 space-y-4">

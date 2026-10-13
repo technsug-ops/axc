@@ -7228,7 +7228,9 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
      fark üst kısmın yaşlanmayı beklemesiydi. Artık ana okuma onu BEKLEMEZ; iki bölüm
      `Suspense` içinde AYNI sözü bekler. */
   const anaOkumaBas = sayfaK.indexOf("] = await Promise.all([\n    prisma.sale.findMany({");
-  const anaOkumaSon = sayfaK.indexOf('sureIsareti("ana-okuma");');
+  /* ⚠ ÇAPA TAŞINDI (13.10.2026): bitiş eskiden geçici süre izi satırıydı (`sureIsareti("ana-okuma")`);
+     süre izi kaldırılınca ana okumadan sonraki İLK satıra bağlandı. */
+  const anaOkumaSon = sayfaK.indexOf("const maliyetKdvHaric = new Map<Currency, number>();");
   kontrol("  ...ana okuma yaşlanma sözünü BEKLEMEZ (üst kısım bütün partileri beklemez)",
     anaOkumaBas >= 0 && anaOkumaSon > anaOkumaBas &&
       !/yaslanmaVerisiSozu|yaslanmaHesabiSozu/.test(sayfaK.slice(anaOkumaBas, anaOkumaSon)));

@@ -18,7 +18,6 @@ import { gunDegeri } from "@/lib/donem";
 import { karEksikAyAdresi } from "@/lib/liste-suzgeci";
 import { aylikMarj, aylikSeri, type AyNoktasi, type PanelIadesi, type PanelSatisi } from "@/lib/panel";
 import { suzgecAdresi } from "@/lib/suzgec";
-import { sureIsareti, sureIziniYaz } from "@/lib/sure-izi";
 
 /** Aylık grafiğin kaç ay geriye baktığı — panel okuma aralığını da bu kurar. */
 export const GRAFIK_AY_SAYISI = 12;
@@ -293,9 +292,6 @@ export async function PanelAylikGrafik({
     ).map((n) => n.adet),
   }));
 
-  /* ⏱ SÜRE İZİ — TEST İÇİN AÇILDI (K332, kaldırılacak). */
-  sureIsareti("grafik12");
-  sureIziniYaz("panel-grafik");
 
   return (
     <>

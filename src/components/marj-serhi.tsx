@@ -13,7 +13,6 @@ import { pencereCoz } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 import { DURUM_KUTUSU } from "@/lib/renkler";
 import { OnbellekNotu } from "@/components/onbellek-notu";
-import { sureIsareti, sureIziniYaz } from "@/lib/sure-izi";
 
 /**
  * ============================================================================
@@ -49,9 +48,6 @@ export async function MarjSerhi({
 }) {
   const cozum = pencereCoz(parametreler ?? {});
   const s = await marjSerhi(prisma, marjPencereden(cozum.aralik));
-  /* ⏱ SÜRE İZİ — TEST İÇİN AÇILDI (K332, kaldırılacak). */
-  sureIsareti("marj-serhi");
-  sureIziniYaz("marj-serhi");
   /** ⚠ SEBEPLERİN HEPSİ SIFIRSA ŞERH HİÇ ÇIKMAZ. */
   if (s.bekleyen === 0 && s.alimYok === 0 && s.donemDisi === 0) return null;
 

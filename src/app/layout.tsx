@@ -10,7 +10,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { cn } from "@/lib/utils";
 import { AltCubuk } from "@/components/alt-cubuk";
-import { GezinmeOlcumu } from "@/components/gezinme-olcumu";
 import { AppSidebar } from "@/components/app-sidebar";
 import { BasariBildirimi } from "@/components/basari-bildirimi";
 import {
@@ -365,8 +364,6 @@ export default async function RootLayout({
                 {/* TELEFON ALT BARI (K270): sabit, beş sekme; `pb-24` yukarıda onun
                     içindir — içerik barın arkasına kaymaz. Masaüstünde yok (`md:hidden`). */}
                 <AltCubuk />
-                {/* TEST İÇİN AÇILDI (K332, 11.10.2026) — yalnız `?hiz=1` ile görünür; ölçüm bitince kalkar. */}
-                <GezinmeOlcumu />
               </SidebarInset>
             </SidebarProvider>
           </TooltipProvider>

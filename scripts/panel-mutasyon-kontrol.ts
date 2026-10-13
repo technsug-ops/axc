@@ -1201,8 +1201,9 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "ANA OKUMA YASLANMAYI YINE BEKLIYOR",
     yon: "FAZLADAN",
     dosya: SAYFA,
-    bul: '  sureIsareti("ana-okuma");\n',
-    koy: '  await yaslanmaHesabiSozu;\n  sureIsareti("ana-okuma");\n',
+    /* ⚠ ÇAPA TAŞINDI (13.10.2026): geçici süre izi kaldırıldı; ana okumadan sonraki ilk satır. */
+    bul: "  const maliyetKdvHaric = new Map<Currency, number>();\n",
+    koy: "  await yaslanmaHesabiSozu;\n  const maliyetKdvHaric = new Map<Currency, number>();\n",
     bozdugu: "ust kisim butun acik partileri bekler (canli izde 0,5-1,5 sn)",
   },
   {
