@@ -189,10 +189,21 @@ async function donguOlc() {
 {
   const uclar = dosyalar("src/app/api/cron").filter((y) => /route\.ts$/.test(y));
   kontrol(`zamanlanmış iş ucu tabanı DOLU (≥7, bulunan ${uclar.length})`, uclar.length >= 7);
+  /* Firma işi YAPMAYAN uç beyanla muaf — gerekçesiz muafiyet yok; muaf uç yine de
+     hiçbir model sorgusu taşımamalı (yalnız ham `SELECT 1`). */
+  const DONGU_MUAF: Record<string, string> = {
+    "src/app/api/cron/sicak/route.ts": "sunucu parçasını ve havuz bağlantılarını uyanık tutar (K332); firma verisine dokunmaz, yalnız SELECT 1",
+  };
   const betikler = new Set<string>();
   for (const u of uclar) {
     const k = yorumsuz(kaynakOku(u));
-    kontrol(`${u.replace(/\\/g, "/")} firma döngüsünden geçer`, /await zamanlanmisIsDongusu\(\{ kanalAnahtariGerekir: (true|false) \}/.test(k));
+    const yol = u.replace(/\\/g, "/");
+    if (DONGU_MUAF[yol]) {
+      kontrol(`${yol} firma döngüsünden muaf — gerekçe: ${DONGU_MUAF[yol]} (model sorgusu YOK)`,
+        DONGU_MUAF[yol].length > 10 && !/prisma\.\w+\.(find|create|update|delete|upsert|count|aggregate|groupBy)/.test(k));
+      continue;
+    }
+    kontrol(`${yol} firma döngüsünden geçer`, /await zamanlanmisIsDongusu\(\{ kanalAnahtariGerekir: (true|false) \}/.test(k));
     for (const m of k.matchAll(/from "(?:\.\.\/)+scripts\/([\w-]+)"/g)) betikler.add(m[1]!);
   }
   kontrol(`uçların çağırdığı betik tabanı DOLU (≥8, bulunan ${betikler.size})`, betikler.size >= 8);
@@ -256,6 +267,7 @@ async function donguOlc() {
 {
   const MUAF: Record<string, string> = {
     AuditLog: "oturum açılmadan önceki giriş izinin firması yoktur (iz.ts → sistemPrisma)",
+    KullanimOlayi: "kullanım izi iş verisi değil ölçümdür; firma silinince iz ANONİM kalır (onDelete SetNull) — NOT NULL kuralı SetNull ile çelişir ve izi firma silmeyi engelleyen bir bağa çevirirdi. Yazan uç firmayı oturumdan alır (api/kullanim, K334)",
   };
   const sema = kaynakOku("prisma/schema.prisma").replace(/\r\n/g, "\n");
   const goc = readdirSync("prisma/migrations")

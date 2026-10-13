@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Building2, CalendarCheck, LogOut, Mail, NotebookText, Package, Wallet, type LucideIcon } from "lucide-react";

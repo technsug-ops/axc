@@ -1,5 +1,5 @@
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { getTranslations } from "next-intl/server";
 import { PanelRightOpen, Plus } from "lucide-react";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { useTranslations } from "next-intl";
 import { Copy, KeyRound, ShieldCheck } from "lucide-react";
 

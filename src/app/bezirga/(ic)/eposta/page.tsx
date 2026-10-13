@@ -5,7 +5,7 @@ import { gidenEpostalar } from "@/lib/eposta";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
 import { sorunluEpostalar } from "@/lib/yonetim/durumlar";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 
 import { SayfaBasligi } from "../sayfa-basligi";
 

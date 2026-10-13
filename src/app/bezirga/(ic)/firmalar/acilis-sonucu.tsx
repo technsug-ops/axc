@@ -2,7 +2,7 @@
 
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { useTranslations } from "next-intl";
 import { CircleCheck } from "lucide-react";
 

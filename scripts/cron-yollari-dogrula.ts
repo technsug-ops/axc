@@ -194,9 +194,16 @@ console.log("\n5) ARKA PLAN HAVUZU (K332)");
     [...yorumsuz(d).matchAll(/new PrismaMariaDb\(([^)]*\)?)\)/g)]
       .filter((m) => !/^havuzluAdres\(\w+, ARKA_PLAN_HAVUZU\)$/.test(m[1]))
       .map((m) => `${d}: new PrismaMariaDb(${m[1]})`));
-  const kurulumlu = cekirdekler.filter((d) => /new PrismaMariaDb\(/.test(yorumsuz(d)));
+  /* K303 dalı: çekirdekler istemciyi `firmaIstemcisi(` ile kurar (firma süzgeci). O
+     yol da sayılır — ama YALNIZ ortak gövde istemciyi arka plan havuzuyla kuruyorsa;
+     gövdedeki her `new PrismaMariaDb(` aynı ölçütten geçer (çıplak adres yok). */
+  const firmaGovdesi = "src/lib/firma-istemcisi.ts";
+  const govdeKurulumlari = [...yorumsuz(firmaGovdesi).matchAll(/new PrismaMariaDb\(([^)]*\)?)\)/g)].map((m) => m[1]);
+  const govdeHavuzlu = govdeKurulumlari.length >= 1 && govdeKurulumlari.every((a) => /^havuzluAdres\(\w+, ARKA_PLAN_HAVUZU\)$/.test(a));
+  const kurulumlu = cekirdekler.filter((d) =>
+    /new PrismaMariaDb\(/.test(yorumsuz(d)) || (govdeHavuzlu && /\bfirmaIstemcisi\(/.test(yorumsuz(d))));
   kontrol("  ...çekirdekte istemci YALNIZ arka plan havuzuyla kurulur (çıplak adres yok)",
-    kurulumlu.length >= 6 && ciplak.length === 0, { kurulumlu: kurulumlu.length, ciplak });
+    kurulumlu.length >= 6 && ciplak.length === 0 && govdeHavuzlu, { kurulumlu: kurulumlu.length, ciplak, govdeKurulumlari });
   kontrol("  ...⛔ minimumIdle=0 yasağı arka plan havuzunda da", Number(ARKA_PLAN_HAVUZU.minimumIdle) >= 1);
 }
 

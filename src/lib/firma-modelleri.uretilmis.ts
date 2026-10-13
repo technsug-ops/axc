@@ -249,6 +249,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
         "hedef": "AuditLog",
         "liste": true
       },
+      "kullanimOlaylari": {
+        "hedef": "KullanimOlayi",
+        "liste": true
+      },
       "talepler": {
         "hedef": "Talep",
         "liste": true
@@ -819,6 +823,22 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
     },
     "yabanciAnahtarlar": [
       "channelAccountId"
+    ]
+  },
+  "KullanimOlayi": {
+    "firma": true,
+    "iliskiler": {
+      "company": {
+        "hedef": "Company",
+        "liste": false
+      },
+      "user": {
+        "hedef": "User",
+        "liste": false
+      }
+    },
+    "yabanciAnahtarlar": [
+      "userId"
     ]
   },
   "Location": {
@@ -1619,6 +1639,10 @@ export const MODEL_HARITASI: Record<string, ModelBilgisi> = {
       },
       "auditLogs": {
         "hedef": "AuditLog",
+        "liste": true
+      },
+      "kullanimOlaylari": {
+        "hedef": "KullanimOlayi",
         "liste": true
       },
       "talepler": {

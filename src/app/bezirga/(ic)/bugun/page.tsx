@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { getTranslations } from "next-intl/server";
 import { AlertTriangle, BadgeCheck, Ban, Building2, CalendarClock, CircleCheck, Gauge, MailX, PackageX, Wallet, Wrench, type LucideIcon } from "lucide-react";
 

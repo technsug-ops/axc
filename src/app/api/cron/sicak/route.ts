@@ -42,6 +42,7 @@ export async function GET(istek: NextRequest) {
     const sureler = await Promise.all(
       Array.from({ length: SAYFA_HAVUZU_BOYUTU }, async () => {
         const b = performance.now();
+        // SISTEM: bağlantı yoklaması — hiçbir tabloya dokunmaz, firma verisi okumaz/yazmaz
         await prisma.$queryRawUnsafe("SELECT 1");
         return Math.round(performance.now() - b);
       }),
