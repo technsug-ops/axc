@@ -136,7 +136,9 @@ console.log("\n4) SICAK TUTMA UCU (K332)");
 {
   const yol = routeDosyalari.find((d) => urlYolu(d) === "/api/cron/sicak");
   kontrol("sıcak tutma ucu var", yol !== undefined);
-  const kod = yol ? kaynakOku(yol).replace(/\/\*[\s\S]*?\*\//g, " ") : "";
+  /* Satır yorumu da ayıklanır (13.10.2026): `// SISTEM:` gerekçesi (firma süzgeci şartı)
+     ölçütü kırmızı yakıyordu — yorum davranış değildir. */
+  const kod = yol ? kaynakOku(yol).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1 ") : "";
   kontrol("  ...sayfalarla aynı parçada: çalışma ayarı YOK (maxDuration · runtime · preferredRegion)",
     kod.length > 0 && !/export const (maxDuration|runtime|preferredRegion|regions)\b/.test(kod));
   /* 12.10.2026: tek yoklama → AYNI ANDA üç (havuzun üç bağlantısı da canlı kalsın). */
