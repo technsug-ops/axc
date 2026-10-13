@@ -291,6 +291,22 @@ console.log("\n6) zincir — kutu panele, süzgeç /stok'a BAĞLI mı");
     "  ...çizilen kutuya veri GİDİYOR",
     /<VitrinKutusu\s+veri=\{/.test(kanalSayfasi),
   );
+  /**
+   * ⚡ PANELLE AYNI ÖNBELLEK (K332, 13.10.2026). Kanal listeleme vitrini her açılışta
+   * sıfırdan hesaplıyordu (bütün açık partiler); artık panelle AYNI anahtar
+   * (`vitrin:<firma>`) — iki ekran aynı rakamı aynı hesaplamadan gösterir. Önbellek
+   * bayatlığı gizlenmez: kutunun altında hesaplandığı saat yazar. Anahtar panelden
+   * ayrışırsa iki ekran iki farklı anın rakamını gösterirdi — ölçüt iki dosyada da arar.
+   */
+  const VITRIN_ANAHTARI = /kisaOnbellek\(`vitrin:\$\{\w+\}`, PANEL_ONBELLEK_MS, (?:vitrinKutusunuTopla|\(\) => vitrinKutusunuTopla\(\))\)/;
+  dogru(
+    "  ...vitrin panelle AYNI önbellek anahtarından (kanal listeleme + panel)",
+    VITRIN_ANAHTARI.test(kanalSayfasi) && VITRIN_ANAHTARI.test(panel),
+  );
+  dogru(
+    "  ...kanal listeleme kutusu arkadan dolar ve hesaplandığı saati YAZAR",
+    /<ArkadanDolan\s+soz=\{vitrinSozu\}[\s\S]{0,300}?<VitrinKutusu veri=\{vitrin\.deger\} \/>\s*\{vitrin\.deger\.length > 0 \? <OnbellekNotu an=\{vitrin\.an\} \/> : null\}/.test(kanalSayfasi),
+  );
 
   /**
    * ⛔ PANELDE ŞERH VAR, DÖKÜM YOK — İKİSİ AYRI ÖLÇÜLÜR.

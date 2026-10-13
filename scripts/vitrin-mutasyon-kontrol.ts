@@ -68,11 +68,28 @@ const MUTASYONLAR: Mutasyon[] = [
       "serh her zaman bos gorunur; rafta yatan sermaye panelde HIC yazmaz",
   },
   {
+    ad: "KANAL LISTELEME KENDI ONBELLEGINI KURDU (panelden ayristi)",
+    yon: "KALDIRAN",
+    dosya: KANAL,
+    bul: "kisaOnbellek(`vitrin:${vitrinFirmasi}`, PANEL_ONBELLEK_MS, () => vitrinKutusunuTopla())",
+    koy: "kisaOnbellek(`kanal-vitrin:${vitrinFirmasi}`, PANEL_ONBELLEK_MS, () => vitrinKutusunuTopla())",
+    bozdugu: "panel ile kanal listeleme ayni kutuyu iki ayri anin rakamiyla gosterir",
+  },
+  {
+    ad: "KANAL LISTELEME HESAPLANDIGI SAATI YAZMIYOR",
+    yon: "KALDIRAN",
+    dosya: KANAL,
+    bul: "              {vitrin.deger.length > 0 ? <OnbellekNotu an={vitrin.an} /> : null}",
+    koy: "",
+    bozdugu: "2 dk eski kutu taze gibi gorunur",
+  },
+  {
     ad: "DOKUM KANAL LISTELEMEDEN KALKTI (hic bir yerde cizilmez)",
     yon: "KALDIRAN",
     dosya: KANAL,
-    bul: "      <VitrinKutusu veri={await vitrinKutusunuTopla()} />",
-    koy: "      {null}",
+    /* ⚠ ÇAPA TAŞINDI (13.10.2026, K332): kutu artık `ArkadanDolan` içinde, panelle aynı önbellekten. */
+    bul: "              <VitrinKutusu veri={vitrin.deger} />",
+    koy: "              {null}",
     bozdugu:
       "panelden kaldirilan dokum yeni evine hic varmaz - tasima sirasinda kaybolan ekran",
   },

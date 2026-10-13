@@ -2565,8 +2565,10 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
   kontrol(
     "  ...izin yoksa takvim sorgusu ATILMIYOR",
+    /* ⚠ ÖLÇÜT TAŞINDI (13.10.2026, K332): sorgu SÖZ olarak başlıyor ve ana okumayla
+       aynı anda bekleniyor; izin kapısı aynı, boş dal artık çözülmüş boş söz. */
     raporSayfasi.includes(
-      "karGorunur ? await takvimSatirlariniTopla(takvimBugun) : []",
+      "karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([])",
     ),
   );
   /**

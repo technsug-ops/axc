@@ -760,7 +760,9 @@ console.log("\nK141) kargosu düşülmemiş kâr — tek ölçüt, sayı = liste
   kontrol("rozet kâr rakamının iki çiziminde de (nötr + renkli)", (netKar.match(/\{kargoRozeti\}/g) ?? []).length === 2);
   for (const [ad, yol] of [["panel", "src/app/page.tsx"], ["rapor", "src/app/rapor/page.tsx"]] as const) {
     const m = yorumsuzla(kaynakOku(yol));
-    kontrol(`${ad}: sayı listenin süzgeç gövdesiyle sayılıyor`, /karGorunur\s*\?\s*await prisma\.sale\.count\(\{ where: satisKosulu\(kargosuzParam, an\)\.kosul \}\)/.test(m));
+    /* ⚠ ÖLÇÜT TAŞINDI (13.10.2026, K332): rapor sayımı artık SÖZ olarak başlıyor ve ana
+       okumayla aynı anda bekleniyor (`await` yeri değişti, sorgu ve izin kapısı aynı). */
+    kontrol(`${ad}: sayı listenin süzgeç gövdesiyle sayılıyor`, /karGorunur\s*\?\s*(?:await )?prisma\.sale\.count\(\{ where: satisKosulu\(kargosuzParam, an\)\.kosul \}\)/.test(m));
     kontrol(`${ad}: not aynı parametrelerle listeye götürüyor`, m.includes('suzgecAdresi("/satislar", kargosuzParam, {})'));
     kontrol(`${ad}: not ÇİZİLİYOR (koşul + metin aynı dalda)`, /\{kargosuzSayisi > 0 \? \([\s\S]{0,400}t\("kargosuzNotu"/.test(m));
   }

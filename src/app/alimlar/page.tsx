@@ -98,7 +98,10 @@ export default async function AlimlarSayfasi({
 
   // Süzgeç seçenekleri VERİDEN gelir. Alım hesapları ALIŞ rolündedir;
   // satış mağazasını alım süzgecinde listelemek anlamsız olurdu.
-  const [hesaplar, tedarikciler, kartlar] = await Promise.all([
+  /* ⚡ Süzgeç seçenekleri ve toplamlar AYNI ANDA (K332, 13.10.2026) — birbirinden
+     bağımsızlar; eskiden toplamlar seçenekleri bekliyordu. Satır okuması sayfa
+     numarasını toplam kayıt sayısından çözdüğü için sırada kalır. */
+  const [hesaplar, tedarikciler, kartlar, toplamVerisi] = await Promise.all([
     prisma.channelAccount.findMany({
       where: { isActive: true, alisIcin: true },
       select: { id: true, name: true, channel: { select: { name: true } } },
@@ -114,6 +117,7 @@ export default async function AlimlarSayfasi({
       select: { id: true, label: true },
       orderBy: { label: "asc" },
     }),
+    alimToplamlari(kosul),
   ]);
 
   /**
@@ -125,7 +129,6 @@ export default async function AlimlarSayfasi({
    * ⛔ Toplamlar `lib/alim-toplami.ts`e taşındı ve SÜZGECİN TAMAMINI ölçüyor
    * (İlke #15) — yoksa sayfalama toplamı sayfanın toplamına düşürürdü.
    */
-  const toplamVerisi = await alimToplamlari(kosul);
   const sayfalama = sayfaCoz(p.sayfa, toplamVerisi.kayitSayisi);
 
   const alimlar = await prisma.purchase.findMany({

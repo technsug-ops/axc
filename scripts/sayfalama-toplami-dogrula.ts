@@ -107,7 +107,9 @@ for (const e of EKRANLAR) {
     e.ad + " · toplamlar veritabanı gövdesinden (" + e.govde + ")",
     new RegExp("await\\s+" + e.govde + "\\(kosul\\)").test(kod) ||
       /* K332: sayımla liste AYNI ANDA — gövde `Promise.all` içinde çağrılır. */
-      kod.includes("const [toplamlar, tahminiListe] = await Promise.all([" + e.govde + "(kosul)"),
+      kod.includes("const [toplamlar, tahminiListe] = await Promise.all([" + e.govde + "(kosul)") ||
+      /* K332 (13.10.2026): /alimlar'da toplamlar süzgeç seçenekleriyle AYNI ANDA okunur. */
+      new RegExp("toplamVerisi\\] = await Promise\\.all\\(\\[[\\s\\S]{0,900}?" + e.govde + "\\(kosul\\),\\s*\\]\\);").test(kod),
     "gövde çağrılmıyor — toplam nereden geliyor?",
   );
   if (fonksiyonlaSayfali) {
