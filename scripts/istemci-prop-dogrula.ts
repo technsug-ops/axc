@@ -162,7 +162,10 @@ kosanBolumler.push("desen yasağı");
 console.log("\n2) 07.09 vakası — karşılaştırma grafiği birim TANIMI taşır");
 {
   const g = kaynakOku("src/components/karsilastirma-grafigi.tsx");
-  const p = kaynakOku("src/app/page.tsx");
+  /* K332 (11.10.2026): seri kurulumu `panel-aylik-grafik.tsx`e taşındı (12 aylık
+     grafik arkadan doluyor). Sayfa da okunur ki kod geri dönerse ölçüt körleşmesin;
+     yalnız sayfayı okumak ikinci ölçütü SESSİZCE yeşil bırakıyordu (ölçecek kod yoktu). */
+  const p = kaynakOku("src/app/page.tsx") + "\n" + kaynakOku("src/app/panel-aylik-grafik.tsx");
   dogru("seri BİRİM TÜRÜ taşıyor", /birimTuru:\s*"PARA"\s*\|\s*"SAYI"/.test(g));
   dogru("biçim İSTEMCİDE çözülüyor (useBicim)", g.includes("const bicim = useBicim();"));
   /** ⛔ Fonksiyon alanları GERİ GELEMEZ. */

@@ -48,6 +48,17 @@
   --se-kabuk-marka:      #12356B;   /* logo rengi menüde (07.10.2026) */
   --se-kabuk-cizgi:      #DCE0E6;
 
+  /* --- sol menü (11.10.2026, kullanıcı: «burayı daha koyu yaparsan sayfadan ayrılmış
+     olur») — beyaz menü #F4F6FA zeminden ayrışmıyordu. Üst çubuk ve telefon sistem
+     çubuğu (`--se-kabuk`, `KABUK_RENKLERI`) DEĞİŞMEDİ; yalnız menü. Ölçüldü: menüdeki
+     ikincil yazı eski #667380 ile bu zeminde 3,98 (sınır 4,5) → #525E6B 5,43. Seçili
+     satır vurgu tonunda açık mavi (panel:dogrula: seçili satır renkli olmalı, düz beyaz «seçili»
+     demiyor); zeminle 1,05'lik eski ton seçimi göstermezdi. */
+  --se-menu:             #E4E9F0;
+  --se-menu-secili:      #F5F8FD;
+  --se-menu-ink2:        #525E6B;
+  --se-menu-cizgi:       #C9D0DA;
+
   /* --- mürekkep --- */
   --se-ink:              #232B35;   /* birincil metin, sayılar */
   --se-ink-2:            #667380;   /* etiket, ikincil metin */

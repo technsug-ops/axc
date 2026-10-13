@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { ETIKET_BOY_MM, ETIKET_EN_MM, rafEtiketiSvg } from "@/lib/depo/etiket";

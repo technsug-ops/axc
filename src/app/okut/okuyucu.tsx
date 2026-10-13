@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { useTranslations } from "next-intl";
 import { PackageCheck } from "lucide-react";
 

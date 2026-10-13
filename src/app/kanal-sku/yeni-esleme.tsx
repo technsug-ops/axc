@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 
 import { useActionState, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";

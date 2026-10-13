@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { AlertTriangle, PackageX } from "lucide-react";
 
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
@@ -25,7 +25,12 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaCoz } from "@/lib/sayfalama";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { aramaKosulu, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
-import { sayfaIzni } from "@/lib/yetki";
+import { sayfaIzni, yetkiBaglami } from "@/lib/yetki";
+import { Suspense } from "react";
+import { ArkadanDolan } from "@/components/arkadan-dolan";
+import { OnbellekNotu } from "@/components/onbellek-notu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { kisaOnbellek, PANEL_ONBELLEK_MS } from "@/lib/kisa-onbellek";
 import { VitrinKutusu } from "@/app/vitrin-kutusu";
 import { vitrinKutusunuTopla } from "@/lib/panel/vitrin-verisi";
 import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
@@ -86,11 +91,24 @@ export default async function KanalListelemeSayfasi({
   const bicim = await bicimlendirici();
   const simdi = new Date();
 
-  const hesaplar = await prisma.channelAccount.findMany({
+  /* ⚡ VİTRİN KUTUSU PANELLE AYNI ÖNBELLEKTEN VE ARKADAN (K332, 13.10.2026). Eskiden
+     sayfanın sonunda `await` ile her açılışta sıfırdan hesaplanıyordu (bütün açık
+     partiler); panel aynı veriyi 2 dk önbellekte tutuyor. Anahtar panelle AYNI
+     (`vitrin:<firma>`) — iki ekran aynı rakamı aynı hesaplamadan gösterir; ne zaman
+     hesaplandığı kutunun altında yazar. Söz BURADA başlar, aşağıdaki okumalarla
+     aynı anda koşar; kutu `Suspense` içinde bekler. */
+  const vitrinFirmasi = (await yetkiBaglami())?.companyId ?? "-";
+  const vitrinSozu = kisaOnbellek(`vitrin:${vitrinFirmasi}`, PANEL_ONBELLEK_MS, () => vitrinKutusunuTopla());
+  vitrinSozu.catch(() => {});
+
+  /* ⚡ Birbirine bağlı olmayan okumalar AYNI ANDA (K332): eskiden dört okuma sırayla
+     bekleniyordu (her biri canlıda ≥ 1 gidiş-dönüş + istemcinin ek sorguları). */
+  const hesaplarSozu = prisma.channelAccount.findMany({
     where: { channelSkus: { some: {} } },
     select: { id: true, name: true, channel: { select: { name: true } } },
     orderBy: [{ channel: { name: "asc" } }, { name: "asc" }],
   });
+  hesaplarSozu.catch(() => {});
 
   /**
    * ⚠ SÜZGEÇ KOŞULU `AND` İLE KURULUR, SPREAD İLE DEĞİL — spread kullanıcının
@@ -132,7 +150,7 @@ export default async function KanalListelemeSayfasi({
     });
   }
 
-  const kayitlar = await prisma.channelSku.findMany({
+  const [hesaplar, kayitlar] = await Promise.all([hesaplarSozu, prisma.channelSku.findMany({
     where: kosullar.length > 0 ? { AND: kosullar } : {},
     select: {
       id: true,
@@ -147,24 +165,22 @@ export default async function KanalListelemeSayfasi({
         select: { id: true, name: true, channel: { select: { name: true } } },
       },
     },
-  });
+  })]);
 
   /**
    * STOK LEDGER'DAN — `StockMovement` toplamı. Varyant tablosunda saklanan
    * bir "stok" alanı YOK ve olmamalı (ledger tek gerçek).
    */
   const varyantIdleri = [...new Set(kayitlar.map((k) => k.variant.id))];
-  const hareketler =
+  /* Söz olarak başlar; son satış fiyatı okumasıyla AYNI ANDA beklenir (K332). */
+  const hareketlerSozu =
     varyantIdleri.length === 0
-      ? []
-      : await prisma.stockMovement.groupBy({
+      ? Promise.resolve([])
+      : prisma.stockMovement.groupBy({
           by: ["variantId"],
           where: { variantId: { in: varyantIdleri } },
           _sum: { quantityDelta: true },
         });
-  const stokHaritasi = new Map(
-    hareketler.map((h) => [h.variantId, Number(h._sum.quantityDelta ?? 0)]),
-  );
 
   /**
    * ⛔ KANAL FİYATI DEFTERDE TUTULMUYOR — ve UYDURULMAZ.
@@ -181,10 +197,10 @@ export default async function KanalListelemeSayfasi({
    * satılmamış bir varyantta fiyat yoktur; satır SAYILIR ama tutara GİRMEZ —
    * adet tam, tutar ALT SINIR.
    */
-  const sonSatislar =
+  const [hareketler, sonSatislar] = await Promise.all([hareketlerSozu,
     varyantIdleri.length === 0
-      ? []
-      : await prisma.saleItem.findMany({
+      ? Promise.resolve([])
+      : prisma.saleItem.findMany({
           where: {
             variantId: { in: varyantIdleri },
             /**
@@ -199,7 +215,10 @@ export default async function KanalListelemeSayfasi({
           },
           select: { variantId: true, unitPriceAmount: true, sale: { select: { soldAt: true } } },
           orderBy: { sale: { soldAt: "desc" } },
-        });
+        })]);
+  const stokHaritasi = new Map(
+    hareketler.map((h) => [h.variantId, Number(h._sum.quantityDelta ?? 0)]),
+  );
   const fiyatHaritasi = new Map<string, number | null>();
   for (const si of sonSatislar) {
     /** İlk gördüğümüz EN YENİDİR (sıralama desc) — sonrakiler eskisi. */
@@ -297,7 +316,18 @@ export default async function KanalListelemeSayfasi({
 
           ⚠ İZİN AYRICA İSTENMİYOR: sayfanın kendisi `stok.gor` kapısından
           geçiyor (`:78`) ve kutu o kapının arkasında. */}
-      <VitrinKutusu veri={await vitrinKutusunuTopla()} />
+      {/* ⚡ Arkadan dolar, panelle aynı 2 dk önbellekten (K332) — hesaplandığı saat altında yazar. */}
+      <Suspense fallback={<Skeleton className="h-24" />}>
+        <ArkadanDolan
+          soz={vitrinSozu}
+          ciz={(vitrin) => (
+            <>
+              <VitrinKutusu veri={vitrin.deger} />
+              {vitrin.deger.length > 0 ? <OnbellekNotu an={vitrin.an} /> : null}
+            </>
+          )}
+        />
+      </Suspense>
 
       {/* ── ÖLÇÜMÜN YAŞI — şemanın şartı, bayatsa görünür ───────────────── */}
       <div

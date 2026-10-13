@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Wand2 } from "lucide-react";

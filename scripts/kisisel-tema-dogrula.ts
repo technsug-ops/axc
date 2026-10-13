@@ -181,6 +181,23 @@ console.log("\n2) zincir — betik · düğme · CSS");
   kontrol("düğme ve girdi köşesi kart köşesine bağlı (sabit 8px değil)",
     (kopru.match(/border-radius: calc\(var\(--radius\) \* 2 \/ 3\);/g) ?? []).length === 2 && !/\[data-slot="button"\] \{\s*border-radius: 8px/.test(kopru));
   kontrol("kaldırılan tema dosyaları yok", !existsSync("src/styles/tema-gece.css") && !existsSync("src/styles/tema-pembe.css"));
+  {
+    /* 11.10.2026 telefon bulgusu: renk girişi panelin İÇİNDEYKEN telefonun renk penceresi
+       paneli kapatıyor, giriş sökülüyor, seçilen renk hiç ulaşmıyordu. Ölçüt: tek renk
+       girişi var, panel bloğunun ÖNÜNDE (kökte) duruyor, değişimi kişisel temaya yazıyor
+       ve paletteki düğme onu kimliğiyle açıyor. */
+    const panelBas = secici.indexOf("<PopoverContent");
+    const panelSon = secici.indexOf("</PopoverContent>");
+    const renkGirisleri = secici.match(/type="color"/g) ?? [];
+    const girisBas = secici.indexOf('type="color"');
+    const girisBlok = girisBas >= 0 ? secici.slice(Math.max(0, girisBas - 120), girisBas + 400) : "";
+    kontrol("tek renk girişi var", renkGirisleri.length === 1, renkGirisleri.length);
+    kontrol("  ...panelin DIŞINDA (panel kapansa da renk ulaşır)", panelBas > 0 && girisBas >= 0 && girisBas < panelBas, { girisBas, panelBas });
+    kontrol("  ...kimliği ortak sabitten", /id=\{OZEL_RENK_GIRISI\}/.test(girisBlok));
+    kontrol("  ...değişim kişisel temaya yazılıyor", /onChange=\{\(e\) => kisiselDegistir\(\{ renk: e\.target\.value \}\)\}/.test(girisBlok));
+    const panel = panelBas >= 0 && panelSon > panelBas ? secici.slice(panelBas, panelSon) : "";
+    kontrol("paletteki düğme girişi kimliğiyle açıyor", /<label\s+htmlFor=\{OZEL_RENK_GIRISI\}/.test(panel));
+  }
 }
 kosanBolumler.push("zincir");
 

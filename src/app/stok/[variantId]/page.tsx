@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";

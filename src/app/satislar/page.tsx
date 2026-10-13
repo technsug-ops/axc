@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { getTranslations } from "next-intl/server";
@@ -6,7 +7,7 @@ import { onayBekleyenIdleri } from "@/lib/onay-kuyrugu";
 import { supheliVeriBulgusu } from "@/lib/uyari/faz2-veri";
 import { DogrulaButonu } from "./dogrula-butonu";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { Eye, Plus, TriangleAlert, Undo2 } from "lucide-react";
 
 import { ExcelIndir } from "@/components/excel-indir";
@@ -49,7 +50,13 @@ import {
 import { bicimlendirici } from "@/lib/bicim";
 import { gunMetni } from "@/lib/donem";
 import { hesapEtiketi } from "@/lib/ice-aktarma/referans";
-import { pencereCoz, satisKosulu, satisListesiParametreleri } from "@/lib/liste-suzgeci";
+import {
+  pencereCoz,
+  SATIS_VARSAYILAN_PENCERE,
+  satisKosulu,
+  satisListesiParametreleri,
+  TUM_ZAMANLAR,
+} from "@/lib/liste-suzgeci";
 import {
   MARJ_SEBEPLERI,
   marjPencereden,
@@ -119,6 +126,13 @@ export default async function SatislarSayfasi({
   const karGorunur = await izinVarMi("satis.kar.gor");
 
   const p = await searchParams;
+  /**
+   * ⏩ SÜZGEÇSİZ AÇILIŞ «BU AY» (kullanıcı kararı 11.10.2026, K332 — hız).
+   * Yalnız HİÇ parametre yokken: panel sayısından açılan süzgeçli listeler
+   * (kargo, onay, kâr eksik…) tüm zamanlara bakmaya devam eder — sayı = liste.
+   * Dönem ADRESE yazılır ki rozetiyle görünsün ve Excel aynı dönemi alsın.
+   */
+  if (Object.keys(p).length === 0) redirect(`/satislar?pencere=${SATIS_VARSAYILAN_PENCERE}`);
   const arama = (p.q ?? "").trim();
 
   /**
@@ -144,6 +158,31 @@ export default async function SatislarSayfasi({
     d === null ? null : Number(d.toString());
   const tIade = await getTranslations("Iade");
   const ortak = await getTranslations("Ortak");
+
+  /**
+   * ⚡ ÖNDEN BAŞLAT (K332, 11.10.2026): süzgeç seçenekleri ve ilk çekim anları
+   * koşula BAĞLI DEĞİL; eskiden onay kuyruğundan, toplamlardan ve listeden
+   * SONRA sırayla bekleniyordu (canlıda her basamak bir veritabanı gidiş-dönüşü).
+   * Sonuç kullanıldığı yerde alınır; `.catch` yalnız yakalanmamış ret uyarısını
+   * önler — hata `await` edildiği yerde yine fırlar.
+   */
+  // Süzgeç seçenekleri VERİDEN gelir: olmayan bir seçeneğe tıklanıp boş
+  // liste görülmesin.
+  const kanalSecenekleriSozu = Promise.all([
+    prisma.channel.findMany({
+      where: { isActive: true },
+      select: { code: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.channelAccount.findMany({
+      where: { isActive: true, satisIcin: true },
+      select: { id: true, name: true, channel: { select: { name: true } } },
+      orderBy: [{ channelId: "asc" }, { name: "asc" }],
+    }),
+  ]);
+  kanalSecenekleriSozu.catch(() => {});
+  const ilkCekimlerSozu = ilkCekimAnlari(prisma);
+  ilkCekimlerSozu.catch(() => {});
 
   /**
    * ŞÜPHELİ VERİ KÜMESİ — yalnız süzgeç AÇIKKEN hesaplanır.
@@ -202,20 +241,7 @@ export default async function SatislarSayfasi({
   const pListe = satisListesiParametreleri(p);
   const { kosul, pencere } = satisKosulu(pListe, an, supheliIdler, paketliIdler, marjIdler, onayIdleri);
 
-  // Süzgeç seçenekleri VERİDEN gelir: olmayan bir seçeneğe tıklanıp boş
-  // liste görülmesin.
-  const [kanallar, hesaplar] = await Promise.all([
-    prisma.channel.findMany({
-      where: { isActive: true },
-      select: { code: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.channelAccount.findMany({
-      where: { isActive: true, satisIcin: true },
-      select: { id: true, name: true, channel: { select: { name: true } } },
-      orderBy: [{ channelId: "asc" }, { name: "asc" }],
-    }),
-  ]);
+  const [kanallar, hesaplar] = await kanalSecenekleriSozu;
 
   /**
    * ═══════════════════════════════════════════════════════════════════════
@@ -246,53 +272,61 @@ export default async function SatislarSayfasi({
    *  bağımsız.
    * ═══════════════════════════════════════════════════════════════════════
    */
-  // ÖNCE SAY, SONRA SAYFAYI ÇEK (bkz. lib/sayfalama.ts).
-  const toplamlar = await satisToplamlari(kosul);
-  const sayfalama = sayfaCoz(p.sayfa, toplamlar.kayitSayisi);
-
-  const satislar = await prisma.sale.findMany({
-    where: kosul,
-    skip: sayfalama.atla,
-    take: sayfalama.boyut,
-    include: {
-      items: {
-        /**
-         * ⛔ KALDIRILMIŞ KALEM LİSTEDE GÖRÜNMEZ (K78). Listedeki ürün adı ve
-         * fiyat sütunu bu kalemlerden çiziliyor; kaldırılmış satır burada
-         * dursaydı satır "2 kalem" der, toplamlar 1 kalem sayardı — sayı ile
-         * liste ayrışırdı. Kaldırılmış kalemin YERİ satış detayıdır.
-         */
-        where: { ...KALEM_GECERLI },
-        include: {
-          variant: {
-            include: { product: { select: { name: true } } },
+  /**
+   * ÖNCE SAY, SONRA SAYFAYI ÇEK (bkz. lib/sayfalama.ts) — ⚡ K332: sayım ile
+   * liste AYNI ANDA. Liste, sayfa numarasını toplama göre KIRPMAK için sayımı
+   * bekliyordu; kırpma yalnız son sayfa AŞILINCA bir şey değiştirir. Liste
+   * kırpmasız sayfayla önden çekilir; gerçek sayfa farklı çıkarsa (aralık dışı
+   * sayfa) DOĞRU sayfayla yeniden çekilir — sonuç her durumda aynı.
+   */
+  const listeyiCek = (s: { atla: number; boyut: number }) =>
+    prisma.sale.findMany({
+      where: kosul,
+      skip: s.atla,
+      take: s.boyut,
+      include: {
+        items: {
+          /**
+           * ⛔ KALDIRILMIŞ KALEM LİSTEDE GÖRÜNMEZ (K78). Listedeki ürün adı ve
+           * fiyat sütunu bu kalemlerden çiziliyor; kaldırılmış satır burada
+           * dursaydı satır "2 kalem" der, toplamlar 1 kalem sayardı — sayı ile
+           * liste ayrışırdı. Kaldırılmış kalemin YERİ satış detayıdır.
+           */
+          where: { ...KALEM_GECERLI },
+          include: {
+            variant: {
+              include: { product: { select: { name: true } } },
+            },
+            returnItems: { where: { return: IADE_GECERLI }, select: { quantity: true } },
           },
-          returnItems: { where: { return: IADE_GECERLI }, select: { quantity: true } },
         },
+        channelAccount: { include: { channel: { select: { name: true } } } },
+        // Rozet ve satır eylemi için: iade var mı, kalan var mı?
+        returns: { where: { ...IADE_GECERLI }, select: { id: true } },
+        /**
+         * SERMAYE VERİMİNİN PAYDASI — satışın maliyeti. Yalnız MALIYET
+         * kesintisi çekilir; YENİ HESAP YOK, mevcut snapshot okunur.
+         */
+        fees: { where: { code: "MALIYET" }, select: { amount: true } },
+        /**
+         * K141 — sipariş düzeyinde KARGO kesintisi var mı. Ölçüt `KARGO_DUSULMEMIS`
+         * ile AYNI (`kargo-kaynagi.ts`); rozet ile süzgeç aynı kümeyi görür.
+         */
+        _count: { select: { fees: { where: { code: "KARGO", saleItemId: null } } } },
       },
-      channelAccount: { include: { channel: { select: { name: true } } } },
-      // Rozet ve satır eylemi için: iade var mı, kalan var mı?
-      returns: { where: { ...IADE_GECERLI }, select: { id: true } },
-      /**
-       * SERMAYE VERİMİNİN PAYDASI — satışın maliyeti. Yalnız MALIYET
-       * kesintisi çekilir; YENİ HESAP YOK, mevcut snapshot okunur.
-       */
-      fees: { where: { code: "MALIYET" }, select: { amount: true } },
-      /**
-       * K141 — sipariş düzeyinde KARGO kesintisi var mı. Ölçüt `KARGO_DUSULMEMIS`
-       * ile AYNI (`kargo-kaynagi.ts`); rozet ile süzgeç aynı kümeyi görür.
-       */
-      _count: { select: { fees: { where: { code: "KARGO", saleItemId: null } } } },
-    },
-    orderBy: { soldAt: "desc" },
-  });
+      orderBy: { soldAt: "desc" },
+    });
+  const tahminiSayfa = sayfaCoz(p.sayfa, Number.MAX_SAFE_INTEGER);
+  const [toplamlar, tahminiListe] = await Promise.all([satisToplamlari(kosul), listeyiCek(tahminiSayfa)]);
+  const sayfalama = sayfaCoz(p.sayfa, toplamlar.kayitSayisi);
+  const satislar = sayfalama.atla === tahminiSayfa.atla ? tahminiListe : await listeyiCek(sayfalama);
 
   /**
    * AKTARILAN SİPARİŞ ROZETİ (K314) — başka mağazanın gönderemediği, pazaryerinin
    * bize aktardığı sipariş: tarihi eski, sisteme bugün düştü. Ölçüt onayın stok
    * sınırıyla AYNI gövde (`aktarilanSiparisMi`); ilk çekim anları tek sorguda.
    */
-  const ilkCekimler = await ilkCekimAnlari(prisma);
+  const ilkCekimler = await ilkCekimlerSozu;
   const aktarilanMi = (s: (typeof satislar)[number]) =>
     aktarilanSiparisMi(s, s.importKaynak ? (ilkCekimler.get(s.importKaynak) ?? null) : null);
 
@@ -682,6 +716,8 @@ export default async function SatislarSayfasi({
         /* İptal kutusu ÇÖZÜLMÜŞ değeri yazar — görev listesinde «gizli», aramada «göster». */
         mevcut={{ ...p, iptal: pListe.iptal }}
         suzgecler={suzgecler}
+        /* Rozet çarpısı satışlarda AÇIK «tüm zamanlar» yazar — boş pencere «Bu ay»a döner. */
+        tumZamanDegeri={TUM_ZAMANLAR}
         zaman={{
           secili: pencere.tur,
           aralikMetni,

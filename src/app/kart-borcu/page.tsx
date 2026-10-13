@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { DurumRozeti } from "@/components/durum-rozeti";
 import {

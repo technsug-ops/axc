@@ -137,6 +137,8 @@ import {
   type TakvimSatiri,
 } from "../src/lib/panel/nakit-takvimi";
 import { miniKovalar } from "../src/lib/panel/mini-seri";
+import { ustOkumaPenceresi } from "../src/app/panel-satir";
+import { telefonMu } from "../src/lib/panel/cihaz";
 import { abcSiniflari, devirHizi, maliyetSurucuculeri, stokGunu } from "../src/lib/panel/bi";
 import { nakitEtkisi } from "../src/lib/nakit-isaret";
 import {
@@ -200,6 +202,16 @@ import {
   VARSAYILAN_KANAL_SIRASI,
 } from "../src/lib/kanal-sirasi";
 import { kaynakOku } from "./kaynak-oku";
+/**
+ * K332 (11.10.2026) — PANELİN KAYNAĞI ÜÇ DOSYA. 12 aylık grafik bölümü
+ * `panel-aylik-grafik.tsx`e (arkadan dolan bölüm, kullanıcı fikri), satır
+ * dönüştürmesi `panel-satir.ts`e taşındı. Aşağıda bu yardımcıyı kullanan
+ * ölçütler sayfanın DOSYASINI değil panelin KAYNAĞINI ölçüyor — ölçüt eskidi,
+ * kural aynı. Dosyalar bütün hâlde art arda okunur (blok kesmeleri dosya
+ * içinde kalır).
+ */
+const panelKaynaklari = () =>
+  ["src/app/page.tsx", "src/app/panel-aylik-grafik.tsx", "src/app/panel-satir.ts"].map((y) => kaynakOku(y)).join("\n");
 
 let basarisiz = 0;
 let calisan = 0;
@@ -2553,8 +2565,10 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
   );
   kontrol(
     "  ...izin yoksa takvim sorgusu ATILMIYOR",
+    /* ⚠ ÖLÇÜT TAŞINDI (13.10.2026, K332): sorgu SÖZ olarak başlıyor ve ana okumayla
+       aynı anda bekleniyor; izin kapısı aynı, boş dal artık çözülmüş boş söz. */
     raporSayfasi.includes(
-      "karGorunur ? await takvimSatirlariniTopla(takvimBugun) : []",
+      "karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([])",
     ),
   );
   /**
@@ -5932,7 +5946,7 @@ console.log("=".repeat(70));
    * kullanıcı yine "hangileri?" diye arar. Desen ADA değil KULLANIMA
    * bağlanıyor: `href={karEksik...}`.
    */
-  const panelHam = kaynakOku("src/app/page.tsx");
+  const panelHam = panelKaynaklari();
   kontrol(
     "aylık tablodaki sayı LİNK (href=ay adresi)",
     /href=\{karEksikAyAdresi\(nokta\.yil, nokta\.ay\)\}/.test(panelHam),
@@ -6463,7 +6477,7 @@ console.log("\nZAMAN TABLOSU SIRASI — EN YENİ ÜSTTE (K125)");
    * farklı iki hesap aynı anahtarı üretirse React satırları karıştırır.
    * _(Anayasa: "sınanmamış ekran, ekran değildir".)_
    */
-  const panelKaynagi = kaynakOku("src/app/page.tsx");
+  const panelKaynagi = panelKaynaklari();
   kontrol(
     "ekran hesap satırını KİMLİKLE anahtarlıyor",
     /key=[{]`[$][{]kanal[.]kanalKodu[}]-[$][{]hesap[.]hesapId[}]`[}]/.test(
@@ -6667,7 +6681,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
    * ⛔ VE `indexOf` "yok" hâlinde −1 döner ve karşılaştırmayı sessizce geçer;
    * varlık AYRICA kapılanır (anayasa: nötr görünen varsayılan).
    */
-  const panelEkrani = kaynakOku("src/app/page.tsx");
+  const panelEkrani = panelKaynaklari();
   const aSon = panelEkrani.indexOf("nokta.iadeAdedi > 0");
   const aBas = panelEkrani.lastIndexOf("bicim.para(nokta.net2, seciliPara)", aSon);
   kontrol("K170-②: aylık NET-2 hücresi bulundu (çapa)", aBas >= 0 && aSon > aBas, {
@@ -6693,7 +6707,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
 {
   const yorumsuz3 = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-  const panel3 = yorumsuz3(kaynakOku("src/app/page.tsx"));
+  const panel3 = yorumsuz3(panelKaynaklari());
   const rapor3 = yorumsuz3(kaynakOku("src/app/rapor/page.tsx"));
   const donem3 = yorumsuz3(kaynakOku("src/lib/donem-raporu.ts"));
 
@@ -6829,7 +6843,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   const yorumsuz4 = (m: string) =>
     m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
   const grafik4 = yorumsuz4(kaynakOku("src/components/karsilastirma-grafigi.tsx"));
-  const panel4 = yorumsuz4(kaynakOku("src/app/page.tsx"));
+  const panel4 = yorumsuz4(panelKaynaklari());
 
   /** ⛔ RAKAM KAPISI GERİ GELEMEZ: tek seri şartı rakamları söndürüyordu. */
   kontrol(
@@ -6985,7 +6999,7 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   kontrol("  ...her sekme 44+ px (min-h-14, Ilke #8)", /<Link[\s\S]{0,200}?min-h-14/.test(altCubuk));
 
   /* ── PANEL SAYFASI ── */
-  const sayfaT = yorumsuz(kaynakOku("src/app/page.tsx"));
+  const sayfaT = yorumsuz(panelKaynaklari());
   /* 08.10.2026: görev şeridi Huni satırına gömüldü (tek şerit); tek başına hâli yalnız
      satışsız dönemde. Niyet aynı: hızlı işlemler şeridin hemen ardından gelir. */
   kontrol("hizli islemler gorev seridinin HEMEN ALTINDA",
@@ -7119,6 +7133,142 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
   const kisa = miniKovalar([5, -2, 9], 6);
   kontrol("  ...kısa seri bölünmez, olduğu gibi döner (eksi kova korunur)", kisa.join() === "5,-2,9", kisa);
   kontrol("  ...boş seri boş", miniKovalar([], 6).length === 0);
+}
+
+/* ═══ 12 AYLIK GRAFİK ARKADAN DOLAR (K332, kullanıcı fikri 11.10.2026) ═══
+   Üst kısım dar aralığı okur ve hemen çizilir; 12 aylık bölüm kendi okumasını
+   `Suspense` içinde bekler. Ölçülen iki şey: ① pencere hesabı (saf gövde,
+   değer testi — örnek veri payın TAM 31 gün olduğunu ve kırpmanın iki yanını
+   ayırır) ② sayfa grafik okumasını BEKLEMİYOR (bekleseydi akış boşa düşer,
+   panel yine 12 ayı bekleyip açılırdı — rakam aynı kalır, hız gider). */
+{
+  console.log("\nK332 — 12 aylık grafik arkadan dolar");
+  const G = (s: string) => new Date(`${s}T00:00:00Z`);
+  const GUN = 24 * 60 * 60 * 1000;
+  const veri = { baslangic: G("2025-11-01"), bitisHaric: G("2026-11-01") };
+  const donemP = { baslangic: G("2026-03-01"), bitisHaric: G("2026-04-01") };
+  const kiyasP = { baslangic: G("2026-02-01"), bitisHaric: G("2026-03-01") };
+  /* ⚠ ÖLÇÜT DEĞİŞTİ (K333, 11.10.2026): ilk sürümde iki yanda TAM 31 gün pay
+     sınanıyordu — pay operasyon tablosunun dönem dışı günleri kenar kovaya
+     sayan eski davranışını korumak içindi. K333 o davranışı düzeltti, pay
+     kaldırıldı; ölçüt artık «TAM kapsar, fazlasını okumaz» der. */
+  const ortada = ustOkumaPenceresi(veri, [donemP, kiyasP]);
+  kontrol("pencere: dönem+kıyası TAM kapsar, pay YOK (K333)",
+    ortada.baslangic.getTime() === G("2026-02-01").getTime() &&
+      ortada.bitisHaric.getTime() === G("2026-04-01").getTime(), ortada);
+  const kenar = ustOkumaPenceresi(veri, [{ baslangic: G("2025-10-01"), bitisHaric: G("2026-12-01") }]);
+  kontrol("  ...12 aylık VERİ aralığını iki yanda da AŞAMAZ (kırpılır)",
+    kenar.baslangic.getTime() === veri.baslangic.getTime() && kenar.bitisHaric.getTime() === veri.bitisHaric.getTime(), kenar);
+  const kiyassiz = ustOkumaPenceresi(veri, [donemP, null]);
+  kontrol("  ...kıyas yoksa yalnız dönemden",
+    kiyassiz.baslangic.getTime() === G("2026-03-01").getTime() &&
+      kiyassiz.bitisHaric.getTime() === G("2026-04-01").getTime(), kiyassiz);
+  const bos = ustOkumaPenceresi(veri, []);
+  kontrol("  ...pencere yoksa veri aralığının tamamı (daralma yok)",
+    bos.baslangic.getTime() === veri.baslangic.getTime() && bos.bitisHaric.getTime() === veri.bitisHaric.getTime(), bos);
+
+  const yorumsuzK = (s: string) => s.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+  const sayfaK = yorumsuzK(kaynakOku("src/app/page.tsx"));
+  const grafikK = yorumsuzK(kaynakOku("src/app/panel-aylik-grafik.tsx"));
+  kontrol("sayfa: grafik bölümü Suspense İÇİNDE, okuması SÖZ olarak veriliyor",
+    /<Suspense\s+fallback=\{[\s\S]{0,200}?\}>\s*<PanelAylikGrafik\s+veriSozu=\{grafikVerisiSozu\}/.test(sayfaK));
+  /* ⚠ ÖLÇÜT DEĞİŞTİ (12.10.2026): okuma artık telefonda HİÇ başlatılmıyor —
+     tanım koşullu, söze dördüncü bir yerden (telefon dalı, `=== null`) bakılıyor.
+     Kural aynı: söz hiçbir yerde BEKLENMEZ. */
+  kontrol("  ...grafik okuması BEKLENMEDEN başlatılıyor (await yok; telefonda hiç)",
+    /const grafikVerisiSozu = !grafikOkunur \? null : Promise\.all\(\[/.test(sayfaK));
+  const sozKullanimi = (sayfaK.match(/\bgrafikVerisiSozu\b/g) ?? []).length;
+  kontrol("  ...sayfa grafik sözüne YALNIZ dört yerde dokunuyor (tanım · hata yutma · telefon dalı · bölüme verme) — bekleme yok",
+    sozKullanimi === 4 && !/await[^;]{0,200}?grafikVerisiSozu/.test(sayfaK), sozKullanimi);
+
+  /* ═══ TELEFONDA 12 AYLIK OKUMA YOK (12.10.2026) ═══
+     Ölçüt cihaz TÜRÜ: yalnız «mobile» elenir; tablet, masaüstü ve tanınmayan
+     tarayıcı grafiği görür (şüphede okunur). Örnek veri iki yakayı da gösterir. */
+  const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const ANDROID = "Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36";
+  const IPAD = "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  const MASAUSTU = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36";
+  kontrol("telefon: iPhone ve Android telefon SAYILIR", telefonMu(IPHONE) && telefonMu(ANDROID));
+  kontrol("  ...iPad (tablet) telefon SAYILMAZ — yatayda grafik orada çizilir", !telefonMu(IPAD));
+  kontrol("  ...masaüstü telefon SAYILMAZ", !telefonMu(MASAUSTU));
+  kontrol("  ...boş / tanınmayan satır telefon SAYILMAZ (şüphede okunur)",
+    !telefonMu(null) && !telefonMu(undefined) && !telefonMu("") && !telefonMu("curl/8.0"));
+  kontrol("sayfa: karar isteğin tarayıcı satırından veriliyor",
+    /const grafikOkunur = !telefonMu\(\(await headers\(\)\)\.get\("user-agent"\)\);/.test(sayfaK));
+  kontrol("  ...telefon dalı boş kalmaz, NEDENİNİ söyler (İlke #5)",
+    /\{grafikVerisiSozu === null \? \(\s*<p className="[^"]*max-md:hidden">\{t\("grafikTelefondaYok"\)\}<\/p>\s*\) : \(/.test(sayfaK));
+
+  /* ═══ YAŞLANMA VERİSİ — TELEFONDA YOK, BİLGİSAYARDA 2 DK ÖNBELLEK (12.10.2026) ═══
+     Kullanıcı onayı. Bütün açık partilerin kalan adedi yalnız ÜRÜN ANALİZİ
+     bölümünü besler (telefonda gizli, K270). Ölçülen: okuma telefonda HİÇ
+     başlamaz; bilgisayarda önbellekten gelir ve hesaplandığı saati iki yerde
+     yazar; telefonda bölüm boş verilerle ÇİZİLMEZ, nedenini söyler. */
+  kontrol("yaşlanma: okuma telefonda başlamaz, bilgisayarda 2 dk önbellekten (firma anahtarlı)",
+    /const yaslanmaVerisiSozu = !grafikOkunur\s*\?\s*null\s*:\s*kisaOnbellek\(`yaslanma:\$\{panelFirmasi\}`, PANEL_ONBELLEK_MS,/.test(sayfaK));
+  /* ⚠ ÖLÇÜT GÜNCELLENDİ (12.10.2026): okuma artık AYNI İSTEKTE ORTAK (`acikPartilerIstekte`)
+     — yaşlanma, iş zekâsı ve vitrin aynı açılışta üç kez okuyordu. Niyet aynı: sayfada
+     tek yerde ve önbelleğin içinde. */
+  kontrol("  ...açık parti okuması sayfada YALNIZ önbelleğin içinde (tek yer, ortak okuma)",
+    !/acikPartilerToplu\(/.test(sayfaK) &&
+      (sayfaK.match(/acikPartilerIstekte\(/g) ?? []).length === 1 &&
+      /kisaOnbellek\(`yaslanma:[\s\S]{0,400}?await acikPartilerIstekte\(\)/.test(sayfaK));
+  const ortakK = yorumsuzK(kaynakOku("src/lib/panel/acik-partiler-istekte.ts"));
+  const vitrinK = yorumsuzK(kaynakOku("src/lib/panel/vitrin-verisi.ts"));
+  const biK = yorumsuzK(kaynakOku("src/app/panel-bi.tsx"));
+  kontrol("açık partiler: üç blok AYNI istekteki ortak okumayı kullanır (yaşlanma · iş zekâsı · vitrin)",
+    /export const acikPartilerIstekte = cache\(\(\)[^=]*=> acikPartilerToplu\(prisma, null\)\);/.test(ortakK) &&
+      /abcGirdileriniYukle\(prisma, abcKapsami, acikPartilerIstekte\(\)\)/.test(biK) &&
+      /const degerSozu = acikPartilerIstekte\(\)\.then\(/.test(vitrinK) && !/acikPartilerToplu\(/.test(vitrinK));
+  kontrol("  ...vitrin yalnız STOKLU ürünleri sayar ve sayımlar partileri beklemez",
+    /if \(!stokluKume\.has\(vid\)\) continue;/.test(vitrinK) &&
+      /* İLK iş aynı anda bekleme olmalı — önüne «önce partileri bekle» konursa kırmızı (mutasyonla bulundu). */
+      /const olc = async \(kosul: [^)]*\) => \{\s*const \[vs, deger\] = await Promise\.all\(\[\s*prisma\.productVariant\.findMany\(/.test(vitrinK));
+  /* ⚠ ÖLÇÜT ÇEVRİLDİ (12.10.2026, K332): eskiden «okuma dizisi önbellekli sözü bekler»
+     diyordu. Canlı süre izi: bilgisayarda ana okuma 0,85–2,2 sn, telefonda 0,4–0,7 sn —
+     fark üst kısmın yaşlanmayı beklemesiydi. Artık ana okuma onu BEKLEMEZ; iki bölüm
+     `Suspense` içinde AYNI sözü bekler. */
+  const anaOkumaBas = sayfaK.indexOf("] = await Promise.all([\n    prisma.sale.findMany({");
+  /* ⚠ ÇAPA TAŞINDI (13.10.2026): bitiş eskiden geçici süre izi satırıydı (`sureIsareti("ana-okuma")`);
+     süre izi kaldırılınca ana okumadan sonraki İLK satıra bağlandı. */
+  const anaOkumaSon = sayfaK.indexOf("const maliyetKdvHaric = new Map<Currency, number>();");
+  kontrol("  ...ana okuma yaşlanma sözünü BEKLEMEZ (üst kısım bütün partileri beklemez)",
+    anaOkumaBas >= 0 && anaOkumaSon > anaOkumaBas &&
+      !/yaslanmaVerisiSozu|yaslanmaHesabiSozu/.test(sayfaK.slice(anaOkumaBas, anaOkumaSon)));
+  kontrol("  ...hesap tek SÖZ: önbellekli okumaya bağlı, telefonda null",
+    /const yaslanmaHesabiSozu =\s*yaslanmaVerisiSozu === null\s*\?\s*null\s*:\s*yaslanmaVerisiSozu\.then\(/.test(sayfaK));
+  kontrol("  ...iki bölüm (ölü sermaye · stokta bekleyen) Suspense içinde AYNI sözü bekler",
+    (sayfaK.match(/<Suspense fallback=\{<Skeleton className="[^"]+" \/>\}>\s*<ArkadanDolan\s*soz=\{yaslanmaHesabiSozu\}/g) ?? []).length === 2);
+  kontrol("  ...telefonda ürün analizi boş verilerle ÇİZİLMEZ, nedenini söyler (İlke #5)",
+    /\{yaslanmaHesabiSozu === null \? \(\s*<p className="[^"]*max-md:hidden">\{t\("urunAnaliziTelefondaYok"\)\}<\/p>\s*\) : \(\s*<div className="max-md:hidden">/.test(sayfaK));
+  kontrol("  ...önbellekten gelen iki yer (stokta bekleyen · ölü sermaye) hesaplandığı saati yazar",
+    (sayfaK.match(/<OnbellekNotu an=\{yaslanmaAn\} \/>/g) ?? []).length === 2);
+
+  /* ═══ MARJ SINIFLANDIRMASI İSTEK BAŞINA BİR KEZ (12.10.2026) ═══
+     Panel bu sınıflandırmayı iki yerden istiyor (kutu + şerh); dönem yokken
+     ikisi de defterin tamamını okuyordu (yerel ölçüm 270 → 252 sorgu, çıktı
+     birebir). `cache` istek dışında doğrudan çağırdığı için değer testi
+     tekilleşmeyi göremez — ölçüt BAĞA bakar: dış kapıların ikisi de önbellekli
+     yoldan geçer, çıplak sınıflandırma YALNIZ önbelleğin içinde çağrılır,
+     anahtar nesne değil SAYI (aynı pencere iki ayrı nesneyle gelse de tek iş). */
+  const serhK = yorumsuzK(kaynakOku("src/lib/ice-aktarma-serhi.ts"));
+  kontrol("marj: şerh ve süzgeç kümesi ÖNBELLEKLİ yoldan",
+    (serhK.match(/await istekteSiniflandir\(db, pencere\)/g) ?? []).length === 2);
+  /* ⚠ ÖLÇÜT GÜNCELLENDİ (12.10.2026, kullanıcı kararı «2 dk önbellek»): istek içi
+     `cache` artık istekler arası `kisaOnbellek`i sarıyor — iki katman da ölçülür;
+     çıplak sınıflandırma yine YALNIZ ikisinin içinde. */
+  kontrol("  ...çıplak sınıflandırma YALNIZ önbelleğin içinde (istek içi + 2 dk, firma anahtarlı)",
+    (serhK.match(/\bmarjSiniflandir\(/g) ?? []).length === 2 &&
+      /cache\(\s*async \(db: [^)]*\)[^=]*=>\s*kisaOnbellek\(`marj:\$\{await onbellekFirmasi\(\)\}:[^`]*`, PANEL_ONBELLEK_MS, \(\) =>\s*marjSiniflandir\(/.test(serhK));
+  const serhBilesenK = yorumsuzK(kaynakOku("src/components/marj-serhi.tsx"));
+  kontrol("  ...şerh hesaplandığı saati yazar (eski oran taze görünmesin)",
+    /<OnbellekNotu an=\{s\.hesaplandi\} \/>/.test(serhBilesenK) && /hesaplandi: an,/.test(serhK));
+  kontrol("  ...önbellek anahtarı pencerenin ANLARI (sayı), nesne değil",
+    /siniflandirOnbellekli\(db, pencere\?\.bas\.getTime\(\) \?\? null, pencere\?\.son\.getTime\(\) \?\? null\)/.test(serhK));
+  kontrol("  ...bölüm kendi okumasını BEKLİYOR", /const \{ satislar, iadeler \} = await veriSozu;/.test(grafikK));
+  kontrol("üst okuma DAR aralıkta (satış + iade, iki yer)",
+    (sayfaK.match(/soldAt: \{ gte: ustBaslangic, lt: ustBitisHaric \}/g) ?? []).length === 2);
+  kontrol("  ...grafiğin iade okuması SATIŞIN gününden, 12 aylık aralıkta",
+    (sayfaK.match(/where: \{ sale: \{ soldAt: \{ gte: veriBaslangic, lt: veriBitisHaric \} \}, \.\.\.IADE_GECERLI \}/g) ?? []).length === 1);
 }
 
 console.log("\n" + "=".repeat(70));

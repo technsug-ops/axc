@@ -1,3 +1,4 @@
+import { ARKA_PLAN_HAVUZU, havuzluAdres } from "@/lib/veritabani-adresi";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 import { argumanlariSuz, FirmaBaglamiHatasi, firmaModeliMi } from "@/lib/firma-suzgeci";
@@ -45,6 +46,10 @@ export function firmaIstemcisi(adres: string, companyId: string): PrismaClient {
   if (!companyId) {
     throw new FirmaBaglamiHatasi("FIRMA_BAGLAMI_YOK", "firmaIstemcisi: companyId verilmedi");
   }
-  const ham = new PrismaClient({ adapter: new PrismaMariaDb(adres) });
+  /* Arka plan havuzu (K332, 13.10.2026 — ana daldan): çıplak adreste sürücü varsayılanı
+     10 bağlantı açıyordu; canlıda dakika başı tepe 25 = max_user_connections. Bu istemciyi
+     yalnız arka plan işleri kurar (çekim çekirdekleri · betikler · firma açılışı). Adreste
+     yazılı ayara dokunulmaz (betik yolu `betikAdresi` 1 bağlantıda kalır). */
+  const ham = new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(adres, ARKA_PLAN_HAVUZU)) });
   return suzgecUzat(ham, () => companyId);
 }

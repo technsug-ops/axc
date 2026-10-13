@@ -34,7 +34,7 @@ import {
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 3;
+const BOLUM_SAYISI = 4;
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -152,6 +152,49 @@ console.log("=".repeat(70));
   kontrol("kâr sekmesi izinsizde menüde de yok", /KART_SEKMELERI\.filter\(\(s\) => karGorunur \|\| s !== "kar"\)/.test(pano));
   kontrol("sipariş toplamı DÖNEMİN tamamı (İlke #15)", /siparisToplam: \{ satir: kalemler\.length, adet, ciro,/.test(analiz));
   kosanBolumler.push("bag");
+}
+
+/* ④ ÇİZİM (11.10.2026 kullanıcı bulguları): fiyat noktası rakamsızdı · küçük grafik geniş
+   ekranda orantılı büyüyüp satırdan taşıyordu · özet kutularında içerik yukarı yapışıktı ·
+   telefonda panel kutusunun 64 px sağ payı etiketi harf harf kırıyordu. */
+{
+  const grafik = oku("src/app/kart/[variantId]/kart-grafikleri.tsx");
+  const blok = (m: string, bas: string, son: string) => {
+    const i = m.indexOf(bas);
+    const j = i >= 0 ? m.indexOf(son, i + bas.length) : -1;
+    return i >= 0 && j > i ? m.slice(i, j) : "";
+  };
+  const mini = blok(grafik, "export function MiniCizgi(", "export function DurumHalkasi(");
+  kontrol("küçük grafik bulundu", mini.length > 500, mini.length);
+  kontrol("  ...SABİT yükseklikte (geniş ekranda büyümez)", /<div className="relative w-full" style=\{\{ height: yukseklik \}\}>/.test(mini) && !/className="h-auto w-full"/.test(mini));
+  kontrol("  ...çizgi yatayda esner, kalınlık sabit", /preserveAspectRatio="none"/.test(mini) && /vectorEffect="non-scaling-stroke"/.test(mini));
+  /* ⚠ ÖLÇÜT DEĞİŞTİ (12.10.2026, kullanıcı: «anlamsız işaretler»): değer artık noktanın
+     üstünde YÜZEN etiketle değil, çizginin ALTINDA ilk/son satırıyla yazılıyor (yüzen
+     etiketler üst üste biniyordu). Niyet aynı: ilk ve son değer OKUNUR. */
+  kontrol("  ...ilk/son noktanın değeri (ve tarihi) çizginin ALTINDA yazılır",
+    /<span>\{ucYazisi\(ilk\)\}<\/span>/.test(mini) && /\{ucYazisi\(son\)\}<\/span>/.test(mini) && !/\{bicimle!\(d\)\}/.test(mini));
+  kontrol("  ...çizgi yalnız DOLU noktalardan geçer (seyrek satışta yüzen yuvarlak yok)",
+    /const yol = dolular\.map\(\(n, j\) => `\$\{j === 0 \? "M" : "L"\}/.test(mini) && !/yollar\(/.test(mini));
+  kontrol("  ...tek nokta ÇİZİLMEZ, metin olarak yazılır",
+    /if \(dolular\.length === 1\) \{[\s\S]{0,200}?return metin === null \? null : <p /.test(mini));
+  const pano = oku("src/app/kart/[variantId]/kart-panosu.tsx");
+  /* Çağrılar artık çok satırlı olabilir — desen satır sonu da kapsar. */
+  const cagrilar = pano.match(/<MiniCizgi\b[\s\S]*?\/>/g) ?? [];
+  kontrol("küçük grafiğin her kullanımı değer biçimini ve TARİHLERİ verir",
+    cagrilar.length >= 3 && cagrilar.every((c) => c.includes("bicimle={(n) => bicim.para(n, para)}") && /tarihler=\{/.test(c)), cagrilar.length);
+  kontrol("  ...Fiyat kutusunda tek satış günü ve tek alım METİNLE yazılır",
+    /tekMetni=\{tekSatis\.length === 1 \? t\("tekSatisGunu"/.test(pano) && /tekMetni=\{a\.alimFiyatlari\.length === 1 \? t\("tekAlim"/.test(pano));
+  const stokFiyat = blok(grafik, "export function StokFiyatGrafigi(", "export function MiniCizgi(");
+  kontrol("stok-fiyat grafiğinde fiyat noktası rakamlı", /\{fiyatEtiketli\.has\(i\) \? \(\s*<text[^>]*>\s*\{bicimlePara\(n\.fiyat\)\}/.test(stokFiyat));
+  kontrol("  ...yan yana yazılar binmez (aralık kapısı)", /if \(x\(i\) - sonEtiketX < FIYAT_ETIKET_ARALIGI\) return;/.test(stokFiyat) && /const FIYAT_ETIKET_ARALIGI = \d+;/.test(grafik));
+  const ozet = blok(pano, "export async function OzetKutulari(", "export async function SekmeCubugu(");
+  kontrol("özet kutularında içerik ortada (üç kutu)", (ozet.match(/className="flex flex-col gap-2 rounded-lg border p-4"/g) ?? []).length === 3 && (ozet.match(/className="my-auto/g) ?? []).length === 3);
+  const kutu = oku("src/components/istatistik-kutusu.tsx");
+  const ist = blok(kutu, "export function IstatistikKutusu(", "export function MiniCubuklar(");
+  kontrol("panel kutusu: telefonda sağ pay YOK", /\$\{miniVar \? "sm:pr-16" : ""\}/.test(ist) && !/"pr-16"/.test(ist));
+  kontrol("  ...tek kovalık seride çubuk çizilmez", /const miniVar = mini !== undefined && mini\.length >= 2;/.test(ist));
+  kontrol("  ...telefonda çubuklar yazının altına akar", /<MiniCubuklar degerler=\{mini\} telefondaAkista \/>/.test(ist) && /max-sm:static/.test(kutu));
+  kosanBolumler.push("cizim");
 }
 
 console.log("=".repeat(70));

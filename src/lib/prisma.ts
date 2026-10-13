@@ -31,7 +31,7 @@
 
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
-import { havuzluAdres } from "@/lib/veritabani-adresi";
+import { havuzluAdres, uygulamaHavuzu } from "@/lib/veritabani-adresi";
 import { aktifFirmaKimligi } from "@/lib/firma-baglami";
 import { suzgecUzat } from "@/lib/firma-istemcisi";
 
@@ -54,7 +54,19 @@ function createPrismaClient(): PrismaClient {
   // KALDIRILMAZ: çıplak adresle sürücü varsayılanları geçerli olur
   // (connectionLimit 10, minimumIdle 10) ve havuz hiç iş yokken 10 bağlantı
   // park eder — hesabın 25'lik kotası boşuna dolar.
-  return new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(url)) });
+  /**
+   * ⚡ METİN PROTOKOLÜ (K332, 12.10.2026) — sorgu başına İKİ değil BİR gidiş-dönüş.
+   * Ölçüldü (yerel sorgu kaydı): panel 80 sorgu atıyordu ve HER biri önce
+   * «Prepare» (ayrı gidiş-dönüş), sonra çalıştırma, sonra «Close stmt» —
+   * bağdaştırıcının varsayılanı sürücünün ikili protokolü (`execute`).
+   * Canlıda gidiş-dönüş ~20 ms (KAS): panelde ~80 fazladan gidiş-dönüş.
+   * `useTextProtocol` bağdaştırıcının belgeli, kararlı seçeneği (`query`);
+   * parametreleri sürücü kaçışlar. Açılmadan önce 14 sayfanın çıktısı eski ve
+   * yeni sürümde karşılaştırıldı (rakam farkı yok — pano K332).
+   */
+  // Çekim uçları (`maxDuration` taşıyan) `lib/arka-plan-havuzu.ts`i içe alır ve
+  // küçük havuz kurdurur (K332, 13.10.2026); sayfalar `UYGULAMA_HAVUZU`nda kalır.
+  return new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(url, uygulamaHavuzu()), { useTextProtocol: true }) });
 }
 
 let istemci: PrismaClient | undefined;

@@ -31,7 +31,9 @@ import {
   alimKosulu,
   kargosuzParametreleri,
   pencereCoz,
+  SATIS_VARSAYILAN_PENCERE,
   satisKosulu,
+  TUM_ZAMANLAR,
 } from "../src/lib/liste-suzgeci";
 import { KARGO_DUSULMEMIS, kargoKesintiDurumu } from "../src/lib/kargo-kaynagi";
 import { GOREV_ADRESLERI } from "../src/lib/panel/bugun-ne-yapmaliyim";
@@ -71,7 +73,7 @@ let calisan = 0;
 const istGun = (d: Date): string =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" }).format(d);
 
-const BOLUM_SAYISI = 8;
+const BOLUM_SAYISI = 9;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -758,11 +760,33 @@ console.log("\nK141) kargosu düşülmemiş kâr — tek ölçüt, sayı = liste
   kontrol("rozet kâr rakamının iki çiziminde de (nötr + renkli)", (netKar.match(/\{kargoRozeti\}/g) ?? []).length === 2);
   for (const [ad, yol] of [["panel", "src/app/page.tsx"], ["rapor", "src/app/rapor/page.tsx"]] as const) {
     const m = yorumsuzla(kaynakOku(yol));
-    kontrol(`${ad}: sayı listenin süzgeç gövdesiyle sayılıyor`, /karGorunur\s*\?\s*await prisma\.sale\.count\(\{ where: satisKosulu\(kargosuzParam, an\)\.kosul \}\)/.test(m));
+    /* ⚠ ÖLÇÜT TAŞINDI (13.10.2026, K332): rapor sayımı artık SÖZ olarak başlıyor ve ana
+       okumayla aynı anda bekleniyor (`await` yeri değişti, sorgu ve izin kapısı aynı). */
+    kontrol(`${ad}: sayı listenin süzgeç gövdesiyle sayılıyor`, /karGorunur\s*\?\s*(?:await )?prisma\.sale\.count\(\{ where: satisKosulu\(kargosuzParam, an\)\.kosul \}\)/.test(m));
     kontrol(`${ad}: not aynı parametrelerle listeye götürüyor`, m.includes('suzgecAdresi("/satislar", kargosuzParam, {})'));
     kontrol(`${ad}: not ÇİZİLİYOR (koşul + metin aynı dalda)`, /\{kargosuzSayisi > 0 \? \([\s\S]{0,400}t\("kargosuzNotu"/.test(m));
   }
   kosanBolumler.push("kargosuz");
+}
+
+// ── SATIŞLAR VARSAYILAN DÖNEMİ «BU AY» (kullanıcı kararı 11.10.2026, K332) ──
+{
+  /* Değer: açık «tüm zamanlar» süzgeçsizdir; boş pencere de hâlâ süzgeçsiz
+     (Alımlar · İadeler · Panel · süzgeçli satış listeleri değişmedi). */
+  kontrol("açık «tüm zamanlar» değeri süzgeçsiz çözülür", pencereCoz({ pencere: TUM_ZAMANLAR }).aralik === undefined && pencereCoz({ pencere: TUM_ZAMANLAR }).tur === "");
+  kontrol("  ...boş pencere de hâlâ süzgeçsiz (öteki ekranlar değişmedi)", pencereCoz({}).aralik === undefined);
+  kontrol("  ...varsayılan dönem gerçek bir liste penceresi", (LISTE_PENCERELERI as readonly string[]).includes(SATIS_VARSAYILAN_PENCERE));
+  const yorumsuzSv = (k: string) => k.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+  const sayfaSv = yorumsuzSv(kaynakOku("src/app/satislar/page.tsx"));
+  /* Yönlendirme YALNIZ süzgeçsiz açılışta: koşulu genişleyen bir yönlendirme
+     panel sayısından açılan listeyi de «Bu ay»a daraltır — sayı ≠ liste. */
+  kontrol("satışlar süzgeçsiz açılışta «Bu ay»a yönlendirir (yalnız HİÇ parametre yokken)",
+    /if \(Object\.keys\(p\)\.length === 0\) redirect\(`\/satislar\?pencere=\$\{SATIS_VARSAYILAN_PENCERE\}`\);/.test(sayfaSv));
+  kontrol("  ...rozet çarpısı satışlarda AÇIK «tüm zamanlar» yazar", /tumZamanDegeri=\{TUM_ZAMANLAR\}/.test(sayfaSv));
+  const cubukSv = yorumsuzSv(kaynakOku("src/components/suzgec-cubugu.tsx"));
+  kontrol("  ...çubuk çarpıda verilen değeri kullanır (varsayılan boş)",
+    /git\(\{ pencere: tumZamanDegeri, baslangic: "", bitis: "" \}\)/.test(cubukSv) && /tumZamanDegeri = "",/.test(cubukSv));
+  kosanBolumler.push("satış varsayılan dönemi");
 }
 
 // ===========================================================================

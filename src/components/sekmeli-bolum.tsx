@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";

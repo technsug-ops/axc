@@ -162,6 +162,9 @@ function yazDepoya(anahtar: string, deger: string) {
   }
 }
 
+/** Kendi renk girişinin kimliği — panelin DIŞINDA durur (bkz. aşağıdaki not). */
+const OZEL_RENK_GIRISI = "tema-ozel-renk";
+
 export function TemaSecici() {
   const t = useTranslations("Ortak");
   const tema = useSyncExternalStore(abone, anlikOku, sunucudaOku);
@@ -207,6 +210,8 @@ export function TemaSecici() {
     kisisel: kisisel?.degiskenler["--se-vurgu"] ?? KISISEL_VARSAYILAN.renk,
   };
   const sonuc = kisisel ? kisiselTema(kisisel) : null;
+  /** Seçili renk hazır listede yoksa paletteki düğme o renkle dolar — seçimin uygulandığı GÖRÜNÜR. */
+  const ozelRenkSecili = sonuc !== null && !HAZIR_RENKLER.some((r) => r.toLowerCase() === sonuc.secilen.toLowerCase());
   const zeminAdi: Record<ZeminKodu, string> = {
     gri: t("temaZeminGri"), beyaz: t("temaZeminBeyaz"), sicak: t("temaZeminSicak"), mavi: t("temaZeminMavi"), nane: t("temaZeminNane"), tas: t("temaZeminTas"),
   };
@@ -215,6 +220,21 @@ export function TemaSecici() {
   const cizgiAdi = [t("temaCizgiYok"), t("temaCizgiInce"), t("temaCizgiOrta"), t("temaCizgiBelirgin"), t("temaCizgiKoyu")];
 
   return (
+    <>
+    {/* ⚠ RENK GİRİŞİ PANELİN DIŞINDA (kullanıcı bulgusu 11.10.2026, telefon):
+        paletteki düğme telefonun kendi renk penceresini açınca panel «dışarıya
+        dokunuldu» sayıp KAPANIYORDU; giriş panelle birlikte söküldüğü için
+        seçilen renk hiç ulaşmıyordu. Giriş kökte kalır, panel kapansa da renk
+        uygulanır; paletteki düğme yalnız `htmlFor` ile onu açar. */}
+    <input
+      id={OZEL_RENK_GIRISI}
+      type="color"
+      value={(sonuc?.secilen ?? KISISEL_VARSAYILAN.renk).toLowerCase()}
+      onChange={(e) => kisiselDegistir({ renk: e.target.value })}
+      tabIndex={-1}
+      aria-hidden="true"
+      className="pointer-events-none fixed top-0 right-0 size-px opacity-0"
+    />
     <Popover onOpenChange={(acik) => { if (acik && !kisisel) setKisisel(kisiselOku()); }}>
       <PopoverTrigger asChild>
         <Button
@@ -270,15 +290,17 @@ export function TemaSecici() {
                     style={{ background: renk }}
                   />
                 ))}
-                <label className="relative flex size-11 cursor-pointer items-center justify-center rounded-full border md:size-8" title={t("temaKendiRengin")}>
-                  <Palette className="size-4" aria-hidden="true" />
+                <label
+                  htmlFor={OZEL_RENK_GIRISI}
+                  className={cn(
+                    "relative flex size-11 cursor-pointer items-center justify-center rounded-full border-2 md:size-8",
+                    ozelRenkSecili ? "border-foreground" : "border-border",
+                  )}
+                  style={ozelRenkSecili ? { background: sonuc.secilen } : undefined}
+                  title={t("temaKendiRengin")}
+                >
+                  <Palette className={cn("size-4", ozelRenkSecili && "text-white")} aria-hidden="true" />
                   <span className="sr-only">{t("temaKendiRengin")}</span>
-                  <input
-                    type="color"
-                    value={sonuc.secilen.toLowerCase()}
-                    onChange={(e) => kisiselDegistir({ renk: e.target.value })}
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                  />
                 </label>
               </div>
               {sonuc.koyulasti ? (
@@ -396,5 +418,6 @@ export function TemaSecici() {
         ) : null}
       </PopoverContent>
     </Popover>
+    </>
   );
 }

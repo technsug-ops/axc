@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { sayfaIzni } from "@/lib/yetki";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { CircleCheck, TriangleAlert, Upload } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
@@ -185,7 +185,11 @@ export default async function HakedisSayfasi({
         orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
       }),
       // Karşılaştırma için: kâr snapshot'ı + maliyet kesintisi.
-      prisma.sale.findMany({
+      /* ⚡ YALNIZ «Kontrol» SEKMESİ AÇIKKEN (K332, 13.10.2026). Karşılaştırma
+         yalnız o sekmede çizilir (`SekmeliBolum` yalnız seçili sekmeyi çizer);
+         öteki sekmelerde bütün satışlar (canlı 8.370 satır, ~0,45 sn) + maliyet
+         kayıtları boşuna okunuyordu. */
+      sekmeSecili !== SEKME_KONTROL ? Promise.resolve([]) : prisma.sale.findMany({
         where: {
           // İptal edilen satıştan hakediş beklenmez.
           iptalTarihi: null,
@@ -518,7 +522,8 @@ export default async function HakedisSayfasi({
     (k) => k.paidAt === null && k.dueDate !== null,
   );
   for (const k of gelecekKalemleri) {
-    const { anahtar } = gelecekOdemeAnahtari(k.channelAccount.channel.name, k.dueDate!);
+    /* `bugun`: geçmişe düşen ödeme günü ileri kayar (K325-⑤) — gruplamayla AYNI anahtar. */
+    const { anahtar } = gelecekOdemeAnahtari(k.channelAccount.channel.name, k.dueDate!, bugun);
     grupKalemleri.set(anahtar, [...(grupKalemleri.get(anahtar) ?? []), kalemOzeti(k)]);
   }
   const gelecekOdemeler: OdemeGrubu[] = gelecekOdemeleriGrupla(
@@ -530,6 +535,7 @@ export default async function HakedisSayfasi({
       saleId: k.saleId,
     })),
     satisKesintisi,
+    bugun,
   ).map((g) => ({ ...g, odemeEmriNo: null }));
 
   /**

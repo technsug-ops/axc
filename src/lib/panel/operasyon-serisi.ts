@@ -270,28 +270,42 @@ export function operasyonSerisi(girdi: OperasyonGirdisi): OperasyonNoktasi[] {
     imlec = sonraki;
   }
 
+  /**
+   * ⛔ PENCERE DIŞI KAYIT KOVAYA GİRMEZ (K333, kullanıcı kararı 11.10.2026).
+   * İlk/son kova pencereye KIRPILIYOR ama anahtar ayın/haftanın tamamını
+   * kapsıyor: kapı olmadan «01.02–17.02 · Satış 497» satırı 18–28 Şubat'ın
+   * 137 satışını da sayıyordu — etiketle ve tıklanınca açılan listeyle (360)
+   * çelişen sayı (İlke #16 «sayı = liste»). Kardeşi `donemCiroNetSerisi`
+   * bu kapıyı zaten taşıyordu; iki grafik aynı günleri sayar.
+   */
+  const noktasi = (tarih: Date): OperasyonNoktasi | undefined => {
+    const gun = gunDegeri(isTakvimGunu(tarih)).getTime();
+    if (gun < eksenBas.getTime() || gun >= eksenBitHaric.getTime()) return undefined;
+    return dizin.get(kova(tarih, girdi.kirilim).anahtar);
+  };
+
   for (const sp of girdi.siparisler) {
-    const n = dizin.get(kova(sp.tarih, girdi.kirilim).anahtar);
+    const n = noktasi(sp.tarih);
     if (!n) continue;
     n.siparisAdet++;
     n.siparisTutar += sp.tutar;
   }
   for (const a of girdi.alimlar) {
-    const n = dizin.get(kova(a.tarih, girdi.kirilim).anahtar);
+    const n = noktasi(a.tarih);
     if (!n) continue;
     n.alimAdet++;
     n.alimTutar += a.tutar;
     n.alimKdv += a.kdv;
   }
   for (const s of girdi.satislar) {
-    const n = dizin.get(kova(s.tarih, girdi.kirilim).anahtar);
+    const n = noktasi(s.tarih);
     if (!n) continue;
     n.satisAdet++;
     n.satisCiro += s.gelir;
     n.satisKdv += s.kdv;
   }
   for (const k of girdi.kargolar) {
-    const n = dizin.get(kova(k.tarih, girdi.kirilim).anahtar);
+    const n = noktasi(k.tarih);
     if (!n) continue;
     n.kargoAdet++;
     n.kargoCiro += k.gelir;

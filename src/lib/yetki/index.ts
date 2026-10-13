@@ -2,7 +2,7 @@ import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 
 import { prisma, sistemPrisma } from "@/lib/prisma";
-import { oturumdakiKullanici } from "@/lib/oturum";
+import { kullaniciSatiri, oturumdakiKullanici } from "@/lib/oturum";
 import { paketKapisi } from "@/lib/paket/erisim";
 
 import { izinTaninirMi, tamYetkiliMi, type Izin } from "./izinler";
@@ -151,10 +151,8 @@ export async function yetkiIste(izin: Izin): Promise<YetkiBaglami> {
 export const parolaDegismeliMi = cache(async (): Promise<boolean> => {
   const kullanici = await oturumdakiKullanici();
   if (!kullanici) return false;
-  const kayit = await prisma.user.findUnique({
-    where: { id: kullanici.id },
-    select: { mustChangePassword: true },
-  });
+  /* Aynı istekteki oturum okumasıyla AYNI satır (K332) — ek gidiş-dönüş yok. */
+  const kayit = await kullaniciSatiri(kullanici.id);
   return kayit?.mustChangePassword ?? false;
 });
 

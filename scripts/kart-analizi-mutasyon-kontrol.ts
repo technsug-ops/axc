@@ -21,6 +21,8 @@ const GORSEL = "src/lib/urun-gorseli.ts";
 const YAZICI = "src/lib/urun-gorseli-yaz.ts";
 const SAYFA = "src/app/kart/[variantId]/page.tsx";
 const PANO = "src/app/kart/[variantId]/kart-panosu.tsx";
+const GRAFIK = "src/app/kart/[variantId]/kart-grafikleri.tsx";
+const KUTU = "src/components/istatistik-kutusu.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -57,6 +59,30 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "          galeri: galeriAdresleri(Array.isArray(r.imageUrls) ? r.imageUrls : [], \"N11\"),\n", koy: "", bozdugu: "N11 urunlerinde galeri hic dolmaz" },
   { ad: "KAR SEKMESI IZINSIZE ACIK", yon: "FAZLADAN", dosya: SAYFA,
     bul: "  const sekme = istenenSekme === \"kar\" && !karGorunur ? \"genel\" : istenenSekme;", koy: "  const sekme = istenenSekme;", bozdugu: "adresle kar raporu izinsize acilir" },
+  { ad: "KUCUK GRAFIK YENIDEN ORANTILI", yon: "KALDIRAN", dosya: GRAFIK,
+    bul: '<div className="relative w-full" style={{ height: yukseklik }}>', koy: '<div className="relative w-full">', bozdugu: "genis ekranda satirdan tasar" },
+  { ad: "FIYAT NOKTASI RAKAMSIZ", yon: "KALDIRAN", dosya: GRAFIK,
+    bul: "{fiyatEtiketli.has(i) ? (", koy: "{false ? (", bozdugu: "yesil noktalarin fiyati okunmaz" },
+  { ad: "KANAL TABLOSU DEGERSIZ", yon: "KALDIRAN", dosya: PANO,
+    /* Çapa 12.10.2026'da taşındı: çağrı tarihleri de veriyor (niyet aynı). */
+    bul: "<MiniCizgi degerler={k.noktalar} tarihler={a.gunluk.map((n) => kisa(n.gun))} bicimle={(n) => bicim.para(n, para)} />", koy: "<MiniCizgi degerler={k.noktalar} tarihler={a.gunluk.map((n) => kisa(n.gun))} />", bozdugu: "kanal fiyati noktalari rakamsiz" },
+  /* 12.10.2026 — küçük fiyat çizgisi noktaları birleştirir (kullanıcı: «anlamsız işaretler»). */
+  { ad: "KUCUK CIZGI YINE BOSLUKLU (yuzen yuvarlaklar)", yon: "KALDIRAN", dosya: GRAFIK,
+    bul: 'const yol = dolular.map((n, j) => `${j === 0 ? "M" : "L"}${x(n.i).toFixed(1)},${y(n.d).toFixed(1)}`).join("");',
+    koy: 'const yol = yollar(degerler.map((d, i) => [x(i), d === null ? null : y(d)] as const)).join("");',
+    bozdugu: "seyrek satista cizgi olusmaz, anlamsiz yuvarlaklar kalir" },
+  { ad: "TEK NOKTA CIZGI GIBI CIZILIYOR", yon: "KALDIRAN", dosya: GRAFIK,
+    bul: "  if (dolular.length === 1) {", koy: "  if (dolular.length === -1) {", bozdugu: "tek alimda bosta duran tek yuvarlak" },
+  { ad: "SON DEGER ALTTA YAZMIYOR", yon: "KALDIRAN", dosya: GRAFIK,
+    bul: "{ucYazisi(son)}</span>", koy: "</span>", bozdugu: "son fiyat okunmaz" },
+  { ad: "TEK ALIM METNI YOK", yon: "KALDIRAN", dosya: PANO,
+    bul: 'tekMetni={a.alimFiyatlari.length === 1 ? t("tekAlim"', koy: 'tekMetni={a.alimFiyatlari.length === -1 ? t("tekAlim"', bozdugu: "tek alimda tarih/fiyat yerine ciplak rakam" },
+  { ad: "STOK KUTUSU YUKARI YAPISIK", yon: "KALDIRAN", dosya: PANO,
+    bul: '<div className="my-auto grid grid-cols-2 items-center gap-2 text-center">', koy: '<div className="grid grid-cols-2 items-center gap-2 text-center">', bozdugu: "icerik ustte, alti bos" },
+  { ad: "TELEFONDA SAG PAY GERI", yon: "FAZLADAN", dosya: KUTU,
+    bul: '${miniVar ? "sm:pr-16" : ""}', koy: '${miniVar ? "pr-16" : ""}', bozdugu: "dar kutuda etiket harf harf kirilir" },
+  { ad: "TEK KOVADA CUBUK", yon: "FAZLADAN", dosya: KUTU,
+    bul: "mini.length >= 2", koy: "mini.length > 0", bozdugu: "tek gunluk donemde anlamsiz tek cubuk" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

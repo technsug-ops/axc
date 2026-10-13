@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -358,7 +358,7 @@ export function AppSidebar({
                 «açık font kullan»). `text-muted-foreground` sayfa gövdesinin
                 koyu grisiydi; sol menü onu üst çubuk gibi kabuk rengine
                 çevirmiyor ve koyu mavide okunmuyordu. */}
-            <span className="text-xs text-[var(--se-kabuk-ink2)]">{t("slogan")}</span>
+            <span className="text-xs text-[var(--se-menu-ink2)]">{t("slogan")}</span>
           </span>
         </Link>
       </SidebarHeader>

@@ -147,13 +147,16 @@ export function bicimOlustur(format: Formatter) {
  * `formatToParts` kullanılıyor: yerel ayarın tarih sıralamasına bağlı
  * kalmadan yıl-ay-gün parçaları tek tek alınır, biçim garanti edilir.
  */
+/** Bir kez kurulur (K332, 11.10.2026) — kurulum pahalı, sonuç aynı. Bkz. `donem.ts` → `isTakvimGunu`. */
+let girdiBicimleyici: Intl.DateTimeFormat | undefined;
 export function tarihGirdisi(tarih: Date): string {
-  const parcalar = new Intl.DateTimeFormat("en-US", {
+  girdiBicimleyici ??= new Intl.DateTimeFormat("en-US", {
     timeZone: IS_SAAT_DILIMI,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(tarih);
+  });
+  const parcalar = girdiBicimleyici.formatToParts(tarih);
 
   const al = (tur: Intl.DateTimeFormatPartTypes) =>
     parcalar.find((p) => p.type === tur)?.value ?? "";

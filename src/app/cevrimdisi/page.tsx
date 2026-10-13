@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { WifiOff } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 

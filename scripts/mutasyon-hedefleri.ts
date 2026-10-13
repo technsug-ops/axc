@@ -150,6 +150,8 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "stok-suzgeci-mutasyon:kontrol",
   /* 07.10.2026: layout.tsx (başlık betiği) + globals.css + tema-secici — panel ve kabuk denetimleriyle aynı dosyalar. */
   "kisisel-tema-mutasyon:kontrol",
+  /* 11.10.2026 (K332): panel (`page.tsx`) + iş zekası (`panel-bi.tsx`) — panel, abc-listesi ve vitrin denetimleriyle aynı dosyalar. */
+  "kisa-onbellek-mutasyon:kontrol",
   "aylik-marj-mutasyon:kontrol",
   /**
    * K236 (22.09.2026) — `kamera` ve `kare-tanisi` İKİSİ DE

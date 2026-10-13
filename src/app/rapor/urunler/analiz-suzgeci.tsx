@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { CalendarRange, Flag, RotateCcw, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

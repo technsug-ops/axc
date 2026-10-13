@@ -331,7 +331,9 @@
     "temaCizgiZorunlu": "",
     "temaYazi": "",
     "temaYaziNormal": "",
-    "temaYaziYuksek": ""
+    "temaYaziYuksek": "",
+    "sayfaYukleniyor": "",
+    "onbellekNotu": ""
   },
   "AlimDurumu": {
     "DRAFT": "",
@@ -2635,7 +2637,9 @@
     "halkaAciklama": "",
     "ciroNetBaslik": "",
     "hizliIslemler": "",
-    "kargosuzNotu": ""
+    "kargosuzNotu": "",
+    "grafikTelefondaYok": "",
+    "urunAnaliziTelefondaYok": ""
   },
   "Envanter": {
     "baslik": "",
@@ -3824,7 +3828,9 @@
     "deneKuponNotu": "",
     "deneKuponlu": "",
     "deneKuponFarki": "",
-    "deneKuponDilimDegisti": ""
+    "deneKuponDilimDegisti": "",
+    "tekSatisGunu": "",
+    "tekAlim": ""
   },
   "SatisDuzenleme": {
     "duzenle": "",
@@ -3883,7 +3889,11 @@
     "tarifeYok": "",
     "kargoFirmasiYok": "",
     "tutarElle": "",
-    "tarifeOkunuyor": ""
+    "tarifeOkunuyor": "",
+    "iz_PAKETLENDI": "",
+    "iz_SIPARIS_ONAYI": "",
+    "iz_KARGO_TAHMIN_TARTIMLA_TAZELE": "",
+    "izBilinmeyen": ""
   },
   "SatisIptali": {
     "iptalEt": "",

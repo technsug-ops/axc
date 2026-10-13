@@ -473,7 +473,21 @@ const serhLib = oku("src/lib/ice-aktarma-serhi.ts");
  * ve DÖRT kontrol kırmızı yandı — kod doğruydu. Dar pencere sessiz bir
  * kör nokta üretir; genişletmek onu kapatır.
  */
-const marjGovde = blok(serhLib, "export async function marjSerhi(", 6500);
+/**
+ * ⚠ PENCERE ÜÇÜNCÜ KEZ KISA KALDI (12.10.2026, K332): `marjSerhi` ile
+ * sınıflandırma gövdesi arasına istek başına önbellek bloğu girdi ve gövde
+ * 6500 karakterin dışına itildi — DÖRT kontrol yine kırmızı, kod yine doğru.
+ * Sabit uzunluk her büyümede kırılıyor; artık pencere ÖLÇÜLMÜYOR, SINIRLA
+ * kesiliyor: `marjSerhi`nin başından sınıflandırma işlevinin bittiği yere
+ * (ondan sonraki ilk `export`) kadar. İkisi de tam kapsanır, gövde büyüdükçe
+ * pencere de büyür.
+ */
+const marjGovde = (() => {
+  const bas = serhLib.indexOf("export async function marjSerhi(");
+  const gov = serhLib.indexOf("async function marjSiniflandir(", bas);
+  const son = serhLib.indexOf("\nexport ", gov);
+  return bas >= 0 && gov > bas && son > gov ? serhLib.slice(bas, son) : "";
+})();
 kontrol("marjSerhi gövdesi bulundu", marjGovde.length > 0);
 kontrol(
   "bekleyen sayımı `profitStatus === null` ölçütüne bağlı",

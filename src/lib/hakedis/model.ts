@@ -305,9 +305,34 @@ export function gecmisOdemeAnahtari(k: {
 export function gelecekOdemeAnahtari(
   kanalAdi: string,
   vade: Date,
+  /**
+   * ⚠ GEÇMİŞE DÜŞEN ÖDEME GÜNÜ İLERİ KAYAR (K325-⑤, 13.10.2026). Trendyol geriye
+   * snap'ler (vade Çarşamba → önceki Pazartesi); o Pazartesi GEÇTİYSE ve kalem hâlâ
+   * ödenmemişse, kalem o ödemeye girmemiştir — bir sonrakine girer. Ölçüldü:
+   * `11600993042` vade 14.10 Çarşamba, kural 12.10 Pazartesi; 13.10'da hâlâ
+   * ödenmemiş, TY panelinde 15.10 ödemesinde. Ekran onu geçmiş bir «12.10» grubunda
+   * gösteriyordu. Verilmezse (eski çağıranlar) eski davranış.
+   */
+  bugun?: Date,
 ): { anahtar: string; odemeGunu: Date } {
-  const odemeGunu = sonrakiOdemeGunu(vade, kanalAdi);
+  const kuralGunu = sonrakiOdemeGunu(vade, kanalAdi);
+  const odemeGunu =
+    bugun !== undefined && kuralGunu.getTime() < gunDegeri(isTakvimGunu(bugun)).getTime()
+      ? ilkOdemeGunuItibaren(bugun, kanalAdi)
+      : kuralGunu;
   return { anahtar: `${kanalAdi}|${odemeGunu.toISOString().slice(0, 10)}`, odemeGunu };
+}
+
+/** `gun` (İstanbul günü) dahil, ondan itibaren kanalın İLK ödeme günü — yön kuralından bağımsız İLERİ arar. */
+export function ilkOdemeGunuItibaren(gun: Date, kanalAdi: string): Date {
+  const istanbulGunu = gunDegeri(isTakvimGunu(gun));
+  const takvim = KANAL_ODEME_GUNLERI[kanalAdi];
+  if (!takvim || takvim.gunler.length === 0) return istanbulGunu;
+  for (let i = 0; i < 7; i++) {
+    const aday = new Date(istanbulGunu.getTime() + i * 86_400_000);
+    if (takvim.gunler.includes(aday.getUTCDay())) return aday;
+  }
+  return istanbulGunu;
 }
 
 /** Ödeme özeti satırının altında açılan tek kalem. */
@@ -435,6 +460,8 @@ export function gelecekOdemeleriGrupla(
   kalemler: GelecekOdemeKalemi[],
   /** Satış kimliği → o satışın toplam tahmini kesintisi (pozitif tutar). */
   satisKesintisi: Map<string, number>,
+  /** Geçmişe düşen ödeme günü ileri kayar (bkz. `gelecekOdemeAnahtari`). */
+  bugun?: Date,
 ): GelecekOdemeGrubu[] {
   const gruplar = new Map<
     string,
@@ -443,7 +470,7 @@ export function gelecekOdemeleriGrupla(
 
   for (const k of kalemler) {
     /** ⚠ ANAHTAR ORTAK GÖVDEDEN — ekran kalemleri aynı gövdeyle gruba bağlar. */
-    const { anahtar, odemeGunu } = gelecekOdemeAnahtari(k.kanalAdi, k.vade);
+    const { anahtar, odemeGunu } = gelecekOdemeAnahtari(k.kanalAdi, k.vade, bugun);
     const g = gruplar.get(anahtar) ?? {
       anahtar,
       kanalAdi: k.kanalAdi,

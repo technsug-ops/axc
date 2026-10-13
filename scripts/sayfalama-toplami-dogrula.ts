@@ -81,18 +81,47 @@ for (const e of EKRANLAR) {
   const i = kod.indexOf(e.model);
   const sorgu = i === -1 ? "" : kod.slice(i, i + 900);
   kontrol(e.ad + " · liste sorgusu bulundu", sorgu !== "", e.model + " yok");
+  /*
+   * ⚠ K332 (11.10.2026) — ÖLÇÜT ESKİDİ, DAVRANIŞ DEĞİL: /satislar listesi artık
+   * sayımla AYNI ANDA çekiliyor; sorgu `listeyiCek(s)` fonksiyonunda ve sayfa
+   * PARAMETREYLE geliyor (`skip: s.atla`). Eski ölçüt yalnız `sayfalama.atla`
+   * yazımını tanıyordu ve kırmızı yandı. İki yazım da kabul edilir — ama
+   * fonksiyon yazımında fonksiyonun GERÇEK sayfayla (`sayfalama`) çağrıldığı ve
+   * sayfalamanın toplamdan kurulduğu AYRICA aranır; yoksa liste tahmini sayfayla
+   * kalırdı.
+   */
+  const dogrudanSayfali = /skip:\s*sayfalama\.atla/.test(sorgu) && /take:\s*sayfalama\.boyut/.test(sorgu);
+  const fonksiyonlaSayfali =
+    /skip:\s*s\.atla/.test(sorgu) &&
+    /take:\s*s\.boyut/.test(sorgu) &&
+    /listeyiCek\(sayfalama\)/.test(kod) &&
+    kod.includes("const sayfalama = sayfaCoz(p.sayfa, toplamlar.kayitSayisi)");
   kontrol(
     e.ad + " · sorgu SAYFALANIYOR (skip + take)",
-    /skip:\s*sayfalama\.atla/.test(sorgu) && /take:\s*sayfalama\.boyut/.test(sorgu),
+    dogrudanSayfali || fonksiyonlaSayfali,
     "defterin tamamı çekiliyor — satır sayısıyla doğrusal büyüyen ekran",
   );
 
   // ── ② TOPLAM GÖVDEDEN GELİYOR MU ──────────────────────────────────────
   kontrol(
     e.ad + " · toplamlar veritabanı gövdesinden (" + e.govde + ")",
-    new RegExp("await\\s+" + e.govde + "\\(kosul\\)").test(kod),
+    new RegExp("await\\s+" + e.govde + "\\(kosul\\)").test(kod) ||
+      /* K332: sayımla liste AYNI ANDA — gövde `Promise.all` içinde çağrılır. */
+      kod.includes("const [toplamlar, tahminiListe] = await Promise.all([" + e.govde + "(kosul)") ||
+      /* K332 (13.10.2026): /alimlar'da toplamlar süzgeç seçenekleriyle AYNI ANDA okunur. */
+      new RegExp("toplamVerisi\\] = await Promise\\.all\\(\\[[\\s\\S]{0,900}?" + e.govde + "\\(kosul\\),\\s*\\]\\);").test(kod),
     "gövde çağrılmıyor — toplam nereden geliyor?",
   );
+  if (fonksiyonlaSayfali) {
+    /* K332: tahmini sayfa gerçek sayfadan farklıysa (aralık dışı sayfa) liste
+       DOĞRU sayfayla yeniden çekilmeli — yoksa ekran sayfa numarasıyla tutmayan
+       satırları gösterirdi. */
+    kontrol(
+      e.ad + " · kırpılan sayfa yeniden çekiliyor",
+      /const satislar = sayfalama\.atla === tahminiSayfa\.atla \? tahminiListe : await listeyiCek\(sayfalama\);/.test(kod) &&
+        /const tahminiSayfa = sayfaCoz\(p\.sayfa, Number\.MAX_SAFE_INTEGER\);/.test(kod),
+    );
+  }
 
   // ── ③ TOPLAM SAYFADAN HESAPLANMIYOR ───────────────────────────────────
   //  ⛔ ASIL ÖLÇÜT BU. Sayfalanmış diziyi toplayan her ifade yasaktır.

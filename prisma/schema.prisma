@@ -2788,6 +2788,7 @@ model User {
   ekler               Attachment[]
   userCompanyRoles    UserCompanyRole[]
   auditLogs           AuditLog[]
+  kullanimOlaylari    KullanimOlayi[]
   /// Bu kullanıcının açtığı destek talepleri.
   talepler            Talep[]           @relation("TalepBildiren")
   /// Bu kullanıcının yazdığı çözüm notları (Faz 2'de mesajlara evrilecek).
@@ -3328,6 +3329,7 @@ model Company {
   /// Model 2 (05.10.2026): bu firmaya ait hesaplar.
   hesaplar                     User[]                  @relation("HesapFirmasi")
   auditLogs                    AuditLog[]
+  kullanimOlaylari             KullanimOlayi[]
   talepler                     Talep[]
   /// K303 Aşama 2 — firmaya ait tabloların geri bağları.
   productListesi               Product[]
@@ -3497,6 +3499,59 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+// ============================================================================
+//  KULLANIM İZİ (kullanıcı kararı 13.10.2026 «Axcali firması ile bu programı
+//  ölçmek istiyorum: en çok nereler kullanılıyor, hangi tuşlara basılıyor,
+//  hangi sayfalarda ve nereden nereye geçiliyor»).
+// ----------------------------------------------------------------------------
+//  `AuditLog` yalnız VERİ DEĞİŞTİREN işlemi tutuyor; sayfa açılışı, tıklama ve
+//  geçiş hiç kaydedilmiyordu (ölçüldü: son 30 günde tek kullanıcı, 4.914 işlem,
+//  hiçbiri sayfa/tıklama değil). Bu tablo YALNIZ kullanım ölçer — iş verisi
+//  taşımaz: sayfa KALIBA indirgenir (`/satislar/:id`), sorgu dizesi atılır,
+//  düğme yazısındaki uzun rakamlar gizlenir (`lib/kullanim/olay.ts`).
+//  Firma kimliği taşır (çok-firma hazırlığı); kayıt silinen kullanıcı/firmadan
+//  sonra da kalır, bağ boşalır.
+// ============================================================================
+enum KullanimOlayiTuru {
+  SAYFA
+  TIKLAMA
+}
+
+enum KullanimCihazi {
+  TELEFON
+  TABLET
+  MASAUSTU
+}
+
+model KullanimOlayi {
+  id String @id @default(cuid())
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  tur KullanimOlayiTuru
+
+  /// Sayfanın KALIBI (`/satislar/:id`) — kayıt kimliği ve sorgu dizesi taşımaz.
+  sayfa String
+
+  /// SAYFA olayında bir önceki sayfanın kalıbı (nereden nereye). İlk açılışta boş.
+  oncekiSayfa String?
+
+  /// TIKLAMA olayında neye basıldı: düğme yazısı (uzun rakamlar «#») ya da
+  /// bağlantının gittiği sayfanın kalıbı («→ /satislar»).
+  hedef String?
+
+  cihaz KullanimCihazi
+
+  createdAt DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([userId, createdAt])
 }
 
 /// Talep türü — kullanıcının ne bildirdiği.
@@ -4298,3 +4353,4 @@ model VaryantGorseli {
   @@unique([variantId, sira])
   @@index([companyId])
 }
+

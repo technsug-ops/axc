@@ -1,5 +1,5 @@
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { NakitOzeti } from "@/app/nakit-ozeti";
 import { HakedisOzeti } from "@/app/hakedis-ozeti";
@@ -142,11 +142,11 @@ export default async function RaporSayfasi({
   const takvimPenceresi: TakvimPenceresi =
     parametreler.takvim === "30" ? 30 : 14;
   const takvimBugun = takvimBugunu();
-  const takvim = nakitTakvimiKur({
-    satirlar: karGorunur ? await takvimSatirlariniTopla(takvimBugun) : [],
-    bugun: takvimBugun,
-    pencereGun: takvimPenceresi,
-  });
+  /* ⚡ SÖZ — ana okumayla AYNI ANDA beklenir (K332, 13.10.2026). Eskiden takvim ·
+     hakediş özeti · kargosuz sayısı · ana okuma SIRAYLA bekleniyordu; dördü de
+     birbirinden bağımsız. Takvim ana okumadan sonra kurulur. */
+  const takvimSatirlariSozu = karGorunur ? takvimSatirlariniTopla(takvimBugun) : Promise.resolve([]);
+  takvimSatirlariSozu.catch(() => {});
 
   /**
    * ── BEKLENEN HAKEDİŞ ÖZETİ — RAPOR'A EKLENDİ (kullanıcı kararı 20.09.2026)
@@ -158,9 +158,10 @@ export default async function RaporSayfasi({
    * izin yoksa atılmaz (bkz. "yetki taşımada düşmüştü" dersi).
    */
   const hakedisGorunur = await izinVarMi("hakedis.gor");
-  const hakedisOzeti = hakedisGorunur
-    ? await beklenenHakedisOzetiGetir(takvimBugun)
-    : null;
+  const hakedisOzetiSozu = hakedisGorunur
+    ? beklenenHakedisOzetiGetir(takvimBugun)
+    : Promise.resolve(null);
+  hakedisOzetiSozu.catch(() => {});
 
   const an = new Date();
   let pencere: Pencere;
@@ -192,9 +193,10 @@ export default async function RaporSayfasi({
     baslangic: parametreler.baslangic,
     bitis: parametreler.bitis,
   });
-  const kargosuzSayisi = karGorunur
-    ? await prisma.sale.count({ where: satisKosulu(kargosuzParam, an).kosul })
-    : 0;
+  const kargosuzSayisiSozu = karGorunur
+    ? prisma.sale.count({ where: satisKosulu(kargosuzParam, an).kosul })
+    : Promise.resolve(0);
+  kargosuzSayisiSozu.catch(() => {});
 
   /**
    * Kıyas seçimi adreste yaşar; DÖNEM SEÇİMİ KORUNUR. Aynı düğmeye tekrar
@@ -247,6 +249,9 @@ export default async function RaporSayfasi({
     duzeltmeKayitlari,
     giderKayitlari,
     tazminatIzleri,
+    takvimSatirlari,
+    hakedisOzeti,
+    kargosuzSayisi,
   ] =
     await Promise.all([
       prisma.sale.findMany({
@@ -342,7 +347,15 @@ export default async function RaporSayfasi({
         /* `detail` ŞART: tahsil günü (pazaryeri bildirimi) izin içinde durur. */
         select: { action: true, createdAt: true, targetId: true, detail: true },
       }),
+      takvimSatirlariSozu,
+      hakedisOzetiSozu,
+      kargosuzSayisiSozu,
     ]);
+  const takvim = nakitTakvimiKur({
+    satirlar: takvimSatirlari,
+    bugun: takvimBugun,
+    pencereGun: takvimPenceresi,
+  });
 
   const sayi = (deger: { toString(): string } | null) =>
     deger === null ? null : Number(deger.toString());

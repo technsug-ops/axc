@@ -1,5 +1,5 @@
 import { TriangleAlert } from "lucide-react";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { getTranslations } from "next-intl/server";
 
 import { bicimlendirici } from "@/lib/bicim";
@@ -12,6 +12,7 @@ import {
 import { pencereCoz } from "@/lib/liste-suzgeci";
 import { prisma } from "@/lib/prisma";
 import { DURUM_KUTUSU } from "@/lib/renkler";
+import { OnbellekNotu } from "@/components/onbellek-notu";
 
 /**
  * ============================================================================
@@ -103,6 +104,8 @@ export async function MarjSerhi({
             {t("marjBagliOlan", { oran: bicim.yuzde(s.baglıMarj) })}
           </span>
         )}
+        {/* ⏱ 2 dk önbellekten (K332) — eski bir oran taze gibi görünmesin. */}
+        <OnbellekNotu an={s.hesaplandi} />
       </div>
     </div>
   );

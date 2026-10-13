@@ -366,6 +366,10 @@ console.log("\n2b) KORUMASIZ API UCU BEKÇİSİ");
  */
 const API_ISTISNALARI = new Map<string, string>([
   [
+    "src/app/api/kullanim/route.ts",
+    "K334 kullanım izi: HER rolün kullanımı ölçülür, bu yüzden bir izne bağlanmaz — ama oturum ŞART: girişsiz istek kapıda 401 (proxy), uç da oturum yoksa hiçbir şey yazmaz. Yalnız oturumun KENDİ firması ve kullanıcısı adına yazar (tarayıcının söylediği kimlik yok sayılır), hiçbir şey OKUMAZ/döndürmez (hep 204). Kapı ve kimlik kaynağı kullanim:dogrula'da mutasyonla sınandı.",
+  ],
+  [
     "src/app/api/yedek/otomatik/route.ts",
     "Vercel Cron çağırır; kendi CRON_SECRET koruması var, tarayıcı oturumu taşıyamaz",
   ],
@@ -400,6 +404,10 @@ const API_ISTISNALARI = new Map<string, string>([
   [
     "src/app/api/cron/listeleme-cekim/route.ts",
     "K225: kanal listeleme durumu çekimi (TY + HB tek uçta) — dış zamanlayıcı çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. ⚠ Kapı artık BEYANLA değil ÖLÇÜMLE de korunuyor: `api:dogrula` 4. bölüm her `src/app/api/cron/**/route.ts` dosyasını DİZİNDEN tarayıp sır kapısını sınıyor (21.09.2026'da açıldı — o güne kadar YAZAN cron uçlarının hiçbiri denetlenmiyordu).",
+  ],
+  [
+    "src/app/api/cron/sicak/route.ts",
+    "K332 (12.10.2026): sıcak tutma ucu — dış zamanlayıcı (cron-job.org, dakikada bir) çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. SALT OKUMA: yalnız `SELECT 1`; kapıyı `api:dogrula` 4. bölüm dizinden tarayıp sınıyor.",
   ],
 ]);
 {

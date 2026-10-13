@@ -12,7 +12,7 @@
  *  Taşırken özetlemek, neyin kaybolduğunu ölçülemez yapardı.
  * ============================================================================
  */
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { getTranslations } from "next-intl/server";
 
 import { TriangleAlert } from "lucide-react";

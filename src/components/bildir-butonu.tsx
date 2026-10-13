@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { MessageSquarePlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

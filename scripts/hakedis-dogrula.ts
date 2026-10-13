@@ -24,6 +24,7 @@ import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
 
 import { gunDegeri, isGunuEkle, isGunuFarki, haftaSonuMu } from "../src/lib/donem";
 import { hbApiSatiriniOku } from "../src/lib/hakedis/hb-api-oku";
+import { GECICI_FATURA_NO, geciciFaturaKarari, geciciKopyaMi, type MevcutHakedisSatiri } from "../src/lib/hakedis/gecici-fatura";
 import {
   gecmisOdemeAnahtari,
   gelecekOdemeAnahtari,
@@ -66,7 +67,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 11;
+const BOLUM_SAYISI = 12;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -823,6 +824,36 @@ console.log("\nÖDEME GÜNÜ SNAP'LEME — İSTANBUL TAKVİMİ (K222-④, 20.09.
     sonrakiOdemeGunu(istanbulPazartesi, "Trendyol").toISOString().slice(0, 10) ===
       "2026-09-21",
   );
+  /*
+   * ⭐ GEÇMİŞE DÜŞEN ÖDEME GÜNÜ İLERİ KAYAR (K325-⑤, 13.10.2026). Canlı: `11600993042`
+   * vade 14.10 Çarşamba → kural 12.10 Pazartesi; 13.10'da hâlâ ödenmemiş, TY panelinde
+   * 15.10 ödemesinde. Ekran onu geçmiş bir «12.10» grubunda gösteriyordu; düzeltmeyle
+   * 15.10'un satış tarafı TY dosyasıyla birebir (₺82.584,62). Ayrımın iki yakası:
+   * geçmişe düşen kayar · düşmeyen kaymaz · bugün ödeme günüyse KAYMAZ (kesin «<»).
+   */
+  const vade1410 = new Date("2026-10-14T20:28:08.124Z"); // İstanbul 14.10 Çarşamba 23:28
+  const isoGun = (d: Date) => d.toISOString().slice(0, 10);
+  kontrol("geçmişe düşen TY ödeme günü (12.10) bugün 13.10 → bir SONRAKİ ödemeye (15.10 Perşembe)",
+    isoGun(gelecekOdemeAnahtari("Trendyol", vade1410, new Date("2026-10-13T09:00:00Z")).odemeGunu) === "2026-10-15");
+  kontrol("  ...geçmişe düşmüyorsa kural aynen (bugün 11.10 → 12.10)",
+    isoGun(gelecekOdemeAnahtari("Trendyol", vade1410, new Date("2026-10-11T09:00:00Z")).odemeGunu) === "2026-10-12");
+  kontrol("  ...bugün ödeme gününün KENDİSİ ise kaymaz (bugün 12.10 → 12.10)",
+    isoGun(gelecekOdemeAnahtari("Trendyol", vade1410, new Date("2026-10-12T09:00:00Z")).odemeGunu) === "2026-10-12");
+  kontrol("  ...bugün verilmezse eski davranış (çağıranı bozmaz)",
+    isoGun(gelecekOdemeAnahtari("Trendyol", vade1410).odemeGunu) === "2026-10-12");
+  kontrol("  ...HB'de de: vadesi geçmiş ödenmemiş kalem bugünkü/sonraki Salı'ya (bugün 13.10 Salı → 13.10)",
+    isoGun(gelecekOdemeAnahtari("Hepsiburada", new Date("2026-10-05T21:00:00Z"), new Date("2026-10-13T09:00:00Z")).odemeGunu) === "2026-10-13");
+  const kayanGrup = gelecekOdemeleriGrupla(
+    [{ kanalAdi: "Trendyol", vade: vade1410, tutar: 2190.32, paraBirimi: "TRY", saleId: null }],
+    new Map(),
+    new Date("2026-10-13T09:00:00Z"),
+  );
+  kontrol("  ...gruplama da aynı kuralla (2190,32 → 15.10 grubu)",
+    kayanGrup.length === 1 && isoGun(kayanGrup[0]!.tarih) === "2026-10-15" && kayanGrup[0]!.anahtar === "Trendyol|2026-10-15", kayanGrup);
+  const hakedisSayfasi = kaynakOku("src/app/hakedis/page.tsx").replace(/\r\n/g, "\n");
+  kontrol("  ...sayfa İKİ yerde de bugünü veriyor (kalem dökümü + gruplama aynı anahtar)",
+    /gelecekOdemeAnahtari\(k\.channelAccount\.channel\.name, k\.dueDate!, bugun\)/.test(hakedisSayfasi) &&
+      /satisKesintisi,\s*bugun,\s*\)\.map\(\(g\) => \(\{ \.\.\.g, odemeEmriNo: null \}\)\)/.test(hakedisSayfasi));
   /**
    * ⚠ İKİ KANAL İKİ YÖN — ve bu bilerek. HB'nin kendi paneli "22 Eylül
    * Salı · 84.680,85" diyor ve İLERİ kaydırma bu rakamı kuruşuna
@@ -1250,6 +1281,24 @@ console.log("\n9) ÖDEME ÖZETİ — pazaryeri paneli düzeni (22.09.2026)");
   kontrol("EKRAN: toplam SÜZÜLMÜŞ kümenin tamamından (sayfa diliminden değil)", /odemeToplamlari\(odemelerSuzulmus\)/.test(sayfa));
   kontrol("EKRAN: sayfa dilimi süzülmüş kümeden kesiliyor", /odemelerSuzulmus\.slice\(/.test(sayfa));
   kontrol("EKRAN: geçmiş grup anahtarı ortak gövdeden (kendi formülü yok)", /gecmisOdemeAnahtari\(\{/.test(sayfa) && !/EMIR:\$\{/.test(sayfa));
+  /*
+   * ⚡ SATIŞLAR YALNIZ «KONTROL» SEKMESİNDE OKUNUR (K332, 13.10.2026). Canlı:
+   * bütün satışlar 8.370 satır ~0,45 sn + maliyet kayıtları; yerelde Özet
+   * ~2,5 → ~0,9 sn, çıktı bayt bayt aynı. İKİ YÖN: okuma koşula bağlı (kaldıran
+   * mutasyon kırmızı) VE karşılaştırmadan türeyen hiçbir değer Kontrol sekmesinin
+   * DIŞINDA çizilmez — çizilseydi öteki sekmede sessizce «0» görünürdü.
+   */
+  kontrol("EKRAN: satışlar yalnız Kontrol sekmesi açıkken okunur",
+    /sekmeSecili !== SEKME_KONTROL \? Promise\.resolve\(\[\]\) : prisma\.sale\.findMany\(/.test(sayfa));
+  const cizimBas = sayfa.indexOf("\n  return (");
+  const kontrolSekmesi = sayfa.indexOf("anahtar: SEKME_KONTROL,");
+  const kontrolSonrasi = sayfa.indexOf("anahtar:", kontrolSekmesi + 1);
+  const disari = cizimBas < 0 || kontrolSekmesi < 0 ? "" :
+    sayfa.slice(cizimBas, kontrolSekmesi) + (kontrolSonrasi < 0 ? "" : sayfa.slice(kontrolSonrasi));
+  kontrol("  ...karşılaştırmadan türeyen değer (karsilastirma · sorunlu) Kontrol sekmesi DIŞINDA çizilmez",
+    cizimBas >= 0 && kontrolSekmesi > cizimBas &&
+      /\{karsilastirma\.length > 0 \?/.test(sayfa.slice(kontrolSekmesi)) &&
+      !/\b(karsilastirma|sorunlu)\b/.test(disari));
   const bilesen = yorumsuz("src/app/hakedis/odeme-ozeti.tsx");
   kontrol(
     "BİLEŞEN: arama ortak kod kutusundan, sayfanın okuduğu parametreyle (kamera — İlke #7); çıplak input yok",
@@ -1338,6 +1387,60 @@ console.log("\n10) HEPSİBURADA API OKUYUCUSU — İŞ TARİHİ SAAT TAŞIMAZ (K
   kontrol("boş tarih null döner", ornek({ dueDate: "" }).vadeTarihi === null);
 }
 kosanBolumler.push("hb-api-tarih");
+
+// ===========================================================================
+console.log("\nGEÇİCİ FATURA NO «.» — KOPYA YERİNE TERFİ (K325-④)");
+// ===========================================================================
+{
+  /*
+   * HB aynı kesintiyi önce «.» ile, sonra gerçek fatura numarasıyla veriyor; anahtar
+   * fatura numarasını taşıdığı için ikinci geliş kopya yazılıyordu. Canlı: 348 kopya,
+   * 20.10 ödemesi ₺70.282,67 → ayıklanınca ₺75.970,90 = HB paneli. DEĞER testleri
+   * saf gövdeyi çağırır; ayrımın İKİ YAKASI da örnekte (terfi ↔ yeni, atla ↔ yeni).
+   */
+  const m = (id: string, externalId: string, amount: number, ek: Partial<MevcutHakedisSatiri> = {}): MevcutHakedisSatiri =>
+    ({ id, externalId, orderNo: "4168771298", rawType: "Komisyon tutarı", amount, paidAt: null, ...ek });
+  const g = (externalId: string, tutar: number, ek: Partial<{ siparisNo: string | null; hamTip: string }> = {}) =>
+    ({ externalId, siparisNo: "4168771298", hamTip: "Komisyon tutarı", tutar, ...ek });
+  const nokta = m("n1", GECICI_FATURA_NO, -2526.48);
+
+  kontrol("gerçek no gelir, ödenmemiş «.» eşi var → TERFİ (kopya yazılmaz)",
+    JSON.stringify(geciciFaturaKarari(g("HD42026000493963", -2526.48), [nokta])) === JSON.stringify({ tur: "TERFI", hedefId: "n1" }));
+  kontrol("  ...tutar kuruşunda farklı → YENİ (aynı tipte ayrı kesinti olabilir)",
+    geciciFaturaKarari(g("HD42026000493963", -2526.47), [nokta]).tur === "YENI");
+  kontrol("  ...ham tip farklı → YENİ",
+    geciciFaturaKarari(g("HD42026000493963", -2526.48, { hamTip: "Kargo Bedeli" }), [nokta]).tur === "YENI");
+  kontrol("  ...«.» eşi ÖDENMİŞ → YENİ (ödendi kaydı o satırın kendisi)",
+    geciciFaturaKarari(g("HD42026000493963", -2526.48), [m("n1", GECICI_FATURA_NO, -2526.48, { paidAt: new Date("2026-10-01") })]).tur === "YENI");
+  kontrol("  ...sipariş no yok → YENİ",
+    geciciFaturaKarari(g("HD42026000493963", -2526.48, { siparisNo: null }), [nokta]).tur === "YENI");
+  kontrol("  ...bir «.» satırı İKİ gelen satıra terfi edemez (ikincisi YENİ)",
+    geciciFaturaKarari(g("HD42026000493963", -2526.48), [nokta], new Set(["n1"])).tur === "YENI");
+  kontrol("«.» gelir, gerçek numaralı eşi var → ATLA",
+    JSON.stringify(geciciFaturaKarari(g(GECICI_FATURA_NO, -2526.48), [m("r1", "HD42026000493963", -2526.48)])) === JSON.stringify({ tur: "ATLA", esId: "r1" }));
+  kontrol("  ...«.» gelir, yalnız «.» eşi var → ATLANMAZ (gerçek numaralı eş yok, YENİ)",
+    geciciFaturaKarari(g(GECICI_FATURA_NO, -2526.48), [nokta]).tur === "YENI");
+  kontrol("  ...«.» gelir, eşi yok → YENİ (gerçek bekleyen kesinti kaybolmaz)",
+    geciciFaturaKarari(g(GECICI_FATURA_NO, -325.19), [m("r1", "HD42026000493963", -2526.48)]).tur === "YENI");
+
+  const gercek = m("r1", "HD42026000493963", -2526.48);
+  kontrol("temizlik ölçütü: ödenmemiş «.» + gerçek eş → KOPYA", geciciKopyaMi(nokta, [nokta, gercek]));
+  kontrol("  ...eş yoksa KOPYA DEĞİL", !geciciKopyaMi(nokta, [nokta]));
+  kontrol("  ...ödenmiş «.» KOPYA DEĞİL", !geciciKopyaMi(m("n2", GECICI_FATURA_NO, -2526.48, { paidAt: new Date() }), [gercek]));
+  kontrol("  ...gerçek numaralı satır KOPYA DEĞİL (yalnız «.» silinir)", !geciciKopyaMi(gercek, [nokta, gercek]));
+  kontrol("  ...tutar farklı eş → KOPYA DEĞİL", !geciciKopyaMi(nokta, [m("r2", "HD42026000493963", -100)]));
+  kontrol("İKİ YER TEK ÖLÇÜT: kopya sayılan «.» için çekim de ATLA der",
+    geciciKopyaMi(nokta, [nokta, gercek]) && geciciFaturaKarari(g(GECICI_FATURA_NO, -2526.48), [gercek]).tur === "ATLA");
+
+  const cekim = kaynakOku("scripts/canli-hb-hakedis-cekim.ts").replace(/\r\n/g, "\n");
+  kontrol("ÇEKİM: «yeni» satırlar karar gövdesinden geçer (DB + aynı çekimdeki gerçek numaralılar)",
+    /geciciFaturaKarari\(h\.satir, \[\.\.\.ayniSiparistekiler, \.\.\.gelenGercekler\], terfiHedefleri\)/.test(cekim) &&
+      /yeniler\.splice\(0, yeniler\.length, \.\.\.gercekYeniler\);/.test(cekim));
+  kontrol("  ...terfi YENİ SATIR YAZMAZ, mevcut satırı günceller ve iz bırakır",
+    /for \(const \{ hedefId, h \} of terfiler\) \{[\s\S]{0,400}?tx\.settlementItem\.update\(\{\s*where: \{ id: hedefId \}/.test(cekim) &&
+      /action: "HB_HAKEDIS_GECICI_TERFI"/.test(cekim));
+}
+kosanBolumler.push("gecici-fatura");
 
 // ===========================================================================
 console.log("");

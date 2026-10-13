@@ -331,7 +331,9 @@
     "temaCizgiZorunlu": "Kart bu zeminden ayrışmadığı için ince çizgi kendiliğinden eklendi.",
     "temaYazi": "Yazı kontrastı",
     "temaYaziNormal": "Normal",
-    "temaYaziYuksek": "Yüksek"
+    "temaYaziYuksek": "Yüksek",
+    "sayfaYukleniyor": "Sayfa yükleniyor…",
+    "onbellekNotu": "{saat} itibarıyla hesaplandı · en fazla {dakika} dk önce"
   },
   "AlimDurumu": {
     "DRAFT": "Taslak",
@@ -2635,7 +2637,9 @@
     "halkaAciklama": "Ciro dağılımı: {liste}",
     "ciroNetBaslik": "Ciro ve NET-2 — {pencere}",
     "hizliIslemler": "Hızlı işlemler",
-    "kargosuzNotu": "{sayi} satışın kârı kargo düşülmeden hesaplandı — NET o kadar iyimser. Listeyi aç"
+    "kargosuzNotu": "{sayi} satışın kârı kargo düşülmeden hesaplandı — NET o kadar iyimser. Listeyi aç",
+    "grafikTelefondaYok": "Son 12 aylık grafik telefonda yüklenmez (panel daha hızlı açılsın diye). Bilgisayardan ya da tabletten açınca görünür.",
+    "urunAnaliziTelefondaYok": "Ürün analizi telefonda yüklenmez (panel daha hızlı açılsın diye). Menüdeki «Ürün analizi» sayfasından ya da bilgisayardan açınca görünür."
   },
   "Envanter": {
     "baslik": "Envanter değeri",
@@ -3824,7 +3828,9 @@
     "deneKuponNotu": "Mağazanı takip eden müşterinin tek seferlik indirimi; kuponu sen ödersin. Doldurursan kuponlu satışın NET-2si ayrıca gösterilir.",
     "deneKuponlu": "Kuponlu satışta ({kupon} kupon) NET-2:",
     "deneKuponFarki": "(kuponsuza göre {fark})",
-    "deneKuponDilimDegisti": "Kupon fiyatı başka bir komisyon dilimine indiriyor; hesap kuponlu fiyatın dilimini kullandı. Pazaryerinin dilimi hangi fiyata göre seçtiği ölçülmedi."
+    "deneKuponDilimDegisti": "Kupon fiyatı başka bir komisyon dilimine indiriyor; hesap kuponlu fiyatın dilimini kullandı. Pazaryerinin dilimi hangi fiyata göre seçtiği ölçülmedi.",
+    "tekSatisGunu": "tek satış günü · {tarih} · {fiyat}",
+    "tekAlim": "tek alım · {tarih} · {fiyat}"
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",
@@ -3883,7 +3889,11 @@
     "tarifeYok": "Bu firma {desi} desi taşımıyor — tutar değişmedi, elle yazın",
     "kargoFirmasiYok": "Satışta kargo firması seçili değil — tarife okunamıyor",
     "tutarElle": "senin girdiğin",
-    "tarifeOkunuyor": "Tarife okunuyor…"
+    "tarifeOkunuyor": "Tarife okunuyor…",
+    "iz_PAKETLENDI": "Paketlendi",
+    "iz_SIPARIS_ONAYI": "Sipariş onaylandı",
+    "iz_KARGO_TAHMIN_TARTIMLA_TAZELE": "Kargo tahmini tartımla güncellendi",
+    "izBilinmeyen": "Kayıt: {kod}"
   },
   "SatisIptali": {
     "iptalEt": "Satışı iptal et",

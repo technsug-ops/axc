@@ -31,7 +31,7 @@ import { parolaDogrula, parolaOzetle, parolaYeterliMi } from "../src/lib/parola"
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -251,6 +251,24 @@ async function main() {
       /parola === "degisti" \? \([\s\S]{0,400}?t\("parolaDegistiBilgi"\)/.test(giris),
     );
     kosanBolumler.push("parola-degisimi");
+  }
+
+  /* ═══ KULLANICI SATIRI İSTEK BAŞINA BİR KEZ (K332, 11.10.2026) ═══
+     Yerleşim, yetki bağlamı ve parola kapısı aynı satırı ayrı ayrı okuyordu
+     (sorgu günlüğü: her sayfada 3 okuma). Geri dönerse oturum DOĞRU kalır,
+     yalnız her sayfa iki gidiş-dönüş yavaşlar — kalıp ölçülür. */
+  {
+    const yorumsuz5 = (k: string) => k.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+    const oturum = yorumsuz5(kaynakOku("src/lib/oturum.ts"));
+    const yetki = yorumsuz5(kaynakOku("src/lib/yetki/index.ts"));
+    kontrol("kullanıcı satırı istek önbelleğinde (`cache`)", /export const kullaniciSatiri = cache\(\(id: string\) =>/.test(oturum));
+    const govdeBas = oturum.indexOf("export async function oturumdakiKullanici(");
+    const govde = govdeBas >= 0 ? oturum.slice(govdeBas, oturum.indexOf("\n}", govdeBas)) : "";
+    kontrol("oturum okuması önbellekten", govde.includes("await kullaniciSatiri(govde.kullaniciId)") && !govde.includes("prisma.user.findUnique"));
+    const parolaBas = yetki.indexOf("export const parolaDegismeliMi = cache(");
+    const parola = parolaBas >= 0 ? yetki.slice(parolaBas, yetki.indexOf("});", parolaBas)) : "";
+    kontrol("parola kapısı AYNI satırı kullanır (ek okuma yok)", parola.includes("await kullaniciSatiri(kullanici.id)") && !parola.includes("prisma.user.findUnique"));
+    kosanBolumler.push("tek-okuma");
   }
 
   console.log("");

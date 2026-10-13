@@ -21,6 +21,7 @@ import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
  */
 
 const BEKCI = "scripts/vitrin-dogrula.ts";
+const VERI = "src/lib/panel/vitrin-verisi.ts";
 const BEKCI_BASLIGI = "ölçüt geçti";
 const PANEL = "src/app/page.tsx";
 const KANAL = "src/app/kanal-listeleme/page.tsx";
@@ -67,11 +68,28 @@ const MUTASYONLAR: Mutasyon[] = [
       "serh her zaman bos gorunur; rafta yatan sermaye panelde HIC yazmaz",
   },
   {
+    ad: "KANAL LISTELEME KENDI ONBELLEGINI KURDU (panelden ayristi)",
+    yon: "KALDIRAN",
+    dosya: KANAL,
+    bul: "kisaOnbellek(`vitrin:${vitrinFirmasi}`, PANEL_ONBELLEK_MS, () => vitrinKutusunuTopla())",
+    koy: "kisaOnbellek(`kanal-vitrin:${vitrinFirmasi}`, PANEL_ONBELLEK_MS, () => vitrinKutusunuTopla())",
+    bozdugu: "panel ile kanal listeleme ayni kutuyu iki ayri anin rakamiyla gosterir",
+  },
+  {
+    ad: "KANAL LISTELEME HESAPLANDIGI SAATI YAZMIYOR",
+    yon: "KALDIRAN",
+    dosya: KANAL,
+    bul: "              {vitrin.deger.length > 0 ? <OnbellekNotu an={vitrin.an} /> : null}",
+    koy: "",
+    bozdugu: "2 dk eski kutu taze gibi gorunur",
+  },
+  {
     ad: "DOKUM KANAL LISTELEMEDEN KALKTI (hic bir yerde cizilmez)",
     yon: "KALDIRAN",
     dosya: KANAL,
-    bul: "      <VitrinKutusu veri={await vitrinKutusunuTopla()} />",
-    koy: "      {null}",
+    /* ⚠ ÇAPA TAŞINDI (13.10.2026, K332): kutu artık `ArkadanDolan` içinde, panelle aynı önbellekten. */
+    bul: "              <VitrinKutusu veri={vitrin.deger} />",
+    koy: "              {null}",
     bozdugu:
       "panelden kaldirilan dokum yeni evine hic varmaz - tasima sirasinda kaybolan ekran",
   },
@@ -110,6 +128,22 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "      {false ? null : (",
     bozdugu:
       "acilacak liste yokken tiklanabilir gorunur; kullanici bos ekrana gider",
+  },
+  {
+    ad: "VITRIN SATIRLARI YENIDEN SIRALI",
+    yon: "KALDIRAN",
+    dosya: VERI,
+    bul: "      const r = satirSonuclari[VITRIN_SATIRLARI.indexOf(s)]!;",
+    koy: "      const r = await olc({ where: vitrinKosulu({ kanalHesabiId: h.id, variantIdleri: stoklu, satir: s }) });",
+    bozdugu: "panel her satiri tek tek bekler (K332), sonuc ayni oldugu icin kimse gormez",
+  },
+  {
+    ad: "VITRIN HESAPLARI YENIDEN SIRALI",
+    yon: "KALDIRAN",
+    dosya: VERI,
+    bul: "  const olcumler = await Promise.all(hesaplar.map(hesapOlcumleri));",
+    koy: "  const olcumler: Awaited<ReturnType<typeof hesapOlcumleri>>[] = [];\n  for (const x of hesaplar) olcumler.push(await hesapOlcumleri(x));",
+    bozdugu: "hesaplar tek tek olculur, panel saniyelerce bekler",
   },
 ];
 

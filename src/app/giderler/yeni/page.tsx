@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { sayfaIzni } from "@/lib/yetki";
 import { getTranslations } from "next-intl/server";
 

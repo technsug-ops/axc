@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { PackagePlus, ScanBarcode } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";

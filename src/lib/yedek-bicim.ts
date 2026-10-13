@@ -77,6 +77,8 @@ export const YEDEK_TABLOLARI = [
   "RolePermission",
   "UserCompanyRole",
   "AuditLog",
+  /** K334 — kullanım izi; `User` ve `Company`ye bağlı (SetNull) → ikisinden SONRA. Veri sahipliği: ölçüm de müşterinin verisidir. */
+  "KullanimOlayi",
   // --- ürün ağacı ---
   "Product",
   "ProductVariant",
@@ -203,11 +205,12 @@ export const YEDEK_TABLOLARI = [
  *   8 — VaryantGorseli eklendi (10.10.2026, K330, yalnız çok firmalı dal).
  *       Liste ve üretici AYNI düzenlemede değişti (09.10 veri kaybının dersi:
  *       listede olup üreticide olmayan tablo geri yükleme sınamasında BOŞALIR).
+ *   9 — KullanimOlayi eklendi (13.10.2026, K334 kullanım izi — ana daldan birleştirmeyle).
  *
  * Sürüm 1 dosyalar OKUNABİLİR kalır; geri yükleme ekranı eksik tabloları
  * tek tek sayar ve uyarır — sessizce "tamam" demez.
  */
-export const YEDEK_SURUMU = 8;
+export const YEDEK_SURUMU = 9;
 
 /**
  * ============================================================================

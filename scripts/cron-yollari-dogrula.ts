@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
+import { ARKA_PLAN_HAVUZU, SAYFA_HAVUZU_BOYUTU, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
 
 /**
  * ============================================================================
@@ -124,6 +125,79 @@ for (const dosya of cekimRotalari) {
     `${urlYolu(dosya)} → atlandı ise 503, koştuysa 200 (son cevap donguDurumKodu + atlandı yüklemi)`,
     /status: donguDurumKodu\(sonuc, \(o\) => [^)]*?(?:"atlandi" in o|o\.dusen > 0)/.test(sonCevap),
   );
+}
+
+/* 4) SICAK TUTMA UCU SAYFALARLA AYNI PARÇADA (K332, 12.10.2026).
+   Vercel farklı ayarlı yolları AYRI sunucu parçasında toplar; çekim uçları
+   `maxDuration = 60` taşıdığı için dakikalık çağrıları paneli uyandırmıyor.
+   Sıcak tutma ucu bu yüzden HİÇBİR çalışma ayarı taşımaz — taşırsa ayrı
+   parçaya düşer ve sessizce işe yaramaz. Ve işi SALT OKUMA, tek SELECT 1. */
+console.log("\n4) SICAK TUTMA UCU (K332)");
+{
+  const yol = routeDosyalari.find((d) => urlYolu(d) === "/api/cron/sicak");
+  kontrol("sıcak tutma ucu var", yol !== undefined);
+  const kod = yol ? kaynakOku(yol).replace(/\/\*[\s\S]*?\*\//g, " ") : "";
+  kontrol("  ...sayfalarla aynı parçada: çalışma ayarı YOK (maxDuration · runtime · preferredRegion)",
+    kod.length > 0 && !/export const (maxDuration|runtime|preferredRegion|regions)\b/.test(kod));
+  /* 12.10.2026: tek yoklama → AYNI ANDA üç (havuzun üç bağlantısı da canlı kalsın). */
+  /* ⚠ ÖLÇÜT TAŞINDI (13.10.2026): sayı elle «üç» yazılıydı; havuz 3 → 5 olunca iki yerde iki
+     sayı doğardı. Artık yoklama sayısı havuzun TEK kaynağından (`SAYFA_HAVUZU_BOYUTU`). */
+  kontrol("  ...yalnız SELECT 1 (havuzun BÜTÜN bağlantılarına aynı anda, sayı tek kaynaktan), yazma yok",
+    /Array\.from\(\{ length: SAYFA_HAVUZU_BOYUTU \}, async \(\) => \{[\s\S]{0,120}?await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
+}
+
+/* ═══ 5) ARKA PLAN HAVUZU (K332, 13.10.2026) ═══
+   Canlıda bağlantı tepe değeri 25 = `max_user_connections`; kaynak, aynı
+   saniyede başlayan çekim kopyalarıydı (her biri 3 park). Çekimler işareti
+   içe alır ve küçük havuz kurdurur. ⛔ İşaret YALNIZ `maxDuration` taşıyan
+   uçlarda olabilir: taşımayan uç sayfalarla aynı kopyada koşar ve işaret
+   orada sayfaların havuzunu da küçültürdü. Küme elle tutulmaz, dosyalardan
+   türetilir (iki yön: çekimde EKSİK işaret · sayfa kopyasında FAZLA işaret). */
+console.log("\n5) ARKA PLAN HAVUZU (K332)");
+{
+  const yorumsuz = (yol: string) => kaynakOku(yol).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
+  const ISARET = /^\s*import "@\/lib\/arka-plan-havuzu";/m;
+  const maxDurationlu = (yol: string) => /export const maxDuration\s*=/.test(yorumsuz(yol));
+  const cekimUclari = routeDosyalari.filter((d) => urlYolu(d).startsWith("/api/cron/") && maxDurationlu(d));
+  kontrol("maxDuration taşıyan çekim ucu bulundu (taban DOLU)", cekimUclari.length >= 7, cekimUclari.map(urlYolu));
+  const eksik = cekimUclari.filter((d) => !ISARET.test(yorumsuz(d))).map(urlYolu);
+  kontrol("  ...her çekim ucu arka plan işaretini içe alıyor", eksik.length === 0, eksik);
+  const tumKaynaklar = (kok: string): string[] =>
+    readdirSync(kok).flatMap((isim) => {
+      const tam = join(kok, isim);
+      if (statSync(tam).isDirectory()) return tumKaynaklar(tam);
+      return /\.(ts|tsx)$/.test(isim) ? [tam.replace(/\\/g, "/")] : [];
+    });
+  const isaretliler = tumKaynaklar("src").filter((d) => /["']@\/lib\/arka-plan-havuzu["']/.test(yorumsuz(d)));
+  const yanlisYer = isaretliler.filter((d) => !(d.endsWith("/route.ts") && maxDurationlu(d)));
+  kontrol("  ...işaret YALNIZ maxDuration taşıyan uçlarda (sayfa kopyasına sızmaz)", isaretliler.length >= 7 && yanlisYer.length === 0, yanlisYer);
+  const prismaK = yorumsuz("src/lib/prisma.ts");
+  kontrol("  ...istemci havuzu işarete göre seçiyor; prisma.ts işareti KURMUYOR",
+    /havuzluAdres\(url, uygulamaHavuzu\(\)\)/.test(prismaK) && !/arka-plan-havuzu/.test(prismaK));
+  const once = uygulamaHavuzu();
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- ölçüm sırası: işaret TAM burada kurulmalı
+  require("../src/lib/arka-plan-havuzu");
+  const sonra = uygulamaHavuzu();
+  /* ⚠ 13.10.2026: arka plan sınırı 2 → 3 (çekirdekler 10'la yazılmıştı; 2 iç içe işlemde
+     kuyruk kilidi riski). İki havuzu artık AYIRAN değer `minimumIdle` (3 ↔ 1). */
+  /* ⚠ 13.10.2026 «5 yap»: sayfa havuzu 3 → 5 (gerekçe ve bütçe `veritabani-adresi.ts`te). */
+  kontrol("  ...değer: işaret yokken sayfa havuzu (5 · boşta 5), varken arka plan havuzu (3 · boşta 1)",
+    once.connectionLimit === "5" && once.minimumIdle === "5" && SAYFA_HAVUZU_BOYUTU === 5 && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1", { once, sonra });
+  /* ⛔ ÇEKİRDEKLER UYGULAMANIN İSTEMCİSİNİ KULLANMIYOR (bulgu 13.10.2026): çekim uçları
+     `scripts/` altındaki çekirdekleri çağırıyor ve onlar kendi istemcisini HAM adresle
+     kuruyordu — sürücü varsayılanı 10 bağlantı; canlıdaki «10»lar buydu, işaret oraya
+     ULAŞMIYORDU. Küme uçların içe alma satırlarından türetilir (elle liste yok). */
+  const cekirdekler = [...new Set(cekimUclari.flatMap((d) =>
+    [...yorumsuz(d).matchAll(/from "(?:\.\.\/)+(scripts\/[\w-]+)"/g)].map((m) => `${m[1]}.ts`)))];
+  kontrol("  ...uçların çağırdığı betik çekirdeği bulundu (taban DOLU)", cekirdekler.length >= 8, cekirdekler);
+  const ciplak = cekirdekler.flatMap((d) =>
+    [...yorumsuz(d).matchAll(/new PrismaMariaDb\(([^)]*\)?)\)/g)]
+      .filter((m) => !/^havuzluAdres\(\w+, ARKA_PLAN_HAVUZU\)$/.test(m[1]))
+      .map((m) => `${d}: new PrismaMariaDb(${m[1]})`));
+  const kurulumlu = cekirdekler.filter((d) => /new PrismaMariaDb\(/.test(yorumsuz(d)));
+  kontrol("  ...çekirdekte istemci YALNIZ arka plan havuzuyla kurulur (çıplak adres yok)",
+    kurulumlu.length >= 6 && ciplak.length === 0, { kurulumlu: kurulumlu.length, ciplak });
+  kontrol("  ...⛔ minimumIdle=0 yasağı arka plan havuzunda da", Number(ARKA_PLAN_HAVUZU.minimumIdle) >= 1);
 }
 
 console.log("\n" + "=".repeat(70));

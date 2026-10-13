@@ -14,6 +14,9 @@ import { buyukGorselAdresi, kucukGorselAdresi, type GorselKaynagi } from "@/lib/
  *  Büyük resim 208 px kare (Algoritmo ~200 px) + yanda küçük resimler +
  *  «‹ 1/9 ›» geçiş. Ana resim önce, kanal galerisi ardından (`kartResimleri`).
  *
+ *  Resim kutuyu DOLDURUR (`object-cover`, kullanıcı 11.10.2026: «resim tam
+ *  dolabilir») — kanal resimlerindeki geniş beyaz pay kırpılır.
+ *
  *  ⚠ İlke #8: oklar telefonda 44 px. ⚠ Resim yüklenemezse (kırık adres)
  *  kutu boş kalmaz — ürün adının ilk harfi çizilir.
  * ============================================================================
@@ -47,7 +50,7 @@ export function UrunGalerisi({
           <img
             src={buyukGorselAdresi(resimler[sira]!, k)}
             alt={ad}
-            className="size-full object-contain"
+            className="size-full object-cover"
             onError={() => setKirik((s) => new Set(s).add(sira))}
           />
         )}
@@ -89,7 +92,7 @@ export function UrunGalerisi({
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={kucukGorselAdresi(u, k)} alt="" loading="lazy" className="size-full object-contain" />
+              <img src={kucukGorselAdresi(u, k)} alt="" loading="lazy" className="size-full object-cover" />
             </button>
           ))}
         </div>

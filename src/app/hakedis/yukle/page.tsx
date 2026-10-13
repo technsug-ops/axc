@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { ExternalLink } from "lucide-react";
 
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";

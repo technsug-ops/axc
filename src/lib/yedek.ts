@@ -102,10 +102,12 @@ export async function yedekUret(
     RolePermission: await istemci.rolePermission.findMany(),
     UserCompanyRole: await istemci.userCompanyRole.findMany(),
     AuditLog: await istemci.auditLog.findMany(),
+    KullanimOlayi: await istemci.kullanimOlayi.findMany(),
     Product: await istemci.product.findMany(),
     ProductVariant: await istemci.productVariant.findMany(),
     VariantOption: await istemci.variantOption.findMany(),
     EskiKod: await istemci.eskiKod.findMany(),
+    /** K330 — resim galerisi (sıralı). */
     PenaltyTariff: await istemci.penaltyTariff.findMany(),
     ChannelFee: await istemci.channelFee.findMany(),
     CargoTariff: tarifesiz ? [] : await istemci.cargoTariff.findMany(),

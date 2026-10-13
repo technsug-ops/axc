@@ -57,11 +57,61 @@
  *  Park sayısını düşürmenin çalışan yolu `minimumIdle=1`'dir:
  *  ölçüldü, havuz 3 yerine 1 bağlantı park ediyor.
  */
+/**
+ * ⚠ `minimumIdle` 1 → 3 (K332, 12.10.2026) — YUKARIDAKİ GEREKÇE SİLİNMEDİ,
+ * KAPSAMI DEĞİŞTİ. İsraf sınır 10 iken gerçekti (örnek başına 10 park, kota
+ * 25). Sınır 3 iken sabit havuz örnek başına en fazla 3 bağlantı tutar →
+ * 25 ÷ 3 ≈ 8 örnek sığar. Ölçüldü (canlı, 12.10): bağlantıyı YENİDEN kurmak
+ * ~0,54 sn (`/api/cron/sicak` ilk çağrı 560 ms, sonrakiler 21 ms). Panel aynı
+ * anda 3 bağlantı kullanıyor; 1 park edildiğinde öteki ikisi panelin içinde
+ * sıfırdan kuruluyordu. Sürücü belgesi de sabit havuzu öneriyor
+ * («Recommendation is to use fixed pool»). Bağlantıların KAS'ın 120 sn'lik
+ * `wait_timeout`una düşmemesi için sıcak tutma ucu dakikada bir ÜÇÜNÜ birden
+ * kullanır. ⛔ `minimumIdle=0` YASAĞI AYNEN GEÇERLİ.
+ */
+/**
+ * ⚠ 3 → 5 (K332, kullanıcı kararı 13.10.2026 «5 yap»). Yerel ölçüm (28 ms gecikme
+ * aracı): panel ana okuma 3 bağlantıda ~2,3 sn, 4'te ~2,1, 6'da ~1,8; 10, 6'dan iyi
+ * değil. 6 SEÇİLMEDİ: canlıda tepe (çekimler küçük havuza alındıktan sonra) 13;
+ * kötü anda 3 sayfa kopyası × 6 + çekimler ≈ 27 > 25 (`max_user_connections`).
+ * 5'te ≈ 24. Sıcak tutma ucu bu sayıyı buradan okur (`SAYFA_HAVUZU_BOYUTU`).
+ */
 const UYGULAMA_HAVUZU = {
+  connectionLimit: "5",
+  minimumIdle: "5",
+  idleTimeout: "60",
+} as const;
+
+/** Sayfa havuzunun boyutu — sıcak tutma ucu bu kadar bağlantıyı aynı anda yoklar. */
+export const SAYFA_HAVUZU_BOYUTU = Number(UYGULAMA_HAVUZU.connectionLimit);
+
+/**
+ * ARKA PLAN HAVUZU (K332, 13.10.2026) — çekim uçları gibi `maxDuration` taşıyan
+ * arka plan işleri için. Gerekçe ve ölçüm `lib/arka-plan-havuzu.ts`te.
+ * minimumIdle 1 : 12.10 öncesi ölçülmüş çalışan değer (yukarıdaki gerekçe);
+ *                 ⛔ 0 YASAĞI burada da geçerli.
+ * connectionLimit 3 : uygulamanın 12.10'a kadar aylarca çalıştığı değer; çekim
+ *                     çekirdekleri 10'la yazılmıştı, 2'ye inmek iç içe işlemde
+ *                     (`$transaction` + dışarıdan okuma) kuyruk kilidi riski taşırdı.
+ */
+export const ARKA_PLAN_HAVUZU = {
   connectionLimit: "3",
   minimumIdle: "1",
   idleTimeout: "60",
 } as const;
+
+/** İşaret anahtarı — kuran: `lib/arka-plan-havuzu.ts` (içe alındığı her yerde). */
+export const ARKA_PLAN_ISARETI = Symbol.for("veritabani.arkaPlanHavuzu");
+
+/** Bu sunucu kopyası arka plan havuzuyla mı kurulmalı? Yan etkisiz okuma. */
+export function arkaPlanHavuzuMu(): boolean {
+  return (globalThis as unknown as Record<symbol, boolean | undefined>)[ARKA_PLAN_ISARETI] === true;
+}
+
+/** İstemcinin havuz ayarı — işaret yoksa sayfaların ayarı. */
+export function uygulamaHavuzu(): Record<string, string> {
+  return arkaPlanHavuzuMu() ? ARKA_PLAN_HAVUZU : UYGULAMA_HAVUZU;
+}
 
 /**
  * Adrese havuz ayarlarını ekler. **Adreste açıkça yazılmış bir parametreye
