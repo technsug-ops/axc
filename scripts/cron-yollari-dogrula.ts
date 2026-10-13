@@ -1,7 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
-import { ARKA_PLAN_HAVUZU, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
+import { ARKA_PLAN_HAVUZU, SAYFA_HAVUZU_BOYUTU, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
 
 /**
  * ============================================================================
@@ -133,8 +133,10 @@ console.log("\n4) SICAK TUTMA UCU (K332)");
   kontrol("  ...sayfalarla aynı parçada: çalışma ayarı YOK (maxDuration · runtime · preferredRegion)",
     kod.length > 0 && !/export const (maxDuration|runtime|preferredRegion|regions)\b/.test(kod));
   /* 12.10.2026: tek yoklama → AYNI ANDA üç (havuzun üç bağlantısı da canlı kalsın). */
-  kontrol("  ...yalnız SELECT 1 (havuzun üç bağlantısına aynı anda), yazma yok",
-    /\[0, 1, 2\]\.map\(async \(\) => \{[\s\S]{0,120}?await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
+  /* ⚠ ÖLÇÜT TAŞINDI (13.10.2026): sayı elle «üç» yazılıydı; havuz 3 → 5 olunca iki yerde iki
+     sayı doğardı. Artık yoklama sayısı havuzun TEK kaynağından (`SAYFA_HAVUZU_BOYUTU`). */
+  kontrol("  ...yalnız SELECT 1 (havuzun BÜTÜN bağlantılarına aynı anda, sayı tek kaynaktan), yazma yok",
+    /Array\.from\(\{ length: SAYFA_HAVUZU_BOYUTU \}, async \(\) => \{[\s\S]{0,120}?await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
 }
 
 /* ═══ 5) ARKA PLAN HAVUZU (K332, 13.10.2026) ═══
@@ -171,8 +173,9 @@ console.log("\n5) ARKA PLAN HAVUZU (K332)");
   const sonra = uygulamaHavuzu();
   /* ⚠ 13.10.2026: arka plan sınırı 2 → 3 (çekirdekler 10'la yazılmıştı; 2 iç içe işlemde
      kuyruk kilidi riski). İki havuzu artık AYIRAN değer `minimumIdle` (3 ↔ 1). */
-  kontrol("  ...değer: işaret yokken sayfa havuzu (3 · boşta 3), varken arka plan havuzu (3 · boşta 1)",
-    once.connectionLimit === "3" && once.minimumIdle === "3" && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1", { once, sonra });
+  /* ⚠ 13.10.2026 «5 yap»: sayfa havuzu 3 → 5 (gerekçe ve bütçe `veritabani-adresi.ts`te). */
+  kontrol("  ...değer: işaret yokken sayfa havuzu (5 · boşta 5), varken arka plan havuzu (3 · boşta 1)",
+    once.connectionLimit === "5" && once.minimumIdle === "5" && SAYFA_HAVUZU_BOYUTU === 5 && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1", { once, sonra });
   /* ⛔ ÇEKİRDEKLER UYGULAMANIN İSTEMCİSİNİ KULLANMIYOR (bulgu 13.10.2026): çekim uçları
      `scripts/` altındaki çekirdekleri çağırıyor ve onlar kendi istemcisini HAM adresle
      kuruyordu — sürücü varsayılanı 10 bağlantı; canlıdaki «10»lar buydu, işaret oraya

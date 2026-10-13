@@ -69,11 +69,21 @@
  * `wait_timeout`una düşmemesi için sıcak tutma ucu dakikada bir ÜÇÜNÜ birden
  * kullanır. ⛔ `minimumIdle=0` YASAĞI AYNEN GEÇERLİ.
  */
+/**
+ * ⚠ 3 → 5 (K332, kullanıcı kararı 13.10.2026 «5 yap»). Yerel ölçüm (28 ms gecikme
+ * aracı): panel ana okuma 3 bağlantıda ~2,3 sn, 4'te ~2,1, 6'da ~1,8; 10, 6'dan iyi
+ * değil. 6 SEÇİLMEDİ: canlıda tepe (çekimler küçük havuza alındıktan sonra) 13;
+ * kötü anda 3 sayfa kopyası × 6 + çekimler ≈ 27 > 25 (`max_user_connections`).
+ * 5'te ≈ 24. Sıcak tutma ucu bu sayıyı buradan okur (`SAYFA_HAVUZU_BOYUTU`).
+ */
 const UYGULAMA_HAVUZU = {
-  connectionLimit: "3",
-  minimumIdle: "3",
+  connectionLimit: "5",
+  minimumIdle: "5",
   idleTimeout: "60",
 } as const;
+
+/** Sayfa havuzunun boyutu — sıcak tutma ucu bu kadar bağlantıyı aynı anda yoklar. */
+export const SAYFA_HAVUZU_BOYUTU = Number(UYGULAMA_HAVUZU.connectionLimit);
 
 /**
  * ARKA PLAN HAVUZU (K332, 13.10.2026) — çekim uçları gibi `maxDuration` taşıyan

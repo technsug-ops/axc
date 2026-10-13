@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import { SAYFA_HAVUZU_BOYUTU } from "@/lib/veritabani-adresi";
 
 /**
  * ============================================================================
@@ -19,7 +20,7 @@ import { prisma } from "@/lib/prisma";
  *  hâle gelir (bekçi: `cron-yollari:dogrula`).
  *
  *  · Kapı: diğer çekim uçlarıyla AYNI `CRON_SECRET`; yanlış/boş sır 404.
- *  · İş: aynı anda üç `SELECT 1` — havuzun üç bağlantısını da taze tutar
+ *  · İş: aynı anda havuz boyutu kadar `SELECT 1` — havuzun bütün bağlantılarını taze tutar
  *    (KAS boştaki bağlantıyı 120 sn'de kapatıyor). Hiçbir şey yazmaz.
  *  · Tetik: cron-job.org, dakikada bir (kullanıcı hesabında kurulur).
  * ============================================================================
@@ -35,10 +36,11 @@ export async function GET(istek: NextRequest) {
   }
   const bas = performance.now();
   try {
-    /* Havuzun ÜÇ bağlantısının üçü de kullanılsın diye AYNI ANDA üç yoklama
-       (havuz sınırı `veritabani-adresi.ts` → 3). Tek yoklama yalnız birini canlı tutardı. */
+    /* Havuzun BÜTÜN bağlantıları kullanılsın diye AYNI ANDA havuz boyutu kadar yoklama
+       (`SAYFA_HAVUZU_BOYUTU`, tek kaynak `veritabani-adresi.ts`; 13.10.2026'da 3 → 5).
+       Tek yoklama yalnız birini canlı tutardı. */
     const sureler = await Promise.all(
-      [0, 1, 2].map(async () => {
+      Array.from({ length: SAYFA_HAVUZU_BOYUTU }, async () => {
         const b = performance.now();
         await prisma.$queryRawUnsafe("SELECT 1");
         return Math.round(performance.now() - b);
