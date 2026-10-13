@@ -522,7 +522,8 @@ export default async function HakedisSayfasi({
     (k) => k.paidAt === null && k.dueDate !== null,
   );
   for (const k of gelecekKalemleri) {
-    const { anahtar } = gelecekOdemeAnahtari(k.channelAccount.channel.name, k.dueDate!);
+    /* `bugun`: geçmişe düşen ödeme günü ileri kayar (K325-⑤) — gruplamayla AYNI anahtar. */
+    const { anahtar } = gelecekOdemeAnahtari(k.channelAccount.channel.name, k.dueDate!, bugun);
     grupKalemleri.set(anahtar, [...(grupKalemleri.get(anahtar) ?? []), kalemOzeti(k)]);
   }
   const gelecekOdemeler: OdemeGrubu[] = gelecekOdemeleriGrupla(
@@ -534,6 +535,7 @@ export default async function HakedisSayfasi({
       saleId: k.saleId,
     })),
     satisKesintisi,
+    bugun,
   ).map((g) => ({ ...g, odemeEmriNo: null }));
 
   /**

@@ -824,6 +824,36 @@ console.log("\nÖDEME GÜNÜ SNAP'LEME — İSTANBUL TAKVİMİ (K222-④, 20.09.
     sonrakiOdemeGunu(istanbulPazartesi, "Trendyol").toISOString().slice(0, 10) ===
       "2026-09-21",
   );
+  /*
+   * ⭐ GEÇMİŞE DÜŞEN ÖDEME GÜNÜ İLERİ KAYAR (K325-⑤, 13.10.2026). Canlı: `11600993042`
+   * vade 14.10 Çarşamba → kural 12.10 Pazartesi; 13.10'da hâlâ ödenmemiş, TY panelinde
+   * 15.10 ödemesinde. Ekran onu geçmiş bir «12.10» grubunda gösteriyordu; düzeltmeyle
+   * 15.10'un satış tarafı TY dosyasıyla birebir (₺82.584,62). Ayrımın iki yakası:
+   * geçmişe düşen kayar · düşmeyen kaymaz · bugün ödeme günüyse KAYMAZ (kesin «<»).
+   */
+  const vade1410 = new Date("2026-10-14T20:28:08.124Z"); // İstanbul 14.10 Çarşamba 23:28
+  const isoGun = (d: Date) => d.toISOString().slice(0, 10);
+  kontrol("geçmişe düşen TY ödeme günü (12.10) bugün 13.10 → bir SONRAKİ ödemeye (15.10 Perşembe)",
+    isoGun(gelecekOdemeAnahtari("Trendyol", vade1410, new Date("2026-10-13T09:00:00Z")).odemeGunu) === "2026-10-15");
+  kontrol("  ...geçmişe düşmüyorsa kural aynen (bugün 11.10 → 12.10)",
+    isoGun(gelecekOdemeAnahtari("Trendyol", vade1410, new Date("2026-10-11T09:00:00Z")).odemeGunu) === "2026-10-12");
+  kontrol("  ...bugün ödeme gününün KENDİSİ ise kaymaz (bugün 12.10 → 12.10)",
+    isoGun(gelecekOdemeAnahtari("Trendyol", vade1410, new Date("2026-10-12T09:00:00Z")).odemeGunu) === "2026-10-12");
+  kontrol("  ...bugün verilmezse eski davranış (çağıranı bozmaz)",
+    isoGun(gelecekOdemeAnahtari("Trendyol", vade1410).odemeGunu) === "2026-10-12");
+  kontrol("  ...HB'de de: vadesi geçmiş ödenmemiş kalem bugünkü/sonraki Salı'ya (bugün 13.10 Salı → 13.10)",
+    isoGun(gelecekOdemeAnahtari("Hepsiburada", new Date("2026-10-05T21:00:00Z"), new Date("2026-10-13T09:00:00Z")).odemeGunu) === "2026-10-13");
+  const kayanGrup = gelecekOdemeleriGrupla(
+    [{ kanalAdi: "Trendyol", vade: vade1410, tutar: 2190.32, paraBirimi: "TRY", saleId: null }],
+    new Map(),
+    new Date("2026-10-13T09:00:00Z"),
+  );
+  kontrol("  ...gruplama da aynı kuralla (2190,32 → 15.10 grubu)",
+    kayanGrup.length === 1 && isoGun(kayanGrup[0]!.tarih) === "2026-10-15" && kayanGrup[0]!.anahtar === "Trendyol|2026-10-15", kayanGrup);
+  const hakedisSayfasi = kaynakOku("src/app/hakedis/page.tsx").replace(/\r\n/g, "\n");
+  kontrol("  ...sayfa İKİ yerde de bugünü veriyor (kalem dökümü + gruplama aynı anahtar)",
+    /gelecekOdemeAnahtari\(k\.channelAccount\.channel\.name, k\.dueDate!, bugun\)/.test(hakedisSayfasi) &&
+      /satisKesintisi,\s*bugun,\s*\)\.map\(\(g\) => \(\{ \.\.\.g, odemeEmriNo: null \}\)\)/.test(hakedisSayfasi));
   /**
    * ⚠ İKİ KANAL İKİ YÖN — ve bu bilerek. HB'nin kendi paneli "22 Eylül
    * Salı · 84.680,85" diyor ve İLERİ kaydırma bu rakamı kuruşuna

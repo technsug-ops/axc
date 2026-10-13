@@ -96,7 +96,8 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "ZINCIR KOPTU - grup kendi anahtar formulunu kullaniyor",
     yon: "KALDIRAN",
     dosya: MODEL,
-    bul: "    const { anahtar, odemeGunu } = gelecekOdemeAnahtari(k.kanalAdi, k.vade);",
+    /* ⚠ ÇAPA TAŞINDI (13.10.2026, K325-⑤): çağrı artık `bugun` da veriyor. */
+    bul: "    const { anahtar, odemeGunu } = gelecekOdemeAnahtari(k.kanalAdi, k.vade, bugun);",
     koy: '    const odemeGunu = sonrakiOdemeGunu(k.vade, k.kanalAdi); const anahtar = k.kanalAdi + "|" + odemeGunu.toISOString().slice(0, 10) + "|x";',
     bozdugu: "satirin rakami bir anahtardan, acilan kalem listesi baska anahtardan - sayi ile liste ayrisir",
   },
