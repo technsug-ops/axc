@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
@@ -10,6 +10,8 @@ import { geciciKopyaMi, GECICI_FATURA_NO, type MevcutHakedisSatiri } from "../sr
  * ----------------------------------------------------------------------------
  *      Kuru:   npx tsx scripts/canli-hb-hakedis-gecici-temizle.ts
  *      Yazım:  npx tsx scripts/canli-hb-hakedis-gecici-temizle.ts --yaz --anlik="C:\…\oncesi.json"
+ *      Geri:   npx tsx scripts/canli-hb-hakedis-gecici-temizle.ts --geri-al --anlik="C:\…\oncesi.json"
+ *      Prova:  PROVA_DB_URL="mysql://…yerel…" ile aynı komutlar YEREL kopyada koşar (canlıya dokunmaz).
  *
  *  BETIK SINIFI: TEK_SEFERLIK — çekim 13.10.2026'da düzeltildi (`gecici-fatura.ts`:
  *  «.» satırı gerçek numaraya terfi eder, kopya yazılmaz); bu betik o tarihten
@@ -31,18 +33,32 @@ import { geciciKopyaMi, GECICI_FATURA_NO, type MevcutHakedisSatiri } from "../sr
  */
 
 const YAZ = process.argv.includes("--yaz");
+/** GERİ ÇAĞIRMA (kullanıcı isteği 13.10.2026 «bir aksilik durumunda geri çağıralım»): anlık görüntüden satırları AYNI kimlikle geri yükler. */
+const GERI_AL = process.argv.includes("--geri-al");
+/** Prova hedefi — verilirse canlı yerine bu veritabanı. Canlıya dokunmadan tam döngü sınanır. */
+const PROVA = process.env.PROVA_DB_URL?.trim() || null;
 const ANLIK = process.argv.find((a) => a.startsWith("--anlik="))?.slice("--anlik=".length) ?? null;
 const ODEME_GUNU_DENETIMI = { bas: "2026-10-14", bit: "2026-10-20", panel: 75970.9 };
 
 async function main() {
-  if (YAZ && !ANLIK) throw new Error("--yaz için --anlik=<dosya> zorunlu — hiçbir şey yazılmadı");
-  const y = canliYapilandirma();
-  if (!y.tamam) throw new Error("canlı yapılandırma okunamadı");
-  process.env.DATABASE_URL = betikAdresi(y.veri.ham);
+  if ((YAZ || GERI_AL) && !ANLIK) throw new Error("--yaz / --geri-al için --anlik=<dosya> zorunlu — hiçbir şey yazılmadı");
+  if (YAZ && GERI_AL) throw new Error("--yaz ile --geri-al birlikte verilemez");
+  if (PROVA) {
+    process.env.DATABASE_URL = betikAdresi(PROVA);
+    console.log("⚠ PROVA — hedef YEREL veritabanı (PROVA_DB_URL); canlıya dokunulmaz.");
+  } else {
+    const y = canliYapilandirma();
+    if (!y.tamam) throw new Error("canlı yapılandırma okunamadı");
+    process.env.DATABASE_URL = betikAdresi(y.veri.ham);
+  }
   const { prisma } = await import("../src/lib/prisma");
   const { izYaz } = await import("../src/lib/iz");
   const { isTakvimGunu, gunDegeri } = await import("../src/lib/donem");
   try {
+    if (GERI_AL) {
+      await geriAl(prisma, izYaz);
+      return;
+    }
     const hesaplar = await prisma.channelAccount.findMany({ where: { channel: { code: "HEPSIBURADA" } }, select: { id: true, name: true } });
     const noktalar = await prisma.settlementItem.findMany({
       where: { channelAccountId: { in: hesaplar.map((h) => h.id) }, externalId: GECICI_FATURA_NO },
@@ -126,6 +142,60 @@ async function main() {
   } finally {
     await prisma.$disconnect();
   }
+}
+
+/**
+ * GERİ ÇAĞIRMA — anlık görüntüdeki satırları AYNI kimlik, parti, tarih ve tutarla geri
+ * yükler; parti toplamlarını eski değerine döndürür. Satır satır, tekrar koşulabilir:
+ * zaten var olan kimlik atlanır. Her satır `HB_HAKEDIS_GECICI_KOPYA_GERI` izi bırakır.
+ */
+async function geriAl(
+  prisma: typeof import("../src/lib/prisma").prisma,
+  izYaz: typeof import("../src/lib/iz").izYaz,
+) {
+  const anlik = JSON.parse(readFileSync(ANLIK!, "utf8")) as {
+    kopyalar: Record<string, unknown>[];
+    partiDurumu: { id: string; eskiToplam: number; yeniToplam: number }[];
+  };
+  const tarih = (v: unknown) => (v === null || v === undefined ? null : new Date(String(v)));
+  let yuklenen = 0;
+  let zatenVar = 0;
+  for (const k of anlik.kopyalar) {
+    const id = String(k.id);
+    if (await prisma.settlementItem.findUnique({ where: { id }, select: { id: true } })) { zatenVar++; continue; }
+    await prisma.$transaction(async (tx) => {
+      await tx.settlementItem.create({
+        data: {
+          id,
+          settlementId: String(k.settlementId),
+          saleId: (k.saleId as string | null) ?? null,
+          channelAccountId: String(k.channelAccountId),
+          externalId: String(k.externalId),
+          rowKey: String(k.rowKey),
+          code: k.code as never,
+          rawType: (k.rawType as string | null) ?? null,
+          orderNo: (k.orderNo as string | null) ?? null,
+          amount: String(k.amount),
+          currency: k.currency as never,
+          dueDate: tarih(k.dueDate),
+          paidAt: tarih(k.paidAt),
+          paymentOrderId: (k.paymentOrderId as string | null) ?? null,
+          rawRow: (k.rawRow as string | null) ?? null,
+          createdAt: tarih(k.createdAt) ?? undefined,
+        },
+      });
+      await izYaz({ action: "HB_HAKEDIS_GECICI_KOPYA_GERI", targetType: "SettlementItem", targetId: id, userId: null, detail: JSON.stringify({ kaynak: ANLIK }) }, tx);
+    });
+    yuklenen++;
+  }
+  for (const p of anlik.partiDurumu) {
+    await prisma.$transaction(async (tx) => {
+      await tx.settlement.update({ where: { id: p.id }, data: { amount: p.eskiToplam.toFixed(4) } });
+      await izYaz({ action: "HB_HAKEDIS_PARTI_TOPLAM_GERI", targetType: "Settlement", targetId: p.id, userId: null, detail: JSON.stringify({ eskiToplamaDondu: p.eskiToplam, kaynak: ANLIK }) }, tx);
+    });
+  }
+  console.log(`
+GERİ ÇAĞIRMA · geri yüklenen ${yuklenen} · zaten vardı ${zatenVar} · parti toplamı geri ${anlik.partiDurumu.length}`);
 }
 
 main().catch((e) => {
