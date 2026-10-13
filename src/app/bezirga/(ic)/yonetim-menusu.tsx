@@ -3,7 +3,7 @@
 import Link from "@/components/niyetli-baglanti";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Building2, CalendarCheck, LogOut, Mail, NotebookText, Package, Wallet, type LucideIcon } from "lucide-react";
+import { BarChart3, Building2, CalendarCheck, LogOut, Mail, NotebookText, Package, Wallet, type LucideIcon } from "lucide-react";
 
 import { YONETIM_ADRESLERI, YONETIM_ANA, YONETIM_MENUSU, seciliOge, type YonetimMenuOgesi } from "@/lib/yonetim/menu";
 
@@ -14,6 +14,7 @@ const IKON: Record<YonetimMenuOgesi, LucideIcon> = {
   firmalar: Building2,
   paketler: Package,
   odemeler: Wallet,
+  kullanim: BarChart3,
   eposta: Mail,
   kayitDefteri: NotebookText,
 };

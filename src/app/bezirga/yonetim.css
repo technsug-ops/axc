@@ -137,3 +137,15 @@
 /* ---- Giriş ---- */
 .yn-login { max-width: 420px; width: calc(100% - 32px); margin: 10vh auto; display: grid; gap: 14px; }
 .yn-login .qr img { width: 220px; height: 220px; display: block; margin: 0 auto; }
+
+/* ---- Ölçüm çubukları (referans `metricsView`: .frow/.fbar/.wau/.wcol — K334 Kullanım) ---- */
+.yn-frow { display: grid; grid-template-columns: minmax(120px, 280px) minmax(60px, 1fr) 52px; gap: 10px; align-items: center; padding: 5px 0; }
+.yn-frow > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .86rem; }
+.yn-frow > b { text-align: right; font-variant-numeric: tabular-nums; }
+.yn-fbar { height: 14px; background: #EFEDE9; border-radius: 7px; overflow: hidden; } .yn-fbar i { display: block; height: 100%; background: var(--teal); border-radius: 7px; }
+.yn-wau { display: flex; gap: 4px; align-items: flex-end; overflow-x: auto; padding-bottom: 2px; min-height: 130px; }
+.yn-wcol { display: grid; justify-items: center; gap: 3px; min-width: 22px; flex: 1 0 22px; }
+.yn-wcol i { display: block; width: 100%; max-width: 26px; background: var(--teal); border-radius: 5px 5px 0 0; min-height: 1px; }
+.yn-wcol span { font-size: .68rem; color: var(--muted); white-space: nowrap; } .yn-wcol b { font-size: .74rem; font-variant-numeric: tabular-nums; }
+.yn-suzgec { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+@media (max-width: 640px) { .yn-frow { grid-template-columns: minmax(0, 1fr) 44px; } .yn-frow .yn-fbar { grid-column: 1 / -1; grid-row: 2; } }

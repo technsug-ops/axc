@@ -18,6 +18,7 @@ export const YONETIM_ANA = `${YONETIM_YOLU}/bugun`;
 export const YONETIM_MENUSU = [
   { grup: "grupGunluk", ogeler: ["bugun", "firmalar"] },
   { grup: "grupTicari", ogeler: ["paketler", "odemeler"] },
+  { grup: "grupBuyume", ogeler: ["kullanim"] },
   { grup: "grupDestek", ogeler: ["eposta", "kayitDefteri"] },
 ] as const;
 
@@ -28,6 +29,7 @@ export const YONETIM_ADRESLERI: Record<YonetimMenuOgesi, string> = {
   firmalar: `${YONETIM_YOLU}/firmalar`,
   paketler: `${YONETIM_YOLU}/paketler`,
   odemeler: `${YONETIM_YOLU}/odemeler`,
+  kullanim: `${YONETIM_YOLU}/kullanim`,
   eposta: `${YONETIM_YOLU}/eposta`,
   kayitDefteri: `${YONETIM_YOLU}/kayit-defteri`,
 };

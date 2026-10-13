@@ -292,6 +292,11 @@ export function gunBasiAni(g: TakvimGunu): Date {
   );
 }
 
+/** Bir anın İŞ saat dilimindeki saati (0–23) — kullanım raporunun saat dağılımı (K334). */
+export function isSaati(an: Date): number {
+  return new Date(an.getTime() + isSaatDilimiOfsetiMs(an)).getUTCHours();
+}
+
 /**
  * GÜN HASSASİYETLİ Mİ — `soldAt` sözleşmesi (K163): elle ve Excel kayıtları
  * UTC gece yarısına damgalı (saat BİLİNMİYOR), API çekimi gerçek anı yazar.

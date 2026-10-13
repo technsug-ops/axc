@@ -384,6 +384,7 @@
     "canli:ty-urun-taramasi": "tsx scripts/canli-ty-urun-taramasi.ts",
     "canli:kanal-listeleme": "tsx scripts/canli-kanal-listeleme-yaz.ts",
     "kullanim:dogrula": "tsx scripts/kullanim-dogrula.ts",
+    "kullanim-raporu:dogrula": "tsx scripts/kullanim-raporu-dogrula.ts",
     "vitrin:dogrula": "tsx scripts/vitrin-dogrula.ts",
     "vitrin-mutasyon:kontrol": "tsx scripts/vitrin-mutasyon-kontrol.ts",
     "alim-ekseni:dogrula": "tsx scripts/alim-ekseni-dogrula.ts",
