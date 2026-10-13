@@ -42,6 +42,7 @@ import { apiGet, baslikKur, kimlikOku, UCLAR } from "./hb/istemci";
 import { hbHesabiCoz, hbHesapHatasi } from "../src/lib/kanal-hesabi-hb";
 import { satirlariEslestir } from "../src/lib/hakedis/eslestir";
 import { satirAnahtari } from "../src/lib/hakedis/okuyucu";
+import { GECICI_FATURA_NO, geciciFaturaKarari, type MevcutHakedisSatiri } from "../src/lib/hakedis/gecici-fatura";
 import { izYaz } from "../src/lib/iz";
 import { hbApiSatirlariniOku, type HbFinansKaydi } from "../src/lib/hakedis/hb-api-oku";
 
@@ -68,6 +69,10 @@ export type HbHakedisCekimOzeti = {
   /** K232-②: ödenmemişken yazılıp sonra Paid olan satır — `paidAt` boştan doldu. */
   tazelenen: number;
   tutarsiz: number;
+  /** K325-④: «.» geçici fatura numaralı satır gerçek numaraya terfi etti (kopya yazılmadı). */
+  terfi: number;
+  /** K325-④: «.» satırı geldi ama gerçek numaralı eşi zaten var — yazılmadı. */
+  atlanan: number;
   netToplam: number;
   hataSayisi: number;
 };
@@ -334,6 +339,43 @@ export async function hbHakedisCekimKos(ayar: {
     }
   }
 
+  // ── ③b GEÇİCİ FATURA NO «.» (K325-④, 13.10.2026) ─────────────────────
+  /* HB aynı kesintiyi önce «.» ile, sonra gerçek fatura numarasıyla veriyor; anahtar
+     fatura numarasını taşıdığı için ikinci geliş YENİ sayılıyor ve kesinti iki kez
+     yazılıyordu (gerekçe ve ölçüm `lib/hakedis/gecici-fatura.ts`). «Yeni» sayılan
+     satırlar aynı siparişlerin mevcut satırlarıyla — ve aynı çekimde gelen gerçek
+     numaralı satırlarla — karşılaştırılır: terfi / atla / yeni. */
+  const yeniSiparisNolari = [...new Set(yeniler.map((h) => h.satir.siparisNo).filter((n): n is string => n !== null))];
+  const ayniSiparistekiler: MevcutHakedisSatiri[] = [];
+  for (let i = 0; i < yeniSiparisNolari.length; i += parcaBoyutu) {
+    const parca = await prisma.settlementItem.findMany({
+      where: { channelAccountId: hesapId, orderNo: { in: yeniSiparisNolari.slice(i, i + parcaBoyutu) } },
+      select: { id: true, externalId: true, orderNo: true, rawType: true, amount: true, paidAt: true },
+    });
+    for (const m of parca) ayniSiparistekiler.push({ ...m, amount: Number(m.amount.toString()) });
+  }
+  /* Aynı çekimde gelen GERÇEK numaralı satırlar da eş sayılır («.» ile birlikte gelirlerse «.» yazılmaz). */
+  const gelenGercekler: MevcutHakedisSatiri[] = yeniler
+    .filter((h) => h.satir.externalId !== GECICI_FATURA_NO)
+    .map((h, i) => ({ id: `gelen:${i}`, externalId: h.satir.externalId, orderNo: h.satir.siparisNo, rawType: h.satir.hamTip, amount: h.satir.tutar, paidAt: h.satir.odemeTarihi }));
+  const terfiler: { hedefId: string; h: (typeof hepsi)[number] }[] = [];
+  let atlanan = 0;
+  const terfiHedefleri = new Set<string>();
+  const gercekYeniler = yeniler.filter((h) => {
+    const karar = geciciFaturaKarari(h.satir, [...ayniSiparistekiler, ...gelenGercekler], terfiHedefleri);
+    if (karar.tur === "TERFI") {
+      terfiHedefleri.add(karar.hedefId);
+      terfiler.push({ hedefId: karar.hedefId, h });
+      return false;
+    }
+    if (karar.tur === "ATLA") {
+      atlanan++;
+      return false;
+    }
+    return true;
+  });
+  yeniler.splice(0, yeniler.length, ...gercekYeniler);
+
   // ── ④ ÖZET ───────────────────────────────────────────────────────────────
   const yeniToplam = yeniler.reduce((t, y) => t + y.satir.tutar, 0);
   console.log("\n" + "-".repeat(100));
@@ -341,6 +383,8 @@ export async function hbHakedisCekimKos(ayar: {
   console.log(`TAZELENECEK (ödendi geçişi — paidAt boştan dolar) : ${tazelenecekler.length}`);
   console.log(`ZATEN AYNI (dokunulmaz)            : ${hepsi.length - yeniler.length - tazelenecekler.length - tutarsizlar.length}`);
   console.log(`⚠ TUTARSIZ (dokunulmaz, raporlanır) : ${tutarsizlar.length}`);
+  console.log(`TERFİ («.» → gerçek fatura no, kopya YAZILMAZ) : ${terfiler.length}`);
+  console.log(`ATLANAN («.» geldi, gerçek numaralı eşi var) : ${atlanan}`);
   if (tutarsizlar.length > 0) {
     for (const t of tutarsizlar.slice(0, 10)) {
       console.log(`   ${t.hamTip.padEnd(20)} DB=${para(t.dbTutar)} API=${para(t.apiTutar)}`);
@@ -361,6 +405,8 @@ export async function hbHakedisCekimKos(ayar: {
     yeni: yeniler.length,
     tazelenen: tazelenecekler.length,
     tutarsiz: tutarsizlar.length,
+    terfi: terfiler.length,
+    atlanan,
     netToplam: yeniToplam,
     hataSayisi: hatalar.length,
   };
@@ -415,6 +461,41 @@ export async function hbHakedisCekimKos(ayar: {
     });
     console.log(`✓ ${yeniler.length} yeni satır yazıldı (parti ${partiId}).`);
   }
+
+  /**
+   * K325-④ — TERFİ: «.» satırı gerçek fatura numarasına geçer; kopya yazılmaz.
+   * Satır satır, tekrar koşulabilir (terfi eden satırın numarası artık «.» değil,
+   * ikinci koşumda anahtarı DB'de bulunur). Her satır eski değerleriyle iz bırakır.
+   */
+  for (const { hedefId, h } of terfiler) {
+    const yeniAnahtar = satirAnahtari(h.satir);
+    await prisma.$transaction(async (tx) => {
+      const eski = await tx.settlementItem.findUniqueOrThrow({
+        where: { id: hedefId },
+        select: { externalId: true, rowKey: true, dueDate: true, paidAt: true },
+      });
+      await tx.settlementItem.update({
+        where: { id: hedefId },
+        data: {
+          externalId: h.satir.externalId,
+          rowKey: yeniAnahtar,
+          dueDate: h.satir.vadeTarihi,
+          ...(h.satir.odemeTarihi !== null ? { paidAt: h.satir.odemeTarihi } : {}),
+        },
+      });
+      await izYaz(
+        {
+          action: "HB_HAKEDIS_GECICI_TERFI",
+          targetType: "SettlementItem",
+          targetId: hedefId,
+          userId: null,
+          detail: JSON.stringify({ eski, yeniExternalId: h.satir.externalId, yeniRowKey: yeniAnahtar, yeniVade: h.satir.vadeTarihi, yeniPaidAt: h.satir.odemeTarihi, siparisNo: h.satir.siparisNo, tutar: h.satir.tutar }),
+        },
+        tx,
+      );
+    });
+  }
+  if (terfiler.length > 0) console.log(`✓ ${terfiler.length} «.» satırı gerçek fatura numarasına terfi etti (kopya yazılmadı).`);
 
   /**
    * K232-② — ÖDENDİ GEÇİŞİ: satır satır, tekrar koşulabilir (ikinci koşumda

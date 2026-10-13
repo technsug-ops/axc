@@ -24,6 +24,7 @@ import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
 
 import { gunDegeri, isGunuEkle, isGunuFarki, haftaSonuMu } from "../src/lib/donem";
 import { hbApiSatiriniOku } from "../src/lib/hakedis/hb-api-oku";
+import { GECICI_FATURA_NO, geciciFaturaKarari, geciciKopyaMi, type MevcutHakedisSatiri } from "../src/lib/hakedis/gecici-fatura";
 import {
   gecmisOdemeAnahtari,
   gelecekOdemeAnahtari,
@@ -66,7 +67,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 11;
+const BOLUM_SAYISI = 12;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1356,6 +1357,60 @@ console.log("\n10) HEPSİBURADA API OKUYUCUSU — İŞ TARİHİ SAAT TAŞIMAZ (K
   kontrol("boş tarih null döner", ornek({ dueDate: "" }).vadeTarihi === null);
 }
 kosanBolumler.push("hb-api-tarih");
+
+// ===========================================================================
+console.log("\nGEÇİCİ FATURA NO «.» — KOPYA YERİNE TERFİ (K325-④)");
+// ===========================================================================
+{
+  /*
+   * HB aynı kesintiyi önce «.» ile, sonra gerçek fatura numarasıyla veriyor; anahtar
+   * fatura numarasını taşıdığı için ikinci geliş kopya yazılıyordu. Canlı: 348 kopya,
+   * 20.10 ödemesi ₺70.282,67 → ayıklanınca ₺75.970,90 = HB paneli. DEĞER testleri
+   * saf gövdeyi çağırır; ayrımın İKİ YAKASI da örnekte (terfi ↔ yeni, atla ↔ yeni).
+   */
+  const m = (id: string, externalId: string, amount: number, ek: Partial<MevcutHakedisSatiri> = {}): MevcutHakedisSatiri =>
+    ({ id, externalId, orderNo: "4168771298", rawType: "Komisyon tutarı", amount, paidAt: null, ...ek });
+  const g = (externalId: string, tutar: number, ek: Partial<{ siparisNo: string | null; hamTip: string }> = {}) =>
+    ({ externalId, siparisNo: "4168771298", hamTip: "Komisyon tutarı", tutar, ...ek });
+  const nokta = m("n1", GECICI_FATURA_NO, -2526.48);
+
+  kontrol("gerçek no gelir, ödenmemiş «.» eşi var → TERFİ (kopya yazılmaz)",
+    JSON.stringify(geciciFaturaKarari(g("HD42026000493963", -2526.48), [nokta])) === JSON.stringify({ tur: "TERFI", hedefId: "n1" }));
+  kontrol("  ...tutar kuruşunda farklı → YENİ (aynı tipte ayrı kesinti olabilir)",
+    geciciFaturaKarari(g("HD42026000493963", -2526.47), [nokta]).tur === "YENI");
+  kontrol("  ...ham tip farklı → YENİ",
+    geciciFaturaKarari(g("HD42026000493963", -2526.48, { hamTip: "Kargo Bedeli" }), [nokta]).tur === "YENI");
+  kontrol("  ...«.» eşi ÖDENMİŞ → YENİ (ödendi kaydı o satırın kendisi)",
+    geciciFaturaKarari(g("HD42026000493963", -2526.48), [m("n1", GECICI_FATURA_NO, -2526.48, { paidAt: new Date("2026-10-01") })]).tur === "YENI");
+  kontrol("  ...sipariş no yok → YENİ",
+    geciciFaturaKarari(g("HD42026000493963", -2526.48, { siparisNo: null }), [nokta]).tur === "YENI");
+  kontrol("  ...bir «.» satırı İKİ gelen satıra terfi edemez (ikincisi YENİ)",
+    geciciFaturaKarari(g("HD42026000493963", -2526.48), [nokta], new Set(["n1"])).tur === "YENI");
+  kontrol("«.» gelir, gerçek numaralı eşi var → ATLA",
+    JSON.stringify(geciciFaturaKarari(g(GECICI_FATURA_NO, -2526.48), [m("r1", "HD42026000493963", -2526.48)])) === JSON.stringify({ tur: "ATLA", esId: "r1" }));
+  kontrol("  ...«.» gelir, yalnız «.» eşi var → ATLANMAZ (gerçek numaralı eş yok, YENİ)",
+    geciciFaturaKarari(g(GECICI_FATURA_NO, -2526.48), [nokta]).tur === "YENI");
+  kontrol("  ...«.» gelir, eşi yok → YENİ (gerçek bekleyen kesinti kaybolmaz)",
+    geciciFaturaKarari(g(GECICI_FATURA_NO, -325.19), [m("r1", "HD42026000493963", -2526.48)]).tur === "YENI");
+
+  const gercek = m("r1", "HD42026000493963", -2526.48);
+  kontrol("temizlik ölçütü: ödenmemiş «.» + gerçek eş → KOPYA", geciciKopyaMi(nokta, [nokta, gercek]));
+  kontrol("  ...eş yoksa KOPYA DEĞİL", !geciciKopyaMi(nokta, [nokta]));
+  kontrol("  ...ödenmiş «.» KOPYA DEĞİL", !geciciKopyaMi(m("n2", GECICI_FATURA_NO, -2526.48, { paidAt: new Date() }), [gercek]));
+  kontrol("  ...gerçek numaralı satır KOPYA DEĞİL (yalnız «.» silinir)", !geciciKopyaMi(gercek, [nokta, gercek]));
+  kontrol("  ...tutar farklı eş → KOPYA DEĞİL", !geciciKopyaMi(nokta, [m("r2", "HD42026000493963", -100)]));
+  kontrol("İKİ YER TEK ÖLÇÜT: kopya sayılan «.» için çekim de ATLA der",
+    geciciKopyaMi(nokta, [nokta, gercek]) && geciciFaturaKarari(g(GECICI_FATURA_NO, -2526.48), [gercek]).tur === "ATLA");
+
+  const cekim = kaynakOku("scripts/canli-hb-hakedis-cekim.ts").replace(/\r\n/g, "\n");
+  kontrol("ÇEKİM: «yeni» satırlar karar gövdesinden geçer (DB + aynı çekimdeki gerçek numaralılar)",
+    /geciciFaturaKarari\(h\.satir, \[\.\.\.ayniSiparistekiler, \.\.\.gelenGercekler\], terfiHedefleri\)/.test(cekim) &&
+      /yeniler\.splice\(0, yeniler\.length, \.\.\.gercekYeniler\);/.test(cekim));
+  kontrol("  ...terfi YENİ SATIR YAZMAZ, mevcut satırı günceller ve iz bırakır",
+    /for \(const \{ hedefId, h \} of terfiler\) \{[\s\S]{0,400}?tx\.settlementItem\.update\(\{\s*where: \{ id: hedefId \}/.test(cekim) &&
+      /action: "HB_HAKEDIS_GECICI_TERFI"/.test(cekim));
+}
+kosanBolumler.push("gecici-fatura");
 
 // ===========================================================================
 console.log("");
