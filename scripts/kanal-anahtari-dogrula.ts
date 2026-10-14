@@ -59,6 +59,20 @@ async function main() {
   /* ⚠ `sirOku(undefined)` VARSAYILAN olarak ortam değişkenini okur — ortamda sır tanımlıyken
      (deneme kurulumu, 14.10.2026) «sır yok» dalını SINAMAZ. Ölçüt açık boş girdiyle kurulur. */
   kontrol("sır yok → SIR_YOK (boş · yalnız boşluk)", S.sirOku("").durum === "SIR_YOK" && S.sirOku("   ").durum === "SIR_YOK");
+  /* ⭐ 14.10.2026 (birleşmede eklendi): yukarıdaki not doğruydu — o yüzden `sirOku` artık
+     VARSAYILAN almıyor (iki adımlı giriş kendi sırrı yokken pazaryeri sırrına düşüyordu).
+     Bu ölçüt o gerilemeyi ORTAMDAN BAĞIMSIZ yakalar: sır ortamda TANIMLIYKEN `undefined`
+     yine SIR_YOK olmalı. Ortam değeri sınamadan sonra eski hâline döner. */
+  {
+    const onceki = process.env[S.SIR_DEGISKENI];
+    process.env[S.SIR_DEGISKENI] = randomBytes(32).toString("base64");
+    try {
+      kontrol("  ...verilmeyen sır ORTAMDAN okunmaz (ortamda geçerli sır VARKEN undefined → SIR_YOK)", S.sirOku(undefined).durum === "SIR_YOK");
+    } finally {
+      if (onceki === undefined) delete process.env[S.SIR_DEGISKENI];
+      else process.env[S.SIR_DEGISKENI] = onceki;
+    }
+  }
   kontrol("sır 32 bayt değil → SIR_GECERSIZ", S.sirOku(randomBytes(16).toString("base64")).durum === "SIR_GECERSIZ" && S.sirOku("%%%").durum === "SIR_GECERSIZ");
   kontrol("geçerli sır okunur", S.sirOku(sir.toString("base64")).durum === "TAMAM");
   kontrol("son 4 hane", S.sonDort("abcdefgh1234") === "1234" && S.sonDort("kisa") === "****");
