@@ -1,6 +1,5 @@
 import { gunBasiAni, gunDegeri, gunEkle, gunMetni, isSaati, isTakvimGunu } from "@/lib/donem";
 
-import { BAGLANTI_ONEKI, DIS_BAGLANTI } from "./olay";
 
 /**
  * ============================================================================
@@ -58,14 +57,12 @@ export function saatKovalariniDagit(kovalar: SaatKovasi[], ilkGun: Date, gunSayi
   return { gunler, saatler };
 }
 
-export type HedefGorunumu = { tur: "BAGLANTI"; kalip: string } | { tur: "DIS" } | { tur: "DUGME"; metin: string };
-
-/** İz hedefi → ekran biçimi. Site dışı bağlantı veritabanında KODDUR; metni sözlükten gelir. */
-export function hedefGorunumu(hedef: string): HedefGorunumu {
-  if (hedef === DIS_BAGLANTI) return { tur: "DIS" };
-  if (hedef.startsWith(BAGLANTI_ONEKI + "/")) return { tur: "BAGLANTI", kalip: hedef.slice(BAGLANTI_ONEKI.length) };
-  return { tur: "DUGME", metin: hedef };
-}
+/**
+ * Hedef ayrımı ORTAK gövdede (`olay.ts`, 14.10.2026): firma ekranı (`ayarlar/kullanim`,
+ * K334-③) da aynı kuralı okur — iki ekranda iki ayrı kopya olmasın. Buradan yeniden
+ * dışa aktarılır ki süper admin ekranı ve `kullanim-raporu:dogrula` aynı adla çağırsın.
+ */
+export { hedefGorunumu, type HedefGorunumu } from "./olay";
 
 /** Çubuk genişliği (%) — en büyüğe göre. Sıfır olmayan değer en az %2 (görünsün); en büyük 0 ise 0. */
 export function cubukYuzdesi(adet: number, enBuyuk: number): number {

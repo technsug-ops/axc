@@ -22,8 +22,20 @@ const SURUM = "v1";
 
 export type SirSonucu = { durum: "TAMAM"; sir: Buffer } | { durum: "SIR_YOK" } | { durum: "SIR_GECERSIZ" };
 
-/** Ana sırrı okur ve sınar (base64, tam 32 bayt). */
-export function sirOku(ham: string | undefined = process.env[SIR_DEGISKENI]): SirSonucu {
+/**
+ * Ana sırrı sınar (base64, tam 32 bayt). Çağıran HANGİ sırrı okuduğunu AÇIKÇA verir.
+ *
+ * ⛔ VARSAYILAN PARAMETRE YOK (düzeltme 14.10.2026). Eskiden
+ * `ham = process.env[SIR_DEGISKENI]` idi; JavaScript'te `sirOku(undefined)` da
+ * varsayılanı tetikler. İki adımlı giriş kendi sırrını (`IKI_ADIM_SIRRI`) bu
+ * gövdeye veriyordu — o sır TANIMSIZKEN değer `undefined` geldi, varsayılan
+ * devreye girdi ve iki adımlı giriş sessizce PAZARYERİ anahtar sırrıyla
+ * şifreledi. `.env`e pazaryeri sırrı eklenince (14.10) `iki-adim:dogrula` ve
+ * `kanal-anahtari:dogrula` «sır yok → SIR_YOK» ölçütünde kırmızı yandı.
+ * Biri değişince öteki etkilenmesin diye AYRI tutulan iki sır, bu tek satırla
+ * birbirinin yerine geçebiliyordu.
+ */
+export function sirOku(ham: string | undefined): SirSonucu {
   const s = (ham ?? "").trim();
   if (!s) return { durum: "SIR_YOK" };
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(s)) return { durum: "SIR_GECERSIZ" };

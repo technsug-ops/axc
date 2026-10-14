@@ -71,6 +71,7 @@ export const BOLUMLER = [
   { kimlik: "kullanici", ad: "Ayarlar — Kullanıcılar" },
   { kimlik: "rol", ad: "Ayarlar — Roller" },
   { kimlik: "menu", ad: "Ayarlar — Menü düzeni" },
+  { kimlik: "kullanim", ad: "Ayarlar — Kullanım" },
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
   { kimlik: "gecmisEkstre", ad: "Veri — Geçmiş ekstreler" },
   { kimlik: "komisyonKapisi", ad: "Veri — Komisyon yükleme" },
@@ -145,6 +146,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   kullanicilar: "kullanici",
   roller: "rol",
   menuDuzeni: "menu",
+  kullanimIzi: "kullanim",
   talepler: "talep",
   gecmisEkstre: "gecmisEkstre",
   komisyonKapisi: "komisyonKapisi",
@@ -2150,6 +2152,23 @@ ${sikHata([
     cozum: "Sorun değil: boş grup menüde görünmez. İçine bir başlık taşıdığınız an geri gelir.",
   },
 ])}
+</section>
+
+<section id="kullanim">
+${baslik("kullanim")}
+<p><strong>Ayarlar → Kullanım.</strong> Programın nasıl kullanıldığını gösterir:
+en çok hangi sayfaların açıldığı, hangi düğmelere basıldığı, sayfalar arasında
+nereden nereye geçildiği ve kim ne kadar kullandığı. Amaç, sık yapılan işi
+kısaltmak ve hiç kullanılmayan ekranı görmek.</p>
+${neZaman("Bir ekranın kullanılıp kullanılmadığını merak ettiğinizde; yeni bir eleman işe başladıktan birkaç gün sonra.")}
+<h3>Ne kaydedilir, ne kaydedilmez</h3>
+<p>Yalnız <strong>sayfa adresi</strong> ve <strong>düğme yazısı</strong>
+kaydedilir. Kayıt numaraları tek kalıba iner (<code>/satislar/:id</code>),
+düğme yazısındaki rakamlar <strong>#</strong> olur (sipariş no, tutar
+görünmez) ve yazı kutularına yazılanlar <strong>hiç</strong> okunmaz.</p>
+<div class="ek-not dikkat"><div class="etiket">Kutucuklar aramadan etkilenmez</div>
+<p>Üstteki sayılar seçili dönemin tamamıdır. Arama yalnız alttaki listeyi
+daraltır ve liste kaç satır bulduğunu ayrıca yazar.</p></div>
 </section>
 
 <section id="toplu">

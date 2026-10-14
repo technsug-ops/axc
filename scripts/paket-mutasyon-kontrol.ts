@@ -44,7 +44,7 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: '  nakitTakvimi: ["nakitTakvimi"],', koy: '  nakitTakvimi: ["nakitTakvimi", "kartBorcu"],',
     bozdugu: "bir paketten cikan ekran ötekinden acik kalir" },
   { ad: "HEP ACIK OZELLIGI YUTUYOR", yon: "FAZLADAN", dosya: KATALOG,
-    bul: '"geceTuru", "paketim"] as const;', koy: '"geceTuru", "paketim", "finansman"] as const;',
+    bul: '"geceTuru", "paketim", "kullanimIzi"] as const;', koy: '"geceTuru", "paketim", "kullanimIzi", "finansman"] as const;',
     bozdugu: "paket disi birakilan ekran paketle kapatilamaz" },
   { ad: "FIRMAYA OZEL SECIM OKUNMUYOR", yon: "KALDIRAN", dosya: KATALOG,
     bul: "return new Set(paket.firmayaOzel ? firmaSecimi : paket.ozellikler);", koy: "return new Set(paket.ozellikler);",

@@ -74,9 +74,13 @@ export const OZELLIK_EKRANLARI: Record<Ozellik, readonly string[]> = {
  * menuDuzeni: kullanıcı kendi menüsünü kilitleyemez (MENUDEN_DUSURULEMEZ) ·
  * maliyetYontemi / donemler / ozellikler: firmanın kendi defter ayarı ·
  * geceTuru: sistemin teknik bakımı, ticari özellik değil ·
- * paketim: kilitli ekranın açıklama sayfası; kapansaydı kilit açıklanamazdı.
+ * paketim: kilitli ekranın açıklama sayfası; kapansaydı kilit açıklanamazdı ·
+ * kullanimIzi (K334-③, 14.10.2026): firmanın KENDİ kullanım izi — geceTuru gibi
+ * sistemin kendisi; iz her firmada zaten yazılıyor, okumasını kapatmak firmanın
+ * kendi verisini ondan saklamak olurdu. ⚠ Bir pakete taşınması TİCARİ bir karardır
+ * (kullanıcıya soruldu); taşınırsa buradan silinip `OZELLIK_EKRANLARI`na yazılır.
  */
-export const HEP_ACIK = ["menuDuzeni", "maliyetYontemi", "donemler", "ozellikler", "geceTuru", "paketim"] as const;
+export const HEP_ACIK = ["menuDuzeni", "maliyetYontemi", "donemler", "ozellikler", "geceTuru", "paketim", "kullanimIzi"] as const;
 
 /**
  * Bağımlılık UYARISI (engel değil; docs §3): A açıkken B kapalıysa ekranda

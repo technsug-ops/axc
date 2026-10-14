@@ -77,6 +77,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   ozellikler: "/ayarlar/ozellikler",
   /** K303 ② — firmanın paketi: açık/kapalı özellikler (kilitli ekranın açıklama sayfası). */
   paketim: "/paket",
+  /** K334-③ — hangi sayfa açılıyor, hangi düğmeye basılıyor, nereden nereye geçiliyor. */
+  kullanimIzi: "/ayarlar/kullanim",
 
   veriAktarimi: "/ayarlar/ice-aktarma",
   veriDisari: "/ayarlar/disa-aktarma",
@@ -235,6 +237,8 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "maliyetYontemi", varsayilanGrup: "grupAyarlar" },
   { anahtar: "ozellikler", varsayilanGrup: "grupAyarlar" },
   { anahtar: "paketim", varsayilanGrup: "grupAyarlar" },
+  /** K334-③ — programın kendi kullanımı; iş verisi değil, sistemin kendisi → Ayarlar. */
+  { anahtar: "kullanimIzi", varsayilanGrup: "grupAyarlar" },
 ];
 
 /**
