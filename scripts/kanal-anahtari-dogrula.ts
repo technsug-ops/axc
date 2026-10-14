@@ -207,6 +207,7 @@ async function main() {
   const form = yorumsuz(kaynakOku("src/app/ayarlar/kanallar/api-baglantisi.tsx"));
   kontrol("gizli alan parola kutusu, tarayıcı hatırlamaz", /type=\{a\.gizli \? "password" : "text"\}/.test(form) && /autoComplete=\{a\.gizli \? "new-password" : "off"\}/.test(form));
   kontrol("  ...form alanlarına kayıtlı değer YAZILMAZ (defaultValue yok, ortam hariç)", !/defaultValue=\{(?!.*CANLI)/.test(form) && (form.match(/defaultValue=/g) ?? []).length === 1);
+  kontrol("  ...ekranda YALNIZ son işlemin sonucu (iki eylem de aynı duruma yazar)", (form.match(/const s = await kanalAnahtari(Kaydet|Kaldir)\(onceki, form\);\s*setSon\(s\);/g) ?? []).length === 2 && /const mesaj = son\.basari;\s*const hata = son\.hata;/.test(form));
   kontrol("  ...kaldır ONAY diyaloğundan geçer (İlke #6)", /<AlertDialogTrigger asChild>[\s\S]{0,400}t\("kaldir"\)[\s\S]{0,1200}<form action=\{kaldirAction\}>/.test(form));
   const tr = (JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>).KanalAnahtari ?? {};
   const alanAdlari = [...new Set(Object.values(K.KIMLIK_ALANLARI).flat().map((a) => a.ad))];

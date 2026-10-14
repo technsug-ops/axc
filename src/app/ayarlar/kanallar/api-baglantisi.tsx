@@ -40,14 +40,23 @@ export function ApiBaglantisi({
 }) {
   const t = useTranslations("KanalAnahtari");
   const [acik, setAcik] = useState(false);
-  const [kayit, kaydetAction, kaydediyor] = useActionState<AnahtarDurumu, FormData>(async (onceki, form) => {
+  /* Ekranda YALNIZ son işlemin sonucu (Halil testi 14.10.2026: kaydetme hatası, ardından
+     yapılan kaldırmanın «kaldırıldı» mesajının önünde kalıyordu). Form açılınca temizlenir. */
+  const [son, setSon] = useState<AnahtarDurumu>({});
+  const [, kaydetAction, kaydediyor] = useActionState<AnahtarDurumu, FormData>(async (onceki, form) => {
     const s = await kanalAnahtariKaydet(onceki, form);
+    setSon(s);
     if (s.tamam) setAcik(false);
     return s;
   }, {});
-  const [kaldirma, kaldirAction, kaldiriyor] = useActionState<AnahtarDurumu, FormData>(kanalAnahtariKaldir, {});
-  const mesaj = kaldirma.basari ?? kayit.basari;
-  const hata = kayit.hata ?? kaldirma.hata;
+  const [, kaldirAction, kaldiriyor] = useActionState<AnahtarDurumu, FormData>(async (onceki, form) => {
+    const s = await kanalAnahtariKaldir(onceki, form);
+    setSon(s);
+    if (s.tamam) setAcik(false);
+    return s;
+  }, {});
+  const mesaj = son.basari;
+  const hata = son.hata;
 
   return (
     <div className="space-y-3 rounded-lg border p-3">
@@ -63,7 +72,7 @@ export function ApiBaglantisi({
           )}
         </div>
         <div className="flex gap-2">
-          <Button type="button" variant={hesap.bagli ? "outline" : "default"} className="h-11 md:h-9" onClick={() => setAcik((a) => !a)} aria-expanded={acik}>
+          <Button type="button" variant={hesap.bagli ? "outline" : "default"} className="h-11 md:h-9" onClick={() => { setSon({}); setAcik((a) => !a); }} aria-expanded={acik}>
             <KeyRound />
             {hesap.bagli ? t("degistir") : t("anahtarGir")}
           </Button>

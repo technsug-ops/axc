@@ -198,7 +198,7 @@ export default async function KanalHesaplariSayfasi() {
             {magazaHesaplari.map((h) => (
               <MagazaAdiFormu
                 key={h.id}
-                hesap={{ id: h.id, etiket: tMagaza("etiket", { kanal: h.channel.name, hesap: h.name }), magazaAdi: h.magazaAdi }}
+                hesap={{ id: h.id, etiket: h.name, magazaAdi: h.magazaAdi }}
               />
             ))}
           </CardContent>
