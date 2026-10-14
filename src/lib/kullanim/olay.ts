@@ -81,6 +81,20 @@ export function baglantiHedefi(href: string, kendiKokeni: string): string | null
   }
 }
 
+export type HedefGorunumu = { tur: "BAGLANTI"; kalip: string } | { tur: "DIS" } | { tur: "DUGME"; metin: string };
+
+/**
+ * İz hedefi → ekran biçimi. Site dışı bağlantı veritabanında KODDUR; metni sözlükten gelir.
+ * ⚠ TEK GÖVDE (14.10.2026): firma ekranı (`ayarlar/kullanim`) ve süper admin ekranı
+ * (`bezirga/kullanim`, deneme dalı) ikisi de bunu okur — iki yerde iki ayrım olmaz.
+ * Biçim dalda Halil testinden geçen hâlidir (`metin`).
+ */
+export function hedefGorunumu(hedef: string): HedefGorunumu {
+  if (hedef === DIS_BAGLANTI) return { tur: "DIS" };
+  if (hedef.startsWith(BAGLANTI_ONEKI + "/")) return { tur: "BAGLANTI", kalip: hedef.slice(BAGLANTI_ONEKI.length) };
+  return { tur: "DUGME", metin: hedef };
+}
+
 /** Sunucu: tarayıcıdan gelen hedefi YENİDEN süzer — bağlantı hedefi yeniden kalıba indirgenir. */
 function hedefiYenidenSuz(hedef: string): string | null {
   if (hedef === DIS_BAGLANTI) return DIS_BAGLANTI;

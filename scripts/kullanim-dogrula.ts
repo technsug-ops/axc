@@ -1,5 +1,16 @@
 import { kaynakOku } from "./kaynak-oku";
 import { baglantiHedefi, cihazSec, DIS_BAGLANTI, hedefTemizle, KULLANIM_PAKET_SINIRI, paketiSuz, sayfaKalibi } from "../src/lib/kullanim/olay";
+import {
+  isSaatDilimiFarki,
+  KULLANIM_LISTE_SINIRI,
+  KULLANIM_SEKMELERI,
+  kullanimListele,
+  kullanimSekmesi,
+  payYuzde,
+  sayfaMenuAnahtari,
+} from "../src/lib/kullanim/firma-raporu";
+import { hedefGorunumu } from "../src/lib/kullanim/olay";
+import { MENU_ADRESLERI, MENU_KATALOGU } from "../src/lib/menu/katalog";
 
 /**
  * ============================================================================
@@ -83,6 +94,93 @@ kontrol("  ...tuş/yazma olayı DİNLENMİYOR", !/addEventListener\("(input|keyd
 kontrol("  ...input/textarea değeri OKUNMUYOR", !/\.value\b/.test(bilesen));
 const yerlesim = yorumsuz("src/app/layout.tsx");
 kontrol("yerleşimde bir kez bağlı", (yerlesim.match(/<KullanimIzi \/>/g) ?? []).length === 1);
+
+console.log("\n8) FİRMA RAPORU — saf kurallar (K334-③; hedef ayrımı ORTAK gövdeden, olay.ts)");
+kontrol("bilinmeyen/eksik sekme ilk sekmeye düşer", kullanimSekmesi(undefined) === "sayfalar" && kullanimSekmesi("hack") === "sayfalar" && kullanimSekmesi("dugmeler") === "dugmeler");
+kontrol("menü adı TAM kalıpla eşleşir", sayfaMenuAnahtari("/satislar") === "satislar" && sayfaMenuAnahtari("/ayarlar/kullanim") === "kullanimIzi");
+kontrol("  ...kayıt detayı menü adı ALMAZ (liste ile detay aynı satıra yazılmaz)", sayfaMenuAnahtari("/satislar/:id") === null);
+kontrol("hedef: site dışı kod · bağlantı kalıbı · düğme yazısı ayrılır",
+  hedefGorunumu(DIS_BAGLANTI).tur === "DIS" &&
+  JSON.stringify(hedefGorunumu("→ /satislar/:id")) === JSON.stringify({ tur: "BAGLANTI", kalip: "/satislar/:id" }) &&
+  JSON.stringify(hedefGorunumu("Onayla")) === JSON.stringify({ tur: "DUGME", metin: "Onayla" }));
+kontrol("  ...okla başlayıp «/» ile sürmeyen yazı DÜĞMEDİR", hedefGorunumu("→ ileri").tur === "DUGME");
+kontrol("pay: bir ondalık", payYuzde(1, 3) === 33.3 && payYuzde(3, 3) === 100);
+kontrol("  ...toplam sıfırsa null (%0 değil)", payYuzde(0, 0) === null && payYuzde(5, 0) === null);
+kontrol("saat dilimi farkı İstanbul'dan ölçülür (yaz ve kış aynı +03:00)",
+  isSaatDilimiFarki(new Date("2026-10-14T12:00:00Z")) === "+03:00" && isSaatDilimiFarki(new Date("2027-01-15T23:30:00Z")) === "+03:00",
+  [isSaatDilimiFarki(new Date("2026-10-14T12:00:00Z")), isSaatDilimiFarki(new Date("2027-01-15T23:30:00Z"))]);
+const yuzElli = Array.from({ length: KULLANIM_LISTE_SINIRI + 50 }, (_, i) => ({ ad: `s${i}`, adet: (i % 7) + 1 }));
+const liste = kullanimListele(yuzElli);
+const beklenenToplam = yuzElli.reduce((t, s) => t + s.adet, 0);
+kontrol(`liste: çizim ${KULLANIM_LISTE_SINIRI} satırda kesilir`, liste.satirlar.length === KULLANIM_LISTE_SINIRI, liste.satirlar.length);
+kontrol("  ...farklı sayısı ve TOPLAM kesilmeden önce, kümenin tamamından (İlke #15)",
+  liste.farkli === yuzElli.length && liste.toplam === beklenenToplam, { farkli: liste.farkli, toplam: liste.toplam, beklenenToplam });
+kontrol("  ...büyükten küçüğe, eşitlikte ada göre",
+  liste.satirlar[0].adet === 7 && liste.satirlar.every((s, i, a) => i === 0 || a[i - 1].adet > s.adet || (a[i - 1].adet === s.adet && a[i - 1].ad.localeCompare(s.ad, "tr") <= 0)));
+
+console.log("\n9) RAPOR — sözlük (dinamik anahtarlar i18n taramasına girmiyor)");
+const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, unknown>>;
+const en = JSON.parse(kaynakOku("messages/en.json")) as Record<string, Record<string, unknown>>;
+const trK = tr.Kullanim as Record<string, Record<string, string>> | undefined;
+kontrol("her sekmenin etiketi ve notu Türkçe sözlükte dolu",
+  KULLANIM_SEKMELERI.length === 4 && KULLANIM_SEKMELERI.every((s) => !!trK?.sekme?.[s] && !!trK?.sekmeNotu?.[s]));
+const anahtarlar = (o: unknown, on = ""): string[] =>
+  o && typeof o === "object" ? Object.entries(o).flatMap(([k, v]) => (typeof v === "object" ? anahtarlar(v, `${on}${k}.`) : [`${on}${k}`])) : [];
+const trA = anahtarlar(tr.Kullanim).sort().join(",");
+kontrol("  ...İngilizce iskelet aynı anahtarları taşır", trA.length > 0 && trA === anahtarlar(en.Kullanim).sort().join(","));
+kontrol("  ...menü etiketi iki sözlükte de var", typeof tr.Menu?.kullanimIzi === "string" && (tr.Menu.kullanimIzi as string) !== "" && typeof en.Menu?.kullanimIzi === "string");
+
+console.log("\n10) RAPOR — veri katmanı: her sorgu FİRMAYA bağlı");
+const veri = yorumsuz("src/lib/kullanim/rapor-veri.ts");
+const sorgular = [...veri.matchAll(/prisma\.kullanimOlayi\.(groupBy|findFirst|findMany|count)\(/g)];
+kontrol("taban dolu: en az 6 sorgu bulundu", sorgular.length >= 6, sorgular.length);
+/** `where: kosul` ancak `kosul` ortak gövdeden kurulduysa geçerli — tanım ayrıca aranır. */
+const kosulTanimli = /const kosul = kullanimKosulu\(companyId, aralik\);/.test(veri);
+for (const s of sorgular) {
+  const bas = s.index!;
+  const sonlar = [veri.indexOf("});", bas), veri.indexOf("}),\n", bas)].filter((i) => i > bas);
+  const blok = veri.slice(bas, Math.min(...sonlar));
+  const tamam =
+    /where: kullanimKosulu\(companyId, aralik\)|AND: \[kullanimKosulu\(companyId, aralik\)|where: \{ companyId \}/.test(blok) ||
+    (kosulTanimli && /where: kosul,/.test(blok));
+  kontrol(`  ...${s[1]} @${bas} firma koşulu taşıyor`, tamam, blok.slice(0, 160));
+}
+const ham = [...veri.matchAll(/FROM KullanimOlayi\s+WHERE ([^`]*)`/g)];
+kontrol("ham sayım iki dalda da firmaya bağlı", ham.length === 2 && ham.every((h) => h[1].trimStart().startsWith("companyId = ${companyId}")), ham.map((h) => h[1]));
+kontrol("ortak koşul firma + dönem", /return \{ companyId, \.\.\.\(aralik \? \{ createdAt: aralik \} : \{\}\) \};/.test(veri));
+kontrol("liste tek gövdeden (tavan + toplam kuralı)", /const listele = kullanimListele;/.test(veri));
+
+console.log("\n11) RAPOR — ekran");
+const ekran = yorumsuz("src/app/ayarlar/kullanim/page.tsx");
+kontrol("izin: ayar.yaz (kullanıcı kararı 14.10.2026)", /const baglam = await sayfaIzni\("ayar\.yaz"\);/.test(ekran));
+kontrol("  ...firma OTURUMDAN (adresten değil)",
+  /kullanimOzeti\(baglam\.companyId, pencere\.aralik\)/.test(ekran) && /sekmeVerisi\(sekme, baglam\.companyId, pencere\.aralik, q, ekKaliplar\)/.test(ekran) && /ilkIzAni\(baglam\.companyId\)/.test(ekran));
+kontrol("  ...kutucuklar ARAMADAN bağımsız (özete q gitmiyor)", !/kullanimOzeti\([^)]*\bq\b/.test(ekran));
+const temel = ekran.match(/const TEMEL = "([^"]+)";/)?.[1];
+kontrol("  ...ekran adresi menüdeki adresle aynı", temel === MENU_ADRESLERI.kullanimIzi && temel === "/ayarlar/kullanim", temel);
+kontrol("  ...arama kutusu ortak bileşen, adrese yazıyor", /<KodAramaKutusu\s+temelAdres=\{TEMEL\}\s+baslangic=\{p\.q \?\? ""\}/.test(ekran));
+/**
+ * Sekme başına AYRI blok (anayasa: aynı desen birden çok yerde geçiyorsa her yer
+ * ayrı sınanır). Blok: o sekmenin dalı → bir sonraki dal ya da `const tasinan`.
+ */
+const dallar: [string, RegExp][] = [
+  ["sayfalar", /\} else if \(veri\.sekme === "sayfalar"\) \{/],
+  ["dugmeler", /\} else if \(veri\.sekme === "dugmeler"\) \{/],
+  ["gecisler", /\} else if \(veri\.sekme === "gecisler"\) \{/],
+  ["kullanicilar", /\} else \{\s*icerik = \(/],
+];
+const dalBaslari = dallar.map(([, d]) => ekran.search(d));
+const dalSonu = ekran.indexOf("const tasinan");
+kontrol("  ...dört sekme dalı bulundu", dalBaslari.every((b) => b >= 0) && dalSonu > Math.max(...dalBaslari), dalBaslari);
+dallar.forEach(([ad], i) => {
+  const blok = ekran.slice(dalBaslari[i], i + 1 < dallar.length ? dalBaslari[i + 1] : dalSonu);
+  kontrol(`  ...«${ad}» sekmesinde TOPLAM satırı (İlke #15)`, /<TableCell>\{t\("toplam"\)\}<\/TableCell>|\{toplamSatiri\(\d, veri\.liste\.toplam\)\}/.test(blok));
+});
+kontrol("  ...ortak toplam satırı toplamı yazıyor", /const toplamSatiri = \(sutun: number, toplam: number\) => \(\s*<TableRow[^>]*>\s*<TableCell colSpan=\{sutun\}>\{t\("toplam"\)\}<\/TableCell>\s*<TableCell className="text-right tabular-nums">\{bicim\.sayi\(toplam\)\}<\/TableCell>/.test(ekran));
+kontrol("  ...kullanıcı toplamı kümeden (çizilen satırlardan değil)",
+  /\{bicim\.sayi\(veri\.liste\.toplamSayfa\)\}/.test(ekran) && /\{bicim\.sayi\(veri\.liste\.toplamTiklama\)\}/.test(ekran) && !/veri\.liste\.satirlar\.reduce/.test(ekran));
+kontrol("  ...izin doğum tarihi yazıyor", /\{ilk \? t\("izDogumu", \{ tarih: bicim\.tarihSaat\(ilk\) \}\) : t\("izYok"\)\}/.test(ekran));
+kontrol("menüde Ayarlar grubunda", MENU_KATALOGU.some((o) => o.anahtar === "kullanimIzi" && o.varsayilanGrup === "grupAyarlar"));
 
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
