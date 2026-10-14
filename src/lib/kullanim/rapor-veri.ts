@@ -72,6 +72,34 @@ async function aktifGunSay(companyId: string, aralik: Aralik): Promise<number> {
   return Number(sonuc[0]?.gun ?? 0);
 }
 
+/**
+ * Grafik sayımları — İstanbul günü × tür ve İstanbul saati. Gruplama VERİTABANINDA
+ * (satır sayısı kadar değil, gün/saat sayısı kadar satır döner). Pencere yoksa
+ * (tüm zamanlar) sınırlar geniş tutulur — tek sorgu, iki dal yok.
+ */
+export async function grafikSayimlari(companyId: string, aralik: Aralik) {
+  const fark = isSaatDilimiFarki(new Date());
+  const sinir = aralik ?? { gte: new Date(0), lt: new Date("9999-12-31T00:00:00Z") };
+  const [gunler, saatler] = await Promise.all([
+    prisma.$queryRaw<{ gun: string; tur: string; adet: bigint | number }[]>`
+      SELECT DATE_FORMAT(CONVERT_TZ(createdAt, '+00:00', ${fark}), '%Y-%m-%d') AS gun, tur, COUNT(*) AS adet
+      FROM KullanimOlayi
+      WHERE companyId = ${companyId} AND createdAt >= ${sinir.gte} AND createdAt < ${sinir.lt}
+      GROUP BY gun, tur`,
+    prisma.$queryRaw<{ saat: bigint | number; adet: bigint | number }[]>`
+      SELECT HOUR(CONVERT_TZ(createdAt, '+00:00', ${fark})) AS saat, COUNT(*) AS adet
+      FROM KullanimOlayi
+      WHERE companyId = ${companyId} AND createdAt >= ${sinir.gte} AND createdAt < ${sinir.lt}
+      GROUP BY saat`,
+  ]);
+  return {
+    gunler: gunler
+      .filter((g) => g.tur === "SAYFA" || g.tur === "TIKLAMA")
+      .map((g) => ({ gun: g.gun, tur: g.tur as "SAYFA" | "TIKLAMA", adet: Number(g.adet) })),
+    saatler: saatler.map((s) => ({ saat: Number(s.saat), adet: Number(s.adet) })),
+  };
+}
+
 export async function kullanimOzeti(companyId: string, aralik: Aralik): Promise<KullanimOzeti> {
   const kosul = kullanimKosulu(companyId, aralik);
   const [turler, cihazlar, kullanicilar, aktifGun] = await Promise.all([

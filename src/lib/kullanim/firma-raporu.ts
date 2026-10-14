@@ -1,4 +1,4 @@
-import { gunBasiAni, gunDegeri, isTakvimGunu } from "@/lib/donem";
+import { gunBasiAni, gunDegeri, gunEkle, gunMetni, isTakvimGunu } from "@/lib/donem";
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
 
 /**
@@ -91,4 +91,81 @@ export function kullanimListele<T extends { adet: number; ad: string }>(satirlar
     farkli: sirali.length,
     toplam: sirali.reduce((t, s) => t + s.adet, 0),
   };
+}
+
+/* ═══ GRAFİKLER (K334-③ görsel turu, kullanıcı/mimar isteği 14.10.2026) ════════
+ * Sayım veritabanında (gün × tür, saat); burada yalnız toplanmış sayıların
+ * EKSENE yerleşmesi var. ⚠ İz olmayan gün/saat 0 olarak YAZILIR — «o gün
+ * kullanılmadı» bilinen bir sonuçtur (iz her açılışta yazılıyor); eksenden
+ * düşürmek boş günü gizler ve sütunlar arasındaki zaman aralığını yalanlar.
+ * Tek istisna: izin doğumundan ÖNCESİ ve bugünden SONRASI eksene hiç girmez
+ * (orada «0» bir sonuç değildir — anayasa: yeni izin doğum tarihi beyan edilir).
+ */
+
+/** Gün sayısı bunu aşarsa sütunlar AYLIK kovaya toplanır — telefonda 365 ince çubuk okunmaz. */
+export const GUNLUK_SUTUN_TAVANI = 62;
+
+export type GunSayimi = { gun: string; tur: "SAYFA" | "TIKLAMA"; adet: number };
+export type ZamanSutunu = {
+  /** «2026-10-14» ya da «2026-10» */
+  anahtar: string;
+  /** Kovanın ilk ve son günü (UTC çapa — etiket ve süzgeç adresi bunlardan). */
+  ilk: Date;
+  son: Date;
+  sayfa: number;
+  tiklama: number;
+};
+export type ZamanEkseni = { kova: "GUN" | "AY"; sutunlar: ZamanSutunu[] };
+
+/**
+ * Pencere [ilk, son] (UTC çapa, ikisi de dahil) → her güne bir sütun, iz yoksa 0.
+ * `ilk`, izin doğumundan önceyse doğum gününe; `son`, bugünden sonraysa bugüne çekilir.
+ */
+export function zamanEkseni(ham: readonly GunSayimi[], ilk: Date, son: Date, izDogumu: Date, bugun: Date): ZamanEkseni {
+  const bas = ilk.getTime() < izDogumu.getTime() ? izDogumu : ilk;
+  const bit = son.getTime() > bugun.getTime() ? bugun : son;
+  if (bas.getTime() > bit.getTime()) return { kova: "GUN", sutunlar: [] };
+
+  const sayim = new Map<string, { sayfa: number; tiklama: number }>();
+  for (const s of ham) {
+    const g = sayim.get(s.gun) ?? { sayfa: 0, tiklama: 0 };
+    if (s.tur === "SAYFA") g.sayfa += s.adet;
+    else g.tiklama += s.adet;
+    sayim.set(s.gun, g);
+  }
+  const gunler: ZamanSutunu[] = [];
+  for (let d = bas; d.getTime() <= bit.getTime(); d = gunEkle(d, 1)) {
+    const anahtar = gunMetni(d);
+    const g = sayim.get(anahtar) ?? { sayfa: 0, tiklama: 0 };
+    gunler.push({ anahtar, ilk: d, son: d, ...g });
+  }
+  if (gunler.length <= GUNLUK_SUTUN_TAVANI) return { kova: "GUN", sutunlar: gunler };
+
+  const aylar: ZamanSutunu[] = [];
+  for (const g of gunler) {
+    const anahtar = g.anahtar.slice(0, 7);
+    const onceki = aylar[aylar.length - 1];
+    if (onceki && onceki.anahtar === anahtar) {
+      onceki.son = g.son;
+      onceki.sayfa += g.sayfa;
+      onceki.tiklama += g.tiklama;
+    } else aylar.push({ ...g, anahtar });
+  }
+  return { kova: "AY", sutunlar: aylar };
+}
+
+/** Saat sayımı (İstanbul saati 0–23) → 24 kova; iz olmayan saat 0. Aralık dışı saat atılır. */
+export function saatEkseni(ham: readonly { saat: number; adet: number }[]): number[] {
+  const kovalar = Array.from({ length: 24 }, () => 0);
+  for (const s of ham) if (Number.isInteger(s.saat) && s.saat >= 0 && s.saat < 24) kovalar[s.saat] += s.adet;
+  return kovalar;
+}
+
+/**
+ * Sütun boyu (% — en büyüğe göre). Sıfır olmayan değer en az %3 (görünsün:
+ * 1 tıklamalı gün «hiç yok» gibi okunmasın); 0 → 0; en büyük 0 → 0.
+ */
+export function sutunYuzdesi(deger: number, enBuyuk: number): number {
+  if (enBuyuk <= 0 || deger <= 0) return 0;
+  return Math.max(3, Math.round((deger / enBuyuk) * 1000) / 10);
 }

@@ -329,3 +329,31 @@ export const KANAL_RENKLERI: Record<string, string> = {
 
 /** Tanınmayan/sıraya girmeyen kanal için nötr ton — PASTA_VARSAYILAN ile aynı gerekçe. */
 export const KANAL_RENGI_VARSAYILAN = "#94A3B8";
+
+/**
+ * KULLANIM GRAFİKLERİ — KATEGORİ PALETİ (K334-③, 14.10.2026)
+ *
+ * `KANAL_RENKLERI` ile AYNI doğrulanmış kategorik sıranın ilk üç basamağı
+ * (mavi · turuncu · su yeşili) — yeni ton üretilmedi. dataviz doğrulayıcısı
+ * `--pairs all` ile koşuldu: açık #fcfcfb zeminde CVD ΔE 9,2 · normal 24,0
+ * (su yeşili 2,74:1 kontrast → etiketler görünür yazılır: lejant + değer);
+ * koyu #1a1a19 zeminde koyu basamaklar CVD 9,4 · normal 20,9 · hepsi ≥3:1.
+ * ⚠ Açık turuncu koyu zeminde açıklık bandını aşıyordu (L 0,671) — koyu tema
+ * KENDİ basamağını alır, otomatik çevrilmez.
+ *
+ * Renk VARLIĞI izler, sırayı değil: «sayfa açılışı» hep mavi, «tıklama» hep
+ * turuncu; telefon hep mavi, masaüstü hep turuncu, tablet hep su yeşili.
+ */
+export const KULLANIM_RENKLERI = {
+  sayfa: "bg-[#2a78d6] dark:bg-[#3987e5]",
+  tiklama: "bg-[#eb6834] dark:bg-[#d95926]",
+  /** Saat grafiği tek seridir (bütün olaylar) — ilk basamak. */
+  saat: "bg-[#2a78d6] dark:bg-[#3987e5]",
+} as const;
+
+/** Cihaz halkası — `HalkaGrafik` SVG `stroke` ister (sınıf değil, ham ton). */
+export const KULLANIM_CIHAZ_RENKLERI = {
+  TELEFON: "#2a78d6",
+  MASAUSTU: "#eb6834",
+  TABLET: "#1baf7a",
+} as const;
