@@ -72,6 +72,7 @@ Kullanıcı: «mobilde tıklamalara geç reaksiyon» → ① kök yükleniyor ek
 · **Bekçi:** K329 yayın boşluğu çanı artık canlıda — kaçış kırmızı yazar.
 · **Açık:** GitHub → Vercel bildirimi (GitHub uygulaması/webhook teslim kaydı) kullanıcı hesabından bakılmalı; buradan görülemiyor. Üç kez daha kaçarsa «yönetilemeyen bağımlılık» kuralı: dağıtımı kendi betiğimiz başlatır (push sonrası kanca).
 · **[KOŞTU] 14.10.2026 — EŞİK AŞILDI: üç kaçış daha** (`d76e3107`/`0dab9f5d`/`a678ad3a` → elle `a678ad3`; `86707c61` → elle; ayrıntı K329 ─── ② ③). Bu kalem 14.10'da gözden kaçmış, kaçışlar önce K329'a yazıldı — doğru yer burası. Kural gereği kendi tetiğimize geçiş SIRADAKİ İŞ olarak önerildi (15.10).
+· **KULLANICI KARARI 15.10.2026: «o önemli bir iş değil, yaparız»** — kendi tetik ŞİMDİ yapılmıyor, sıra K303'e verildi. Geçici yol (elle yayın + «Canlı yayın» kutusu) sürüyor; her push sonrası kutuya bakılır.
 
 ## 🔶 K330 — ALGORİTMO TASARIMI + YENİ KÂRLILIK KARTI CANLIYA (dal → main) · 11.10.2026 · [CANLI MIGRATION KOŞTU · PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
 Kullanıcı kararı 10–11.10: «normal orijinal canlıya almak istiyorum» → seçenek «önce yalnız tasarım, çok firma ayrı gün». `k303-cok-firma` dalından YALNIZ tasarım/panel/kart değişiklikleri alındı (≈30 commit; çok firma kodu ALINMADI — süzgeç, süper admin, paketler, giriş firma kodu dalda kalır).
