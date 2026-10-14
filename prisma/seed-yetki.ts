@@ -124,6 +124,8 @@ export async function yetkiSeed(prisma: PrismaClient, verilenFirma?: { id: strin
     "tarife.gor",
     // 28.09.2026 — K304: /finansman (sermaye · borç · banka kredisi).
     "finansman.yonet",
+    // 14.10.2026 — K303: kanal hesaplarında «API bağlantısı» (firma başına anahtar).
+    "kanal.anahtar",
   ];
 
   /**

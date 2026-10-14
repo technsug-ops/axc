@@ -25,8 +25,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
-import { firmaSeed, yetkiSeed } from "../prisma/seed-yetki";
-import { firmaIstemcisi } from "../src/lib/firma-istemcisi";
+import { butunFirmalardaYetki } from "./yetki-senkron";
 import { canliYapilandirma, parolayiTemizle } from "./canli-ortak";
 import { bekciyiYaz, yetkiBekcisi } from "./yetki-bekci";
 
@@ -48,16 +47,10 @@ async function main() {
   });
 
   try {
-    /* K303 3d: rol/izin tabloları firmaya ait — firma istemcisiyle yazılır. */
-    const firma = await firmaSeed(prisma);
-    const fp = firmaIstemcisi(betikAdresi(y.veri.ham), firma.id);
-    try {
-      await yetkiSeed(fp, firma);
-    } finally {
-      await fp.$disconnect();
-    }
+    /* K303 (14.10.2026): BÜTÜN firmalarda — gerekçe `yetki-senkron.ts`. */
+    const firmalar = await butunFirmalardaYetki(prisma, betikAdresi(y.veri.ham));
     console.log("");
-    console.log("  ✓ izinler canlıda güncel");
+    console.log(`  ✓ izinler canlıda güncel (${firmalar.length} firma: ${firmalar.join(", ")})`);
 
     /**
      * SENKRONDAN SONRA BEKÇİ (mimar kararı 13.08.2026).

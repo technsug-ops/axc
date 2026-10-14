@@ -22,7 +22,7 @@ import { kaynakOku } from "./kaynak-oku";
 
 console.log("\nKANAL ANAHTARI BEKÇİSİ\n");
 
-const BOLUM_SAYISI = 4;
+const BOLUM_SAYISI = 5;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let hata = 0;
@@ -56,7 +56,9 @@ async function main() {
   const bozuk = [parca[0], parca[1], parca[2], Buffer.from(Buffer.from(parca[3]!, "base64").map((b, i) => (i === 0 ? b ^ 1 : b))).toString("base64")].join(":");
   kontrol("tek bit bozulmuş paket ÇÖZÜLEMEZ (GCM bütünlüğü)", S.coz(bozuk, sir).durum === "COZULEMEDI");
   kontrol("biçimsiz paket ÇÖZÜLEMEZ", S.coz("duz-metin", sir).durum === "COZULEMEDI" && S.coz("v2:a:b:c", sir).durum === "COZULEMEDI");
-  kontrol("sır yok → SIR_YOK", S.sirOku("").durum === "SIR_YOK" && S.sirOku(undefined).durum === "SIR_YOK");
+  /* ⚠ `sirOku(undefined)` VARSAYILAN olarak ortam değişkenini okur — ortamda sır tanımlıyken
+     (deneme kurulumu, 14.10.2026) «sır yok» dalını SINAMAZ. Ölçüt açık boş girdiyle kurulur. */
+  kontrol("sır yok → SIR_YOK (boş · yalnız boşluk)", S.sirOku("").durum === "SIR_YOK" && S.sirOku("   ").durum === "SIR_YOK");
   kontrol("sır 32 bayt değil → SIR_GECERSIZ", S.sirOku(randomBytes(16).toString("base64")).durum === "SIR_GECERSIZ" && S.sirOku("%%%").durum === "SIR_GECERSIZ");
   kontrol("geçerli sır okunur", S.sirOku(sir.toString("base64")).durum === "TAMAM");
   kontrol("son 4 hane", S.sonDort("abcdefgh1234") === "1234" && S.sonDort("kisa") === "****");
@@ -185,6 +187,41 @@ async function main() {
   const izDetay = [...depo.matchAll(/detail: JSON\.stringify\(\{([^}]*)\}\)/g)].map((m) => m[1]!);
   kontrol(`iz detayları yalnız tanıma alanı taşır (${izDetay.length} iz)`, izDetay.length >= 2 && izDetay.every((d) => !/kimlik|ham|duz|paket|secret|key\b/.test(d)), izDetay);
   kosanBolumler.push("desen");
+
+  /* ═══ ⑤ EKRAN — «API bağlantısı» (K303 2. adım, 14.10.2026) ═══ */
+  console.log("\n⑤ ekran");
+  const sayfa = yorumsuz(kaynakOku("src/app/ayarlar/kanallar/page.tsx"));
+  kontrol("kart yalnız `kanal.anahtar` izniyle çizilir", /const anahtarYetkisi = baglam\.izinler\.has\("kanal\.anahtar"\);/.test(sayfa) && /\{anahtarYetkisi \? \(/.test(sayfa));
+  kontrol("  ...yalnız AKTİF SATIŞ hesabı + desteklenen kanal", /hesaplar\.filter\(\(h\) => h\.satisIcin && h\.isActive && desteklenenKanalMi\(h\.channel\.code\)\)/.test(sayfa));
+  const eylem = yorumsuz(kaynakOku("src/app/ayarlar/kanallar/anahtar-actions.ts"));
+  const kaydetGovde = eylem.slice(eylem.indexOf("export async function kanalAnahtariKaydet("), eylem.indexOf("export async function kanalAnahtariKaldir("));
+  const kaldirGovde = eylem.slice(eylem.indexOf("export async function kanalAnahtariKaldir("));
+  kontrol("kaydet: İLK iş izin kapısı", /^export async function kanalAnahtariKaydet\([^)]*\)[^{]*\{\s*const baglam = await yetkiIste\("kanal\.anahtar"\);/.test(kaydetGovde));
+  kontrol("kaldır: İLK iş izin kapısı", /^export async function kanalAnahtariKaldir\([^)]*\)[^{]*\{\s*const baglam = await yetkiIste\("kanal\.anahtar"\);/.test(kaldirGovde));
+  kontrol("formdan YALNIZ o kanalın alanları okunur", /for \(const a of KIMLIK_ALANLARI\[kanal\]\) ham\[a\.ad\] = String\(form\.get\(a\.ad\) \?\? ""\);/.test(kaydetGovde));
+  /* Dönüş SATIRIN SONUNA kadar okunur — iç içe süslü parantez (`{ son: … }`) ilk `}`te kesseydi
+     ardından eklenen bir sızıntıyı göremezdi (mutasyonla bulundu). */
+  const donusler = [...eylem.matchAll(/return (\{[^\n]*\});/g)].map((m) => m[1]!);
+  kontrol(`eylem dönüşü anahtarı TAŞIMAZ (${donusler.length} dönüş)`, donusler.length >= 6 && donusler.every((d) => !/\bham\b|form\.get|kimlik/.test(d)), donusler);
+  kontrol("  ...beklenmeyen hata yutulmaz, TAM loglanır", (eylem.match(/catch \(e\) \{\s*console\.error\("\[kanal-anahtari\] (kaydetme|kaldırma) düştü:", e\);/g) ?? []).length === 2);
+  const form = yorumsuz(kaynakOku("src/app/ayarlar/kanallar/api-baglantisi.tsx"));
+  kontrol("gizli alan parola kutusu, tarayıcı hatırlamaz", /type=\{a\.gizli \? "password" : "text"\}/.test(form) && /autoComplete=\{a\.gizli \? "new-password" : "off"\}/.test(form));
+  kontrol("  ...form alanlarına kayıtlı değer YAZILMAZ (defaultValue yok, ortam hariç)", !/defaultValue=\{(?!.*CANLI)/.test(form) && (form.match(/defaultValue=/g) ?? []).length === 1);
+  kontrol("  ...kaldır ONAY diyaloğundan geçer (İlke #6)", /<AlertDialogTrigger asChild>[\s\S]{0,400}t\("kaldir"\)[\s\S]{0,1200}<form action=\{kaldirAction\}>/.test(form));
+  const tr = (JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>).KanalAnahtari ?? {};
+  const alanAdlari = [...new Set(Object.values(K.KIMLIK_ALANLARI).flat().map((a) => a.ad))];
+  const alanEksik = alanAdlari.filter((a) => !tr[`alan_${a}`]?.trim());
+  kontrol(`her kimlik alanının adı sözlükte (${alanAdlari.length} alan)`, alanAdlari.length >= 8 && alanEksik.length === 0, alanEksik);
+  const hataKodlari = ["HESAP_YOK", "SATIS_HESABI_DEGIL", "KANAL_DESTEKLENMIYOR", "ALAN_EKSIK", "ALAN_GECERSIZ", "SIR_YOK", "SIR_GECERSIZ", "ANAHTAR_YOK", "BEKLENMEDIK"];
+  const hataEksik = hataKodlari.filter((h) => !tr[`hata_${h}`]?.trim());
+  kontrol("her hata kodunun cümlesi sözlükte", hataEksik.length === 0, hataEksik);
+  const seed = yorumsuz(kaynakOku("prisma/seed-yetki.ts"));
+  kontrol("izin sonradan doğanlarda (tam yetkili rol kendiliğinden alır)", /const SONRADAN_DOGAN: string\[\] = \[[\s\S]*?"kanal\.anahtar",[\s\S]*?\];/.test(seed));
+  const senkron = yorumsuz(kaynakOku("scripts/yetki-senkron.ts"));
+  kontrol("izin senkronu BÜTÜN firmalarda döner", /for \(const firma of firmalar\) \{[\s\S]{0,200}await yetkiSeed\(fp, firma\);/.test(senkron));
+  kontrol("  ...sabit firma YALNIZ hiç firma yokken oluşturulur", /if \(firmalar\.length === 0\) firmalar = \[await firmaSeed\(prisma\)\];/.test(senkron) && (senkron.match(/firmaSeed\(/g) ?? []).length === 1);
+  kontrol("  ...canlı senkron ortak gövdeyi çağırır", /await butunFirmalardaYetki\(prisma, betikAdresi\(y\.veri\.ham\)\);/.test(yorumsuz(kaynakOku("scripts/canli-yetki-seed.ts"))) && !/firmaSeed\(/.test(yorumsuz(kaynakOku("scripts/canli-yetki-seed.ts"))));
+  kosanBolumler.push("ekran");
 
   await sistemPrisma.$disconnect();
   if (kosanBolumler.length !== BOLUM_SAYISI) {

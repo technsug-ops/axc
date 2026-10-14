@@ -131,6 +131,9 @@ export const IZINLER = [
   // Dışa aktarma TÜM veriyi indirir, geri yükleme TÜMÜNÜ siler.
   // Ayırmak yanlış güven verirdi; tek izin.
   { anahtar: "veri.aktar", grup: "ayar" },
+  // K303 — pazaryeri API anahtarını girer/değiştirir/kaldırır (firmanın kendi mağazası).
+  // `ayar.yaz`tan AYRI: anahtar firmanın mağazasına yazma gücü verir.
+  { anahtar: "kanal.anahtar", grup: "ayar" },
 
   // --- YÖNETİM ---
   { anahtar: "kullanici.yonet", grup: "yonetim" },

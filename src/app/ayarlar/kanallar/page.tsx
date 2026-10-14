@@ -28,6 +28,10 @@ import { KanalHesabiFormu } from "./kanal-hesabi-formu";
 import { ListeKanallariFormu } from "./liste-kanallari-formu";
 import { ILAN_ADRESI_KALIPLARI, listeKanallariCoz, MAGAZA_ADI_KULLANAN_KANALLAR } from "@/lib/kanal-ilan-adresi";
 import { MagazaAdiFormu } from "./magaza-adi-formu";
+import { ApiBaglantisi } from "./api-baglantisi";
+import { anahtarDurumlari } from "@/lib/kanal-anahtari/depo";
+import { KIMLIK_ALANLARI, desteklenenKanalMi } from "@/lib/kanal-anahtari/kimlik";
+import { bicimlendirici } from "@/lib/bicim";
 import { RolSecici } from "./rol-secici";
 import { HesapSilButonu } from "./sil-butonu";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -81,6 +85,16 @@ export default async function KanalHesaplariSayfasi() {
   const magazaHesaplari = hesaplar.filter(
     (h) => h.satisIcin && h.isActive && MAGAZA_ADI_KULLANAN_KANALLAR.includes(h.channel.code),
   );
+
+  /* K303 2. adım (14.10.2026): API bağlantısı — yalnız `kanal.anahtar` izni olan görür;
+     desteklenen kanalların (TY · HB · N11) AKTİF satış hesapları. Durum firma süzgeçli. */
+  const anahtarYetkisi = baglam.izinler.has("kanal.anahtar");
+  const anahtarHesaplari = anahtarYetkisi
+    ? hesaplar.filter((h) => h.satisIcin && h.isActive && desteklenenKanalMi(h.channel.code))
+    : [];
+  const anahtarlar = anahtarYetkisi ? await anahtarDurumlari() : new Map();
+  const tAnahtar = await getTranslations("KanalAnahtari");
+  const bicim = await bicimlendirici();
 
   const t = await getTranslations("KanalHesabi");
 
@@ -187,6 +201,36 @@ export default async function KanalHesaplariSayfasi() {
                 hesap={{ id: h.id, etiket: tMagaza("etiket", { kanal: h.channel.name, hesap: h.name }), magazaAdi: h.magazaAdi }}
               />
             ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {anahtarYetkisi ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{tAnahtar("baslik")}</CardTitle>
+            <p className="text-muted-foreground text-sm">{tAnahtar("aciklama")}</p>
+          </CardHeader>
+          <CardContent className="grid gap-3 lg:grid-cols-2">
+            {anahtarHesaplari.length === 0 ? (
+              <p className="text-muted-foreground text-sm">{tAnahtar("bos")}</p>
+            ) : (
+              anahtarHesaplari.map((h) => {
+                const a = anahtarlar.get(h.id);
+                return (
+                  <ApiBaglantisi
+                    key={h.id}
+                    hesap={{
+                      id: h.id,
+                      /* Hesap adı kanalı zaten taşıyor («Trendyol — Damisell»); kanal adı eklenince tekrar ediyordu. */
+                      etiket: h.name,
+                      alanlar: desteklenenKanalMi(h.channel.code) ? KIMLIK_ALANLARI[h.channel.code] : [],
+                      bagli: a ? { sonDort: a.sonDort, kayitMetni: tAnahtar("kayitTarihi", { tarih: bicim.tarihSaat(a.kayit) }) } : null,
+                    }}
+                  />
+                );
+              })
+            )}
           </CardContent>
         </Card>
       ) : null}
