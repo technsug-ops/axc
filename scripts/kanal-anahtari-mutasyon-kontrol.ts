@@ -24,8 +24,13 @@ type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: 
 
 const MUTASYONLAR: Mutasyon[] = [
   { ad: "ZARARSIZ - yorum", yon: "ZARARSIZ", dosya: SIFRE,
-    bul: "/** Ana sırrı okur ve sınar (base64, tam 32 bayt). */", koy: "/** Ana sırrı okur ve sınar (base64; tam 32 bayt). */",
+    /* Çapa 14.10.2026'da taşındı: yorum «okur ve sınar» → «sınar» oldu (gizli varsayılan kaldırıldı). */
+    bul: " * Ana sırrı sınar (base64, tam 32 bayt).", koy: " * Ana sırrı sınar (base64; tam 32 bayt).",
     bozdugu: "hicbir sey - YESIL kalmali" },
+  { ad: "GIZLI VARSAYILAN SIR", yon: "FAZLADAN", dosya: SIFRE,
+    bul: "export function sirOku(ham: string | undefined): SirSonucu {",
+    koy: "export function sirOku(ham: string | undefined = process.env[SIR_DEGISKENI]): SirSonucu {",
+    bozdugu: "sir verilmeyen cagri (iki adimli giris, kendi sirri yokken) sessizce PAZARYERI sirrini okur (vaka 14.10.2026)" },
   { ad: "IV SABIT", yon: "KALDIRAN", dosya: SIFRE,
     bul: "  const iv = randomBytes(12);", koy: "  const iv = Buffer.alloc(12);",
     bozdugu: "ayni anahtar ayni paketi verir; GCM'de iv tekrari sifrelemeyi kirar" },
