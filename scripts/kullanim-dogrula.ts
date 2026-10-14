@@ -149,6 +149,9 @@ const ham = [...veri.matchAll(/FROM KullanimOlayi\s+WHERE ([^`]*)`/g)];
 kontrol("ham sayım iki dalda da firmaya bağlı", ham.length === 2 && ham.every((h) => h[1].trimStart().startsWith("companyId = ${companyId}")), ham.map((h) => h[1]));
 kontrol("ortak koşul firma + dönem", /return \{ companyId, \.\.\.\(aralik \? \{ createdAt: aralik \} : \{\}\) \};/.test(veri));
 kontrol("liste tek gövdeden (tavan + toplam kuralı)", /const listele = kullanimListele;/.test(veri));
+kontrol("kişi adı FİRMA ÜYELİĞİNDEN (çok-firma: başka firmanın kişisi okunmaz)",
+  /prisma\.userCompanyRole\.findMany\(\{\s*where: \{ companyId, userId: \{ in: idler \} \}/.test(veri) && !/prisma\.user\.(findMany|findFirst|findUnique)\(/.test(veri));
+kontrol("  ...üyeliği kalkmış kişinin satırı adsız kalmaz (İlke #14)", /\{s\.kullaniciId === null \|\| s\.ad === "" \? <span[^>]*>\{t\("silinmisKullanici"\)\}/.test(yorumsuz("src/app/ayarlar/kullanim/page.tsx")));
 
 console.log("\n11) RAPOR — ekran");
 const ekran = yorumsuz("src/app/ayarlar/kullanim/page.tsx");
