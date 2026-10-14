@@ -7,9 +7,10 @@ import { SekmeliBolum, type Sekme } from "@/components/sekmeli-bolum";
 import { SuzgecCubugu } from "@/components/suzgec-cubugu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
-import { hedefCoz, KULLANIM_LISTE_SINIRI, KULLANIM_SEKMELERI, kullanimSekmesi, payYuzde, sayfaMenuAnahtari } from "@/lib/kullanim/rapor";
+import { KULLANIM_LISTE_SINIRI, KULLANIM_SEKMELERI, kullanimSekmesi, payYuzde, sayfaMenuAnahtari } from "@/lib/kullanim/firma-raporu";
+import { hedefGorunumu } from "@/lib/kullanim/olay";
 import { ilkIzAni, kullanimOzeti, sekmeVerisi } from "@/lib/kullanim/rapor-veri";
-import type { KullanimListesi } from "@/lib/kullanim/rapor";
+import type { KullanimListesi } from "@/lib/kullanim/firma-raporu";
 import { pencereCoz } from "@/lib/liste-suzgeci";
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
 import { suzgecAdresi } from "@/lib/suzgec";
@@ -17,7 +18,7 @@ import { sayfaIzni } from "@/lib/yetki";
 
 /**
  * ============================================================================
- *  AYARLAR → KULLANIM (K334-②, kullanıcı kararı 14.10.2026)
+ *  AYARLAR → KULLANIM (K334-③, kullanıcı kararı 14.10.2026)
  * ----------------------------------------------------------------------------
  *  «En çok nereler kullanılıyor, hangi tuşlara basılıyor, hangi sayfalarda ve
  *  nereden nereye geçiliyor.» İz `components/kullanim-izi.tsx`ten gelir;
@@ -95,7 +96,7 @@ export default async function KullanimSayfasi({
   };
 
   const hedefAdi = (hedef: string) => {
-    const h = hedefCoz(hedef);
+    const h = hedefGorunumu(hedef);
     if (h.tur === "DIS") return <span className="text-muted-foreground italic">{t("disBaglanti")}</span>;
     if (h.tur === "BAGLANTI")
       return (
@@ -104,7 +105,7 @@ export default async function KullanimSayfasi({
           {sayfaAdi(h.kalip)}
         </span>
       );
-    return <span className="font-medium break-words">«{h.yazi}»</span>;
+    return <span className="font-medium break-words">«{h.metin}»</span>;
   };
 
   /** Liste başlığı: kaç farklı satır, toplam kaç olay; aramada mı; tavan aşıldı mı. */

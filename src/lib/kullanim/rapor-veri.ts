@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { KullanimCihazTuru } from "./olay";
-import { isSaatDilimiFarki, kullanimListele, type KullanimListesi, type KullanimSekmesi } from "./rapor";
+import { isSaatDilimiFarki, kullanimListele, type KullanimListesi, type KullanimSekmesi } from "./firma-raporu";
 
 export type { KullanimListesi };
 
 /**
  * ============================================================================
- *  KULLANIM RAPORU — VERİ (K334-②)
+ *  FİRMA KULLANIM RAPORU — VERİ (K334-③)
  * ----------------------------------------------------------------------------
  *  ⛔ HER SORGU FİRMAYA BAĞLI: `companyId` oturumdan gelir (sayfa verir).
  *  Çok-firma geldiğinde başka firmanın izi bu ekranda görünmez.

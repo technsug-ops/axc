@@ -1,7 +1,6 @@
 import { kaynakOku } from "./kaynak-oku";
 import { baglantiHedefi, cihazSec, DIS_BAGLANTI, hedefTemizle, KULLANIM_PAKET_SINIRI, paketiSuz, sayfaKalibi } from "../src/lib/kullanim/olay";
 import {
-  hedefCoz,
   isSaatDilimiFarki,
   KULLANIM_LISTE_SINIRI,
   KULLANIM_SEKMELERI,
@@ -9,7 +8,8 @@ import {
   kullanimSekmesi,
   payYuzde,
   sayfaMenuAnahtari,
-} from "../src/lib/kullanim/rapor";
+} from "../src/lib/kullanim/firma-raporu";
+import { hedefGorunumu } from "../src/lib/kullanim/olay";
 import { MENU_ADRESLERI, MENU_KATALOGU } from "../src/lib/menu/katalog";
 
 /**
@@ -95,15 +95,15 @@ kontrol("  ...input/textarea değeri OKUNMUYOR", !/\.value\b/.test(bilesen));
 const yerlesim = yorumsuz("src/app/layout.tsx");
 kontrol("yerleşimde bir kez bağlı", (yerlesim.match(/<KullanimIzi \/>/g) ?? []).length === 1);
 
-console.log("\n8) RAPOR — saf kurallar (K334-②)");
+console.log("\n8) FİRMA RAPORU — saf kurallar (K334-③; hedef ayrımı ORTAK gövdeden, olay.ts)");
 kontrol("bilinmeyen/eksik sekme ilk sekmeye düşer", kullanimSekmesi(undefined) === "sayfalar" && kullanimSekmesi("hack") === "sayfalar" && kullanimSekmesi("dugmeler") === "dugmeler");
 kontrol("menü adı TAM kalıpla eşleşir", sayfaMenuAnahtari("/satislar") === "satislar" && sayfaMenuAnahtari("/ayarlar/kullanim") === "kullanimIzi");
 kontrol("  ...kayıt detayı menü adı ALMAZ (liste ile detay aynı satıra yazılmaz)", sayfaMenuAnahtari("/satislar/:id") === null);
 kontrol("hedef: site dışı kod · bağlantı kalıbı · düğme yazısı ayrılır",
-  hedefCoz(DIS_BAGLANTI).tur === "DIS" &&
-  JSON.stringify(hedefCoz("→ /satislar/:id")) === JSON.stringify({ tur: "BAGLANTI", kalip: "/satislar/:id" }) &&
-  JSON.stringify(hedefCoz("Onayla")) === JSON.stringify({ tur: "DUGME", yazi: "Onayla" }));
-kontrol("  ...okla başlayıp «/» ile sürmeyen yazı DÜĞMEDİR", hedefCoz("→ ileri").tur === "DUGME");
+  hedefGorunumu(DIS_BAGLANTI).tur === "DIS" &&
+  JSON.stringify(hedefGorunumu("→ /satislar/:id")) === JSON.stringify({ tur: "BAGLANTI", kalip: "/satislar/:id" }) &&
+  JSON.stringify(hedefGorunumu("Onayla")) === JSON.stringify({ tur: "DUGME", metin: "Onayla" }));
+kontrol("  ...okla başlayıp «/» ile sürmeyen yazı DÜĞMEDİR", hedefGorunumu("→ ileri").tur === "DUGME");
 kontrol("pay: bir ondalık", payYuzde(1, 3) === 33.3 && payYuzde(3, 3) === 100);
 kontrol("  ...toplam sıfırsa null (%0 değil)", payYuzde(0, 0) === null && payYuzde(5, 0) === null);
 kontrol("saat dilimi farkı İstanbul'dan ölçülür (yaz ve kış aynı +03:00)",

@@ -1,14 +1,18 @@
 import { gunBasiAni, gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { MENU_ADRESLERI } from "@/lib/menu/katalog";
-import { BAGLANTI_ONEKI, DIS_BAGLANTI } from "./olay";
 
 /**
  * ============================================================================
- *  KULLANIM RAPORU — SAF KURALLAR (K334-②, kullanıcı kararı 14.10.2026)
+ *  FİRMA KULLANIM RAPORU — SAF KURALLAR (K334-③, kullanıcı kararı 14.10.2026)
  * ----------------------------------------------------------------------------
- *  «Ayarlar → Kullanım» ekranının hesap kuralları. Veritabanına giden kısım
- *  `rapor-veri.ts`te; burada yalnız çağrılıp DEĞERİYLE sınanabilen gövdeler
- *  var (anayasa: saf hesap katmanı desen tarayan bekçiye muhtaç olmaz).
+ *  «Ayarlar → Kullanım» (firmanın KENDİ izi) ekranının hesap kuralları.
+ *  Veritabanına giden kısım `rapor-veri.ts`te; burada yalnız çağrılıp
+ *  DEĞERİYLE sınanabilen gövdeler var.
+ *
+ *  ⚠ NİYE `firma-raporu.ts`, `rapor.ts` DEĞİL: deneme dalında `rapor.ts` süper
+ *  admin ekranının (`bezirga/kullanim`, K334-②) gövdesi. Aynı ad iki farklı
+ *  ekranı taşısaydı dal birleşmesinde çakışır, sonra da yanlış dosya okunurdu
+ *  (anayasa: yazmadan önce hedefe bak). Ortak kural (`hedefGorunumu`) `olay.ts`te.
  * ============================================================================
  */
 
@@ -38,18 +42,6 @@ export function sayfaMenuAnahtari(kalip: string): string | null {
     if (adres === kalip) return anahtar;
   }
   return null;
-}
-
-export type HedefCozumu =
-  | { tur: "BAGLANTI"; kalip: string }
-  | { tur: "DIS" }
-  | { tur: "DUGME"; yazi: string };
-
-/** İz hedefi → ne tür bir tıklama. Site dışı bağlantı KOD olarak saklanır, ekran sözlükten çevirir. */
-export function hedefCoz(hedef: string): HedefCozumu {
-  if (hedef === DIS_BAGLANTI) return { tur: "DIS" };
-  if (hedef.startsWith(BAGLANTI_ONEKI + "/")) return { tur: "BAGLANTI", kalip: hedef.slice(BAGLANTI_ONEKI.length) };
-  return { tur: "DUGME", yazi: hedef };
 }
 
 /**
