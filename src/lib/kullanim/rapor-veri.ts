@@ -153,7 +153,17 @@ export async function kullaniciListesi(companyId: string, aralik: Aralik, q: str
     _max: { createdAt: true },
   });
   const idler = [...new Set(gruplar.map((g) => g.userId).filter((x): x is string => x !== null))];
-  const kisiler = await prisma.user.findMany({ where: { id: { in: idler } }, select: { id: true, name: true, email: true } });
+  /**
+   * ⚠ KİŞİ ÜYELİKTEN OKUNUR, `user` tablosundan doğrudan DEĞİL (çok-firma kuralı,
+   * `kullanici-uyeligi:dogrula`): firmanın üyesi olmayan bir kişinin adı bu
+   * firmanın ekranında yazılmaz. Üyeliği kalkmış kişinin izi kaybolmaz —
+   * satırı durur, adı yerine «Silinmiş kullanıcı» yazılır.
+   */
+  const uyelikler = await prisma.userCompanyRole.findMany({
+    where: { companyId, userId: { in: idler } },
+    select: { user: { select: { id: true, name: true, email: true } } },
+  });
+  const kisiler = uyelikler.map((u) => u.user);
 
   const birlesik = new Map<string, KullaniciSatiri>();
   for (const g of gruplar) {

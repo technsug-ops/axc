@@ -243,7 +243,7 @@ export default async function KullanimSayfasi({
             {veri.liste.satirlar.map((s) => (
               <TableRow key={s.kullaniciId ?? "silinmis"}>
                 <TableCell className="whitespace-normal font-medium">
-                  {s.kullaniciId === null ? <span className="text-muted-foreground italic">{t("silinmisKullanici")}</span> : s.ad}
+                  {s.kullaniciId === null || s.ad === "" ? <span className="text-muted-foreground italic">{t("silinmisKullanici")}</span> : s.ad}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{bicim.sayi(s.sayfa)}</TableCell>
                 <TableCell className="text-right tabular-nums">{bicim.sayi(s.tiklama)}</TableCell>
