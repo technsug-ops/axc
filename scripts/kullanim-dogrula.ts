@@ -7,8 +7,13 @@ import {
   kullanimListele,
   kullanimSekmesi,
   payYuzde,
+  saatEkseni,
   sayfaMenuAnahtari,
+  sutunYuzdesi,
+  zamanEkseni,
+  GUNLUK_SUTUN_TAVANI,
 } from "../src/lib/kullanim/firma-raporu";
+import { gunEkle, gunMetni, gunMetninden } from "../src/lib/donem";
 import { hedefGorunumu } from "../src/lib/kullanim/olay";
 import { MENU_ADRESLERI, MENU_KATALOGU } from "../src/lib/menu/katalog";
 
@@ -146,7 +151,7 @@ for (const s of sorgular) {
   kontrol(`  ...${s[1]} @${bas} firma koşulu taşıyor`, tamam, blok.slice(0, 160));
 }
 const ham = [...veri.matchAll(/FROM KullanimOlayi\s+WHERE ([^`]*)`/g)];
-kontrol("ham sayım iki dalda da firmaya bağlı", ham.length === 2 && ham.every((h) => h[1].trimStart().startsWith("companyId = ${companyId}")), ham.map((h) => h[1]));
+kontrol("ham sayımların DÖRDÜ de firmaya bağlı (aktif gün ×2 · grafik gün · grafik saat)", ham.length === 4 && ham.every((h) => h[1].trimStart().startsWith("companyId = ${companyId}")), ham.map((h) => h[1]));
 kontrol("ortak koşul firma + dönem", /return \{ companyId, \.\.\.\(aralik \? \{ createdAt: aralik \} : \{\}\) \};/.test(veri));
 kontrol("liste tek gövdeden (tavan + toplam kuralı)", /const listele = kullanimListele;/.test(veri));
 kontrol("kişi adı FİRMA ÜYELİĞİNDEN (çok-firma: başka firmanın kişisi okunmaz)",
@@ -184,6 +189,54 @@ kontrol("  ...kullanıcı toplamı kümeden (çizilen satırlardan değil)",
   /\{bicim\.sayi\(veri\.liste\.toplamSayfa\)\}/.test(ekran) && /\{bicim\.sayi\(veri\.liste\.toplamTiklama\)\}/.test(ekran) && !/veri\.liste\.satirlar\.reduce/.test(ekran));
 kontrol("  ...izin doğum tarihi yazıyor", /\{ilk \? t\("izDogumu", \{ tarih: bicim\.tarihSaat\(ilk\) \}\) : t\("izYok"\)\}/.test(ekran));
 kontrol("menüde Ayarlar grubunda", MENU_KATALOGU.some((o) => o.anahtar === "kullanimIzi" && o.varsayilanGrup === "grupAyarlar"));
+
+console.log("\n12) GRAFİKLER — saf kurallar (K334-③ görsel turu)");
+const G = (m: string) => gunMetninden(m)!;
+const ham3 = [
+  { gun: "2026-10-13", tur: "SAYFA" as const, adet: 5 },
+  { gun: "2026-10-13", tur: "TIKLAMA" as const, adet: 7 },
+  { gun: "2026-10-15", tur: "SAYFA" as const, adet: 2 },
+  { gun: "2026-10-20", tur: "SAYFA" as const, adet: 99 }, // bugünden SONRA — eksene girmez
+];
+const e3 = zamanEkseni(ham3, G("2026-10-10"), G("2026-10-31"), G("2026-10-13"), G("2026-10-15"));
+kontrol("iz olmayan gün 0 olarak YER TUTAR (13 · 14 · 15 → 3 sütun, ortadaki 0)",
+  e3.kova === "GUN" && e3.sutunlar.map((s) => `${s.anahtar}:${s.sayfa}+${s.tiklama}`).join(" ") === "2026-10-13:5+7 2026-10-14:0+0 2026-10-15:2+0",
+  e3.sutunlar.map((s) => `${s.anahtar}:${s.sayfa}+${s.tiklama}`));
+kontrol("  ...izin DOĞUMUNDAN önce ve BUGÜNDEN sonra eksen yok (orada 0 bir sonuç değil)", e3.sutunlar[0]?.anahtar === "2026-10-13" && e3.sutunlar.at(-1)?.anahtar === "2026-10-15");
+kontrol("  ...pencere tamamen doğumdan önceyse sütun yok", zamanEkseni(ham3, G("2026-10-01"), G("2026-10-05"), G("2026-10-13"), G("2026-10-15")).sutunlar.length === 0);
+const uzunHam = Array.from({ length: 90 }, (_, i) => ({ gun: gunMetni(gunEkle(G("2026-08-01"), i)), tur: "SAYFA" as const, adet: 1 }));
+const e90 = zamanEkseni(uzunHam, G("2026-08-01"), G("2026-10-29"), G("2026-08-01"), G("2026-10-29"));
+kontrol(`${GUNLUK_SUTUN_TAVANI} günü aşan dönem AY kovasına toplanır (ağu · eyl · eki)`,
+  e90.kova === "AY" && e90.sutunlar.map((s) => `${s.anahtar}:${s.sayfa}`).join(" ") === "2026-08:31 2026-09:30 2026-10:29",
+  e90.sutunlar.map((s) => `${s.anahtar}:${s.sayfa}`));
+kontrol("  ...toplama SAYI KAYBETMEZ (90 gün = 90 olay) ve ay kovası ilk/son günü taşır",
+  e90.sutunlar.reduce((t, s) => t + s.sayfa, 0) === 90 && gunMetni(e90.sutunlar[1]!.ilk) === "2026-09-01" && gunMetni(e90.sutunlar[1]!.son) === "2026-09-30");
+const tam62 = zamanEkseni([], G("2026-08-01"), gunEkle(G("2026-08-01"), GUNLUK_SUTUN_TAVANI - 1), G("2026-08-01"), G("2026-12-31"));
+kontrol(`  ...tam ${GUNLUK_SUTUN_TAVANI} gün hâlâ GÜN kovası (sınırın iki yakası)`, tam62.kova === "GUN" && tam62.sutunlar.length === GUNLUK_SUTUN_TAVANI);
+const sa = saatEkseni([{ saat: 0, adet: 4 }, { saat: 23, adet: 1 }, { saat: 9, adet: 3 }, { saat: 9, adet: 2 }, { saat: 24, adet: 50 }, { saat: -1, adet: 50 }]);
+kontrol("saat: 24 kova, aynı saat toplanır, aralık dışı atılır", sa.length === 24 && sa[0] === 4 && sa[9] === 5 && sa[23] === 1 && sa.reduce((t, x) => t + x, 0) === 10, sa);
+kontrol("sütun boyu: en büyük %100 · sıfır 0 · küçük değer en az %3 · en büyük 0 → 0",
+  sutunYuzdesi(828, 828) === 100 && sutunYuzdesi(0, 828) === 0 && sutunYuzdesi(1, 828) === 3 && sutunYuzdesi(414, 828) === 50 && sutunYuzdesi(5, 0) === 0);
+
+console.log("\n13) GRAFİKLER — ekran bağları");
+kontrol("grafik sayımı FİRMAYA ve DÖNEME bağlı, aramadan BAĞIMSIZ", /grafikSayimlari\(baglam\.companyId, pencere\.aralik\),/.test(ekran) && !/grafikSayimlari\([^)]*\bq\b/.test(ekran));
+kontrol("  ...eksen izin doğumu ile bugüne sıkıştırılıyor",
+  /zamanEkseni\(grafik\.gunler, pencere\.pencere\?\.ilkGun \?\? dogumGun, pencere\.pencere\?\.sonGun \?\? bugunGun, dogumGun, bugunGun\)/.test(ekran));
+kontrol("  ...gün sütunu ekranı O GÜNE süzer (özel aralık, iki uç kovanın kendi günleri)",
+  /pencere: "OZEL", baslangic: gunMetni\(s\.ilk\), bitis: gunMetni\(s\.son\)/.test(ekran));
+kontrol("  ...grafikler ve halka çiziliyor (dal ölü değil)",
+  /<GunGrafigi\s+sutunlar=\{gunSutunlari\}/.test(ekran) && /<SaatGrafigi\s+saatler=\{saatler\}/.test(ekran) && /<HalkaGrafik\s+dilimler=\{cihazDilimleri\}/.test(ekran) && !/\{false \?/.test(ekran));
+kontrol("  ...halka payının paydası BÜTÜN olaylar (kutucuklarla aynı toplam)", /toplam=\{toplamOlay\}/.test(ekran) && /const toplamOlay = ozet\.sayfa \+ ozet\.tiklama;/.test(ekran));
+kontrol("  ...halka rengi tek kaynaktan, cihaz başına SABİT (renk varlığı izler)", /renk: KULLANIM_CIHAZ_RENKLERI\[c\]/.test(ekran));
+const grafikDosyasi = yorumsuz("src/app/ayarlar/kullanim/grafikler.tsx");
+kontrol("  ...grafik dosyasında ham renk yok (renkler.ts tek kaynak)", !/#[0-9a-fA-F]{6}\b/.test(grafikDosyasi) && /KULLANIM_RENKLERI\.sayfa/.test(grafikDosyasi) && /KULLANIM_RENKLERI\.tiklama/.test(grafikDosyasi));
+kontrol("  ...iki serili grafikte lejant İKİ seriyi de yazıyor (renk tek başına konuşmaz)", /\{lejantSayfa\}/.test(grafikDosyasi) && /\{lejantTiklama\}/.test(grafikDosyasi));
+kontrol("  ...her sütunun üzerine gelince tam cümle (title + erişilebilir ad)", (grafikDosyasi.match(/title=\{s\.ipucu\}\s+aria-label=\{s\.ipucu\}/g) ?? []).length === 1 && /title=\{ipuclari\[i\]\} aria-label=\{ipuclari\[i\]\}/.test(grafikDosyasi));
+/** Pay çubuğu dört listenin DÖRDÜNDE de — sekme başına ayrı blok (dal sınırları bölüm 11'den). */
+dallar.forEach(([ad], i) => {
+  const blok = ekran.slice(dalBaslari[i], i + 1 < dallar.length ? dalBaslari[i + 1] : dalSonu);
+  kontrol(`  ...«${ad}» listesinde pay çubuğu (paydası o listenin toplamı)`, /\{payHucresi\(s\.adet, veri\.liste\.toplam\)\}/.test(blok));
+});
 
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
