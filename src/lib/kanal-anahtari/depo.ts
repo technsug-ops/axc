@@ -3,7 +3,7 @@ import { izKaydi } from "@/lib/iz";
 import { prisma } from "@/lib/prisma";
 
 import { desteklenenKanalMi, kimligiAc, kimlikKur, kimlikMetni, type KanalKimligi, type KimlikHatasi } from "./kimlik";
-import { coz, sifrele, sirOku, sonDort } from "./sifre";
+import { coz, sifrele, SIR_DEGISKENI, sirOku, sonDort } from "./sifre";
 
 /**
  * ============================================================================
@@ -39,7 +39,7 @@ export async function anahtarKaydet(
   if (!desteklenenKanalMi(kanal)) return { durum: "HATA", hata: "KANAL_DESTEKLENMIYOR" };
   const k = kimlikKur(kanal, ham);
   if (k.durum === "HATA") return { durum: "HATA", hata: k.hata, alanlar: "alanlar" in k ? k.alanlar : undefined };
-  const sir = sirOku();
+  const sir = sirOku(process.env[SIR_DEGISKENI]);
   if (sir.durum !== "TAMAM") return { durum: "HATA", hata: sir.durum };
   const paket = sifrele(kimlikMetni(k.kimlik), sir.sir);
   const son = sonDort(k.gizli);
@@ -90,7 +90,7 @@ export async function kayitliKimligiAc(channelAccountId: string): Promise<Exclud
   if (!a) return { durum: "ANAHTAR_YOK" };
   const kanal = a.channelAccount.channel.code;
   if (!desteklenenKanalMi(kanal)) return { durum: "KANAL_DESTEKLENMIYOR" };
-  const sir = sirOku();
+  const sir = sirOku(process.env[SIR_DEGISKENI]);
   if (sir.durum !== "TAMAM") return { durum: sir.durum };
   const c = coz(a.sifreli, sir.sir);
   if (c.durum !== "TAMAM") return { durum: "COZULEMEDI" };
