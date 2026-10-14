@@ -1,4 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
+import { eksenSinirlari } from "../src/lib/grafik/eksen";
 
 import {
   LISTE_PENCERELERI,
@@ -754,6 +755,29 @@ console.log("\nK333) PENCERE DIŞI KAYIT KENAR KOVAYA GİRMEZ (kullanıcı karar
   /** Sayı = liste: noktanın taşıdığı aralık pencerenin içinde ve sayılan günleri kapsıyor. */
   kontrol("  ...son kova etiketi 01.02–17.02 (sayılanla aynı aralık)",
     son.baslangic.getTime() === g("2026-02-01").getTime() && son.sonGun.getTime() === g("2026-02-17").getTime());
+}
+
+/* ═══ K335 ② — DİKEY EKSEN: ADET VERİSİNDE ADIM TAM SAYI (14.10.2026) ═══
+   Vaka: boş firmada eksen «1·1·1·0·0» yazıyordu (tavan 1, dört aralık, tam
+   sayıya yuvarlanan 0,25/0,5/0,75). Örnek veri ayrımın iki yakasını gösterir:
+   tam sayı (adet) ↔ kesirli (para). */
+{
+  console.log("\nK335 ② dikey eksen");
+  const adim = (s: { taban: number; tavan: number }) => (s.tavan - s.taban) / 4;
+  const bos = eksenSinirlari([0, 0, 0], 4);
+  kontrol("veri hep 0 → eksen 0..4, adım 1 (etiket = çizginin değeri)", bos.taban === 0 && bos.tavan === 4, bos);
+  const az = eksenSinirlari([0, 1, 2], 4);
+  kontrol("  ...küçük adet (en çok 2) → adım TAM SAYI", Number.isInteger(adim(az)) && az.tavan >= 2, az);
+  const cok = eksenSinirlari([3, 17, 9], 4);
+  kontrol("  ...17 → tavan 20 (4'ün katı, en yakın üst)", cok.tavan === 20, cok);
+  const eksi = eksenSinirlari([-3, 5], 4);
+  kontrol("  ...negatif taban korunur, adım yine tam sayı", eksi.taban === -3 && Number.isInteger(adim(eksi)) && eksi.tavan >= 5, eksi);
+  const para = eksenSinirlari([1250.5, 300.25], 4);
+  kontrol("para (kesirli) → tavan verinin en büyüğü (davranış AYNEN)", para.taban === 0 && para.tavan === 1250.5, para);
+  const bosPara = eksenSinirlari([0.5, 0.5].map((x) => x - 0.5), 4);
+  kontrol("  ...tavan=taban olamaz (bölme sıfıra düşmez)", bosPara.tavan > bosPara.taban, bosPara);
+  const bilesen = kaynakOku("src/components/uc-serili-grafik.tsx").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("grafik ekseni saf gövdeden (tek kaynak)", /const \{ taban, tavan \} = eksenSinirlari\(tumu, ARALIK\);/.test(bilesen) && !/const tavan = /.test(bilesen));
 }
 
 console.log("");

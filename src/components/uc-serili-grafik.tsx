@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import Link from "@/components/niyetli-baglanti";
 import { ChevronRight } from "lucide-react";
+import { eksenSinirlari } from "@/lib/grafik/eksen";
 import { tabloNoktalari } from "@/lib/tablo-sirasi";
 
 /**
@@ -221,8 +222,6 @@ export function UcSeriliGrafik({
     ...(dVar ? [dDeger(n)] : []),
     ...(toplamVar ? [toplamDeger(n)] : []),
   ]);
-  const tavanHam = Math.max(...tumu, 0);
-  const tabanHam = Math.min(...tumu, 0);
   /**
    * ⚠ TABAN SIFIRIN ALTINA İNEBİLİR: ciro görünümünde üçüncü seri FARK ve
    * fark negatif olabilir (alım satıştan büyükse). Ekseni sıfırda kessek
@@ -230,9 +229,11 @@ export function UcSeriliGrafik({
    *
    * ⚠ TAVAN=TABAN OLAMAZ: hiç hareket yoksa bölme sıfıra düşer ve bütün
    * noktalar NaN olur — grafik boş değil BOZUK çizilirdi.
+   *
+   * ⚠ ADET VERİSİNDE ADIM TAM SAYI (K335 ②): boş firmada eksen «1·1·1·0·0»
+   * yazıyordu. Kural saf gövdede (`lib/grafik/eksen.ts`).
    */
-  const taban = Math.min(tabanHam, 0);
-  const tavan = tavanHam === taban ? taban + 1 : tavanHam;
+  const { taban, tavan } = eksenSinirlari(tumu, ARALIK);
 
   /** Sütunda her kova bir YUVA (eşit genişlik); çizgide uçlar kenara yaslı. */
   const yuva = IC_GENISLIK / Math.max(1, noktalar.length);
