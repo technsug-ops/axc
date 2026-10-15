@@ -18,6 +18,16 @@
 
 ---
 
+## ✅ K335 — YENİ (BOŞ) FİRMANIN PANELİNDE İKİ KUSUR · 14.10.2026 → 15.10.2026 · [KAPANDI — HALİL TESTİ GEÇTİ, MİMAR ONAYI 15.10 · k303 dalı]
+
+> **KAPANDI 15.10.2026.** Halil testi deneme `localhost:3101`'de, kullanıcının iki ekran görüntüsüyle, İKİ YÖNDE: **TST2** (anahtar yok) → sağ üstte çekim yazısı YOK · **Damisell** (TY anahtarı kayıtlı, deneme ortamında çekim kapalı) → «⚠ TY çekimi: hiç iz yok» VAR. İkisinde de «Günlük operasyon» ekseni 0·1·2·3·4 (② tuttu). Kullanıcı = mimar; onay 15.10. Kod `60fd1950` (dal push 178/178 yeşil). Zildeki «1» = `yedekYok` — K335 değil; çok firmada gece yedeğinin firma başına alınıp alınmadığı ayrı soru olarak açık (geçiş öncesi ölçülecek).
+
+① Sağ üstte kırmızı «⚠ TY çekimi: hiç iz yok» + zilde 1 — firmanın Trendyol hesabı YOK; bağlı olmayan kanal için çekim uyarısı çıkmamalı (ölçüt: firmanın o kanalda hesabı var mı). ② «Günlük operasyon» grafiğinde veri hep 0 iken sol eksen «1 · 1 · 1 · 0 · 0» — eksen adımı sıfır aralıkta yuvarlanıp tekrarlıyor. İkisi de geçişi engellemez; yeni açılan her firmanın ilk günü görür.
+─── ② **15.10.2026 — ② `78aae6d1` (14.10, eksen adımı tam sayı) · ① DÜZELTİLDİ.** Ölçüt kayıttakinden bir adım dar kuruldu: «hesabı var mı» değil, **anahtarı KAYITLI, AKTİF bir SATIŞ hesabı var mı** — K337'den sonra çekim hesabın kendi anahtarıyla koşuyor, anahtarsız hesap bilerek atlanıyor; orada iz olmaması kaçış değil bağlantı yokluğu (onu «API bağlantısı» kartı söylüyor). `panel/ty-cekim-yasi.ts`: `olculecekKanallar` (SAF) + `sonCekimler` bağlı kanalı firma süzgeçli `kanalAnahtari`ndan türetir; bağlı kanal yoksa rozet hiç çizilmez; bağlı kanalda iz yoksa kural AYNEN yanar. Bekçi `panel:dogrula` +5 ölçüt (962 yeşil); mutasyon 5/5 (zararsız yorum yeşil · filtre kalkar · filtre hep boş · okuyucu filtreyi atlar · alış hesabı bağlı sayılır → kırmızı). **Gerçek veritabanında her firmanın kendi bağlamında ölçüldü:** TST1 · TST2 (anahtar yok) → rozet YOK; DMS · TCH (TY anahtarı kayıtlı, deneme ortamında çekim kapalı → iz 0) → «TY çekimi: hiç iz yok» — doğru. ⚠ **ZİLDEKİ «1» ÇEKİM DEĞİLMİŞ:** boş firmanın çanındaki tek madde `yedekYok` (ölçüldü: TST1/TST2 `[yedekYok]`); deneme kurulumunda zamanlanmış işler kapalı → yedek hiç alınmıyor, uyarı DOĞRU. Ayrı soru (açık, geçişi engellemez mi bilinmiyor): çok firmada gece yedeği firma başına mı alınıyor, yoksa yeni firmanın çanı canlıda da «yedek yok» mu der — geçiş öncesi ölçülecek. **Halil testi:** deneme `localhost:3101` → TST2 ile giriş → panelde sağ üstte «TY çekimi» yazısı YOK · Damisell ile giriş → «⚠ TY çekimi: hiç iz yok» VAR (TY anahtarı kayıtlı).
+
+
+---
+
 ## ✅ K317 — ROL EKRANI İZİNLERİ HAM KODLA ÇİZİYORDU · 04.10.2026 → 04.10.2026 · [KAPANDI — Halil testi geçti]
 
 > **KAPANDI 04.10.2026 — HALİL TESTİ GEÇTİ** (canlı `axc-seven.vercel.app/ayarlar/roller`, masaüstü tarayıcı,
