@@ -3,7 +3,8 @@ import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { gorevSayilariniTopla, tarifeKapsaminiOlc } from "@/lib/panel/gorev-verisi";
 import { nakitTakvimiKur } from "@/lib/panel/nakit-takvimi";
 import { takvimSatirlariniTopla } from "@/lib/panel/takvim-verisi";
-import { prisma } from "@/lib/prisma";
+import { prisma, sistemPrisma } from "@/lib/prisma";
+import { tamSistemIslemiAcikMi } from "@/lib/firma-dongusu";
 import { tarifeUyarisiVarMi } from "@/lib/panel/tarife-penceresi";
 import { izinVarMi } from "@/lib/yetki";
 
@@ -18,6 +19,14 @@ import { tyKategoriKarsiliksizSayisi } from "@/lib/kategori-eslesme-yaz";
 import { geceTuruSorunSayisi } from "@/lib/gece-turu-veri";
 import { yayinBosluguSayisiOlc } from "@/lib/yayin-boslugu";
 import { kdvUyusmayanKanalSkulari } from "@/lib/kdv-uyusmazligi";
+
+/** Sistemin (gece yedeği) uyarıları — çok firmada firma çanından çıkar (aşağıda). */
+export const YEDEK_UYARILARI: ReadonlySet<string> = new Set(["yedekEski", "yedekYok", "yedekIzden"]);
+
+/** SAF: tek firmada (sistem sahibi = firma sahibi) hepsi kalır; çok firmada yedek uyarıları çıkar. */
+export function yedekUyarilariniSuz<T extends { anahtar: string }>(uyarilar: T[], tekFirma: boolean): T[] {
+  return tekFirma ? uyarilar : uyarilar.filter((u) => !YEDEK_UYARILARI.has(u.anahtar));
+}
 
 /**
  * ============================================================================
@@ -82,7 +91,7 @@ type YedekKaynagi = "HEDEF" | "IZ" | "YOK";
  * diye kırmızı yanardı — oysa yedek gerçekten alınıyor. Sönmeyen uyarı
  * okunmaz olur ve rozetin tamamına olan güveni götürür (K49).
  */
-async function sonYedekZamani(): Promise<{
+export async function sonYedekZamani(): Promise<{
   an: Date | null;
   kaynak: YedekKaynagi;
 }> {
@@ -117,7 +126,15 @@ async function sonYedekZamani(): Promise<{
    */
   try {
     const { YEDEK_IZI } = await import("@/lib/yedek-yaz");
-    const iz = await prisma.auditLog.findFirst({
+    /**
+     * SISTEM: gece yedeği BÜTÜN firmaları kapsayan tek dosyadır ve izi cron'dan
+     * firmasız (`companyId` boş) yazılır. Süzgeçli istemci bu izi HİÇBİR firmada
+     * göremezdi → depo okunamadığı gün her firmanın çanı, yedek alınıyorken bile
+     * «yedek yok» derdi (ölçüldü 15.10.2026, `firma-suzgeci.ts whereEkle`). Okunan
+     * tek alan zamandır; firma verisi taşımaz. Elle alınan yedek de sistemi
+     * kapsadığı için hangi firmanın bağlamında yazıldığı fark etmez.
+     */
+    const iz = await sistemPrisma.auditLog.findFirst({
       where: { action: YEDEK_IZI },
       orderBy: { createdAt: "desc" },
       select: { createdAt: true },
@@ -128,6 +145,46 @@ async function sonYedekZamani(): Promise<{
   }
 
   return { an: null, kaynak: "YOK" };
+}
+
+/**
+ * SİSTEMİN YEDEK HÜKMÜ — TEK GÖVDE: firma çanı (tek firmada) ve yönetim «Bugün»
+ * ekranı (çok firmada) AYNI hükmü okur; iki yerde iki ölçüt olmaz.
+ */
+export function sistemYedekOlcumu(
+  sonYedek: { an: Date | null; kaynak: YedekKaynagi },
+  bugun: Date,
+) {
+  /**
+   * Yedek yaşı İŞ TAKVİMİ GÜNÜNE göre ölçülür — yedek zamanı da aynı
+   * takvime indirilir ki "bugün alındı" saat farkından "1 gün" görünmesin.
+   */
+  const yedek = yedekOlcumu(
+    sonYedek.an === null ? null : gunDegeri(isTakvimGunu(sonYedek.an)),
+    bugun,
+  );
+
+  /**
+   * ⭐ ÜÇÜNCÜ HÂL: yedek TAZE ama depodan DOĞRULANAMIYOR.
+   *
+   * ⚠ KIRMIZI ÖNCELİKLİDİR: iz eski ya da hiç yoksa `yedekEski`/`yedekYok`
+   * yerinde kalır — amber onları EZMEZ. Amber yalnız "yaş sorunu yok, ama
+   * kanıt hedeften değil izden geliyor" hâlinde yanar.
+   */
+  const yedekIzden = {
+    sayi:
+      sonYedek.kaynak === "IZ" &&
+      yedek.yedekEski.sayi === 0 &&
+      yedek.yedekYok.sayi === 0
+        ? 1
+        : 0,
+  };
+  return { yedek, yedekIzden };
+}
+
+/** Yönetim ekranı için: sistemin şu anki yedek hükmü (firma bağlamı GEREKMEZ). */
+export async function sistemYedekDurumu() {
+  return sistemYedekOlcumu(await sonYedekZamani(), gunDegeri(isTakvimGunu(new Date())));
 }
 
 /**
@@ -257,30 +314,7 @@ export async function uyarilariTopla(
     pencereGun: 14,
   });
 
-  /**
-   * Yedek yaşı İŞ TAKVİMİ GÜNÜNE göre ölçülür — yedek zamanı da aynı
-   * takvime indirilir ki "bugün alındı" saat farkından "1 gün" görünmesin.
-   */
-  const yedek = yedekOlcumu(
-    sonYedek.an === null ? null : gunDegeri(isTakvimGunu(sonYedek.an)),
-    bugun,
-  );
-
-  /**
-   * ⭐ ÜÇÜNCÜ HÂL: yedek TAZE ama depodan DOĞRULANAMIYOR.
-   *
-   * ⚠ KIRMIZI ÖNCELİKLİDİR: iz eski ya da hiç yoksa `yedekEski`/`yedekYok`
-   * yerinde kalır — amber onları EZMEZ. Amber yalnız "yaş sorunu yok, ama
-   * kanıt hedeften değil izden geliyor" hâlinde yanar.
-   */
-  const yedekIzden = {
-    sayi:
-      sonYedek.kaynak === "IZ" &&
-      yedek.yedekEski.sayi === 0 &&
-      yedek.yedekYok.sayi === 0
-        ? 1
-        : 0,
-  };
+  const { yedek, yedekIzden } = sistemYedekOlcumu(sonYedek, bugun);
 
   /**
    * İADE SAYAÇLARI — ekranla AYNI gövdeden (bkz. uyari/iade-sayaci.ts).
@@ -327,8 +361,20 @@ export async function uyarilariTopla(
     },
   });
 
+  /**
+   * ⛔ ÇOK FİRMADA YEDEK UYARISI FİRMA ÇANINDA ÇIKMAZ (kullanıcı kararı 15.10.2026).
+   * Gece yedeği SİSTEMİN işidir ve bütün firmaları tek dosyada kapsar; birden çok
+   * aktif firma varken tam yedek ekranı kapalı (`tamSistemIslemiAcikMi`) — yani
+   * müşteri firma bu uyarıyla HİÇBİR ŞEY yapamaz. Kapatılamayan madde çanın
+   * tamamına güveni eritir (K49). Uyarı kaybolmaz, YERİ değişir: yönetim «Bugün»
+   * ekranı sistemin yedek durumunu gösterir (`app/bezirga/(ic)/bugun`). Tek firmada
+   * (bugünkü canlı) o firmanın sahibi sistemin sahibidir — çanda kalır.
+   * ⚠ Süzgeç `tamGorunum`dan ÖNCE: cron yolu da firma başına koşar (özet).
+   */
+  const firmaninUyarilari = yedekUyarilariniSuz(uyarilar, await tamSistemIslemiAcikMi());
+
   /** Sistem bağlamı (cron) — oturum yok, süzgeç uygulanmaz (yukarıdaki not). */
-  if (tamGorunum) return uyarilar;
+  if (tamGorunum) return firmaninUyarilari;
 
   /**
    * İZİN SÜZGECİ BURADA, sayım öncesinde. Rozet 3 gösterip listede 1 uyarı
@@ -340,7 +386,7 @@ export async function uyarilariTopla(
     izinVarMi("destek.yonet"),
     izinVarMi("veri.aktar"),
   ]);
-  return izneGoreSuz(uyarilar, (izin) => {
+  return izneGoreSuz(firmaninUyarilari, (izin) => {
     if (izin === "satis.kar.gor") return karGorunur;
     if (izin === "destek.yonet") return destekYonetir;
     if (izin === "veri.aktar") return veriAktarir;

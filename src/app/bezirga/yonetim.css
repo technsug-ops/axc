@@ -90,7 +90,8 @@
 
 /* ---- Bugün ---- */
 .yn-todo { display: grid; gap: 0; padding: 6px; }
-.yn-todo a { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; padding: 10px; border-radius: 10px; text-decoration: none; color: var(--ink); min-height: 44px; }
+/* `.satir` — gidilecek ekranı OLMAYAN madde (bağlantı gibi görünmez, hover yok). */
+.yn-todo a, .yn-todo .satir { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; padding: 10px; border-radius: 10px; text-decoration: none; color: var(--ink); min-height: 44px; }
 .yn-todo a:hover { background: #F7F6F3; }
 .yn-todo .ico { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: #EFEDE9; color: var(--ink2); }
 .yn-todo .ico svg { width: 18px; height: 18px; }

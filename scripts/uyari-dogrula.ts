@@ -27,6 +27,7 @@ import {
 } from "../src/lib/uyari/kurallar";
 import { maliyetsizMi, maliyetsizVaryantlar } from "../src/lib/uyari/maliyetsiz-stok";
 import { yedekOlcumu } from "../src/lib/uyari/yedek";
+import { sistemYedekOlcumu, YEDEK_UYARILARI, yedekUyarilariniSuz } from "../src/lib/uyari/topla";
 import {
   supheSebepleri,
   supheliMi,
@@ -1360,6 +1361,39 @@ console.log("K266) ŞERİTTEN ÇANA — iki bakım uyarısı");
     "  ...ve GÖREV ŞERİDİNDE yoklar (tek tanım)",
     anahtarBlok.length > 100 && !/"oransizKanalSku"|"tarifePenceresi"/.test(anahtarBlok),
   );
+}
+
+/**
+ * ═══ ÇOK FİRMADA SİSTEM YEDEĞİ (15.10.2026) ═══
+ * Gece yedeği bütün firmaları tek dosyada kapsar; izi cron'dan FİRMASIZ yazılır.
+ * ① iz firma süzgecinden geçmeden okunur (yoksa depo okunamadığı gün her firma
+ * «yedek yok» der) · ② çok firmada yedek uyarıları firma çanından çıkar, tek
+ * firmada kalır — iki yön ayrı · ③ yönetim «Bugün» aynı gövdeden okur.
+ */
+{
+  const ornek = ["yedekYok", "yedekEski", "yedekIzden", "nakitAcigi", "cevapsizTalep"].map((anahtar) => ({ anahtar }));
+  const kodlar = (l: { anahtar: string }[]) => l.map((u) => u.anahtar).join(",");
+  kontrol("tek firmada yedek uyarıları ÇANDA KALIR (bugünkü canlı)", kodlar(yedekUyarilariniSuz(ornek, true)) === kodlar(ornek));
+  kontrol("çok firmada yedek uyarıları firma çanından ÇIKAR, ötekiler kalır",
+    kodlar(yedekUyarilariniSuz(ornek, false)) === "nakitAcigi,cevapsizTalep", kodlar(yedekUyarilariniSuz(ornek, false)));
+  kontrol("  ...taban: süzülen küme üç yedek anahtarının TAMAMI ve hepsi gerçek uyarı anahtarı",
+    YEDEK_UYARILARI.size === 3 && [...YEDEK_UYARILARI].every((a) => (UYARI_ANAHTARLARI as readonly string[]).includes(a)));
+  const bugunY = new Date("2026-10-15T00:00:00Z");
+  const izden = sistemYedekOlcumu({ an: new Date("2026-10-15T01:00:00Z"), kaynak: "IZ" }, bugunY);
+  const yok = sistemYedekOlcumu({ an: null, kaynak: "YOK" }, bugunY);
+  kontrol("sistem yedek hükmü: taze iz → yalnız AMBER (izden), hiç yok → KIRMIZI (yok)",
+    izden.yedekIzden.sayi === 1 && izden.yedek.yedekYok.sayi === 0 && yok.yedek.yedekYok.sayi === 1 && yok.yedekIzden.sayi === 0);
+  const toplaY = kaynakOku("src/lib/uyari/topla.ts").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, "");
+  kontrol("yedek izi FİRMA SÜZGECİNDEN GEÇMEDEN okunur (cron izi firmasız yazılır)",
+    /const iz = await sistemPrisma\.auditLog\.findFirst\(\{\s*where: \{ action: YEDEK_IZI \},/.test(toplaY) &&
+      !/prisma\.auditLog\.findFirst\(\{\s*where: \{ action: YEDEK_IZI/.test(toplaY.replace(/sistemPrisma/g, "SISTEM_ISTEMCI")));
+  kontrol("toplayıcı süzgeci GERÇEK firma sayısıyla çağırır ve izin süzgecine süzülmüş kümeyi verir",
+    /const firmaninUyarilari = yedekUyarilariniSuz\(uyarilar, await tamSistemIslemiAcikMi\(\)\);/.test(toplaY) &&
+      /if \(tamGorunum\) return firmaninUyarilari;/.test(toplaY) && /return izneGoreSuz\(firmaninUyarilari,/.test(toplaY));
+  const bugunK = kaynakOku("src/app/bezirga/(ic)/bugun/page.tsx");
+  kontrol("yönetim «Bugün» sistem yedeğini AYNI gövdeden okur ve maddeyi çizer (bağlantı değil — gidilecek ekran yok)",
+    /sistemYedekDurumu\(\)/.test(bugunK) && /\{yedekMaddesi \? \(\s*<div className=\{`satir \$\{yedekMaddesi\.sinif\}`\}>/.test(bugunK) &&
+      /yapilacaklar\.length === 0 && gonderilemeyen === 0 && yedekMaddesi === null/.test(bugunK));
 }
 
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);

@@ -1,11 +1,12 @@
 import Link from "@/components/niyetli-baglanti";
 import { getTranslations } from "next-intl/server";
-import { AlertTriangle, BadgeCheck, Ban, Building2, CalendarClock, CircleCheck, Gauge, MailX, PackageX, Wallet, Wrench, type LucideIcon } from "lucide-react";
+import { AlertTriangle, BadgeCheck, Ban, Building2, CalendarClock, CircleCheck, DatabaseBackup, Gauge, MailX, PackageX, Wallet, Wrench, type LucideIcon } from "lucide-react";
 
 import { bicimlendirici } from "@/lib/bicim";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { buAyTahsilat, etiketSayilari, firmaOzetleri, firmalarAdresi, gonderilemeyenEpostaSayisi, YAPILACAK_ETIKETLERI, type FirmaEtiketi } from "@/lib/yonetim/durumlar";
 import { bugunIs } from "@/lib/aski-sureci";
+import { sistemYedekDurumu } from "@/lib/uyari/topla";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
 
 import { SayfaBasligi } from "../sayfa-basligi";
@@ -62,7 +63,21 @@ export default async function BugunSayfasi() {
   await yonetimSayfasi();
   const t = await getTranslations("YonetimBugun");
   const bicim = await bicimlendirici();
-  const [ozetler, gonderilemeyen, tahsilat] = await Promise.all([firmaOzetleri(), gonderilemeyenEpostaSayisi(), buAyTahsilat()]);
+  const [ozetler, gonderilemeyen, tahsilat, yedekDurumu] = await Promise.all([firmaOzetleri(), gonderilemeyenEpostaSayisi(), buAyTahsilat(), sistemYedekDurumu()]);
+  /**
+   * SİSTEMİN GECE YEDEĞİ (15.10.2026) — çok firmada firma çanından çıktı
+   * (`uyari/topla.ts`: müşteri firma bununla bir şey yapamaz); yeri burası.
+   * Hüküm firma çanıyla AYNI gövdeden (`sistemYedekOlcumu`). Kırmızı önceliklidir;
+   * amber yalnız yaş sorunu yokken. Gidilecek yönetim ekranı yok → bağlantı DEĞİL.
+   */
+  const yedekMaddesi =
+    yedekDurumu.yedek.yedekYok.sayi > 0
+      ? { sinif: "bad" as const, metin: t("yedekYok") }
+      : yedekDurumu.yedek.yedekEski.sayi > 0
+        ? { sinif: "bad" as const, metin: t("yedekEski", { gun: yedekDurumu.yedek.yedekEski.sayi }) }
+        : yedekDurumu.yedekIzden.sayi > 0
+          ? { sinif: "warn" as const, metin: t("yedekIzden") }
+          : null;
   const sayilar = etiketSayilari(ozetler);
   const ilkleri = (e: FirmaEtiketi) => {
     const l = ozetler.filter((o) => o.etiketler.includes(e));
@@ -95,7 +110,7 @@ export default async function BugunSayfasi() {
         <div className="yn-grid2">
           <section className="yn-card" style={{ padding: "10px 8px" }}>
             <h2 style={{ padding: "8px 12px 0" }}>{t("yapilacaklar")}</h2>
-            {yapilacaklar.length === 0 && gonderilemeyen === 0 ? (
+            {yapilacaklar.length === 0 && gonderilemeyen === 0 && yedekMaddesi === null ? (
               <div className="yn-allgood">
                 <CircleCheck width={22} height={22} aria-hidden />
                 {t("bekleyenYok")}
@@ -124,6 +139,16 @@ export default async function BugunSayfasi() {
                     </span>
                     <b className="n">{gonderilemeyen}</b>
                   </Link>
+                ) : null}
+                {yedekMaddesi ? (
+                  <div className={`satir ${yedekMaddesi.sinif}`}>
+                    <span className="ico"><DatabaseBackup aria-hidden /></span>
+                    <span>
+                      <span className="t">{yedekMaddesi.metin}</span>
+                      <span className="h">{t("yedekIpucu")}</span>
+                    </span>
+                    <span />
+                  </div>
                 ) : null}
               </div>
             )}
