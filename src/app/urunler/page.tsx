@@ -36,8 +36,8 @@ import { STOK_PARAMETRESI, stokluUrunIdleri, stokSuzgeciCoz, urunStoklari } from
 
 import { SilButonu } from "./sil-butonu";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
-import { PazaryeriLinkleri, type PazaryeriSatiri } from "@/components/pazaryeri-linkleri";
-import { ilanAdresi, listeKanallariCoz } from "@/lib/kanal-ilan-adresi";
+import { PazaryeriLinkleri } from "@/components/pazaryeri-linkleri";
+import { pazaryeriSatirlariKur } from "@/lib/pazaryeri-satirlari";
 
 export async function generateMetadata() {
   const tBaslik = await getTranslations("Basliklar");
@@ -174,33 +174,8 @@ export default async function UrunlerSayfasi({
    * kurulur (`lib/kanal-ilan-adresi.ts`). Yalnız bu sayfanın satırları çekilir.
    */
   const anaIdleri = urunler.map((u) => u.variants[0]?.id).filter((x): x is string => Boolean(x));
-  const [firmaAyari, aktifKanallar, kanalKayitlari] = await Promise.all([
-    prisma.company.findUnique({ where: { id: baglam.companyId }, select: { urunListesiKanallari: true } }),
-    prisma.channel.findMany({ where: { isActive: true }, select: { code: true, name: true } }),
-    prisma.channelSku.findMany({
-      where: { variantId: { in: anaIdleri }, isActive: true, channelAccount: { satisIcin: true } },
-      select: {
-        variantId: true,
-        channelSku: true,
-        externalListingId: true,
-        channelAccount: { select: { externalId: true, magazaAdi: true, channel: { select: { code: true } } } },
-      },
-    }),
-  ]);
-  const listeKanallari = listeKanallariCoz(firmaAyari?.urunListesiKanallari ?? null, aktifKanallar.map((k) => k.code));
-  const kanalAdlari = new Map(aktifKanallar.map((k) => [k.code, k.name]));
-  function pazaryeriSatirlari(variantId: string | undefined): PazaryeriSatiri[] {
-    return listeKanallari.map((kod) => {
-      const ad = kanalAdlari.get(kod) ?? kod;
-      const kayitlar = kanalKayitlari.filter((k) => k.variantId === variantId && k.channelAccount.channel.code === kod);
-      if (kayitlar.length === 0) return { kod, ad, durum: "KAYIT_YOK", adres: null };
-      for (const k of kayitlar) {
-        const adres = ilanAdresi(kod, { channelSku: k.channelSku, externalListingId: k.externalListingId, saticiId: k.channelAccount.externalId, magazaAdi: k.channelAccount.magazaAdi });
-        if (adres) return { kod, ad, durum: "LINK", adres };
-      }
-      return { kod, ad, durum: "LINK_YOK", adres: null };
-    });
-  }
+  /* 15.10.2026: kurulum ORTAK gövdede — kârlılık kartı da aynı satırları çizer. */
+  const { kanallar: listeKanallari, satirlar: pazaryeriSatirlari } = await pazaryeriSatirlariKur(baglam.companyId, anaIdleri);
   const tPazaryeri = await getTranslations("PazaryeriLinki");
   const pazaryeriMetni = {
     kayitYok: tPazaryeri("kayitYok"),
