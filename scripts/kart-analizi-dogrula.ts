@@ -1,6 +1,8 @@
 import { kaynakOku } from "./kaynak-oku";
 import { galeriAdresleri, galeriYazilirMi, GALERI_TAVANI, kartResimleri } from "../src/lib/urun-gorseli";
 import {
+  adetBasinaKazanc,
+  stoktaGunSayisi,
   dagilim,
   degisimYuzdesi,
   gunAnahtari,
@@ -68,6 +70,41 @@ console.log("=".repeat(70));
   kontrol("stok kaç gün: 30 elde, 30 günde 15 satış → 60 gün", stokYeterGun(30, 15, 30) === 60);
   kontrol("stok kaç gün: satış yoksa ÖLÇÜLEMEZ (null, 0 değil)", stokYeterGun(30, 0, 30) === null);
   kontrol("stok kaç gün: stok yoksa 0", stokYeterGun(0, 15, 30) === 0);
+
+  /* ⛔ 15.10.2026 kullanıcı vakası: payda DÖNEMİN günü değil, ürünün STOKTA olduğu gün. */
+  {
+    const otuzGun = gunListesi(new Date("2026-09-13T00:00:00Z"), new Date("2026-10-12T00:00:00Z"));
+    /* Tefal: dönem öncesi stok 0 · 10.10 alım +2 · 12.10 satış −1 → eldeki 1. */
+    const tefalSeri = gunlukStok(0, [{ gun: "2026-10-10", delta: 2 }, { gun: "2026-10-12", delta: -1 }], otuzGun);
+    const tefalGun = stoktaGunSayisi(0, tefalSeri, new Set(["2026-10-12"]));
+    kontrol("stokta olduğu gün: 30 günlük dönemde 10.10'da giren ürün → 3 gün (10 · 11 · 12)", tefalGun === 3, tefalGun);
+    kontrol("  ...Tefal: eldeki 1, 3 günde 1 satış → 3 gün (eski hesap 30 gün diyordu)", stokYeterGun(1, 1, tefalGun) === 3, stokYeterGun(1, 1, tefalGun));
+    /* İkinci vaka: 08.10'da 6 giriş, 13.10'da 1 satış, dönem 15.09–14.10 → eldeki 5. */
+    const ikinciDonem = gunListesi(new Date("2026-09-15T00:00:00Z"), new Date("2026-10-14T00:00:00Z"));
+    const ikinciSeri = gunlukStok(0, [{ gun: "2026-10-08", delta: 6 }, { gun: "2026-10-13", delta: -1 }], ikinciDonem);
+    const ikinciGun = stoktaGunSayisi(0, ikinciSeri, new Set(["2026-10-13"]));
+    kontrol("  ...eldeki 5, 7 günde 1 satış → 35 gün (eski hesap 150 gün diyordu)", ikinciGun === 7 && stokYeterGun(5, 1, ikinciGun) === 35, { ikinciGun, gun: stokYeterGun(5, 1, ikinciGun) });
+    /* Ayrımın öteki yakası: dönem başında zaten stokta olan ürün → bütün günler sayılır. */
+    kontrol("  ...dönem boyunca stoktaysa payda dönemin TAMAMI (30)", stoktaGunSayisi(4, gunlukStok(4, [], otuzGun), new Set()) === 30);
+    /* Aynı gün girip aynı gün tükenen mal (gün sonu 0) o gün rafta DURMUŞTUR. */
+    kontrol("  ...aynı gün girip tükenen gün SAYILIR (satış günü)",
+      stoktaGunSayisi(0, gunlukStok(0, [{ gun: "2026-10-01", delta: 1 }, { gun: "2026-10-01", delta: -1 }], gunler), new Set(["2026-10-01"])) === 1);
+    kontrol("  ...stoksuz ve satışsız gün SAYILMAZ (hiç stok yok → 0)", stoktaGunSayisi(0, gunlukStok(0, [], gunler), new Set()) === 0);
+    /* Gün BAŞINDA rafta olan mal, gün içinde satış dışı düzeltmeyle sıfırlansa da o gün rafta durmuştur. */
+    kontrol("  ...gün başında stoklu, gün içinde DÜZELTMEYLE sıfırlanan gün SAYILIR (satış yok)",
+      stoktaGunSayisi(2, gunlukStok(2, [{ gun: "2026-10-01", delta: -2 }], gunler), new Set()) === 1);
+  }
+
+  /* ADET BAŞI KAZANÇ (15.10.2026): merdivenle AYNI kalemlerden. */
+  {
+    const k = (adet: number, net: number | null): KartKalemi =>
+      ({ saleId: "s", siparisNo: "1", gun: "2026-10-01", ciro: 100 * adet, adet, maliyet: net === null ? null : 50 * adet, net1: net, net2: net === null ? null : net - 10, kanal: "TY", hesap: "A" }) as unknown as KartKalemi;
+    const m = karMerdiveni([k(2, 60), k(1, 30), k(5, null)]);
+    kontrol("merdivenin adedi YALNIZ hesaplanan kalemlerden (2+1=3; hesaplanamayan 5 adet DIŞARIDA)", m.dahilAdet === 3, m.dahilAdet);
+    const a = adetBasinaKazanc(m);
+    kontrol("adet başı: NET-1 90/3 = 30 · NET-2 70/3", a !== null && a.net1 === 30 && Math.abs(a.net2 - 70 / 3) < 1e-9, a);
+    kontrol("  ...adet yoksa YOK (sıfıra bölünmez)", adetBasinaKazanc({ net1: 0, net2: 0, dahilAdet: 0 }) === null);
+  }
 
   const stok = gunlukStok(10, [{ gun: "2026-10-02", delta: -3 }, { gun: "2026-10-02", delta: 5 }, { gun: "2026-09-30", delta: 99 }], gunler);
   kontrol(
@@ -151,6 +188,15 @@ console.log("=".repeat(70));
   kontrol("sekme adrese yazılır (dönem korunur)", /href=\{suzgecAdresi\(temel, mevcut, \{ sekme: s === "genel" \? undefined : s \}\)\}/.test(pano));
   kontrol("kâr sekmesi izinsizde menüde de yok", /KART_SEKMELERI\.filter\(\(s\) => karGorunur \|\| s !== "kar"\)/.test(pano));
   kontrol("sipariş toplamı DÖNEMİN tamamı (İlke #15)", /siparisToplam: \{ satir: kalemler\.length, adet, ciro,/.test(analiz));
+  /* 15.10.2026: stok kaç gün yeter — payda STOKTA OLDUĞU gün, dönemin gün sayısı DEĞİL. */
+  kontrol("stok kaç gün yeter: analiz STOKTA OLDUĞU günle çağırır (dönemin gün sayısıyla DEĞİL)",
+    /stokYeterGun: stokYeterGun\(eldekiAdet, adet, stoktaGun\),/.test(analiz) && !/stokYeterGun\(eldekiAdet, adet, gunler\.length\)/.test(analiz));
+  kontrol("  ...stokta olduğu gün, kartın ÇİZDİĞİ stok serisinden ve satış günlerinden",
+    /const stoktaGun = stoktaGunSayisi\(\s*stokOnce\._sum\.quantityDelta \?\? 0,\s*stokSerisi,\s*new Set\(kalemler\.filter\(\(k\) => k\.adet > 0\)\.map\(\(k\) => k\.gun\)\),\s*\);/.test(analiz) && /^\s*stokSerisi,$/m.test(analiz));
+  const panoK = oku("src/app/kart/[variantId]/kart-panosu.tsx");
+  kontrol("  ...ekran rakamın TABANINI yazar (kaç günde kaç satış)", /:\s*t\("yeterTaban", \{ gun: a\.stoktaGun, adet: a\.adet \}\)/.test(panoK));
+  kontrol("adet başı kazanç: kâr kutusunda merdivenle AYNI gövdeden çizilir",
+    /const adetBasi = m === null \|\| m\.dahilKalem === 0 \? null : adetBasinaKazanc\(m\);/.test(panoK) && /\{karGorunur && adetBasi !== null \? \(/.test(panoK));
   kosanBolumler.push("bag");
 }
 

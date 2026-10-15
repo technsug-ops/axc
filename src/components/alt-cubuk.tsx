@@ -14,7 +14,8 @@ import { ALT_CUBUK_SEKMELERI, MENU_IKONLARI, type AltCubukSekmesi } from "@/lib/
  * ----------------------------------------------------------------------------
  *  Kullanıcı Trendyol/Hepsiburada satıcı uygulamalarını gösterip «alt
  *  butonların fonksiyonelliği güven veriyor» dedi; onaylanan demoda bar beş
- *  sekme: Panel · Satışlar · Okut · Alımlar · Menü. Yalnız telefonda
+ *  sekme: Panel · Satışlar · Okut · Alımlar · Menü (15.10.2026: Okut → Paketle,
+ *  kullanıcı kararı; gerekçe `ikonlar.ts`). Yalnız telefonda
  *  (`md:hidden`); masaüstünde sol menü var, iki gezinme aynı anda durmaz.
  *  ⚠ 44 px dokunma (İlke #8): her sekme `min-h-14`. Alt güvenli alan
  *  (`safe-area-inset-bottom`) bar içinde — çentikli telefonda ev çubuğunun
@@ -27,7 +28,7 @@ import { ALT_CUBUK_SEKMELERI, MENU_IKONLARI, type AltCubukSekmesi } from "@/lib/
 const ADRESLER: Record<AltCubukSekmesi, string> = {
   panel: MENU_ADRESLERI.panel ?? "/",
   satislar: MENU_ADRESLERI.satislar ?? "/satislar",
-  okut: MENU_ADRESLERI.okut ?? "/okut",
+  paketle: MENU_ADRESLERI.paketle ?? "/paketle",
   alimlar: MENU_ADRESLERI.alimlar ?? "/alimlar",
   menu: "/menu",
 };
@@ -35,7 +36,7 @@ const ADRESLER: Record<AltCubukSekmesi, string> = {
 const IKONLAR: Record<AltCubukSekmesi, LucideIcon> = {
   panel: MENU_IKONLARI.panel ?? Menu,
   satislar: MENU_IKONLARI.satislar ?? Menu,
-  okut: MENU_IKONLARI.okut ?? Menu,
+  paketle: MENU_IKONLARI.paketle ?? Menu,
   alimlar: MENU_IKONLARI.alimlar ?? Menu,
   menu: Menu,
 };
