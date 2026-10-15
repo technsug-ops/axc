@@ -5,6 +5,8 @@ import { Boxes, Calculator, Layers, Lock, Sparkles, TriangleAlert } from "lucide
 
 import { Baglanti } from "@/components/baglanti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { PazaryeriLinkleri } from "@/components/pazaryeri-linkleri";
+import { pazaryeriSatirlariKur } from "@/lib/pazaryeri-satirlari";
 import { Button } from "@/components/ui/button";
 import { bicimlendirici } from "@/lib/bicim";
 import { KART_PARTI_CAPASI, partiToplami, siradakiPartiSirasi } from "@/lib/kart-partileri";
@@ -130,12 +132,20 @@ export default async function KartSayfasi({
   params: Promise<{ variantId: string }>;
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await sayfaIzni("urun.gor");
+  const baglam = await sayfaIzni("urun.gor");
   const karGorunur = await izinVarMi("satis.kar.gor");
 
   const { variantId } = await params;
   const veri = await kartVerisiniTopla(variantId);
   if (veri === null) notFound();
+  /* Pazaryeri ilan linkleri — ürünler listesiyle AYNI gövde (15.10.2026). */
+  const pazaryeri = await pazaryeriSatirlariKur(baglam.companyId, [variantId]);
+  const tPazaryeri = await getTranslations("PazaryeriLinki");
+  const pazaryeriMetni = {
+    kayitYok: tPazaryeri("kayitYok"),
+    linkYok: tPazaryeri("linkYok"),
+    ac: (kanal: string) => tPazaryeri("ac", { kanal }),
+  };
 
   /**
    * K330 — ALGORİTMO ÜRÜN SAYFASI: dönem (adreste, varsayılan son 30 gün) ve
@@ -295,6 +305,13 @@ export default async function KartSayfasi({
           />
           {varyant.barcode ? (
             <KopyalanabilirKod deger={varyant.barcode} etiket={t("barkod")} />
+          ) : null}
+          {/* PAZARYERİ İLANLARI (kullanıcı isteği 15.10.2026: «pazaryerine bakmak için ürünler
+              sekmesine gitmesin») — ürünler listesiyle AYNI gövde ve AYNI bileşen. */}
+          {pazaryeri.kanallar.length > 0 ? (
+            <div className="sm:ml-auto">
+              <PazaryeriLinkleri yatay satirlar={pazaryeri.satirlar(variantId)} metin={pazaryeriMetni} />
+            </div>
           ) : null}
         </div>
 

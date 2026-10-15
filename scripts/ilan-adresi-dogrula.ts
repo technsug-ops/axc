@@ -131,11 +131,21 @@ console.log("\n2) yazıcı zinciri");
 console.log("\n3) ekran");
 {
   const liste = oku("src/app/urunler/page.tsx");
+  /* 15.10.2026: satır kurulumu ORTAK gövdeye taşındı (kârlılık kartı da çizer) — ölçütler
+     oraya taşındı, gevşetilmedi; iki ekranın o gövdeyi çağırdığı ayrıca ölçülür. */
+  const govdeSatir = oku("src/lib/pazaryeri-satirlari.ts");
   kontrol("liste sütunu FİRMA SEÇİMİNDEN (Company.urunListesiKanallari)",
-    /listeKanallariCoz\(firmaAyari\?\.urunListesiKanallari \?\? null, aktifKanallar\.map\(\(k\) => k\.code\)\)/.test(liste));
+    /listeKanallariCoz\(firmaAyari\?\.urunListesiKanallari \?\? null, aktifKanallar\.map\(\(k\) => k\.code\)\)/.test(govdeSatir));
   kontrol("  ...adres KALIPTAN, satış hesabının satıcı kimliğiyle",
-    /ilanAdresi\(kod, \{ channelSku: k\.channelSku, externalListingId: k\.externalListingId, saticiId: k\.channelAccount\.externalId, magazaAdi: k\.channelAccount\.magazaAdi \}\)/.test(liste) &&
-      /channelAccount: \{ select: \{ externalId: true, magazaAdi: true,/.test(liste));
+    /ilanAdresi\(kod, \{ channelSku: k\.channelSku, externalListingId: k\.externalListingId, saticiId: k\.channelAccount\.externalId, magazaAdi: k\.channelAccount\.magazaAdi \}\)/.test(govdeSatir) &&
+      /channelAccount: \{ select: \{ externalId: true, magazaAdi: true,/.test(govdeSatir) &&
+      /channelAccount: \{ satisIcin: true \}/.test(govdeSatir));
+  kontrol("  ...ürünler listesi satırları ORTAK gövdeden kurar (kendi kopyası yok)",
+    /const \{ kanallar: listeKanallari, satirlar: pazaryeriSatirlari \} = await pazaryeriSatirlariKur\(baglam\.companyId, anaIdleri\);/.test(liste) && !/ilanAdresi\(/.test(liste));
+  const kart = oku("src/app/kart/[variantId]/page.tsx");
+  kontrol("kârlılık kartı AYNI gövdeyle o varyantın linklerini künyede çizer (15.10.2026)",
+    /const pazaryeri = await pazaryeriSatirlariKur\(baglam\.companyId, \[variantId\]\);/.test(kart) &&
+      /<PazaryeriLinkleri yatay satirlar=\{pazaryeri\.satirlar\(variantId\)\} metin=\{pazaryeriMetni\} \/>/.test(kart) && !/ilanAdresi\(/.test(kart));
   /* K320 (09.10.2026): mağaza adı kutusu — zincirin her halkası: çizilir · okur · doğrular · yazar. */
   const ayar = oku("src/app/ayarlar/kanallar/page.tsx");
   kontrol("Kanal Hesapları mağaza adı kutusunu adı kullanan kanalların satış hesaplarına çizer",

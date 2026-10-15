@@ -18,12 +18,15 @@ export type PazaryeriSatiri = {
 export function PazaryeriLinkleri({
   satirlar,
   metin,
+  yatay = false,
 }: {
   satirlar: PazaryeriSatiri[];
   metin: { kayitYok: string; linkYok: string; ac: (kanal: string) => string };
+  /** Kârlılık kartı künyesinde kodların yanında yan yana (15.10.2026); liste hücresinde alt alta. */
+  yatay?: boolean;
 }) {
   return (
-    <ul className="space-y-0.5 text-xs">
+    <ul className={yatay ? "flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" : "space-y-0.5 text-xs"}>
       {satirlar.map((s) => (
         <li key={s.kod} className="flex min-h-6 items-center gap-1.5 whitespace-nowrap">
           {s.durum === "LINK" && s.adres ? (

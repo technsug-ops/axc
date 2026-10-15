@@ -41,6 +41,13 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: " || s.externalListingId !== bulunan.ilan) {", koy: ") {", bozdugu: "durum degismeyen N11 urununun linki hic dolmaz" },
   { ad: "TELEFON KARTINDA SUTUN YOK", yon: "KALDIRAN", dosya: LISTE,
     bul: "? [{ etiket: tPazaryeri(\"sutun\"), deger: <PazaryeriLinkleri satirlar={pazaryeriSatirlari(ana?.id)} metin={pazaryeriMetni} /> }]", koy: "? []", bozdugu: "telefonda link gorunmez" },
+  /* 15.10.2026 — kârlılık kartı linkleri + ortak gövde */
+  { ad: "KARTTA LINK CIZILMIYOR", yon: "KALDIRAN", dosya: "src/app/kart/[variantId]/page.tsx",
+    bul: "<PazaryeriLinkleri yatay satirlar={pazaryeri.satirlar(variantId)} metin={pazaryeriMetni} />", koy: "null",
+    bozdugu: "kartta pazaryeri linki gorunmez, kullanici urunler sekmesine gitmek zorunda" },
+  { ad: "ORTAK GOVDE ALIS HESABINI DA SAYAR", yon: "FAZLADAN", dosya: "src/lib/pazaryeri-satirlari.ts",
+    bul: "isActive: true, channelAccount: { satisIcin: true } },", koy: "isActive: true },",
+    bozdugu: "alis hesabinin kodu satis ilani gibi linklenir" },
   { ad: "AYAR KODU DOGRULAMIYOR", yon: "FAZLADAN", dosya: EYLEM,
     bul: "    if (!gecerli.has(kod)) return { hata: tListe(\"gecersizKanal\") };\n", koy: "", bozdugu: "formdan gelen bilinmeyen kod firmaya yazilir" },
   /* ═══ K320 (09.10.2026) — mağaza adı + N11 groupId ═══ */
@@ -83,7 +90,8 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "  const ham = String(formData.get(\"magazaAdi\") ?? \"\").trim();", koy: "  const ham = \"\";", bozdugu: "kullanici yazar, kaydet der, ad silinir" },
   { ad: "FORM KAYITLI ADI GERI VERMIYOR", yon: "KALDIRAN", dosya: "src/app/ayarlar/kanallar/magaza-adi-formu.tsx",
     bul: "defaultValue={hesap.magazaAdi ?? \"\"}", koy: "defaultValue=\"\"", bozdugu: "kutu bos gorunur, kaydedince ad silinir" },
-  { ad: "URUNLER LINKE MAGAZA ADINI GECMIYOR", yon: "KALDIRAN", dosya: LISTE,
+  /* 15.10.2026: satır kurulumu ortak gövdeye taşındı — çapa onunla taşındı, niyet aynı. */
+  { ad: "URUNLER LINKE MAGAZA ADINI GECMIYOR", yon: "KALDIRAN", dosya: "src/lib/pazaryeri-satirlari.ts",
     bul: ", magazaAdi: k.channelAccount.magazaAdi });", koy: ", magazaAdi: null });", bozdugu: "ad kayitli oldugu halde link magaza belirtmez" },
 ];
 
