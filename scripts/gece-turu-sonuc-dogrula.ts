@@ -73,7 +73,7 @@ console.log("=".repeat(70));
   kontrol("uç dosyası var", existsSync(UC));
   const uc = yorumsuz(kaynakOku(UC));
   const kapiYeri = uc.indexOf("const sonuc = geceTuruSonucuCoz(govde);");
-  const yazimYeri = uc.indexOf("await prisma.auditLog.create(");
+  const yazimYeri = uc.indexOf("await izYaz(");
   kontrol("uç kayda yazmadan ÖNCE gövdeyi kapıdan geçirir ve reddi döndürür",
     kapiYeri >= 0 && yazimYeri > kapiYeri && /if \(!sonuc\.tamam\) return NextResponse\.json\(\{ hata: sonuc\.kod \}, \{ status: 400 \}\);/.test(uc));
   kontrol("  ...kayda KAPININ çıktısı yazılır (ham gövde değil)", /detail: JSON\.stringify\(sonuc\.detay\)/.test(uc) && !/detail: metin/.test(uc));
