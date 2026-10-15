@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { UYGULAMA } from "@/lib/uygulama";
 import { etiketSayilari, firmaOzetleri, gonderilemeyenEpostaSayisi, YAPILACAK_ETIKETLERI } from "@/lib/yonetim/durumlar";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
+import { sistemYedekDurumu, sistemYedekMaddesi } from "@/lib/uyari/topla";
 
 import { YonetimMenusu, type Rozetler } from "./yonetim-menusu";
 
@@ -21,9 +22,13 @@ import { YonetimMenusu, type Rozetler } from "./yonetim-menusu";
 export default async function YonetimKabugu({ children }: { children: React.ReactNode }) {
   const k = await yonetimSayfasi();
   const t = await getTranslations("Yonetim");
-  const [ozetler, gonderilemeyen] = await Promise.all([firmaOzetleri(), gonderilemeyenEpostaSayisi()]);
+  const [ozetler, gonderilemeyen, yedekDurumu] = await Promise.all([firmaOzetleri(), gonderilemeyenEpostaSayisi(), sistemYedekDurumu()]);
   const sayilar = etiketSayilari(ozetler);
-  const yapilacak = YAPILACAK_ETIKETLERI.filter((e) => (sayilar.get(e) ?? 0) > 0).length + (gonderilemeyen > 0 ? 1 : 0);
+  /* Sistem yedeği maddesi «Bugün» sayfasıyla AYNI gövdeden (`sistemYedekMaddesi`) — sayı = liste. */
+  const yapilacak =
+    YAPILACAK_ETIKETLERI.filter((e) => (sayilar.get(e) ?? 0) > 0).length +
+    (gonderilemeyen > 0 ? 1 : 0) +
+    (sistemYedekMaddesi(yedekDurumu) === null ? 0 : 1);
   const rozetler: Rozetler = {
     bugun: { sayi: yapilacak, sicak: true },
     firmalar: { sayi: ozetler.length, sicak: false },

@@ -6,7 +6,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import { YONETIM_YOLU } from "@/lib/oturum-imza";
 import { buAyTahsilat, etiketSayilari, firmaOzetleri, firmalarAdresi, gonderilemeyenEpostaSayisi, YAPILACAK_ETIKETLERI, type FirmaEtiketi } from "@/lib/yonetim/durumlar";
 import { bugunIs } from "@/lib/aski-sureci";
-import { sistemYedekDurumu } from "@/lib/uyari/topla";
+import { sistemYedekDurumu, sistemYedekMaddesi } from "@/lib/uyari/topla";
 import { yonetimSayfasi } from "@/lib/yonetim-oturumu";
 
 import { SayfaBasligi } from "../sayfa-basligi";
@@ -70,14 +70,15 @@ export default async function BugunSayfasi() {
    * Hüküm firma çanıyla AYNI gövdeden (`sistemYedekOlcumu`). Kırmızı önceliklidir;
    * amber yalnız yaş sorunu yokken. Gidilecek yönetim ekranı yok → bağlantı DEĞİL.
    */
+  const madde = sistemYedekMaddesi(yedekDurumu);
   const yedekMaddesi =
-    yedekDurumu.yedek.yedekYok.sayi > 0
-      ? { sinif: "bad" as const, metin: t("yedekYok") }
-      : yedekDurumu.yedek.yedekEski.sayi > 0
-        ? { sinif: "bad" as const, metin: t("yedekEski", { gun: yedekDurumu.yedek.yedekEski.sayi }) }
-        : yedekDurumu.yedekIzden.sayi > 0
-          ? { sinif: "warn" as const, metin: t("yedekIzden") }
-          : null;
+    madde === null
+      ? null
+      : madde.tur === "YOK"
+        ? { sinif: "bad" as const, metin: t("yedekYok") }
+        : madde.tur === "ESKI"
+          ? { sinif: "bad" as const, metin: t("yedekEski", { gun: madde.gun }) }
+          : { sinif: "warn" as const, metin: t("yedekIzden") };
   const sayilar = etiketSayilari(ozetler);
   const ilkleri = (e: FirmaEtiketi) => {
     const l = ozetler.filter((o) => o.etiketler.includes(e));

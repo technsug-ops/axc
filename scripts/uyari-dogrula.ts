@@ -27,7 +27,7 @@ import {
 } from "../src/lib/uyari/kurallar";
 import { maliyetsizMi, maliyetsizVaryantlar } from "../src/lib/uyari/maliyetsiz-stok";
 import { yedekOlcumu } from "../src/lib/uyari/yedek";
-import { sistemYedekOlcumu, YEDEK_UYARILARI, yedekUyarilariniSuz } from "../src/lib/uyari/topla";
+import { sistemYedekMaddesi, sistemYedekOlcumu, YEDEK_UYARILARI, yedekUyarilariniSuz } from "../src/lib/uyari/topla";
 import {
   supheSebepleri,
   supheliMi,
@@ -1390,7 +1390,14 @@ console.log("K266) ŞERİTTEN ÇANA — iki bakım uyarısı");
   kontrol("toplayıcı süzgeci GERÇEK firma sayısıyla çağırır ve izin süzgecine süzülmüş kümeyi verir",
     /const firmaninUyarilari = yedekUyarilariniSuz\(uyarilar, await tamSistemIslemiAcikMi\(\)\);/.test(toplaY) &&
       /if \(tamGorunum\) return firmaninUyarilari;/.test(toplaY) && /return izneGoreSuz\(firmaninUyarilari,/.test(toplaY));
+  kontrol("yedek maddesi: yok → YOK · taze iz → IZDEN · temiz → madde YOK (null)",
+    sistemYedekMaddesi(yok)?.tur === "YOK" && sistemYedekMaddesi(izden)?.tur === "IZDEN" &&
+      sistemYedekMaddesi(sistemYedekOlcumu({ an: new Date("2026-10-15T01:00:00Z"), kaynak: "HEDEF" }, bugunY)) === null);
+  const kabukK = kaynakOku("src/app/bezirga/(ic)/layout.tsx").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("menü «Bugün» rozeti yedek maddesini SAYFAYLA AYNI gövdeden sayar (sayı = liste — 15.10'da 2 madde varken «1» diyordu)",
+    /\(sistemYedekMaddesi\(yedekDurumu\) === null \? 0 : 1\)/.test(kabukK) && /sistemYedekDurumu\(\)/.test(kabukK));
   const bugunK = kaynakOku("src/app/bezirga/(ic)/bugun/page.tsx");
+  kontrol("  ...sayfa da maddeyi AYNI gövdeden kurar", /const madde = sistemYedekMaddesi\(yedekDurumu\);/.test(bugunK));
   kontrol("yönetim «Bugün» sistem yedeğini AYNI gövdeden okur ve maddeyi çizer (bağlantı değil — gidilecek ekran yok)",
     /sistemYedekDurumu\(\)/.test(bugunK) && /\{yedekMaddesi \? \(\s*<div className=\{`satir \$\{yedekMaddesi\.sinif\}`\}>/.test(bugunK) &&
       /yapilacaklar\.length === 0 && gonderilemeyen === 0 && yedekMaddesi === null/.test(bugunK));

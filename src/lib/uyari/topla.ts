@@ -182,6 +182,20 @@ export function sistemYedekOlcumu(
   return { yedek, yedekIzden };
 }
 
+export type SistemYedekMaddesi = { tur: "YOK" | "ESKI" | "IZDEN"; gun: number } | null;
+
+/**
+ * SAF: yönetim «Bugün»deki yedek MADDESİ — sayfa VE menü rozeti AYNI gövdeyi
+ * çağırır (sayı = liste, İlke #16). 15.10.2026'da rozet ayrı hesaplanıyordu ve
+ * listede 2 madde varken «1» diyordu. Kırmızı (YOK/ESKİ) önceliklidir.
+ */
+export function sistemYedekMaddesi(o: ReturnType<typeof sistemYedekOlcumu>): SistemYedekMaddesi {
+  if (o.yedek.yedekYok.sayi > 0) return { tur: "YOK", gun: 0 };
+  if (o.yedek.yedekEski.sayi > 0) return { tur: "ESKI", gun: o.yedek.yedekEski.sayi };
+  if (o.yedekIzden.sayi > 0) return { tur: "IZDEN", gun: 0 };
+  return null;
+}
+
 /** Yönetim ekranı için: sistemin şu anki yedek hükmü (firma bağlamı GEREKMEZ). */
 export async function sistemYedekDurumu() {
   return sistemYedekOlcumu(await sonYedekZamani(), gunDegeri(isTakvimGunu(new Date())));
