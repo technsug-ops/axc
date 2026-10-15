@@ -142,6 +142,10 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   /* 07.10.2026: ürün listesi + kanal yazıcıları + N11 betiği — n11-listeleme,
      kdv-uyusmazligi ve vitrin denetimleriyle aynı dosyaları bozar. */
   "ilan-adresi-mutasyon:kontrol",
+  /* 15.10.2026 (K337 3. adım): kanal anahtarı denetimi artık kart eylemlerini ve TY çekim ucunu da
+     bozar — hb-yazma ve uyarı-cron denetimleriyle aynı dosyalar. hb-yazma da bu yüzden kümeye girdi. */
+  "kanal-anahtari-mutasyon:kontrol",
+  "hb-yazma-mutasyon:kontrol",
   /* 09.10.2026: satış/alım listesi + liste-suzgeci + Excel listesi + liste kartı — liste denetimleriyle aynı dosyalar. */
   "iptal-gorunurluk-mutasyon:kontrol",
   /* 09.10.2026: panel-bi + ürünler sayfası + Excel listesi — panel ve liste denetimleriyle aynı dosyalar. */

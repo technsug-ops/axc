@@ -2199,7 +2199,8 @@ kontrol(
   kontrol(
     "rota ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)",
     /* 02.10.2026: pencere 3 → 7 gün (kullanıcı kararı; gerekçe rota dosyasında). */
-    rota.includes("tyCekimKos({ yaz: true, gun: 7, dbAdresi, companyId })"),
+    /* K337 3. adım (15.10.2026): çekirdek AYNI, çağrı anahtar KAYNAĞINI da verir (uç: hesabın anahtarı · betik: «ORTAM»). */
+    rota.includes("tyCekimKos({ yaz: true, gun: 7, dbAdresi, companyId, anahtar: { kimlik } })"),
   );
   const kapiBasi = rota.indexOf("if (sir === \"\" || gelen !== ");
   kontrol("sır kapısı VAR ve boş-sır da kapatıyor", kapiBasi >= 0);
@@ -2213,7 +2214,7 @@ kontrol(
   );
   kontrol(
     "betik modu da AYNI çekirdeği çağırıyor",
-    betik.includes("tyCekimKos({ yaz: YAZ, gun: GUN, companyId })"),
+    betik.includes("tyCekimKos({ yaz: YAZ, gun: GUN, companyId, anahtar: \"ORTAM\" })"),
   );
 }
 
@@ -2231,9 +2232,10 @@ kontrol(
   const akis = kaynakOku(".github/workflows/ty-cekim.yml");
 
   /* K303 3b (03.10.2026): çekirdek firma döngüsünden çağrılır, `companyId` taşır — ölçüt aynı, yazılış güncellendi. */
-  kontrol("HB ucu ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)", hbRota.includes("hbCekimKos({ yaz: true, dbAdresi, companyId })"));
+  /* K337 3. adım (15.10.2026): çekirdek AYNI, çağrı anahtar KAYNAĞINI da verir (uç: hesabın anahtarı · betik: «ORTAM»). */
+  kontrol("HB ucu ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)", hbRota.includes("hbCekimKos({ yaz: true, dbAdresi, companyId, anahtar: { kimlik } })"));
   kontrol("çekirdek DIŞA AKTARILMIŞ", hbBetik.includes("export async function hbCekimKos("));
-  kontrol("betik kipi de AYNI çekirdeği çağırıyor", hbBetik.includes("hbCekimKos({ yaz: YAZ, sadece: SADECE, companyId })"));
+  kontrol("betik kipi de AYNI çekirdeği çağırıyor", hbBetik.includes("hbCekimKos({ yaz: YAZ, sadece: SADECE, companyId, anahtar: \"ORTAM\" })"));
 
   /** ⛔ SIR KAPISI — reddedilen istek 404 alır; rotanın VARLIĞI bile sızmaz. */
   const kapiBasi = hbRota.indexOf('if (sir === "" || gelen !== ');
@@ -2372,15 +2374,21 @@ kontrol(
   /* K303 3b: karar ortak gövdede (`donguDurumKodu` — atlandı → 503, değerle
    * sınanıyor); rotanın işi yüklemi vermek. ESKİ ölçüt `if ("atlandi" in
    * ozet)` dalında `status: 503`/`status: 200` arıyordu — niyet aynı. */
-  const atlamaBasi = hbRota.indexOf("const kimlikDustu =");
-  kontrol("HB ucu ATLAMA dalını AYIRIYOR", atlamaBasi >= 0);
-  const atlamaB = atlamaBasi >= 0 ? hbRota.slice(atlamaBasi, atlamaBasi + 700) : "";
-  const yuklem = 'donguDurumKodu(sonuc, (o) => "atlandi" in o && o.atlandi !== "BEKCI_TURU")';
+  /* K337 3. adım (15.10.2026): atlama dalı artık SON CEVAPTA ve hesap düzeyinde sarılı.
+     «Eksik ortam değişkeni ADLARI gövdeye» davranışı BİLEREK kalktı — anahtar hesabın,
+     ortam eksiği bu uçta oluşamaz; yerine hesap başına «ATLANDI · ANAHTAR_YOK» yazılır
+     (ölçütü: ortam okuyucusu uçta YOK + uç hesap hesap dolaşır). ESKİ ölçüt (silinmedi):
+     `kimlikDustu` dalı + `eksikDegiskenler: kimlikEksikleri()` + `f.sonuc.atlandi === "KIMLIK"`. */
+  const atlamaBasi = hbRota.lastIndexOf("return NextResponse.json(sonuc, {");
+  kontrol("HB ucu ATLAMA dalını AYIRIYOR (son cevap)", atlamaBasi >= 0);
+  const atlamaB = atlamaBasi >= 0 ? hbRota.slice(atlamaBasi, atlamaBasi + 400) : "";
+  const yuklem = 'donguDurumKodu(sonuc, (h) => hesapSonuclariKirmiziMi(h, (o) => "atlandi" in o && o.atlandi !== "BEKCI_TURU"))';
   kontrol("  ...kimliksiz/DB'siz koşum 503 döner (200 DEĞİL)", atlamaB.includes(yuklem));
-  kontrol("  ...eksik değişken ADLARI gövdeye giriyor", atlamaB.includes("...(kimlikDustu ? { eksikDegiskenler: kimlikEksikleri() } : {})"));
+  kontrol("  ...ortam değişkeni okuyucusu uçta YOK; uç hesap hesap dolaşır (eksik anahtar hesap başına ATLANDI yazar)",
+    !/kimlikEksikleri|kimlikOku/.test(hbRota) && /kanalHesaplariylaKos\("HEPSIBURADA", /.test(hbRota));
   kontrol(
     "  ...BEKCI_TURU istisna ve 200 kalıyor (doğru davranış arıza sayılmaz)",
-    atlamaB.includes(yuklem) && /f\.sonuc\.atlandi === "KIMLIK"/.test(atlamaB),
+    atlamaB.includes(yuklem) && yuklem.includes('o.atlandi !== "BEKCI_TURU"'),
   );
   /**
    * ⛔ ÜÇ KANAL BAĞIMSIZ: birinin düşmesi ötekini engellemez. `if: always()`
@@ -2664,7 +2672,8 @@ kontrol(
   );
   kontrol(
     "rota ÇEKİRDEĞİ çağırıyor (ikinci gövde yok)",
-    rota.includes("n11CekimKos({ yaz: true, dbAdresi, companyId })"),
+    /* K337 3. adım (15.10.2026): çekirdek AYNI, çağrı anahtar KAYNAĞINI da verir (uç: hesabın anahtarı · betik: «ORTAM»). */
+    rota.includes("n11CekimKos({ yaz: true, dbAdresi, companyId, anahtar: { kimlik } })"),
   );
   const kapiBasi = rota.indexOf("if (sir === \"\" || gelen !== ");
   kontrol("sır kapısı VAR ve boş-sır da kapatıyor", kapiBasi >= 0);
@@ -2678,7 +2687,7 @@ kontrol(
   );
   kontrol(
     "betik modu da AYNI çekirdeği çağırıyor",
-    betik.includes("n11CekimKos({ yaz: YAZ, companyId })"),
+    betik.includes("n11CekimKos({ yaz: YAZ, companyId, anahtar: \"ORTAM\" })"),
   );
 }
 
@@ -2996,7 +3005,7 @@ console.log("\nONAY DURUMU ETİKETİ");
   );
   /* Rotalar: atlandı → 503 (ayrıntı cron-yollari:dogrula'da; burada N11 rotası). */
   const rota = kaynakOku("src/app/api/cron/n11-cekim/route.ts");
-  kontrol("n11 rotası atlandı ise 503 dönüyor", /status: donguDurumKodu\(sonuc, \(o\) => "atlandi" in o\)/.test(rota));
+  kontrol("n11 rotası atlandı ise 503 dönüyor", /status: donguDurumKodu\(sonuc, \(h\) => hesapSonuclariKirmiziMi\(h, \(o\) => "atlandi" in o\)\)/.test(rota));
 }
 
 console.log(`\n${hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ"} (${gecen}/${gecen + hata})\n`);
