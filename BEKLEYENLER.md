@@ -66,14 +66,6 @@ Kullanıcı: «mobilde tıklamalara geç reaksiyon» → ① kök yükleniyor ek
 
 **Halil testi:** telefonda `bezirga.com/?hiz=1` aç → sol altta «Gezinme ölçümü» kutusu → Panel · Satışlar · Alımlar · Ürünler · bir kârlılık kartı arasında 10–15 kez gez (bir kez de birkaç dakika ara verip) → kutunun ekran görüntüsünü gönder.
 
-## 🔴 K331 — VERCEL GÖNDERİMİ KENDİLİĞİNDEN YAYINA ALMIYOR · 11.10.2026 · [AÇIK — SEBEP BİLİNMİYOR; GEÇİCİ: elle yayın]
-Ölçüldü (Vercel dağıtım listesi, 11.10.2026): `main`e giden **5 gönderimin hiçbiri** kendiliğinden dağıtım başlatmadı — `d31417af` · `34695136` (10.10) · `6fd8c322` · `e8862897` · `3aa0505e` (11.10). Son kendiliğinden dağıtım `9670b2de` (10.10). Hata/iptal kaydı YOK: dağıtım hiç oluşmuyor. Proje ayarında yayını durduran bir şey görülmedi (`vercel.json`da `ignoreCommand`/`deploymentEnabled` yok). K326'nın «yayın boşluğu» bu.
-· **Geçici yol:** her gönderimden sonra dağıtım listesine bakılır, gerekirse dağıtım elle başlatılır (Vercel API, `gitSource` = `main` + tam sha) ve ardından `canli:yetki`. 11.10'da iki kez yapıldı: `6fd8c322` · `3aa0505e` — ikisi de READY, `bezirga.com`a bağlandı.
-· **Bekçi:** K329 yayın boşluğu çanı artık canlıda — kaçış kırmızı yazar.
-· **Açık:** GitHub → Vercel bildirimi (GitHub uygulaması/webhook teslim kaydı) kullanıcı hesabından bakılmalı; buradan görülemiyor. Üç kez daha kaçarsa «yönetilemeyen bağımlılık» kuralı: dağıtımı kendi betiğimiz başlatır (push sonrası kanca).
-· **[KOŞTU] 14.10.2026 — EŞİK AŞILDI: üç kaçış daha** (`d76e3107`/`0dab9f5d`/`a678ad3a` → elle `a678ad3`; `86707c61` → elle; ayrıntı K329 ─── ② ③). Bu kalem 14.10'da gözden kaçmış, kaçışlar önce K329'a yazıldı — doğru yer burası. Kural gereği kendi tetiğimize geçiş SIRADAKİ İŞ olarak önerildi (15.10).
-· **KULLANICI KARARI 15.10.2026: «o önemli bir iş değil, yaparız»** — kendi tetik ŞİMDİ yapılmıyor, sıra K303'e verildi. Geçici yol (elle yayın + «Canlı yayın» kutusu) sürüyor; her push sonrası kutuya bakılır.
-
 ## 🔶 K330 — ALGORİTMO TASARIMI + YENİ KÂRLILIK KARTI CANLIYA (dal → main) · 11.10.2026 · [CANLI MIGRATION KOŞTU · PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
 Kullanıcı kararı 10–11.10: «normal orijinal canlıya almak istiyorum» → seçenek «önce yalnız tasarım, çok firma ayrı gün». `k303-cok-firma` dalından YALNIZ tasarım/panel/kart değişiklikleri alındı (≈30 commit; çok firma kodu ALINMADI — süzgeç, süper admin, paketler, giriş firma kodu dalda kalır).
 · Alınanlar: Algoritmo görünümü + kişisel tema (tarayıcıda saklanır, veritabanı yok) · panel iş zekası (paranın dağılımı, ABC → ürün listesi, devir hızı, stok günü, ortalama sipariş), Huni+görev şeridi, sade NET kutuları · kârlılık kartı (208px resim + galeri, dönem kıyası, sekmeler, tekrar göstergeler temizlendi) · bütün kutular tek kart · sayfalar tam genişlik.
