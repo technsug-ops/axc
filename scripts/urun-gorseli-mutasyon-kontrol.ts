@@ -285,6 +285,31 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: "                gorsel={<UrunGorseli variantId={varyant.id}",
     bozdugu: "telefonda stok kartinda rozet hic cikmaz - depoda resim eklenemez",
   },
+  /* ═══ 15.10.2026 — Fisher-Price vakası: ilan barkodu = kanal kodu ≠ EAN ═══ */
+  {
+    ad: "LISTE DURUMU YINE YALNIZ EAN'LA",
+    yon: "KALDIRAN",
+    dosya: "src/lib/kanal-listeleme-yaz.ts",
+    bul: "const k = kanal.get(kod) ?? (bk === \"\" ? undefined : kanal.get(bk));",
+    koy: "const k = kanal.get(bk);",
+    bozdugu: "kanal kodu EAN'dan farkli 54 TY ilani yeniden YOK yazilir (linksiz, gorselsiz)",
+  },
+  {
+    ad: "GORSEL BASKA KANALIN KODUYLA ESLESIYOR",
+    yon: "FAZLADAN",
+    dosya: YAZICI,
+    bul: "    if (a && a.kaynak === s.channelAccount.channel.code) return a;",
+    koy: "    if (a) return a;",
+    bozdugu: "bir kanalin kodu otekinin ilan barkoduna denk gelirse yanlis urunun resmi yazilir",
+  },
+  {
+    ad: "GORSEL YAZICI KANAL KODUYLA ARAMIYOR",
+    yon: "KALDIRAN",
+    dosya: YAZICI,
+    bul: "    where: { OR: [{ barcode: { in: [...tekil.keys()] } }, { channelSkus: { some: { channelSku: { in: [...tekil.keys()] } } } }] },",
+    koy: "    where: { barcode: { in: [...tekil.keys()] } },",
+    bozdugu: "kod ile EAN'i farkli urune gorsel hic gelmez",
+  },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
