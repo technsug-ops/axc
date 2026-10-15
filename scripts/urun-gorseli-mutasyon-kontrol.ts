@@ -306,7 +306,7 @@ const MUTASYONLAR: Mutasyon[] = [
     ad: "GORSEL YAZICI KANAL KODUYLA ARAMIYOR",
     yon: "KALDIRAN",
     dosya: YAZICI,
-    bul: "    where: { OR: [{ barcode: { in: [...tekil.keys()] } }, { channelSkus: { some: { channelSku: { in: [...tekil.keys()] } } } }] },",
+    bul: "    where: { OR: [{ barcode: { in: [...tekil.keys()] } }, { id: { in: kodluVaryantlar.map((k) => k.variantId) } }] },",
     koy: "    where: { barcode: { in: [...tekil.keys()] } },",
     bozdugu: "kod ile EAN'i farkli urune gorsel hic gelmez",
   },

@@ -250,7 +250,8 @@ for (const yol of ["src/app/urunler/page.tsx", "src/app/stok/page.tsx", "src/app
   kontrol("  ...ne EAN ne kod tutuyorsa YOK", adayBul({ barcode: "1", channelSkus: [kodlu("X", "TRENDYOL")] }, tekil) === undefined);
   const gy = kaynakOku("src/lib/urun-gorseli-yaz.ts").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("  ...yazıcı varyantları kanal koduyla da çeker ve adayı ortak kuraldan alır",
-    /\{ channelSkus: \{ some: \{ channelSku: \{ in: \[\.\.\.tekil\.keys\(\)\] \} \} \} \}/.test(gy) && /const aday = adayBul\(v, tekil\);/.test(gy));
+    /where: \{ channelSku: \{ in: \[\.\.\.tekil\.keys\(\)\] \} \},/.test(gy) &&
+      /\{ id: \{ in: kodluVaryantlar\.map\(\(k\) => k\.variantId\) \} \}/.test(gy) && /const aday = adayBul\(v, tekil\);/.test(gy));
   const ly = kaynakOku("src/lib/kanal-listeleme-yaz.ts").replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol("liste durumu: önce KANAL KODU, sonra EAN (EAN tek başına anahtar değil)",
     /const k = kanal\.get\(kod\) \?\? \(bk === "" \? undefined : kanal\.get\(bk\)\);/.test(ly) && !/const k = kanal\.get\(bk\);/.test(ly));

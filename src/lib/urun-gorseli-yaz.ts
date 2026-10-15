@@ -75,8 +75,14 @@ export async function gorselleriYaz(
    * yalnız EAN'la arayınca ilan bulunur ama ürüne HİÇ bağlanmazdı (ölçüldü: TY'de kodla
    * bulunup görselsiz kalan 22 ürün). Kanal kodu YALNIZ AYNI KANALIN adayıyla eşleşir.
    */
+  /* Kanal kodu KESİN eşleşme — arama değil (arama kuralı `arama:dogrula` ortak gövdeyi ister;
+     burada kimlik tablosundan doğrudan okunur). */
+  const kodluVaryantlar = await prisma.channelSku.findMany({
+    where: { channelSku: { in: [...tekil.keys()] } },
+    select: { variantId: true },
+  });
   const varyantlar = await prisma.productVariant.findMany({
-    where: { OR: [{ barcode: { in: [...tekil.keys()] } }, { channelSkus: { some: { channelSku: { in: [...tekil.keys()] } } } }] },
+    where: { OR: [{ barcode: { in: [...tekil.keys()] } }, { id: { in: kodluVaryantlar.map((k) => k.variantId) } }] },
     select: {
       id: true,
       barcode: true,
