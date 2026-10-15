@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
-import { KeyRound, Trash2 } from "lucide-react";
+import { KeyRound, PlugZap, Trash2 } from "lucide-react";
 
 import {
   AlertDialog,
@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { HB_ORTAMLARI } from "@/lib/kanal-anahtari/kimlik";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 
-import { kanalAnahtariKaldir, kanalAnahtariKaydet, type AnahtarDurumu } from "./anahtar-actions";
+import { kanalAnahtariDene, kanalAnahtariKaldir, kanalAnahtariKaydet, type AnahtarDurumu } from "./anahtar-actions";
 
 /**
  * API BAĞLANTISI — satış hesabı başına bir kutu (K303 2. adım, 14.10.2026).
@@ -35,7 +35,8 @@ export function ApiBaglantisi({
     id: string;
     etiket: string;
     alanlar: readonly { ad: string; gizli: boolean }[];
-    bagli: { sonDort: string; kayitMetni: string } | null;
+    /** `sonDeneme`: «Son deneme 15.10 · 02:10 — bağlandı» (sayfa sözlükten kurar) ya da hiç denenmediyse null. */
+    bagli: { sonDort: string; kayitMetni: string; sonDeneme: { metin: string; basarili: boolean } | null } | null;
   };
 }) {
   const t = useTranslations("KanalAnahtari");
@@ -55,6 +56,12 @@ export function ApiBaglantisi({
     if (s.tamam) setAcik(false);
     return s;
   }, {});
+  /* K337 3. adım ②: «Bağlantıyı dene» — sonucu aynı «son işlem» durumuna yazar. */
+  const [, deneAction, deneniyor] = useActionState<AnahtarDurumu, FormData>(async (onceki, form) => {
+    const s = await kanalAnahtariDene(onceki, form);
+    setSon(s);
+    return s;
+  }, {});
   const mesaj = son.basari;
   const hata = son.hata;
 
@@ -67,11 +74,25 @@ export function ApiBaglantisi({
             <p className={`text-sm ${DURUM_YAZISI.olumlu}`}>
               {t("bagli", { son: hesap.bagli.sonDort })} · <span className="text-muted-foreground">{hesap.bagli.kayitMetni}</span>
             </p>
+          ) : null}
+          {hesap.bagli?.sonDeneme ? (
+            <p className={`text-xs ${hesap.bagli.sonDeneme.basarili ? DURUM_YAZISI.olumlu : DURUM_YAZISI.olumsuz}`}>{hesap.bagli.sonDeneme.metin}</p>
+          ) : hesap.bagli ? (
+            <p className="text-muted-foreground text-xs">{t("hicDenenmedi")}</p>
           ) : (
             <p className="text-muted-foreground text-sm">{t("bagliDegil")}</p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {hesap.bagli ? (
+            <form action={deneAction}>
+              <input type="hidden" name="hesapId" value={hesap.id} />
+              <Button type="submit" variant="outline" className="h-11 md:h-9" disabled={deneniyor}>
+                <PlugZap />
+                {deneniyor ? t("deneniyor") : t("baglantiyiDene")}
+              </Button>
+            </form>
+          ) : null}
           <Button type="button" variant={hesap.bagli ? "outline" : "default"} className="h-11 md:h-9" onClick={() => { setSon({}); setAcik((a) => !a); }} aria-expanded={acik}>
             <KeyRound />
             {hesap.bagli ? t("degistir") : t("anahtarGir")}

@@ -97,6 +97,22 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "import { hesabinKimligi, tekSatisHesabi } from \"@/lib/kanal-anahtari/hesaplar\";\n",
     koy: "import { hesabinKimligi, tekSatisHesabi } from \"@/lib/kanal-anahtari/hesaplar\";\nimport { kimlikOku } from \"../../../../scripts/ty/istemci\";\nvoid kimlikOku;\n",
     bozdugu: "ekran eylemi yeniden tek takim ortam anahtarina erisir" },
+  { ad: "DENE: DENEME KAPISI DELINDI", yon: "FAZLADAN", dosya: "src/app/ayarlar/kanallar/anahtar-actions.ts",
+    bul: "    const o = await kimligiOku(hesapId);",
+    koy: "    const o = await kayitliKimligiAc(hesapId);",
+    bozdugu: "deneme kurulumunda gercek pazaryerine istek gider" },
+  { ad: "DENE: REDDEDILEN ANAHTAR BAGLANDI SAYILIR", yon: "FAZLADAN", dosya: "src/lib/kanal-anahtari/dene.ts",
+    bul: "  if (tur === \"YETKISIZ\") return \"REDDEDILDI\";",
+    koy: "  if (tur === \"YETKISIZ\") return \"BAGLANDI\";",
+    bozdugu: "yanlis anahtar yesil gorunur" },
+  { ad: "DENE: IZIN GEVSEDI", yon: "FAZLADAN", dosya: "src/app/ayarlar/kanallar/anahtar-actions.ts",
+    bul: "export async function kanalAnahtariDene(_onceki: AnahtarDurumu, form: FormData): Promise<AnahtarDurumu> {\n  const baglam = await yetkiIste(\"kanal.anahtar\");",
+    koy: "export async function kanalAnahtariDene(_onceki: AnahtarDurumu, form: FormData): Promise<AnahtarDurumu> {\n  const baglam = await yetkiIste(\"ayar.yaz\");",
+    bozdugu: "magazaya erisim gucu ayar izniyle denenir" },
+  { ad: "DENE: HAM HATA KAYDA", yon: "FAZLADAN", dosya: "src/lib/kanal-anahtari/depo.ts",
+    bul: "sonHata: basarili ? null : sonuc }",
+    koy: "sonHata: basarili ? null : JSON.stringify({ sonuc, ham: \"pazaryeri metni\" }) }",
+    bozdugu: "pazaryerinin ham metni kayda girer" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

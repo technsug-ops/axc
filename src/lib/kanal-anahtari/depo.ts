@@ -73,6 +73,21 @@ export async function anahtarKaldir(channelAccountId: string, yapanId: string): 
   return { durum: "TAMAM" };
 }
 
+/**
+ * «Bağlantıyı dene» sonucunu yazar (K337 3. adım ②). `sonHata` yalnız KOD taşır
+ * (`dene.ts → DenemeSonucu`) — pazaryerinin ham metni değil. İz bırakır.
+ */
+export async function denemeSonucuYaz(channelAccountId: string, sonuc: "BAGLANDI" | "REDDEDILDI" | "ISTEK_HATALI" | "ULASILAMADI", yapanId: string): Promise<boolean> {
+  const a = await prisma.kanalAnahtari.findUnique({ where: { channelAccountId }, select: { id: true, sonDort: true } });
+  if (!a) return false;
+  const basarili = sonuc === "BAGLANDI";
+  await prisma.$transaction([
+    prisma.kanalAnahtari.update({ where: { id: a.id }, data: { sonDenemeAt: new Date(), sonDenemeBasarili: basarili, sonHata: basarili ? null : sonuc } }),
+    izKaydi(prisma, { action: "KANAL_ANAHTARI_DENENDI", targetType: "ChannelAccount", targetId: channelAccountId, userId: yapanId, detail: JSON.stringify({ sonuc, sonDort: a.sonDort }) }),
+  ]);
+  return true;
+}
+
 /** Ekran için durum — anahtarın kendisi DEĞİL, yalnız «bağlı mı · son 4 · son deneme». */
 export async function anahtarDurumlari(): Promise<Map<string, { sonDort: string; kayit: Date; sonDenemeAt: Date | null; sonDenemeBasarili: boolean | null; sonHata: string | null }>> {
   const l = await prisma.kanalAnahtari.findMany({ select: { channelAccountId: true, sonDort: true, updatedAt: true, sonDenemeAt: true, sonDenemeBasarili: true, sonHata: true } });

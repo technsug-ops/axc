@@ -225,7 +225,22 @@ export default async function KanalHesaplariSayfasi() {
                       /* Hesap adı kanalı zaten taşıyor («Trendyol — Damisell»); kanal adı eklenince tekrar ediyordu. */
                       etiket: h.name,
                       alanlar: desteklenenKanalMi(h.channel.code) ? KIMLIK_ALANLARI[h.channel.code] : [],
-                      bagli: a ? { sonDort: a.sonDort, kayitMetni: tAnahtar("kayitTarihi", { tarih: bicim.tarihSaat(a.kayit) }) } : null,
+                      bagli: a
+                        ? {
+                            sonDort: a.sonDort,
+                            kayitMetni: tAnahtar("kayitTarihi", { tarih: bicim.tarihSaat(a.kayit) }),
+                            /* K337 3. adım ②: son «Bağlantıyı dene» — sonuç KOD olarak saklı, cümlesi sözlükten. */
+                            sonDeneme: a.sonDenemeAt
+                              ? {
+                                  basarili: a.sonDenemeBasarili === true,
+                                  metin: tAnahtar("sonDeneme", {
+                                    tarih: bicim.tarihSaat(a.sonDenemeAt),
+                                    sonuc: tAnahtar(`deneKisa_${a.sonDenemeBasarili ? "BAGLANDI" : (a.sonHata ?? "ULASILAMADI")}`),
+                                  }),
+                                }
+                              : null,
+                          }
+                        : null,
                     }}
                   />
                 );

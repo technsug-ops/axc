@@ -313,6 +313,32 @@ async function main() {
     kontrol(`kart düğmeleri anahtarı HESAPTAN okur (${kartOkuma} okuma ≥ 5: TY gönder · TY sonuç · N11 · HB önizle · HB gönder)`, kartOkuma >= 5);
     kontrol("  ...kart bağlamları hesabı TEK-HESAP kuralıyla bulur (üç kanal)", (kart.match(/const t = await tekSatisHesabi\("(?:TRENDYOL|N11|HEPSIBURADA)"\);/g) ?? []).length === 3);
   }
+  {
+    /* «BAĞLANTIYI DENE» — K337 3. adım ② (15.10.2026). */
+    const Y = await import("../src/lib/kanal-anahtari/dene");
+    const tablo: [string, string][] = [["VERI", "BAGLANDI"], ["BOS", "BAGLANDI"], ["YETKISIZ", "REDDEDILDI"], ["ISTEK_HATALI", "ISTEK_HATALI"], ["BULUNAMADI", "ULASILAMADI"], ["ULASILAMADI", "ULASILAMADI"], ["TANIMSIZ", "ULASILAMADI"]];
+    const yanlis = tablo.filter(([g, b]) => Y.okumayiYorumla(g) !== b);
+    kontrol("deneme yorumu: kabul → bağlandı · 401/403 → reddedildi · 400 → istek hatalı · gerisi ulaşılamadı (hüküm yok)", yanlis.length === 0, yanlis);
+    const eylem = yorumsuz(kaynakOku("src/app/ayarlar/kanallar/anahtar-actions.ts"));
+    const dene = eylem.slice(eylem.indexOf("export async function kanalAnahtariDene("));
+    kontrol("dene eylemi kanal.anahtar izni ister", /^export async function kanalAnahtariDene\([^)]*\)[^{]*\{\s*const baglam = await yetkiIste\("kanal\.anahtar"\);/.test(dene));
+    kontrol("  ...anahtarı UYGULAMA kapısından okur (deneme ortamında pazaryerine GİDİLMEZ)",
+      /const o = await kimligiOku\(hesapId\);\s*if \(o\.durum === "DENEME_ORTAMI" \|\| o\.durum === "COZULEMEDI"\) return \{ hata: t\(`dene_\$\{o\.durum\}`\) \};\s*if \(o\.durum !== "TAMAM"\) return/.test(dene) && !/kayitliKimligiAc/.test(eylem));
+    kontrol("  ...pazaryeri çağrısı kapılardan SONRA, sonuç depoya yazılır",
+      /if \(o\.durum !== "TAMAM"\) return \{ hata: t\(`hata_\$\{o\.durum\}`\) \};\s*const sonuc = await baglantiyiDene\(o\.kimlik\);\s*await denemeSonucuYaz\(hesapId, sonuc, baglam\.kullaniciId\);/.test(dene));
+    const denemeDosyasi = yorumsuz(kaynakOku("src/lib/kanal-anahtari/dene.ts"));
+    kontrol("  ...deneme gövdesi veritabanına DOKUNMAZ (prisma yok) ve yalnız okuma uçlarını çağırır",
+      !/prisma/.test(denemeDosyasi) && /TY\.onayliUrunler\(/.test(denemeDosyasi) && /HB\.listingler\(/.test(denemeDosyasi) && /N11\.paketler\(/.test(denemeDosyasi));
+    const depo2 = yorumsuz(kaynakOku("src/lib/kanal-anahtari/depo.ts"));
+    kontrol("  ...kayda yalnız KOD yazılır (ham pazaryeri metni değil)", /data: \{ sonDenemeAt: new Date\(\), sonDenemeBasarili: basarili, sonHata: basarili \? null : sonuc \}/.test(depo2));
+    const trK = (JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>).KanalAnahtari ?? {};
+    const sonuclar = ["BAGLANDI", "REDDEDILDI", "ISTEK_HATALI", "ULASILAMADI"];
+    const eksikMetin = [...sonuclar.flatMap((x) => [`dene_${x}`, `deneKisa_${x}`]), "dene_DENEME_ORTAMI", "dene_COZULEMEDI", "baglantiyiDene", "sonDeneme", "hicDenenmedi"].filter((a) => !trK[a]?.trim());
+    kontrol("  ...her deneme sonucunun cümlesi ve kısa adı sözlükte", eksikMetin.length === 0, eksikMetin);
+    const ekranB = yorumsuz(kaynakOku("src/app/ayarlar/kanallar/api-baglantisi.tsx"));
+    kontrol("  ...düğme YALNIZ bağlı hesapta, sonuç «son işlem» durumuna yazılır",
+      /\{hesap\.bagli \? \(\s*<form action=\{deneAction\}>/.test(ekranB) && /const s = await kanalAnahtariDene\(onceki, form\);\s*setSon\(s\);/.test(ekranB));
+  }
   kosanBolumler.push("hesap");
 
   await sistemPrisma.$disconnect();
