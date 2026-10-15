@@ -379,7 +379,8 @@ async function main() {
     kontrol("geri alma kümesi YENİDEN HESAPLANIR: yalnız anahtarı ortamdakiyle BİREBİR aynı hesap", geri.map((x) => x.id).join(",") === "ty", geri);
     const betik = yorumsuz(kaynakOku("scripts/canli-anahtar-tasi.ts"));
     const isaret = betik.indexOf('if (DENEME) process.env.DENEME_ORTAMI = "1";');
-    const istemci = betik.indexOf('await import("./ty/istemci")');
+    // Çapa istemci YOLUNU yazmaz: `api:dogrula` o dizeyi «API'ye ulaşan dosya» sayar (bekçinin arama dizesi davranış sanılır).
+    const istemci = betik.indexOf("const { kimlikOku: tyOku } = await import(");
     kontrol("taşıma betiği: deneme kipinde deneme İŞARETİ istemcilerden ÖNCE konur (gerçek anahtar deneme veritabanına gidemez)", isaret >= 0 && istemci >= 0 && isaret < istemci);
     const kapi = betik.indexOf("if (!karar.yazilabilir) {");
     const goruntu = betik.indexOf("writeFileSync(goruntu,");
