@@ -18,6 +18,1284 @@
 
 ---
 
+## ✅ K330 — ALGORİTMO TASARIMI + YENİ KÂRLILIK KARTI CANLIYA (dal → main) · 11.10.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi GEÇTİ 15.10.2026 (kullanıcı: «diğer tüm testler ok» — panel ABC → ürün listesi · kârlılık kartı resim/sekmeler · kişisel tema). Kullanıcı (mimar) «kapat» 15.10.2026.
+
+Kullanıcı kararı 10–11.10: «normal orijinal canlıya almak istiyorum» → seçenek «önce yalnız tasarım, çok firma ayrı gün». `k303-cok-firma` dalından YALNIZ tasarım/panel/kart değişiklikleri alındı (≈30 commit; çok firma kodu ALINMADI — süzgeç, süper admin, paketler, giriş firma kodu dalda kalır).
+· Alınanlar: Algoritmo görünümü + kişisel tema (tarayıcıda saklanır, veritabanı yok) · panel iş zekası (paranın dağılımı, ABC → ürün listesi, devir hızı, stok günü, ortalama sipariş), Huni+görev şeridi, sade NET kutuları · kârlılık kartı (208px resim + galeri, dönem kıyası, sekmeler, tekrar göstergeler temizlendi) · bütün kutular tek kart · sayfalar tam genişlik.
+· **Uyarlama:** `VaryantGorseli` canlıda FİRMA ALANSIZ (`20261010120000_varyant_gorseli`, canlıda koştu 11.10, 68 migration); dal kendi sürümünde `companyId` taşır — çok firma geçişinde bu tablo da firma alanı alır. Yedek sürümü 7 (dalda 8). Galeri yazıcısı firmasız. Demo galeri betiği taşınmadı.
+· Taşıma turunda bulunan, dalda çözülmüş üç düzeltme de alındı: panel iptal süzgeci açık (f4365804 parçası) · panel sıra/lint (af42201e) · panel mutasyon çapası (7728d808). Tam tur: 228 bekçi, kırmızı kalan yalnız deploy:bekci (migration bekliyordu).
+· **Kart düzeltmesi (12.10.2026, kullanıcı: «anlamsız işaretler var ürün kartında» → seçim «noktaları birleştir»):** Fiyat kutusundaki küçük çizgi seyrek satışta eksensiz yüzen yuvarlaklar + üst üste binen fiyat yazıları çiziyordu. Artık çizgi yalnız fiyatı OLAN noktalardan geçer (boş günlere değer UYDURULMAZ — sıfır çizilmez; dosya başındaki «boşluk» kuralı günlük grafikte aynen geçerli, eski gerekçe bileşende duruyor), yüzen etiket yok: ilk/son tarih + fiyat çizginin altında; tek satış günü / tek alım çizilmez, metin yazar («tek alım · 23.05.2026 · ₺489,98»). Kanal fiyat tablosu da aynı bileşen. Yerel kopyada `axcali1780` kartı çizildi (metin kontrolü). `kart-analizi:dogrula` 68 («değer yazılır» ölçütü yeni yere taşındı, üç yeni ölçüt), mutasyon 26/26 (+4).
+**Halil testi (bezirga.com, telefon + bilgisayar):** a) Panel → kutularda eğilim rozeti, «Paranın dağılımı» ve ABC; ABC'de bir sınıfa dokun → ürün listesi o sınıfla açılır · b) Ürünler → bir ürün → Kârlılık kartı: üstte büyük resim + küçük resimler (resim yoksa boş kutu), dönem seçici, sekmeler (Genel · Siparişler · Kâr · Varyantlar · İadeler) · c) Kârlılık kartında NET-2 rakamı eski karttakiyle aynı · d) Herhangi bir ayar sayfası iki yana tam genişlik · e) Üst çubukta tema düğmesi → Kişisel → renk seç, sayfa yenilenince kalır. ⚠ Galeriyi günlük listeleme çekimi doldurur (`/api/cron/listeleme-cekim`, her gün 04:50 UTC; TY + N11) ve koşum başına en çok **150** ürün yazar (`GORSEL_YAZIM_TAVANI`) — galerisi henüz yazılmamış üründe kart tek resim (`gorselUrl`) gösterir. Elle hızlandırma: `npm run canli:kanal-listeleme` + `npm run canli:n11-listeleme` (aynı iş, kullanıcı onayıyla).
+─── ⓪ **DAL KAYDI (k303, 10.10.2026) — aynı kalemin dal yarısı, birleştirmede (13.10) tek satıra toplandı** · eski başlık: 🔶 K330 — KÂRLILIK KARTI ALGORİTMO ÜRÜN SAYFASI + ÇOKLU ÜRÜN RESMİ (YALNIZ k303 DALI) · 10.10.2026 · [DALDA — DEMO ADRESİNDE ÇİZİLDİ, HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı (10.10):** `Downloads/ürün karti algoritmo.zip` (18 görüntü, Algoritmo ürün sayfası) — «hem frontend olarak hem içerik olarak çok sevdim» · «kârlılık kartında mutlaka ürünün Algoritmo ölçüsünde resmi olsun». Seçimler: **deneme kurulumunda** · **dört bölümün hepsi ilk pakette** · **çoklu resim ilk pakette** (yeni tablo onaylı).
+**Çoklu resim — ölçüldü 10.10 (canlı TY, yalnız GET):** 300 içerikte resim sayısı 1–23, çoğu 5–10 (17'si tek resim); `ProductVariant.gorselUrl` yalnız `images[0]`ı tutuyordu. Yeni tablo `VaryantGorseli` (firma süzgecinde, `companyId`; migration `20261010120000_varyant_gorseli` — **yalnız deneme + demo veritabanında koştu, canlıya GİTMEDİ**). Kural saf (`urun-gorseli.ts`: `galeriAdresleri` izinli sunucu/https/tekrarsız/tavan 30 · `galeriYazilirMi` TY>N11, aynı liste yazılmaz, boş aday silmez · `kartResimleri` ana önce). Yazıcı `gorselleriYaz` galeriyi varyant başına TEK işlemde (sil+yaz) yazar, tavan 150. TY ve N11 okumaları galeriyi taşır. Yedek sürüm 8 (liste + üretici AYNI düzenlemede; öncesi `deneme-yedekleri/selliora_deneme-20261010-galeri-oncesi.sql`, yedek testi sonrası 62 tablo / 5.108 satır birebir).
+**Demo galerisi:** deneme kurulumunda pazaryeri anahtarı YOK → ana kurulumda TY listesi yalnız okunup dosyaya çıkarıldı (1.653 içerik / 1.697 barkod), `scripts/deneme-galeri-doldur.ts` (TEK_SEFERLİK) ile demo veritabanında **1.245 ürüne** yazıldı (9 tur; ikinci kuru koşum 0).
+**Kart (`/kart/[id]`):** üst kart — 208 px resim + küçük resimler + «‹ 1/N ›» · künye (AYNEN) gri kutuda · ürün kaydı / ilk satış / son satış (gün) · dönem seçici (adreste, varsayılan son 30 gün, özel aralık) · satılan adet + ciro, önceki döneme göre % (önceki 0 ise «karşılaştırılamaz») + mini çubuk · 4 kutu (fiyat çizgisi + alış geçmişi + son alış · kâr özeti ciro/maliyet/NET-1/NET-2 % · stok kaç gün yeter halkası · iade adedi/oranı) · alt çizgili sekmeler (adreste): **Genel** (günlük ciro/NET-2 çubuk + adet/iade çizgi · kanala göre ciro halkası + hesap tablosu toplamlı · ürün durumu halkaları iade/marj/toplam cirodaki pay · stok + ortalama fiyat grafiği · kanallara göre fiyat gelişimi; ardından mevcut stok/maliyet/açık parti/satış blokları) · **Siparişler** (dönemin satırları, toplam satırı dönemin tamamı, Satışlar ekranına bağlantı — Excel orada) · **Kâr raporu** (merdiven: adet/iptal/iade → ciro → maliyet → komisyon+stopaj → NET-1 → KDV → NET-2; hesaplanamayan kalem dışarıda ve sayısı yazar; ardından mevcut kârlılık + tavsiye) · **Varyantlar** · **İadeler** (günlük iade + mevcut risk bloğu). «Fiyat dene» K103 gereği SEKME DEĞİL, geniş ekranda her sekmenin sağında. Kâr rakamları izinsize sunucudan çıkmaz; kâr sekmesi izinsize açılmaz. Hesaplar saf gövdede (`urun-karti-seri.ts`), okuma `urun-karti-analiz.ts` (kartın ölçütü: iptalsiz satış · `KALEM_GECERLI` · `IADE_GECERLI` · maliyet `kalemMaliyeti`).
+**Doğrulama:** demo adresinde 5 sekme 200, galeri 8 küçük resim; son 30 gün `672e2eb0…` ekranda 15 adet · NET-2 ₺3.016,50 · %29 — veritabanından bağımsız sorgu **15 · ₺10.455,00 · ₺3.016,50** birebir. Bekçi `kart-analizi:dogrula` 54/54 · mutasyon **16/16** (2 zararsız · 14 bozma: UTC günü · önceki-sıfır uydurma % · satışsızda stok günü · merdivene maliyetsiz kalem · kısmi NET-2 · satışsız güne fiyat 0 · kaldırılmış kalem · izinsize NET-1 · geri alınmış iade · galeri silinmeden yazım · N11 TY'yi ezer · galeride tekrar · N11 galeri taşımaz · kâr sekmesi izinsize). `kart:dogrula` 119 · `stok-siralama` 64 + mutasyon 32/32 (iki çapa yeni koda TAŞINDI, silinmedi) · `urun-gorseli` 80 + mutasyon 30/30 · `yedek` 77 · `i18n` temiz · lint 0 hata.
+**Halil testi (demo adresi, telefon + bilgisayar):** ① Ürünler → çok satan bir ürünün kartı → solda büyük resim, yanında küçük resimler; okla ve küçük resme tıklayarak geçiş · ② sağ üstte Dönem → «Son 3 ay» → adet/ciro ve grafikler değişir, sekme değişince dönem korunur · ③ Siparişler sekmesi → satır sayısı sekme adındaki sayıyla aynı, toplam satırı · ④ Kâr raporu → NET-2 satırı = Genel'deki «Kâr özeti» NET-2 · ⑤ Varyantlar → başka varyantın adına tıkla, kart o varyantla ve aynı dönemle açılır · ⑥ kâr izni olmayan rolle aynı kart: kâr kutusu «yetkiniz dahilinde değil», Kâr raporu sekmesi YOK.
+⚠ **Canlıya geçiş ayrı karardır:** tablo canlıda yok; canlıya alınırken migration + ilk galeri dolumu (senkron 150/koşum) onay ister.
+─── ② **10.10.2026 — KULLANICI: «üst taraf harika olmuş ama iki farklı dizayn karışmış» + «duble gösterge varsa temizlemeyi ihmal etme».** Eski bloklar (stok · maliyet · açık partiler · kârlılık · tavsiye · risk) yeni beyaz kart görünümüne alındı (`Kutu`/`Bolum` — Fiyat dene `cerceve={false}`, kendi kartı var). **Tekrarlar kaldırıldı:** eldeki adet (stok kutusunda) · son alım (Fiyat kutusunda, notu AYNEN: giriş · tedarikçi · kod · tükendi; artık herkese açık — eski «Maliyet» bölümü de açıktı) · «Satış geçmişi» bloğu (son satış üstte; «Tüm zamanlar: N satış» üst satırda; kanallar dağılımda) · İadeler sekmesindeki 3 kutu · merdivendeki «satılan adet» (üst göstergeyle aynı). ⚠ **«Satılan adet» kutusu kâr bloğundan kaldırılmadı:** K102 (kullanıcı 30.08 «satış miktarı yok burda» — kâr cümlesinin ölçeği), bekçi yakaladı; tekrar üst satırdan kaldırıldı. Kâr bloğu «Kârlılık — tüm satışlar», merdiven «Kâr raporu — seçili dönem» (iki kapsam ayrı adla). **Kusurlar:** fiyat çizgisi seyrek satışta «∞» gibi eziliyordu (oran korunur, her nokta çizilir) · kanal halkası «%10.000» (`HalkaKompakt` yüzdeyi 0–100 veriyor) · %0 halkada nokta · sekme çubuğunda dikey kaydırma. **Deneme sunucuları** artık `.next-sunum`dan (`SUNUM_DERLEME=1`) — push turundaki derleme `.next-bekci`yi yeniden yazıp açık sunucunun CSS'ini siliyordu (kullanıcı stilsiz sayfa gördü). Bekçiler: `kart` 119 · `kart-partileri` 31 + mutasyon 19/19 · `stok-siralama` 64 + mutasyon 32/32 (3 çapa taşındı, gerekçesi dosyada) · `kart-analizi` 54 + 16/16 · `i18n` temiz.
+**Sıradaki (kullanıcı kararı 10.10 «sistemdeki bütün kutular»):** bütün ekranların kutu/kart görünümü bu tasarıma — önce envanter, sonra ortak bileşen + ekran ekran plan.
+─── ③ **10.10.2026 — SİSTEMDEKİ BÜTÜN KUTULAR TEK KART TASARIMINDA (kullanıcı «sistemdeki bütün kutular»).** Envanter: ~415 kutu (269 `rounded-lg border` · 146 `rounded-md border` · 142 `Card` · 72 kesikli). Üç paket, her biri demo adresinde gösterildi ve kullanıcı onayladı: **A — tema** (`globals.css`): kutu boyundaki `rounded-md border` (p-3+) kart olur, çip/etiket boyu DIŞARIDA · gri dolgulu kutu (`bg-muted/40`+çerçeve) beyaz — KATMANSIZ (yoksa `bg-*` aracı kazanır) · bağlantı biçimindeki kutu (`<a rounded-lg border>`) kart (kullanıcı kanal listelemede «değişen bir şey olmamış» dedi) · `CardTitle` 16px/600 KATMANDA (ilk yazım katmansızdı ve rakam kutusu etiketlerini 16px'e çıkardı — Paket C'de görüldü, düzeltildi, bekçi yasakladı) · `ListeKarti` rounded-lg. **B — ortak yazı** `src/lib/kutu-bicimi.ts` (`KUTU_ETIKETI` 13px orta · `KUTU_RAKAMI` kalın): nakit özeti · nakit takvimi · hakediş · iadeler · kanal listeleme · vitrin · kârlılık kartı. Görev kutucukları (K259 telefon sıkışık tasarımı) ve simülasyon satır içi rakamları BİLEREK dışarıda. **Kullanıcı kararları (10.10):** dikkat çeken liste satırı (`SatirKarti` `zemin`) tam boya yerine SOL ŞERİT · durum kutusu (`DURUM_KUTUSU` — sarı/kırmızı/yeşil kart, 105 dosya) beyaz + sol şerit + durum tonunda yazı; rozetler pastel KALIR (küçük alanda doygunluk kuralı). Eski gerekçeler dosyalarda silinmedi. **C:** stok kartı + kart detayı rakam kartları · depo/tarife/kargo/göç/paketleme sayım kutuları · satış/alım formu para birimi toplam kutucukları. **Bekçi** `kutu-bicimi:dogrula` 51/51 · mutasyon **14/14** (ilk sürümde «katmansız mı» ölçütü kördü — kural katmana alınınca yeşil kalıyordu, mutasyon yakaladı; «kart başlığı katmanda mı» ölçütü önce yanlış yere bakıyordu — seçici dosyada iki kez geçiyor, çapa boyut satırına bağlandı). Eskiyen ölçütler taşındı (silinmedi, gerekçesiyle): `satir-karti` (zemin → şerit, zeminin dönüşü yasak) · `panel` (kutu K1+K2 → K1+beyaz+zeminin yazı tonu, pastelin dönüşü yasak) · `kart-partileri-mutasyon` çapası. Etkilenen bütün bekçi + mutasyonlar yeşil (panel 928 + 91/91 · satır kartı 82 + 42/42 · depo 210 · paketleme 112 + 6/6 · kişisel tema 56 + 15/15 …).
+**Halil testi (demo adresi):** Panel · Satışlar · bir satış detayı · Hakediş · Stok + bir stok kartı · Ürünler · Nakit takvimi · İadeler · Kanal listeleme · Kartlar → bir kart · Paketle · Yeni satış/alım — kutular Kârlılık kartıyla aynı dilde; uyarı kutuları beyaz + sol şerit; kanalda kapalı satırlar solda turuncu şerit.
+
+
+---
+
+## ✅ K319 — GEÇİCİ PAROLAYLA GİREN KİŞİ PANELE DÜŞÜYORDU (ZORUNLU PAROLA DEĞİŞİMİ ATLANIYORDU) · 05.10.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi GEÇTİ 15.10.2026 canlıda (①–③: parola sıfırla → «Parolanızı değiştirin» → yeni parolayla giriş). ④ deneme kurulumuna aitti — çok-firma geçişinde zorunlu parola değişimi `/giris` akışıyla birlikte yeniden sınanır. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**Kullanıcı bulgusu (deneme, yeni firma TechNS):** «firma kuruldu ama şifre yenilenme istemedi». Ölçüldü: yönetici 14:10'da girdi, `mustChangePassword` HÂLÂ `true`; dünkü TST1'de de aynısı (fark edilmemiş).
+**KÖK:** zorunlu parola değişimi sayfa kapılarının (`sayfaIzni` · `sayfaGirisi` · `sayfaTamYetki`) içinde yaşıyor; Panel «girişi olan herkes görür» gerekçesiyle KAPISIZ beyanlıydı ve yalnız `izinVarMi` çağırıyordu. Girişten sonra ilk açılan sayfa panel → parola ekranı hiç gelmiyordu (menüden başka sayfaya tıklayınca geliyordu). **Canlıda da aynı kod** — `main`de düzeltildi. _(Anayasa: «ilke kendi kapsamının dışına uygulanırsa hatayı korur».)_
+**Düzeltme:** Panel `sayfaGirisi()` kapısından geçer (izin istemez, niyet aynı); kapısız sayfa istisnalarından ÇIKTI.
+**Bekçi açığı da kapandı:** `yetki:dogrula` `izinVarMi`yi kapı sayıyordu → panel kapısını silen mutasyon YEŞİL geçti. Yeni ölçüt: istisna olmayan her sayfa, gövdesi `redirect("/parola-degistir")` taşıyan bir kapıyı (modülden TÜRETİLİR, elle liste yok; taban ≥3) yorumsuz kodda çağırır. Mutasyonlar: panel kapısı silindi · kapının içindeki yönlendirme silindi (taban 2'ye düştü, panel + menü kırmızı) · kapı yalnız yorumda — üçü de KIRMIZI. Ölçüldü: bugün başka açık sayfa yok (kapısız yalnız giriş · parola değiştir · çevrimdışı, üçü beyanlı).
+─── ② **05.10.2026 — PAROLA DEĞİŞİNCE GİRİŞ FORMU ESKİ MENÜNÜN İÇİNDE AÇILIYORDU (kullanıcı bulgusu, ekran görüntüsü).** Kök: eylem oturum sürümünü artırıyor (jeton geçersiz) ama ÇEREZİ silmiyordu; Next.js belgesi: «sunucu eylemi çerez set/silerse sayfa ve layout'lar yeniden çizilir» — çerez değişmeyince layout eski hâliyle kaldı. Çıkış çerezi sildiği için etkilenmiyordu. Ayrıca eylemin gönderdiği `?parola=degisti` bilgisini giriş ekranı HİÇ okumuyordu. Düzeltme: eylem yönlendirmeden önce `oturumKapat()` (çerez silinir) · giriş ekranı «Parolanız değişti… yeni parolanızla giriş yapın» yazar. `oturum:dogrula` ⑤ bölüm (45/45, bölüm sayacı 5) · mutasyon 5/5 (zararsız yeşil; silme yok · yalnız yorumda · yönlendirmeden sonra · bilgi koşulu ölü → kırmızı). **Halil testi ek:** parolayı değiştirince menüsüz giriş ekranı + yeşil «Parolanız değişti» kutusu.
+⚠ **Push kapısında bulunan iki şey (05.10.2026):** ① `bekci-kapisi` haklı kırmızı — ⑤ bölüm dosyayı `readFileSync` ile okuyordu; ortak okuma kapısına (`kaynakOku`) çevrildi. ② `urun-etiketi` turda ÇÖKTÜ, tek başına 28/28: zxing-wasm çözücü dosyasını o an İNTERNETTEN indirmeye çalıştı ve indirme düştü («wasm streaming compile failed: fetch failed»). Değişiklikle ilgisiz — ama **bir bekçinin ağa bağlı olması ayrı bir zayıflık** (ağ yoksa push kapısı kod yüzünden değil bağlantı yüzünden durur). Açık kalem: wasm yerel dosyadan yüklensin (`node_modules` içindeki `.wasm`).
+**Halil testi (deploy sonrası, canlı):** ① Kullanıcılar ekranından bir kullanıcının parolasını sıfırlayın (yeni parola verin) · ② o kullanıcıyla `bezirga.com`'a girin → Panel DEĞİL «Parolanızı değiştirin» ekranı açılmalı · ③ yeni parolayı koyun → Panel açılır · ④ deneme kurulumunda TechNS yöneticisiyle yeniden girin → aynı şekilde parola ekranı.
+
+
+---
+
+## ✅ K327 — İPTAL EDİLEN SATIŞ LİSTEDE ÜSTÜ ÇİZİLİ GÖRÜNÜR (ALIMLAR GİBİ) · 09.10.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi GEÇTİ 15.10.2026 (iptal satırı üstü çizili, ciroya girmez · «İptalleri gizle» · Excel «İptal tarihi» · telefon). Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**Kullanıcı:** «Trendyol'da iptal olan siparişin bizde hiç kaydı çıkmıyor. Bu normal mi» (`11687161720`) · «aldıklarımda iptal olan varsa o üzeri çizik olarak duruyor» → «evet».
+**Ölçüldü (canlı, salt okuma):** sipariş KAYITTAYDI — 08.10 16:25 geldi, 16:27 onaylandı; TY 09.10 11:18 iptal etti, sistem **11:19**'da kendiliğinden tespit etti (`SATIS_IPTAL`, geri dönen adet 1, ciro ₺875 · NET-2 ₺235,04 düşüldü). Kusur yalnız ekrandaydı: `satisKosulu` `iptal` boşken iptalleri atıyor ve Satışlar listesi bunu varsayılan kullanıyordu → arama «satış yok» diyordu.
+**Kural** `liste-suzgeci.ts` `satisListesiParametreleri` (saf): iptaller adreste yalnız NÖTR süzgeç varsa (arama · dönem · kanal · hesap · sayfa) varsayılan GÖRÜNÜR; görev/ölçüm süzgeçlerinde (kâr eksik · kargo · onay · marj · şüpheli · iade · paket) GİZLİ — onlar bir sayıdan açılır, «sayı = liste» (İlke #16). İZİN listesi: bilinmeyen süzgeç gizliye düşer. Açık seçim kazanır (`iptal=1` göster · `iptal=0` gizle; kutuya «İptalleri gizle» eklendi, kutu çözülmüş değeri yazar). ⛔ ORTAK koşulun varsayılanı DEĞİŞMEDİ (panel, rapor kaymaz). Toplamlar hep iptal hariç (değişmedi). Excel aynı gövdeyi çağırır + yeni «İptal tarihi» sütunu (dosyayı toplayan ayırabilsin). Telefon kartı da üstü çizili (`ListeKarti iptal`) — Alımlar dahil (İlke #10).
+**Bekçi** `iptal-gorunurluk:dogrula` **30/30** · mutasyon **13/13** (1 zararsız yeşil) · `suzgec` 152 · `iptal` 54 · `iptal:bekci` · çakışma 3 · tur seçimi 26 · i18n ✓ · kullanıcı kolaylığı ✓ · mobil doğrulama kullanıcıda.
+**Halil testi (deploy sonrası, canlı):** ① Satışlar → `11687161720` ara → satır GÖRÜNÜR, üstü çizili ve solgun, rozette iptal · ciro toplamı ve «N kayıt» bu satışı SAYMAZ · ② «İptaller» kutusu «İptalleri göster» yazar → «İptalleri gizle» seç → satır kalkar · ③ Panel → «kâr hesaplanamayan» ya da «kargo bekleyen» rakamına tıkla → açılan listede iptal edilmiş satır YOK, kutu «İptalleri gizle» der, satır sayısı paneldeki rakamla birebir · ④ Satışlar → «Bu ay» → Excel indir → son sütun «İptal tarihi»; iptal edilen satırlarda tarih dolu · ⑤ telefonda aynı arama → kart üstü çizili · ⑥ Alımlar'da iptal edilmiş bir alım telefonda da üstü çizili.
+
+
+---
+
+## ✅ K318 — UYGULAMA ADI «SELLIORA» → «BEZIRGA» + ADIN KODA GÖMÜLMESİ YASAĞI · 04.10.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi GEÇTİ 15.10.2026 (logo · sekme başlığı «Panel — Bezirga» · «Bezirga stoğu»). Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**Kullanıcı kararı 04.10.2026:** ürün adı «Bezirga»; logo «Bezirga Vektör Paketi 1.0»dan birebir (`src/lib/marka/cizim.tsx`).
+**BULGU:** anayasa «ad değişikliği tek satırlık iş» diyordu ama ad **30'dan fazla yerde elle** yazılıydı (sözlük 9 metin · el kitabı 8 cümle · oturum çerezi · yedek adı ve biçimi · tarayıcı anahtarları · CSS dosya adları). Hepsi `UYGULAMA.ad` / `UYGULAMA.teknikAd`a bağlandı; sözlükte `{uygulama}` yer tutucusu. CSS `selliora-*.css` → `tema-*.css`.
+**ESKİ ADLAR OKUNUR:** `UYGULAMA.eskiTeknikAdlar = ["selliora"]` — eski adlı yedekler (`selliora-<gün>.json`, `bicim: "selliora-yedek"`) indirilebilir ve geri yüklenebilir kalır; YAZAN her yer yalnız yeni adı kullanır (`yedek-bicim.ts`). Yedek eksik-gün raporu günü dosya adından değil yazım tarihinden okuyor — eski adlı günler «eksik» görünmez.
+⚠ **BEDELİ BEYAN:** oturum çerezi `selliora_oturum` → `bezirga_oturum`; deploy sonrası açık oturumlar **bir kez düşer**, yeniden giriş gerekir. Menü açık/kapalı ve tema tercihi de bir kez sıfırlanır (tarayıcı anahtarı değişti).
+**Bekçi:** `uygulama-adi:dogrula` — desen yasağı, dosya listesi yok: `src/` + `messages/*.json` + `public/*.js` yorumsuz kodda güncel ya da eski ad geçemez (harf büyüklüğü fark etmez); `sw.js` önbellek adı ayrıca güncel teknik adla ölçülür; taban doluluğu ayrı. **Mutasyon** `uygulama-adi-mutasyon:kontrol` **10/10**: 3 zararsız yorum YEŞİL · menü / sekme (BÜYÜK HARF) / çerez / sözlük / sw adı elle yazılınca · teknik ad değişip sw kalınca · tarama boşalınca KIRMIZI.
+**Halil testi (deploy sonrası, telefonda + bilgisayarda):** ① site açılınca giriş ekranı çıkar (oturum düştü — beklenen) · giriş ekranında kobalt kare «b» simgesi + «bezirga» yazısı · ② giriş sonrası sol menünün üstünde aynı logo · ③ tarayıcı sekmesinde «Panel — Bezirga» · ④ Ürün kartı → kanal stok kutusunda «Bezirga stoğu» · ⑤ yedek listesinde eski `selliora-…` yedekler hâlâ görünür ve «İndir» çalışır; ertesi sabahın yedeği `bezirga-<gün>.json` adıyla gelir · ⑥ telefonda ana ekrana kurulu uygulamanın simgesi yeni logo (eski simge önbellekteyse kaldırıp yeniden kurun).
+
+
+---
+
+## ✅ K316 — EL KİTABI GÜNCELLEMESİ (6 HAFTALIK BORÇ) · 03.10.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi GEÇTİ 15.10.2026 (El Kitabı yeni başlıklar açılıyor). Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**Kullanıcı:** «Kullanım kılavuzunu çok iyi kontrol et, eksiklerin hepsini yaz.» Üç salt-okuma denetimi (ekran/menü · son 6 haftanın değişiklikleri · iddialar) + her iddia yazılmadan önce kodda/sözlükte/canlı izde doğrulandı. Kaynak `src/lib/el-kitabi/icerik.ts` (son dokunuş 30.09'du).
+**YANLIŞTI → düzeltildi:** iade ayı (rapor/panelde SATIŞIN ayına; dönem raporu bilerek olay ayına) · GERÇEK NET (− fire + tazminat geliri; sayım farkı ayrı satır) · «siparişleri elle girin» (TY/HB/N11 5 dk'da bir gelir) · «herkes aynı yetkiyle giriyor» · «maliyet sonradan düzeltilemez» · tazminat tanımı · hakediş yalnız dosya · kanal listeleme «elle» · dilim tarifesi «komut satırı» · paketlemede ürün barkodu · «Giderler → Şablonlar» (öyle ekran yok) · geri yükleme «GERI YUKLE» (kod «GERİ YÜKLE» ister; blok Türkçe karaktersizdi) · panel «bu ay» (açılış Bugün) · nakit takvimi «giderler» (kaynak kart + hakediş + finansman) · okut «hiçbir kayıt değişmez» · «dört alan» (beş) · paketle «bulunamadı» mesajı (dört ayrı sebep) · «Yolda» tablosu (7/7 maddesi artık vardı → gerçekten olmayan 6 iş) · **37 menü yolu** «Ayarlar →» yazıyordu, ekranlar Tanımlar / Veri / Ürün ve kanal grubunda.
+**EKSİKTİ → yazıldı:** sipariş onayı · otomatik onay (HB kapalı) · otomatik iptal · aktarılan sipariş · satış iptali · alım fatura yapısı (KDV hariç/kargo/gümrük/KDV kontrolü) · iade alış KDV'si · iadeyi düzenle/geri al · iade bildirimleri ekranı · giriş kilidi · parola değişimi · fiziksel sayım · aktif etme şartı · şüpheli ürünler · SKU önizleme/Öner · ürün etiketi · telefon alt çubuğu · panelde onay/yolda/teslim · **5 yeni bölüm:** kanala stok/fiyat gönderme · mal kabul günlüğü · günlük özet · muhasebe dönemleri · maliyet yöntemi (menü eşlemesindeki 4 `null` kapandı).
+**Ekran metni de bayattı:** `KanalListeleme.tazelemeKomutu` «otomatik zamanlama henüz yok» → düzeltildi (zamanlama canlı izde ölçüldü, K225).
+**BİLEREK KALAN (sonraki tur):** panel ekran şeması yeniden çizimi · ürün analizi yeni süzgeç/sekmeler · `/tarife` kendi bölümü · Kanal kodları ↔ Komisyon yükleme iki kapı ilişkisi · gecikme faizi · «Bildir» düğmesi · alımda Promosyon (₺0) · «kargo düşülmedi» rozeti · paketlemede her adedin ayrı okutulması · okuyucu klavye düzeni emniyeti · TY kategori eşleşmesi · ürün resmi · takipçi kuponu · Excel indir listesi · `docs/el-kitabi.html` eski dışa aktarım (13.08; bağlantısı yok).
+**ÜRÜN BOŞLUĞU (kılavuz değil, ekran eksik):** ① **gider kategorisi ekleyecek ekran yok** (yalnız seed) — kılavuz artık «destek talebi açın» diyor · ② kullanıcının **kendi parolasını değiştireceği bağlantı yok** (`/parola-degistir` yalnız zorunlu değişimde açılıyor).
+**Halil testi (deploy sonrası):** ① El Kitabı → İçindekiler'de yeni başlıklar: «Kanala stok ve fiyat göndermek», «Mal kabul — günün girişleri», «Günlük özet», «Ayarlar — Muhasebe dönemleri», «Ayarlar — Maliyet yöntemi» — tıklayınca bölüm açılır · ② «Satış» bölümü «Pazaryeri siparişleri kendiliğinden gelir» ile başlar · ③ «Dönem raporu»nda «iade edilen satışın ayına yazılır» · ④ «Henüz yok, yolda» tablosunda hakediş/kullanıcı/pazaryeri bağlantısı YOK · ⑤ «Raf Konumları» bölüm başlığı «Tanımlar — Raf Konumları» · ⑥ Kanal listeleme ekranının üstünde «her sabah kendiliğinden tazelenir».
+
+
+---
+
+## ✅ K315 — PASİF KAYIT EKSİK BİLGİYLE AKTİF EDİLEMEZ · 03.10.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi GEÇTİ 15.10.2026 (pasif ürün eksik bilgiyle aktif edilemez, kırmızı «eksik: …»). Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**Kullanıcı:** «Pasif olanın gerekli bilgileri manuel girildikten sonra aktife alınabilir hâle getirilsin» → **EAN + kategori + marka, hepsi olsun.**
+**Neden:** 26.09 temizliği 619 «uyuyan» kaydı pasife aldı (kategori/marka boş · stok 0 · 90 gün satış yok · kanalda açık değil). Formdaki tek tık onları EKSİK hâlde geri açıyordu.
+**Kural** `lib/urun-aktiflik.ts` `aktifEtmeEksikleri` (saf): yalnız **kayıtta pasif → şimdi aktif** geçişinde ① EAN gerçek GTIN (biçim + kontrol hanesi; şüpheli ürün kuralıyla AYNI gövde) ② kategori ③ marka **marka tablosuna bağlı** (SKU'nun MRK parçası). Zaten aktif kaydın düzenlenmesi, pasif bırakılan kayıt ve yeni varyant **kapsam dışı**.
+**Eksikte kayıt REDDEDİLİR** ve varyant başına ne eksik olduğu yazar (önerilen «kaydet ama pasif bırak» yerine — işaretli kutunun sessizce kalkması kafa karıştırırdı; kullanıcıya bildirildi). Formda kayıtta pasif varyantın kutusunun altında şart önceden yazar.
+**Bekçi** `urun-aktiflik:dogrula` 28 · mutasyon **14/14** (form ipucu ölçütü ilk sürümde `{false && …}` bozmasını görmedi → `{` çapası).
+**Halil testi (deploy sonrası):** ① Ürünler → pasif bir ürün (ör. Philips BHD500 `HBCV00000R0H0K`) → Düzenle → «Aktif» kutusunun altında «Pasif kaydı aktif etmek için EAN, kategori ve marka… gerekli» · ② kutuyu işaretle → Kaydet → kırmızı «… aktif edilemedi — eksik: geçerli EAN · kategori · marka…»; hiçbir şey kaydedilmez · ③ geçerli EAN + kategori + tablodaki bir marka gir → Kaydet → ürün aktif, listede «pasif» yok · ④ zaten aktif bir ürünün açıklamasını değiştirip kaydet → eskisi gibi kaydedilir.
+
+
+---
+
+## ✅ K312 — VERİ KAZINMASINA KARŞI DÖRT KORUMA · 02.10.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi GEÇTİ 15.10.2026 (telefon mobil veriyle 6. hatalı girişte 15 dk kilit · bilgisayardan giriş açık · robots.txt). ③ canlı izden ÖLÇÜLDÜ (salt okuma): `TOPLU_INDIRME` son 15.10 14:53 UTC · `GIRIS_BASARISIZ` son 15.10 15:02 UTC. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**Kullanıcı isteği:** «Projede veri madenciliği yapılarak db'nin kazınmasını engelle» (Selliora için).
+**Ölçüm (önce):** bütün sayfalar/API'ler oturuma kapalı (`proxy.ts`), cron uçları sır anahtarlı 404, çerez HttpOnly+SameSite, giriş tek hata mesajı + sahte özetle zamanlama sızdırmıyor, döküm/yedek `veri.aktar` iznine bağlı — **sağlam**. Eksikler:
+① **giriş denemesine sınır yoktu** → `lib/giris-kilidi.ts` (saf): aynı e-posta YA DA IP'den 15 dk'da 5 başarısız deneme → 15 dk kilit; kilitliyken parola HİÇ denenmez; başarısız deneme `AuditLog` `GIRIS_BASARISIZ` {eposta, ip} (parola yazılmaz). Yeni tablo AÇILMADI — mevcut iz tablosu soruyu taşıyor.
+② **toplu indirme iz bırakmıyordu** → «tümü», tek liste (liste + süzgeç) ve yedek indirmesi `TOPLU_INDIRME` izi yazar.
+③ `/api/olcum` · `/api/yedek/otomatik` anahtarsız isteğe 401 diyordu (varlık sızıyordu) → 404.
+④ arama motorlarına kapalı değildi → `app/robots.ts` (`disallow: "/"`) + sayfa başlığında noindex; `/robots.txt` proxy açık yollarında.
+**Bekçi** `erisim:dogrula` 27 · `erisim-mutasyon` 9/9.
+⏭ **ÖNERİ (onay bekliyor):** panelde «son 7 günde toplu indirme / başarısız giriş» satırı — iz var, gösterim yok.
+💤 **TANITIM SAYFASI (kullanıcı: «uç tarafta programın tanıtım sayfası olması lazım»)** — dışa dönük tanıtım = SaaS işi; CLAUDE.md gereği bugün AÇILMAZ, SaaS aşamasında açılır. O gün robots YALNIZ o sayfaya `allow` verir.
+**Halil testi (deploy sonrası):** ⚠ kilit IP'ye de bağlı — testi bilgisayardan yaparsan o bağlantıdan 15 dk giriş kapanır. **Telefondan, Wi-Fi KAPALI (mobil veri)** dene: ① `/giris` → olmayan bir e-posta (örn. deneme@ornek.com) + rastgele parola × 5 → 6. denemede «Çok fazla hatalı deneme… 15 dakika kapalı» · ② bilgisayardan (farklı IP) normal giriş ÇALIŞIR · ③ Veri aktar → «Tümünü indir» → sonra bana söyle, izi kayıttan doğrularım · ④ tarayıcıda `…/robots.txt` → «Disallow: /».
+
+
+---
+
+## ✅ K309 — ALIMIN FATURA YAPISI: KDV HARİÇ · KARGO AYRI · GÜMRÜK (MALİYETE DAĞITILIR) · 30.09.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi GEÇTİ 15.10.2026 (KDV hariç tedarikçi · fatura toplamı ₺1.260,00 · gümrükle ₺1.290,00 / karta ₺1.260,00). Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**Kullanıcı kararı:** «Hep bu şekilde olmaz mal alışları — toptan alımda KDV ve kargo ayrı yazılabilir, yurtdışında gümrük
+olur, sistem şimdiden hazır olmalı.» Seçimler (üçü de önerilen): ayar **tedarikçide varsayılan, alımda değişir** · ayrı
+kargo+gümrük **kalemlere tutar oranında dağıtılır, ürün maliyetine girer** · KDV tutarı **faturadan**.
+**Şema** `20260930150000_alim_kdv_kargo` (canlıda, yalnız alan): `Supplier/Purchase.fiyatKdvDahil` · `kargoDahil`
+(varsayılan true = BUGÜNKÜ davranış) · `Purchase.customsAmount/Currency`; boş duran `shippingAmount`/`taxAmount` kullanıma girdi.
+**Tek gövde** `lib/alim-maliyeti.ts`: iniş maliyeti (maliyet KDV DAHİL kuralı korunur — hariç alımda KDV birim maliyete eklenir),
+kart eki (KDV+kargo, gümrük YOK), indirilecek KDV (hariçte faturadaki, ayrı kargonun KDV'si eklenir, gümrük KDV değildir),
+fatura toplamı. Bağlananlar: mal kabul PURCHASE_IN · alım düzenlemede defter damgası (ölçüt artık «iniş maliyeti değişti mi») ·
+4 kart kurucusu (K308 «asla ekleme» → «AYRIYSA ekle», eski gerekçe dosyada) · panel alım KDV'si/tutarı · alım listesi toplamı.
+**Varsayılanda hiçbir rakam değişmez** (bekçi değerle sınıyor). Karışık TL/EUR alıma ek YAZILAMAZ (form söyler).
+⚠ İşaretsiz kutu tuzağı: değer gizli alanla hep gider; alan yoksa güncellemede DOKUNULMAZ (`lib/alim-fatura.ts`).
+**Bekçi** `alim-maliyeti:dogrula` 26 · mutasyon 9/9 · `kart-iadesi:dogrula` ölçütleri çevrildi (23) · harness 13/13.
+**AÇIK:** fatura KDV'sinin kategori oranıyla KONTROLÜ (uyarı) henüz yok — formda oran bilgisi yok; ayrı iş.
+**Halil testi:**
+1. Ayarlar → Tedarikçiler → bir tedarikçide Düzenle → «Fiyatlar KDV dahil» işaretini kaldır → kaydet → satırda «KDV hariç fiyat» rozeti.
+2. Alımlar → Yeni alım → o tedarikçiyi seç → «Fatura yapısı»nda KDV kutusu İŞARETSİZ gelir, «KDV tutarı (faturadan) *» alanı açılır.
+3. Kalem: 1 adet · birim 1.000 → KDV tutarı 200 → «Kargo fiyata dahil»i kaldır → kargo 60 → toplam kutusunda
+   **Fatura toplamı ₺1.260,00 · Karta yazılacak ₺1.260,00 · stoğa yazılacak birim maliyet ₺1.260,00**.
+4. Gümrük 30 yaz → fatura toplamı **₺1.290,00**, karta yazılacak **₺1.260,00** (gümrük karta yazılmaz), birim maliyet **₺1.290,00**.
+5. KDV alanını boşaltıp kaydet → «faturadaki KDV tutarını girin» hatası. (Gerçek alım değilse kaydetme; tedarikçiyi eski ayarına döndür.)
+6. Eski bir alımı aç → Düzenle → kutular işaretli, alanlar boş gelir; hiçbir rakam değişmez.
+
+─── ② FATURA KDV KONTROLÜ (30.09.2026, kullanıcı isteği) · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR]
+«KDV hariç» faturada girilen KDV, kalemlerin ürün oranıyla (istisna > kategori > %20) beklenenle kıyaslanır:
+beklenen = Σ birim × adet × oran/100. Tolerans uydurulmadı: birim başına kuruş yuvarlaması → 0,005 × toplam adet
+(en az 1 kuruş). Aşarsa sarı uyarı; **kayıt ENGELLENMEZ** (esas olan fatura). İki para birimi / oranı bilinmeyen /
+fiyatı boş kalem varsa hüküm verilmez. Bekçi `alim-maliyeti:dogrula` +19 ölçüt; mutasyon 17/17 (8 yeni).
+**Halil testi:** yeni alım → KDV hariç tedarikçi → %20'lik üründen 1 adet ₺1.000 → KDV **200** yaz → uyarı YOK;
+**210** yaz → «Faturadaki KDV ₺210,00, ürünlerin KDV oranlarına göre beklenen ₺200,00» çıkar ve Kaydet düğmesi yine
+basılabilir. %10'luk bir diş fırçası eklenince beklenen ona göre artar (ör. ₺500 fırça → beklenen ₺250,00). ✅ **HALİL TESTİ GEÇTİ 01.10.2026** (kullanıcı: «alım faturası KDV kontrol ok»).
+
+
+---
+
+## ✅ K195-② — "KAÇ PAKET YOLDA / TESLİM EDİLDİ" KUTUSU · 09.09.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi GEÇTİ 15.10.2026 («Teslim edildi» ve «teslim bilgisi yok» sayısı = liste). Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+K195'in ana gövdesi (kanal teslim/kargo damgası — `deliveredAt` ·
+`kanalKargoFirmasi` · `kargoTakipBaglantisi`) 19.09.2026'da Halil testini
+geçip kapandı (bkz. ARSIV.md). **Bu alt kalem bilerek AYRI ve AÇIK
+bırakıldı:** üç sütun da yazılıyor ama **hiçbir ekran okumuyor** —
+anayasa gereği bu tek başına bir teslim sayılmaz ("altyapı tek başına
+teslim değildir").
+
+_Mimar beyanı 09.09.2026:_ **onay HENÜZ VERİLMEDİ.** Altyapı yeterli;
+kutunun kendisi ayrı bir tasarım kararı:
+
+    · kutu deseni ne olacak (panel kutusu mu, /satislar süzgeci mi)
+    · nereye konacak
+    · hangi SAYI yazacak — ve o sayı neye tıklayınca neyi açacak
+
+⚠ **SORULMADAN YAZILMAZ:** İlke #16 gereği bir aksaklık sayısı ekranda
+duruyorsa tıklanınca kaynağını açmak zorunda ("sayı = liste"). Kutuyu
+tasarlamadan yazmak, adresi olmayan bir rakam üretirdi.
+
+─── ② **02.10.2026 — KUTUDAN ÖNCE ÖLÇÜM: HB TESLİM DAMGASI 14.09'DAN BERİ YAZILMIYORDU (kullanıcı «sıra ile devam et»).** Son 30 gün HB: kargoda 120 · «yolda» **76** (60'ı 8–30 gündür) — oysa HB kargo→teslim ortalaması ~50 saat. Örnek 12 siparişin **12'si de** HB'nin kendi kaydında `Delivered`. **Kök sebep:** `tumKayitlar` 100 istiyor, HB `/shipped` · `/delivered` · `/cancelled` en fazla **50** veriyor (zarf `limit: 50`; `/listings` 100). Gezici «az geldi = son sayfa» deyip durdu → `/delivered`in 122 kaydının yalnız ilk 50'si okundu (en yenisi 14.09). Durmasa bile sonraki sayfayı 100'den açıp 50–99'u atlayacaktı. **Düzeltme:** ofset GELEN kayıt kadar ilerler · kısa sayfa ölçütü kanalın beyan ettiği tavana göre · `totalCount` varken beyana ya da boş sayfaya kadar sürer. Canlı salt-okuma: teslim **122/122** (eskiden 50) · kargoda 3/3 · iptal 10/10. Yeni bekçi `hb-sayfa:dogrula` 11/11 (sahte HB, ölçülen tavanlarla) · `hb-sayfa-mutasyon` 6/6 (tavan mutasyonu ilk turda KAÇTI → «zarf tavan söylüyor, toplam söylemiyor» durumu eklendi, kırmızı yandı). Etki: bir sonraki 5 dk'lık HB çekimi boş `deliveredAt`leri doldurur (ezme yok). ⚠ Zarfsız dizi dönen `/packages` için tavan BİLİNEMEZ — bugün 1 kayıt; 100'ü aşan açık sipariş olursa aynı soru yeniden sorulur. **Sonra:** «yolda» yeniden ölçülür (HB 76 → birkaç beklenir), kutu ondan sonra yazılır. ─── ④ **02.10.2026 CANLIDA ÖLÇÜLDÜ (kullanıcı):** panel «Yolda 15» → tıklayınca 15 kayıt (sayı = liste ✓); HB «yolda» **75 → 3** (kullanıcının saydığıyla aynı). Tek sapma TY `11646955949`: TY 01.10 15:05 teslim etmiş, bizde yolda — **sık çekim penceresi 3 gündü**, 26.09 siparişini görmüyordu; teslim ertesi sabahki 60 günlük çekimle (02.10 08:00) düştü — gecikme, kayıp değil. **Kullanıcı kararı: pencere 3 → 7 gün** (Vercel `api/cron/ty-cekim` + `kanal-sik-cekim.cmd`; 3 dilim/dk). 7 günden eski siparişin teslimi yine sabahki çekime kalır — bilinçli sınır. ─── ③ **KUTU YAZILDI (kullanıcı «sıra ile devam et» / «hadi yap»).** Panel kargo satırına iki kutucuk: **Yolda N** (anlık durum, dönemsiz) · **Teslim edildi M** (seçili dönemde, ekseni TESLİM tarihi). Sayılar `satisKosulu(teslimParametreleri(...))` ile — tıklanınca açılan listenin AYNI gövdesi (sayı = liste). Not satırı: «Teslim bilgisi olmayan N paket sayılmadı» (>0 ise bağlantı). Kutucuklar yalnız İLK para birimi bloğunda (liste para birimi süzmüyor). **Kova değişikliği:** `TESLIM_BILDIREN_KANALLAR = TY · HB · N11` (beyan; bekçi `deliveredAt` YAZAN içe aktarmalarla karşılaştırıyor) — Amazon/Elden Satış artık «yolda» değil «bilinmiyor» (eskiden Elden Satış'taki 1 paket sonsuza kadar yolda kalırdı). Liste: `kargo=teslim` dönemi `deliveredAt`e uygular; kargo süzgecine Yolda · Teslim edildi · Teslim bilgisi yok seçenekleri. `teslim-durumu:dogrula` 28/28 · mutasyon 14/14 (zararsız sağlama EKLENDİ — ilk koşuda bekçi mutasyonsuz kodda kırmızıydı ve tur «13/13 yakalandı» diyordu: yalancı kırmızı; pencere ölçütü yapıya bağlandı). Çakışma beyanı `SIRALI_MUTASYON_GRUP`. ⚠ **SÜREÇ HATASI (02.10):** gezici push'unun bekçi turu koşarken çalışma ağacında düzenleme yaptım ve bir mutasyon turu koşturdum; tur yarım dosyaları okudu, push 141/143 ile REDDEDİLDİ (`teslim-durumu` · `mutasyon-capa`). Gezici + kutu tek push'ta yeniden gidiyor. **Halil testi (deploy + bir HB çekiminden sonra):** ① Panel → kargo satırında «Yolda» ve «Teslim edildi» kutucukları · ② «Yolda»ya tıkla → satış listesi «Yolda (teslim edilmedi)» süzgeciyle açılır, satır sayısı kutucuktaki sayıyla BİREBİR · ③ «Teslim edildi»ye tıkla → aynı dönem, sayı birebir · ④ kanal süzgecinde Hepsiburada seç → HB yolda sayısı küçük olmalı (eskiden 76) · ⑤ not satırındaki «N paket»e tıkla → «Teslim bilgisi yok» listesi · ⑥ telefonda da.
+
+⚠ **KAPSAM SINIRI ŞİMDİDEN BELLİ VE KUTUYA YAZILACAK:** `deliveredAt` bugün
+boş doğuyor ve yalnız **bundan sonraki** teslimlerle doluyor. "Teslim
+edilmedi" ile "sistem bilmiyor" aynı görünürse kutu yanlış okunur.
+
+
+---
+
+## ✅ K231 — BİR KOD İKİ ÜRÜNE UYUYORDU, SİSTEM SESSİZCE BİRİNİ SEÇİYORDU · 21.09.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** ③ Halil testi GEÇTİ 15.10.2026 (`887961643367` okutulunca tek ürün). Çok eşleşme uyarısı tetiklenemedi (bugün çakışma 0) — açık yol, ilk gerçek çakışmada görülür. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+**KULLANICI BİLDİRİMİ:** _"Bu üründen 2 tane stok kaydı var, birinde 4 stok
+var, diğeri sıfır; sipariş geldi, 0 stoktan düşmeye çalışıyor, düşemiyor,
+siparişi kaydedemedim."_ (`HBCV00000R0H0K` · barkod `97393839282`)
+
+⛔ **EKRANDAKİ RAKAM DOĞRUYDU — VE ARIZA TAM BU YÜZDEN GİZLENDİ.**
+`Stok yetersiz (HBCV00000R0H0K: 0/1)` cümlesi kusursuzdu: o varyantın stoğu
+GERÇEKTEN sıfırdı. Yanlış olan sayı değil, **kodun hangi kayda çözüldüğüydü.**
+Doğru rakam, yanlış hedefi görünmez yaptı.
+
+### MEKANİZMA — `findFirst` + SIRALAMA YOK
+
+Beş ekran (sonradan **altı** çıktı) şunu yapıyordu:
+
+    prisma.productVariant.findFirst({ where: { OR: kodKosulu(kod) } })
+
+Bir kod iki aktif varyanta uyduğunda hangisinin geleceği **veritabanının o
+anki sırasına** kalıyor ve **kaybeden sessizce düşüyor** — ne hata, ne uyarı.
+_(Anayasa: "seçici ölçüt, evren genişlediğinde ne yapacağıyla tasarlanır —
+bugün doğru cevabı vermesi, sınanmış olduğunu göstermez.")_
+
+### KÖK — PAZARYERİ KODU KİMLİK ALANINA YAZILMIŞ
+
+Üç çiftin üçünde de aynı şey: bir kanal kodu ikinci bir varyantın
+`sku`/`firmaSku`/`barkod` alanında duruyor. Anayasadaki **üç kod rolü**
+ayrımının ihlali — Kanal SKU bir KİMLİK değil, eşleştirmedir.
+
+### ÖLÇÜM — `npm run canli:kod-carpismasi` (salt okuma, tekrar koşulabilir)
+
+    TABAN 1865 aktif varyant · 4306 benzersiz kod · ÇARPIŞAN KÜME 3
+
+    HBCV00000R0H0K · 97393839282   Philips BHD500    stok 0 <-> 4  ← bildirilen
+    221000567899                   TEFAL bıçak seti  stok 0 <-> 2
+    887961643367                   Fisher-Price      stok 0 <-> 1
+
+**İkisi henüz patlamamıştı** — o ürünlere sipariş gelmemişti.
+
+⚠ **ÖLÇÜM EŞDEĞERLERİ AÇAR VE BU ŞART:** `887961643367` ile `0887961643367`
+iki ayrı dizedir, `@unique` ikisini de kabul eder — ama arama onları **DENK**
+sayar (UPC-A ↔ EAN-13). Ham dize karşılaştırması bu çarpışmayı **göremezdi.**
+
+### YAPILAN ① — CANLI YAZIM (`npm run canli:carpisma-onar`)
+
+Kuru koşum gösterildi, sonra `--uygula`. **4 kayıt · iz bırakıldı · yerel
+anlık görüntü alındı** (`veri/ozel/carpisma-onarim-*.json`).
+
+· bloke siparişin kalemi gerçek varyanta çevrildi (sipariş ONAYSIZDI, stok
+  hareketi henüz yazılmamıştı — ledger'a dokunulmadı)
+· üç ikiz varyant pasife alındı
+
+⚠ **SİLİNMEDİ — GEÇMİŞ TAŞIYORLAR:** Philips 2, TEFAL **17**, Fisher **11**
+satış kalemi. Pasife almanın neyi gizlediği ÖNCE ölçüldü: satış ekseni/ciro/kâr
+`Sale` üzerinden okunuyor (**değişmez**), `/urunler` ve `/stok` `isActive`
+süzmüyor (**değişmez**), raporun stok ekseni süzüyor ama üçünün de stoğu `0`.
+
+⚠ **BETİK KİMLİĞE KİLİTLİ VE `--geri` TAŞIYOR.** Geri alma ölçütü **kodun
+içindeki sabit kimlik listesi** — veritabanı alanında değil, yani kırpılamaz.
+_(Anayasa: "geri alma yolu saklanan listeye değil yeniden hesaplanabilir
+ölçüte dayanır.")_
+
+**DOĞRULANDI (iz değil, VERİ):** çarpışma **3 → 0** · aktif varyant 1865 → 1862
+· sipariş artık `KUC-BR-BHD50-01`, stok **4**, onay bekliyor.
+
+### YAPILAN ② — SESSİZ SEÇİM KAPATILDI
+
+Ortak gövde: `src/lib/varyant-kod-cozumu.ts` → **seçmez, SAYAR**
+(`YOK` · `TEK` · `COK`). `YOK` ile `COK` ayrı tutuluyor; tek kefeye konsaydı
+operatör var olan ürünü **yeniden tanımlamaya** kalkar ve ikiz sayısı artardı
+— arızayı besleyen bir mesaj.
+
+⭐ **DESEN YASAĞI DOSYA LİSTESİNİ YENDİ — VE HEMEN KANITLADI.** Ben beş
+çağıran saymıştım; bekçi **altıncısını** buldu (`okut/sayim-actions.ts`).
+Elle liste tutulsaydı sayım yolu sessizce korumasız kalırdı — ve orası en
+tehlikelisi: **sayım son sözdür**, yanlış varyanta yazılan adet ledger'a girer.
+
+Ekranlar artık **söylüyor**: satış formu · alım formu (kodu arama kutusuna
+yazıp listeyi açıyor) · `/okut` · `/yerlestir` · sayım kipi.
+⛔ Ve `/okut` çakışmada **eşleştirme teklif ETMİYOR** — teklif etseydi zaten
+fazla olan bağlara bir tane daha eklenirdi.
+
+### YAPILAN ③ — DEĞİŞİKLİK EKRANDA GÖRÜNÜR OLDU
+
+`/urunler` yalnız **ürün** düzeyini gösteriyordu; aramayı süzen alan ise
+**varyantın** `isActive`i. Pasife alınan üç kayıt ekranda tamamen normal
+görünüyordu. Rozet varyant düzeyine bağlandı ve **"hepsi" ile "bazısı" ayrı
+yazılıyor** — tek varyantı pasif olan çok varyantlı bir ürün hâlâ satılabilir.
+
+### ÖLÇÜLDÜ
+
+`kod-cozumu:dogrula` **20 ölçüt** · `kod-cozumu-mutasyon` **9/9** (zararsız
+sağlama + kaldıran + fazladan) · `simulasyon-mutasyon` **8/8** · `arama` 124 ·
+`depo` 210 · `simulasyon` 182 · `i18n` · `tsc` · `lint` · `build`
+
+⚠ **`depo:dogrula`NIN HARNESS'İ YOK** — taşınan ölçütü ELDEN mutasyonla
+sınadım (mutantla çıkış `1`, geri alınca `0`, GÖRÜLDÜ). Aynı davranış ayrıca
+harness'li `kod-cozumu:dogrula` altında da ölçülüyor, yani koruma tek bacağa
+bağlı değil.
+
+⛔ **ÜÇ MUTASYON İLK TURDA KAÇTI VE BEKÇİYİ DÜZELTTİRDİ** — üçü de anayasanın
+adı konmuş körlükleri: ① `durum: "COK"` deseni **TİP TANIMINDA** da geçiyordu,
+dönüşü `YOK`a çeviren mutasyon yeşil geçti · ② satış formunun dal **KOŞULU**
+`false` yapıldı, sözlük anahtarı dosyada kaldı · ③ okuma ekranında aynısı.
+Ölçütler koşul+sonuç **aynı desende** olacak şekilde yeniden yazıldı.
+
+⛔ **VE PUSH TURU DÖRT BEKÇİYİ KIRMIZI YAKTI — DÖRDÜ DE "ÖLÇÜTÜM ESKİDİ".**
+`arama:dogrula` (×2) · `depo:dogrula` · `simulasyon:dogrula`. Hepsi
+`kodKosulu(temiz)` çapasını arıyordu ve refaktör o çağrıyı bir katman yukarı
+taşıdı. **Hiçbiri susturulmadı** — çapa `kodlaVaryantCoz(temiz)`ye taşındı,
+niye eskidiği koda yazıldı, ve her birinin yanına _"çok eşleşmede iş yapmıyor"_
+ölçütü **koşul+sonuç aynı desende** eklendi.
+
+⭐ **VE BU DESEN ARTIK BİR AİLE:** bu oturumda refaktör **üç ayrı turda**
+bekçi çapası sildi (K230-③'te iki harness, burada dört bekçi).
+_(Anayasa: "iyi bir refaktör bekçiyi kör etmemeli" — ölçülen bedel: her
+teslimde bir tur kayıp.)_
+
+⚠ **VE `arama:dogrula` İKİ KEZ KIRMIZI YANDI — İKİSİ DE "ÖLÇÜTÜM ESKİDİ".**
+Refaktör onun aradığı çapayı (`kodKosulu(temiz)`) sildi. Ölçüt susturulmadı,
+taşındı. İkincisi daha öğretici: taramayı yorumsuz okumaya çevirince ÜÇ
+ekranın `PASİF DAHİL:` **beyanı** kayboldu ve bu kez onlar suçlandı —
+**çağrı koddan, beyan yorumdan** okunmak zorundaymış.
+
+─── ⑤ **İÇE AKTARMA PASİF SÜZMÜYORDU — 22.09.2026, kullanıcı yakaladı**
+
+HB'nin 08:16 siparişi (**4748270482**, aynı Philips) yine ikize bağlandı, yine
+`Stok yetersiz (0/1)`. Sebep: **üç içe aktarma** (`canli-hb/ty/n11-ice-aktar`)
+varyantı `kodKosuluToplu` ile arıyor ve `isActive` **süzmüyordu**. Dün aramayı
+düzelttim, içe aktarmayı düzeltmedim — _"kararın kapsamı, uygulandığı yerle
+sınırlı sayılmaz"_ dersini bir gün sonra kendim çiğnedim. Üçüne de süzgeç
+kondu; `ice-aktarma:dogrula` ölçütü taşındı + "yalnız aktif" şartı eklendi.
+
+**ONARIM (`canli-pasif-bagi-onar.ts`, kuru koşum → `--uygula`):** ölçüt
+"onaysız ∧ iptalsiz ∧ pasif varyant ∧ **stok hareketi YOK**". 30 kalem bulundu;
+**29'u 2025 tarihli Excel geçmişi** (`satis-excel`, hareketleri ikizde) —
+DOKUNULMADI, iki defter ayrışırdı. **1 kalem çevrildi** (4748270482 →
+`KUC-BR-BHD50-01`, stok 3). Veriden doğrulandı: tekrar koşum 0. İz
+`PASIF_BAGI_ONARIM`. ⚠ "Onaysız = hareketsiz" varsayımı YANLIŞTI; ölçüm
+yazımdan önce yakaladı.
+
+### AÇIK
+
+- [x] ~~**Halil testi ①**~~ — **GEÇTİ 21.09.2026 19:44.** Defterden teyit
+      edildi (kullanıcı beyanı değil, veri): onay damgası yazıldı, `SALE_OUT −1`
+      **doğru varyanta** düştü, stok **4 → 3** (beklenen rakamla birebir).
+      ⭐ Ve bir şeyi daha kanıtladı: kâr **hesaplandı** (`CALCULATED`,
+      NET-1 ₺663,91 · NET-2 ₺549,32). İkize bağlı kalsaydı maliyet
+      bulunamaz, `NO_COST` düşerdi — yani arıza yalnız "kaydedemiyorum"
+      değil, **kârın sessizce hesaplanamaması** idi.
+- [x] ~~**Halil testi ②**~~ — **GEÇTİ 22.09.2026, BULGUYLA.** İki kayıt, doğru
+      stoklar, ikizde _"Varyantları pasif — aramada çıkmaz"_ yazısı VARDI —
+      kullanıcı ekran görüntüsüyle geldi ve _"rozet hâlâ yok"_ dedi. Haklıydı:
+      `variant="secondary"` bu temada **düz metin gibi** çıkıyor; yanındaki
+      çerçeveli "Hepsiburada kodu" etiketinin yanında rozet sanılmıyor.
+      ⭐ Kod doğru, veri doğru, deploy güncel — üçü ölçüldü ve üçü tuttu;
+      **ekran yine de "yok" dedi.** İlke #2'nin rozet hâli: etiket etiket gibi
+      GÖRÜNMELİ. `outline` + kehribar çerçeveye çevrildi. Dün "tarayıcı
+      önbelleği" dedim — yanlıştı; sebep görünürlüktü.
+- [ ] **Halil testi ③** — `/okut`ta `887961643367` okutun: artık **tek** ürün
+      açılmalı (Fisher-Price, stok 1).
+─── ④ **MUSLUK KAPANDI** — üç kalem de bitti (21.09.2026)
+
+⭐ **KÖK BULUNDU VE BEKLEDİĞİM YERDE DEĞİLDİ.** İkizlerin bir içe aktarmadan
+doğduğunu sanıyordum. Ölçüm başka şey söyledi: Philips ikizi **ÖNCE** doğmuş
+(03.09, `URUN_TANIM_TOPLU`), gerçek kayıt **SONRA** (17.09). Yani çarpışmayı
+üreten şey ürün tanımlama değil, **sonradan eklenen kanal eşleştirmesiydi.**
+
+**GERÇEK SEBEP TEK CÜMLE: YAZMA KAPISI, OKUMA KAPISINDAN DARDI.**
+
+| kapı | neye bakıyordu | neye BAKMIYORDU |
+|---|---|---|
+| ürün formu | kimlik alanları ↔ öteki kimlik alanları | **Kanal SKU'lara** |
+| kanal eşleştirme | kanal kodu ↔ öteki kanal kodları | **kimlik alanlarına** |
+| arama (`kodKosulu`) | **dört rolün hepsi** | — |
+
+İki kapı da "temiz" diyor, sonra arama iki kayıt buluyor ve sessizce birini
+seçiyordu. _(Anayasa: "yazımın kapısı ile okumanın kapısı AYNI ölçüde bakar;
+iki yerde iki farklı ölçüt olursa biri ötekinin yazdığını göremez.")_
+
+**Çare:** her iki kapı da ortak gövdeye bağlandı (`kodBaskaVaryantaAitMi`).
+⚠ Ve yazma kapısı arama kapısından **DAHA GENİŞ** bakıyor (`pasifDahil`):
+pasife alınmış bir ikizin kodunu ikinci kez kullanmak, temizlenen çarpışmayı
+geri getirirdi — kapı kendi temizlediğini yeniden üretemez.
+
+**② FİYAT DENEMESİ ARTIK SEBEBİ SÖYLÜYOR.** `urunZemini` çok eşleşmede `null`
+döndürüyordu ve çağıran onu _"ürün bulunamadı"_ diye çiziyordu — yani **yanlış
+sebebi** söylüyordu ve operatörü var olan ürünü yeniden tanımlamaya iterdi.
+Sonuç ayrıldı: `BULUNDU` · `YOK` · `COK`.
+
+**③ PASİFE ALMA KUTUSU EKLENDİ** — ürün formunda, varyant başına.
+⛔ `isActive` aylardır şemadaydı, `/urunler` "pasif" rozetini ÇİZİYORDU ve o
+durumu üreten **hiçbir düğme yoktu.** Zincirin beş halkası da ayrı ölçülüyor:
+sorar · okur · doğrular · yazar · **geri verir** (sonuncusu en sinsisi —
+okunmayan alan kaydette sessizce sıfırlanır ve hiçbir hata çıkmaz).
+
+**ÖLÇÜLDÜ:** `kod-cozumu:dogrula` **30 ölçüt** · mutasyon **15/15** ·
+`simulasyon-mutasyon` 8/8 · `simulasyon` 183 · `depo` 210 · `arama` 124
+
+⚠ **VE BU TURDA ÖLÇÜT BİR KEZ DAHA ESKİDİ — BU KEZ DAVRANIŞ İYİLEŞTİĞİ İÇİN.**
+Bir saat önce yazdığım _"çok eşleşmede zemin KURULMUYOR"_ ölçütü `null` dönüşünü
+sabitliyordu; ayrı sonuca çevirince kırmızı yandı. Ölçüt ve ona çapalı mutasyon
+birlikte taşındı. _(Anayasa: "bekçinin kırmızısı her zaman 'kod yanlış' demez".)_
+
+### AÇIK
+- [x] ~~**Toplu içe aktarmalar yazma kapısından GEÇMİYOR.**~~ **KAPANDI
+      21.09.2026 — musluğun son yarısı.** Ölçüm iki yönde de açık buldu:
+      kimlik dizinleri kanal kodlarını hiç indekslemiyordu; kanal eşleştirmesi
+      `(hesap|varyant)` çiftine bakıyor, **kodun kendisine** bakmıyordu.
+      Şekil, aynı dosyadaki dönem kapısının şekli: **sorma, atla, raporla** —
+      iki yeni hata kodu (`KOD_BASKANIN_KANAL_KODU` · `KOD_BASKANIN_KIMLIGI`),
+      atlanan satır kimliğiyle ekrana gidiyor. ⚠ Dosya İÇİ çarpışma da
+      yakalanıyor: bir satır kodu kimlik olarak açıp başka satır kanal kodu
+      yapamaz. **DEĞER TESTİ** (`toplu-kapi:dogrula`, 13 ölçüt — gövde saf,
+      desen taranmadı) + **mutasyon 6/6** (kaldıran 3 · fazladan 2 · zararsız).
+      ⛔ **VE BİR CÜMLEM YANLIŞTI, COMMIT'TEN ÖNCE YAKALANDI.** Panoya önce
+      _"`komisyon/yukle.ts` kanal SKU yaratmaz, oraya kapı gerekmez"_ yazdım;
+      kodu okuyunca tersi çıktı — **"EKSİK EŞLEMELER" bloğu `createMany` ile
+      eşleme YARATIYOR** (dosyadaki barkodla varyantı bulup pazaryerinin
+      kodunu bağlıyor). Yani K231'i doğuran adımın üçüncü kapısı buradaydı.
+      Takıldı (22.09.2026): dört rollü kimlik dizini (`sku` · `firmaSku` ·
+      `barkod` · **bütün hesapların** kanal kodları) → başkasının kimliği
+      olan kod **eşleme açmaz**, sayılır (`kimlikCakisti`), önizlemede
+      **hangi kod · hangi ürüne · sahibi kim** diye yazar. Hedefin KENDİ
+      barkodu meşru (en yaygın durum). **Değer testi** `komisyon:dogrula`
+      10. bölüm (7 ölçüt, gövde çağrılır) + mutasyon `komisyon-kapi-mutasyon`
+      (kaldıran 2 · fazladan 2 · zararsız). _(Anayasa: "yokluk iddiası da
+      iddiadır" — üç kez bakmadan kuruldu, üçü de yanlış çıktı; bu dördüncüsü,
+      bakıldığı için yanlış çıkmadan düzeldi.)_
+
+
+---
+
+## ✅ K245 — NET-2 MARJI KUTUSU: BİR ORANIN DEĞİŞİMİ PUAN, YÜZDE DEĞİL · 23.09.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Başlıkta GEÇTİ 28.09; açık adım yoktu — kapanış kararıyla. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+Kullanıcı panel tasarımı için bir demo istedi, demoyu onayladı ve
+_"birebir yapabilir misin"_ dedi. Demo dört pakete bölündü; bu birincisi.
+
+### ① DEMODAKİ KIRMIZI KUTU — VE NİYE KIRMIZI
+
+Demoda altı hüküm kutusundan biri bilerek kırmızıydı: ciro %8 artarken
+NET-2 marjı 0,6 puan geriliyordu. **Panelin söylemesi gereken şey tam
+buydu ve hiçbir kutu onu söylemiyordu.** Tutar kutularının altısı da
+yeşilken hiçbiri bir şey söylemez.
+
+### ② ÖLÇÜM ÖNCE — MEKANİZMANIN YARISI ZATEN VARDI
+
+Yazmaya başlamadan ölçtüm ve varsayımım yanlış çıktı:
+
+    IstatistikKutusu       `kiyas` yuvası ZATEN var
+    kiyasRozeti()          ZATEN yazılmış
+    kullanan kutu          3 (ciro · NET-1 · NET-2)
+    kıyas bloğu            `kiyasBlogu(paraBirimi)` ZATEN hesaplanıyor
+    eksik olan             marj kutusunun KENDİSİ
+
+Yani "en büyük değişiklik" diye sunduğum şeyin çoğu üründe duruyordu.
+_(Anayasa: "yokluk iddiası da iddiadır" — üç kez bakılmadan kurulup üçü de
+yanlış çıkmıştı; bu kez bakıldı.)_
+
+### ⛔ ASIL TUZAK: HAZIR ROZETE BAĞLAMAK YANLIŞ RAKAM ÜRETİRDİ
+
+Mevcut `kiyasRozeti` bir **TUTARIN** değişimini yüzdeyle anlatır ve orada
+doğrudur. Marj ise zaten bir **ORAN**. Aynı rozete bağlansaydı:
+
+    marj  %17,1 → %16,5
+    kiyasRozeti  →  "▼ 0,6 · %3,7"      ← 0,6 / 17,1
+    doğrusu      →  "▼ 0,6 puan"
+
+Rakam matematiksel olarak doğru, **cümle yanlış**: okuyan marjın 3,5 puan
+düştüğünü sanır. Ve yanlışlığı kendini belli etmez — sayı makul görünür.
+_(Anayasa: "metin, sahip olmadığı anlamı iddia etmez" · "bir sayı
+etiketiyle taşınır".)_
+
+### ③ YAPILAN
+
+· **`oranDegisimi()`** — saf gövde, `lib/karsilastirma.ts`. İki oranı
+  hesaplar ve farkı **PUAN** olarak verir.
+· **`oranKiyasRozeti()`** — panelde ayrı rozet. `kiyasRozeti` YERİNDE
+  KALDI: iki ayrı soruya iki ayrı cevap, biri ötekini bozmaz.
+· **NET-2 marjı kutusu** — NET-2'nin hemen ardında, huninin sonunda.
+· **`bicim.sayi(deger, basamak = 0)`** — puan bir haneyle yazılır.
+  Varsayılan değişmedi, çağıranların hiçbiri etkilenmedi.
+
+### ⚠ İKİ KURAL DAHA — İKİSİ DE ÖLÇÜLDÜ
+
+**CİRO YOKKEN MARJ "%0" DEĞİL.** `ciroyaOran` zaten payda ≤ 0 iken `null`
+dönüyordu ve o kural aynen kullanıldı. "%0 marj" demek "hiç kâr yok"
+demektir; doğru cevap **"hesaplanamıyor"**.
+
+**0,05 PUAN ALTI DEĞİŞİM SAYILMAZ.** Eşik uydurma değil, rozetin işlevinden
+geliyor: 0,02 puanlık bir kıpırtı "değişim" diye yazılırsa rozet HER GÜN
+yanar ve okunmaz olur. _(Anayasa: "yanlış uyarı, uyarısızlıktan kötüdür".)_
+
+### ÖLÇÜLDÜ
+
+    panel:dogrula                744 ölçüt (16'sı yeni · 9'u DEĞER testi)
+    panel-mutasyon:kontrol       15/15 (5'i yeni, üç yön)
+    i18n:kontrol                 tr/en eşit · 0 eksik
+    tsc --noEmit                 çıktı BOŞ
+
+Mutasyonların ikisi doğrudan bu paketin varlık sebebini koruyor:
+`oranDegisimi`yi yüzdeye çeviren ve marj kutusunu yüzde rozetine bağlayan
+senaryolar — ikisi de KIRMIZI yandı.
+
+### HALİL TEST LİSTESİ
+
+1. `/` (Panel) → "Seçili dönem" kartında **sekiz** kutu olmalı; sonuncusu
+   **NET-2 marjı**, altında `NET-2 ÷ brüt ciro` yazar.
+2. Üstteki **Karşılaştır → Önceki dönem**e bas. Marj kutusunun altında
+   rozet çıkmalı ve **"puan"** kelimesi geçmeli — "%" ile biten bir
+   değişim yazmamalı.
+3. Ciroyu sıfırlayan bir süzgeç seç (satışı olmayan bir gün). Kutu
+   **"hesaplanamıyor"** yazmalı, **%0 YAZMAMALI**.
+4. Karşılaştırmayı kapat. Rozet hiç çıkmamalı, rakam kalmalı.
+5. Telefonda: sekiz kutu ikişerli sarmalı, yatay kaydırma çıkmamalı.
+
+**mobil doğrulama kullanıcıda** · **i18n: ✓** (4 yeni anahtar, tr+en) ·
+**kullanıcı kolaylığı: ✓**
+
+### SIRADAKİ ÜÇ PAKET
+
+    K246  pazaryeri kartları + ciro halkası AYNI DÜZLEMDE
+    K247  operasyon çizgiden SÜTUNA; para ile yan yana
+    K248  görev kutusu → tek satırlık şerit
+
+
+---
+
+## ✅ K234 — "FİYATLANDIRMA VE ANALİZ" GRUBU + TARİFE HESAPLAMA EKRANI · 22.09.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Başlıkta GEÇTİ 28.09; açık adım yoktu — kapanış kararıyla. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+**KULLANICI İSTEĞİ:** _"Fiyatlandırma ve Analiz isminde bir sekme açalım;
+altına Ürün analizi · Fiyat denemesi · Kârlılık kartı · Tarife hesaplama."_
+Ardından: _"Fiyat denemesi'nin ismi Hesaplama motoru olsun"_ ve tarife
+ekranı için üç istek: _"şu anki fiyattan satarsam ne kalır"_ · _"Selliora
+bana desin ki fiyatı 1095 yap daha fazla kazan; fark ufak ama sistem
+önemli"_ · _"eksi kırmızı, artı yeşil"_ · _"arama kutusu olsa, barkodu
+girince teklif varsa çıksa"_ (#6'nın devamı).
+
+**KANAAT (verildi, kabul edildi):** dört ekran aynı soruya cevap veriyor —
+"kaça satayım, ne kalır" — üç ayrı grupta duruyordu, dördüncüsü menüde
+HİÇ yoktu (yalnız Komisyon yükleme → pencere satırından). Gruplama doğru.
+
+### YAPILAN
+
+- **Menü kataloğu:** `grupFiyatAnaliz` günlüğün hemen altında; varsayılan
+  üyeler `urunAnalizi · urunKarti · simulasyon · tarifeHesaplama`.
+  `simulasyon` günlükten gruba taşındı (25.08 kararı çevrildi, silinmedi).
+- **Adlar:** Fiyat denemesi → **Hesaplama motoru** (menü · sekme başlığı ·
+  ekran başlığı · el kitabı). Tarife aynası → **Tarife hesaplama** (aynı üç
+  yer + komisyon ekranındaki bağlantı).
+- **`/tarife`** (yeni, `tarife.gor` OKUMA izni): menü kayıt numarasına
+  gitmez; sayfa **en güncel pencereyi** açar (saf gövde `guncelPencereSec`
+  — adresteki kimlik yoksa 404, sessizce başka pencere açılmaz), üstte
+  **pencere seçici** (kanal · tarih aralığı) ve **barkod / ürün adı
+  araması** (ortak kod kutusu, kamera; barkod EŞDEĞERLERİYLE — UPC-A ↔
+  EAN-13). Eski `/ayarlar/tarife/[id]` yönlendirir; komisyon ekranındaki
+  satır bağlantısı yeni adrese.
+- **Şu anki fiyat (K234-②):** NET kutusuna **"Şu anki satış fiyatı"** alanı
+  — boş bırakılırsa o kanaldaki son satış (tarihiyle etiketli: _"son satış:
+  20.09.2026"_), yazılırsa yazılan (_"girdiğiniz fiyat"_). Oran fiyatın
+  düştüğü dilimden MOTOR tarafından çözülür; yeni hesap yok, aynı
+  `simulasyonKarsilastir`. Sistem kanal satış fiyatını TUTMUYOR (ölçüldü:
+  `ChannelSku`te fiyat alanı yok, listeleme senkronu fiyat çekmiyor) — bu
+  yüzden SORULUR, uydurulmaz.
+- **Öneri:** _"Fiyatı ₺1.095,95 yaparsanız NET-2 ₺1,07 artar."_ (yeşil) ya da
+  _"Şu anki fiyat en yüksek NET-2'yi veriyor."_ Kuruş tozu (<1 kuruş) öneri
+  üretmez. ⚠ 21.09 kararı ("hüküm vermesin") aynı kullanıcı tarafından
+  22.09'da çevrildi; ikisi de kodda.
+- **Renk:** NET-2 eksi → kırmızı, artı → yeşil, sıfır/bilinmeyen renksiz
+  (`lib/renkler` tokenleri).
+- **İzin:** `tarife.gor` (izinler + `SONRADAN_DOGAN`) — deploy sonrası
+  `npm run canli:yetki` ŞART, yoksa ekran sessizce 404.
+- **Bekçi:** `tarife:dogrula` K234 bloğu (18 değer testi: pencere seçimi ·
+  arama · öneri · renk, 221/221); menü ölçütleri (`panel:dogrula`) yeşil;
+  `teklif-tanima-mutasyon` çapası yeni adrese TAŞINDI (silinmedi).
+
+### MENÜ KAYDI — KULLANICI KENDİSİ TAŞIDI (22.09, Ayarlar → Menü düzeni)
+
+_Betik (`canli:menu-duzeni-yaz`) koşulmadı; kullanıcı üç kalemi sürükleyip kaydetti ("Menü düzeni kaydedildi"). Betik duruyor, geri alma/tekrar için._
+
+─── **③ Sıkı dikey aralık (kullanıcı 22.09): "sekmeler kapalıyken scroll yapmak istemiyorum"** — grup başlıkları arası dikey dolgu 8→2 px (grup başına 12 px, altıda 72 px); telefonda başlık 44 px dokunma hedefi (İlke #8). Halil: masaüstünde bütün gruplar kapalıyken **Ayarlar** alt bloğun üstünde, kaydırmadan görünür.
+
+Menü sırası VERİ (`Company.menuDuzeni`) ve kayıt varsayılanı ezer; kullanıcı
+25.08'de bir düzen kaydetmiş. Kod tek başına dört kalemi taşımaz.
+`npm run canli:menu-duzeni-yaz` kuru koşumu (22.09):
+
+    çözülen kalem: eski 42 · yeni 42 · kaybolan 0
+    yeni grup: urunAnalizi · urunKarti · simulasyon · tarifeHesaplama
+    tanınmayan (eski anahtar, düşer): tarife
+
+`--uygula` ile yazılır (yerel görüntü + iz + `--geri=<dosya>`). Alternatif:
+kullanıcı Ayarlar → Menü düzeni'nden dördünü gruba sürükler.
+
+### HALİL TEST LİSTESİ
+
+1. Sol menüde **Fiyatlandırma ve Analiz** başlığı (günlük listenin altında,
+   Para'nın üstünde) → içinde Ürün analizi · Kârlılık kartı · Hesaplama
+   motoru · Tarife hesaplama. _(Menü kaydı yazıldıktan sonra; öncesinde grup
+   yalnız "Tarife hesaplama" ile görünür, öteki üçü eski yerlerinde.)_
+2. **Tarife hesaplama** → başlık "Trendyol tarife hesaplama · 22.09.2026 –
+   29.09.2026 · 724 ürün" (en güncel pencere kendiliğinden). Pencere
+   seçicisinden "Hepsiburada · 16.09 – 22.09" → 152 ürün.
+3. Arama kutusuna **027084667271** yaz (Trendyol penceresi) → tek ürün:
+   "Eğlen ve Öğren Eğitici Masalcı Tırtıl". "xyz" → "Ürün bulunamadı" +
+   Temizle. Kamera simgesi çalışır.
+4. O üründe **NET hesapla** → Kargo 107 · **Şu anki satış fiyatı boş** →
+   Göster: dilim satırları + altta "Şu anki fiyat ₺1.102,00 · komisyon
+   %11,5 · NET-2 ₺169,29 (son satış: <tarih>)" ve yeşil satır **"Fiyatı
+   ₺1.095,95 yaparsanız NET-2 ₺1,07 artar."** NET-2 rakamları yeşil.
+5. Aynı kutuda fiyata **1095,95** yaz → Göster: "Şu anki fiyat ₺1.095,95 …
+   NET-2 ₺170,36 (girdiğiniz fiyat)" ve "Şu anki fiyat en yüksek NET-2'yi
+   veriyor."
+6. Hepsiburada penceresi → **HBCV00000EURKI** (Grundig) → NET hesapla,
+   kargo 185 → NET-2'ler **kırmızı** (−₺201,40 · −₺829,03 …), öneri satırı
+   "en yüksek" ya da "artar" — hepsi eksi olsa da en az kötüyü söyler.
+7. Eski adres `/ayarlar/tarife/<id>` → `/tarife?pencere=<id>`e yönlenir;
+   Komisyon yükleme → satırdaki "Tarife hesaplama" bağlantısı aynı yere.
+8. Sekme başlığı ve menü "Hesaplama motoru"; `/simulasyon` ekranının
+   başlığı da öyle. _(mobil doğrulama kullanıcıda)_
+
+### AÇIK
+
+- Kanalın **canlı satış fiyatını** çekmek (listeleme senkronuna fiyat
+  alanı) — o gün "şu anki fiyat" sorulmaz, ölçülür. Ayrı kalem.
+- N11 penceresi 142 ürün, tarife hesaplama N11 için de çalışır (ölçülmedi).
+
+
+---
+
+## ✅ K320 — ÜRÜNLER: PAZARYERİ İLAN LİNKLERİ · 07.10.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Ana amaç (TY · HB · N11 ilan linkleri) 10.10'da GEÇTİ; kenar adımlar (⑤–⑧) sınanmadan kapanış kararıyla. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**Kullanıcı 07.10.2026:** Firma SKU'nun soluna pazaryeri linkleri; önce TY, HB, N11; sonraki pazaryerlerine hazır; satırları firma seçer. «Denemede görmeme gerek yok» → doğrudan canlı.
+**Yapı:** adres SAKLANMAZ, kimlik saklanır (`ChannelSku.externalListingId` — 07.10'a kadar YAZICISI YOKTU, 0/2358); link kanal başına tek kalıptan (`src/lib/kanal-ilan-adresi.ts`) · yeni pazaryeri = tek satır. Seçim `Company.urunListesiKanallari` (en fazla 3, boş dizi sütunu gizler, bozuk/boş → varsayılan). İki «yok» ayrı: «kodu yok» (o kanalda kanal kodu yok) · «link yok» (kod var, ilan kimliği yok). Bekçi `ilan-adresi:dogrula` + 9 mutasyon.
+**Ölçüldü 08.10 (canlı, salt okuma):** ilan kimliği TY **1.076/1.135** · N11 **109/109** · HB **0/1.136** (beklenen: HB linki kanal kodundan `HBCV…` kurulur, kimlik gerekmez) · firma seçimi boş → varsayılan TY · HB · N11.
+⚠ **HB ve N11 kalıbı DOĞRULANMADI:** iki site betikten gelen isteğe 403 veriyor; doğru ürüne gittiği yalnız tarayıcıda görülebilir.
+**Halil testi (canlı):** ① Ürünler → Firma SKU'nun solunda «Pazaryeri» sütunu, satır başına Trendyol · Hepsiburada · N11 · ② bir üründe **Trendyol**'a tıkla → yeni sekmede O ürünün TY ilanı · ③ aynı üründe **Hepsiburada** → doğru ilan mı (⚠ doğrulanmamış kalıp) · ④ N11'de satılan bir üründe **N11** → doğru ilan mı (⚠ doğrulanmamış) · ⑤ N11'de olmayan üründe «N11 · kodu yok» (gri, link değil) · ⑥ Ayarlar → Kanallar → «Ürün listesinde gösterilecek pazaryerleri» → 1. satıra N11 koy, Kaydet → «Kaydedildi…» → Ürünler'de ilk satır N11 · ⑦ aynı kanalı iki satıra seç → «Aynı kanal iki satırda seçilemez» · ⑧ hepsini boş bırak → sütun kalkar; sonra eski sıraya geri dön · ⑨ telefonda link tek dokunuşla açılır.
+
+─── ② **09.10.2026 — HALİL TESTİ SONUCU (kullanıcı):** ② Trendyol → mağazamızın ürünü ✓ (kalıptaki `merchantId` işe yarıyor) · ③ **Hepsiburada → ürünün BUYBOX mağazasına** gidiyor — kalıp mağaza belirtmiyor · ④ **N11 → ana sayfaya** düşüyor — kalıp yanlış (`n11ProductId` adreste bu biçimde ürün açmıyor) · ⑥ **test tarifi YANLIŞTI:** ekranın menüdeki adı «Kanal Hesapları», varsayılan grubu «Ürün ve kanal» (adres `/ayarlar/kanallar`); tarif «Ayarlar → Kanallar» diyordu (K289'daki ders tekrarlandı: tarif menü adına bakılmadan yazıldı).
+~~[BEKLİYOR — kullanıcı]: örnek linkler~~ → geldi 09.10 (HB `…-p-HBCV0000CHSGX1?magaza=AXCALI` · N11 `…-120395634?magaza=axcali`).
+─── ③ **09.10.2026 — KALIPLAR ÖRNEKTEN KURULDU · MIGRATION CANLIDA.** **Ölçüldü (yalnız GET):** N11 ucu, 113 ilan — linkteki `120395634` **`groupId`** (113/113 dolu); bizim sakladığımız `n11ProductId` (774932795) DEĞİL · mağaza adı `sellerNickname` (113/113). HB ilan ucu mağaza adını **VERMİYOR** (`hepsiburadaSku · merchantSku · productId`).
+**Kullanıcı kararı:** mağaza adı ayrı alanda (hesap adı bir etikettir; yeniden adlandırılınca link sessizce bozulmasın). Alan `ChannelAccount.magazaAdi` — «vitrin» kelimesi bu depoda «pazaryerinde listelenmiş» demek (vitrin kutusu), iki kavram tek kelimede karışmasın diye `magazaAdi`. Migration `20261009120000_kanal_hesabi_magaza_adi` **canlıda koştu** (onaylı, damga 67).
+**Kod:** kalıp HB + N11 `?magaza={magazaAdi}` (boşsa ek YOK, kodlanır) · N11 kimliği `groupId` · N11 okuması mağaza adını kanalın cevabından yazar (yalnız TEK değer gelirse) · Kanal Hesapları → «Pazaryerindeki mağaza adı» kartı (yalnız adı kullanan kanalların aktif satış hesapları; küme kalıpların davranışından ölçülür) · eylem boşluk/`?&/#` reddeder, yalnız satış hesabına yazar. Bekçi `ilan-adresi:dogrula` **38/38** · mutasyon **23/23** (2 zararsız yeşil · 21 kırmızı). i18n ✓ · kullanıcı kolaylığı ✓ (44 px, görünür geri bildirim) · mobil doğrulama kullanıcıda.
+**Deploy sonrası iş:** ~~N11 ilan okuması `--uygula`~~ → **KOŞTU 09.10** (push `b534552` sonrası): 109 kimlik `groupId`'ye döndü (LEGO 43020 → `120395634`, kullanıcının linkiyle aynı) · N11 hesabına mağaza adı `AXCALI` yazıldı · ikinci kuru koşum değişecek **0**. HB mağaza adı BOŞ (beklenen — kullanıcı yazacak). Not: ilk push'ta `api:dogrula` ve `n11-listeleme:dogrula` haklı kırmızı yandı (betik doğrudan yazıyordu) → yazım `src/lib/kanal-magaza-adi.ts`e taşındı.
+**Halil testi (deploy sonrası):** ① Kanal Hesapları → «Pazaryerindeki mağaza adı» kartı · N11 kutusunda `AXCALI` · HB kutusu boş · ② HB kutusuna `AXCALI` → Kaydet → «Kaydedildi — … «AXCALI» mağazasını açacak» · ③ Ürünler → Emsan tencere seti → **Hepsiburada** → ilan BİZİM mağazamızla · ④ LEGO 43020 → **N11** → ürün sayfası (ana sayfa değil), bizim mağazamızla · ⑤ kutuya boşluklu ad → kırmızı uyarı, kaydedilmez · ⑥ telefonda aynı. ⚠ N11 linkinde ürün adı yerinde «x» var (uç adı vermiyor) — N11'in buna aldırmadığı yalnız ④ ile görülür.
+─── ④ **10.10.2026 — N11 İKİ ARIZA DAHA, İKİSİ DE KAPANDI.** (a) Link yine ana sayfaya düşüyordu: 09.10 13:57'de ESKİ canlı kodla koşan N11 okuması 109 kimliği `n11ProductId`ye GERİ çevirmişti (Vercel yeni kodu henüz yayımlamamıştı). Okuma yeni kodla yeniden koşuldu: 109 güncellendi, ikinci koşum 0. (b) Link ürünü açtı ama öne çıkan BAŞKA satıcıyı gösterdi (LEGO 43264 → PanelKırtasiye). **Ayırt edici deneme (kullanıcı, aynı ürün):** `?magaza=AXCALI` → PanelKırtasiye · `?magaza=axcali` → AXCALI. N11 mağaza adını küçük harfle bekliyor; HB büyük harfle çalışıyor (kullanıcının kendi linki). Çare yalnız N11 kalıbında küçük harf — `toLowerCase()`, `toLocaleLowerCase("tr")` DEĞİL (AXCALI → axcalı olurdu). Veri değişmedi (ekranda AXCALI kalır). `ilan-adresi:dogrula` 44/44 · mutasyon 28/28 (yeni üçü kırmızı: N11 büyük harfe döner · HB de küçülür · Türkçe küçük harf). **Halil testi GEÇTİ (10.10, canlı 9670b2d, kullanıcı):** Ürünler → LEGO 43264 → N11 linki → sağ üstte satıcı **AXCALI** · aynı ürünün HB linki → satıcı AXCALI.
+
+---
+
+## ✅ K226 — KOMİSYON YÜKLEME TEK KAPI + ESKİ BİÇİM (.xls) · 21.09.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** ③ 21.09 · ⑥ 01.10 GEÇTİ; kalanlar K227/K230'da geçti. HB «Avantajlı Teklifler» kutusu bir kez denenmedi — kapanış kararıyla. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**KULLANICI ARIZASI:** _"Hepsiburada tarifeler panodan yüklenemiyor."_ İki
+dosya gönderildi, ikisi de düştü — ve **iki ayrı sebeple**.
+
+### ÖLÇÜM — iki dosya da TARİFE DEĞİL, aynı cinsten KAMPANYA dosyası
+
+| | Hepsiburada | N11 |
+|---|---|---|
+| dosya | `Avantajlı_Teklifler-21-09-2026-09_33.xlsx` · 290.427 bayt | `4534966-21-09-2026-09-35-13.xls` · 44.544 bayt |
+| imza | `50 4B` → gerçek xlsx | `D0 CF 11 E0` → **gerçek eski biçim .xls** |
+| sayfa | `Açıklama` + `Teklifler` | `Ürün Komisyon Teklifleri` |
+| şekil | iki satırlı: `Teklif N` / `Üst Fiyat`+`Komisyon` | tek satırlı, **11. satırda**: `1. Teklif Üst Limit/Alt Limit/Komisyon` |
+
+İkisi de **koşullu teklif**: oran ancak teklif kabul edilip fiyat düşürülürse
+geçerli. HB ekranının reddi DOĞRUYDU; N11 hiç okunamadı.
+
+### ÜÇ KUSUR
+
+**① `.xls` OKUNAMIYORDU.** `read-excel-file` kendi cümlesiyle reddediyor —
+_"You passed a legacy `.xls` file. Only `.xlsx` files are supported"_ — ama bu
+cümle kullanıcıya ULAŞMIYOR; yerine onu suçlayan bir metin görünüyordu
+(_"dosyanın bozuk olmadığından ve indirildiği hâlde olduğundan emin olun"_).
+Dosya bozuk DEĞİLDİ. ⚠ Üstelik `accept=".xlsx"` yüzünden dosya seçicide
+`.xls` dosyaları **görünmüyordu** bile.
+
+**② N11 TEKLİF DOSYASI YAKALAYICIDAN KAÇIYORDU.** Ölçüldü:
+`teklifDosyasiMi = false`. Tanıma yalnız 0. ve 1. satıra bakıyordu; N11'de
+başlıklar 11. satırda. Yani `.xls` çözülse bile kullanıcı _"sütun eksik…
+henüz desteklenmiyor"_ görecekti — doğru red, "yakında gelir" diye okunan
+yanlış mesaj.
+
+**③ EKRAN ÇIKMAZA GÖTÜRÜYORDU.** Kırmızı kutu dosyanın ne OLMADIĞINI
+yazıyor, nereye gideceğini yazmıyordu. _(Anayasa: "kural doğru mu değil,
+teslim edilebilir mi".)_
+
+### YAPILAN
+
+**A) OKUMA TEK KAPIYA ALINDI** — `src/lib/tablo/tablo-oku.ts`. Biçim
+**BAYTTAN** tanınır (ad bir iddiadır); xlsx yolu DEĞİŞMEDİ (beş kapıda
+kanıtlanmış + Trendyol ZIP64 normalleştiricisi), eski biçim SheetJS'e gider.
+`src/` altındaki **beş yükleme kapısı** (hakediş · komisyon · tarife · içe
+aktarma · geçmiş ekstre) bu gövdeye bağlandı; çıplak `readXlsxFile(` **desen
+yasağıyla** kapatıldı — dosya listesiyle değil.
+
+⛔ **İKİ YOLUN AYNI ŞEYİ SÖYLEDİĞİ ÖLÇÜLDÜ** (aynı içerik, iki kap) ve ölçüm
+**üç sessiz ayrışma** yakaladı:
+
+    ilk ölçüm      357 hücre ayrışıyor   → boş metin `""` vs `null`
+    ikinci ölçüm    93 hücre ayrışıyor   → TARİH, tam 2 SAAT kaymış
+    üçüncü ölçüm    39 hücre ayrışıyor   → metin kırpma + milisaniye
+    son ölçüm        0 hücre             ✓
+
+⚠ **EN PAHALISI SAAT DİLİMİYDİ:** SheetJS seri sayıyı **YEREL** saatte
+kuruyor. Aynı dosya Berlin'deki makinede ve UTC koşan sunucuda **iki farklı
+ana** çözülürdü ve hiçbir yerde hata vermezdi. Anayasa bunu adıyla yasaklıyor.
+Çözüm: seri sayı saf UTC aritmetiğiyle çevriliyor. Formül **tahmin edilmedi,
+ölçüldü** (n=92 tarih hücresi): `(seri − 25569) × 86400000` → **92/92**;
+`Math.round`lu hâli **0/92**.
+
+**B) KAMPANYA YAKALAYICISI İKİ ŞEKLİ DE TANIYOR.** Başlık satırı ilk 20 satır
+içinde aranıyor; hem HB'nin iki satırlı hem N11'in tek satırlı şekli.
+Ayırt edici kelime **`teklif`** — Trendyol'un gerçek tarifesi `1.KOMİSYON` +
+`1.Fiyat Alt Limit` taşır ama "teklif" TAŞIMAZ.
+
+📏 **ALTI GERÇEK DOSYAYLA ÖLÇÜLDÜ — 6/6:** N11 kampanya ✓ yakalandı · HB
+kampanya ✓ yakalandı · **TY gerçek dilimli tarife ✗ dokunulmadı** (hâlâ tarife
+olarak okunuyor) · TY indirimli rapor ✗ · HB komisyon listesi ✗ · TY temmuz
+indirimli ✗.
+
+**C) TEK KAPI EKRANI — `/ayarlar/komisyon`.** _Kullanıcı kararı: "her kanalın
+kendi yükleme stili olsun; kişi kanala tıklasın, dosyayı içine koysun."_
+Kanal kartları **veriden** türetiliyor (elle liste yok). Her kart o kanalın
+kabul ettiği dosyaları adıyla yazar; **desteklenmeyen tür de SATIR olarak
+durur** ve NİYE olmadığını söyler (sıfır satır gizlenmez). Yükleyiciler
+yeniden yazılmadı — sabit hesapla içeri alındı.
+
+⚠ **ESKİ EKRANLAR KALDI:** `/ayarlar/tarife` yüklü pencereleri ve kapsam
+boşluğu tutanağını (K49) göstermeye devam ediyor — o bir DURUM ekranı.
+
+**D) KAMPANYA TANIMASI İKİ YOLA DA BAĞLANDI.** Yakalayıcı önce yalnız TARİFE
+yolundaydı; kullanıcı aynı dosyayı **öteki kutuya** da bırakabilir ve orada
+_"ürün listesine benzemiyor"_ yazıyordu — doğru ama dosyanın NE olduğunu
+söylemeyen bir cümle. Komisyon yolu da artık danışıyor (`TEKLIF_DOSYASI`).
+⚠ Bağın KENDİSİ ölçülüyor: ölçüt `TANINMADI` dalına daraltıldı ve **sıra** da
+sınanıyor (tanıma genel cevaptan ÖNCE gelmeli, yoksa hiç çalışmaz).
+
+**E) EL KİTABI BÖLÜMÜ YAZILDI** — `el-kitabi:dogrula` push'u durdurdu:
+menüdeki her ekranın kitapta karşılığı olmak zorunda (kullanıcı kararı
+22.08.2026) ve yeni ekran yoktu. Bölüm iki dosya türünü, kampanya tuzağını ve
+`.xls` biçimini anlatıyor. _Bekçi öğretti, kimse fark etmek zorunda kalmadı._
+
+**F) ÜÇ MESAJ DÜZELTİLDİ** — kullanıcıyı suçlayan `.xls` metni, "henüz
+desteklenmiyor" diye okunan sütun mesajı ve teklif dosyası uyarısı. Üçü de
+artık aynı kartın altındaki **"Güncel komisyon oranı listesi"** kutusuna
+yönlendiriyor — hedefi VAR OLAN bir kutu.
+
+### BEKÇİ + MUTASYON
+
+    tablo-oku:dogrula                  24 ölçüt  (yeni)
+    tarife:dogrula                142 → 159 ölçüt
+    komisyon:dogrula              169 → 174 ölçüt
+    el-kitabi:dogrula                  53 ölçüt  (yeni bölüm)
+    tablo-oku-mutasyon:kontrol         13/13     (yeni)
+    teklif-tanima-mutasyon:kontrol     10/10     (yeni)
+
+⭐ **ZARARSIZ MUTASYON DA SINANDI** (yorum değişikliği → YEŞİL). Yalnız gerçek
+bozmalar denenseydi, hiçbir şey koşmayan bir harness "mükemmel" görünürdü.
+
+⛔ **VE BİR MUTASYON KAÇTI — ÖLÇÜT DEĞİL, VERİ DÜZELTİLDİ.** _"Teklif şartını
+gevşeten"_ mutasyon ilk turda yeşil geçti: mevcut örnekler o dalı hiç
+çalıştırmıyordu. Ayrımı gösteren satır eklendi (`limit` var, `teklif` yok) ve
+mutasyon kırmızıya döndü. _(Anayasa: "mutasyon kaçıyorsa önce test verisi
+sorgulanır".)_
+
+⚠ **YOL ÜSTÜNDE İKİ KAÇIŞ HATASI KENDİ ELİMDEN ÇIKTI** ve ikisini de ÖLÇÜM
+yakaladı, dikkat değil: bekçinin yorum temizleyicisine fazladan bir ters bölü
+girmişti (`/\/\\*/` — doğrusu `/\/\*/`) ve regex herhangi bir `/`'dan `*/`'a kadar **kodu
+yiyordu** — taban ölçütü 6 yerine 4 sayıyordu. _(Anayasa: "kod üreten araç,
+kaçış dizilerini bozuk yazabilir".)_
+
+### BAĞIMLILIK KARARI — kullanıcı onayıyla
+
+`.xls` için **SheetJS 0.20.3, yayıncının kendi adresinden**
+(`cdn.sheetjs.com`). Ölçüldü ve **npm'deki `xlsx` paketi ELENDİ**: tek sürümü
+`0.18.5`, **yüksek önem dereceli iki açık ve düzeltmesi YOK** (Prototype
+Pollution + ReDoS; yayıncı npm'den ayrılmış). `exceljs` eski biçimi hiç
+okumuyor. Seçilen sürümde açık **yok**, bağımlılığı **yok**.
+
+⚠ **BEDELİ BEYAN EDİLİYOR:** her kurulum ve her Vercel deploy'u
+`cdn.sheetjs.com`a bağlanır. Adres düşerse **build KIRMIZI yanar** — sessiz
+değil, görünür bir arıza; yanlış rakam üretmez.
+
+─── ② PUSH KAPISI BİR ÇAKIŞMA YAKALADI (aynı teslim)
+
+`mutasyon-cakisma:dogrula` push'u durdurdu ve **haklıydı**: iki yeni harness de
+`src/lib/komisyon/yukle.ts`i mutasyona uğratıp `finally`de geri yazıyor.
+Paralel koşsalardı biri ötekinin **MUTANTINI** "asıl" sanıp geri yazardı —
+ve bozulma sessiz olurdu. İkisi `SIRALI_MUTASYON_GRUP`a beyan edildi
+(9 çakışan + 16 bağımsız). ⚠ Liste elle tutuluyor ama **her koşumda gerçek
+taramayla karşılaştırılıyor**; beyan edilmemiş bir çakışma kırmızı yanıyor.
+
+**Tur sonucu: 137/137 yeşil · push geçti.**
+
+─── ③ HALİL TESTİ EKRANI DOĞRULADI + BİR AYLIK SESSİZ KUSUR ÇIKTI
+
+**Ekran canlıda ve doğru davranıyor** (kullanıcı ekran görüntüsü, 21.09): HB
+kartında kampanya dosyası reddedildi, kırmızı kutu ne olduğunu ve nereye
+gidileceğini yazdı. ⚠ Deploy da geçmiş demektir — **cdn.sheetjs.com
+bağımlılığı ilk gerçek deploy'da sorun çıkarmadı.**
+
+⛔ **AMA AYNI EKRAN GÖRÜNTÜSÜNDE BİR AYLIK BİR KUSUR GÖRÜNDÜ.** N11 okuyucusu
+**18.08.2026**'da eklendi; ekranın ELLE YAZILMIŞ iki yeri güncellenmedi ve
+bir ay öyle kaldı:
+
+| eksik | sonucu |
+|---|---|
+| `platformN11` sözlük etiketi HİÇ yazılmamış | önizlemede kanal adı **BOŞ** basılıyordu |
+| "nereden indirilir" yazısı yalnız TY + HB | operatörün **tam o soruya** cevabı yoktu |
+
+⭐ **VE BİRİNCİSİ GÖRÜNMEDEN YAŞIYORDU — ÖLÇÜLDÜ.** Önce _"next-intl patlar,
+ekran kırılır"_ diye teşhis kurdum; ölçüm **çürüttü**: kütüphane hata
+atmıyor, eksik parametreyi **sessizce boş** basıyor (`" listesi · okunan
+sayfa: …"`). Yani kusur ne hata veriyor ne göze çarpıyordu.
+_(Anayasa: "imkânsız görünen değer önce doğrulanır" — burada imkânsız
+görünen ÇÖKÜŞTÜ ve olmadığı ölçüldü.)_
+
+**ÇARE METİN DEĞİL, BAĞ:** ekranın platform tipi artık `KomisyonPlatformu`
+tek gövdesine bağlı. Dördüncü pazaryeri eklendiğinde `Record` **DERLENMEZ** —
+liste bakım istemez. _(Anayasa: "tip listesi değil, BAĞ".)_
+
+**BEKÇİ — küme `IMZALAR`dan türetiliyor, elle liste yok:** her platform için
+① sözlükte etiketi var mı ② "nereden indirilir" o kanalın yolunu anlatıyor mu
+③ ekranda çıplak birlik yok. `komisyon:dogrula` 174 → **183**.
+**Mutasyon 10/10 → 13/13**: etiketi silen · yolu çıkaran · tipi çıplak
+birliğe döndüren; üçü de kırmızı yandı.
+
+─── ④ KAMPANYA DOSYASINDAN "MEVCUT KOMİSYON" — ÜÇÜNCÜ KUTU
+
+**KULLANICI İTİRAZI:** _"Bunları HB ve N11 yüklemek için yapmıyor muyuz zaten,
+normalde Trendyol yükleniyordu."_ İtiraz haklıydı ve iki şeyi ayırmayı
+gerektirdi:
+
+⚠ **HB/N11 YÜKLEMESİ BU PAKETTEN ÖNCE DE VARDI** — `/kanal-sku/komisyon-aktar`
+üç kanalı da **18.08.2026'dan beri** tanıyor. Trendyol'un ayrıcalığı yoktu.
+Bozuk olan **kapının bulunamaması** ve ekranın yanlış cümle kurmasıydı.
+
+⭐ **AMA İTİRAZIN ALTINDA GERÇEK BİR ŞEY VARDI:** kullanıcının ELİNDEKİ dosya
+kampanya dosyası ve içinde `Mevcut Komisyon` sütunu duruyor — kanalın o anki
+GERÇEK oranı, kaynak önceliğinde **en üst basamak**. Atmak, elimizdeki gerçek
+veriyi çöpe atmaktı.
+
+**ÖLÇÜLDÜ (gerçek dosyalar, 21.09.2026):**
+
+    HB  kampanya  44/45 satırda kod + okunabilir oran   · kataloğun 2153'te 44'ü
+    N11 kampanya  46/46 satırda kod + okunabilir oran   · kataloğun 48'de 46'sı
+    kimlik uyumu  HB 36/44 · N11 24/46 kod oran listesinde de var → aynı kod uzayı
+
+⭐ **N11'DE BU BÜYÜK:** indirdiği kampanya dosyası kataloğunun neredeyse
+tamamının güncel oranını taşıyor. HB'de küçük (%2) — orada asıl kaynak yine
+tam döküm. **Karar kullanıcıya soruldu, sessizce yapılmadı.**
+
+**YAPILAN:** kartlarda üçüncü kutu — _"Kampanya dosyasından güncel oranları
+al"_. ⛔ Teklif kolonları **OKUNMUYOR** (modül onları hiç görmüyor).
+Aynı okuyucu/plan/yazma gövdesinden geçiyor; ikinci bir yazma yolu açılmadı.
+
+⚠ **TRENDYOL KUTUSU AÇILMADI VE BU BİR ÖLÇÜM SONUCU DEĞİL, BOŞLUK:** TY
+kampanya dosyasında `Mevcut Komisyon` biçiminde tek bir güncel oran kolonu
+olup olmadığı **ölçülmedi**. "TY yayımlamıyor" denmiyor — bakılmadı.
+
+**BEKÇİ:** `komisyon:dogrula` 183 → **203** · `tarife:dogrula` 159 → **163**.
+Mutasyon **13/13** ve **18/18**.
+⛔ **EN KRİTİK ÖLÇÜT:** okuyucuyu teklif kolonuna çeviren mutasyon KIRMIZI
+yanıyor — örnek veri ayrımın iki yakasını gösteriyor (Mevcut %13 ↔ teklif %8,4).
+
+⭐ **VE HARNESS'İN ZARARSIZ MUTASYON SAĞLAMASI ANINDA İŞE YARADI.** Zararsız
+bir yorum değişikliği bekçiyi kırmızı yaktı → "YALANCI KIRMIZI" raporlandı.
+Sebep mutasyon değildi: `tarife:dogrula`da **elle sayılmış** bir ölçüt
+(_"iki tür döner"_) üçüncü tür eklenince eskimişti. **Susturulmadı,
+beyandan türetildi** (`YUKLEME_TURLERI`) ve tamlık derleme zamanında
+kapılandı. _(Anayasa: "bekçinin kırmızısı her zaman kod yanlış demez".)_
+⚠ Yalnız gerçek bozmalar denenseydi bu görünmezdi.
+
+### AÇIK
+- [ ] **Halil testi** — canlı adreste, gerçek dosyalarla (liste raporda).
+- [ ] **N11'in KOMİSYON dökümü hangi biçimde iniyor — ÖLÇÜLMEDİ.** Elimizdeki
+      `.xls` dosya kampanya dosyasıydı. Ürün/komisyon dökümü de `.xls` ise
+      kapı onu da açar; `.xlsx` ise bugün zaten çalışıyordu. Kapı iki biçimi
+      de çözdüğü için **hangisi olursa olsun sonuç değişmiyor** — ama iddia
+      ölçülmeden yazılmaz.
+- [ ] **HB/N11 dilimli tarife yayımlıyor mu — BİLİNMİYOR.** Ekran "bizim
+      okuyucumuz yok" diyor, "kanal yayımlamıyor" DEMİYOR. Yokluk iddiası da
+      bir iddiadır ve ölçülmedi. Böyle bir dosya eline geçerse okuyucu yazılır.
+- [ ] **FIRSAT (kusur değil):** her iki kampanya dosyasında `Mevcut Komisyon`
+      sütunu duruyor — HB'de 45, N11'de 46 ürün için, **kanalın kendi beyanı**
+      (kaynak önceliği: `OLCULDU`). Teklif kolonlarına dokunmadan yalnız o
+      sütun okunabilir. **Karar kullanıcıya ait, sessizce yapılmadı.**
+
+⚠ **DEPODA 12 GÜVENLİK AÇIĞI VAR VE BU PAKETTEN DEĞİL** (3 orta · 8 yüksek ·
+1 kritik): `prisma`/`deepmerge-ts` · `fast-uri` · `hono` · `js-yaml` ·
+`mariadb` · `sharp`. Eklenen `xlsx` audit'te **geçmiyor**. Prisma düzeltmesi
+**kırıcı sürüm** istiyor; ayrı kalem, ayrı karar.
+
+---
+
+─── ⑤ **30.09.2026 — TEST LİSTESİ DERLENİRKEN BULUNDU:** üç metin (`Tarife.hataSutunEksik` · `Tarife.hataTeklifDosyasi` · `Komisyon.kampanyaNeOkunur`) K227'de adı «Haftalık komisyon oranı (ürün dökümü)» olan kutuyu hâlâ «Güncel komisyon oranı listesi» diye anıyordu — kullanıcı var olmayan bir kutuyu arardı; el kitabında da iki yerde. Düzeltme: metinler adı `{kutu}` parametresiyle `KomisyonKapisi.turGuncelOran`dan alır; el kitabı güncellendi. Bekçi `komisyon:dogrula` «kutu adı» bölümü (216) — elle ad / eksik parametre kırmızı, zararsız yeşil görüldü.
+─── ⑥ **01.10.2026 — HALİL TESTİ (N11 adımı) GEÇTİ:** N11 kampanya kutusuna `4534966-01-10-2026-09-45-29.xls` yüklendi — `.xls` okundu, platform «N11», `KOMISYON_YUKLEME` izi: okunan 45 · güncellenen 9 · aynı 36 · yaratılan 0. (Board'daki 46/46 geçen haftanın dosyasıydı.) HB «Avantajlı Teklifler» 30.09'da tarife kutusuna yüklendi (146 kalem, pencere 30.09–06.10). Kalan: N11 tarife kutusu (K227) ve «Yüklü pencereler» anlık tazelenmesi (K230).
+
+
+---
+
+## ✅ K227 — TEKLİF DOSYASI **TARİFEDİR** — ESKİ KARAR ÇEVRİLDİ · 21.09.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Halil testi 21.09 + ② 01.10 GEÇTİ. Açık kalanlar test değil iş: katalogda olmayan 11 N11 kodu · TY kampanya dosyası ölçülmedi. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**KULLANICI TESPİTİ:** _"HB'de her Çarşamba ürünlerin bir kısmı için teklif
+veriliyor; teklif edilen rakamı satış fiyatı olarak işaretlersen o fiyatın
+komisyonu geçerli. **Temel mantık Trendyol ile aynı.**"_
+
+⛔ **VE HAKLIYDI. 02.09.2026'daki K-HB-TEKLIF KARARI YANLIŞTI.** O gün şu
+yazılmıştı: _"Bu dosya tarife DEĞİL ve tarife olarak yüklenmesi kâr hesabını
+bozar."_ Gerekçe şuydu: `dilimBul` bugünkü fiyata indirimli oranı uygulardı.
+
+⭐ **GEREKÇE DOĞRUYDU AMA KOŞULLUYDU — VE KOŞUL HİÇ SORULMAMIŞTI:** o kayma
+yalnız **MEVCUT FİYAT DİLİMİ tabloya konmazsa** olur. Konursa
+`dilimBul(2.599)` → **%18** döner, yani doğru. Trendyol'un tarifesi de
+**aynı koşullu mekanizma** — anayasa onu kendi sözleriyle yazıyor:
+_"TY fiyat indirimi karşılığı komisyon indiriyor: 2.000'e %10, 1.750'ye
+satarsan %7"_. Yani koşulluluk ayırt edici değildi; eksik olan **tablonun
+TEPESİYDİ**. _(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı
+korur" — burada korunan şey, HB/N11'in tarifesiz kalmasıydı.)_
+
+### ÖLÇÜM — üç kanalın paneli GÖZ GÖZE karşılaştırıldı
+
+Braun IRT3030 · HB dosyası ↔ HB panelinin kendi ekranı, **birebir**:
+
+    > 1.801,00            %18     ← mevcut komisyon, üst uç AÇIK
+    1.711,01 – 1.801,00   %8,8
+    1.621,01 – 1.711,00   %7,2
+            ≤ 1.621,00    %6      ← alt uç AÇIK
+
+| kanal | dosyadaki şekil |
+|---|---|
+| Trendyol | `1.Fiyat Alt Limit … 4.KOMİSYON` · tepe dilim dosyada VAR (`ve üstü`) |
+| Hepsiburada | `Teklif 1/2/3` → yalnız **ÜST fiyat**; alt sınır bir sonrakinin **+1 kuruşu** (panel `1.711,00 - 1.621,01` yazarak doğruluyor) |
+| N11 | `N. Teklif Üst Limit + Alt Limit + Komisyon` · **iki sınır da dosyada**, türetme YOK |
+
+Dosyanın kendi notu da kanıt: _"Hesaplanan Komisyon, girilen fiyata ve
+**sunulan fiyat aralıklarına** göre otomatik hesaplanır."_ (N11)
+
+### YAPILAN
+
+**A) Yeni saf gövde** `teklif-tarifesi.ts` — teklif dosyasını `TarifeOkumasi`
+üretir, yani Trendyol okuyucusunun **çıktısının aynısı**. Aynı plan/yazma
+yolundan geçer; ikinci bir yazma yolu açılmadı.
+
+**B) Tarife yolu artık teklif dosyasını KABUL EDİYOR** — ve yalnız HATA
+dalında deneniyor, geçerli bir TY tarifesi o satıra hiç gelmiyor.
+`TEKLIF_DOSYASI` engel kodu **kaldırıldı** (üretilmeyen kod bırakılmaz);
+yerine `PLATFORM_UYUSMAZ` geldi — dosya ile hesabın kanalı çelişirse yazmaz.
+
+**C) `DILIMLI_TARIFE` artık ÜÇ kanalda** ve küme **elle değil beyandan**
+türetiliyor (`...TEKLIF_TARIFESI_OKUYUCUSU_OLAN`).
+
+**D) Kutu adları düzeltildi** (kullanıcı onayı): _"Güncel komisyon oranı
+listesi"_ → **"Haftalık komisyon oranı (ürün dökümü)"**; tarife kutusu
+**"Haftalık dilimli komisyon tarifesi"** oldu ve üç kanaldaki adlarını yazıyor.
+
+⛔ **PENCERE — ÖLÇÜM BİR KUSUR YAKALADI.** İlk yazımda pencere tam zaman
+damgasına göre gruplanıyordu ve **44 satırın 41'i "pencere dışı"** çıktı:
+HB teklifleri aynı günün farklı DAKİKASINDA başlıyor (`00:07` · `00:19`…).
+Gruplama İstanbul takvim gününe çevrildi → pencere **16.09 → 22.09**, yani
+**panelin sekmesinde yazanın aynısı**; dışarıda kalan 14 satır ekranda sayılıyor.
+
+⚠ **PENCERE YÜKLEME BAŞINA TEK — BEYAN.** Teklifler ürün başına ayrı tarih
+taşıyor (HB'de 44 üründe 27 farklı). Kayıt tek pencere tutuyor; **en yaygın**
+aralık seçiliyor. Gerekçe: dosya haftalık yükleniyor ve her yükleme o haftanın
+geçerli tekliflerini yeniden getiriyor. _Kalem başına geçerlilik şema
+değişikliği ister; bugünkü akışta karşılığı yok._
+
+### BEKÇİ + MUTASYON
+
+    tarife:dogrula   164 → 187 ölçüt
+    teklif-tanima-mutasyon:kontrol   18/18 → 23/23
+
+⛔ **EN KRİTİK ÖLÇÜT:** `dilimBul(2.599) → %18`. Tepe dilimi kaldıran mutasyon
+kırmızı yanıyor — yani 02.09'daki korkunun kendisi artık **ölçülüyor**.
+Diğerleri: kuruş payını kaldıran (dilimler çakışır) · alt sınır türetmeyi
+kaldıran (HB dilimleri açık kalır) · pencereyi saniyeye döndüren · beyanı
+boşaltan. Beşi de kırmızı.
+
+⭐ **VE BİR MUTASYON KAÇTI, ÖLÇÜT DÜZELTİLDİ.** Bir türü BAŞKA bir türle
+değiştiren mutasyon, yalnız SAYI sayan ölçütten kaçıyordu (adet aynı, küme
+bozuk). Artık **türlerin KÜMESİ** karşılaştırılıyor — her kanal için.
+
+⚠ **VE İKİ MUTASYONUN ÇAPASI REFAKTÖRLE KAYDI.** Harness _"geçti"_ demedi,
+**"ÖLÇÜLEMEDİ"** dedi ve push'u durdurdu. Mutasyonlar SİLİNMEDİ; niyetleri
+korunup yeni koda taşındı. _(Anayasa: "refaktör, çapalı harness'i de taşır".)_
+
+### ✅ HALİL TESTİ GEÇTİ — 21.09.2026, canlı adres, gerçek dosyalar
+
+    HB  yükleme : 44 satır · 152 kalem · 43 eşleşen · 1 bağsız
+                  pencere 2026-09-16 → 2026-09-22  (panel sekmesiyle BİREBİR)
+    N11 yükleme : 142 kalem · 33 eşleşen ürün · pencere 2026-09-21 → 2026-10-04
+    ikisi de canlıya yazıldı (13:08 ve 13:09)
+
+⭐ **VE ZİNCİR UÇTAN UCA ÇALIŞTI — ASIL KANIT BU.** Kullanıcı fiyat denemesinde
+HB fiyatına **1801** yazdı ve komisyon kendiliğinden **%8,8** oldu; kutunun
+altında _"oran dilim tarifesinden"_ yazıyor. Yani teklif dosyası tarifeye,
+tarife dilime, dilim kâr hesabına ulaştı.
+
+⚠ **"N11 ÇALIŞMIYOR" DENDİ — ÖLÇÜM ÇÜRÜTTÜ.** Denenen ürün (Braun IRT-3030)
+N11 tekliflerinde **HİÇ YOK** (ölçüldü: 0 kalem); N11'in _"veri yok"_ demesi
+DOĞRU davranıştı. N11 teklifi OLAN bir üründe motor sorunsuz çözüyor:
+
+    1210001906501 (Stanley French Press)
+      3.500 → %16    (tepe dilim)     2.950 → %3,81
+      2.900 → %3,31                   2.500 → %3      · kaynak=DILIM
+
+_(Anayasa: "sıfır üç farklı şey olabilir" — burada "oran gelmiyor", kusur
+değil, o üründe teklif OLMAMASIYDI.)_
+
+### AÇIK
+─── ③ **BAĞSIZ ÜRÜNLERİN SEBEBİ ÖLÇÜLDÜ — VE PANODAKİ TEŞHİS YANLIŞTI**
+_(21.09.2026 · `npm run canli:tarife-bagi`)_
+
+Panoda şöyle yazıyordu: _"o ürünlerin N11 kodu bizde yok."_ **Ölçüm çürüttü.**
+Bağsız kodların bir kısmı sistemde **ZATEN VARDI** — başka kanalın kodu olarak:
+
+    HBCV00004U1QOR · HBCV00007ITCGF   -> HEPSİBURADA kodları
+    5702017424842                     -> EAN (LEGO)
+    40744 · 42221 · 43020             -> LEGO ürün numaraları
+
+Yani N11 dosyası "pazaryerinin kendi kodunu" taşımıyor; **satıcı o ürüne hangi
+kodu girdiyse onu** taşıyor. Yükleyici ise yalnız iki role bakıyordu: `barcode`
++ **o hesabın** kanal kodları. Kapsam dört role ve bütün kanallara genişletildi.
+
+**ÖLÇÜLDÜ:** 17 bağsız koddan **6'sı** bulunuyor · bunun **3'ü yürürlükteki
+N11 penceresinde** (bir sonraki yüklemede kendiliğinden düzelir).
+
+⚠ **GEÇMİŞ PENCERELERE DOKUNULMADI VE DOKUNULMAYACAK.** Ölçüm şunu gösterdi:
+`TYB03WJ27YHQ5LZU10` 09-08 penceresinde bağsız, 09-15'te bağlı — kanal SKU'su
+**09-10'da kurulmuş.** Yani eski pencere yükleme anının FOTOĞRAFI ve doğru.
+Bunu "kusur" diye okumak, doğru çalışan bir mekanizmayı bozmak olurdu.
+_(Anayasa: "geçmişi düzeltmek ile mekanizmayı kurmak ayrı kararlardır".)_
+
+⛔ **VE GENİŞLEYEN KAPSAM YENİ BİR SESSİZ SEÇİM ÜRETMİYOR:** bir kod iki
+varyanta çözülüyorsa **bağlanmaz** — bağsız kalem görünür, yanlış bağlanmış
+kalem görünmez. Bugün çakışma **0** ve bu tesadüf değil: K231'in yazma kapısı
+bu kodların doğmasını engelliyor.
+
+- [ ] **Kalan 11 kod gerçekten kataloğumuzda yok** — LEGO ürün numaraları
+      (`40744`, `42221`), N11'in 18 haneli iç kodları, `BRİ924` model kodu.
+      Kapatma yolu: **N11 listeleme senkronu** (aşağıda).
+- [x] ~~**Teslim 2: pazaryeri aynası ekranı**~~ — **K230'DA YAPILDI**
+      (`/ayarlar/tarife/[id]`). Kalem burada açık kalmıştı; kapatıldı 21.09. Panelin gösterdiği her dilimin yanında o fiyata satarsan
+      NET-2 yazacak — pazaryerinin asla gösteremeyeceği rakam, çünkü maliyeti
+      bilmiyor. Fiyat denemesi motoru yeniden yazılmayacak, çağrılacak.
+- [ ] **Trendyol teklif/indirimli dosyası ölçülmedi** — TY'nin kampanya
+      dosyasında `Mevcut Komisyon` biçiminde bir kolon var mı bakılmadı.
+      "Yok" denmiyor, **bakılmadı**.
+
+---
+
+─── ② **01.10.2026 — N11 DOSYA BİÇİMİ DEĞİŞTİ, OKUYUCU UYARLANDI.** Kullanıcı bu haftanın N11 dosyasını (`4534966-01-10-2026-09-45-29.xls`, md5 `1417289f…`) tarife kutusuna yükledi → «Dosyada geçerlilik penceresi yok». Ölçüldü, iki değişiklik: ① tarih başlığı «Başlangıç Zamnı» → «**Başlangıç Zamanı**» (N11 yazım hatasını düzeltti); ② teklif adları «1./2./3. Teklif» → «**Avantajlı / Süper / Kaçmaz Teklif**». Eski okuyucu 45 satırın **45'ini** «teklif yok» diye atlıyordu. Düzeltme: tarih başlığı iki yazımla da aranır; teklif adı başlığın kendisinden okunur (numara da kelime de). Uygulamanın kendi okuyucusuyla ölçüldü: **21.09 dosyası birebir aynı** (46 ürün · 142 dilim · 21.09–04.10); **01.10 dosyası 45 ürün · 142 dilim**, ilk satır dosyayla göz göze (Freebuds: ₺7.897'ye kadar %1, üstü %15). `tarife:dogrula` +5 (240) · `teklif-tanima-mutasyon` 37/37 (3 yeni). **Halil testi:** Ayarlar → Komisyon → N11 → tarife kutusu → aynı dosya → «Önce göster» önizleme açılır (45 ürün) → yükle → «Yüklü pencereler»de N11 penceresi. ✅ **HALİL TESTİ GEÇTİ 01.10.2026** — canlıda ölçüldü: N11 penceresi (21.09–04.10) bu dosyayla güncellendi, `kaynakDosyaAdi` `4534966-01-10-2026-09-45-29.xls`, **142 kalem**, `yuklemeSayisi` 2.
+
+
+---
+
+## ✅ K229 — KARGO TARİFESİ KANAL BAĞIMSIZ OLDU · 21.09.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** İçerikte GEÇTİ 22.09 (#8 bulguyla). Açık kalanlar iş kalemi: Bim/MediaMarkt `satisIcin` bayrağı · «yalnız HB'ye yükleme» netleşmesi · 6 TY satışı kargosuz (K141). Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+**KULLANICI TESPİTİ:** _"Bu sadece HB'ye özel değil, diğer pazaryerleri de arada
+bir değiştiriyor. Onlara has bir yer de olmalı."_ Ekranın **adında kanal
+gömülüydü** — anayasanın adlandırma kuralına da aykırı: kanal VERİ olabilir,
+YAPI olamaz.
+
+⛔ **VE EKRAN OLMAYINCA GÖRÜNMEYEN BİR ARIZA BÜYÜMÜŞ — ÖLÇÜLDÜ:**
+
+    Trendyol      4.210 satır · 10 taşıyıcı · tek parti 2026-07-16   ← 2 AY ESKİ
+    Hepsiburada  85.702 satır · 11 taşıyıcı · 2026-08-01 + 2026-09-10
+    N11 ve 9 kanal daha                       TARİFE YOK
+
+Trendyol'unki **seed'den** gelmiş (`prisma/seed-kar-motoru.ts` →
+`veri/kargo-tarifeleri.xlsx`) ve bir daha tazelenmemiş; tazeleyecek ekran da
+yoktu. Yani TY satışlarında kargo maliyeti iki aylık bir tarifeden hesaplanıyor
+ve bunu **hiçbir ekran söylemiyordu.**
+
+### YAPILAN
+
+**A) `/ayarlar/kargo-tarifesi`** — kanal kartları, komisyon ekranıyla aynı
+desen. Kart üç ÖLÇÜLMÜŞ şeyi yazar: satır sayısı · en son yürürlük tarihi ·
+**üstünden kaç gün geçtiği**. Tarifesi olmayan kanal da kart olur ve
+_"kâr hesabı kargoyu bilemez"_ diye yazar.
+
+**B) KANAL ARTIK KİMLİKLE ÇÖZÜLÜYOR.** Yazıcı kanalı
+`name: { contains: "Hepsiburada" }` ile buluyordu. Bu deponun **K13b dersi**
+o kalıbın bedelini ölçmüştü: ad alanı `"Hepsiburada — AXCALI"` üretiyor,
+eşleşme tutmuyor ve kayıtlar sessizce eleniyordu. `Channel.code` ile değişti.
+
+**C) VERİ MODELİ DEĞİŞMEDİ** — `CargoTariff.channelId` zaten herhangi bir
+kanala bağlanıyordu (ölçüldü). Eksik olan yalnız ekran ve okuyucuydu.
+
+⚠ **"BAYAT" EŞİĞİ KOYULMADI VE BU BİLİNÇLİ.** Tarifenin BİTİŞ tarihi veride
+YOK (`CargoTariff`te yalnız `effectiveFrom` var), yani "kaç günde bayatlar"
+sorusunun veriden türetilebilir cevabı yok. Uydurma bir gün sayısı, anayasanın
+_"eşik dağılımın gediğine konur"_ kuralını çiğnerdi. Ekran ÖLÇÜLEBİLİR OLANI
+yazıyor: tarih ve geçen gün. Hükmü operatör veriyor — ama artık rakamı görerek.
+
+### API — ÖLÇÜLDÜ, İDDİA EDİLMEDİ
+
+Mevcut istemcilerde **kargo TARİFESİ ucu YOK.** Trendyol'da bulunan tek kargo
+ucu `cargo-invoice/{faturaNo}/items` — o **fatura**, yani fiilen kesilen;
+ileriye dönük tarife değil. HB ve N11 istemcilerinde kargo ucu hiç yok.
+
+⚠ **"Pazaryerleri böyle bir uç yayımlamıyor" DENMİYOR — dokümanlarına
+BAKILMADI.** Yokluk iddiası da bir iddiadır; bakılmadan yazılmaz.
+
+⭐ Ve iki soru ayrı: _"bu desiyi gönderirsem ne tutar"_ (simülasyon → **tarife**)
+ile _"bu gönderiden ne kesildi"_ (denetim → **fatura**, TY'de ucu VAR).
+
+### BEKÇİ + MUTASYON
+
+    kargo-tarife-pdf:dogrula        24 → 35 ölçüt
+    kargo-tarifesi-mutasyon:kontrol      6/6  (yeni)
+
+⛔ **BEKÇİ YAZILIRKEN KENDİ KURALIMI YAKALADI:** _"adla arama kalmadı"_ ölçütü
+kırmızı yandı çünkü desen, eski hâli **ANLATAN YORUMUN** içinde eşleşiyordu.
+Anayasa: _"yorumsuz kodda arar — bir yasağı anlatan yorum, o yasağı çiğnemiş
+sayılmaz."_ Okuma kapısı eklendi.
+
+⚠ **VE HARNESS İKİ ÇAPAYI "ÖLÇÜLEMEDİ" DİYE REDDETTİ** (biri Türkçe karakter
+farkı, biri sözdizimi bozan mutasyon) — "geçti" demedi. İkisi de onarıldı.
+
+### AÇIK
+- [x] ~~**Halil testi**~~ — GEÇTİ 22.09, **BULGUYLA (#8):** kullanıcı: _"listede
+      sadece alım yaptığımız Bim ve MediaMarkt da var; yükleme yalnız
+      Hepsiburada'da."_ İlki kusur: ekran `channel.findMany({isActive})` ile
+      ALIŞ kanallarını da çiziyordu → **yalnız satış hesabı olan kanallar**
+      (komisyon kapısıyla aynı ölçüt). İkincisi tasarım: okuyucu yalnız HB için
+      var, kart bunu yazıyor — TY/N11 dosyası gelirse okuyucu yazılır.
+- [x] ~~**Trendyol kargo tarifesi 2 aydır tazelenmiyor — okuyucusu yok.**~~
+      **YANLIŞ ÇERÇEVE — 22.09.2026'da ölçüldü.** Kullanıcı: _"TY'nin fiilen
+      kestiği kargoyu API'den okuyor olmalısın, kontrol et."_ **Okuyor:**
+      `canli-ty-kargo-gercek-olcum.ts` (K220-②) TY'nin "Kargo Fatura"
+      kayıtlarını API'den alıp `Sale.cargoAmount`a yazıyor — yalnız BOŞ olana,
+      dolu olanı ezmez; `ty-hakedis-cekim` cron'undan **her gece** koşuyor
+      (`TY_KARGO_GERCEK_YAZ`, 96 iz, son 21.09 04:21). Kâr motoru
+      (`kargo-kaynagi.ts`) gerçek varsa onu, yoksa tahmini kullanıyor.
+
+          ay        satış   GERÇEK(API)  yalnız TAHMİN   hiçbiri
+          2026-07     290         290              0         0
+          2026-08     230         173             57         0
+          2026-09     223          10            207         6
+
+      Yani tarife "tazelenmiyor" değil — tarife yalnız **fatura gelene kadarki
+      pencerede** (TY faturası ~4 hafta sonra düşüyor; son 14 günün 154
+      satışının 143'ü kargolanmış ama faturası henüz yok) NET-2'yi besliyor.
+      Bu pencerede tahmin iki aylık tarifeden geliyor; fatura gelince
+      **kendiliğinden düzeliyor.** Anayasa: "geçmişi düzeltmek ile mekanizmayı
+      kurmak ayrı kararlardır" — mekanizma kurulu.
+- [ ] **Eylül'de 6 TY satışı ne gerçek ne tahmini kargo taşıyor** — NET-2
+      kargosuz hesaplanıyor ve durumu `CALCULATED` (K141'in bilinen açığı:
+      "CALCULATED eksik maliyeti söylemiyor"). **Satış satış ölçüldü:** altısı
+      da 21.09 siparişi, **onaylı, kargolanmamış, taşıyıcı SEÇİLMEMİŞ**, desi 3
+      (`11628817256 · 11629058995 · 11629354592 · 11630018372 · 11630383131 ·
+      11630389840`). Taşıyıcı seçilince tahmin dolar, fatura gelince gerçek —
+      bir zamanlama hâli, kusur değil. Ama o ana kadar 6 satışın kârı kargo
+      kadar ŞİŞİK görünür ve rozet bunu söylemiyor → K141'e bağlı.
+- [x] ~~**API'de kargo tarifesi ucu var mı — ÖLÇÜLMEDİ.**~~ **ÖLÇÜLDÜ 21.09.2026**
+      (kendi keşif belgelerimiz: `docs/a3-*-api-kesif.md`): **hiçbir kanal desi
+      tarifesini API'den yayımlamıyor.** HB `product/cargo-providers` → yalnız
+      taşıyıcı LİSTESİ; TY `Cargo Invoice Details` → **fiilen kesilen** kargo.
+      ⭐ İkincisi tarifeden ÜSTÜN bir kaynak (anayasa kaynak sırası: kanalın
+      kendi belgesi > bizim tahmin). TY tarifesinin iki aydır tazelenmemesi
+      sorunu şekil değiştiriyor: tarifeyi tazelemek yerine **gerçek kesintiyi
+      okumak** — ayrı kalem. ⚠ Sınır: satıcının tam uç kataloğu değil, bizim
+      keşif notlarımız ölçüldü.
+
+---
+
+─── **Halil 22.09 (#8): "Kargo listelemede sadece satın alım yaptığımız
+pazaryerleri de var (Bim, MediaMarkt); ayrıca sadece Hepsiburada kısmına
+yükleme yapılıyor."** Kanal listesi `satisIcin: true` hesabı olan kanallardan
+geliyor — demek ki Bim/MediaMarkt hesapları **satış hesabı olarak
+işaretli**; ölçülmedi. **AÇIK:** ① hesapların `satisIcin` bayrağı ölçülüp
+düzeltilecek (veri mi, kod mu) · ② "yalnız HB'ye yükleme" — hangi ekran,
+hangi düğme netleştirilecek (kullanıcıdan ekran görüntüsü).
+
+
+---
+
+## ✅ K194-HB — HB'YE STOK/FİYAT GÖNDERİMİ (ÜÇÜNCÜ KANAL) · 09.09.2026 · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Başlık bayattı: içerikte «01.10.2026 23:29 telefonda değişen fiyatla GEÇTİ — K194-HB KAPANDI». Açık tek yol: yavaş TY gönderiminde pencerenin saymayı sürdürmesi (K169) — olaya bağlı. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+
+⭐ **01.10.2026 — SIT ERİŞİMİ AÇILDI VE DENEME KOŞTU (kullanıcı onayı «yap»).**
+· **401'in sebebi:** kayıtlı SIT secret key eskimişti. HB'nin verdiği merchantId ve developer (`axcali_dev`) bizdekiyle AYNIYDI (değer basılmadan karşılaştırıldı). Kullanıcı yeni anahtarı `.env.canli`ye KENDİSİ koydu (sohbete yazılmadı) → listing ve oms okuması **VERİ** döndü.
+· **Deneme — yalnız SIT, yalnız `HBV000010LWPR` (önce: fiyat ₺100 · stok 10), betik başlangıç hâli tutmazsa hiçbir şey göndermiyordu:**
+    stock-uploads XML (dokümandaki örnek)  → HTTP 400 «deserializing input data» — HİÇBİR ŞEY DEĞİŞMEDİ
+    stock-uploads JSON [{hepsiburadaSku, merchantSku, availableStock:11}] → 200 · durum «Ready» · stok 11 · **fiyat ₺100 (değişmedi)**
+    geri: availableStock:10 → 200 · Ready · stok 10
+    price-uploads JSON [{hepsiburadaSku, merchantSku, price:101}] → 200 · durum «Done» · priceValidations null · fiyat 101 · **stok 10 (değişmedi)**
+    geri: price:100 → 200 · Done · fiyat 100
+    (correlation id'ler: dd6e048c… · d40407fb… · 105cad25… · b28880c9…)
+✅ **ÇEKİRDEK SORU 1 KAPANDI:** stok gönderimi fiyatSIZ kabul ediliyor ve fiyatı EZMİYOR — bayat fiyat riski YOK. Stok ile fiyat bağımsız (TY/N11 düzeniyle aynı: stok tek düğme, fiyat kanal başına).
+✅ **SORU 2 GEREKSİZ ÇIKTI:** ne stok ne fiyat gönderimi CargoCompany/ShippingProfileName istiyor.
+⚠ **DOKÜMAN İKİ YERDE YANLIŞ (ölçüldü):** ① gövde JSON olmalı — XML örneği 400 alıyor; ② bitiş durumu stokta «**Ready**», fiyatta «**Done**» (doküman yalnız Done/Failed diyor). Yazma kodu bu ÖLÇÜME göre kurulacak.
+⚠ **DÜZELTME (aynı gün, uçtan uca koşuda):** «Ready» bitiş DEĞİL, kuyruk — stok yüklemesi de ~10 sn sonra «Done» oldu. Ayrıca «Done» dendiği anda ilan ESKİ fiyattaydı (HB ~5–6 sn sonra yansıtıyor) ve arka arkaya iki fiyat gönderilince ilan bir süre ilkinde kaldı.
+
+─── ② **01.10.2026 — YAZMA KODU YAZILDI (kullanıcı onayı «BAŞLA») · [KOD YAZILDI — DEPLOY + HALİL TESTİ BEKLİYOR · CANLI KİLİTLİ]**
+⚠ **Düzeltme:** «stok tek düğmeyle üç kanala» ekranı KODDA YOK (karar yazılı, iş yapılmamış); TY/N11 ürün sayfasında kanal başına PENCERE. HB üçüncü pencere oldu.
+· `scripts/hb/yazici.ts` — tek POST, adres kapalı kümeden (`stock-uploads` · `price-uploads`); `kalemGecerliMi` ağa çıkmadan; **`HB_CANLI_YAZMA_ACIK = false`** → canlı ortamda ağa HİÇ çıkılmaz (`CANLI_KAPALI`).
+· Doğrulama ilan GERİ OKUNARAK (`kanaldakiIlan`, `hbSkuList` süzgeci + SKU ayrıca karşılaştırılır), 12 sn'ye kadar; hüküm `parcaHukmu`: hata/kilit → RED · ilanda görüldü → DOĞRULANDI · Done ama görünmüyor → «kanalda görünmüyor» · aksi → işleniyor. «Tamam» yalnız ilanda görülünce.
+· `kart/actions.ts` → `hbGonderimOnizle` / `hbStokFiyatGonder` (stok sunucuda yeniden çözülür; parça başına `KANAL_GONDERIMI` izi KABUL/RED); `hb-gonderim.tsx` → hangi mağaza (deneme/canlı) yazar, canlı kilitliyken Gönder kapalı ve nedeni yazar; stok ve fiyat sonucu AYRI satır; HB hata kodları Türkçe.
+· Ürün sayfasında TY · N11'in yanında «HB'ye Gönder» (masaüstü + telefon). İzin `kanal.yaz`.
+· **SIT uçtan uca (gerçek yazıcı kodu):** stok 11/10 ve fiyat 101/100 — dördü de DOĞRULANDI (~10 sn), ilan ₺100/10'a döndü.
+· Bekçiler: `api:dogrula` (beyan) · `kanal-yazma:dogrula` 77 (HB'ye 24 kontrol; canlı kilidinin ağa çıkmadığı fetch casusuyla değerle sınanıyor) · `hb-yazma-mutasyon` **10/10**.
+⚠ **BİLİNEN SINIR:** fiyat bandı (`OutOfPriceRange`) ÖNCEDEN hesaplanamıyor — HB'nin baktığı «yayındaki fiyat ortalaması» bize gelmiyor; ekran bandı NOT olarak yazar, red gelirse sebebi Türkçe gösterir. (Önceki plandaki «göndermeden önce hesaplayıp uyarır» sözü bu yüzden TUTULAMADI — beyan edildi.)
+**Halil testi (canlı, deploy sonrası):** Ürünler → herhangi bir HB ilanı olan ürün → Varyant satırında «HB'ye Gönder» → pencere: «Canlı Hepsiburada mağazası» + «Canlı … gönderim henüz AÇILMADI» uyarısı + HB SKU · Selliora stoğu · HB'nin bildirdiği adet → **Gönder düğmesi KAPALI**. Telefonda da aynı. ✅ **01.10.2026 bilgisayarda GEÇTİ** (ekran görüntüsü: «Canlı Hepsiburada mağazası» · kilit uyarısı · HBCV000076U6IO · Selliora 2 · HB 2 · Gönder kapalı). Telefon teyidi bekliyor.
+**CANLI AÇILIŞ (ayrı onay):** `HB_CANLI_YAZMA_ACIK = true` (tek satır) → tek ürünle canlı deneme → sonuç panoya. ⭐ **01.10.2026 AÇILDI (kullanıcı onayı «ok»).** Kilit kararı saf fonksiyona taşındı (`hbYazmaAcikMi`) — bayrak açıkken de iki konumu değerle sınanıyor (eskiden yalnız kapalıyken sınanıyordu; açılınca o sınama koşmaz olurdu). `kanal-yazma:dogrula` 81 · mutasyon 11/11. **İlk canlı deneme:** HBCV000076U6IO · yalnız stok · aynı rakam (2) — kullanıcı pencereden gönderecek, sonuç iz + HB cevabıyla doğrulanacak. ✅ **01.10.2026 14:30 CANLI İLK GÖNDERİM GEÇTİ:** ekran «Stok 2 — Hepsiburada'da görüldü, tamam» · iz `KANAL_GONDERIMI` (ortam CANLI · KABUL · yükleme `d2d6a3b7…` · kanaldaki 2 · DOGRULANDI) · HB'nin kendi kaydı sonradan okundu: **Done, hata yok, kilit yok** · ilan stok 2 / ₺3.999. ⚠ **SINIR BEYANI:** gönderilen rakam ilandakiyle AYNIYDI (2→2) — bu deneme canlı YAZMA YETKİSİNİ ve yolu kanıtlıyor, rakamın DEĞİŞTİĞİNİ kanıtlamıyor (ilan zaten 2'ydi). Değişen bir rakamla ilk gönderim (stok ya da fiyat) ayrıca gözlenecek. ─── ② ✅ **01.10.2026 23:29 TELEFONDA, DEĞİŞEN FİYATLA GEÇTİ — K194-HB KAPANDI (kullanıcı «yap»).** HBCV0000DSV4YT (Hot Wheels F1 Williams) · ekran: «Stok 2 — görüldü, tamam» + «Fiyat ₺720,00 — görüldü, tamam» · iz `KANAL_GONDERIMI` ×2 (CANLI · KABUL · `hbDurumu: Done` · hata/kilit yok · kanaldaki 2 / 720 · DOGRULANDI) · kullanıcının HB uygulaması: 720,00 TL · 2 adet. ⚠ **SINIR BEYANI:** fiyat **₺700 → ₺720** (kullanıcı beyanı, 01.10.2026: «700'dü 720 yaptım»). Önceki rakamın kaynağı kullanıcıdır — sistem HB'nin önceki fiyatını SAKLAMIYOR ve bu ürünün HB satışı yok; yeni rakam (720) ise hem iz hem HB ilanıyla ölçüldü. Stok değişmedi (14:40 ölçümü de 2). Telefon teyidi de bu denemeyle verildi.
+
+
+🔧 **K169 TY — PENCERE SONUCU DÜZELTİLDİ (01.10.2026, kullanıcı: «Trendyol'da gönderim tuşu var ama çalışmıyor»).** Ölçüm: gönderim ÇALIŞIYORDU — TY'nin kendi kaydı `items[0].status: "SUCCESS"`, `failedItemCount: 0`. Kusur okumadaydı: eylem durumu üst seviyede (`govde.status`) arıyordu, TY o alanı hiç göndermiyor → ekran ve iz her gönderimde «ISLEMDE» yazdı, başarı/red hiç görünmedi. Çare: saf `tyBatchCoz` (`src/lib/kanal-gonderim-ty.ts`, durum KALEMDEN) · sonuç 12 sn'ye kadar (2 sn + 4×2,5 sn) sorgulanıyor · pencere «işlendi ✓» / «REDDETTİ + sebep» / «12 sn'de bitmedi» / «sorgulanamadı» diye ayrı yazıyor · sebepler ize de yazılıyor. `kanal-yazma:dogrula` 94/94 (ölçülen gerçek cevap gövdesiyle) · mutasyon 16/16 (5 yeni TY mutasyonu + zararsız yeşil). **Halil testi:** Ürünler → TY ilanı olan ürün → «TY'ye Gönder» → stok gönder → ~2–12 sn içinde YEŞİL «Trendyol işledi ✓ — stok: N» görülmeli (eskiden «kuyruk durumu: ISLEMDE» yazardı); TY panelinde stok aynı rakam. ─── ② **01.10.2026 20:54 — TELEFON DENEMESİ: 12 SN YETMEDİ.** Yeni pencere doğru davrandı («12 saniyede bitirmedi», başarı UYDURMADI). Ölçüm: 20:30 (…0699, stok 2) ve 20:53 (…3980, stok 1) gönderimlerinin İKİSİ DE 21:07'de TY'ye sorulunca **SUCCESS**, hata yok. TY bitiş anını vermiyor (`creationDate` = `lastModification`). (20:30 denemesi eski kodla işlendi — deploy 20:18'de bitmişti ama sayfa önceden açıktı; Vercel eski sayfanın eylemini eski sürüme yönlendiriyor.) **Çare (kullanıcı «yap»):** pencere 12 sn'den sonra 5 sn'de bir salt-okuma sorgusu (`tyGonderimSonucuSorgula`) yapıyor, en fazla 2 dk, «işliyor… (N sn)» yazıyor; kesin sonuç `KANAL_GONDERIMI_SONUCU` izine BİR KEZ, geçen süreyle (`izdenSonraSn`) yazılıyor — TY'nin gerçek işleme süresi böylece birikecek. Sorgu yalnız o varyantın kendi gönderim izindeki kimliği sorar. `kanal-yazma:dogrula` 104/104 · mutasyon 20/20 (pencerenin sorma koşulunu öldüren mutasyon ilk turda KAÇTI → ölçüt koşulun kendisine bağlandı, kırmızı yandı). **Halil testi:** sayfayı YENİLE → TY'ye Gönder → yalnız stok → «işliyor… (12/17/22 sn)» saymalı → yeşil «Trendyol işledi ✓». Sonra kaç saniye sürdüğü izden okunacak. ─── ③ ✅ **01.10.2026 21:54 TELEFONDA GEÇTİ:** yeşil «Trendyol işledi ✓ — stok: 2» · iz `KANAL_GONDERIMI` barkod 194735347872 · `batchDurumu: BASARILI` · sebep yok · istek 18:54:04Z → iz 18:54:11Z (~7 sn, sunucunun 12 sn'lik ilk beklemesinde bitti). ⚠ **AÇIK KALAN YOL:** pencerenin 12 sn'den sonra sorma döngüsü («işliyor… N sn» + `KANAL_GONDERIMI_SONUCU` izi) bu denemede TETİKLENMEDİ — yalnız TY yavaş kaldığında çalışır (önceki iki gönderimde kalmıştı). Gerçek bir yavaş gönderimde görülene kadar «geçti» sayılmaz.
+
+
+---
+
+## ✅ K332 — TELEFONDA GEÇİŞLER ~2 SN · 11.10.2026 · [DURDURULDU 13.10.2026 — kullanıcı «şimdilik bu kadar iyileştirme yeterli; belki sunucu değiştireceğimiz zaman bir daha bakarız» · geçici ölçüm araçları KALDIRILDI · ⏳ Halil testi bekliyor] _(eski etiket: «ÖLÇÜMDE — gezinme ölçümü TEST İÇİN AÇILDI, ÜRETİM ÖZELLİĞİ DEĞİL»)_ · [KAPANDI 15.10.2026]
+
+> **KAPANDI 15.10.2026.** Kullanıcı 13.10'da DURDURDU («şimdilik bu kadar iyileştirme yeterli»); ölçüm aracı kaldırıldı. Sunucu değişikliğinde yeniden açılır. Kullanıcı (mimar) «kapat» 15.10.2026.
+
+Kullanıcı: «mobilde tıklamalara geç reaksiyon» → ① kök yükleniyor ekranı (`src/app/loading.tsx`, canlı `4621d0d`): dokunuş artık anında gri iskelet verir — kullanıcı 11.10 gördü; **bekleme yine ~2 sn**.
+· Ölçüldü (11.10, yerel üretim sunucusu + yerel veritabanı, `scripts/tmp/hiz-olcum.ts`, salt okuma): sayfa çizimi 0,1–0,25 sn · sorgu sayısı 11–74 (kârlılık kartı 74, İadeler 62, satış/alım 32) · gezinme cevabı ~320 KB (her sayfada aynı taban — sözlüğün tamamı 351 KB istemciye veriliyor; gezinmede tekrar gidip gitmediği bu yöntemle ÖLÇÜLEMEDİ). Canlı (oturumsuz `/giris`, Frankfurt): ilk bayt 0,15–0,3 sn. **2 sn bu rakamlarla AÇIKLANMIYOR.**
+· ② Telefonda ölçüm: `src/components/gezinme-olcumu.tsx` — yalnız `?hiz=1` ile açılır, tarayıcının kendi kaydından toplam / sunucu bekleme / indirme / KB; sunucuya HİÇBİR ŞEY yazmaz. **Ölçüm bitince bileşen + yerleşimdeki satır + sözlük bölümü (`GezinmeOlcumu`) KALDIRILIR.**
+· ③ **TELEFON ÖLÇÜMÜ GELDİ (11.10, ekran görüntüsü):** sunucu ilk cevabı 70–207 ms (hızlı), ama sayfanın tamamı **0,4–5 sn** sonra iniyor (panel 4,5–5,2 sn · satışlar 1,6–2,8 · kart 1,6–1,8 · iadeler 1,8), boyut yalnız 10–97 KB. → gecikme ağda/telefonda DEĞİL; sunucu sayfayı parça parça gönderiyor, kalan süre **sunucunun hesap süresi**.
+· ④ **Kök sebep ölçüldü (canlıdan SALT OKUMA kopya → yerel `axcali_olcum`, 8.406 satış / 120.524 iz):** yerel boş veritabanında (3 satış) panel 0,13 sn görünüyordu — ⚠ **ilk ölçüm bu yüzden yanıltıcıydı.** Gerçek hacimde panel **4,7 sn**, satışlar **1,3 sn** (ağ gecikmesi SIFIRKEN). İşlemci profili: panelin **2,3 sn**'si tek fonksiyonda — `isTakvimGunu` her çağrıda `new Intl.DateTimeFormat` kuruyordu (saat dilimi verisi her seferinde yeniden çözülür). Havuzu 3→10 yapmak HİÇBİR ŞEY değiştirmedi (ölçüldü) — bağlantı darboğazı değil.
+· ⑤ **Düzeltme (kod):** `donem.ts` (2) · `bicim-ortak.ts` · `komisyon/tarife-okuyucu.ts` — biçimleyici bir kez kurulur (`??=`). Eşdeğerlik: 60.000 tarih / 180.000 karşılaştırma, 1960–2040 (yaz saati yılları dahil), **fark 0**; 20.000 çağrı 2.948 → 167 ms. Gerçek hacimde panel **4,7 → 2,8 sn**. Bekçi `donem:dogrula` 63 (kalıp + değer) · mutasyon 14/14 (2 yeni).
+· ⑥ **AÇIK — kalan yavaşlık:** satışlar 1,2 sn (değişmedi) ve panel 2,8 sn. Profil: işlemci artık boşta, süre veritabanı beklemesi. Satışlar her açılışta **bütün defteri** okuyor (8.555 kalemin tamamı çekilip JS'de toplanıyor, tüm satış sayımı, `Sale IN (binlerce)`), sorgular aynı anda çıkıp 3'lük havuzda sıra bekliyor. Çare sayfa bazında: toplamları veritabanına taşımak + gereksiz tam-defter okumalarını kaldırmak — ayrı paket, önce ölçüm.
+
+· ⑦ **Canlıda ölçüldü (11.10, düzeltme ⑤ sonrası):** panel 3.133–3.941 ms (önce 4.579–5.187) · menü 1.137 · okut 907 · alımlar 625–776 · iadeler 1.993 · satışlar 2.398 · kart 1.250. En basit sayfalar bile ~1 sn → canlıda **sırayla yapılan veritabanı gidiş-dönüşleri**. Yerelde `scripts/tmp/gecikme-gecidi.ts` (yerel MySQL önüne gidiş-dönüş gecikmesi) ile canlı davranışı üretildi; panel ~80 basamaklı sıralı zincir.
+  ⚠ Önceki teşhis düzeltildi: «menü rozetleri her sayfada sayılıyor» YANLIŞ — rozetler yalnız `/menu` sayfasında. Her sayfaya ortak yük küçük: kullanıcı satırı 3 kez + yetki 3 basamak.
+· ⑧ **Hız paketi 2 / adım 1 (kod):** ① `kullaniciSatiri` istek başına bir kez (`cache`; oturum + parola kapısı aynı satır) — her sayfada 2 gidiş-dönüş eksik · ② vitrin kutusu: hesap × satır ölçümleri AYNI ANDA (eskiden 21 sıralı basamak). Eşdeğerlik: eski/yeni gövde gerçek hacimde **birebir eşit** (3 kutu); 28 ms gecikmede 3.415 → 1.467 ms. Bekçiler: vitrin 132 (+3, mutasyon +2) · oturum 48 (+3, elle mutasyon 2 kırmızı / zararsız yeşil).
+· ⑩ **Hız paketi 2 / adım 2 (kod):** panelde görev bloğu (görev sayıları · paketleme · alım · kıyas alımı · vitrin), satış hesapları ve muhasebe dönemi büyük okumayla AYNI ANDA başlar (`...Sozu`, sonuç kullanıldığı yerde alınır; hesap aynı). Çekim rozeti ve marj şerhi bekçi ölçütleri tam satıra bağlı olduğu için yerinde bırakıldı (1–2 sorgu). 28 ms gecikme taklidi, adım 1+2 birlikte: panel 8,4 → 5,9 sn · satışlar 4,4 → 2,9 · menü 1,0 → 0,8.
+· ⑪ **Adım 3 — satışlar (kod):** süzgeç seçenekleri ve ilk çekim anları önden; liste sayımla AYNI ANDA (kırpmasız sayfayla önden çekilir, sayfa aralık dışıysa doğru sayfayla yeniden — `?sayfa=9999` ölçüldü, doğru). `sayfalama-toplami:dogrula` ölçütü ESKİDİ (davranış değil): fonksiyon yazımı tanınıyor + «kırpılan sayfa yeniden çekiliyor» ölçütü; elle mutasyon 2 kırmızı / zararsız yeşil. **Kazanç KÜÇÜK** (28 ms taklitte 2,9 → 2,8 sn).
+· ⑫ **Ölçülen ve ELENEN:** havuz 3→8 bağlantı gecikme altında da kazandırmadı (panel 5,9 → 6,7 · satışlar 2,8 → 3,3) — havuz ayarı kaldıraç DEĞİL, değiştirilmedi.
+· ⑬ **Kalan asıl maliyet:** satışlar varsayılan görünümde **bütün zamanların** toplamını (8.400 satış, 8.555 kalem satır satır) her açılışta hesaplıyor; panel 12 aylık grafik + ABC + iş zekası blokları defterin geniş kısmını okuyor. Kaldıraçlar KULLANICI KARARI: (a) satışlar varsayılan dönemi «bu ay» · (b) ağır panel bloklarının 1–5 dk önbelleği (rakam en fazla o kadar eski — «sayı = liste» ilkesiyle tartılmalı).
+· ⑭ **KULLANICI KARARLARI 11.10.2026: «1 ok» · «2 ok».**
+  ① **Satışlar süzgeçsiz açılışta «Bu ay»** — yalnız HİÇ parametre yokken `?pencere=BU_AY`ya yönlendirilir; panel sayısından açılan süzgeçli listeler tüm zamanlara bakmaya devam eder (sayı = liste). Rozet çarpısı satışlarda AÇIK `TUM_ZAMANLAR` yazar (`SuzgecCubugu.tumZamanDegeri`); «Temizle» varsayılana döner. 13.08 «varsayılan tüm zamanlar» gerekçesi `liste-suzgeci.ts`te SİLİNMEDİ, karşılandı (dönem adreste + rozette görünür). Bekçi `suzgec:dogrula` 158 (+5); elle mutasyon: yönlendirmeyi genişletmek + çarpı değerini kaldırmak KIRMIZI, yorum YEŞİL. ⚠ «TUM çözümünü kaldıran» mutasyon YEŞİL kaldı — kaçak değil: tanınmayan pencere zaten süzgeçsiz çözülüyor, davranış aynı (değer testi davranışı ölçüyor).
+  ② **Ağır panel blokları 2 dk önbellek** — `lib/kisa-onbellek.ts` (kendi yazımımız: Next 16 `unstable_cache` «yerini `use cache`a bıraktı» işaretli, `use cache` ayrı yapılandırma ister — anayasa: geçiş aşamasındaki özellik yok). YALNIZ vitrin (kanal karşılaştırma) + iş zekası (paranın dağılımı · ABC · devir); bugünün rakamları ve görev kutusu ANLIK. Anahtar firmayı taşır; hata önbelleğe yazılmaz; eşzamanlı istek tek hesap; tavan 200. Blok «HH:MM itibarıyla hesaplandı · en fazla 2 dk önce» YAZAR (`OnbellekNotu`). ⚠ ABC listesi (`/urunler?abc=`) anlık hesaplanır — panel ABC sayısı en fazla 2 dk farklı olabilir (kullanıcı kararıyla kabul). Bekçi `kisa-onbellek:dogrula` 13 · mutasyon 6/6 (sıralı grupta).
+  ⚠ **SÜREÇ HATASI (11.10):** adım 3'ün push turu SÜRERKEN bu iki değişiklik yazıldı — tur çalışma ağacını okuduğu için sonucu karışık. Adım 3 commit'i (`651c4f02`) GitHub'a gitti ama **YAYINA ALINMADI**; bu paketle birlikte TEMİZ turdan geçip yayına alınır. Mutasyon denetiminin bozması o an alınan yedeğe de girmişti — yedek atıldı, dosya kaydedilmiş sürümle doğrulandı.
+· ⑮ **Canlıda ölçüldü (11.10 akşam, kararlar ①② sonrası):** satışlar **0,3 sn** (önce 2,0–2,8) · menü 0,34 (1,1) · alımlar 0,4–0,6 · panel **2,3–2,7 sn** (başta 4,6–5,2). Kullanıcı: «ne kadar hızlı o kadar iyi».
+· ⑯ **Panel kargo okuması ikiye bölündü (kod):** bekleyen dal (`shippedAt: null`, ~5.600 tarihi bilinmeyen geçmiş satış) yalnız kova alanlarıyla — kalem tutarları okunmuyordu ama çekiliyordu; ciro yalnız kargolanmışlarda. **Eşdeğerlik:** eski/yeni panel çıktısı (varsayılan · son 30 gün · bu ay+Trendyol) kelime düzeyinde karşılaştırıldı — farklar yalnız derleme kimliği, saat ve «N dk önce» (5 dk ara) + akış parçası sırası; **rakam farkı 0**. Bekçi `kargo-bekleyen:dogrula` 20 (+3; elle mutasyon 2 kırmızı / zararsız yeşil); K60 istisna gerekçesi güncellendi. ⚠ Hız kazancı yerelde ÖLÇÜLEMEDİ: makine %100 işlemci yükündeydi (başka projelerin süreçleri), süreler 3,3–11 sn savruldu — canlıda telefonla ölçülecek.
+· ⑰ **Panelde 12 aylık grafik ARKADAN dolar (kod, kullanıcı fikri 11.10: «açıldıktan sonra çekse son 12 ay verilerini»):** üst kısım (bugün rakamları, dönem blokları, görev kutusu, operasyon) artık yalnız dönem+kıyas aralığını (iki yanda 31 gün kova payıyla, 12 ayı aşmadan — `ustOkumaPenceresi`, `panel-satir.ts`) okur ve hemen çizilir; 12 aylık sekmeli grafik `panel-aylik-grafik.tsx`te kendi okumasıyla `Suspense` içinde, iskeletle dolar (telefonda zaten gizli — telefonda o okuma beklenmiyor). Satır dönüştürmesi iki okumada ORTAK (`panelSatisiKur`/`panelIadesiKur`). **Eşdeğerlik:** 12 görünümde eski/yeni çıktı kelime düzeyinde aynı (saat hariç). `panel:dogrula` 938 (+10; 11 ölçüt kod taşındığı için panelin ÜÇ kaynak dosyasını birlikte okuyacak şekilde güncellendi — ölçüt eskidi, kural aynı), `panel-mutasyon` 98/98 (+7, iki yön). ⚠ İlk sürümdeki iki yanda 31 gün pay K333 ile kaldırıldı (bkz. K333).
+· ⑱ **⚠ ⑰'NİN TEŞHİSİ YANLIŞTI — ÖLÇÜLDÜ (12.10.2026).** Canlıda telefon ölçümü (panel 2,2–2,5 sn; «Toplam» ≈ «Sunucu + İndirme») ⑰'nün kazandırmadığını gösterdi. ⑰'deki «üst kısım 0,6–0,9 sn'de geliyor» ölçümü YANLIŞ şeyi ölçmüştü: aranan metinler («Satış adedi») sözlükte de geçiyor ve sözlük ilk parçada geliyor — ölçülen içerik değil sözlüktü. Akış İŞARETLERİYLE (React `<div hidden id="S:n">`) yeniden ölçüldü: üst kısım **1,8–2,5 sn**, 12 aylık grafik ondan **birkaç ms** sonra → darboğaz grafik DEĞİL, üst kısmın kendisi. İşlemci ölçümü (tek istek): **MySQL ~3,5 sn · Next ~3 sn işlemci**. Yerel yavaş sorgu kaydı (geçici, yerel kopya): panel tek açılışta **270 sorgu**, sorgu süreleri toplamı ~3,3 sn; beş ağır sorgu **ikişer kez**.
+· ⑲ **Kod (12.10.2026):** (a) marj sınıflandırması istek başına BİR KEZ (`ice-aktarma-serhi.ts` → React `cache`, anahtar pencerenin anları) — kutu + şerh dönem yokken defterin tamamını iki kez okuyordu: **270 → 252 sorgu**, dört görünümde çıktı birebir. (b) Telefondan gelen istekte gizli 12 aylık grafiğin okuması yapılmıyor (`lib/panel/cihaz.ts`, Next `userAgent`; yalnız «mobile», tablet/masaüstü/tanınmayan okur); yatay telefonda alan boş kalmaz, nedeni yazar. Bilgisayar çıktısı birebir. ⚠ (b)'nin telefondaki kazancı yerelde AYRIŞTIRILAMADI (makine %84 yükte) — canlıda ölçülecek. `panel:dogrula` 947 (+9), panel-mutasyon +7 (elle 7/7), `ice-aktarma:dogrula` marj penceresi sabit uzunluktan SINIRLA kesmeye çevrildi (üçüncü kez kısa kalmıştı; elle 3/3).
+· ⑳ **AÇIK — kalan ağır sorgular (yerel, sorgu başına):** onay kuyruğu adayı **~340–450 ms** (aktarılmış 7.574 satış ilk iki şartı sağlıyor, NOT EXISTS her biri için koşuyor; kuyruk 0) — ucuzlatmak ya **indeks** (şema → kullanıcı onayı) ya ölçütü yeniden düşünmeyi ister · tüm partilerin kalan adedi (`defterDerinligi`) **~330–400 ms** · tüm satış kalemlerini okuyan iki sorgu ~200 ms'er. Sıradaki aday sayfa: `/rapor` 2,6 sn.
+· ㉑ **Kullanıcı onayı 12.10.2026 «ikisini de onaylıyorum» — iki kalemin sonucu:** (a) **ONAY KUYRUĞU İNDEKSİ YAPILMADI — ÖLÇÜM ÇÜRÜTTÜ.** Yerel kopyada `StockMovement(saleItemId, type)` + `Sale(iptalTarihi, onaylandiAt, importKaynak, soldAt)` denendi, istatistik tazelendi: plan yeni indeksleri SEÇMEDİ, süre 240 → ~180 ms (gürültü payı içinde). Maliyet 7.574 aday × iç kontrolden geliyor — 7.574'ün HEPSİ saatli (canlı çekim, onay izi yazılmadan önce stoğa bağlanmış), gün hassasiyeti süzgeci de daraltmıyor; onay izini geriye yazmak YASAK (öz iz). «Şema değişikliği en pahalı çözümdür» + «fayda varsayılmaz» → migration yok; deneme indeksleri kaldırıldı. Açık kalan yol: sorguyu ham SQL ile ters çevirmek (kazanç ~200 ms veritabanı, paralel) — sonraya. (b) ⚠ **⑳'DEKİ KAYNAK YANLIŞTI:** paneldeki ağır «kalan adet» sorgusu `defterDerinligi` DEĞİL (o panelde yok; `/stok` ve `/envanter-degeri`), `acikPartilerToplu(prisma, null)` — yalnız ÜRÜN ANALİZİ bölümünü (stokta bekleyen · bağlı sermaye · ölü sermaye) besliyor; görev kutusu ve bugünün rakamları okumaz. **Kod:** telefonda okunmaz (bölüm orada gizli, K270 — yatay telefonda bölüm yerine neden notu), bilgisayarda 2 dk `kisaOnbellek` (firma anahtarlı), stokta bekleyen + ölü sermaye hesaplandığı saati yazar; sıralama önbellekten sonra. Bilgisayar çıktısı dört görünümde birebir. **Yerel ölçüm (telefon kimliği, üst kısım S:1):** 1,8–2,4 → **1,2–1,5 sn** (makine %32 yükte; kıyas tam temiz değil). `panel:dogrula` 952 (+5), panel-mutasyon +4 (elle 5/5).
+· ㉒ **⏱ SÜRE İZİ — TEST İÇİN AÇILDI, ÜRETİM ÖZELLİĞİ DEĞİL (kullanıcı onayı 12.10.2026 «ekleyelim»).** Yerel kazançlar canlıya yansımadı (canlı panel 1,3–3,1 sn; yerel makine canlıyı temsil etmiyor — veritabanı aynı makinede). `src/lib/sure-izi.ts` panelin her açılışında adımların istek başından kaçıncı ms'de bittiğini Vercel sunucu kaydına tek satır yazar (`[sure-izi]`: basla · db-yoklama (tek SELECT 1) · giris · ceviri · ana-okuma · satis-hesaplari · secenekler · muhasebe · gorev · govde · marj-serhi · grafik12 · bi; telefon mu; vitrin/yaşlanma/iş zekâsı önbelleğinin hesaplandığı an). Ekranda hiçbir şey değişmez, veritabanına yazmaz, kişisel veri/tutar yok. Okuma: `npx vercel logs --scope technsug-ops-projects --project axc --json --query sure-izi` (MCP kayıt okuma 403 veriyor). İlk yerel okuma: ana okuma ~0,6–0,8 sn ama **görev bloğu ~1,2–1,4 sn** — sayfa onu bekliyor. ⛔ Ölçüm bitince dosya ve çağrıları (page.tsx · panel-bi.tsx · panel-aylik-grafik.tsx · marj-serhi.tsx) KALDIRILACAK.
+· ㉓ **⭐ BİLGİSAYARDAKİ YAVAŞLIĞIN ASIL KAYNAĞI BULUNDU — ÖNCEDEN YÜKLEME FIRTINASI (ölçüldü 12.10.2026, canlı kayıt).** Kullanıcı: «bilgisayar inanılmaz yavaş». Süre izi + Vercel istek kaydı (10:44–11:23, 833 kayıt): bilgisayarda bir sayfa açılınca ~30–45 sn içinde **~140 istek** (10:59 → 138 · 11:16 → 136 · 11:21–23 → 147/150/98; aralarda dakikada 1–3). İçerik: satış listesinde satır başına ÜÇ bağlantı (`/satislar/:id` · `/satislar/:id/iade` · `/kart/:id`, sayfada görünen 13–17 satır) + sol menünün TÜM bağlantıları (rapor · giderler · özet · stok · el kitabı · okut · paketle …) — Next `<Link>` ekrana GİREN her bağlantıyı önceden yüklüyor, her biri kabuğu (oturum · menü sayıları) çiziyor. Aynı anda açılan panelin **tek `SELECT 1`'i 0,53–0,74 sn** bekledi; panel gövdesi 3,6–4,0 sn (ana okuma 2,7–3,3). **Kod:** `src/components/niyetli-baglanti.tsx` (Next belgesindeki «hover-triggered prefetch» deseni, kararlı): bağlantı ekrana girince YÜKLENMEZ, fare üzerine gelince / dokununca / klavye odağında yüklenir; açık verilen `prefetch`'e dokunmaz. 84 dosyada yalnız içe aktarma satırı değişti. İstisna beyanlı: telefon alt çubuğu (`alt-cubuk.tsx`, 4 bağlantı) doğrudan `next/link` — telefondaki hızlı geçişleri korur. Bekçi `yukleniyor:dogrula` 14 (+6, desen yasağı + taban ≥ 80), mutasyon 10/10 (+4). ⚠ Etkisi tarayıcıda görülür (yerelde tarayıcı otomasyonu yok) — doğrulama canlı istek kaydından: dalga kaybolmalı.
+· ㉔ **Yığılma çözüldükten sonra kalan: SOĞUK AÇILIŞ (canlı kayıt 12.10.2026, 13:46–14:03).** Önceden yükleme kapanınca dakikalık istek dalgası ~140 → **14–29**. Panel iki kümeye ayrıldı: kısa arayla açılınca `SELECT 1` **0,04 sn**, gövde **1,7–2,6 sn**; birkaç dakika boşta kalınca `SELECT 1` **0,56–0,64 sn**, gövde **3,4–3,7 sn** (kullanıcı telefon ölçümü 1,9 ↔ 4,5 sn). Bilgisayardan canlı veritabanına bağlantı kurulumu 117–360 ms (gidiş-dönüş ~28 ms); yerelde yeni başlayan sunucuda ilk panel 5,0 sn, ikincisi 2,2 sn → uyanma maliyeti ~2,5 sn. Havuz: KAS `wait_timeout` 120 sn, bizim `idleTimeout` 60 sn. **Süre izine eklendi:** süreç yaşı (sn) + istemci istek başında hazır mıydı — «sunucu yeni uyandı» ile «ayaktaydı, bağlantı düşmüştü» ayrılacak; çare ikisinde farklı (sıcak tutma / bağlantı ömrü).
+· ㉕ **A — SICAK TUTMA UCU (kullanıcı kararı 12.10.2026 «A ve B'yi birlikte»).** Ölçüldü: çekim uçları dakikada bir geliyor ama paneli uyandırmıyor — `maxDuration = 60` taşıyorlar ve Vercel farklı ayarlı yolları AYRI sunucu parçasında topluyor (belge). Canlı tek örnek (14:37): süreç 43 sn yaşında, istemci HİÇ kurulmamış, ilk sorgu 0,72 sn. **Kod:** `/api/cron/sicak` — aynı `CRON_SECRET` kapısı (404), çalışma ayarı YOK (sayfalarla aynı parçaya düşsün), yalnız `SELECT 1`; `ACIK_YOLLAR` + `yetki:dogrula` gerekçeli istisna. Bekçi `cron-yollari:dogrula` 23 (+3: uç var · ayar yok · salt okuma), elle mutasyon 3/3. ⛔ **ÇALIŞMASI İÇİN KULLANICI ADIMI:** cron-job.org'da dakikalık görev (mevcut çekim görevinin kopyası, adres `/api/cron/sicak`). Etkisi süre izinden ölçülecek (süreç yaşı · istemci hazır mı · ilk sorgu). **B** (sürekli açık sunucu, veritabanıyla aynı yerde) için karar belgesi hazırlanıyor.
+· ㉖ **A'yı en üst düzeye çıkar (kullanıcı «mevcut durumda yapılacakları maximize edelim», 12.10.2026).** (a) **Metin protokolü** (`prisma.ts` → `useTextProtocol: true`, bağdaştırıcının belgeli seçeneği): ölçüldü (yerel sorgu kaydı) panel 80 sorgu atıyordu ve HER biri «Prepare» + çalıştır + «Close stmt» idi → **240 → 80** veritabanı komutu, canlıda panel başına ~80 gidiş-dönüş (~20 ms) eksik. **Eşdeğerlik:** 14 sayfa (panel ×3 görünüm · satışlar · satış detayı · alımlar · alım detayı · stok · rapor · ürün kartı · ürünler · iadeler · giderler · hakediş) eski/yeni çıktı kelime düzeyinde aynı; tek farklar zaman sayaçları (N11 dakika · «60 → 61 gün»). (b) **Havuz sabit 3** (`minimumIdle` 1 → 3, eski gerekçe dosyada): canlı ölçüm bağlantıyı yeniden kurmak ~0,54 sn; panel 3 bağlantı kullanıyor. Sıcak tutma ucu artık **aynı anda üç** `SELECT 1` (`cron-yollari:dogrula` 23, elle mutasyon 2/2). (c) Bağımsız bulgu, düzeltildi: satış detayındaki değişiklik geçmişinde üç kayıt türünün (`PAKETLENDI` · `SIPARIS_ONAYI` · `KARGO_TAHMIN_TARTIMLA_TAZELE`) çevirisi YOKTU (sunucu `MISSING_MESSAGE` basıyordu); eklendi + bilinmeyen tür artık «Kayıt: KOD» yazar.
+· ㉗ **Canlı ölçüm (12.10.2026, 16:16–16:17, sıcak tutma kurulduktan sonra):** panelin ilk sorgusu **39–102 ms** (önce 550–740) — bağlantı beklemesi çözüldü; kalan ana okuma 1,3–1,8 sn · görev 2,1–2,7 · iş zekâsı 2,4–3,0. Canlı veritabanında ağır sorgular sunucuda ~1 ms (29 ms'nin tamamı gidiş-dönüş); binlerce satır dönenler 70–180 ms (taşıma). **İşlemci profili** (sunucu aynı süreçte, yerel): istek başı ~1,07 sn işlemci — Prisma satır dönüşümü ~430 ms · uygulama ~340 · Next ~115 (≈60'ı tarih nesnesi sarmalayıcısı). Bloklar tek başına: **marj uyarısı ~480 ms** (defter tamamı) · görev ~230 · kargo bekleyen ~85. **Kod (kullanıcı kararı «Evet, 2 dk önbellek»):** marj sınıflandırması istekler arası `kisaOnbellek` (firma anahtarlı; istek içi `cache` korunuyor; şerh ve `/satislar?marjsebep` aynı önbellekten → sayı = liste), şerh hesaplandığı saati yazar → 480 → **2 ms**. `panel:dogrula` 953 (+1, ölçüt yeni biçime taşındı), elle mutasyon 4/4, panel-mutasyon +2 (çapa taşındı). ⚠ Bu turda yanlışlıkla arka planda bir panel mutasyon turu başladı ve durduruldu; `page.tsx`'te bir mutasyon artığı kaldı (kanal rengi yedeği), `git diff` ile bulundu ve geri alındı — başka dosyada artık YOK (durum listesi yalnız bu işin dört dosyası).
+· ㉘ **Kargo bekleyen gruplu sayım (kullanıcı «başla», 12.10.2026).** Panel bekleyen dalından yalnız SAYI kullanıyor ama ~7.300 satışı tek tek okuyordu; ölçüldü: canlıda 7.281 satır → **6 grup** (kanal hesabı × para birimi × aktarım kaynağı × onaylı mı), kâr para birimi boş olan 0. `bekleyenKargolariOku` (page.tsx): veritabanı gruplar, sayfa her grup için tek temsilci kaydı grup sayısı kadar listeye koyar; **kova kuralı SQL'e ikinci kez yazılmadı** — hüküm yine `kargoHali`; kâr para birimi boş olanlar eskisi gibi tek tek (ilk kalemin para birimi). **Eşdeğerlik:** 14 sayfa eski/yeni birebir (yalnız zaman sayaçları). Yan doğrulama: satış detayında eskiden ekranda HAM anahtar yazıyordu (`SatisDuzenleme.iz_PAKETLENDI`), ㉖'daki düzeltmeyle «Paketlendi» vb. Bekçi `kargo-bekleyen:dogrula` 23 (+3, ④ yeni biçime taşındı), elle mutasyon 4/4.
+· ㉙ **«Görev kutusu yavaş» teşhisi düzeltildi ve asıl sebep giderildi (kullanıcı «bunu yap», 12.10.2026).** Görev sayımlarının kendisi canlıda ucuz (sayım başına ~1 ms + gidiş-dönüş). Canlı süre izi: «görev» adımı önbellek doluyken +65–100 ms, 2 dk'lık önbellek süresi dolmuşken **+600–900 ms** — bloğun içindeki **vitrin kutusu** yeniden hesaplanıyordu (iş zekâsı da aynı anda +270–830). Ölçüldü (yerel): bütün açık partilerin okunması ~300 ms ve aynı açılışta ÜÇ blok ayrı ayrı okuyordu (yaşlanma · iş zekâsı ABC · vitrin). **Kod:** `src/lib/panel/acik-partiler-istekte.ts` — React `cache` ile istek içinde BİR okuma, üç blok paylaşır (ortak 2 dk önbellek SEÇİLMEDİ: blok notu «şu saatte hesaplandı» derken verisi daha eski olabilirdi); vitrin stoklu ürünleri tam listeden süzer ve kanal sayımları partileri BEKLEMEZ (aynı anda). Eşdeğerlik: 14 sayfa birebir (vitrin tutarı · ABC stok değeri · yaşlanma dahil). Önbellekleri her dakika tazeletme önerilmedi: Vercel ücretsiz planın işlemci kotası. Bekçi `panel:dogrula` 955 (+2), `abc-listesi:dogrula` ölçütü ortak okumaya taşındı, elle mutasyon 5/5 (bir kaçak ölçütü sıkılaştırdı), panel-mutasyon +4.
+· ㉚ **Yaşlanma arkadan dolar — üst kısım onu beklemez (kullanıcı «canlı Axcali'de devam», 12.10.2026).** Canlı süre izi (`53acd590` sonrası, 23 açılış): panel en iyi 0,65 sn · tipik 1,4–2,0 sn · yeni sunucu 3,4 sn. «Ana okuma» adımı telefonda 0,4–0,7 sn, bilgisayarda **0,85–2,2 sn**; tek fark bilgisayarda yaşlanma verisinin beklenmesi. Açılışlar çoğunlukla 2 dk'dan seyrek olduğu için önbelleği hep boş geliyordu (damga = istek anı). **Kod:** hesap bir söz (`yaslanmaHesabiSozu`); «ölü sermaye» rozeti ve «stokta bekleyen» listesi `Suspense` + yeni `ArkadanDolan` (`src/components/arkadan-dolan.tsx`) ile AYNI sözü bekler (sayı = liste); ana okuma onu beklemez. Eşdeğerlik: 6 sayfa (panel · bu ay · stok sekmesi · sermaye sıralı · dağılım sekmesi ×2) birebir — tek fark yerel kopyadaki N11 dakika sayacı. Bekçi `panel:dogrula` 957 (+2: «ana okuma beklemez» · «iki bölüm aynı sözü bekler»); elle mutasyon 6/6 (zararsız yorum YEŞİL, beş bozma KIRMIZI); panel-mutasyon iki çapa taşındı + 2 yeni. Beklenen: bilgisayarda ana okuma telefondaki düzeye (~0,4–0,7 sn) iner — canlı izle ölçülecek.
+· ㉛ **Hakediş: satışlar yalnız «Kontrol» sekmesinde okunur (kullanıcı «sırayla ikisini de yap», 13.10.2026).** Kullanıcının gezinme ölçümü: `/hakedis` iki ölçümde 2,4 sn, süre «indirme»de (sunucu gövdeyi geç bitiriyor). Canlı salt-okuma: bütün hakediş kalemleri 9.793 satır 0,54–0,66 sn · **bütün satışlar 8.370 satır 0,43–0,46 sn** · maliyet kayıtları 8.557 satır 0,10–0,12 sn. Satışlar + maliyet yalnız Kontrol sekmesindeki karşılaştırmayı besliyor ve `SekmeliBolum` yalnız seçili sekmeyi çiziyor → Özet/Detay'da boşuna okunuyordu. **Kod:** `src/app/hakedis/page.tsx` okuma koşula bağlı. Yerel (28 ms gecikme aracı, 3 bağlantı, giriş sayfası taban): Özet ~2,5 → ~0,9 sn · Detay ~2,7 → ~1,2 sn · Kontrol değişmedi. Eşdeğerlik: üç sekme **bayt bayt aynı**. Bekçi `hakedis:dogrula` 192 (+2, iki yön: okuma koşullu · karşılaştırma değeri Kontrol dışında çizilmez); elle mutasyon 3/3; `hakedis-ozeti-mutasyon` 12/12 (+2). Sıradaki aday: hakediş kalemlerinin (9.793) tamamı Özet'te de okunuyor — gruplama SQL'e taşınabilir; Detay sekmesi 2,7 MB HTML.
+· ㉜ **⚠ VERİTABANI BAĞLANTI TAVANINA DAYANILIYOR — bağlantı havuzu ARTIRILMADI (13.10.2026).** Yerel ölçüm (gecikme aracı): panelde havuz 3 → 6 ana okumayı ~0,46 sn, gövdeyi ~0,68 sn kısaltıyor; 10, 6'dan iyi değil. AMA canlıda 6 dk izleme (5 sn aralık, salt okuma, `scripts/tmp/baglanti-izle.ts` · `baglanti-kaynak.ts`): normalde 4 bağlantı, **dakikanın ~10. saniyesinde 15–25'e sıçrıyor, tepe 25 = `max_user_connections`**. Kaynak: Vercel'in iki ortak çıkış adresi (her biri 10, bir kez 20) — çekim işlevlerinin kopyaları (her biri `minimumIdle` 3). Çekim sıklığı canlı günlükten: **TY her dakika · HB ve N11 2 dakikada bir · sıcak tut her dakika**, hepsi :08–:10'da. Son 16 saatlik günlükte bağlantı hatası **YOK** (10 «eşleşme» kimlik/zaman damgası içindeki rakamlardı) — ama tepe anda pay sıfır. Karar kullanıcıda: çekim işlevlerinin havuzu küçültülürse (ör. 1–2) ve/veya cron-job.org'da saniyeler kaydırılırsa panel havuzu 6'ya çıkarılabilir.
+· ㉝ **Çekimler küçük havuzla (kullanıcı «kod tarafını yap, şimdilik yeterli», 13.10.2026) — ㉜'nin (a) yolu.** Kaynak teşhisi DÜRÜST: çekim kopyalarının 3'er bağlantı park etmesinin sebebi 12.10'da sayfalar için yaptığım `minimumIdle` 1 → 3 değişikliğiydi; aynı ayar çekimlere de geçmişti. **Kod:** `src/lib/arka-plan-havuzu.ts` (içe alan uç işareti kurar) · `veritabani-adresi.ts` → `ARKA_PLAN_HAVUZU` (en fazla 2, boşta 1 — 12.10 öncesi ölçülmüş çalışan değer; ⛔ 0 yasağı korunur) + yan etkisiz okuma `uygulamaHavuzu()` · `prisma.ts` havuzu işarete göre seçer · 7 çekim ucu (`maxDuration` taşıyanlar) işareti içe alır; `sicak` ve sayfalar 3/3'te kalır. ⛔ İşaret YALNIZ `maxDuration` taşıyan uçta olabilir (yoksa sayfa kopyasına sızar). Bekçi `cron-yollari:dogrula` 29 (+6: küme dosyalardan türetilir, iki yön, değer testi, 0 yasağı); elle mutasyon 7/7. Canlıda doğrulama: dağıtımdan sonra bağlantı izleme yeniden koşulur (tepe 25'ten düşmeli). Sonraki adım (ayrı karar): tepe düşerse sayfa havuzu 3 → 6 (yerelde panel −0,7 sn).
+  ─── ② **TEŞHİS YANLIŞTI — CANLI ÖLÇÜM ÇÜRÜTTÜ (13.10.2026).** `728b12fc` dağıtıldıktan sonra 6 dk izleme: tepe **yine 25** (sıçrama anında bir adresten 10, ötekinden 6). Yukarıdaki «12.10'daki `minimumIdle` değişikliği çekimlere geçmişti» cümlesi kısmen doğru ama sıçramanın sebebi DEĞİLDİ: çekim uçları uygulamanın istemcisini kullanmıyor, `scripts/` altındaki çekirdekleri (`tyCekimKos` · `hbCekimKos` · `n11CekimKos` · iki hakediş çekirdeği · `canli-ty-kargo-gercek-olcum`) çağırıyor ve onlar istemciyi **ham adresle** kuruyordu (`new PrismaMariaDb(dbAdresi)`) → sürücü varsayılanı **10 bağlantı**. İşaret oraya hiç ulaşmıyordu; yalnız listeleme ve özet uçlarını (uygulama istemcisi) etkiliyordu. **Kod:** altı çekirdekte `havuzluAdres(adres, ARKA_PLAN_HAVUZU)`; betik yolu (`betikAdresi`, 1 bağlantı) yazılı ayara dokunulmadığı için değişmez. Arka plan sınırı 2 → **3** (çekirdekler 10'la yazılmıştı; 2 iç içe işlemde kuyruk kilidi riski taşırdı; 3/boşta 1 = uygulamanın 12.10'a kadar aylarca çalıştığı değer). TY çekirdeği yazmasız kipte yerel kopyaya koşuldu: bağlandı, 7 aday, hata 0. Bekçi `cron-yollari:dogrula` 31 (+2: çekirdek kümesi uçların içe alma satırlarından türetilir · çıplak adres yasak); elle mutasyon 9/9. ⚠ Ders: «işaret kuruldu» bir mekanizmanın VARLIĞIdır; sorulması gereken «bağlantıyı kuran HER yol bu mekanizmadan geçiyor mu» idi — kuran yer sayılmadan düzeltme yazıldı.
+· ㉞ **Sayfa havuzu 3 → 5 (kullanıcı kararı 13.10.2026 «5 yap»).** Ön şart sağlandı: `9b17cefe` sonrası canlı 6 dk izleme tepe **25 → 13** (çoğu zaman 3–7; çekim başına 2–3). Bütçe: kötü anda 3 sayfa kopyası × 5 + çekimler ≈ 24 < 25; 6 seçilmedi (≈ 27). Yerel (28 ms gecikme, soğuk açılış, dönüşümlü 3'er): ana okuma 2,1–2,8 → **1,8–2,0 sn** · gövde 3,5–4,4 → **3,0–3,2 sn**. **Kod:** `veritabani-adresi.ts` `UYGULAMA_HAVUZU` 5/5 + `SAYFA_HAVUZU_BOYUTU`; `/api/cron/sicak` yoklama sayısını oradan okur (eskiden elle `[0, 1, 2]` — iki yerde iki sayı). Bekçi `cron-yollari:dogrula` 31 (ölçütler taşındı); elle mutasyon 4/4 + önceki 9/9. Canlıda doğrulama: dağıtım sonrası bağlantı izleme (tepe 25'in altında kalmalı) + kullanıcının `?hiz=1` tablosu.
+· ㉟ **Kanal listeleme · rapor · alımlar (kullanıcı «son olarak bunlara da bakalım», 13.10.2026).** Kullanıcı ölçümü: kanal listeleme 2,0 sn · rapor 1,8 sn · alımlar 1,0–1,25 sn; süre üçünde de «indirme»de. **Kod:** ① `/kanal-listeleme` — vitrin kutusu her açılışta sıfırdan (bütün açık partiler) hesaplanıyor ve sayfa sonunda bekleniyordu → panelle AYNI 2 dk önbellek anahtarı (`vitrin:<firma>`), `Suspense` + `ArkadanDolan` ile arkadan, altında hesaplandığı saat; hesaplar + kanal kodları aynı anda, stok + son fiyat aynı anda (eskiden dördü sırayla). Canlı salt-okuma: kanal kodu 2.396 satır, son-fiyat için satış kalemi 6.658 satır (~0,1–0,23 sn) — tek başına küçük, yük sıradan ve vitrinden. ② `/rapor` — nakit takvimi · beklenen hakediş özeti · kargosuz sayısı · ana okuma sırayla bekleniyordu → dördü aynı anda (izin kapıları aynı). ③ `/alimlar` — süzgeç seçenekleri ile toplamlar aynı anda. Yerel (28 ms gecikme, araç açılış payı dahil): kanal listeleme ~6,1 → ~4,2 sn (önbellek boşken ~5,6) · rapor ~4,2 → ~3,9 (son 30 gün ~4,7 → ~3,8) · alımlar ~4,1 → ~3,7 (2. sayfa ~4,7 → ~3,7). Eşdeğerlik: 5 sayfa birebir; kanal listelemede tek fark beklenen «hesaplandı» notu. Bekçiler: `vitrin:dogrula` 134 (+2: panelle aynı anahtar · saat yazar), `vitrin-mutasyon` 12/12 (+2, bir çapa taşındı); üç ölçüt yeni yazılışa TAŞINDI (gevşetilmedi): `panel:dogrula` takvim izin kapısı · `suzgec:dogrula` rapor kargosuz sayımı · `sayfalama-toplami:dogrula` alım toplamları — elle mutasyon 4/4.
+· ㊱ **KAPANIŞ — geçici ölçüm araçları KALDIRILDI (kullanıcı «kaldır», 13.10.2026).** Silindi: `src/lib/sure-izi.ts` (sunucu süre kaydı `[sure-izi]`) + beş dosyadaki çağrıları + panelin yalnız ölçüm için attığı `SELECT 1` · `src/lib/prisma.ts` → `istemciKuruluMu` · `src/components/gezinme-olcumu.tsx` (`?hiz=1` tablosu) + `layout.tsx` satırı + sözlükte `GezinmeOlcumu` bölümü (tr + en). Değişiklik yalnız silme (269 satır). Bekçi çapası taşındı: `panel:dogrula` ana okuma bitişi artık `const maliyetKdvHaric = …` satırı (eskiden süre izi satırıydı) ve `panel-mutasyon` aynı çapaya; elle mutasyon 2/2. **Günün sonucu (kullanıcı ölçümü, canlı):** panel 3,6–4,0 → 0,9–1,5 sn · hakediş 2,4 → 1,0–1,5 · kanal listeleme 1,9–2,0 → 1,0–1,3 (önbellek dolarken 2,2) · rapor 1,8 → 0,9 (bir kez 1,76) · bağlantı tepesi 25 → 13–20. Kalan dalgalanma: yeni sunucu kopyası (~1 sn) ve süresi dolan 2 dk önbellekler — **yeniden açılış şartı:** sunucu değişikliği (Hetzner) gündeme geldiğinde. ⚠ Aşağıdaki Halil testi satırı `?hiz=1`e dayanıyor; araç kaldırıldığı için o adım artık uygulanamaz — test ekran rakamları ve gerçek kullanım hissiyle yapılır.
+· ⚠ Ölçüm aracı notu: `scripts/tmp/gecikme-gecidi.ts` yoğun eşzamanlı trafikte KİLİTLENDİ (72 sorgudan sonra akış durdu); doğrudan veritabanıyla 6 açılış sorunsuz → uygulama değil araç. Muhtemel sebep zamanlayıcı yuvarlaması ile paket sırası; bir sonraki kullanımdan önce yön başına tek kuyruklu yazılmalı.
+· ⑨ **Sıradaki:** panel üst katmanında 9 sıralı `await` (satış hesapları · kargo sayıları · dönem · çekimler · marj şerhi · varyantlar · envanter serisi) → bağımsız olanlar aynı anda; sonra satışlar (toplamlar SQL'e + bağımsız işler aynı anda), iadeler.
+
+**Halil testi:** telefonda `bezirga.com/?hiz=1` aç → sol altta «Gezinme ölçümü» kutusu → Panel · Satışlar · Alımlar · Ürünler · bir kârlılık kartı arasında 10–15 kez gez (bir kez de birkaç dakika ara verip) → kutunun ekran görüntüsünü gönder.
+
+
+---
+
 ## ✅ K339 — ÇOK FİRMADA SİSTEM YEDEĞİ UYARISI · 15.10.2026 · [KAPANDI — HALİL TESTİ GEÇTİ, MİMAR ONAYI 15.10 · k303 dalı]
 
 > **KAPANDI 15.10.2026.** Halil testi deneme `localhost:3101`'de, kullanıcının ekran görüntüleriyle: TST2 çanı «Temiz ✓ — bekleyen uyarı yok» · yönetim «Bugün»de yedek maddesi bağlantısız + ipucuyla · rozet düzeltmesinden (`aabbfb82`) sonra kullanıcı «tamam oldu» (rozet 2 + kobalt renkler birlikte onaylandı). Kod `27326f2a` · `aabbfb82` · `4dd17178`; dal push 181/181 yeşil. ⚠ Canlı üretimde çanın bugün depodan mı izden mi okuduğu ÖLÇÜLMEDİ (canlı veritabanı okuması bu oturumda izinle engelliydi).
