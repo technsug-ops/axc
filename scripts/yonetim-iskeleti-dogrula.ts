@@ -102,7 +102,8 @@ async function main() {
   /* ④ BAĞ */
   console.log("\n④ bağ");
   const kabuk = yorumsuz(kaynakOku("src/app/bezirga/(ic)/layout.tsx"));
-  kontrol("kabuk rozetleri tek kaynaktan (firmaOzetleri + gonderilemeyenEpostaSayisi)", kabuk.includes("const [ozetler, gonderilemeyen] = await Promise.all([firmaOzetleri(), gonderilemeyenEpostaSayisi()]);") && kabuk.includes('odemeler: { sayi: sayilar.get("ODEME_GECIKTI") ?? 0, sicak: true },'));
+  /* 15.10.2026 (K339): üçüncü kaynak eklendi — sistem yedeği maddesi «Bugün» sayfasıyla AYNI gövdeden (ölçüt eskidi, güncellendi; gevşetilmedi). */
+  kontrol("kabuk rozetleri tek kaynaktan (firmaOzetleri + gonderilemeyenEpostaSayisi + sistemYedekDurumu)", kabuk.includes("const [ozetler, gonderilemeyen, yedekDurumu] = await Promise.all([firmaOzetleri(), gonderilemeyenEpostaSayisi(), sistemYedekDurumu()]);") && kabuk.includes('odemeler: { sayi: sayilar.get("ODEME_GECIKTI") ?? 0, sicak: true },'));
   const bugun = yorumsuz(kaynakOku("src/app/bezirga/(ic)/bugun/page.tsx"));
   kontrol("Bugün yapılacak satırları süzgeç adresine götürür", bugun.includes("<Link key={e} href={firmalarAdresi(e)} className={SATIR[e]}>") && bugun.includes("const yapilacaklar = YAPILACAK_ETIKETLERI.filter((e) => (sayilar.get(e) ?? 0) > 0);"));
   const liste = yorumsuz(kaynakOku("src/app/bezirga/(ic)/firmalar/page.tsx"));
