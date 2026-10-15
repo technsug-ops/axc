@@ -8,6 +8,7 @@
  * ============================================================================
  */
 import { kaynakOku } from "./kaynak-oku";
+import { adayBul } from "../src/lib/urun-gorseli-yaz";
 
 import {
   GORSEL_KAYNAKLARI,
@@ -233,6 +234,26 @@ for (const yol of ["src/app/urunler/page.tsx", "src/app/stok/page.tsx", "src/app
   const toplam = adet(m, "<UrunGorseli ");
   kontrol(`${yol.split("/")[2]}: her küçük resim izni taşıyor (${toplam})`,
     toplam > 0 && adet(m, "<UrunGorseli ekleyebilir={resimEkleyebilir} ") === toplam && adet(m, 'const resimEkleyebilir = await izinVarMi("urun.yaz");') === 1);
+}
+
+/* ⛔ 15.10.2026 — FISHER-PRICE VAKASI: ilan barkodu = KANAL KODU, EAN'dan farklı olabilir.
+   Görsel de liste durumu da EAN'la eşleşiyordu → 54 TY satırı yanlış «YOK», 22'si görselsiz. */
+{
+  const tekil = new Map([["TRD194735067237", { url: TY1, kaynak: "TRENDYOL" as const }], ["8690000000001", { url: N1, kaynak: "N11" as const }]]);
+  const kodlu = (kod: string, kanal: string) => ({ channelSku: kod, channelAccount: { channel: { code: kanal } } });
+  kontrol("görsel: EAN tutmasa da AYNI KANALIN kanal koduyla bulunur (Fisher-Price)",
+    adayBul({ barcode: "194735067237", channelSkus: [kodlu("TRD194735067237", "TRENDYOL")] }, tekil)?.url === TY1);
+  kontrol("  ...BAŞKA kanalın koduyla eşleşmez (N11 kodu TY ilanına bağlanmaz)",
+    adayBul({ barcode: "194735067237", channelSkus: [kodlu("TRD194735067237", "N11")] }, tekil) === undefined);
+  kontrol("  ...EAN tutuyorsa EAN'la bulunur (eski yol yerinde)",
+    adayBul({ barcode: "8690000000001", channelSkus: [] }, tekil)?.url === N1);
+  kontrol("  ...ne EAN ne kod tutuyorsa YOK", adayBul({ barcode: "1", channelSkus: [kodlu("X", "TRENDYOL")] }, tekil) === undefined);
+  const gy = kaynakOku("src/lib/urun-gorseli-yaz.ts").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("  ...yazıcı varyantları kanal koduyla da çeker ve adayı ortak kuraldan alır",
+    /\{ channelSkus: \{ some: \{ channelSku: \{ in: \[\.\.\.tekil\.keys\(\)\] \} \} \} \}/.test(gy) && /const aday = adayBul\(v, tekil\);/.test(gy));
+  const ly = kaynakOku("src/lib/kanal-listeleme-yaz.ts").replace(/\/\*[\s\S]*?\*\//g, " ");
+  kontrol("liste durumu: önce KANAL KODU, sonra EAN (EAN tek başına anahtar değil)",
+    /const k = kanal\.get\(kod\) \?\? \(bk === "" \? undefined : kanal\.get\(bk\)\);/.test(ly) && !/const k = kanal\.get\(bk\);/.test(ly));
 }
 
 console.log("");

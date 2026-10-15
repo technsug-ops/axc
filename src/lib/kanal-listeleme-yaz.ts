@@ -208,6 +208,7 @@ export async function listelemeDurumunuYaz(
     where: { channelAccountId: hesap.id },
     select: {
       id: true,
+      channelSku: true,
       variantId: true,
       listelemeDurumu: true,
       kanalAdet: true,
@@ -234,8 +235,9 @@ export async function listelemeDurumunuYaz(
   const kontrolEdilen: string[] = [];
   for (const s of satirlar) {
     const bk = (s.variant.barcode ?? "").trim();
-    if (bk === "") {
-      /** ⛔ Barkodu olmayan varyant eşleştirilemez — hüküm YOK, dokunulmaz. */
+    const kod = s.channelSku.trim();
+    if (bk === "" && kod === "") {
+      /** ⛔ Ne kanal kodu ne barkodu olan satır eşleştirilemez — hüküm YOK, dokunulmaz. */
       sonuc.barkodsuzAtlanan += 1;
       continue;
     }
@@ -248,7 +250,17 @@ export async function listelemeDurumunuYaz(
      */
     kontrolEdilen.push(s.id);
 
-    const k = kanal.get(bk);
+    /**
+     * ⛔ ÖNCE KANAL KODU, SONRA EAN (kullanıcı tespiti 15.10.2026, Fisher-Price).
+     * Eşleşme yalnız EAN'la (`variant.barcode`) yapılıyordu. Trendyol ilanının
+     * barkodu bizim KANAL KODUMUZDUR (`ChannelSku.channelSku`, sipariş aktarımı da
+     * onunla eşleşir) — EAN'dan farklı olabilir (`TRD194735067237` ↔ EAN
+     * `194735067237`). Ölçüldü (canlı + TY, salt okuma): 1146 kod satırının 69'unda
+     * kod ≠ EAN; EAN'la 1088, KODLA 1142 bulunuyor; defterde YOK yazılı 55 satırın
+     * 54'ü ilanı satışta olduğu hâlde «YOK» → linksiz, görselsiz, adetsiz. Ürün o
+     * gün satılıyordu. EAN yedek kalır: yalnız EAN'la bulunan 2 satır kaybolmasın.
+     */
+    const k = kanal.get(kod) ?? (bk === "" ? undefined : kanal.get(bk));
     if (k === undefined) {
       if (s.listelemeDurumu !== "YOK" || s.kanalAdet !== null || s.kanalKdvOrani !== null || s.externalListingId !== null) {
         await prisma.channelSku.update({

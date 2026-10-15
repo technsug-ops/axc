@@ -33,6 +33,26 @@ export type GorselYazimOzeti = {
   galeriTavandaKalan: number;
 };
 
+/**
+ * SAF: varyantın adayı — önce EAN (kanaldan bağımsız ürün kimliği), yoksa AYNI KANALDAKİ
+ * kanal kodu. Başka kanalın koduyla eşleşmez (bir kanalın kodu ötekinin barkodu olabilir).
+ */
+export function adayBul<A extends { kaynak: KanalGorselKaynagi }>(
+  v: { barcode: string | null; channelSkus: readonly { channelSku: string; channelAccount: { channel: { code: string } } }[] },
+  tekil: ReadonlyMap<string, A>,
+): A | undefined {
+  const ean = v.barcode?.trim();
+  if (ean) {
+    const a = tekil.get(ean);
+    if (a) return a;
+  }
+  for (const s of v.channelSkus) {
+    const a = tekil.get(s.channelSku.trim());
+    if (a && a.kaynak === s.channelAccount.channel.code) return a;
+  }
+  return undefined;
+}
+
 export async function gorselleriYaz(
   /** `galeri`: kanalın BÜTÜN resimleri, `galeriAdresleri` ile süzülmüş (K330). Yoksa galeriye dokunulmaz. */
   adaylar: readonly { barkod: string; url: string; kaynak: KanalGorselKaynagi; galeri?: readonly string[] }[],
@@ -49,11 +69,18 @@ export async function gorselleriYaz(
   if (tekil.size === 0)
     return { aday: 0, eslesen: 0, degisecek: 0, yazilan: 0, tavandaKalan: 0, galeriDegisecek: 0, galeriYazilan: 0, galeriTavandaKalan: 0 };
 
+  /**
+   * ⛔ EAN YETMEZ — KANAL KODU DA (15.10.2026, Fisher-Price vakası). İlanın barkodu bizim
+   * KANAL KODUMUZDUR ve EAN'dan farklı olabilir (`TRD194735067237` ↔ `194735067237`);
+   * yalnız EAN'la arayınca ilan bulunur ama ürüne HİÇ bağlanmazdı (ölçüldü: TY'de kodla
+   * bulunup görselsiz kalan 22 ürün). Kanal kodu YALNIZ AYNI KANALIN adayıyla eşleşir.
+   */
   const varyantlar = await prisma.productVariant.findMany({
-    where: { barcode: { in: [...tekil.keys()] } },
+    where: { OR: [{ barcode: { in: [...tekil.keys()] } }, { channelSkus: { some: { channelSku: { in: [...tekil.keys()] } } } }] },
     select: {
       id: true,
       barcode: true,
+      channelSkus: { select: { channelSku: true, channelAccount: { select: { channel: { select: { code: true } } } } } },
       gorselUrl: true,
       gorselKaynak: true,
       gorselKirikUrl: true,
@@ -64,7 +91,7 @@ export async function gorselleriYaz(
   /** K330 — galeri (tek firmalı canlı: firma alanı yok; çok firmalı dal kendi sürümünde firmayı da yazar). */
   const galeriYazilacak: { id: string; kaynak: KanalGorselKaynagi; adresler: readonly string[] }[] = [];
   for (const v of varyantlar) {
-    const aday = v.barcode ? tekil.get(v.barcode) : undefined;
+    const aday = adayBul(v, tekil);
     if (!aday) continue;
     const secim = gorselSec(
       { url: v.gorselUrl, kaynak: v.gorselKaynak, kirikUrl: v.gorselKirikUrl },
