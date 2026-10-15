@@ -406,6 +406,10 @@ const API_ISTISNALARI = new Map<string, string>([
     "K225: kanal listeleme durumu çekimi (TY + HB tek uçta) — dış zamanlayıcı çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. ⚠ Kapı artık BEYANLA değil ÖLÇÜMLE de korunuyor: `api:dogrula` 4. bölüm her `src/app/api/cron/**/route.ts` dosyasını DİZİNDEN tarayıp sır kapısını sınıyor (21.09.2026'da açıldı — o güne kadar YAZAN cron uçlarının hiçbiri denetlenmiyordu).",
   ],
   [
+    "src/app/api/cron/gece-turu-sonuc/route.ts",
+    "15.10.2026: gece bekçi turu GitHub'ın sunucusunda koşar ve sonucunu buraya POST eder — tarayıcı oturumu taşıyamaz; kendi CRON_SECRET kapısı var (yanlış/boş sır 404). Yalnız GECE_BEKCI_TURU izi yazar ve gövde kapıdan geçer (`gece-turu-sonuc.ts`: çelişkili «yeşil», yabancı bağlantı/alan reddedilir); kapıyı `gece-turu-sonuc:dogrula` + mutasyon (11/11) sınıyor, sır kapısını `api:dogrula` 4. bölüm tarıyor.",
+  ],
+  [
     "src/app/api/cron/sicak/route.ts",
     "K332 (12.10.2026): sıcak tutma ucu — dış zamanlayıcı (cron-job.org, dakikada bir) çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. SALT OKUMA: yalnız `SELECT 1`; kapıyı `api:dogrula` 4. bölüm dizinden tarayıp sınıyor.",
   ],
