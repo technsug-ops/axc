@@ -36,7 +36,8 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ONCEKI SIFIRDA UYDURMA YUZDE", yon: "FAZLADAN", dosya: SERI,
     bul: " || once === 0) return null;", koy: ") return null;", bozdugu: "onceki donem 0 iken sonsuz/uydurma artis yazar" },
   { ad: "SATISSIZDA STOK GUNU UYDURULUYOR", yon: "FAZLADAN", dosya: SERI,
-    bul: "  if (satilanAdet <= 0 || gunSayisi <= 0) return null;", koy: "  if (satilanAdet <= 0 || gunSayisi <= 0) return 0;", bozdugu: "olculemeyen hiz 0 gun diye okunur" },
+    /* 15.10.2026 (K341): payda `gunSayisi` → `stoktaGun` adını aldı; çapa taşındı, niyet aynı. */
+    bul: "  if (satilanAdet <= 0 || stoktaGun <= 0) return null;", koy: "  if (satilanAdet <= 0 || stoktaGun <= 0) return 0;", bozdugu: "olculemeyen hiz 0 gun diye okunur" },
   { ad: "MERDIVENE HESAPLANAMAYAN KALEM GIRIYOR", yon: "FAZLADAN", dosya: SERI,
     bul: "      haric++;\n      continue;", koy: "      haric++;", bozdugu: "maliyetsiz kalem tam kar gibi toplanir" },
   { ad: "GUNLUK NET-2 KISMI TOPLAM", yon: "FAZLADAN", dosya: SERI,
