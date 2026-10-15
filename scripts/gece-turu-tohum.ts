@@ -15,6 +15,10 @@
  *  (maliyetli) ve sistemin KENDİ satış yolundan (`satisKaydet`: FIFO + kâr) 2 satış.
  *  ⛔ CANLIYA ASLA: adres yerel değilse (localhost/127.0.0.1) DURUR, çıkış 1.
  *  İkinci koşum zararsız: `TOHUM-` ürünleri varsa satır eklemez.
+ *
+ *  SAYIM KORUMASI YOK: yalnız her gece SIFIRDAN açılan boş test veritabanına yazar (GitHub iş
+ *  servisi); orada sayım damgası olamaz, korunacak sayılmış raf yoktur. Canlıya/yerel olmayan
+ *  adrese yazmayı en başta REDDEDER (yukarıdaki kapı, sınandı: çıkış 1).
  * ============================================================================
  */
 import "dotenv/config";
