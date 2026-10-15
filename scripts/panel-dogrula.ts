@@ -61,6 +61,7 @@ import {
   CEKIM_PERIYODU_DK,
   cekimDurumu,
   enKotuCekim,
+  olculecekKanallar,
 } from "../src/lib/panel/ty-cekim-yasi";
 import {
   duzenGecerliMi,
@@ -6534,6 +6535,21 @@ kontrol("  ...her kanalın kendi izi var",
   kontrol("  ...YOK, ESKİ'den de ağır", enKotuCekim([eski, yok])?.kod === "N11");
   kontrol("  ...hepsi tazeyse en YAŞLI olan",
     enKotuCekim([taze, { kod: "HB", durum: cekimDurumu(dkOnce(3), an) }])?.kod === "HB");
+}
+/** ⛔ K335 (15.10.2026): yalnız BAĞLI kanal ölçülür — boş firmada «hiç iz yok» kırmızısı çıkmaz. İki yön ayrı. */
+{
+  const kodlar = (s: string[]) => olculecekKanallar(new Set(s)).map((k) => k.kod).join(",");
+  kontrol("bağlı kanalı olmayan firmada hiçbir kanal ölçülmez → rozet YOK (enKotuCekim([]) null)",
+    kodlar([]) === "" && enKotuCekim([]) === null, kodlar([]));
+  kontrol("  ...yalnız TY bağlıysa yalnız TY ölçülür (HB/N11 «hiç iz yok» demez)", kodlar(["TRENDYOL"]) === "TY", kodlar(["TRENDYOL"]));
+  kontrol("  ...üçü bağlıysa üçü de ölçülür (bağlı kanalda iz yoksa kural AYNEN yanar)",
+    kodlar(["TRENDYOL", "HEPSIBURADA", "N11"]) === "TY,HB,N11", kodlar(["TRENDYOL", "HEPSIBURADA", "N11"]));
+  kontrol("  ...çekimi olmayan kanal (AMAZON) kümeyi şişirmez", kodlar(["AMAZON", "N11"]) === "N11");
+  // Yorumsuz kodda aranır: yorum bir davranışı ANLATIR, onu kanıtlamaz.
+  const yasKaynagi = kaynakOku("src/lib/panel/ty-cekim-yasi.ts").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  kontrol("  ...iz okuyucu bağlı kanalı ANAHTARI KAYITLI aktif SATIŞ hesabından türetir ve yalnız onları dolaşır",
+    /db\.kanalAnahtari\.findMany\(\{\s*where: \{ channelAccount: \{ satisIcin: true, isActive: true \} \}/.test(yasKaynagi) &&
+      /for \(const k of olculecekKanallar\(bagli\)\)/.test(yasKaynagi));
 }
 const panelKaynagi = kaynakOku("src/app/page.tsx");
 kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",

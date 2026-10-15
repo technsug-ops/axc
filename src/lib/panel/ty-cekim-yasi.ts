@@ -64,10 +64,27 @@ export const CEKIM_ESIK_DK = 4 * CEKIM_PERIYODU_DK;
  * tetikleyici hiç kurulmamıştı, kimse fark etmemişti).
  */
 export const CEKIM_KANALLARI = [
-  { kod: "TY", iz: "TY_SIPARIS_ICE_AKTARMA" },
-  { kod: "HB", iz: "HB_SIPARIS_ICE_AKTARMA" },
-  { kod: "N11", iz: "N11_SIPARIS_ICE_AKTARMA" },
+  { kod: "TY", kanal: "TRENDYOL", iz: "TY_SIPARIS_ICE_AKTARMA" },
+  { kod: "HB", kanal: "HEPSIBURADA", iz: "HB_SIPARIS_ICE_AKTARMA" },
+  { kod: "N11", kanal: "N11", iz: "N11_SIPARIS_ICE_AKTARMA" },
 ] as const;
+
+/**
+ * ⛔ YALNIZ BAĞLI KANAL ÖLÇÜLÜR (K335, 15.10.2026).
+ *
+ * Yeni açılan boş bir firmanın panelinde kırmızı «TY çekimi: hiç iz yok»
+ * çıkıyordu — firmanın Trendyol hesabı bile yoktu. Çok firmada çekim HESABIN
+ * KENDİ anahtarıyla koşar (K337); anahtarı olmayan hesap bilerek atlanır. O
+ * kanalda iz olmaması bir KAÇIŞ değil, bağlantı yokluğudur — ve onu «API
+ * bağlantısı» kartı söyler, rozet değil.
+ *
+ * Ölçüt: firmanın o kanalda ANAHTARI KAYITLI, AKTİF bir SATIŞ hesabı var mı
+ * (çekimin dolaştığı kümenin aynısı: `satisHesaplari` + kayıtlı anahtar).
+ * ⚠ Bağlı kanalda iz yoksa kural AYNEN yanar — gevşetilen bir şey yok.
+ */
+export function olculecekKanallar(bagliKanallar: ReadonlySet<string>) {
+  return CEKIM_KANALLARI.filter((k) => bagliKanallar.has(k.kanal));
+}
 
 export type CekimKanali = (typeof CEKIM_KANALLARI)[number]["kod"];
 
@@ -113,13 +130,18 @@ export function enKotuCekim(kanallar: KanalCekimi[]): KanalCekimi | null {
   });
 }
 
-/** Üç kanalın son çekim anı — iz `AuditLog`daki koşum kaydı. */
+/** Bağlı kanalların son çekim anı — iz `AuditLog`daki koşum kaydı (firma süzgeçli istemciyle çağrılır). */
 export async function sonCekimler(
-  db: Pick<PrismaClient, "auditLog">,
+  db: Pick<PrismaClient, "auditLog" | "kanalAnahtari">,
   an: Date,
 ): Promise<KanalCekimi[]> {
+  const anahtarlar = await db.kanalAnahtari.findMany({
+    where: { channelAccount: { satisIcin: true, isActive: true } },
+    select: { channelAccount: { select: { channel: { select: { code: true } } } } },
+  });
+  const bagli = new Set(anahtarlar.map((a) => String(a.channelAccount.channel.code)));
   const cikti: KanalCekimi[] = [];
-  for (const k of CEKIM_KANALLARI) {
+  for (const k of olculecekKanallar(bagli)) {
     const iz = await db.auditLog.findFirst({
       where: { action: k.iz },
       orderBy: { createdAt: "desc" },
