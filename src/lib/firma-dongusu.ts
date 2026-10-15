@@ -7,14 +7,17 @@ import { firmaBaglamindaCalistir } from "@/lib/firma-baglami";
  *  Tasarım §5: «çekimler firma firma döner; bir firmanın hatası ötekini
  *  durdurmaz ve firma adıyla yazar».
  *
- *  ⛔ PAZARYERİ ANAHTARI BUGÜN TEK TAKIM (`.env`). Firma başına anahtar saklama
- *  ayrı bir adım (şema ister). O gün gelene kadar düz bir döngü, BİR firmanın
- *  anahtarıyla BÜTÜN firmalar adına çekim yapar: Axcali'nin siparişleri
- *  Damisell'e yazılır. Bu yüzden kanal anahtarı isteyen iş YALNIZ «anahtar
- *  firmasında» koşar; ötekiler «ATLANDI · anahtar tanımlı değil» yazar.
- *
- *  ANAHTAR FİRMASI (anayasa: «seçici ölçüt, evren genişlediğinde ne
- *  yapacağıyla tasarlanır»):
+ *  ⭐ K337 3. ADIM (15.10.2026): HER FİRMA KOŞAR. Pazaryeri anahtarı artık
+ *  satış hesabına bağlı (`lib/kanal-anahtari/hesaplar.ts`); kanal işi firma
+ *  bağlamında o firmanın HESAPLARINI kendi anahtarlarıyla dolaşır, anahtarı
+ *  olmayan hesap «ATLANDI · ANAHTAR_YOK» yazar.
+ *  ── ESKİ KURAL (silinmedi, NİYE çevrildiği yukarıda) ─────────────────────
+ *  «Pazaryeri anahtarı tek takım (`.env`); düz döngü BİR firmanın anahtarıyla
+ *  BÜTÜN firmalar adına çekim yapardı — kanal işi YALNIZ anahtar firmasında
+ *  koşar, ötekiler ATLANDI.» Tek takım anahtar kalkınca bu kısıt korunacak bir
+ *  şey korumuyordu; bugün ikinci firmanın KENDİ anahtarıyla çekimini engellerdi.
+ *  `kimlikFirmasiSec` YALNIZ komut satırı betiklerinin firma seçimi için durur
+ *  (`scripts/betik-firmasi.ts`):
  *   · `PAZARYERI_KIMLIK_FIRMASI=<firma kodu>` beyanı varsa → o firma
  *     (aktif değilse ya da yoksa HATA — sessizce başka firmaya düşmez);
  *   · beyan yoksa ve TEK aktif firma varsa → o firma (canlıdaki bugünkü
@@ -44,38 +47,21 @@ export function kimlikFirmasiSec(aktifFirmalar: FirmaOzeti[], beyan: string | un
 
 export type FirmaSonucu<T> =
   | { firma: string; durum: "KOSTU"; sonuc: T }
-  | { firma: string; durum: "ATLANDI"; sebep: "KANAL_ANAHTARI_TANIMLI_DEGIL" }
   | { firma: string; durum: "HATA"; hata: string };
 
-export type DonguSonucu<T> =
-  | { tamam: true; firmalar: FirmaSonucu<T>[] }
-  | { tamam: false; sebep: Exclude<KimlikFirmasiSecimi, { tamam: true }>["sebep"] };
+export type DonguSonucu<T> = { tamam: true; firmalar: FirmaSonucu<T>[] } | { tamam: false; sebep: "AKTIF_FIRMA_YOK" };
 
 /**
  * SAF ÇEKİRDEK: firma listesi ve iş verilir, döngü kurulur. Her firma kendi
  * bağlamında koşar (ortak `prisma` o firmaya süzülür); bir firmanın hatası
  * yakalanır, TAM mesajla yazılır ve sıradakine geçilir.
  */
-export async function firmaFirmaKos<T>(
-  aktifFirmalar: FirmaOzeti[],
-  ayar: { kanalAnahtariGerekir: boolean; beyan: string | undefined },
-  is: (companyId: string) => Promise<T>,
-): Promise<DonguSonucu<T>> {
+export async function firmaFirmaKos<T>(aktifFirmalar: FirmaOzeti[], is: (companyId: string) => Promise<T>): Promise<DonguSonucu<T>> {
   /* Boş liste «hepsi koştu» sayılmaz (anayasa: `every` kapısı / boş taban). */
   if (aktifFirmalar.length === 0) return { tamam: false, sebep: "AKTIF_FIRMA_YOK" };
-  let kosacaklar = aktifFirmalar;
-  if (ayar.kanalAnahtariGerekir) {
-    const secim = kimlikFirmasiSec(aktifFirmalar, ayar.beyan);
-    if (!secim.tamam) return { tamam: false, sebep: secim.sebep };
-    kosacaklar = [secim.firma];
-  }
   const firmalar: FirmaSonucu<T>[] = [];
   for (const f of aktifFirmalar) {
     const etiket = `${f.code} · ${f.name}`;
-    if (!kosacaklar.some((k) => k.id === f.id)) {
-      firmalar.push({ firma: etiket, durum: "ATLANDI", sebep: "KANAL_ANAHTARI_TANIMLI_DEGIL" });
-      continue;
-    }
     try {
       const sonuc = await firmaBaglamindaCalistir(f.id, () => is(f.id));
       firmalar.push({ firma: etiket, durum: "KOSTU", sonuc });
@@ -101,18 +87,15 @@ export async function aktifFirmalariOku(): Promise<FirmaOzeti[]> {
 }
 
 /** Zamanlanmış iş ucunun kullandığı tam döngü. */
-export async function zamanlanmisIsDongusu<T>(
-  ayar: { kanalAnahtariGerekir: boolean },
-  is: (companyId: string) => Promise<T>,
-): Promise<DonguSonucu<T>> {
-  return firmaFirmaKos(await aktifFirmalariOku(), { ...ayar, beyan: process.env.PAZARYERI_KIMLIK_FIRMASI }, is);
+export async function zamanlanmisIsDongusu<T>(is: (companyId: string) => Promise<T>): Promise<DonguSonucu<T>> {
+  return firmaFirmaKos(await aktifFirmalariOku(), is);
 }
 
 /**
  * Uç yanıtının durumu. K264 sözleşmesi korunur: zamanlayıcının yeşili «çekim
- * koştu» demek olmalı. Anahtar firması seçilemediyse, bir firma HATA verdiyse
- * ya da işin kendisi «atlandı» dediyse 503. Anahtarı olmayan firmanın
- * ATLANDI'sı beklenen durumdur — 503 yapmaz.
+ * koştu» demek olmalı. Aktif firma yoksa, bir firma HATA verdiyse ya da işin
+ * kendisi «kırmızı» dediyse (kanal işinde: `hesapSonuclariKirmiziMi`) 503.
+ * Anahtarı olmayan hesabın ATLANDI'sı beklenen durumdur — 503 yapmaz.
  */
 export function donguDurumKodu<T>(s: DonguSonucu<T>, isAtlandiMi: (sonuc: T) => boolean): number {
   if (!s.tamam) return 503;

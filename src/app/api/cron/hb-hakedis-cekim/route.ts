@@ -2,6 +2,7 @@
 import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
 import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
+import { hesapSonuclariKirmiziMi, kanalHesaplariylaKos } from "@/lib/kanal-anahtari/hesaplar";
 
 import { hbHakedisCekimKos } from "../../../../../scripts/canli-hb-hakedis-cekim";
 
@@ -38,9 +39,10 @@ export async function GET(istek: NextRequest) {
    * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
    * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
    */
-  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, (companyId) =>
-    hbHakedisCekimKos({ yaz: true, dbAdresi, companyId }),
+  /* K337 3. adım: firma firma, Hepsiburada SATIŞ hesabı başına KENDİ anahtarıyla. */
+  const sonuc = await zamanlanmisIsDongusu((companyId) =>
+    kanalHesaplariylaKos("HEPSIBURADA", (_hesap, kimlik) => hbHakedisCekimKos({ yaz: true, dbAdresi, companyId, anahtar: { kimlik } })),
   );
   /* K264: «atlandı» 200 DEĞİL 503 — zamanlayıcının yeşili «koştu» demek olsun. */
-  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => "atlandi" in o) });
+  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (h) => hesapSonuclariKirmiziMi(h, (o) => "atlandi" in o)) });
 }

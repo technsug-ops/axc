@@ -142,10 +142,12 @@ kontrol("API'ye dokunan dosya bulundu", apiDosyalari.length > 0, apiDosyalari);
    sabitlenir: üçü de istemciyi yalnız import ile alır, taban adresi yazmaz —
    iz körleşirse bu satır kırmızı yanar (boş küme yeşili yok). */
 {
-  const bilinen = ["src/app/kart/[variantId]/actions.ts", "src/app/api/cron/ty-cekim/route.ts", "scripts/canli-ty-mutabakat.ts"];
+  /* K337 3. adım (15.10.2026): kart eylemleri istemciyi ARTIK içeri almıyor — anahtar hesabın deposundan
+     (`kanal-anahtari/hesaplar`), gönderim yazıcıdan. Ortam okuyucusu (`kimlikOku`) src/'de kalmadı. */
+  const bilinen = ["src/app/api/cron/ty-cekim/route.ts", "scripts/canli-ty-mutabakat.ts"];
   const norm = new Set(apiDosyalari.map((y) => y.split("\\").join("/")));
   const kayip = bilinen.filter((y) => !norm.has(y));
-  kontrol("istemciyi İÇERİ ALAN bilinen dosyalar kapsamda (kart eylemleri · TY çekim ucu · TY mutabakat)", kayip.length === 0, kayip);
+  kontrol("istemciyi İÇERİ ALAN bilinen dosyalar kapsamda (TY çekim ucu · TY mutabakat)", kayip.length === 0, kayip);
 }
 
 /** ⚠ SATIR SATIR: hangi dosyada, hangi satırda olduğu söylenmeli. */

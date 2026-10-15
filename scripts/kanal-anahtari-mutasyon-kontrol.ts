@@ -19,6 +19,7 @@ const BEKCI_BASLIGI = "KANAL ANAHTARI BEKÇİSİ";
 const SIFRE = "src/lib/kanal-anahtari/sifre.ts";
 const KIMLIK = "src/lib/kanal-anahtari/kimlik.ts";
 const DEPO = "src/lib/kanal-anahtari/depo.ts";
+const HESAPLAR = "src/lib/kanal-anahtari/hesaplar.ts";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -55,6 +56,47 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "FIRMA SUZGECI DELINDI", yon: "FAZLADAN", dosya: DEPO,
     bul: 'import { prisma } from "@/lib/prisma";', koy: 'import { sistemPrisma as prisma } from "@/lib/prisma";',
     bozdugu: "bir firma baska firmanin anahtarini okur/yazar" },
+  /* ═══ K337 3. adım (15.10.2026) — hesabın KENDİ anahtarı ═══ */
+  { ad: "ZARARSIZ - hesaplar yorumu", yon: "ZARARSIZ", dosya: HESAPLAR,
+    bul: " *  HESABIN KENDİ ANAHTARIYLA KOŞ",
+    koy: " *  HESABIN KENDI ANAHTARIYLA KOŞ",
+    bozdugu: "hicbir sey - YESIL kalmali" },
+  { ad: "ANAHTARSIZ HESAP ATLANMAZ", yon: "KALDIRAN", dosya: HESAPLAR,
+    bul: "      sonuclar.push({ hesap: h.name, durum: \"ATLANDI\", sebep: o.durum });\n      continue;",
+    koy: "      sonuclar.push({ hesap: h.name, durum: \"ATLANDI\", sebep: o.durum });",
+    bozdugu: "anahtari olmayan hesap yine de is'e girer (kimliksiz cagri / ortama dusme kapisi)" },
+  { ad: "BASKA KANALIN ANAHTARI KULLANILIR", yon: "KALDIRAN", dosya: HESAPLAR,
+    bul: "    if (o.kimlik.kanal !== kanal) {",
+    koy: "    if (false) {",
+    bozdugu: "HB anahtari TY cagrisina gider" },
+  { ad: "ALIS HESABI DA DOLASILIR", yon: "FAZLADAN", dosya: HESAPLAR,
+    bul: "    where: { satisIcin: true, isActive: true, channel: { code: kanal } },",
+    koy: "    where: { isActive: true, channel: { code: kanal } },",
+    bozdugu: "alis (kisisel) hesaplar da cekime girer" },
+  { ad: "IKI HESAPTA ILKI SECILIR", yon: "KALDIRAN", dosya: HESAPLAR,
+    bul: "  if (h.length > 1) return { tamam: false, kod: \"HESAP_BELIRSIZ\" };\n",
+    koy: "",
+    bozdugu: "iki satis hesabinda stok rastgele magazaya gider" },
+  { ad: "ANAHTARSIZ HESAP KIRMIZI YAPAR", yon: "FAZLADAN", dosya: HESAPLAR,
+    bul: "(s.durum === \"ATLANDI\" && s.sebep !== \"ANAHTAR_YOK\" && s.sebep !== \"DENEME_ORTAMI\")",
+    koy: "(s.durum === \"ATLANDI\" && s.sebep !== \"DENEME_ORTAMI\")",
+    bozdugu: "kanali baglamamis her firma zamanlayiciyi kirmizi yakar" },
+  { ad: "ACILAMAYAN ANAHTAR YESIL", yon: "KALDIRAN", dosya: HESAPLAR,
+    bul: "(s.durum === \"ATLANDI\" && s.sebep !== \"ANAHTAR_YOK\" && s.sebep !== \"DENEME_ORTAMI\")",
+    koy: "(s.durum === \"ATLANDI\" && false)",
+    bozdugu: "sir bozukken cekim hic kosmaz ve zamanlayici yesil gorur" },
+  { ad: "CEKIM UCU ORTAM ANAHTARINA DONER", yon: "FAZLADAN", dosya: "src/app/api/cron/ty-cekim/route.ts",
+    bul: "anahtar: { kimlik } })),",
+    koy: "anahtar: \"ORTAM\" })),",
+    bozdugu: "Trendyol cekimi her firma adina tek takim ortam anahtariyla kosar" },
+  { ad: "KART BASKA HESABIN ANAHTARINI OKUR", yon: "KALDIRAN", dosya: "src/app/kart/[variantId]/actions.ts",
+    bul: "const k = await hesabinKimligi(\"N11\", b.hesapId);",
+    koy: "const k = await hesabinKimligi(\"N11\", \"baska-hesap\");",
+    bozdugu: "N11 gonderimi baglamin buldugu hesabin degil baska bir kimligin anahtariyla yapilir" },
+  { ad: "KART ORTAM OKUYUCUSUNU ICERI ALIR", yon: "FAZLADAN", dosya: "src/app/kart/[variantId]/actions.ts",
+    bul: "import { hesabinKimligi, tekSatisHesabi } from \"@/lib/kanal-anahtari/hesaplar\";\n",
+    koy: "import { hesabinKimligi, tekSatisHesabi } from \"@/lib/kanal-anahtari/hesaplar\";\nimport { kimlikOku } from \"../../../../scripts/ty/istemci\";\nvoid kimlikOku;\n",
+    bozdugu: "ekran eylemi yeniden tek takim ortam anahtarina erisir" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

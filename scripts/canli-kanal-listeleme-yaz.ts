@@ -1,3 +1,4 @@
+import { anahtariCoz, type AnahtarKaynagi, type TyKimlik } from "../src/lib/kanal-anahtari/kimlik";
 import { readFileSync, readdirSync } from "node:fs";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
@@ -38,7 +39,7 @@ const YAZ = process.argv.includes("--yaz");
 const DOSYADAN = process.argv.includes("--dosya");
 const KLASOR = "veri/ozel";
 
-async function taramaAl(): Promise<
+async function taramaAl(anahtar: AnahtarKaynagi<TyKimlik>): Promise<
   { tamam: true; saticiId: string; urunler: Record<string, unknown>[]; alindi: Date; kaynak: string }
   | { tamam: false; hata: string }
 > {
@@ -62,7 +63,7 @@ async function taramaAl(): Promise<
     };
   }
 
-  const kimlik = kimlikOku();
+  const kimlik = anahtariCoz(anahtar, kimlikOku);
   if (kimlik === null) return { tamam: false, hata: "TY kimliği okunamadı (.env.canli)." };
 
   /**
@@ -137,6 +138,8 @@ export type TyListelemeOzeti =
     };
 
 export async function tyListelemeCekimKos(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<TyKimlik>;
   yaz: boolean;
   /** Sunucudan gelirken hazır adres; yerelde `.env.canli`den okunur. */
   dbAdresi?: string;
@@ -158,7 +161,7 @@ export async function tyListelemeCekimKos(ayar: {
   console.log("  kip  " + (YAZ ? "⚠ YAZIM — defter DEĞİŞECEK" : "KURU — hiçbir şey yazılmaz"));
   console.log("=".repeat(70));
 
-  const t = await taramaAl();
+  const t = await taramaAl(ayar.anahtar);
   if (!t.tamam) {
     console.log("\n   ⛔ " + t.hata);
     /**
@@ -336,6 +339,8 @@ export async function tyListelemeCekimKos(ayar: {
  * iz iki yolda da yazılır. İki yerde iki kalıp olmaz (İlke #10).
  */
 export async function tyListelemeCekimKosGuvenli(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<TyKimlik>;
   yaz: boolean;
   dbAdresi?: string;
 }): Promise<TyListelemeOzeti | { atlandi: "COKTU"; mesaj: string }> {
@@ -366,7 +371,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  void betikFirmasiylaKos(undefined, () => tyListelemeCekimKosGuvenli({ yaz: YAZ })).then(async (o) => {
+  void betikFirmasiylaKos(undefined, () => tyListelemeCekimKosGuvenli({ yaz: YAZ, anahtar: "ORTAM" })).then(async (o) => {
     if ("atlandi" in o) process.exitCode = 1;
     /**
      * ⛔ BAĞLANTI YALNIZ CLI'DA KAPATILIR — GÖVDEDE DEĞİL.

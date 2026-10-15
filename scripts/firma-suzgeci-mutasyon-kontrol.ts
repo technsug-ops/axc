@@ -75,9 +75,12 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ORTAK ISTEMCI GOVDEDEN KOPTU", yon: "KALDIRAN", dosya: ISTEMCI,
     bul: "  suzgecli = suzgecUzat(istemciyiAl(), aktifFirmaKimligi);", koy: "  suzgecli = istemciyiAl();",
     bozdugu: "web istekleri suzgecsiz" },
-  { ad: "DONGU: ANAHTARSIZ FIRMADA DA KOSUYOR", yon: "FAZLADAN", dosya: DONGU,
-    bul: "    kosacaklar = [secim.firma];\n", koy: "",
-    bozdugu: "Axcali anahtariyla Damisell adina cekim" },
+  /* ⚠ «DONGU: ANAHTARSIZ FIRMADA DA KOSUYOR» (bul `kosacaklar = [secim.firma];` → sil · bozduğu
+     «Axcali anahtarıyla Damisell adına çekim») BURADAN TAŞINDI, SİLİNMEDİ — K337 3. adım
+     (15.10.2026): «yalnız anahtar firması koşar» kuralı kalktı, anahtar artık HESABA bağlı.
+     Aynı niyet («anahtarı olmayan yerde çekim koşmaz, başkasının anahtarına düşmez»)
+     `kanal-anahtari-mutasyon:kontrol` → «ANAHTARSIZ HESAP ATLANMAZ» · «CEKIM UCU ORTAM
+     ANAHTARINA DONER» maddelerinde yaşıyor; ölçen bekçi `kanal-anahtari:dogrula` ⑥. */
   { ad: "DONGU: BEYANSIZ ILK FIRMAYI SECIYOR", yon: "FAZLADAN", dosya: DONGU,
     bul: '  return { tamam: false, sebep: "BEYAN_GEREKLI" };', koy: "  return { tamam: true, firma: aktifFirmalar[0]! };",
     bozdugu: "ikinci firma dogunca anahtar sessizce rastgele firmaya gider" },
@@ -88,13 +91,13 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: '      firmalar.push({ firma: etiket, durum: "HATA", hata });\n', koy: "      throw e;\n",
     bozdugu: "bir firmanin hatasi oteki firmalarin cekimini keser" },
   { ad: "DONGU: BOS LISTE GECIYOR", yon: "KALDIRAN", dosya: DONGU,
-    bul: '  if (aktifFirmalar.length === 0) return { tamam: false, sebep: "AKTIF_FIRMA_YOK" };\n  let kosacaklar', koy: "  let kosacaklar",
+    bul: '  if (aktifFirmalar.length === 0) return { tamam: false, sebep: "AKTIF_FIRMA_YOK" };\n  const firmalar', koy: "  const firmalar",
     bozdugu: "hic firma yokken zamanlayici yesil gorur" },
   { ad: "DURUM KODU: FIRMA HATASI 200", yon: "KALDIRAN", dosya: DONGU,
     bul: '(f) => f.durum === "HATA" || (', koy: "(f) => (",
     bozdugu: "patlayan firma zamanlayicida yesil" },
   { ad: "UC DONGUYU ATLIYOR", yon: "KALDIRAN", dosya: UC,
-    bul: "await zamanlanmisIsDongusu({ kanalAnahtariGerekir: false }, () => ozetUretKos());", koy: "(await ozetUretKos()) as never;",
+    bul: "await zamanlanmisIsDongusu(() => ozetUretKos());", koy: "(await ozetUretKos()) as never;",
     bozdugu: "zamanlanmis is baglamsiz/firmasiz kosar" },
   { ad: "CEKIM BETIGI KENDI ISTEMCISINE DONDU", yon: "KALDIRAN", dosya: CEKIM,
     bul: 'firmaIstemcisi(dbAdresi, zorunluFirma(ayar.companyId, "n11CekimKos"))', koy: "new PrismaClient({ adapter: undefined as never })",

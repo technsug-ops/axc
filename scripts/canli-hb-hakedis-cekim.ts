@@ -34,6 +34,7 @@
  * ============================================================================
  */
 
+import { anahtariCoz, type AnahtarKaynagi, type HbKimlik } from "../src/lib/kanal-anahtari/kimlik";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { apiGet, baslikKur, kimlikOku, UCLAR } from "./hb/istemci";
@@ -79,6 +80,8 @@ export type HbHakedisCekimOzeti = {
 };
 
 export async function hbHakedisCekimKos(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<HbKimlik>;
   yaz: boolean;
   dbAdresi?: string;
   /** K303: firma — zamanlanmış iş döngüsü ya da `--firma=` verir; yoksa HATA. */
@@ -88,7 +91,7 @@ export async function hbHakedisCekimKos(ayar: {
   const YAZ = ayar.yaz;
   const TARAMA_GUN = ayar.taramaGun ?? TARAMA_GUN_VARSAYILAN;
 
-  const kimlik = kimlikOku();
+  const kimlik = anahtariCoz(ayar.anahtar, kimlikOku);
   if (!kimlik) {
     console.log("\n⛔ HB KİMLİĞİ OKUNAMADI (.env.canli / süreç ortamı).");
     return { atlandi: "KIMLIK" };
@@ -556,7 +559,7 @@ const dogrudanKosuluyor = (() => {
 if (dogrudanKosuluyor) {
   const gunArg = process.argv.find((a) => a.startsWith("--gun="));
   const taramaGun = gunArg ? Number(gunArg.split("=")[1]) || TARAMA_GUN_VARSAYILAN : undefined;
-  betikFirmasiylaKos(undefined, (companyId) => hbHakedisCekimKos({ yaz: process.argv.includes("--yaz"), taramaGun, companyId })).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => hbHakedisCekimKos({ yaz: process.argv.includes("--yaz"), taramaGun, companyId, anahtar: "ORTAM" })).catch((e) => {
     console.error("HATA:", e instanceof Error ? e.stack : e);
     process.exit(1);
   });

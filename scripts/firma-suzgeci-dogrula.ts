@@ -165,24 +165,26 @@ async function donguOlc() {
     if (id === "d") throw new Error("patladi");
     return { atlandi: false };
   };
-  const s1 = await firmaFirmaKos([A, D], { kanalAnahtariGerekir: true, beyan: undefined }, is);
-  kontrol("anahtar isteyen iş, iki firma + beyansız → HİÇ koşmaz", !s1.tamam && kosanlar.length === 0);
-  const s2 = await firmaFirmaKos([A, D], { kanalAnahtariGerekir: true, beyan: "AXC" }, is);
-  kontrol("anahtar isteyen iş YALNIZ anahtar firmasında koşar", J(kosanlar) === J(["a"]));
-  kontrol("öteki firma ATLANDI · anahtar tanımlı değil", s2.tamam && s2.firmalar[1]?.durum === "ATLANDI");
-  kontrol("iş kendi firmasının BAĞLAMINDA koşar", J(baglamlar) === J(["a"]));
-  kosanlar.length = 0;
-  baglamlar.length = 0;
-  const s3 = await firmaFirmaKos([A, D], { kanalAnahtariGerekir: false, beyan: undefined }, is);
-  kontrol("anahtar istemeyen iş HER firmada, kendi bağlamında", J(kosanlar) === J(["a", "d"]) && J(baglamlar) === J(["a", "d"]));
+  /* ⭐ K337 3. adım (15.10.2026): «anahtar firması» kuralı KALKTI — anahtar hesaba bağlı,
+     her firma KENDİ hesaplarını kendi anahtarlarıyla çeker (\`kanal-anahtari/hesaplar.ts\`,
+     ölçütleri \`kanal-anahtari:dogrula\`da). ESKİ ÖLÇÜTLER (silinmedi, niye kalktığı burada):
+     «anahtar isteyen iş iki firma + beyansız HİÇ koşmaz · YALNIZ anahtar firmasında koşar ·
+     öteki firma ATLANDI» — tek takım ortam anahtarı bir firmanın anahtarıyla bütün firmalar
+     adına çekim yapmasın diye vardı; tek takım kalkınca bugün ikinci firmanın KENDİ
+     anahtarıyla çekimini engellerdi. `kimlikFirmasiSec` komut satırı için yukarıda sınanıyor. */
+  const s3 = await firmaFirmaKos([A, D], is);
+  kontrol("iş HER firmada, sırayla, kendi bağlamında", J(kosanlar) === J(["a", "d"]) && J(baglamlar) === J(["a", "d"]));
   kontrol("bir firmanın hatası ötekini durdurmaz, firma adıyla yazılır",
     s3.tamam && s3.firmalar[0]?.durum === "KOSTU" && s3.firmalar[1]?.durum === "HATA" && s3.firmalar[1]?.firma === "DMS · Damisell");
-  const s4 = await firmaFirmaKos([], { kanalAnahtariGerekir: false, beyan: undefined }, is);
+  const s4 = await firmaFirmaKos([], is);
   kontrol("boş firma listesi «hepsi koştu» sayılmaz", J(s4) === J({ tamam: false, sebep: "AKTIF_FIRMA_YOK" }));
+  kosanlar.length = 0;
+  baglamlar.length = 0;
+  const s5 = await firmaFirmaKos([A, D], async (id: string) => { kosanlar.push(id); return { atlandi: id === "d" }; });
   kontrol("durum kodu: firma HATA → 503", donguDurumKodu(s3, () => false) === 503);
-  kontrol("durum kodu: anahtar firması seçilemedi → 503", donguDurumKodu(s1, () => false) === 503);
-  kontrol("durum kodu: anahtarsız firmanın ATLANDI'sı 503 YAPMAZ", donguDurumKodu(s2, () => false) === 200);
-  kontrol("durum kodu: işin kendi «atlandı»sı → 503", donguDurumKodu(s2, () => true) === 503);
+  kontrol("durum kodu: aktif firma yok → 503", donguDurumKodu(s4, () => false) === 503);
+  kontrol("durum kodu: hepsi koştu, iş kırmızı demedi → 200", donguDurumKodu(s5, () => false) === 200);
+  kontrol("durum kodu: TEK firmanın işi «kırmızı» derse → 503", donguDurumKodu(s5, (o) => o.atlandi) === 503);
 }
 
 /* ⑦ ZAMANLANMIŞ İŞ UÇLARI — küme uçlardan türetilir */
@@ -203,7 +205,8 @@ async function donguOlc() {
         DONGU_MUAF[yol].length > 10 && !/prisma\.\w+\.(find|create|update|delete|upsert|count|aggregate|groupBy)/.test(k));
       continue;
     }
-    kontrol(`${yol} firma döngüsünden geçer`, /await zamanlanmisIsDongusu\(\{ kanalAnahtariGerekir: (true|false) \}/.test(k));
+    /* K337 3. adım (15.10.2026): döngü artık ayar almaz (anahtar firması kalktı) — ölçüt çağrıya bağlı kalır. */
+    kontrol(`${yol} firma döngüsünden geçer`, /await zamanlanmisIsDongusu\(\s*(?:async\s*)?\(/.test(k));
     for (const m of k.matchAll(/from "(?:\.\.\/)+scripts\/([\w-]+)"/g)) betikler.add(m[1]!);
   }
   kontrol(`uçların çağırdığı betik tabanı DOLU (≥8, bulunan ${betikler.size})`, betikler.size >= 8);

@@ -1,5 +1,6 @@
 /** BETIK SINIFI: SUREKLI. Kanala YAZMAZ (GET); deftere yalniz --yaz ile yazar. */
 
+import { anahtariCoz, type AnahtarKaynagi, type HbKimlik } from "../src/lib/kanal-anahtari/kimlik";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { hbHesabiCoz, hbHesapHatasi, HB_KANAL_ADI } from "../src/lib/kanal-hesabi-hb";
 import { hbKargoDamgasi } from "../src/lib/kanal-kargo-damgasi";
@@ -216,6 +217,8 @@ export type HbCekimOzeti = {
  * Sunucuda dosya yoktur, bu yüzden adres parametreyle taşınır.
  */
 export async function hbCekimKos(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<HbKimlik>;
   yaz: boolean;
   /** Onay kapsamı — boş dizi = süzgeç yok. */
   sadece?: string[];
@@ -233,7 +236,7 @@ export async function hbCekimKos(ayar: {
     console.log("");
     return { atlandi: "BEKCI_TURU" };
   }
-  const k = kimlikOku();
+  const k = anahtariCoz(ayar.anahtar, kimlikOku);
   if (!k) {
     console.log("\n⛔ HB ANAHTARLARI EKSİK (.env.canli)\n");
     return { atlandi: "KIMLIK" };
@@ -1305,7 +1308,7 @@ export async function hbCekimKos(ayar: {
  * Argümanlar burada okunur; çekirdek argv bilmez (sunucuda argv yok).
  */
 async function main() {
-  const ozet = await betikFirmasiylaKos(undefined, (companyId) => hbCekimKos({ yaz: YAZ, sadece: SADECE, companyId }));
+  const ozet = await betikFirmasiylaKos(undefined, (companyId) => hbCekimKos({ yaz: YAZ, sadece: SADECE, companyId, anahtar: "ORTAM" }));
   if ("atlandi" in ozet) {
     /** ⚠ Bekçi turu bir HATA DEĞİL — kırmızı dönmez, atlandı der. */
     if (ozet.atlandi !== "BEKCI_TURU") process.exitCode = 1;

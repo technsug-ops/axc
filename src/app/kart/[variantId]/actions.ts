@@ -7,14 +7,12 @@ import { prisma } from "@/lib/prisma";
 import { varyantStogu } from "@/lib/stok";
 import { yetkiIste } from "@/lib/yetki";
 
-import { kimlikOku } from "../../../../scripts/ty/istemci";
+import { hesabinKimligi, tekSatisHesabi } from "@/lib/kanal-anahtari/hesaplar";
 import {
   gonderimSonucu,
   stokFiyatGonder,
 } from "../../../../scripts/ty/yazici";
-import { kimlikOku as n11KimlikOku } from "../../../../scripts/n11/istemci";
 import { stokFiyatGonder as n11StokFiyatIste } from "../../../../scripts/n11/yazici";
-import { kimlikOku as hbKimlikOku } from "../../../../scripts/hb/istemci";
 import {
   HB_CANLI_YAZMA_ACIK,
   hbYazmaAcikMi,
@@ -71,16 +69,17 @@ export type TyGonderimOnizlemesi =
     }
   | {
       tamam: false;
-      kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "VARYANT_YOK" | "VARYANT_BARKODU_YOK";
+      kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "HESAP_BELIRSIZ" | "VARYANT_YOK" | "VARYANT_BARKODU_YOK";
     };
 
 type TyBaglam =
   | {
       tamam: false;
-      kod: "HESAP_YOK" | "VARYANT_YOK" | "KANAL_SKU_YOK" | "VARYANT_BARKODU_YOK";
+      kod: "HESAP_YOK" | "HESAP_BELIRSIZ" | "VARYANT_YOK" | "KANAL_SKU_YOK" | "VARYANT_BARKODU_YOK";
     }
   | {
       tamam: true;
+      hesapId: string;
       /** ⛔ TY'YE GİDECEK GERÇEK BARKOD — `variant.barcode`, `channelSku` DEĞİL. */
       barkod: string;
       kanalSku: {
@@ -90,11 +89,10 @@ type TyBaglam =
     };
 
 async function tyBaglami(variantId: string): Promise<TyBaglam> {
-  const hesap = await prisma.channelAccount.findFirst({
-    where: { channel: { name: "Trendyol" }, satisIcin: true, isActive: true },
-    select: { id: true },
-  });
-  if (!hesap) return { tamam: false, kod: "HESAP_YOK" };
+  /* K337 3. adım: hesap TEK olmalı (iki aktif satış hesabında «hangisi» sorulur) ve anahtar O HESABIN. */
+  const t = await tekSatisHesabi("TRENDYOL");
+  if (!t.tamam) return { tamam: false, kod: t.kod };
+  const hesap = t.hesap;
   const varyant = await prisma.productVariant.findUnique({
     where: { id: variantId },
     select: { id: true, barcode: true },
@@ -107,7 +105,7 @@ async function tyBaglami(variantId: string): Promise<TyBaglam> {
   if (!kanalSku) return { tamam: false, kod: "KANAL_SKU_YOK" };
   const barkod = (varyant.barcode ?? "").trim();
   if (barkod === "") return { tamam: false, kod: "VARYANT_BARKODU_YOK" };
-  return { tamam: true, barkod, kanalSku };
+  return { tamam: true, hesapId: hesap.id, barkod, kanalSku };
 }
 
 export async function tyGonderimOnizle(
@@ -146,6 +144,7 @@ export type TyGonderimSonucu =
       kod:
         | "KANAL_SKU_YOK"
         | "HESAP_YOK"
+        | "HESAP_BELIRSIZ"
         | "VARYANT_YOK"
         | "VARYANT_BARKODU_YOK"
         | "GONDERILECEK_YOK"
@@ -170,7 +169,7 @@ export async function tyStokFiyatGonder(
   if (niyet.fiyat !== null && !(Number.isFinite(niyet.fiyat) && niyet.fiyat > 0)) {
     return { tamam: false, kod: "FIYAT_GECERSIZ" };
   }
-  const k = kimlikOku();
+  const k = await hesabinKimligi("TRENDYOL", b.hesapId);
   if (!k) return { tamam: false, kod: "ANAHTAR_YOK" };
 
   /** Stok SUNUCUDA yeniden çözülür — istemciden sayı alınmaz. */
@@ -281,12 +280,13 @@ export type N11GonderimOnizlemesi =
       kanalAdet: number | null;
       listelemeDurumu: string;
     }
-  | { tamam: false; kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "VARYANT_YOK" };
+  | { tamam: false; kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "HESAP_BELIRSIZ" | "VARYANT_YOK" };
 
 type N11Baglam =
-  | { tamam: false; kod: "HESAP_YOK" | "VARYANT_YOK" | "KANAL_SKU_YOK" }
+  | { tamam: false; kod: "HESAP_YOK" | "HESAP_BELIRSIZ" | "VARYANT_YOK" | "KANAL_SKU_YOK" }
   | {
       tamam: true;
+      hesapId: string;
       kanalSku: {
         channelSku: string;
         kanalAdet: number | null;
@@ -295,11 +295,10 @@ type N11Baglam =
     };
 
 async function n11Baglami(variantId: string): Promise<N11Baglam> {
-  const hesap = await prisma.channelAccount.findFirst({
-    where: { channel: { name: "N11" }, satisIcin: true, isActive: true },
-    select: { id: true },
-  });
-  if (!hesap) return { tamam: false, kod: "HESAP_YOK" };
+  /* K337 3. adım: hesap TEK olmalı (iki aktif satış hesabında «hangisi» sorulur) ve anahtar O HESABIN. */
+  const t = await tekSatisHesabi("N11");
+  if (!t.tamam) return { tamam: false, kod: t.kod };
+  const hesap = t.hesap;
   const varyant = await prisma.productVariant.findUnique({
     where: { id: variantId },
     select: { id: true },
@@ -310,7 +309,7 @@ async function n11Baglami(variantId: string): Promise<N11Baglam> {
     select: { channelSku: true, kanalAdet: true, listelemeDurumu: true },
   });
   if (!kanalSku) return { tamam: false, kod: "KANAL_SKU_YOK" };
-  return { tamam: true, kanalSku };
+  return { tamam: true, hesapId: hesap.id, kanalSku };
 }
 
 export async function n11GonderimOnizle(
@@ -345,6 +344,7 @@ export type N11GonderimSonucu =
       kod:
         | "KANAL_SKU_YOK"
         | "HESAP_YOK"
+        | "HESAP_BELIRSIZ"
         | "VARYANT_YOK"
         | "GONDERILECEK_YOK"
         | "KURAL_IHLALI"
@@ -375,7 +375,7 @@ export async function n11StokFiyatGonder(
     return { tamam: false, kod: "GONDERILECEK_YOK" };
   }
 
-  const k = n11KimlikOku();
+  const k = await hesabinKimligi("N11", b.hesapId);
   if (!k) return { tamam: false, kod: "ANAHTAR_YOK" };
 
   /** Stok SUNUCUDA yeniden çözülür — istemciden sayı alınmaz. */
@@ -496,18 +496,17 @@ export type HbGonderimOnizlemesi =
       /** Canlı mağaza kilidi kapalıysa gönderim YAPILAMAZ ve ekran bunu söyler. */
       canliKapali: boolean;
     }
-  | { tamam: false; kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "VARYANT_YOK" | "ANAHTAR_YOK" };
+  | { tamam: false; kod: "KANAL_SKU_YOK" | "HESAP_YOK" | "HESAP_BELIRSIZ" | "VARYANT_YOK" | "ANAHTAR_YOK" };
 
 type HbBaglam =
-  | { tamam: false; kod: "HESAP_YOK" | "VARYANT_YOK" | "KANAL_SKU_YOK" }
-  | { tamam: true; kanalSku: { channelSku: string; kanalAdet: number | null; listelemeDurumu: string } };
+  | { tamam: false; kod: "HESAP_YOK" | "HESAP_BELIRSIZ" | "VARYANT_YOK" | "KANAL_SKU_YOK" }
+  | { tamam: true; hesapId: string; kanalSku: { channelSku: string; kanalAdet: number | null; listelemeDurumu: string } };
 
 async function hbBaglami(variantId: string): Promise<HbBaglam> {
-  const hesap = await prisma.channelAccount.findFirst({
-    where: { channel: { name: "Hepsiburada" }, satisIcin: true, isActive: true },
-    select: { id: true },
-  });
-  if (!hesap) return { tamam: false, kod: "HESAP_YOK" };
+  /* K337 3. adım: hesap TEK olmalı (iki aktif satış hesabında «hangisi» sorulur) ve anahtar O HESABIN. */
+  const t = await tekSatisHesabi("HEPSIBURADA");
+  if (!t.tamam) return { tamam: false, kod: t.kod };
+  const hesap = t.hesap;
   const varyant = await prisma.productVariant.findUnique({ where: { id: variantId }, select: { id: true } });
   if (!varyant) return { tamam: false, kod: "VARYANT_YOK" };
   const kanalSku = await prisma.channelSku.findFirst({
@@ -515,14 +514,14 @@ async function hbBaglami(variantId: string): Promise<HbBaglam> {
     select: { channelSku: true, kanalAdet: true, listelemeDurumu: true },
   });
   if (!kanalSku) return { tamam: false, kod: "KANAL_SKU_YOK" };
-  return { tamam: true, kanalSku };
+  return { tamam: true, hesapId: hesap.id, kanalSku };
 }
 
 export async function hbGonderimOnizle(variantId: string): Promise<HbGonderimOnizlemesi> {
   await yetkiIste("kanal.yaz");
   const b = await hbBaglami(variantId);
   if (!b.tamam) return { tamam: false, kod: b.kod };
-  const k = hbKimlikOku();
+  const k = await hesabinKimligi("HEPSIBURADA", b.hesapId);
   if (!k) return { tamam: false, kod: "ANAHTAR_YOK" };
   const ortam = k.ortam.toUpperCase();
   return {
@@ -556,6 +555,7 @@ export type HbGonderimSonucu =
       kod:
         | "KANAL_SKU_YOK"
         | "HESAP_YOK"
+        | "HESAP_BELIRSIZ"
         | "VARYANT_YOK"
         | "GONDERILECEK_YOK"
         | "FIYAT_GECERSIZ"
@@ -578,7 +578,7 @@ export async function hbStokFiyatGonder(
   }
   if (!niyet.stokGonder && niyet.fiyat === null) return { tamam: false, kod: "GONDERILECEK_YOK" };
 
-  const k = hbKimlikOku();
+  const k = await hesabinKimligi("HEPSIBURADA", b.hesapId);
   if (!k) return { tamam: false, kod: "ANAHTAR_YOK" };
 
   /** Stok SUNUCUDA yeniden çözülür — istemciden sayı alınmaz. */
@@ -699,7 +699,9 @@ export async function tyGonderimSonucuSorgula(
     select: { createdAt: true },
   });
   if (!gonderim) return { tamam: false, kod: "GONDERIM_YOK" };
-  const k = kimlikOku();
+  /* K337 3. adım: anahtar gönderimi yapan hesabınki — kanalda TEK satış hesabı (gönderim de ancak öyle yapılabildi). */
+  const th = await tekSatisHesabi("TRENDYOL");
+  const k = th.tamam ? await hesabinKimligi("TRENDYOL", th.hesap.id) : null;
   if (!k) return { tamam: false, kod: "ANAHTAR_YOK" };
 
   const batch = await gonderimSonucu(k, batchRequestId);

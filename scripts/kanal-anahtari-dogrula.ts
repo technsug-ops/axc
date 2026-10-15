@@ -22,7 +22,7 @@ import { kaynakOku } from "./kaynak-oku";
 
 console.log("\nKANAL ANAHTARI BEKÇİSİ\n");
 
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 let gecen = 0;
 let hata = 0;
@@ -156,6 +156,28 @@ async function main() {
     const bAc = await firmaBaglamindaCalistir(B.id, () => D.kayitliKimligiAc(bSatis.id));
     kontrol("B kendi anahtarını yazar ve açar (A'nınkinden ayrı)", bKendi.durum === "TAMAM" && bAc.durum === "TAMAM" && (bAc.kimlik.kimlik as { secret: string }).secret === "B-firmasinin-sirri-5555");
 
+    /* ⭐ K337 3. adım — ZAMANLANMIŞ İŞİN YÖNLENDİRMESİ, GERÇEK VERİTABANINDA. Okuyucu olarak
+       `kayitliKimligiAc` verilir (deneme ortamında `kimligiOku` bilerek kimlik VERMEZ). */
+    const H = await import("../src/lib/kanal-anahtari/hesaplar");
+    const goren = (dizi: string[]) => async (h: { id: string }, k: { secret: string }) => { dizi.push(`${h.id}:${k.secret}`); return { atlandi: false }; };
+    const aGoren: string[] = [];
+    const aDongu = await firmaBaglamindaCalistir(A.id, async () => H.hesaplarlaKos("TRENDYOL", await H.satisHesaplari("TRENDYOL"), D.kayitliKimligiAc, goren(aGoren)));
+    kontrol("A'nın döngüsü YALNIZ A'nın satış hesabını, A'NIN anahtarıyla koşar (alış hesabı ve B görünmez)",
+      aGoren.length === 1 && aGoren[0] === `${aSatis.id}:${ham.secret}` && aDongu.length === 1, { aGoren, aDongu });
+    const bGoren: string[] = [];
+    await firmaBaglamindaCalistir(B.id, async () => H.hesaplarlaKos("TRENDYOL", await H.satisHesaplari("TRENDYOL"), D.kayitliKimligiAc, goren(bGoren)));
+    kontrol("B'nin döngüsü YALNIZ B'nin hesabını, B'NİN anahtarıyla koşar", bGoren.length === 1 && bGoren[0] === `${bSatis.id}:B-firmasinin-sirri-5555`, bGoren);
+    const tekA = await firmaBaglamindaCalistir(A.id, () => H.tekSatisHesabi("TRENDYOL"));
+    kontrol("ekran eylemi: tek satış hesabı → o hesap", tekA.tamam && tekA.hesap.id === aSatis.id, tekA);
+    const aSatis2 = await hesapAc(A.id, "AS2", true);
+    const aGoren2: string[] = [];
+    const aDongu2 = await firmaBaglamindaCalistir(A.id, async () => H.hesaplarlaKos("TRENDYOL", await H.satisHesaplari("TRENDYOL"), D.kayitliKimligiAc, goren(aGoren2)));
+    kontrol("  ...anahtarı olmayan ikinci hesap ATLANIR (ANAHTAR_YOK), ortama düşmez; ilki yine kendi anahtarıyla koşar",
+      aGoren2.length === 1 && aDongu2.some((x) => x.durum === "ATLANDI" && x.sebep === "ANAHTAR_YOK") && aDongu2.some((x) => x.durum === "KOSTU"), aDongu2);
+    const tekA2 = await firmaBaglamindaCalistir(A.id, () => H.tekSatisHesabi("TRENDYOL"));
+    kontrol("  ...iki aktif satış hesabında ekran eylemi DURUR (HESAP_BELIRSIZ — «ilkini seç» yok)", !tekA2.tamam && tekA2.kod === "HESAP_BELIRSIZ", tekA2);
+    void aSatis2;
+
     const yanlisSir = randomBytes(32).toString("base64");
     process.env.PAZARYERI_ANAHTAR_SIRRI = yanlisSir;
     const yanlis = await firmaBaglamindaCalistir(A.id, () => D.kayitliKimligiAc(aSatis.id));
@@ -237,6 +259,61 @@ async function main() {
   kontrol("  ...sabit firma YALNIZ hiç firma yokken oluşturulur", /if \(firmalar\.length === 0\) firmalar = \[await firmaSeed\(prisma\)\];/.test(senkron) && (senkron.match(/firmaSeed\(/g) ?? []).length === 1);
   kontrol("  ...canlı senkron ortak gövdeyi çağırır", /await butunFirmalardaYetki\(prisma, betikAdresi\(y\.veri\.ham\)\);/.test(yorumsuz(kaynakOku("scripts/canli-yetki-seed.ts"))) && !/firmaSeed\(/.test(yorumsuz(kaynakOku("scripts/canli-yetki-seed.ts"))));
   kosanBolumler.push("ekran");
+
+  /* ═══ ⑥ HESABIN KENDİ ANAHTARI — K337 3. adım (15.10.2026) ═══ */
+  console.log("\n⑥ hesabın kendi anahtarı (çekim · gönderim)");
+  {
+    const H = await import("../src/lib/kanal-anahtari/hesaplar");
+    const kA = { saticiId: "1", key: "kA", secret: "sA" };
+    const kB = { saticiId: "2", key: "kB", secret: "sB" };
+    const okuyucu = async (id: string) =>
+      id === "a" ? { durum: "TAMAM" as const, kimlik: { kanal: "TRENDYOL" as const, kimlik: kA } }
+      : id === "b" ? { durum: "TAMAM" as const, kimlik: { kanal: "TRENDYOL" as const, kimlik: kB } }
+      : id === "hb" ? { durum: "TAMAM" as const, kimlik: { kanal: "HEPSIBURADA" as const, kimlik: { merchantId: "m", key: "k", ortam: "CANLI", developer: "d" } } }
+      : { durum: "ANAHTAR_YOK" as const };
+    const hesap = (id: string) => ({ id, name: id.toUpperCase(), externalId: null, apiHesapKimligi: null });
+    const giden: string[] = [];
+    const s1 = await H.hesaplarlaKos("TRENDYOL", [hesap("a"), hesap("yok"), hesap("b"), hesap("hb"), hesap("patlar")],
+      async (id) => (id === "patlar" ? { durum: "TAMAM" as const, kimlik: { kanal: "TRENDYOL" as const, kimlik: kA } } : okuyucu(id)),
+      async (h, k) => { if (h.id === "patlar") throw new Error("kanal 500"); giden.push(`${h.id}=${k.key}`); return { atlandi: false }; });
+    kontrol("her hesap KENDİ anahtarıyla çağrılır (a→kA · b→kB; çapraz yok)", JSON.stringify(giden) === JSON.stringify(["a=kA", "b=kB"]), giden);
+    kontrol("  ...anahtarı olmayan hesap ATLANDI · ANAHTAR_YOK (iş ÇAĞRILMAZ)", s1[1]?.durum === "ATLANDI" && s1[1].sebep === "ANAHTAR_YOK");
+    kontrol("  ...başka kanalın anahtarı bu kanalda KULLANILMAZ (iş çağrılmaz)", s1[3]?.durum === "ATLANDI" && s1[3].sebep === "KANAL_DESTEKLENMIYOR" && !giden.some((g) => g.startsWith("hb=")));
+    kontrol("  ...bir hesabın hatası ötekini durdurmaz, hesap adıyla yazılır", s1[4]?.durum === "HATA" && s1[4].hesap === "PATLAR" && s1[2]?.durum === "KOSTU");
+    const atla = (sebep: string) => ({ hesap: "x", durum: "ATLANDI" as const, sebep: sebep as never });
+    kontrol("durum: anahtarı OLMAYAN hesap ve deneme ortamı kırmızı YAPMAZ", !H.hesapSonuclariKirmiziMi([atla("ANAHTAR_YOK"), atla("DENEME_ORTAMI")], () => false));
+    kontrol("  ...anahtar VAR ama açılamıyorsa (sır yok/bozuk) KIRMIZI", H.hesapSonuclariKirmiziMi([atla("SIR_YOK")], () => false) && H.hesapSonuclariKirmiziMi([atla("COZULEMEDI")], () => false));
+    kontrol("  ...hesap HATA ya da işin kendi «atlandı»sı KIRMIZI",
+      H.hesapSonuclariKirmiziMi([{ hesap: "x", durum: "HATA", hata: "e" }], () => false) && H.hesapSonuclariKirmiziMi([{ hesap: "x", durum: "KOSTU", sonuc: 1 }], () => true));
+    kontrol("  ...boş hesap listesi (firma o kanalı bağlamamış) kırmızı YAPMAZ", !H.hesapSonuclariKirmiziMi([], () => true));
+  }
+  {
+    /* DESEN YASAĞI — ortam anahtarına geri dönüş yolu YOK (kullanıcı kararı 15.10 «tek kaynak»). */
+    const { readdirSync, statSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const tara = (kok: string): string[] => readdirSync(kok).flatMap((a) => { const y = join(kok, a).replace(/\\/g, "/"); return statSync(y).isDirectory() ? tara(y) : /\.tsx?$/.test(y) ? [y] : []; });
+    const src = tara("src").filter((y) => !y.startsWith("src/generated"));
+    kontrol(`taban: src taraması dolu (${src.length} ≥ 300)`, src.length >= 300);
+    const ortamOkuyan = src.filter((y) => /from\s+["'][^"']*scripts\/(?:ty|hb|n11)\/istemci["']/.test(yorumsuz(kaynakOku(y))) && /\bkimlikOku\b|\bkimlikEksikleri\b/.test(yorumsuz(kaynakOku(y))));
+    kontrol("src/ altında ortam anahtar okuyucusu (kimlikOku) İÇERİ ALINMAZ", ortamOkuyan.length === 0, ortamOkuyan);
+    const ortamYazan = src.filter((y) => /anahtar:\s*"ORTAM"/.test(yorumsuz(kaynakOku(y))));
+    kontrol("src/ altında «ORTAM» anahtar kaynağı YAZILMAZ (yalnız komut satırı betikleri)", ortamYazan.length === 0, ortamYazan);
+    /* Küme TÜRETİLİR: pazaryeri gövdesini (scripts/canli-{ty,hb,n11,kanal}-…) içeri alan her uç — sıcak tutma ve özet gibi pazaryerine gitmeyen uçlar kendiliğinden dışarıda. */
+    const kanalUclari = tara("src/app/api/cron").filter((y) => /route\.ts$/.test(y) && /from\s+"(?:\.\.\/)+scripts\/canli-(?:ty|hb|n11|kanal)-[\w-]+"/.test(yorumsuz(kaynakOku(y))));
+    kontrol(`taban: kanal uçları (${kanalUclari.length} ≥ 6)`, kanalUclari.length >= 6);
+    for (const u of kanalUclari) {
+      const k = yorumsuz(kaynakOku(u));
+      const cagrilar = [...k.matchAll(/\b(\w+Kos(?:Guvenli)?)\(\{/g)].map((m) => m[1]!);
+      const hesapli = [...k.matchAll(/kanalHesaplariylaKos\("(?:TRENDYOL|HEPSIBURADA|N11)", (?:async )?\(_hesap, kimlik\) =>[\s\S]*?anahtar: \{ kimlik \}/g)].length;
+      kontrol(`  ${u.replace("src/app/api/cron/", "")}: her kanal gövdesi hesabın KENDİ anahtarıyla (${cagrilar.length} çağrı · ${hesapli} hesaplı)`,
+        cagrilar.length > 0 && cagrilar.length === (k.match(/anahtar: \{ kimlik \}/g) ?? []).length && hesapli >= 1, cagrilar);
+    }
+    const kart = yorumsuz(kaynakOku("src/app/kart/[variantId]/actions.ts"));
+    const kartOkuma = (kart.match(/await hesabinKimligi\("(?:TRENDYOL|HEPSIBURADA|N11)", (?:b\.hesapId|th\.hesap\.id)\)/g) ?? []).length;
+    kontrol(`kart düğmeleri anahtarı HESAPTAN okur (${kartOkuma} okuma ≥ 5: TY gönder · TY sonuç · N11 · HB önizle · HB gönder)`, kartOkuma >= 5);
+    kontrol("  ...kart bağlamları hesabı TEK-HESAP kuralıyla bulur (üç kanal)", (kart.match(/const t = await tekSatisHesabi\("(?:TRENDYOL|N11|HEPSIBURADA)"\);/g) ?? []).length === 3);
+  }
+  kosanBolumler.push("hesap");
 
   await sistemPrisma.$disconnect();
   if (kosanBolumler.length !== BOLUM_SAYISI) {

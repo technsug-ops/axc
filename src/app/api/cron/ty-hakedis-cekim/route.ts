@@ -2,6 +2,7 @@
 import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
 import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
+import { hesapSonuclariKirmiziMi, kanalHesaplariylaKos } from "@/lib/kanal-anahtari/hesaplar";
 
 import { tyHakedisCekimKos } from "../../../../../scripts/canli-ty-hakedis-cekim";
 import { tyKargoGercekYazKos } from "../../../../../scripts/canli-ty-kargo-gercek-olcum";
@@ -48,12 +49,15 @@ export async function GET(istek: NextRequest) {
    * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
    * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
    */
-  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, async (companyId) => {
-    const hakedis = await tyHakedisCekimKos({ yaz: true, dbAdresi, companyId });
-    const kargo = await tyKargoGercekYazKos({ yaz: true, dbAdresi, companyId });
-    const dusen = [hakedis, kargo].filter((o) => "atlandi" in o).length;
-    return { hakedis, kargo, dusen };
-  });
+  /* K337 3. adım: firma firma, Trendyol SATIŞ hesabı başına KENDİ anahtarıyla. */
+  const sonuc = await zamanlanmisIsDongusu((companyId) =>
+    kanalHesaplariylaKos("TRENDYOL", async (_hesap, kimlik) => {
+      const hakedis = await tyHakedisCekimKos({ yaz: true, dbAdresi, companyId, anahtar: { kimlik } });
+      const kargo = await tyKargoGercekYazKos({ yaz: true, dbAdresi, companyId, anahtar: { kimlik } });
+      const dusen = [hakedis, kargo].filter((o) => "atlandi" in o).length;
+      return { hakedis, kargo, dusen };
+    }),
+  );
   /* K264: iki işten biri «atlandı» ise 503 — zamanlayıcının yeşili «koştu» demek olsun. */
-  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => o.dusen > 0) });
+  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (h) => hesapSonuclariKirmiziMi(h, (o) => o.dusen > 0)) });
 }

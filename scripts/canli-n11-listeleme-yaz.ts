@@ -1,3 +1,4 @@
+import { anahtariCoz, type AnahtarKaynagi, type N11Kimlik } from "../src/lib/kanal-anahtari/kimlik";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { apiGet, baslikKur, kimlikOku } from "./n11/istemci";
@@ -89,6 +90,8 @@ async function tumUrunler(
 }
 
 export async function n11ListelemeCekimKos(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<N11Kimlik>;
   yaz: boolean;
   dbAdresi?: string;
 }): Promise<N11ListelemeOzeti> {
@@ -102,7 +105,7 @@ export async function n11ListelemeCekimKos(ayar: {
     }
     dbAdresi = betikAdresi(y.veri.ham);
   }
-  const k = kimlikOku();
+  const k = anahtariCoz(ayar.anahtar, kimlikOku);
   if (k === null) {
     console.log("⛔ N11 kimliği okunamadı (.env.canli / süreç ortamı).");
     return { atlandi: "KIMLIK" };
@@ -299,6 +302,8 @@ export async function n11ListelemeCekimKos(ayar: {
 
 /** Cron için: hiçbir şey fırlatmaz; çökme de bir SONUÇTUR. */
 export async function n11ListelemeCekimKosGuvenli(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<N11Kimlik>;
   yaz: boolean;
   dbAdresi?: string;
 }): Promise<N11ListelemeOzeti | { atlandi: "COKTU"; sebep: string }> {
@@ -314,7 +319,7 @@ const dogrudanKosuluyor = (() => {
   return /canli-n11-listeleme-yaz\.(ts|js)$/.test(giris.split("\\").join("/"));
 })();
 if (dogrudanKosuluyor) {
-  betikFirmasiylaKos(undefined, () => n11ListelemeCekimKos({ yaz: process.argv.includes("--uygula") }))
+  betikFirmasiylaKos(undefined, () => n11ListelemeCekimKos({ yaz: process.argv.includes("--uygula"), anahtar: "ORTAM" }))
     .then((o) => {
       if ("atlandi" in o || o.hata > 0) process.exitCode = 1;
     })

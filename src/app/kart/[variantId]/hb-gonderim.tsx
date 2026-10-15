@@ -46,6 +46,7 @@ import {
 export const HATA_ANAHTARI: Record<Exclude<HbGonderimSonucu, { tamam: true }>["kod"], string> = {
   KANAL_SKU_YOK: "hataKanalSkuYok",
   HESAP_YOK: "hataHesapYok",
+  HESAP_BELIRSIZ: "hataHesapBelirsiz",
   VARYANT_YOK: "hataVaryantYok",
   GONDERILECEK_YOK: "hataGonderilecekYok",
   FIYAT_GECERSIZ: "hataFiyatGecersiz",
@@ -57,6 +58,7 @@ export const HATA_ANAHTARI: Record<Exclude<HbGonderimSonucu, { tamam: true }>["k
 export const ONIZLEME_HATA: Record<Exclude<HbGonderimOnizlemesi, { tamam: true }>["kod"], string> = {
   KANAL_SKU_YOK: "hataKanalSkuYok",
   HESAP_YOK: "hataHesapYok",
+  HESAP_BELIRSIZ: "hataHesapBelirsiz",
   VARYANT_YOK: "hataVaryantYok",
   ANAHTAR_YOK: "hataAnahtarYok",
 };

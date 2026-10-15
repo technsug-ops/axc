@@ -2,9 +2,9 @@
 import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
 import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
+import { hesapSonuclariKirmiziMi, kanalHesaplariylaKos } from "@/lib/kanal-anahtari/hesaplar";
 
 import { hbCekimKos } from "../../../../../scripts/canli-hb-ice-aktar";
-import { kimlikEksikleri } from "../../../../../scripts/hb/istemci";
 
 /**
  * ============================================================================
@@ -69,8 +69,9 @@ export async function GET(istek: NextRequest) {
    * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
    * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
    */
-  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, (companyId) =>
-    hbCekimKos({ yaz: true, dbAdresi, companyId }),
+  /* K337 3. adım: firma firma, Hepsiburada SATIŞ hesabı başına KENDİ anahtarıyla. */
+  const sonuc = await zamanlanmisIsDongusu((companyId) =>
+    kanalHesaplariylaKos("HEPSIBURADA", (_hesap, kimlik) => hbCekimKos({ yaz: true, dbAdresi, companyId, anahtar: { kimlik } })),
   );
   /**
    * ⛔ ATLANAN KOŞUM 200 DÖNMEZ — BU BENİM KUSURUMDU (08.09.2026).
@@ -89,12 +90,13 @@ export async function GET(istek: NextRequest) {
    * ⛔ EKSİĞİN ADI SÖYLENİR, DEĞERİ ASLA. `kimlikEksikleri()` yalnız
    * değişken ADLARINI döndürür; satıcı kimliği bile gövdeye girmez.
    */
-  const kimlikDustu = sonuc.tamam && sonuc.firmalar.some((f) => f.durum === "KOSTU" && "atlandi" in f.sonuc && f.sonuc.atlandi === "KIMLIK");
+  /* K337 3. adım: anahtar artık HESABIN — ortam değişkeni eksiği bu uçta oluşamaz
+     (anahtarı olmayan hesap «ATLANDI · ANAHTAR_YOK» yazar). Eski «eksik değişken
+     adları» alanı kaldırıldı; gerekçesi yukarıda tarih olarak duruyor. */
   /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek
      olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü.
      BEKCI_TURU istisnası korunur (yukarıdaki gerekçe). */
-  return NextResponse.json(
-    { ...sonuc, ...(kimlikDustu ? { eksikDegiskenler: kimlikEksikleri() } : {}) },
-    { status: donguDurumKodu(sonuc, (o) => "atlandi" in o && o.atlandi !== "BEKCI_TURU") },
-  );
+  return NextResponse.json(sonuc, {
+    status: donguDurumKodu(sonuc, (h) => hesapSonuclariKirmiziMi(h, (o) => "atlandi" in o && o.atlandi !== "BEKCI_TURU")),
+  });
 }

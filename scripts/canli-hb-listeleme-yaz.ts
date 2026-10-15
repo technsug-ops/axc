@@ -1,3 +1,4 @@
+import { anahtariCoz, type AnahtarKaynagi, type HbKimlik } from "../src/lib/kanal-anahtari/kimlik";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumKayitlar, UCLAR } from "./hb/istemci";
@@ -66,6 +67,8 @@ const SIRA: Record<string, number> = {
 };
 
 export async function hbListelemeCekimKos(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<HbKimlik>;
   yaz: boolean;
   /** Sunucudan gelirken hazır adres; yerelde `.env.canli`den okunur. */
   dbAdresi?: string;
@@ -81,7 +84,7 @@ export async function hbListelemeCekimKos(ayar: {
     }
     dbAdresi = betikAdresi(y.veri.ham);
   }
-  const k = kimlikOku();
+  const k = anahtariCoz(ayar.anahtar, kimlikOku);
   if (k === null) {
     console.log("⛔ HB kimliği okunamadı (.env.canli / süreç ortamı).");
     return { atlandi: "KIMLIK" };
@@ -339,7 +342,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  betikFirmasiylaKos(undefined, () => hbListelemeCekimKos({ yaz: process.argv.includes("--uygula") }))
+  betikFirmasiylaKos(undefined, () => hbListelemeCekimKos({ yaz: process.argv.includes("--uygula"), anahtar: "ORTAM" }))
     .then((o) => {
       /** ⛔ HATA SESSİZ GEÇMEZ: çıkış kodu da düşer. */
       if ("atlandi" in o || o.hata > 0) process.exitCode = 1;

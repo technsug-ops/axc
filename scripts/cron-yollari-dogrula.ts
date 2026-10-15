@@ -123,7 +123,9 @@ for (const dosya of cekimRotalari) {
   const sonCevap = metin.slice(metin.lastIndexOf("NextResponse.json("));
   kontrol(
     `${urlYolu(dosya)} → atlandı ise 503, koştuysa 200 (son cevap donguDurumKodu + atlandı yüklemi)`,
-    /status: donguDurumKodu\(sonuc, \(o\) => [^)]*?(?:"atlandi" in o|o\.dusen > 0)/.test(sonCevap),
+    /* K337 3. adım: kanal uçlarında yüklem HESAP düzeyinde sarılı — `hesapSonuclariKirmiziMi(h, (o) => …atlandı…)`.
+       Örtme (`() => false` ya da yüklemsiz sarma) yine kırmızı. */
+    /status: donguDurumKodu\(sonuc, (?:\(o\) => [^)]*?|\(h\) => hesapSonuclariKirmiziMi\(h, \(o\) => [^)]*?)(?:"atlandi" in o|o\.dusen > 0)/.test(sonCevap),
   );
 }
 

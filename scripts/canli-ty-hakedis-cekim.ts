@@ -45,6 +45,7 @@
  * ============================================================================
  */
 
+import { anahtariCoz, type AnahtarKaynagi, type TyKimlik } from "../src/lib/kanal-anahtari/kimlik";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { baslikKur, kimlikOku, tumSayfalar, UCLAR } from "./ty/istemci";
@@ -118,6 +119,8 @@ export type TyHakedisCekimOzeti = {
  * ucundan `process.env.DATABASE_URL` verilir.
  */
 export async function tyHakedisCekimKos(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<TyKimlik>;
   yaz: boolean;
   dbAdresi?: string;
   /** K303: firma — zamanlanmış iş döngüsü ya da `--firma=` verir; yoksa HATA. */
@@ -128,7 +131,7 @@ export async function tyHakedisCekimKos(ayar: {
 }): Promise<TyHakedisCekimOzeti | { atlandi: "KIMLIK" | "VERITABANI" | "HESAP" }> {
   const YAZ = ayar.yaz;
   const TARAMA_GUN = ayar.taramaGun ?? TARAMA_GUN_VARSAYILAN;
-  const kimlik = kimlikOku();
+  const kimlik = anahtariCoz(ayar.anahtar, kimlikOku);
   if (!kimlik) {
     console.log("\n⛔ TY KİMLİĞİ OKUNAMADI (.env.canli / süreç ortamı).");
     return { atlandi: "KIMLIK" };
@@ -568,7 +571,7 @@ const dogrudanKosuluyor = (() => {
 if (dogrudanKosuluyor) {
   const gunArg = process.argv.find((a) => a.startsWith("--gun="));
   const taramaGun = gunArg ? Number(gunArg.split("=")[1]) || TARAMA_GUN_VARSAYILAN : undefined;
-  betikFirmasiylaKos(undefined, (companyId) => tyHakedisCekimKos({ yaz: process.argv.includes("--yaz"), taramaGun, companyId })).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => tyHakedisCekimKos({ yaz: process.argv.includes("--yaz"), taramaGun, companyId, anahtar: "ORTAM" })).catch((e) => {
     console.error("HATA:", e instanceof Error ? e.stack : e);
     process.exit(1);
   });

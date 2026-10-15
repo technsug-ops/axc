@@ -58,6 +58,7 @@ export const HATA_ANAHTARI: Record<
 > = {
   KANAL_SKU_YOK: "hataKanalSkuYok",
   HESAP_YOK: "hataHesapYok",
+  HESAP_BELIRSIZ: "hataHesapBelirsiz",
   VARYANT_YOK: "hataVaryantYok",
   GONDERILECEK_YOK: "hataGonderilecekYok",
   KURAL_IHLALI: "hataKuralIhlali",
@@ -72,6 +73,7 @@ export const ONIZLEME_HATA: Record<
 > = {
   KANAL_SKU_YOK: "hataKanalSkuYok",
   HESAP_YOK: "hataHesapYok",
+  HESAP_BELIRSIZ: "hataHesapBelirsiz",
   VARYANT_YOK: "hataVaryantYok",
 };
 

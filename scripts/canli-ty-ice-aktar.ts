@@ -1,4 +1,5 @@
 
+import { anahtariCoz, type AnahtarKaynagi, type TyKimlik } from "../src/lib/kanal-anahtari/kimlik";
 import { otomatikOnaylaKuyruk } from "../src/lib/onay-kuyrugu";
 import { kilitDurumu } from "./bekci-kilit";
 import { canliYapilandirma } from "./canli-ortak";
@@ -207,6 +208,8 @@ export type TyCekimOzeti = {
 };
 
 export async function tyCekimKos(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<TyKimlik>;
   yaz: boolean;
   gun: number;
   /** K166: sunucu ucundan DATABASE_URL; betikte boş → dosyadan. */
@@ -222,7 +225,7 @@ export async function tyCekimKos(ayar: {
     console.log("");
     return { atlandi: "BEKCI_TURU" };
   }
-  const k = kimlikOku();
+  const k = anahtariCoz(ayar.anahtar, kimlikOku);
   if (!k) {
     console.log("\n⛔ ANAHTAR OKUNAMADI (.env.canli)\n");
     process.exitCode = 1;
@@ -998,7 +1001,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  betikFirmasiylaKos(undefined, (companyId) => tyCekimKos({ yaz: YAZ, gun: GUN, companyId })).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => tyCekimKos({ yaz: YAZ, gun: GUN, companyId, anahtar: "ORTAM" })).catch((e) => {
     console.error(e);
     process.exit(1);
   });

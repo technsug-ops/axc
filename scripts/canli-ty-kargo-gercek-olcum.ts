@@ -18,6 +18,7 @@
  * ============================================================================
  */
 
+import { anahtariCoz, type AnahtarKaynagi, type TyKimlik } from "../src/lib/kanal-anahtari/kimlik";
 import { betikAdresi } from "../src/lib/veritabani-adresi";
 import { canliYapilandirma } from "./canli-ortak";
 import { apiGet, baslikKur, kimlikOku, tumSayfalar, UCLAR } from "./ty/istemci";
@@ -52,13 +53,15 @@ export type TyKargoGercekOzeti = {
 
 /** ⚠ ROUTE'DAN DA, CLI'DAN DA ÇAĞRILIR (K166 deseni). */
 export async function tyKargoGercekYazKos(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<TyKimlik>;
   yaz: boolean;
   dbAdresi?: string;
   /** K303: firma — zamanlanmış iş döngüsü ya da `--firma=` verir; yoksa HATA. */
   companyId?: string;
 }): Promise<TyKargoGercekOzeti | { atlandi: "KIMLIK" | "VERITABANI" | "HESAP" }> {
   const YAZ = ayar.yaz;
-  const kimlik = kimlikOku();
+  const kimlik = anahtariCoz(ayar.anahtar, kimlikOku);
   if (!kimlik) {
     console.log("⛔ TY kimliği okunamadı");
     return { atlandi: "KIMLIK" };
@@ -256,7 +259,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  betikFirmasiylaKos(undefined, (companyId) => tyKargoGercekYazKos({ yaz: process.argv.includes("--yaz"), companyId })).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => tyKargoGercekYazKos({ yaz: process.argv.includes("--yaz"), companyId, anahtar: "ORTAM" })).catch((e) => {
     console.error("HATA:", e instanceof Error ? e.stack : e);
     process.exit(1);
   });

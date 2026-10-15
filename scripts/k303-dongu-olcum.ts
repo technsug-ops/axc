@@ -36,7 +36,7 @@ async function main() {
   }
   console.log("bağlamsız ortak istemci:", baglamsizHata.startsWith("FIRMA_BAGLAMI_YOK") ? "HATA verdi ✓" : `HATA VERMEDİ ⛔ (${baglamsizHata})`);
 
-  const dongu = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: false }, async (companyId) => {
+  const dongu = await zamanlanmisIsDongusu(async (companyId) => {
     const ortak = await prisma.sale.count();
     const fi = firmaIstemcisi(adres, companyId);
     const sabit = await fi.sale.count();
@@ -44,7 +44,8 @@ async function main() {
     return { ortak, sabit };
   });
   console.log("döngü (anahtar istemeyen):", JSON.stringify(dongu));
-  const anahtarli = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, async () => prisma.sale.count());
+  /* K337 3. adım (15.10.2026): «anahtar isteyen» döngü kalktı — her firma koşar. */
+  const anahtarli = await zamanlanmisIsDongusu(async () => prisma.sale.count());
   console.log("döngü (anahtar isteyen):", JSON.stringify(anahtarli));
 
   const secilen = await betikFirmasi(adres);

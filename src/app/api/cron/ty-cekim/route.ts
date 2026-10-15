@@ -2,6 +2,7 @@
 import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
 import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
+import { hesapSonuclariKirmiziMi, kanalHesaplariylaKos } from "@/lib/kanal-anahtari/hesaplar";
 
 import { tyCekimKos } from "../../../../../scripts/canli-ty-ice-aktar";
 
@@ -59,10 +60,12 @@ export async function GET(istek: NextRequest) {
    * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
    * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
    */
-  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, (companyId) =>
-    tyCekimKos({ yaz: true, gun: 7, dbAdresi, companyId }),
+  /* K337 3. adım: her firmanın Trendyol SATIŞ hesapları, her biri KENDİ anahtarıyla
+     (`lib/kanal-anahtari/hesaplar.ts`). Anahtarı olmayan hesap «ATLANDI · ANAHTAR_YOK». */
+  const sonuc = await zamanlanmisIsDongusu((companyId) =>
+    kanalHesaplariylaKos("TRENDYOL", (_hesap, kimlik) => tyCekimKos({ yaz: true, gun: 7, dbAdresi, companyId, anahtar: { kimlik } })),
   );
   /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek
      olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü. */
-  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (o) => "atlandi" in o) });
+  return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, (h) => hesapSonuclariKirmiziMi(h, (o) => "atlandi" in o)) });
 }

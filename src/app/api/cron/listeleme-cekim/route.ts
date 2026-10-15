@@ -2,6 +2,7 @@
 import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
 import { donguDurumKodu, zamanlanmisIsDongusu } from "@/lib/firma-dongusu";
+import { hesapSonuclariKirmiziMi, kanalHesaplariylaKos } from "@/lib/kanal-anahtari/hesaplar";
 
 import { hbListelemeCekimKos } from "../../../../../scripts/canli-hb-listeleme-yaz";
 import { tyListelemeCekimKosGuvenli } from "../../../../../scripts/canli-kanal-listeleme-yaz";
@@ -83,17 +84,20 @@ export async function GET(istek: NextRequest) {
    * bugün tek takım olduğu için yalnız ANAHTAR FİRMASINDA koşar; ötekiler
    * «ATLANDI · anahtar tanımlı değil» yazar. Her firma kendi bağlamında koşar.
    */
-  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: true }, async (companyId) => {
-  void companyId; // listeleme gövdeleri ortak istemciyi kullanır; firma bağlamdan gelir
+  /* K337 3. adım: firma bağlamdan gelir (süzgeçli istemci); her kanalda o firmanın
+     SATIŞ hesapları KENDİ anahtarlarıyla dolaşılır. */
+  const sonuc = await zamanlanmisIsDongusu(async () => {
   const tyBasladi = Date.now();
-  const ty = await tyListelemeCekimKosGuvenli({ yaz: true, dbAdresi });
+  const ty = await kanalHesaplariylaKos("TRENDYOL", (_hesap, kimlik) => tyListelemeCekimKosGuvenli({ yaz: true, dbAdresi, anahtar: { kimlik } }));
   const tyMs = Date.now() - tyBasladi;
 
   const hbBasladi = Date.now();
-  const hb = await hbListelemeCekimKos({ yaz: true, dbAdresi }).catch((e: unknown) => ({
-    atlandi: "COKTU" as const,
-    mesaj: (e instanceof Error ? (e.stack ?? e.message) : String(e)).replace(/\r?\n/g, " "),
-  }));
+  const hb = await kanalHesaplariylaKos("HEPSIBURADA", (_hesap, kimlik) =>
+    hbListelemeCekimKos({ yaz: true, dbAdresi, anahtar: { kimlik } }).catch((e: unknown) => ({
+      atlandi: "COKTU" as const,
+      mesaj: (e instanceof Error ? (e.stack ?? e.message) : String(e)).replace(/\r?\n/g, " "),
+    })),
+  );
   const hbMs = Date.now() - hbBasladi;
 
   /**
@@ -102,9 +106,13 @@ export async function GET(istek: NextRequest) {
    * tetikleyicinin gördüğü tek şey durum kodudur.
    */
   const n11Basladi = Date.now();
-  const n11 = await n11ListelemeCekimKosGuvenli({ yaz: true, dbAdresi });
+  const n11 = await kanalHesaplariylaKos("N11", (_hesap, kimlik) => n11ListelemeCekimKosGuvenli({ yaz: true, dbAdresi, anahtar: { kimlik } }));
   const n11Ms = Date.now() - n11Basladi;
-  const dusen = [ty, hb, n11].filter((o) => "atlandi" in o).length;
+  const dusen = [
+    hesapSonuclariKirmiziMi(ty, (o) => "atlandi" in o),
+    hesapSonuclariKirmiziMi(hb, (o) => "atlandi" in o),
+    hesapSonuclariKirmiziMi(n11, (o) => "atlandi" in o),
+  ].filter(Boolean).length;
   /**
    * ⚠ SÜRELER CEVAPTA — tavanı bir daha TAHMİN etmemek için. İlk gerçek
    * tetikte 60 sn yetmedi ve elimizde hiçbir sayı yoktu; 504 zamanlama

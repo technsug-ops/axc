@@ -1,5 +1,6 @@
 /** BETIK SINIFI: SUREKLI. Kanala YAZMAZ (GET); deftere yalniz --yaz ile yazar. */
 
+import { anahtariCoz, type AnahtarKaynagi, type N11Kimlik } from "../src/lib/kanal-anahtari/kimlik";
 import { kodKosuluToplu } from "../src/lib/varyant-arama-kurali";
 import { desiSecimi } from "../src/lib/kargo-kaynagi";
 import { n11KargoMaliyeti } from "../src/lib/n11-kargo-tarifesi";
@@ -176,6 +177,8 @@ export type N11CekimOzeti = {
 };
 
 export async function n11CekimKos(ayar: {
+  /** K337 3. adım: anahtar KAYNAĞI zorunlu — hesabın kendi anahtarı ya da (yalnız komut satırı) "ORTAM". */
+  anahtar: AnahtarKaynagi<N11Kimlik>;
   yaz: boolean;
   /** K166: sunucu ucundan DATABASE_URL; betikte boş → dosyadan. */
   dbAdresi?: string;
@@ -192,7 +195,7 @@ export async function n11CekimKos(ayar: {
     console.log("");
     return { atlandi: "BEKCI_TURU" };
   }
-  const k = kimlikOku();
+  const k = anahtariCoz(ayar.anahtar, kimlikOku);
   if (!k) {
     console.log("\n⛔ N11 ANAHTARLARI EKSİK (env ya da .env.canli)\n");
     process.exitCode = 1;
@@ -863,7 +866,7 @@ const dogrudanKosuluyor = (() => {
 })();
 
 if (dogrudanKosuluyor) {
-  betikFirmasiylaKos(undefined, (companyId) => n11CekimKos({ yaz: YAZ, companyId })).catch((e) => {
+  betikFirmasiylaKos(undefined, (companyId) => n11CekimKos({ yaz: YAZ, companyId, anahtar: "ORTAM" })).catch((e) => {
     console.error(e);
     process.exit(1);
   });

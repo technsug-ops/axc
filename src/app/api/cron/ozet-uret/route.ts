@@ -39,6 +39,6 @@ export async function GET(istek: NextRequest) {
    * anahtarı istemez). Özetin kendi «atlandı»sı (bugünkü zaten yayında) bir
    * hata değildir — eskisi gibi 200.
    */
-  const sonuc = await zamanlanmisIsDongusu({ kanalAnahtariGerekir: false }, () => ozetUretKos());
+  const sonuc = await zamanlanmisIsDongusu(() => ozetUretKos());
   return NextResponse.json(sonuc, { status: donguDurumKodu(sonuc, () => false) });
 }

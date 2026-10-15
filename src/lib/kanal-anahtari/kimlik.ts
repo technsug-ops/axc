@@ -43,6 +43,21 @@ export const KIMLIK_ALANLARI: Record<KanalKodu, readonly { ad: string; gizli: bo
 
 export const HB_ORTAMLARI = ["CANLI", "TEST"] as const;
 
+/**
+ * ÇAĞRININ ANAHTAR KAYNAĞI — K337 3. adım (15.10.2026). Pazaryerine giden her
+ * gövde bunu ZORUNLU alır; unutulursa kod derlenmez, sessizce ortama düşmez.
+ *   · `{ kimlik }` — satış hesabının KENDİ anahtarı (`hesaplar.ts` verir);
+ *     zamanlanmış işler ve ekran eylemleri YALNIZ bunu kullanır.
+ *   · `"ORTAM"`    — tek takım ortam anahtarı; YALNIZ komut satırından elle
+ *     koşulan betikler için. `src/` altında yazılamaz (bekçi).
+ */
+export type AnahtarKaynagi<K> = "ORTAM" | { kimlik: K };
+
+/** Kaynaktan kimliği çözer. `"ORTAM"` → verilen okuyucu (betiğin `kimlikOku`'su). */
+export function anahtariCoz<K>(kaynak: AnahtarKaynagi<K>, ortamdan: () => K | null): K | null {
+  return kaynak === "ORTAM" ? ortamdan() : kaynak.kimlik;
+}
+
 export function desteklenenKanalMi(kod: string): kod is KanalKodu {
   return (DESTEKLENEN_KANALLAR as readonly string[]).includes(kod);
 }
