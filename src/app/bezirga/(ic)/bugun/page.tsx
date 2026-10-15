@@ -43,13 +43,13 @@ const SATIR: Record<FirmaEtiketi, "bad" | "warn" | "acc"> = {
   AKTIF: "acc",
 };
 
-/** «Firmalar nerede?» parçaları — referans COLORS: aktif teal · risk bad · kurulum ochre · uyuyan gri · kilitli koyu. Her firma TAM BİRİNE düşer (bekçi ölçer). */
+/** «Firmalar nerede?» parçaları — referans COLORS (15.10.2026 marka kobaltına çevrildi): aktif vurgu (kobalt) · risk bad · kurulum ochre · uyuyan gri · kilitli koyu. Her firma TAM BİRİNE düşer (bekçi ölçer). */
 const DURAK: { etiket: FirmaEtiketi; renk: string }[] = [
-  { etiket: "AKTIF", renk: "var(--teal)" },
+  { etiket: "AKTIF", renk: "var(--vurgu)" },
   { etiket: "UYARIDA", renk: "var(--ochre)" },
   { etiket: "UYARI_DOLDU", renk: "var(--bad)" },
-  { etiket: "ASKIDA", renk: "#5B5552" },
-  { etiket: "YARIM_KURULUM", renk: "#B9B3AC" },
+  { etiket: "ASKIDA", renk: "#4A5562" },
+  { etiket: "YARIM_KURULUM", renk: "#B4BCC8" },
 ];
 
 /**
