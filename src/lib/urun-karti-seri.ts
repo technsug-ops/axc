@@ -41,14 +41,41 @@ export function degisimYuzdesi(simdi: number, once: number): number | null {
 }
 
 /**
- * STOK KAÇ GÜN YETER — eldeki ÷ (dönemde satılan ÷ dönemin gün sayısı).
+ * STOK KAÇ GÜN YETER — eldeki ÷ (dönemde satılan ÷ ürünün dönemde STOKTA olduğu gün).
  * Dönemde hiç satış yoksa hız ölçülemez → `null` (ekran «satış yok» der);
  * stok yoksa 0.
+ *
+ * ⛔ PAYDA DÖNEMİN GÜN SAYISI DEĞİL (kullanıcı tespiti 15.10.2026): «bu ürün 5–6 gün
+ * önce envantere girdi, bugün 1 satış oldu — 150 gün nasıl çıkıyor, kafadan mı
+ * atıyorsun?» Payda 30 günlük dönemdi; ürün o günlerin yalnız son 3–6'sında rafta
+ * duruyordu. Rafta olmadığı gün «satmadığı gün» sayılıyor ve yeni giren her ürün
+ * olduğundan 5–10 kat YAVAŞ görünüyordu (Tefal: 30 gün → 3 gün · eldeki 5: 150 → ~30).
+ * Hız, malın SATILABİLİR olduğu günlerden ölçülür (`stoktaGunSayisi`).
  */
-export function stokYeterGun(eldeki: number, satilanAdet: number, gunSayisi: number): number | null {
+export function stokYeterGun(eldeki: number, satilanAdet: number, stoktaGun: number): number | null {
   if (eldeki <= 0) return 0;
-  if (satilanAdet <= 0 || gunSayisi <= 0) return null;
-  return Math.round(eldeki / (satilanAdet / gunSayisi));
+  if (satilanAdet <= 0 || stoktaGun <= 0) return null;
+  return Math.round(eldeki / (satilanAdet / stoktaGun));
+}
+
+/**
+ * DÖNEMDE STOKTA OLDUĞU GÜN — günün BAŞINDA stok varsa, gün içinde stok GİRDİYSE
+ * (gün sonu > 0) ya da o gün SATIŞ olduysa o gün sayılır. Üçüncüsü gereklidir: aynı
+ * gün girip aynı gün tükenen mal (gün sonu 0) o gün rafta DURMUŞTUR.
+ * `baslangicStok` = dönemin ilk gününden ÖNCEKİ stok (ilk günün başı).
+ */
+export function stoktaGunSayisi(
+  baslangicStok: number,
+  seri: readonly { gun: string; stok: number }[],
+  satisGunleri: ReadonlySet<string>,
+): number {
+  let gunBasi = baslangicStok;
+  let sayi = 0;
+  for (const g of seri) {
+    if (gunBasi > 0 || g.stok > 0 || satisGunleri.has(g.gun)) sayi++;
+    gunBasi = g.stok;
+  }
+  return sayi;
 }
 
 /**
@@ -97,21 +124,35 @@ export function karMerdiveni(kalemler: readonly KartKalemi[]): {
   kdv: number;
   net2: number;
   dahilKalem: number;
+  /** Merdivene giren kalemlerin ADEDİ — adet başı kazancın paydası (aynı küme). */
+  dahilAdet: number;
   haricKalem: number;
 } {
-  let ciro = 0, maliyet = 0, net1 = 0, net2 = 0, dahil = 0, haric = 0;
+  let ciro = 0, maliyet = 0, net1 = 0, net2 = 0, dahil = 0, dahilAdet = 0, haric = 0;
   for (const k of kalemler) {
     if (k.maliyet === null || k.net1 === null || k.net2 === null) {
       haric++;
       continue;
     }
     dahil++;
+    dahilAdet += k.adet;
     ciro += k.ciro;
     maliyet += k.maliyet;
     net1 += k.net1;
     net2 += k.net2;
   }
-  return { ciro, maliyet, kesinti: ciro - maliyet - net1, net1, kdv: net1 - net2, net2, dahilKalem: dahil, haricKalem: haric };
+  return { ciro, maliyet, kesinti: ciro - maliyet - net1, net1, kdv: net1 - net2, net2, dahilKalem: dahil, dahilAdet, haricKalem: haric };
+}
+
+/**
+ * ADET BAŞI KAZANÇ (ortalama) — kullanıcı isteği 15.10.2026. Merdivenin NET'i ÷
+ * merdivene giren ADET: pay ve payda AYNI kalemlerden (kârı hesaplanamayan kalem
+ * ikisine de girmez — yoksa kâr eksik, adet tam bölünür ve ortalama sessizce düşer).
+ * Adet yoksa `null` (sıfıra bölünmez).
+ */
+export function adetBasinaKazanc(m: { net1: number; net2: number; dahilAdet: number }): { net1: number; net2: number } | null {
+  if (m.dahilAdet <= 0) return null;
+  return { net1: m.net1 / m.dahilAdet, net2: m.net2 / m.dahilAdet };
 }
 
 export type GunlukNokta = { gun: string; ciro: number; net2: number | null; adet: number; iade: number };

@@ -125,12 +125,14 @@ export const ALT_OGELER: readonly { anahtar: string; href: string; icon: LucideI
 ];
 
 /**
- * TELEFON ALT BARI — beş sekme, sıra sabit. Depoda birincil cihaz telefon
- * (anayasa: mobil eşit vatandaş) ve barkod her yerde (İlke #7); «Okut» bu
- * yüzden ortada. Anahtarlar `MENU_ADRESLERI` ve `MENU_IKONLARI` ile aynı;
- * «menu» tek istisna — kendi sayfası (`/menu`), katalogda değil.
+ * TELEFON ALT BARI — beş sekme, sıra sabit. Anahtarlar `MENU_ADRESLERI` ve
+ * `MENU_IKONLARI` ile aynı; «menu» tek istisna — kendi sayfası (`/menu`).
+ * ⭐ 15.10.2026 kullanıcı kararı: ortadaki sekme «Okut» → «Paketle» (günlük işin
+ * en sık eylemi paketleme). ESKİ GEREKÇE: «depoda birincil cihaz telefon, barkod her
+ * yerde (İlke #7) — Okut bu yüzden ortada». Okut KAYBOLMADI: panelin hızlı işlemlerinde
+ * (`HIZLI_ISLEMLER`) ve menüde duruyor; Paketle ekranı da kendi içinde barkod okur.
  */
-export const ALT_CUBUK_SEKMELERI = ["panel", "satislar", "okut", "alimlar", "menu"] as const;
+export const ALT_CUBUK_SEKMELERI = ["panel", "satislar", "paketle", "alimlar", "menu"] as const;
 export type AltCubukSekmesi = (typeof ALT_CUBUK_SEKMELERI)[number];
 
 /** Panelin «Hızlı işlemler» satırı — en sık yapılan dört iş (İlke #9). */

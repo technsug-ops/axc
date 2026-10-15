@@ -6992,8 +6992,12 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
 {
   const yorumsuz = (m: string) => m.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ");
   /* ── DEGER TESTLERI ── */
-  kontrol("alt bar 5 sekme, Okut ORTADA (depoda ilk hareket)",
-    ALT_CUBUK_SEKMELERI.length === 5 && ALT_CUBUK_SEKMELERI[2] === "okut" && ALT_CUBUK_SEKMELERI[4] === "menu");
+  /* 15.10.2026 kullanıcı kararı: ortadaki sekme Okut → Paketle (ölçüt eskidi, güncellendi). Okut
+     hızlı işlemlerde KALIR — o da aşağıda ölçülür (kaybolmasın). */
+  kontrol("alt bar 5 sekme, Paketle ORTADA (kullanıcı kararı 15.10.2026)",
+    ALT_CUBUK_SEKMELERI.length === 5 && ALT_CUBUK_SEKMELERI[2] === "paketle" && ALT_CUBUK_SEKMELERI[4] === "menu");
+  kontrol("  ...Okut alt bardan çıktı ama KAYBOLMADI: hızlı işlemlerde duruyor",
+    (HIZLI_ISLEMLER as readonly string[]).includes("okut") && !(ALT_CUBUK_SEKMELERI as readonly string[]).includes("okut"));
   kontrol("sekme etkinligi: kok YALNIZ tam eslesir",
     sekmeAktifMi("/", "/") && !sekmeAktifMi("/satislar", "/"));
   kontrol("  ...alt yol etkin, benzer ad DEGIL (/satislar/1 evet, /satislarx hayir)",

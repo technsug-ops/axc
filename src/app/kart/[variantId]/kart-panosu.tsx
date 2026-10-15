@@ -13,6 +13,7 @@ import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
 import { DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { SIPARIS_SATIR_TAVANI, type KartAnalizi } from "@/lib/urun-karti-analiz";
+import { adetBasinaKazanc } from "@/lib/urun-karti-seri";
 
 import { DurumHalkasi, GunlukGrafik, MiniCizgi, StokFiyatGrafigi } from "./kart-grafikleri";
 import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
@@ -200,6 +201,7 @@ export async function OzetKutulari({
   const m = a.merdiven;
   const yuzde = (pay: number) => (m && m.ciro > 0 ? `%${bicim.sayi(Math.round((pay / m.ciro) * 1000) / 10)}` : "");
   const yeterOrani = a.stokYeterGun === null ? null : Math.min(1, a.stokYeterGun / Math.max(1, a.gunSayisi));
+  const adetBasi = m === null || m.dahilKalem === 0 ? null : adetBasinaKazanc(m);
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div className="space-y-3 rounded-lg border p-4">
@@ -263,6 +265,18 @@ export async function OzetKutulari({
             <dd className={`text-right font-semibold tabular-nums ${DURUM_YAZISI[karDurumu(m.net2)]}`}>{bicim.para(m.net2, para)}</dd>
           </dl>
         )}
+        {karGorunur && adetBasi !== null ? (
+          /* ADET BAŞI KAZANÇ (15.10.2026) — merdivenle AYNI kalemlerden (`adetBasinaKazanc`). */
+          <div className="space-y-1 border-t pt-2 text-xs">
+            <div className="text-muted-foreground text-[11px]">{t("adetBasiBaslik", { adet: m?.dahilAdet ?? 0 })}</div>
+            <dl className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1">
+              <dt>{t("adetBasiNet1")}</dt>
+              <dd className={`text-right font-semibold tabular-nums ${DURUM_YAZISI[karDurumu(adetBasi.net1)]}`}>{bicim.para(adetBasi.net1, para)}</dd>
+              <dt>{t("adetBasiNet2")}</dt>
+              <dd className={`text-right font-semibold tabular-nums ${DURUM_YAZISI[karDurumu(adetBasi.net2)]}`}>{bicim.para(adetBasi.net2, para)}</dd>
+            </dl>
+          </div>
+        ) : null}
         {karGorunur && m !== null && m.haricKalem > 0 ? (
           <p className="text-muted-foreground text-[11px]">{t("merdivenHaric", { sayi: m.haricKalem })}</p>
         ) : null}
@@ -279,7 +293,14 @@ export async function OzetKutulari({
           <DurumHalkasi
             oran={yeterOrani}
             merkez={a.stokYeterGun === null ? "?" : t("yeterGun", { gun: a.stokYeterGun })}
-            alt={a.eldekiAdet <= 0 ? t("stokBitti") : a.stokYeterGun === null ? t("yeterSatisYok") : ""}
+            alt={
+              a.eldekiAdet <= 0
+                ? t("stokBitti")
+                : a.stokYeterGun === null
+                  ? t("yeterSatisYok")
+                  : /* Taban ekranda yazar (15.10.2026): «kafadan mı» sorusunun cevabı rakamın yanında. */
+                    t("yeterTaban", { gun: a.stoktaGun, adet: a.adet })
+            }
             renk="var(--se-vurgu)"
           />
         </div>

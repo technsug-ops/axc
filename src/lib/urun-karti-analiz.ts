@@ -14,6 +14,7 @@ import {
   kanalFiyatSerileri,
   karMerdiveni,
   oran,
+  stoktaGunSayisi,
   stokYeterGun,
   type KartKalemi,
 } from "@/lib/urun-karti-seri";
@@ -157,6 +158,17 @@ export async function kartAnalizi(variantId: string, pencere: Pencere, karGorunu
   const iadeAdet = iadeler.reduce((t, i) => t + i.adet, 0);
   const eldekiAdet = eldeki._sum.quantityDelta ?? 0;
   const merdiven = karGorunur ? karMerdiveni(kalemler) : null;
+  const stokSerisi = gunlukStok(
+    stokOnce._sum.quantityDelta ?? 0,
+    stokHareket.map((h) => ({ gun: gunAnahtari(h.occurredAt), delta: h.quantityDelta })),
+    gunler,
+  );
+  /* Hız payı: ürünün dönemde RAFTA olduğu günler (bkz. `stokYeterGun` gerekçesi, 15.10.2026). */
+  const stoktaGun = stoktaGunSayisi(
+    stokOnce._sum.quantityDelta ?? 0,
+    stokSerisi,
+    new Set(kalemler.filter((k) => k.adet > 0).map((k) => k.gun)),
+  );
 
   /* Kardeş varyantlar — dönem satışı ve eldeki stok. */
   const kardesIdler = kardesler.map((k) => k.id);
@@ -187,15 +199,12 @@ export async function kartAnalizi(variantId: string, pencere: Pencere, karGorunu
     iadeOrani: oran(iadeAdet, adet),
     ciroPayi: oran(ciro, firmaCiro),
     eldekiAdet,
-    stokYeterGun: stokYeterGun(eldekiAdet, adet, gunler.length),
+    stokYeterGun: stokYeterGun(eldekiAdet, adet, stoktaGun),
+    stoktaGun,
     ortalamaFiyat: adet > 0 ? ciro / adet : null,
     merdiven,
     gunluk: gunlukSeri(kalemler, iadeler, gunler).map((n) => (karGorunur ? n : { ...n, net2: null })),
-    stokSerisi: gunlukStok(
-      stokOnce._sum.quantityDelta ?? 0,
-      stokHareket.map((h) => ({ gun: gunAnahtari(h.occurredAt), delta: h.quantityDelta })),
-      gunler,
-    ),
+    stokSerisi,
     kanallar: dagilim(kalemler, "kanal"),
     hesaplar: dagilim(kalemler, "hesap"),
     kanalFiyatlari: kanalFiyatSerileri(kalemler, gunler),
