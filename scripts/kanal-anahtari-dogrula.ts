@@ -339,6 +339,56 @@ async function main() {
     kontrol("  ...düğme YALNIZ bağlı hesapta, sonuç «son işlem» durumuna yazılır",
       /\{hesap\.bagli \? \(\s*<form action=\{deneAction\}>/.test(ekranB) && /const s = await kanalAnahtariDene\(onceki, form\);\s*setSon\(s\);/.test(ekranB));
   }
+  {
+    /* ANAHTAR TAŞIMA PLANI — K337 3. adım ③ (15.10.2026; geçiş günü BİR KEZ). */
+    const T = await import("../src/lib/kanal-anahtari/tasima");
+    const ty = { saticiId: "870249", key: "TYKEY-gercek", secret: "TYSECRET-abcd" };
+    const hb = { merchantId: "11111111-2222-3333-4444-555555555555", key: "HBKEY-wxyz", ortam: "CANLI", developer: "dev" };
+    const n11 = { appKey: "N11APP", appSecret: "N11SECRET-9999" };
+    const ortam = { TRENDYOL: ty, HEPSIBURADA: hb, N11: n11 };
+    type M = Parameters<typeof T.tasimaPlani>[1][number]["mevcut"];
+    const yok: M = { tur: "YOK" };
+    const h = (id: string, kanal: "TRENDYOL" | "HEPSIBURADA" | "N11", ext: string | null, api: string | null, mevcut: M = yok) => ({ id, name: id, kanal, externalId: ext, apiHesapKimligi: api, mevcut });
+    const temel = [h("ty", "TRENDYOL", "870249", null), h("ty-baska", "TRENDYOL", "999", null), h("hb", "HEPSIBURADA", "7000222505", hb.merchantId), h("n11", "N11", "n", null)];
+    const p1 = T.tasimaPlani(ortam, temel, { uzerine: false });
+    const d = (p: typeof p1) => p.map((k) => `${k.kanal}:${k.durum}:${k.hesap?.id ?? "-"}`).join(" ");
+    kontrol("taşıma: hesap KİMLİKLE bulunur (TY satıcı no · HB Mağaza ID · N11 tek hesap), boş hesaba YAZILACAK",
+      d(p1) === "TRENDYOL:YAZILACAK:ty HEPSIBURADA:YAZILACAK:hb N11:YAZILACAK:n11", d(p1));
+    kontrol("  ...yazılacak alanlar ortamdaki kimliğin AYNISI, son 4 gizli alandan (TY secret · HB key · N11 appSecret)",
+      T.ayniKimlik(p1[0]!.ham!, ty) && T.ayniKimlik(p1[1]!.ham!, hb) && p1.map((k) => k.sonDort).join(",") === "abcd,wxyz,9999", p1.map((k) => k.sonDort));
+    kontrol("  ...plan yazılabilir", T.tasimaYazilabilirMi(p1).yazilabilir);
+    const ayni = T.tasimaPlani(ortam, [h("ty", "TRENDYOL", "870249", null, { tur: "VAR", kimlik: { kanal: "TRENDYOL", kimlik: ty } }), ...temel.slice(2)], { uzerine: false });
+    kontrol("  ...hesapta AYNI anahtar → AYNI (atlanır; ikinci koşum zararsız)", ayni[0]!.durum === "AYNI" && ayni[0]!.ham === null);
+    const farkliM: M = { tur: "VAR", kimlik: { kanal: "TRENDYOL", kimlik: { ...ty, secret: "ekrandan-girilmis" } } };
+    const farkli = T.tasimaPlani(ortam, [h("ty", "TRENDYOL", "870249", null, farkliM), ...temel.slice(2)], { uzerine: false });
+    kontrol("  ...hesapta FARKLI anahtar → DURDU (üstüne YAZMAZ) ve plan BÜTÜNÜYLE yazılamaz (yarım taşıma yok)",
+      farkli[0]!.durum === "FARKLI_DURDU" && farkli[0]!.ham === null && !T.tasimaYazilabilirMi(farkli).yazilabilir && farkli[1]!.durum === "YAZILACAK");
+    const uzerine = T.tasimaPlani(ortam, [h("ty", "TRENDYOL", "870249", null, farkliM), ...temel.slice(2)], { uzerine: true });
+    kontrol("  ...--uzerine AÇIKÇA istenirse FARKLI'nın üstüne yazılır", uzerine[0]!.durum === "USTUNE_YAZILACAK" && T.tasimaYazilabilirMi(uzerine).yazilabilir);
+    const acilamadi = T.tasimaPlani(ortam, [h("ty", "TRENDYOL", "870249", null, { tur: "ACILAMADI" }), ...temel.slice(2)], { uzerine: false });
+    kontrol("  ...açılamayan mevcut anahtar → DURDU (sır değişmiş olabilir; körlemesine ezilmez)", acilamadi[0]!.durum === "MEVCUT_ACILAMADI_DURDU" && !T.tasimaYazilabilirMi(acilamadi).yazilabilir);
+    const ikiN11 = T.tasimaPlani(ortam, [...temel, h("n11-2", "N11", null, null)], { uzerine: false });
+    kontrol("  ...iki N11 satış hesabı → HESAP_BELIRSIZ («ilkini seç» yok)", ikiN11[2]!.durum === "HESAP_BELIRSIZ" && !T.tasimaYazilabilirMi(ikiN11).yazilabilir);
+    const tyYok = T.tasimaPlani(ortam, temel.filter((x) => x.id !== "ty"), { uzerine: false });
+    kontrol("  ...satıcı no'su tutan TY hesabı yok → HESAP_YOK (başka TY hesabına YAZILMAZ)", tyYok[0]!.durum === "HESAP_YOK" && tyYok[0]!.hesap === null);
+    const bosOrtam = T.tasimaPlani({ TRENDYOL: null, HEPSIBURADA: null, N11: null }, temel, { uzerine: false });
+    kontrol("  ...ortamda anahtar yok → ORTAMDA_YOK, yazılacak bir şey yok", bosOrtam.every((k) => k.durum === "ORTAMDA_YOK") && !T.tasimaYazilabilirMi(bosOrtam).yazilabilir && T.tasimaYazilabilirMi(bosOrtam).durduran.length === 0);
+    const bozukOrtam = T.tasimaPlani({ ...ortam, TRENDYOL: { ...ty, key: "bosluk var" } }, temel, { uzerine: false });
+    kontrol("  ...ortamdaki değer biçimce bozuk → ORTAM_GECERSIZ (depo kapısıyla aynı ölçüt)", bozukOrtam[0]!.durum === "ORTAM_GECERSIZ" && !T.tasimaYazilabilirMi(bozukOrtam).yazilabilir);
+    const geri = T.geriAlmaKumesi(ortam, [h("ty", "TRENDYOL", "870249", null, { tur: "VAR", kimlik: { kanal: "TRENDYOL", kimlik: ty } }), h("ty-baska", "TRENDYOL", "999", null, farkliM), h("hb", "HEPSIBURADA", null, hb.merchantId)]);
+    kontrol("geri alma kümesi YENİDEN HESAPLANIR: yalnız anahtarı ortamdakiyle BİREBİR aynı hesap", geri.map((x) => x.id).join(",") === "ty", geri);
+    const betik = yorumsuz(kaynakOku("scripts/canli-anahtar-tasi.ts"));
+    const isaret = betik.indexOf('if (DENEME) process.env.DENEME_ORTAMI = "1";');
+    const istemci = betik.indexOf('await import("./ty/istemci")');
+    kontrol("taşıma betiği: deneme kipinde deneme İŞARETİ istemcilerden ÖNCE konur (gerçek anahtar deneme veritabanına gidemez)", isaret >= 0 && istemci >= 0 && isaret < istemci);
+    const kapi = betik.indexOf("if (!karar.yazilabilir) {");
+    const goruntu = betik.indexOf("writeFileSync(goruntu,");
+    const yazim = betik.indexOf("await D.anahtarKaydet(");
+    kontrol("  ...sıra: plan kapısı → anlık görüntü → yazım (hepsi var)", kapi >= 0 && goruntu >= 0 && yazim >= 0 && kapi < goruntu && goruntu < yazim);
+    kontrol("  ...yazılan her anahtar geri açılıp ortamdakiyle BİREBİR karşılaştırılır", /const geri = await D\.kayitliKimligiAc\(k\.hesap\.id\);\s*const tutuyor = s\.durum === "TAMAM" && geri\.durum === "TAMAM" && T\.ayniKimlik\(geri\.kimlik\.kimlik, k\.ham\);/.test(betik));
+    kontrol("  ...varsayılan KURU; yazım --yaz ve firmanın üyesi --yapan ister", /const YAZ = process\.argv\.includes\("--yaz"\);/.test(betik) && /if \(!YAZ\) return console\.log\("\\n  KURU/.test(betik) && /prisma\.userCompanyRole\.findFirst\(\{ where: \{ companyId, user: \{ email: eposta \} \}/.test(betik));
+    kontrol("  ...betik sınıfı beyanlı (TEK_SEFERLIK + gerekçe)", /BETIK SINIFI: TEK_SEFERLIK — .{20,}/.test(kaynakOku("scripts/canli-anahtar-tasi.ts")));
+  }
   kosanBolumler.push("hesap");
 
   await sistemPrisma.$disconnect();
