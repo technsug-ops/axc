@@ -139,6 +139,9 @@ export function gercekCakismaGruplari(npmAdlari: string[]): string[][] {
  * KIRMIZI yanar.
  */
 export const SIRALI_MUTASYON_GRUP: readonly string[] = [
+  /* 15.10.2026: gece turu GitHub geçişi — `scripts/gece-turu.ts`i tur-secimi denetimiyle birlikte bozar. */
+  "gece-turu-sonuc-mutasyon:kontrol",
+  "tur-secimi-mutasyon:kontrol",
   /* 07.10.2026: ürün listesi + kanal yazıcıları + N11 betiği — n11-listeleme,
      kdv-uyusmazligi ve vitrin denetimleriyle aynı dosyaları bozar. */
   "ilan-adresi-mutasyon:kontrol",

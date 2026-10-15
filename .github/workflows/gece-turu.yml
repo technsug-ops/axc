@@ -1,0 +1,81 @@
+# ============================================================
+#  GECE BEKCI TURU — GITHUB'DA (kullanici karari 15.10.2026)
+# ------------------------------------------------------------
+#  Kullanici sordu: "bu neden bilgisayarima bagli" → tur bilgisayardan
+#  (Gorev Zamanlayici, scripts/gece-turu.cmd) GitHub'in sunucusuna tasindi.
+#  15.10 00:30'da bilgisayarin interneti yoktu ve tur KACTI.
+#
+#  · Ne olcer: origin/main (canliya giden kod) — TAM tur (scripts/bekci.ts,
+#    TAM_TUR=1). Kirmizi mutasyon denetiminde git bisect ile bozan push bulunur.
+#  · Veritabani: is icindeki BOS MySQL 8.4 (bilgisayardaki test DB'siyle ayni
+#    surum). Canli veriye DOKUNULMAZ. Ornek veri: scripts/gece-turu-tohum.ts.
+#  · Sonuc: canliya /api/cron/gece-turu-sonuc ucuna POST (CRON_SECRET) —
+#    panel cani ve /ayarlar/gece-turu ayni kaydi okur. Gonderilemezse is
+#    KIRMIZI biter.
+#  · Zaman: GitHub zamanlamasi "elinden gelince" (olculdu: 2-6 saat gecikebilir,
+#    bkz. ty-cekim.yml). Ekrandaki gecikme esigi 36 saat — bu gecikmeyi tasir.
+#  · SIRLAR: depo Secrets → CRON_SECRET (oteki cron isleriyle AYNI deger).
+#    Canli adres oteki cron isleriyle ayni (axc-seven.vercel.app).
+# ============================================================
+name: Gece bekci turu
+
+on:
+  schedule:
+    - cron: "30 21 * * *"   # 21:30 UTC = 00:30 Istanbul
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: gece-turu
+  cancel-in-progress: false
+
+jobs:
+  tur:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: gece
+          MYSQL_DATABASE: axcali_gece
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pgece"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    env:
+      DATABASE_URL: mysql://root:gece@127.0.0.1:3306/axcali_gece
+      TZ: Europe/Istanbul
+      CANLI_ADRES: https://axc-seven.vercel.app
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Son yesil gece (GitHub kaydindan)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(gh api "repos/${{ github.repository }}/actions/workflows/gece-turu.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""' || true)
+          echo "SON_YESIL_SHA=$sha" >> "$GITHUB_ENV"
+          echo "son yesil: ${sha:-yok}"
+      - name: Bagimliliklar
+        run: npm ci --no-audit --no-fund
+      - name: Gece turu
+        run: npx tsx scripts/gece-turu.ts
+      - name: Gunluk
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gece-turu-gunluk
+          path: raporlar/
+          retention-days: 30
+          if-no-files-found: warn

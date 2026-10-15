@@ -29,11 +29,23 @@ import { canliYapilandirma } from "./canli-ortak";
  *  ekranı bunu okur). Hazırlık düşse bile iz yazılır — kaçan gece GÖRÜNÜR.
  *
  *  BETIK SINIFI: SUREKLI
+ *
+ *  ⭐ GITHUB KİPİ (kullanıcı kararı 15.10.2026: «bu neden bilgisayarıma bağlı»
+ *  → GitHub'a taşı). `GITHUB_ACTIONS=true` iken (`.github/workflows/gece-turu.yml`):
+ *   · ayrı çalışma ağacı YOK — GitHub'ın çektiği kopyada (`origin/main`) koşar;
+ *   · veritabanı iş içindeki BOŞ MySQL servisi (canlı veri yok) — tohum verisi
+ *     `scripts/gece-turu-tohum.ts` ile kurulur ki veri isteyen bekçi ATLAMASIN;
+ *   · son yeşil sürüm GitHub'ın kendi kaydından (`SON_YESIL_SHA`, iş adımı);
+ *   · iz canlıya DOĞRUDAN yazılamaz (KAS IP listesi) → `/api/cron/gece-turu-sonuc`
+ *     POST, `CRON_SECRET`. Gönderilemezse iş KIRMIZI biter (GitHub e-postası) ve
+ *     ekrandaki «36 saat» uyarısı da kaçışı gösterir.
+ *  Bilgisayar kipi AYNEN durur (Görev Zamanlayıcı) — geçişte ikisi birlikte koşar.
  * ============================================================================
  */
 
+const GITHUB = process.env.GITHUB_ACTIONS === "true";
 const KOK = process.cwd();
-const GECE = resolve(KOK, "..", "axcali-gece");
+const GECE = GITHUB ? KOK : resolve(KOK, "..", "axcali-gece");
 const RAPOR = join(KOK, "raporlar");
 const DURUM = join(RAPOR, "gece-turu-durum.json");
 
@@ -46,6 +58,11 @@ function kos(komut: string, cwd: string, ek: Record<string, string> = {}) {
 }
 
 function durumOku(): Durum {
+  /* GitHub'da kalıcı dosya yok: son yeşil sürüm iş adımının GitHub kaydından okuduğu değer. */
+  if (GITHUB) {
+    const s = (process.env.SON_YESIL_SHA ?? "").trim();
+    return /^[0-9a-f]{40}$/.test(s) ? { sonYesilSha: s } : {};
+  }
   try {
     return JSON.parse(readFileSync(DURUM, "utf8")) as Durum;
   } catch {
@@ -53,7 +70,39 @@ function durumOku(): Durum {
   }
 }
 
+/** GitHub çalışma sayfası — ekranda «ayrıntı» bağlantısı (kapı yalnız bu deponun adresini kabul eder). */
+function calismaAdresi(): string | null {
+  const { GITHUB_SERVER_URL: s, GITHUB_REPOSITORY: r, GITHUB_RUN_ID: i } = process.env;
+  return s && r && i ? `${s}/${r}/actions/runs/${i}` : null;
+}
+
 async function izYaz(detay: Record<string, unknown>) {
+  if (GITHUB) {
+    /* Canlıya doğrudan bağlanılamaz — sonuç ucuna POST (3 deneme). Gönderilemezse iş kırmızı biter. */
+    const adres = (process.env.CANLI_ADRES ?? "").replace(/\/+$/, "");
+    const sir = process.env.CRON_SECRET ?? "";
+    if (!adres || !sir) throw new Error("GITHUB kipinde CANLI_ADRES ya da CRON_SECRET yok — sonuç gönderilemedi");
+    const govde = JSON.stringify({ ...detay, calisma: calismaAdresi() });
+    let son = "";
+    for (let deneme = 1; deneme <= 3; deneme++) {
+      try {
+        const yanit = await fetch(`${adres}/api/cron/gece-turu-sonuc`, {
+          method: "POST",
+          headers: { authorization: `Bearer ${sir}`, "content-type": "application/json" },
+          body: govde,
+        });
+        if (yanit.ok) {
+          console.log(`sonuç canlıya yazıldı (deneme ${deneme})`);
+          return;
+        }
+        son = `HTTP ${yanit.status} ${await yanit.text()}`;
+      } catch (e) {
+        son = e instanceof Error ? e.message : String(e);
+      }
+      await new Promise((r) => setTimeout(r, deneme * 15_000));
+    }
+    throw new Error(`sonuç canlıya gönderilemedi: ${son}`);
+  }
   const c = canliYapilandirma();
   if (!c.tamam) {
     console.log("⚠ canlı yapılandırma yok — iz yazılamadı (rapor dosyada)");
@@ -82,25 +131,30 @@ async function main() {
   const durum = durumOku();
   let sha = "";
   try {
-    yaz(`GECE TURU BAŞLADI ${new Date().toISOString()}`);
-    hazirlik("git fetch", kos("git fetch origin --quiet", KOK));
-    if (!existsSync(GECE)) hazirlik("worktree ekle", kos(`git worktree add --detach "${GECE}" origin/main`, KOK));
-    else {
-      hazirlik("checkout", kos("git checkout --detach --force origin/main", GECE));
-      hazirlik("temizle", kos("git clean -fdx -e node_modules -e .env -e .env.canli", GECE));
+    yaz(`GECE TURU BAŞLADI ${new Date().toISOString()}${GITHUB ? " · GITHUB" : ""}`);
+    if (!GITHUB) {
+      hazirlik("git fetch", kos("git fetch origin --quiet", KOK));
+      if (!existsSync(GECE)) hazirlik("worktree ekle", kos(`git worktree add --detach "${GECE}" origin/main`, KOK));
+      else {
+        hazirlik("checkout", kos("git checkout --detach --force origin/main", GECE));
+        hazirlik("temizle", kos("git clean -fdx -e node_modules -e .env -e .env.canli", GECE));
+      }
     }
     sha = kos("git rev-parse HEAD", GECE).cikti.trim();
     yaz(`sürüm ${sha}`);
 
-    /* Bağımlılıklar yalnız kilit dosyası değişince yeniden kurulur. */
+    /* Bağımlılıklar yalnız kilit dosyası değişince yeniden kurulur. GitHub'da iş adımı (`npm ci`)
+       kurar — bu betiğin kendisi de o kütüphanelerle açılıyor. */
     const kilit = createHash("md5").update(readFileSync(join(GECE, "package-lock.json"))).digest("hex");
-    if (!existsSync(join(GECE, "node_modules")) || durum.kilitOzeti !== kilit) {
+    if (!GITHUB && (!existsSync(join(GECE, "node_modules")) || durum.kilitOzeti !== kilit)) {
       hazirlik("npm ci", kos("npm ci --no-audit --no-fund", GECE));
       durum.kilitOzeti = kilit;
     }
-    for (const f of [".env", ".env.canli"]) if (existsSync(join(KOK, f))) copyFileSync(join(KOK, f), join(GECE, f));
+    if (!GITHUB) for (const f of [".env", ".env.canli"]) if (existsSync(join(KOK, f))) copyFileSync(join(KOK, f), join(GECE, f));
     hazirlik("prisma generate", kos("npx prisma generate", GECE));
     hazirlik("migrate deploy (yerel test veritabanı)", kos("npx prisma migrate deploy", GECE));
+    /* GitHub'ın veritabanı BOŞ başlar: veri isteyen bekçiler (ör. `toplu`) atlamasın diye örnek veri. */
+    if (GITHUB) hazirlik("tohum (örnek veri)", kos("npx tsx scripts/gece-turu-tohum.ts", GECE));
   } catch (e) {
     const sebep = e instanceof Error ? e.message : String(e);
     yaz(`⛔ ${sebep} — tur KOŞMADI (ayrıntı: ${gunluk})`);
@@ -160,7 +214,7 @@ async function main() {
     kirmizilar,
     sonYesilSha: durum.sonYesilSha ?? null,
     sureSn,
-    gunluk: gunluk.replace(dirname(KOK) + "\\", ""),
+    ...(GITHUB ? {} : { gunluk: gunluk.replace(dirname(KOK) + "\\", "") }),
   });
   if (!gecerli || kirmizilar.length > 0) process.exitCode = 1;
 }

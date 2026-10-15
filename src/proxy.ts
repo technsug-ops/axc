@@ -69,6 +69,10 @@ const ACIK_YOLLAR = [
   // K332 (12.10.2026) — sıcak tutma ucu: aynı sınıf, aynı CRON_SECRET kapısı;
   // sayfa sunucusunu ve veritabanı bağlantısını uyanık tutar.
   "/api/cron/sicak",
+  // 15.10.2026 — gece turu sonucu: tur GitHub'ın sunucusunda koşar ve sonucu
+  // buraya POST eder (canlı DB'ye doğrudan bağlanamaz). Aynı sınıf, aynı
+  // CRON_SECRET kapısı; gövde ayrıca denetlenir (`gece-turu-sonuc.ts`).
+  "/api/cron/gece-turu-sonuc",
   // A3/K50-a — canlı ölçüm ucu: yerel makineden canlı DB'ye TCP seviyesinde
   // erişilemediği için Vercel'in kendi havuzundan koşuyor; aynı sınıf, aynı
   // sır kapısı. ⛔ BU SATIR DA EKSİKTİ (10.09.2026'da HB ile birlikte
