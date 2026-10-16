@@ -142,6 +142,10 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   /* 15.10.2026: gece turu GitHub geçişi — `scripts/gece-turu.ts`i tur-secimi denetimiyle birlikte bozar. */
   "gece-turu-sonuc-mutasyon:kontrol",
   "tur-secimi-mutasyon:kontrol",
+  /* 15.10.2026: okuma sinyali + kasa sesi — paketleyici ve kök yerleşimi (layout) bozar;
+     paketleme denetimiyle aynı dosya, layout üzerinden büyük kümeye bağlanır. */
+  "okuma-sinyali-mutasyon:kontrol",
+  "paketleme-mutasyon:kontrol",
   /* 07.10.2026: ürün listesi + kanal yazıcıları + N11 betiği — n11-listeleme,
      kdv-uyusmazligi ve vitrin denetimleriyle aynı dosyaları bozar. */
   "ilan-adresi-mutasyon:kontrol",

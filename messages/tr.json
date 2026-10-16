@@ -4865,6 +4865,12 @@
     "kutuKapaliDuranEksik": "son satış fiyatı × stok — {sayi} ürünün fiyatı bilinmiyor, bu toplamda YOK",
     "aramaIpucu": "Ürün adı, SKU, Firma SKU, barkod veya kanal kodu"
   },
+  "KasaSesi": {
+    "ac": "Yeni sipariş sesini aç",
+    "kapat": "Yeni sipariş sesini kapat",
+    "yeniSiparis": "{sayi, plural, one {1 yeni sipariş geldi} other {# yeni sipariş geldi}} — Satışlara git",
+    "bildirimiKapat": "Bildirimi kapat"
+  },
   "AltCubuk": {
     "baslik": "Ana gezinme",
     "panel": "Panel",

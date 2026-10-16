@@ -35,6 +35,7 @@ import { TemaSecici } from "@/components/tema-secici";
 import { KABUK_RENKLERI, KISISEL_ANAHTARI, TEMA_ANAHTARI } from "@/lib/marka/renkler";
 import { DEGER_DESENI_KAYNAGI, KISISEL_DEGISKENLERI } from "@/lib/marka/kisisel-tema";
 import { UyariCani } from "@/components/uyari-cani";
+import { KasaSesi } from "@/components/kasa-sesi";
 import { UYGULAMA } from "@/lib/uygulama";
 
 /* Yazı: Rubik — Algoritmo referansının metrikleri (Halil'in analizi bölüm 2.2,
@@ -339,6 +340,8 @@ export default async function RootLayout({
                         bildirilmesi esas; menü zinciri kurulunca kimse
                         bildirmez ve bildirim Telegram'a kaçar. */}
                     <BildirButonu />
+                    {/* KASA SESİ (15.10.2026): yeni sipariş gelince ses + bildirim; aç/kapa cihazda. */}
+                    <KasaSesi />
                     <UyariCani />
                   </div>
                 </header>
