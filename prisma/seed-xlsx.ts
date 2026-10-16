@@ -40,20 +40,27 @@ function sutunIndeksi(ref: string): number {
  * Kitaptaki sayfaları ada göre döndürür.
  * Zip açmak için Windows'ta PowerShell'in Expand-Archive'ı kullanılır;
  * ek paket gerekmez.
+ * ⛔ 16.10.2026: gece turu GitHub'ın LINUX sunucusunda koşuyor — orada
+ * PowerShell yok ve tohum «HAZIRLIK_DUSTU: tohum (örnek veri)» ile düştü
+ * (canlı iz, 15.10 23:44 UTC). Windows dışında standart `unzip` kullanılır.
  */
 export function xlsxOku(dosya: string): Map<string, Sayfa> {
   const gecici = mkdtempSync(join(tmpdir(), "selliora-xlsx-"));
   try {
-    execFileSync(
-      "powershell",
-      [
-        "-NoProfile",
-        "-Command",
-        `Copy-Item -LiteralPath '${dosya}' -Destination '${gecici}\\k.zip' -Force; ` +
-          `Expand-Archive -LiteralPath '${gecici}\\k.zip' -DestinationPath '${gecici}\\acik' -Force`,
-      ],
-      { stdio: "pipe" },
-    );
+    if (process.platform === "win32") {
+      execFileSync(
+        "powershell",
+        [
+          "-NoProfile",
+          "-Command",
+          `Copy-Item -LiteralPath '${dosya}' -Destination '${gecici}\\k.zip' -Force; ` +
+            `Expand-Archive -LiteralPath '${gecici}\\k.zip' -DestinationPath '${gecici}\\acik' -Force`,
+        ],
+        { stdio: "pipe" },
+      );
+    } else {
+      execFileSync("unzip", ["-o", "-q", dosya, "-d", join(gecici, "acik")], { stdio: "pipe" });
+    }
 
     const kok = join(gecici, "acik");
 
