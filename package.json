@@ -114,6 +114,8 @@
     "talep:dogrula": "tsx scripts/talep-dogrula.ts",
     "gecmis:dogrula": "tsx scripts/gecmis-dogrula.ts",
     "gece-turu-sonuc:dogrula": "tsx scripts/gece-turu-sonuc-dogrula.ts",
+    "okuma-sinyali:dogrula": "tsx scripts/okuma-sinyali-dogrula.ts",
+    "okuma-sinyali-mutasyon:kontrol": "tsx scripts/okuma-sinyali-mutasyon-kontrol.ts",
     "gece-turu-sonuc-mutasyon:kontrol": "tsx scripts/gece-turu-sonuc-mutasyon-kontrol.ts",
     "prebuild": "tsx scripts/deploy-bekci.ts",
     "donem-mutasyon:kontrol": "tsx scripts/donem-mutasyon-kontrol.ts",

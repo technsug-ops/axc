@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { MapPin, PackageCheck, RotateCcw } from "lucide-react";
 
@@ -15,6 +15,7 @@ import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
+import { okumaSinyali, sesiHazirla } from "@/lib/okuma-sinyali";
 import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
 import {
   kalemBul,
@@ -53,36 +54,18 @@ import {
  */
 
 /**
- * SESLİ ONAY — DOSYASIZ.
+ * SESLİ + GÖRSEL ONAY — ortak sinyalden (`lib/okuma-sinyali.ts`).
  *
  * ⚠ Halil tarifinde "görsel/SESLİ onay" var: depoda telefon elde, ekrana
- * bakmadan çalışılıyor. Ses dosyası gömmek yerine tek bir ton üretiliyor —
- * ne ağ isteği ne varlık; artifact CSP'si ya da çevrimdışı hâl bunu bozmaz.
+ * bakmadan çalışılıyor. ⭐ 15.10.2026 kullanıcı: _«doğruda belirgin yeşil +
+ * onay sesi, yanlışta kırmızı + sesli uyarı»_ — eski ton kısık ve kısaydı,
+ * renk yalnız küçük kutudaydı. Artık ekranın tamamı parlar, sesler ayırt
+ * edici (ding-ding ↔ üç sert bıp), hatada telefon titrer.
  *
- * ⚠ SESSİZ DÜŞER. Tarayıcı `AudioContext` vermezse (izin yok, eski cihaz,
- * sekme arka planda) akış aynen sürer — ses bir KOLAYLIK, kapı değil.
+ * ⚠ SESSİZ DÜŞER. Tarayıcı sesi vermezse akış aynen sürer — ses bir KOLAYLIK, kapı değil.
  */
 function tonCal(eslesti: boolean) {
-  try {
-    const Ses =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
-    if (!Ses) return;
-    const ctx = new Ses();
-    const osc = ctx.createOscillator();
-    const kazanc = ctx.createGain();
-    /* Eşleşti = yüksek ve kısa; eşleşmedi = alçak. Ayrım KULAKLA yapılabilmeli. */
-    osc.frequency.value = eslesti ? 880 : 220;
-    kazanc.gain.value = 0.08;
-    osc.connect(kazanc);
-    kazanc.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + (eslesti ? 0.12 : 0.28));
-    osc.onended = () => void ctx.close();
-  } catch {
-    /* Ses yoksa akış durmaz. */
-  }
+  okumaSinyali(eslesti);
 }
 
 /**
@@ -99,6 +82,8 @@ export function Paketleyici({
   baslangic?: PaketAramasi | null;
 } = {}) {
   const t = useTranslations("Paketle");
+  /* Tarayıcı sesi ancak ilk dokunuş/tuştan sonra çaldırır — USB okuyucu da tuş gönderir. */
+  useEffect(() => sesiHazirla(), []);
 
   const kargoOdagi = useRef<HTMLInputElement>(null);
   const urunOdagi = useRef<HTMLInputElement>(null);
@@ -151,6 +136,8 @@ export function Paketleyici({
       const cevap = await paketlemeIcinAra(aranacak);
       setSiparis(cevap.durum === "BULUNDU" ? cevap.siparis : null);
       setBulunamadi(cevap.durum === "BULUNDU" ? null : cevap);
+      /* 15.10.2026: sipariş ETİKETİ okutulunca da sinyal — bulundu yeşil, bulunamadı kırmızı. */
+      tonCal(cevap.durum === "BULUNDU");
       setSonOkuma(null);
       setSonTeyitDetay(null);
       setOkunmayanKod(null);
@@ -199,7 +186,10 @@ export function Paketleyici({
 
     setOkunmayanKod(bulunan ? null : aranacak);
     setSonOkuma(bulunan !== null);
-    tonCal(bulunan !== null);
+    /* 15.10.2026: zaten tam teyitli kalemin FAZLADAN okutulması da HATA sinyalidir —
+       eskiden «doğru» sesi çalıyordu (fazla ürün pakete girerdi). */
+    const fazladan = bulunan !== null && bulunan.kalem.teyitliAdet >= bulunan.kalem.adet;
+    tonCal(bulunan !== null && !fazladan);
 
     if (bulunan) {
       /**
