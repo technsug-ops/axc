@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
+import Link from "@/components/niyetli-baglanti";
 
 /**
  * ============================================================================
@@ -36,7 +37,21 @@ import { X } from "lucide-react";
 export type NoktaPenceresi = {
   baslik: string;
   satirlar: { ad: string; deger: string }[];
+  /**
+   * RAKAMIN KAYNAĞI (K344, İlke #16) — «o günün satışları» gibi. Adres
+   * süzgeç sözleşmesinin sahibi dosyadan gelir (`liste-suzgeci.ts`); bu
+   * bileşen adres KURMAZ, yalnız çizer.
+   */
+  baglanti?: { metin: string; adres: string };
 };
+
+/**
+ * ÜSTÜNE GELİNCE AÇILIR (K344, kullanıcı 15.10.2026: «grafiklerin üstüne
+ * gelindiğinde rakam görünmeli»). Fare ile üstüne gelmek pencereyi GEÇİCİ
+ * açar (grafikten çıkınca kapanır); tıklamak SABİTLER — içindeki bağlantıya
+ * gidebilmek için. Dokunmatik ekranda üstüne gelme yoktur: dokunuş sabitler
+ * (K109 davranışı aynen).
+ */
 
 export function GrafikNoktaPenceresi({
   pencereler,
@@ -48,7 +63,15 @@ export function GrafikNoktaPenceresi({
 }) {
   const ortak = useTranslations("Ortak");
   const kap = useRef<HTMLDivElement>(null);
-  const [secili, setSecili] = useState<{ i: number; sol: number; ust: number; ustte: boolean; hiza: "sol" | "orta" | "sag" } | null>(null);
+  const [secili, setSecili] = useState<{
+    i: number;
+    sol: number;
+    ust: number;
+    ustte: boolean;
+    hiza: "sol" | "orta" | "sag";
+    /** Tıklamayla açıldı — fare grafikten çıksa da kapanmaz. */
+    sabit: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (secili === null) return;
@@ -66,16 +89,18 @@ export function GrafikNoktaPenceresi({
     };
   }, [secili]);
 
-  function tikla(e: React.MouseEvent<HTMLDivElement>) {
-    const hedef = (e.target as Element).closest("[data-nokta]");
-    const kutu = kap.current;
-    if (!hedef || !kutu) return;
+  /** Olayın değdiği noktanın sırası; pencere yoksa `null`. */
+  function noktaBul(hedefOge: EventTarget): { i: number; hedef: Element } | null {
+    const hedef = (hedefOge as Element).closest?.("[data-nokta]");
+    if (!hedef) return null;
     const i = Number(hedef.getAttribute("data-nokta"));
-    if (!Number.isInteger(i) || pencereler[i] == null) return;
-    if (secili?.i === i) {
-      setSecili(null);
-      return;
-    }
+    if (!Number.isInteger(i) || pencereler[i] == null) return null;
+    return { i, hedef };
+  }
+
+  function ac(i: number, hedef: Element, sabit: boolean) {
+    const kutu = kap.current;
+    if (!kutu) return;
     /** Noktanın EKRANDAKİ yeri — SVG ölçeği ne olursa olsun doğru. */
     const isaret = kutu.querySelector(`[data-nokta-isaret="${i}"]`) ?? hedef;
     const n = isaret.getBoundingClientRect();
@@ -85,13 +110,36 @@ export function GrafikNoktaPenceresi({
     /** Nokta grafiğin üst yarısındaysa pencere ALTINA açılır (tepeden taşmasın). */
     /** Kenardaki noktada pencere ortalanırsa yarısı kaydırılamayan alana taşar. */
     const hiza = sol < 140 ? "sol" : sol > kutu.scrollWidth - 140 ? "sag" : "orta";
-    setSecili({ i, sol, ust, ustte: ust > k.height / 2, hiza });
+    setSecili({ i, sol, ust, ustte: ust > k.height / 2, hiza, sabit });
+  }
+
+  function tikla(e: React.MouseEvent<HTMLDivElement>) {
+    const bulunan = noktaBul(e.target);
+    if (!bulunan) return;
+    /** Sabit pencerenin noktasına yeniden tıklamak kapatır; geçici olanı sabitler. */
+    if (secili?.i === bulunan.i && secili.sabit) {
+      setSecili(null);
+      return;
+    }
+    ac(bulunan.i, bulunan.hedef, true);
+  }
+
+  function ustuneGel(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType !== "mouse" || secili?.sabit) return;
+    /** Pencerenin kendisinin üstündeyken nokta yoktur — açık olan kalır. */
+    const bulunan = noktaBul(e.target);
+    if (!bulunan || bulunan.i === secili?.i) return;
+    ac(bulunan.i, bulunan.hedef, false);
+  }
+
+  function ayril(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.pointerType === "mouse" && secili && !secili.sabit) setSecili(null);
   }
 
   const p = secili === null ? null : pencereler[secili.i];
 
   return (
-    <div ref={kap} className="relative overflow-x-auto" onClick={tikla}>
+    <div ref={kap} className="relative overflow-x-auto" onClick={tikla} onPointerMove={ustuneGel} onPointerLeave={ayril}>
       {children}
       {secili !== null && p ? (
         <>
@@ -131,6 +179,14 @@ export function GrafikNoktaPenceresi({
                 </div>
               ))}
             </dl>
+            {p.baglanti ? (
+              <Link
+                href={p.baglanti.adres}
+                className="text-primary mt-1 inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline md:min-h-0"
+              >
+                {p.baglanti.metin} →
+              </Link>
+            ) : null}
           </div>
         </>
       ) : null}

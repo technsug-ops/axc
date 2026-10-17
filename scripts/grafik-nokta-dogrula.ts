@@ -9,6 +9,7 @@ import {
   noktaEtiketleri,
 } from "../src/components/grafik-olcek";
 import { kaynakOku } from "./kaynak-oku";
+import { grafikNoktasiSatisAdresi, pencereCoz, satisKosulu, satisListesiParametreleri } from "../src/lib/liste-suzgeci";
 
 /**
  * ============================================================================
@@ -22,13 +23,16 @@ import { kaynakOku } from "./kaynak-oku";
  *     biçimleniyor, boş ay pencere açmıyor.
  *  ③ RAKAM KONUMU (03.10.2026) — gövde çağrılır: NET-2 rakamı ay satırına
  *     İNMEZ, ciro rakamı NET-2'nin ÜSTÜNDE kalır, uç noktalar içe yaslanır.
+ *  ④ ÜSTÜNE GELME + KAYNAK (K344) — fareyle geçici açılış, tıklamayla sabit;
+ *     kart · stok · karşılaştırma grafikleri AYRI AYRI bağlı; adres ve ürün
+ *     süzgeci gövde ÇAĞRILARAK sınanır (sayı = liste).
  * ============================================================================
  */
 
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 3;
+const BOLUM_SAYISI = 4;
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
     gecen++;
@@ -102,9 +106,85 @@ for (const [ad, yol, noktaIfadesi] of [
   kontrol("tek serili: boş ay pencere AÇMAZ, satır seri adını taşır", /n\.deger === null \? null : \{ baslik: n\.tamEtiket, satirlar: \[\{ ad: seriAdi, deger: bicimle\(n\.deger\) \}\] \}/.test(t));
   const p = yorumsuz(kaynakOku("src/components/grafik-nokta-penceresi.tsx"));
   kontrol("sarmalayıcı istemci bileşeni ve fonksiyon ALMIYOR (sunucudan yalnız metin)", /^"use client";/.test(p.trimStart()) && !/bicimle/.test(p));
-  kontrol("kapatma yolları: aynı nokta · Esc · dışarı dokunma", /secili\?\.i === i\)[\s\S]{0,40}setSecili\(null\)/.test(p) && /e\.key === "Escape"/.test(p) && /"pointerdown", disari/.test(p));
+  /*
+   * ⚠ ÖLÇÜT GÜNCELLENDİ (K344, 17.10.2026) — eski hâli `secili?.i === i)` ile
+   * «aynı noktaya yeniden dokun → kapan» arıyordu. K344'te fareyle ÜSTÜNE GELME
+   * pencereyi geçici açar; tıklama onu SABİTLER (içindeki bağlantıya gidilsin
+   * diye). Aynı noktaya yeniden tıklamak artık YALNIZ sabit pencereyi kapatır —
+   * geçici olanı kapatsaydı fareyle gelip tıklayan kişi pencereyi kaybederdi.
+   * Niyet aynı (aynı nokta kapatır), koşul `sabit` ile daraldı; GEVŞETİLMEDİ.
+   */
+  kontrol("kapatma yolları: aynı nokta (sabitken) · Esc · dışarı dokunma", /secili\?\.i === bulunan\.i && secili\.sabit\)\s*\{\s*setSecili\(null\)/.test(p) && /e\.key === "Escape"/.test(p) && /"pointerdown", disari/.test(p));
 }
 kosanBolumler.push("bağ");
+
+/* ④ ÜSTÜNE GELME + KAYNAK BAĞLANTISI (K344, kullanıcı 15.10.2026 — İlke #16) */
+console.log("\n4) üstüne gelme + kaynak bağlantısı (K344)");
+{
+  const p = yorumsuz(kaynakOku("src/components/grafik-nokta-penceresi.tsx"));
+  kontrol("sarmalayıcı üstüne gelmeyi ve ayrılmayı dinliyor", /onClick=\{tikla\} onPointerMove=\{ustuneGel\} onPointerLeave=\{ayril\}/.test(p));
+  kontrol("  ...üstüne gelme YALNIZ fareyle, sabit pencereyi ezmez", /if \(e\.pointerType !== "mouse" \|\| secili\?\.sabit\) return;/.test(p));
+  kontrol("  ...geçici açılış sabit DEĞİL, tıklama sabit", /ac\(bulunan\.i, bulunan\.hedef, false\)/.test(p) && /ac\(bulunan\.i, bulunan\.hedef, true\)/.test(p));
+  kontrol("  ...ayrılınca YALNIZ geçici pencere kapanır", /if \(e\.pointerType === "mouse" && secili && !secili\.sabit\) setSecili\(null\);/.test(p));
+  kontrol("pencere bağlantıyı adres KURMADAN çizer (yalnız verilen adres)", /\{p\.baglanti \? \(\s*<Link\s+href=\{p\.baglanti\.adres\}/.test(p) && !/grafikNoktasiSatisAdresi|\/satislar/.test(p));
+
+  /* Her grafik AYRI sınanır — aynı dosyadaki iki grafik birbirini örtmesin (anayasa: desen sayılır). */
+  const kart = yorumsuz(kaynakOku("src/app/kart/[variantId]/kart-grafikleri.tsx"));
+  const blok = (bas: string, son: string) => {
+    const b = kart.indexOf(bas);
+    const s = kart.indexOf(son);
+    return b >= 0 && s > b ? kart.slice(b, s) : "";
+  };
+  const gunluk = blok("export function GunlukGrafik", "export function StokFiyatGrafigi");
+  const stok = blok("export function StokFiyatGrafigi", "export function MiniCizgi");
+  const kars = yorumsuz(kaynakOku("src/components/karsilastirma-grafigi.tsx"));
+  for (const [ad, m, seritIfadesi] of [
+    ["kart «Satış ve kâr»", gunluk, /<NoktaSeritleri\s+noktalar=\{noktalar\.map\(\(n, i\) => \(\{ x: xMerkez\(i\), y: yPara\(n\.ciro\) \}\)\)\}\s+alan=\{\{ sol: G\.sol, sag: G\.gen - G\.sag, ust: G\.ust, alt: G\.yuk - G\.alt \}\}\s+\/>/],
+    ["kart «Stok ve fiyat»", stok, /<NoktaSeritleri\s+noktalar=\{noktalar\.map\(\(n, i\) => \(\{ x: x\(i\), y: yStok\(n\.stok\) \}\)\)\}\s+alan=\{\{ sol: G\.sol, sag: G\.gen - G\.sag, ust: G\.ust, alt: G\.yuk - G\.alt \}\}\s+\/>/],
+    ["karşılaştırma grafiği", kars, /<NoktaSeritleri noktalar=\{seritNoktalari\} \/>/],
+  ] as const) {
+    kontrol(`${ad}: blok bulundu`, m.length > 0);
+    kontrol(`  ...sarmalayıcıyla sarılı`, /<GrafikNoktaPenceresi pencereler=\{pencereler\}>/.test(m) && /<\/GrafikNoktaPenceresi>/.test(m));
+    kontrol(`  ...şeritler kendi kutusuyla, doğru noktalarla`, seritIfadesi.test(m));
+    kontrol(`  ...şeritler SVG'nin EN SONUNDA (üstte)`, /<NoktaSeritleri[\s\S]{0,300}?\/>\s*<\/svg>/.test(m));
+    kontrol(`  ...eski fare ipucu (<title>) kalmadı — pencereyle çift olmasın`, !/<title>/.test(m));
+  }
+  kontrol("kart günü: DÖRT rakam (ciro · NET-2 · adet · iade)", /\{ ad: adlar\.ciro, deger: bicimleTam\(n\.ciro\) \}/.test(gunluk) && /\{ ad: adlar\.net2, deger: n\.net2 === null \? adlar\.bilinmiyor : bicimleTam\(n\.net2\) \}/.test(gunluk) && /\{ ad: adlar\.adet, deger: String\(n\.adet\) \}/.test(gunluk) && /\{ ad: adlar\.iade, deger: String\(n\.iade\) \}/.test(gunluk));
+  kontrol("  ...NET-2 yetkisizde YOK, bilinmeyen NET-2 sıfır yazılmaz", /\.\.\.\(adlar\.net2 \? \[/.test(gunluk));
+  kontrol("  ...bağlantı yalnız satış OLAN günde", /\.\.\.\(kaynak && n\.adet > 0 \? \{ baglanti: \{ metin: kaynak\.metin, adres: kaynak\.adres\(n\.gun\) \} \} : \{\}\)/.test(gunluk));
+  kontrol("karşılaştırma: değeri olmayan ay pencere ALMAZ", /return satirlar\.length === 0 \? null : \{ baslik: e, satirlar \};/.test(kars));
+
+  const pano = yorumsuz(kaynakOku("src/app/kart/[variantId]/kart-panosu.tsx"));
+  kontrol("kart panosu kaynağı ortak adresten, ÜRÜN KİMLİĞİYLE verir", /kaynak=\{\{ metin: t\("grafikGununSatislari"\), adres: \(gun\) => grafikNoktasiSatisAdresi\(\{ varyant: varyantId, baslangic: gun, bitis: gun \}\) \}\}/.test(pano));
+  const cizgi = yorumsuz(kaynakOku("src/components/cizgi-grafik.tsx"));
+  kontrol("çizgi grafik bağlantıyı noktanın KENDİ sırasından alır", /\.\.\.\(baglantilar\?\.\[i\] \? \{ baglanti: baglantilar\[i\]! \} : \{\}\)/.test(cizgi));
+  const panel = yorumsuz(kaynakOku("src/app/page.tsx"));
+  const ciroBlok = (() => {
+    const b = panel.indexOf("baglantilar={ciroNet.map(");
+    return b >= 0 ? panel.slice(b, b + 700) : "";
+  })();
+  kontrol("panel ciro grafiği: bağlantı ortak adresten, kovanın aralığı + kanal süzgeciyle", /n\.gelir === 0\s*\?\s*null/.test(ciroBlok) && /grafikNoktasiSatisAdresi\(\{\s*baslangic: gunMetni\(n\.baslangic\),\s*bitis: gunMetni\(n\.sonGun\),\s*\.\.\.\(seciliKanal \? \{ kanal: seciliKanal \} : \{\}\),\s*\}\)/.test(ciroBlok));
+
+  /* ADRES + SÜZGEÇ — gövde ÇAĞRILIR (sayı = liste: adres, kartın saydığı kümeyi açmalı) */
+  const adres = grafikNoktasiSatisAdresi({ varyant: "v1", baslangic: "2026-10-15", bitis: "2026-10-15" });
+  kontrol("adres: ürün kimliği + tek günlük özel dönem", adres === "/satislar?varyant=v1&pencere=OZEL&baslangic=2026-10-15&bitis=2026-10-15", adres);
+  const kanalli = grafikNoktasiSatisAdresi({ baslangic: "2026-10-01", bitis: "2026-10-07", kanal: "TY" });
+  kontrol("  ...panel kovası: aralık + kanal, ürünsüz", kanalli === "/satislar?pencere=OZEL&baslangic=2026-10-01&bitis=2026-10-07&kanal=TY", kanalli);
+  const p1 = Object.fromEntries(new URL("http://x" + adres).searchParams);
+  const pen = pencereCoz(p1, new Date("2026-10-17T10:00:00Z"));
+  kontrol("  ...açılan dönem TAM BİR İstanbul günü", pen.aralik !== undefined && pen.aralik.lt.getTime() - pen.aralik.gte.getTime() === 24 * 3600 * 1000, pen.aralik);
+  const liste = satisListesiParametreleri(p1);
+  kontrol("  ...ürün süzgeci NÖTR değil: iptaller gizli (kart da saymıyor)", liste.iptal === "0", liste);
+  const ve = satisKosulu(liste).kosul.AND;
+  const urunKosulu = (Array.isArray(ve) ? ve : []).find((k) => JSON.stringify(k).includes('"variantId":"v1"'));
+  kontrol("  ...süzgeç ürün KİMLİĞİYLE, kaldırılmış kalem bağlamaz", JSON.stringify(urunKosulu) === JSON.stringify({ items: { some: { variantId: "v1", kaldirildiAt: null } } }), urunKosulu);
+  const aramali = satisKosulu({ q: "v1" }).kosul;
+  kontrol("  ...ürün süzgeci ARAMA DEĞİL (q varyant koşulu üretmez)", !JSON.stringify(aramali).includes('"variantId"'));
+  const satis = yorumsuz(kaynakOku("src/app/satislar/page.tsx"));
+  kontrol("Satışlar: ürün süzgeci başka süzgece dokununca TAŞINIR", /varyant: p\.varyant,\s*\};/.test(satis));
+  kontrol("  ...ekranda YAZAR ve tek tıkla kaldırılır", /t\("urunSuzgeci", \{ sku: urunSuzgeci\.sku, ad: urunSuzgeci\.product\.name \}\)/.test(satis) && /suzgecAdresi\("\/satislar", \{ \.\.\.formTasinanlar, q: arama \}, \{ varyant: undefined \}\)/.test(satis));
+}
+kosanBolumler.push("kaynak bağlantısı");
 
 /* ③ RAKAM KONUMU — 03.10.2026 «ciro ile net karışmış» vakası */
 {

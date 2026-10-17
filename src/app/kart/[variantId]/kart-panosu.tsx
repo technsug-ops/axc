@@ -16,6 +16,7 @@ import { SIPARIS_SATIR_TAVANI, type KartAnalizi } from "@/lib/urun-karti-analiz"
 import { adetBasinaKazanc } from "@/lib/urun-karti-seri";
 
 import { DurumHalkasi, GunlukGrafik, MiniCizgi, StokFiyatGrafigi } from "./kart-grafikleri";
+import { grafikNoktasiSatisAdresi } from "@/lib/liste-suzgeci";
 import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
 
 /**
@@ -368,7 +369,7 @@ export async function SekmeCubugu({
 const PALET = ["#12356B", "#E3A13A", "#2F9E5B", "#D64545", "#6B7A90"];
 
 /** GENEL sekmesi — günlük grafik · kanal/hesap dağılımı · ürün durumu · stok ve fiyat · kanal fiyatları. */
-export async function GenelSekmesi({ a, para, karGorunur }: { a: KartAnalizi; para: string; karGorunur: boolean }) {
+export async function GenelSekmesi({ a, para, karGorunur, varyantId }: { a: KartAnalizi; para: string; karGorunur: boolean; varyantId: string }) {
   const t = await getTranslations("UrunKarti");
   const bicim = await bicimlendirici();
   const kisa = (gun: string) => {
@@ -389,10 +390,13 @@ export async function GenelSekmesi({ a, para, karGorunur }: { a: KartAnalizi; pa
         <h2 className="text-base font-semibold">{t("grafikBaslik")}</h2>
         <GunlukGrafik
           noktalar={a.gunluk}
-          adlar={{ ciro: t("grafikCiro"), net2: karGorunur ? t("grafikNet") : null, adet: t("grafikAdet"), iade: t("grafikIade") }}
+          adlar={{ ciro: t("grafikCiro"), net2: karGorunur ? t("grafikNet") : null, adet: t("grafikAdet"), iade: t("grafikIade"), bilinmiyor: t("grafikNetBilinmiyor") }}
           bicimlePara={paraKisa}
+          bicimleTam={(n) => bicim.para(n, para)}
           bicimleGun={kisa}
           bosMesaj={t("grafikBos")}
+          /* K344 — o günün KAYNAĞI: bu ürünün o günkü satışları (kullanıcı kararı 17.10: Satışlar ekranı). */
+          kaynak={{ metin: t("grafikGununSatislari"), adres: (gun) => grafikNoktasiSatisAdresi({ varyant: varyantId, baslangic: gun, bitis: gun }) }}
         />
       </section>
 

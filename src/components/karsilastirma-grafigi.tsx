@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useBicim } from "@/lib/bicim-istemci";
 
 import { Button } from "@/components/ui/button";
+import { GrafikNoktaPenceresi, type NoktaPenceresi } from "@/components/grafik-nokta-penceresi";
+import { NoktaSeritleri } from "@/components/grafik-nokta-seritleri";
 import {
   eksen,
   eksenIsaretleri,
@@ -211,10 +213,27 @@ export function KarsilastirmaGrafigi({
   const bicimle = bicimci(false);
   const bicimleKisa = bicimci(true);
 
+  /**
+   * K344 — üstüne gelince/dokununca o ayın TAM rakamları (seçili her seri).
+   * Noktada yalnız kısaltılmış rakam yazıyordu (`₺1,7 Mn`); tam tutar hiçbir
+   * yerde yoktu. ⚠ Hiç değeri olmayan ay pencere ALMAZ — hüküm yok.
+   */
+  const pencereler: (NoktaPenceresi | null)[] = etiketler.map((e, i) => {
+    const satirlar = seciliSeriler.flatMap((s) => {
+      const d = s.degerler[i];
+      return d === null || d === undefined ? [] : [{ ad: s.ad, deger: bicimle(d) }];
+    });
+    return satirlar.length === 0 ? null : { baslik: e, satirlar };
+  });
+  const seritNoktalari = etiketler.map((_, i) => {
+    const d = seciliSeriler.map((s) => s.degerler[i]).find((v): v is number => v !== null && v !== undefined);
+    return d === undefined ? null : { x: x(i), y: yKonum(d) };
+  });
+
   return (
     <div className="space-y-3">
       {dugmeler}
-      <div className="overflow-x-auto">
+      <GrafikNoktaPenceresi pencereler={pencereler}>
         <svg
           viewBox={`0 0 ${GRAFIK_KUTUSU.genislik} ${GRAFIK_KUTUSU.yukseklik}`}
           className="h-auto w-full min-w-[720px]"
@@ -355,8 +374,11 @@ export function KarsilastirmaGrafigi({
               ) : null,
             )}
           </g>
+
+          {/* --- K344: dokunma şeritleri — EN ÜSTTE --- */}
+          <NoktaSeritleri noktalar={seritNoktalari} />
         </svg>
-      </div>
+      </GrafikNoktaPenceresi>
     </div>
   );
 }

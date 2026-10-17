@@ -11,6 +11,9 @@
  * ============================================================================
  */
 
+import { GrafikNoktaPenceresi, type NoktaPenceresi } from "@/components/grafik-nokta-penceresi";
+import { NoktaSeritleri } from "@/components/grafik-nokta-seritleri";
+
 const RENK = {
   ciro: "var(--se-vurgu)",
   net: "var(--se-kar)",
@@ -79,12 +82,22 @@ export function GunlukGrafik({
   bicimlePara,
   bicimleGun,
   bosMesaj,
+  kaynak,
+  bicimleTam = bicimlePara,
 }: {
   noktalar: readonly { gun: string; ciro: number; net2: number | null; adet: number; iade: number }[];
-  adlar: { ciro: string; net2: string | null; adet: string; iade: string };
+  /** `bilinmiyor`: o gün NET-2 hesaplanamadıysa pencerede yazacak metin. */
+  adlar: { ciro: string; net2: string | null; adet: string; iade: string; bilinmiyor: string };
   bicimlePara: (n: number) => string;
   bicimleGun: (gun: string) => string;
   bosMesaj: string;
+  /**
+   * K344 — günün KAYNAĞI (İlke #16): satış olan günde pencerede bağlantı.
+   * Adres çağırandan gelir (`grafikNoktasiSatisAdresi`); bu dosya adres kurmaz.
+   */
+  kaynak?: { metin: string; adres: (gun: string) => string };
+  /** Pencerede KURUŞLU tutar — eksen yuvarlanmış yazar, pencere hüküm yeridir. */
+  bicimleTam?: (n: number) => string;
 }) {
   if (noktalar.length === 0 || noktalar.every((n) => n.ciro === 0 && n.adet === 0 && n.iade === 0)) {
     return <p className="text-muted-foreground py-10 text-center text-sm">{bosMesaj}</p>;
@@ -98,6 +111,22 @@ export function GunlukGrafik({
   const yAdet = (v: number) => G.ust + ic.yuk - (v / adetUst) * ic.yuk;
   const xMerkez = (i: number) => G.sol + adim * i + adim / 2;
   const etiketAraligi = Math.max(1, Math.ceil(noktalar.length / 6));
+  /**
+   * K344 — üstüne gelince/dokununca o günün DÖRT rakamı (eskiden yalnız
+   * masaüstünde ciro çubuğunun `<title>`ı vardı; adet/iade çizgisinde hiç
+   * yoktu, telefonda hiçbiri yoktu). Bağlantı yalnız satış OLAN günde:
+   * satışsız günün listesi boştur.
+   */
+  const pencereler: NoktaPenceresi[] = noktalar.map((n) => ({
+    baslik: bicimleGun(n.gun),
+    satirlar: [
+      { ad: adlar.ciro, deger: bicimleTam(n.ciro) },
+      ...(adlar.net2 ? [{ ad: adlar.net2, deger: n.net2 === null ? adlar.bilinmiyor : bicimleTam(n.net2) }] : []),
+      { ad: adlar.adet, deger: String(n.adet) },
+      { ad: adlar.iade, deger: String(n.iade) },
+    ],
+    ...(kaynak && n.adet > 0 ? { baglanti: { metin: kaynak.metin, adres: kaynak.adres(n.gun) } } : {}),
+  }));
   return (
     <div className="space-y-2">
       <GrafikLejanti
@@ -108,6 +137,7 @@ export function GunlukGrafik({
           { ad: adlar.iade, renk: RENK.iade, cizgi: true },
         ]}
       />
+      <GrafikNoktaPenceresi pencereler={pencereler}>
       <svg viewBox={`0 0 ${G.gen} ${G.yuk}`} className="h-auto w-full" role="img" aria-label={adlar.ciro}>
         {[0, 1, 2, 3, 4].map((k) => {
           const y = G.ust + (ic.yuk * k) / 4;
@@ -125,13 +155,9 @@ export function GunlukGrafik({
         })}
         {noktalar.map((n, i) => (
           <g key={n.gun}>
-            <rect x={xMerkez(i) - cubuk - 0.5} y={yPara(n.ciro)} width={cubuk} height={G.ust + ic.yuk - yPara(n.ciro)} fill={RENK.ciro} rx={1.5}>
-              <title>{`${bicimleGun(n.gun)} · ${adlar.ciro}: ${bicimlePara(n.ciro)} · ${adlar.adet}: ${n.adet} · ${adlar.iade}: ${n.iade}`}</title>
-            </rect>
+            <rect x={xMerkez(i) - cubuk - 0.5} y={yPara(n.ciro)} width={cubuk} height={G.ust + ic.yuk - yPara(n.ciro)} fill={RENK.ciro} rx={1.5} />
             {adlar.net2 && n.net2 !== null ? (
-              <rect x={xMerkez(i) + 0.5} y={yPara(n.net2)} width={cubuk} height={G.ust + ic.yuk - yPara(n.net2)} fill={RENK.net} rx={1.5}>
-                <title>{`${bicimleGun(n.gun)} · ${adlar.net2}: ${bicimlePara(n.net2)}`}</title>
-              </rect>
+              <rect x={xMerkez(i) + 0.5} y={yPara(n.net2)} width={cubuk} height={G.ust + ic.yuk - yPara(n.net2)} fill={RENK.net} rx={1.5} />
             ) : null}
             {i % etiketAraligi === 0 ? (
               <text x={xMerkez(i)} y={G.yuk - 8} textAnchor="middle" className="fill-muted-foreground text-[10px]">
@@ -150,7 +176,13 @@ export function GunlukGrafik({
             ))}
           </g>
         ))}
+        {/* K344: dokunma şeritleri EN ÜSTTE — kartın kendi kutusuyla dilimlenir. */}
+        <NoktaSeritleri
+          noktalar={noktalar.map((n, i) => ({ x: xMerkez(i), y: yPara(n.ciro) }))}
+          alan={{ sol: G.sol, sag: G.gen - G.sag, ust: G.ust, alt: G.yuk - G.alt }}
+        />
       </svg>
+      </GrafikNoktaPenceresi>
     </div>
   );
 }
@@ -186,7 +218,7 @@ export function StokFiyatGrafigi({
   const sayiEtiketi = noktalar.length <= 35;
   /* Fiyat noktasının rakamı (kullanıcı 11.10.2026: «yeşillerde rakam yok, anlaşılmıyor»).
      Yan yana günlerde yazılar üst üste binmesin diye bir öncekinden FIYAT_ETIKET_ARALIGI
-     birimden yakın noktaya yazı konmaz — o noktanın fiyatı üstüne gelince (title) okunur. */
+     birimden yakın noktaya yazı konmaz — o noktanın fiyatı üstüne gelince/dokununca pencerede okunur (K344). */
   const fiyatEtiketli = new Set<number>();
   let sonEtiketX = -Infinity;
   noktalar.forEach((n, i) => {
@@ -195,9 +227,18 @@ export function StokFiyatGrafigi({
     fiyatEtiketli.add(i);
     sonEtiketX = x(i);
   });
+  /** K344 — üstüne gelince/dokununca o günün rakamları (eskiden yalnız masaüstü `<title>`). */
+  const pencereler: NoktaPenceresi[] = noktalar.map((n) => ({
+    baslik: bicimleGun(n.gun),
+    satirlar: [
+      { ad: adlar.stok, deger: String(n.stok) },
+      ...(adlar.fiyat && n.fiyat !== null ? [{ ad: adlar.fiyat, deger: bicimlePara(n.fiyat) }] : []),
+    ],
+  }));
   return (
     <div className="space-y-2">
       <GrafikLejanti ogeler={[{ ad: adlar.stok, renk: RENK.stok }, ...(adlar.fiyat ? [{ ad: adlar.fiyat, renk: RENK.net, cizgi: true }] : [])]} />
+      <GrafikNoktaPenceresi pencereler={pencereler}>
       <svg viewBox={`0 0 ${G.gen} ${G.yuk}`} className="h-auto w-full" role="img" aria-label={adlar.stok}>
         {[0, 1, 2, 3, 4].map((k) => {
           const y = G.ust + (ic.yuk * k) / 4;
@@ -215,9 +256,7 @@ export function StokFiyatGrafigi({
         })}
         {noktalar.map((n, i) => (
           <g key={n.gun}>
-            <rect x={x(i) - cubuk / 2} y={yStok(n.stok)} width={cubuk} height={G.ust + ic.yuk - yStok(n.stok)} fill={RENK.stok} rx={1.5}>
-              <title>{`${bicimleGun(n.gun)} · ${adlar.stok}: ${n.stok}${n.fiyat === null || !adlar.fiyat ? "" : ` · ${adlar.fiyat}: ${bicimlePara(n.fiyat)}`}`}</title>
-            </rect>
+            <rect x={x(i) - cubuk / 2} y={yStok(n.stok)} width={cubuk} height={G.ust + ic.yuk - yStok(n.stok)} fill={RENK.stok} rx={1.5} />
             {sayiEtiketi && n.stok > 0 ? (
               <text x={x(i)} y={yStok(n.stok) - 3} textAnchor="middle" className="fill-foreground text-[9px] font-medium">
                 {n.stok}
@@ -236,9 +275,7 @@ export function StokFiyatGrafigi({
         {noktalar.map((n, i) =>
           n.fiyat === null || !adlar.fiyat ? null : (
             <g key={`f${n.gun}`}>
-              <circle cx={x(i)} cy={yFiyat(n.fiyat)} r={3} fill="white" stroke={RENK.net} strokeWidth={1.5}>
-                <title>{`${bicimleGun(n.gun)} · ${adlar.fiyat}: ${bicimlePara(n.fiyat)}`}</title>
-              </circle>
+              <circle cx={x(i)} cy={yFiyat(n.fiyat)} r={3} fill="white" stroke={RENK.net} strokeWidth={1.5} />
               {fiyatEtiketli.has(i) ? (
                 <text x={x(i)} y={Math.max(G.ust + 8, yFiyat(n.fiyat) - 7)} textAnchor="middle" className="text-[10px] font-semibold" fill={RENK.net}>
                   {bicimlePara(n.fiyat)}
@@ -247,7 +284,12 @@ export function StokFiyatGrafigi({
             </g>
           ),
         )}
+        <NoktaSeritleri
+          noktalar={noktalar.map((n, i) => ({ x: x(i), y: yStok(n.stok) }))}
+          alan={{ sol: G.sol, sag: G.gen - G.sag, ust: G.ust, alt: G.yuk - G.alt }}
+        />
       </svg>
+      </GrafikNoktaPenceresi>
     </div>
   );
 }

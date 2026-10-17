@@ -49,6 +49,7 @@ import { KANAL_RENKLERI, KANAL_RENGI_VARSAYILAN } from "@/lib/renkler";
 import { HIZLI_KIYAS } from "@/lib/karsilastirma";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
 import {
+  grafikNoktasiSatisAdresi,
   karEksikKanalAdresi,
   kargosuzParametreleri,
   pencereCoz,
@@ -3406,6 +3407,19 @@ export default async function AnaSayfa({
                 bicimleKisa={(deger) => bicim.paraKisa(deger, seciliPara)}
                 bosMesaj={t("grafikBos")}
                 net2Goster={karGorunur}
+                /* K344 — noktanın KAYNAĞI: o aralığın (gün/hafta/ay) satışları, panelin kanal süzgeciyle. */
+                baglantilar={ciroNet.map((n) =>
+                  n.gelir === 0
+                    ? null
+                    : {
+                        metin: t("ciroNetNoktaSatislari"),
+                        adres: grafikNoktasiSatisAdresi({
+                          baslangic: gunMetni(n.baslangic),
+                          bitis: gunMetni(n.sonGun),
+                          ...(seciliKanal ? { kanal: seciliKanal } : {}),
+                        }),
+                      },
+                )}
               />
             </CardContent>
           </Card>

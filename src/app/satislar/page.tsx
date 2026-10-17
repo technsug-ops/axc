@@ -64,6 +64,7 @@ import {
   type MarjSebebi,
 } from "@/lib/ice-aktarma-serhi";
 import { prisma } from "@/lib/prisma";
+import { suzgecAdresi } from "@/lib/suzgec";
 import { aktarilanSiparisMi, ilkCekimAnlari } from "@/lib/stok";
 
 import { satisKalemToplamlari } from "@/lib/tutar";
@@ -113,6 +114,8 @@ export default async function SatislarSayfasi({
     marjsebep?: string;
     /** Uyarı merkezinden: maliyet/kâr olağan aralığın dışında. */
     veri?: string;
+    /** K344 — ürün kimliği (grafik noktasından); bkz. `grafikNoktasiSatisAdresi`. */
+    varyant?: string;
     /** Sayfa numarası (27.08.2026) — `SAYFA_PARAMETRESI` ile aynı ad. */
     sayfa?: string;
   }>;
@@ -569,8 +572,21 @@ export default async function SatislarSayfasi({
      *  3. Excel indirmesi süzgeci yok sayıyordu.
      */
     veri: p.veri,
+    /** K344 — grafikten gelen ürün süzgeci; aramaya/başka süzgece dokununca DÜŞMEZ. */
+    varyant: p.varyant,
   };
   const disaAktarmaParametreleri = { ...formTasinanlar, q: arama };
+
+  /**
+   * ÜRÜN SÜZGECİ EKRANDA YAZAR (#5) — kimlik adreste, ad burada çözülür.
+   * Bulunamayan kimlik de söylenir: liste boşsa sebebi görünsün.
+   */
+  const urunSuzgeci = (p.varyant ?? "").trim()
+    ? await prisma.productVariant.findUnique({
+        where: { id: (p.varyant ?? "").trim() },
+        select: { sku: true, product: { select: { name: true } } },
+      })
+    : undefined;
 
   const suzgecVar =
     arama !== "" || Object.values(formTasinanlar).some((d) => (d ?? "") !== "");
@@ -805,6 +821,24 @@ export default async function SatislarSayfasi({
           }
         />
       </div>
+
+      {/* K344 — ürün süzgeci (grafik noktasından gelir); kaldır tek tık. */}
+      {urunSuzgeci !== undefined ? (
+        <div className="bg-muted/50 flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
+          <span className="font-medium">
+            {urunSuzgeci
+              ? t("urunSuzgeci", { sku: urunSuzgeci.sku, ad: urunSuzgeci.product.name })
+              : t("urunSuzgeciBulunamadi")}
+          </span>
+          <Badge variant="outline">{toplamlar.kayitSayisi}</Badge>
+          <Link
+            href={suzgecAdresi("/satislar", { ...formTasinanlar, q: arama }, { varyant: undefined })}
+            className="text-primary inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline md:min-h-0"
+          >
+            {t("urunSuzgeciKaldir")}
+          </Link>
+        </div>
+      ) : null}
 
       {/* Hangi süzgecin açık olduğu EKRANDA yazar (#5). */}
       {karEksik ? (

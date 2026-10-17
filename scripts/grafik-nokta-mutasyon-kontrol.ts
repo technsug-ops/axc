@@ -22,6 +22,10 @@ const CIZGI = "src/components/cizgi-grafik.tsx";
 const TEK = "src/components/tek-serili-grafik.tsx";
 const PENCERE = "src/components/grafik-nokta-penceresi.tsx";
 const OLCEK = "src/components/grafik-olcek.ts";
+const KART = "src/app/kart/[variantId]/kart-grafikleri.tsx";
+const KARS = "src/components/karsilastirma-grafigi.tsx";
+const SUZGEC = "src/lib/liste-suzgeci.ts";
+const SATIS = "src/app/satislar/page.tsx";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -63,6 +67,58 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "GRAFIK GOVDEYI KULLANMIYOR", yon: "KALDIRAN", dosya: CIZGI,
     bul: "                      y={ciroY}", koy: "                      y={yKonum(n.gelir) - 10}",
     bozdugu: "duzeltme ekrana ulasmaz" },
+  /* ── K344: üstüne gelme + kaynak bağlantısı ── */
+  { ad: "ZARARSIZ - K344 yorumu", yon: "ZARARSIZ", dosya: PENCERE,
+    bul: "  function ayril(e: React.PointerEvent<HTMLDivElement>) {", koy: "  /* zararsiz */\n  function ayril(e: React.PointerEvent<HTMLDivElement>) {",
+    bozdugu: "" },
+  { ad: "USTUNE GELME DINLENMIYOR", yon: "KALDIRAN", dosya: PENCERE,
+    bul: " onPointerMove={ustuneGel}", koy: "",
+    bozdugu: "masaustunde fareyle gelince rakam gorunmez (kullanici istegi)" },
+  { ad: "DOKUNMATIKTE DE USTUNE GELME / SABITI EZER", yon: "FAZLADAN", dosya: PENCERE,
+    bul: 'if (e.pointerType !== "mouse" || secili?.sabit) return;', koy: "if (false) return;",
+    bozdugu: "sabitlenen pencere fare kayinca baska noktaya atlar, baglantiya gidilemez" },
+  { ad: "AYRILINCA SABIT PENCERE DE KAPANIR", yon: "FAZLADAN", dosya: PENCERE,
+    bul: 'if (e.pointerType === "mouse" && secili && !secili.sabit) setSecili(null);', koy: 'if (e.pointerType === "mouse" && secili) setSecili(null);',
+    bozdugu: "tikla-sabitle sonrasi baglantiya giderken pencere kaybolur" },
+  { ad: "PENCEREDE BAGLANTI CIZILMIYOR", yon: "KALDIRAN", dosya: PENCERE,
+    bul: "{p.baglanti ? (", koy: "{false ? (",
+    bozdugu: "rakam kaynagina goturmez (Ilke #16)" },
+  { ad: "KART GUNLUK SERIT YOK", yon: "KALDIRAN", dosya: KART,
+    bul: "          noktalar={noktalar.map((n, i) => ({ x: xMerkez(i), y: yPara(n.ciro) }))}", koy: "          noktalar={[]}",
+    bozdugu: "kart grafiginde dokunma/ustune gelme calismaz" },
+  { ad: "STOK GRAFIGI SERIT YOK", yon: "KALDIRAN", dosya: KART,
+    bul: "          noktalar={noktalar.map((n, i) => ({ x: x(i), y: yStok(n.stok) }))}", koy: "          noktalar={[]}",
+    bozdugu: "stok ve fiyat grafiginde rakam gorunmez" },
+  { ad: "KARSILASTIRMA SERIT YOK", yon: "KALDIRAN", dosya: KARS,
+    bul: "          <NoktaSeritleri noktalar={seritNoktalari} />", koy: "",
+    bozdugu: "karsilastirma grafiginde rakam gorunmez" },
+  { ad: "KART GUNUNDE KAYNAK YOK", yon: "KALDIRAN", dosya: KART,
+    bul: "...(kaynak && n.adet > 0 ?", koy: "...(false && n.adet > 0 ?",
+    bozdugu: "kart grafigi gunun satislarina goturmez" },
+  { ad: "SATISSIZ GUNDE DE BAGLANTI", yon: "FAZLADAN", dosya: KART,
+    bul: "...(kaynak && n.adet > 0 ?", koy: "...(kaynak && n.adet >= 0 ?",
+    bozdugu: "satissiz gunde bos listeye goturur" },
+  { ad: "KART PENCERESI ADET/IADE YAZMIYOR", yon: "KALDIRAN", dosya: KART,
+    bul: "      { ad: adlar.iade, deger: String(n.iade) },\n", koy: "",
+    bozdugu: "gunun iade rakami pencerede yok" },
+  { ad: "URUN SUZGECI UYGULANMIYOR", yon: "KALDIRAN", dosya: SUZGEC,
+    bul: "if (varyant) veKosullari.push(", koy: "if (false) veKosullari.push(",
+    bozdugu: "grafikten acilan liste butun urunlerin satislarini gosterir (sayi != liste)" },
+  { ad: "URUN SUZGECI KALDIRILMIS KALEMI DE BAGLAR", yon: "FAZLADAN", dosya: SUZGEC,
+    bul: "{ variantId: varyant, ...KALEM_GECERLI }", koy: "{ variantId: varyant }",
+    bozdugu: "kartin saymadigi (kaldirilmis kalemli) siparis listede gorunur" },
+  { ad: "URUN SUZGECI IPTALLERI GOSTERIR", yon: "FAZLADAN", dosya: SUZGEC,
+    bul: '"bitis", "kanal", "hesap", "sayfa", "iptal"];', koy: '"bitis", "kanal", "hesap", "sayfa", "iptal", "varyant"];',
+    bozdugu: "kartin saymadigi iptaller listede gorunur (sayi != liste)" },
+  { ad: "ADRES KANALI DUSURUR", yon: "KALDIRAN", dosya: SUZGEC,
+    bul: '  if (p.kanal) q.set("kanal", p.kanal);\n', koy: "",
+    bozdugu: "kanal suzgecli panelden acilan liste butun kanallari gosterir" },
+  { ad: "URUN SUZGECI TASINMIYOR", yon: "KALDIRAN", dosya: SATIS,
+    bul: "    varyant: p.varyant,\n", koy: "",
+    bozdugu: "listede baska suzgece dokununca urun suzgeci sessizce duser" },
+  { ad: "CIZGI GRAFIK BAGLANTIYI ALMIYOR", yon: "KALDIRAN", dosya: CIZGI,
+    bul: "...(baglantilar?.[i] ? {", koy: "...(false ? {",
+    bozdugu: "panel ciro grafigi kaynaga goturmez" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

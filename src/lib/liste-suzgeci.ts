@@ -18,6 +18,7 @@ import { KARGO_DUSULMEMIS } from "@/lib/kargo-kaynagi";
 import { teslimKovasiKosulu } from "@/lib/teslim-durumu";
 import { kodEsdegerleri } from "@/lib/varyant-arama-kurali";
 import { IADE_GECERLI } from "@/lib/iade-geri-alma";
+import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 
 /**
  * ============================================================================
@@ -487,6 +488,18 @@ export function satisKosulu(
     veKosullari.push({ id: { notIn: paketliIdler ?? [] } });
   }
 
+  /**
+   * ÜRÜN SÜZGECİ — `varyant=<id>` (K344, 17.10.2026). Grafikteki bir günün
+   * kaynağı «bu ÜRÜNÜN o günkü satışları»dır; arama (`q=sku`) bunu veremez:
+   * `contains` başka ürünün kodunda geçen SKU'yu da bulur. Ölçüldü (canlı,
+   * salt okuma): satışlı 1.712 varyantın 4'ünde arama başka ürünün satışını
+   * getiriyordu (`194644291297` → `HBCV00008RGXAJ`). Kimlik varken dizeyle
+   * aranmaz. Kalem ölçütü kartla AYNI (`KALEM_GECERLI`): kaldırılmış kalem
+   * siparişi ürüne bağlamaz.
+   */
+  const varyant = temiz(p.varyant);
+  if (varyant) veKosullari.push({ items: { some: { variantId: varyant, ...KALEM_GECERLI } } });
+
   if (veKosullari.length > 0) {
     kosul.AND = [...(Array.isArray(kosul.AND) ? kosul.AND : []), ...veKosullari];
   }
@@ -659,6 +672,27 @@ export function teslimParametreleri(
       : {}),
     ...(p.kanal ? { kanal: p.kanal } : {}),
   };
+}
+
+/**
+ * GRAFİK NOKTASININ KAYNAĞI (K344, İlke #16) — bir gün/kova aralığının
+ * satışları. Panel ciro grafiği ve kârlılık kartı grafiği bu adresi KULLANIR;
+ * ekran kendi adresini kurmaz.
+ * · `baslangic`/`bitis` İSTANBUL günü `YYYY-MM-DD`, ikisi DAHİL
+ *   (`pencereOlustur` OZEL dalı bitişi bir gün ileri taşır).
+ * · `varyant` verilirse ürün kimliğiyle süzer (arama DEĞİL — bkz. `satisKosulu`).
+ * · `kanal` panelin kanal süzgeci — panel noktası o kanalın cirosunu çizer.
+ * ⚠ `varyant` NÖTR süzgeç değil: iptaller listede gizli kalır — kart da
+ * iptali saymıyor (sayı = liste).
+ */
+export function grafikNoktasiSatisAdresi(p: { baslangic: string; bitis: string; varyant?: string; kanal?: string }): string {
+  const q = new URLSearchParams();
+  if (p.varyant) q.set("varyant", p.varyant);
+  q.set("pencere", "OZEL");
+  q.set("baslangic", p.baslangic);
+  q.set("bitis", p.bitis);
+  if (p.kanal) q.set("kanal", p.kanal);
+  return `/satislar?${q.toString()}`;
 }
 
 /** BİR KANALIN kârı hesaplanamayan satışları. */

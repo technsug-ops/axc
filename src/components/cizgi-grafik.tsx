@@ -62,7 +62,14 @@ export function CizgiGrafik({
   bosMesaj,
   net2Goster = true,
   etiketTavani = 12,
+  baglantilar,
 }: {
+  /**
+   * K344 — noktanın KAYNAĞI (İlke #16), `noktalar` ile AYNI sırada; `null` =
+   * o noktada bağlantı yok. Adres çağırandan, süzgeç sözleşmesinin sahibi
+   * dosyadan gelir (`grafikNoktasiSatisAdresi`); bu bileşen adres kurmaz.
+   */
+  baglantilar?: ({ metin: string; adres: string } | null)[];
   noktalar: GrafikNoktasi[];
   gelirAdi: string;
   net2Adi: string;
@@ -123,8 +130,9 @@ export function CizgiGrafik({
   const etiketAtla = etiketAtlamasi(noktalar.length, etiketTavani);
 
   /** K109 — dokunulan noktanın penceresi; metinler SUNUCUDA biçimlenir. */
-  const pencereler = noktalar.map((n) => ({
+  const pencereler = noktalar.map((n, i) => ({
     baslik: n.tamEtiket,
+    ...(baglantilar?.[i] ? { baglanti: baglantilar[i]! } : {}),
     satirlar: net2Goster
       ? [
           { ad: gelirAdi, deger: bicimle(n.gelir) },

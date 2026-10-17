@@ -406,7 +406,7 @@ export default async function KartSayfasi({
       {/* ═══ K330 — GENEL SEKMESİ: Algoritmo panosu, ardından mevcut stok/maliyet/parti/satış blokları ═══ */}
       {sekme === "genel" ? (
       <>
-      <GenelSekmesi a={analiz} para={para} karGorunur={karGorunur} />
+      <GenelSekmesi a={analiz} para={para} karGorunur={karGorunur} varyantId={varyant.id} />
       <h2 className="text-base font-semibold">{t("ayrintiBaslik")}</h2>
       <div className="grid gap-6 lg:grid-cols-2">
       {/* ═══════════════════ STOK — HERKESE AÇIK ═══════════════════ */}
