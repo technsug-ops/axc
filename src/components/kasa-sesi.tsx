@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/niyetli-baglanti";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { Volume2, VolumeX, X } from "lucide-react";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { yeniSiparisOzeti } from "@/app/kasa-sesi-eylem";
 import { sesCal, sesiHazirla } from "@/lib/okuma-sinyali";
+import { UYGULAMA } from "@/lib/uygulama";
 
 /**
  * ============================================================================
@@ -24,7 +25,7 @@ import { sesCal, sesiHazirla } from "@/lib/okuma-sinyali";
  *    (push) işidir ve ayrı pakettir.
  * ============================================================================
  */
-const ANAHTAR = "bezirga.kasaSesi";
+const ANAHTAR = `${UYGULAMA.teknikAd}-kasa-sesi`;
 const ARALIK_MS = 60_000;
 
 /* Tercih deposu — gerçeğin kaynağı BELLEK (`tercih`); `localStorage` yalnız kalıcılık. */
