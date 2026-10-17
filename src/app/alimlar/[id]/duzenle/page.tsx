@@ -13,6 +13,7 @@ import { alimGuncelle } from "../../actions";
 import { AlimFormu, type AlimBaslangici } from "../../alim-formu";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { kdvOraniniCoz } from "@/lib/kdv";
+import { kapsamKurallariniOnizle } from "@/lib/ortaklik/kapsam";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ export default async function AlimDuzenleSayfasi({
   searchParams: Promise<{ donus?: string }>;
 }) {
   await sayfaIzni("alim.yaz");
+  const kapsamOnizlemesi = kapsamKurallariniOnizle();
 
   const [{ id }, { donus }] = await Promise.all([params, searchParams]);
   const t = await getTranslations("Alim");
@@ -162,6 +164,7 @@ export default async function AlimDuzenleSayfasi({
       ) : null}
 
       <AlimFormu
+        kapsamKurallari={await kapsamOnizlemesi}
         tedarikciler={tedarikciKayitlari.map((s2) => ({
           id: s2.id,
           ad: s2.name,

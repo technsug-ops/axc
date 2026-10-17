@@ -49,6 +49,7 @@ export const BOLUMLER = [
   { kimlik: "gider", ad: "Giderler" },
   { kimlik: "kartBorcu", ad: "Kartlar ve kart borcu" },
   { kimlik: "finansman", ad: "Finansman — sermaye, borç ve kredi" },
+  { kimlik: "ortaklik", ad: "İş Ortakları — proje, ortak ve katılım" },
   { kimlik: "ozellikler", ad: "Ayarlar — Özellikler" },
   { kimlik: "hakedis", ad: "Hakediş — param ne zaman yatar" },
   { kimlik: "tazminat", ad: "Tazminat" },
@@ -127,6 +128,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   kartlar: "kartBorcu",
   kartBorcu: "kartBorcu",
   finansman: "finansman",
+  ortaklik: "ortaklik",
   ozellikler: "ozellikler",
   tazminat: "tazminat",
   hakedis: "hakedis",
@@ -1562,6 +1564,59 @@ ${sikHata([
   {
     hata: "Taksiti ödeyip «Gerçekleşti» dememek",
     cozum: "Plan olarak kalan taksit nakit takviminde «çıkacak» görünmeye devam eder ve faizi gidere yazılmaz. Ödediğin gün işaretle.",
+  },
+])}
+</section>
+
+<section id="ortaklik">
+${baslik("ortaklik")}
+<p><strong>Sol menü → İş Ortakları.</strong> Bir ortakla birlikte yürüttüğün işi
+<strong>proje</strong> olarak açarsın; kimin hangi projede ne katkı verdiğini ve
+hangi malın o projeye ait olduğunu burada tutarsın. Pazaryeri hesabı ve satışlar
+yine senin firmanındır; modül yeni bir satış ya da stok kaydı açmaz, var olan
+alımları projeye <strong>işaretler</strong>.</p>
+${neZaman(
+  "Bir ortakla yeni bir iş başlattığında, ortak para koyduğunda ya da o işe ait mal aldığında.",
+)}
+<div class="ek-not dikkat"><div class="etiket">Proje şimdilik taslaktır</div>
+<p>Bu aşamada proje kâr hesaplamaz ve ortağa hak yazmaz. Kim ne katkı verdi,
+hangi alım projeye ait — bunlar kaydedilir; paylaşım ve dönem sonucu sonraki
+aşamada gelir. Projeden önce alınmış eski stok ve geçmiş kâr projeye
+<strong>girmez</strong>.</p></div>
+<h3>Kurulum sırası</h3>
+<ol>
+<li><strong>Yeni proje:</strong> ad ve başlangıç tarihi. Projeler Türk lirasıyla açılır.</li>
+<li><strong>Yeni ortak kartı:</strong> ortağın adı. Aynı kişi birden çok projede yer alabilir.</li>
+<li><strong>Projeye ortak ekle:</strong> sorumluluğunu yaz, katkılarını işaretle
+(sermaye · emek · satış komisyonu · borç finansmanı). Her projede şartlar ayrıdır.</li>
+</ol>
+<h3>Hangi mal projeye ait</h3>
+<p>Alım detayında, her kalemin altında <strong>«Ortaklık projesi kapsamı»</strong>
+seçimi vardır. Mal kabul ya da hasar kaydı başlayınca seçim kilitlenir. Sık alınan
+bir ürün için İş Ortakları ekranında <strong>ürün kuralı</strong> tanımlarsın
+(barkodu okut ya da SKU yaz): o ürünün bundan sonraki alımları kendiliğinden
+projeye işaretlenir. Kural eski alımları değiştirmez; Excel ile içe aktarılan
+alımlara henüz uygulanmaz. Euro ile alınan kalem TL projeye girmez — alım yine
+kaydedilir, form bunu önceden söyler.</p>
+<h3>Ortağın parası</h3>
+<p>Ortağın koyduğu sermaye ya da verdiği borç <strong>Finansman</strong> ekranına
+girilir; sonra İş Ortakları'nda <strong>«Bağla»</strong> ile o ortağın proje
+katılımına bağlanır. Hareketler Finansman'da kalır, kopyalanmaz. Yanlış bağı
+<strong>«Bağı çöz»</strong> ile kaldırıp doğru katılıma bağlayabilirsin.</p>
+${ekranSemasi("İş Ortakları", [
+  { no: 1, ad: "Üç form", aciklama: "Yeni proje · yeni ortak kartı · projeye ortak ekle.", genis: true, vurgulu: true },
+  { no: 2, ad: "Bağ ve kural", aciklama: "Finansman kaynağını bağla · ürün kuralı ekle." },
+  { no: 3, ad: "Arama", aciklama: "Proje, ortak adı ya da ürün kodu; kamera ile okutulabilir." },
+  { no: 4, ad: "Proje kartları", aciklama: "Katılımcılar, katkılar, bağlı kaynaklar, kurallar; her satırda Düzenle · Sil." },
+])}
+${sikHata([
+  {
+    hata: "Eski stoğu projeye almaya çalışmak",
+    cozum: "Proje başlangıcından önceki alım projeye bağlanamaz; ekran bunu söyler. Proje yalnız başlangıçtan sonraki yeni alımları kapsar.",
+  },
+  {
+    hata: "Bağlı kaydı silmeye çalışmak",
+    cozum: "Ortağı, alımı ya da kuralı olan proje silinmez. Önce bağları kaldır; yalnız yanlış açılmış boş kayıt silinir.",
   },
 ])}
 </section>

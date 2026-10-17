@@ -43,6 +43,7 @@ export const MENU_ADRESLERI: Record<string, string> = {
   kartBorcu: "/kart-borcu",
   /** K304 — sermaye, ortak/üçüncü kişi borcu, banka kredisi. */
   finansman: "/finansman",
+  ortaklik: "/ortaklik",
   hakedis: "/hakedis",
   tazminat: "/tazminat",
   nakitTakvimi: "/nakit-takvimi",
@@ -183,6 +184,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "kartlar", varsayilanGrup: "grupPara" },
   { anahtar: "kartBorcu", varsayilanGrup: "grupPara" },
   { anahtar: "finansman", varsayilanGrup: "grupPara" },
+  { anahtar: "ortaklik", varsayilanGrup: "grupPara" },
   { anahtar: "hakedis", varsayilanGrup: "grupPara" },
   { anahtar: "tazminat", varsayilanGrup: "grupPara" },
   { anahtar: "nakitTakvimi", varsayilanGrup: "grupPara" },

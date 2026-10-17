@@ -1,8 +1,9 @@
 # İş ortağı (ortaklık projesi) modülü — tasarım belgesi
 
-_K347 · Sürüm 2 · 17.10.2026 · Aşama 1 (tasarım). Bu belge KOD DEĞİLDİR; şema, migration ve
-ekran yazılmadı. Kodun açılışı ayrı bir kullanıcı kararıdır (§0). Her uygulama aşaması ayrı
-onayla açılır._
+_K347 · Sürüm 4 · 17.10.2026. Kullanıcı modülü «best practice olarak programa eklemek
+istiyorum» diyerek açtı (§0). Aşama 2'nin proje/ortak/katılım çekirdeği, Finansman bağı,
+manuel alım kapsamı ve ürün kuralı yazıldı; aynı gün dört yön kararıyla düzeltildi (§0).
+Canlı Halil testi yapılmadı. Sonraki aşamalar sırayla açılır._
 
 _Girdiler: kullanıcının 17.10.2026 kararları (§0) · kullanıcının verdiği «Ortaklık Yönetimi —
 Kapsamlı Ortaklık Senaryoları ve Proje Planı» raporu (Sürüm 1.0, 17.10.2026; bundan sonra
@@ -23,6 +24,13 @@ sorumluluklarla birlikte çalışmak isteyen kişileri bünyeme katmak.»_
 | «Yeni büyük faz açılmaz» kuralına takılırsa? | **Tasarım yap, kodu bekle** |
 | (sonra) | Kullanıcı RAPOR'u verdi → kapsam ve ilkeler RAPOR'dan alındı |
 
+**17.10.2026 — esnek modül kararı (sürüm 3).** Kullanıcı tek örnek ortaklığı değil,
+farklı ortaklıkları seçeneklerden kurabileceği bir modül istedi: «kiminin 1 kiminin 5
+farklı ortağı ve farklı senaryolarda olabilecek olsun». Hazır senaryo seçimi, ortağa özel
+şartlar ve proje kurulum akışı anlatıldı; kullanıcı «ok» ile tasarımın bu yönde
+sürdürülmesini onayladı. RAPOR §14 yalnız bir hazır şablondur; bütün projelerin zorunlu
+modeli değildir. Bu onay, önceki kod bekletme kararını değiştirmez.
+
 ⚠ **SÜRÜM 1 NİYE DEĞİŞTİ (eski gerekçe silinmez).** Sürüm 1 _firmanın TÜM kârını_ (GERÇEK
 NET) ortaklar arasında bölüyordu. RAPOR'un ana ilkesi bununla çelişir: _«Mevcut envanter ve
 bundan doğan kâr proje kapsamı dışındadır»_ · _«Proje açılışından önceki stoklar ve geçmiş
@@ -31,8 +39,18 @@ kurulur. Sürüm 1'in kademe motoru, ortak carisi, yetki ve Finansman bağı kar
 değişen şey **hangi kârın bölündüğüdür** (§5).
 
 ⚠ **SIRA:** anayasa bugün _«tek firma kendi işinde oturur — yeni büyük faz AÇILMAZ»_ diyor.
-Bu modül büyüktür. Kod, kullanıcı açılış kararı verince başlar ve karar anayasaya tarihiyle
-yazılır.
+Bu modül büyüktür. **17.10.2026 kullanıcı modülü programa eklemek istediğini yazdı; istisna
+anayasaya işlendi.** ⚠ İlk kod aynı gün kullanıcının yanlışlıkla başka bir modelle yürüttüğü
+oturumda yazıldı; o oturumun yazdığı «kullanıcı başla dedi» cümlesi doğrulanamadı ve
+değiştirildi. Kod incelendi, korundu ve şu yön kararlarıyla düzeltildi (17.10.2026):
+
+| Karar | Gerekçe |
+|---|---|
+| Yeni tablolarda **firma alanı YOK** | şema notu: tek firmalı canlıda firma alanı açılmaz; çok-firma K303 deneme dalında |
+| Yanlış **finansman bağı çözülebilir** | bağ etikettir, para kaydı değil; eski bağ ize yazılır. Açılış şartı: dönem KESİN kapanınca (Aşama 4) kapanmış döneme hareketi giren bağ kilitlenir |
+| Kuralın para birimi tutmazsa **alım durmaz**, kalem proje dışı kalır | asıl iş (alım girişi) yan modül yüzünden kilitlenmez; atlanan kalem ize yazılır, formda önceden söylenir. Elle seçimde kapı durur |
+| Projeler **Türk lirasıyla** açılır; ekranda para birimi seçimi yok | kullanıcı: «ana ortaklık unsuru Türk lirası olacak, euro hiç kullanılmayabilir». `currency` sütunu KALIR (anayasa: tutarın yanında birim) — EUR gerekirse yalnız ekrana seçim eklenir, şema değişmez. EUR alım kalemi ve EUR finansman kaynağı TL projeye bağlanmaz (mevcut kapılar) |
+| Kayıtlar **düzeltilebilir/silinebilir** | ad ve katılım şartı düzenlenir; yalnız bağı olmayan kayıt silinir (İlke #1) |
 
 ---
 
@@ -91,6 +109,57 @@ izinden hesaplanabilir. Eksik olanlar: proje, ortak, anlaşma, gider tahsisi, on
 
 ---
 
+### 3.1 Ortak sayısı ve birbirinden bağımsız şartlar
+
+- Ortaklar sabit sütunlar değildir; projeye katılım listesi olarak eklenir. Bir veya beş
+  dış ortakla kurulabilir; sayı iş kuralında 1 ya da 5 ile sınırlandırılmaz. İşletme sahibi
+  de hak hesabı varsa ayrı katılımcıdır; dış ortak sayısı ile toplam katılımcı sayısı ayrılır.
+- Aynı kişi birden çok projeye katılabilir. Sermayesi, sorumluluğu, payı, katılım tarihleri
+  ve yetkisi her proje için ayrı belirlenir; bir projedeki değişiklik diğerine taşınmaz.
+- Aynı projede biri sermaye getirisi, biri emek ücreti + kalan kârdan pay, biri satış
+  komisyonu alabilir. Bir katılımcının birden çok katkı ve hak türü olabilir.
+- Proje anlaşması ortak hesaplama sırasını belirler; her kademenin yararlanıcıları ve
+  şartları katılımcı bazında tanımlanır. Katılımcının şartı proje sırasını gizlice geçersiz
+  kılamaz. Aynı ücret veya komisyon iki kademede mükerrer hesaplanamaz.
+- Katılımın başlaması, bitmesi ve şart değişimi tarihli tutulur. Ayrılan kişinin kartı,
+  geçmiş hakları ve açık alacağı korunur; sonraki dönemlere katılımı anlaşmaya göre biter.
+
+### 3.2 Proje kurulum akışı
+
+1. **Proje aç:** ad, başlangıç, para birimi, hesap dönemi ve stok kapsamını belirle.
+2. **Ortakları ekle:** mevcut kartı seç veya yeni kart aç; katkı ve sorumluluklarını yaz.
+3. **Hazır senaryo seç:** §10 kataloğundan uyumlu bir veya birden fazla bileşeni kullan;
+   özel model için aynı seçenekleri elle düzenle.
+4. **Şartları düzenle:** ortağa özel tutar/oranlar, zarar paylaşımı, rezerv, ödeme sırası,
+   yeniden yatırım ve erişim tercihlerini belirle. Öneriler kullanıcı kararı yerine geçmez.
+5. **Önizlemeyi incele:** girilen örnek sonuç, nakit ve sermaye tarihleriyle her ortağın
+   hakkını, ödenebilir tutarı, projede kalanı ve karşılanmayan yükümlülükleri ayrı göster.
+   Örnek hesap deftere yazılmaz; varsayımları görünür olur.
+6. **Etkinleştir:** eksikler ve çakışmalar çözülünce anlaşmanın tarihli sürümünü kaydet.
+   Taslak kurulum stok, satış veya cari hareketi üretmez.
+
+Hazır şablon yalnız başlangıç ayarlarını doldurur. Sonradan şablonu değiştirmek etkin
+anlaşmaları değiştirmez. Etkin projede düzenleme yeni tarihli anlaşma sürümü oluşturur;
+kesinleşen dönem eski sürümüne bağlı kalır.
+
+### 3.3 Etkinleştirme ve kabul ölçütleri
+
+| Kontrol | Beklenen davranış |
+|---|---|
+| Bir ve beş dış ortak | Her iki proje de aynı kurulum akışından kurulabilir; boş ortak yuvaları gerekmez |
+| Aynı kişi, iki proje | Birinde sermayedar, diğerinde emek ortağı olabilir; cari ve haklar proje bazında ayrılır |
+| Karma haklar | Sermayedar + ücret/pay alan yönetici + komisyon alan ortak tek anlaşmada hesaplanır |
+| Oranlar | İlgili kalan-pay kademesinde oran toplamı %100 olur; sermaye ağırlıklı yöntemde sıfır ağırlığın sonucu açıkça tanımlanmadan etkinleşmez |
+| Çakışma | Aynı kalan tutarın iki kez dağıtılması veya aynı ücretin gider ve hak olarak iki kez düşülmesi engellenir; ilgili alan gösterilir |
+| Eksik karar | Kullanılmayan seçenek cevap gerektirmez; seçilen senaryonun gerekli şartı eksikse etkinleşmez |
+| Karşılanmayan hak | Kâr/nakit yetmezse erteleme, kısma veya ödeme sınırı seçilen kurala göre görünür; nakit açığı saklanmaz |
+| Yeni anlaşma sürümü | Değişiklik diğer projeleri ve kesinleşmiş geçmiş dönemi değiştirmez |
+
+S2–S13'teki işletme tercihleri tek bir modül varsayılanına kilitlenmez; uygun olanlar
+proje/anlaşma seçeneklerine dönüşür. Vergi hesabı ve konsinye gibi yeni kapsam gerektiren
+konular ayrı kapsam kararlarıdır. S14 ilk uygulama doğrulamasının örneğini seçer; modülün
+başka modeller kurabilmesini sınırlamaz.
+
 ## 4. Kapsam: projeye hangi mal girer
 
 ### 4.1 Kapsam kuralları (RAPOR §3 «kapsam» satırı)
@@ -107,6 +176,24 @@ stokunda bulunması»_). SKU/kategori kuralı yalnız **alım anında işaret ko
 satış eşleştirmesi her zaman PARTİ üzerinden yapılır.
 
 ### 4.2 Ortak alım havuzu (senaryo 14)
+
+**17.10.2026 uygulama durumu:** `PurchaseItem.ortaklikProjesiId` alım kaleminin tamamını
+tek projeye işaretler; stok veya satış kopyası açılmaz. Alım detayından proje seçimi ve
+proje dışına alma yalnız mal kabul/hasar başlamadan yapılır (`ortaklik.yonet` + `alim.yaz`).
+Elle seçimde proje başlangıcından eski alım ve farklı para birimi reddedilir. Alımın tarihi/para birimi
+sonradan düzenlenerek bu kapı aşılamaz; doğrulama aynı transaction içindedir.
+
+`OrtaklikKapsamKurali` ilk sürümde **varyant** bazındadır; bir varyant için tek kural vardır.
+Kural ekranında kod SKU, Firma SKU ya da barkod olabilir; USB okuyucu ve kamera desteklenir,
+çözüm `kodlaVaryantCoz`dan gelir (birden çok ürüne uyan kod seçilmez, söylenir). Uygulamadan yeni alım oluşturulurken ve düzenlemede yeni kalem eklenirken
+işaret aynı transaction içinde yazılır ve iz bırakır. Mevcut kalemlere kural yeniden
+uygulanmaz; kural kaldırılırsa eski damgalar korunur. Form yeni kalem için otomatik proje
+önizlemesini gösterir; alım detayında mal kabulden önce elle değiştirilebilir. Eşleşen
+kuralda para birimi farklıysa alım kaydedilir, kalem proje dışı kalır; form bunu önceden
+söyler, atlama ize yazılır. **Excel/diğer içe
+aktarmalarda otomatik işaretleme, marka/kategori/tedarikçi/kart kuralları henüz yoktur**;
+ekranda içe aktarma sınırı açıklanır. Proje kartında bağlı alım kalemi sayısı gösterilir.
+
 Bir alım kalemi projeye **tamamen** ya da **paylı** (ör. %60 proje · %40 firma) işaretlenebilir.
 Paylı kalemden satılan malın sonucu aynı oranla bölünür. (Açık soru S10 — ilk sürümde gerekli mi?)
 
@@ -204,6 +291,19 @@ Kasım projesi sonucu **₺100.000**. Siz (sermaye ₺300.000, tüm ay) · Ahmet
 ---
 
 ## 7. Katkı, sermaye ve ortak carisi (RAPOR §4)
+
+**Uygulanan ilk bağlantı (17.10.2026):** `Finansman.ortaklikKatilimiId` hem kişiyi hem
+projeyi katılım üzerinden belirler; ayrı sermaye defteri açılmaz. İş Ortakları ekranında
+`ortaklik.yonet` + `finansman.yonet` sahibi, mevcut bir `SERMAYE`/`ORTAK_BORCU` kaynağını
+onay diyaloğuyla bağlar. Kaynağın bütün geçmiş ve gelecek hareketleri kapsanır; kullanıcı bunu
+onaylar. Para birimi proje ile aynı olmalı; katılımda uygun sermaye/borç katkısı bulunmalı.
+Bağlı kaynak ikinci kez bağlanamaz (koşullu yazım eşzamanlı ikinci bağlamayı reddeder);
+yanlış bağ önce **çözülür**, sonra doğru katılıma bağlanır. Çözmede hareketler yerinde kalır.
+Bağlı kaynağın gerektirdiği katkı (sermaye/borç finansmanı) katılımdan kaldırılamaz. Bağ kurma
+ve denetim izi aynı işlemde yazılır. Finansman detayında proje/ortak, proje kartında
+kaynak görünür. Hareketler kopyalanmaz ve bu aşamada proje nakdi/kârı hesaplanmaz.
+Ortaklık tabloları da Finansman gibi firma alanı taşımaz (tek-firma deseni); çok-firma
+sürümü K303 deneme dalında bütün tablolarla birlikte kurulur.
 
 | Katkı / hareket | Nerede tutulur |
 |---|---|

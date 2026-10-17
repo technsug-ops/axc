@@ -48,6 +48,11 @@ export type IzinTanimi = {
 };
 
 export const IZINLER = [
+  /**
+   * 17.10.2026 — K347: İş Ortakları (proje · ortak · katılım). Alım kapsamı ayrıca
+   * `alim.yaz`, finansman bağı ayrıca `finansman.yonet` ister — iki kapı birlikte.
+   */
+  { anahtar: "ortaklik.yonet", grup: "para" },
   // --- OPERASYON ---
   { anahtar: "urun.gor", grup: "operasyon" },
   { anahtar: "urun.yaz", grup: "operasyon" },

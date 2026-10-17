@@ -11,6 +11,7 @@ import { ALIM_NO_DENEME, alimNoOlustur } from "@/lib/alim-no";
 import { prisma } from "@/lib/prisma";
 import { izYaz } from "@/lib/iz";
 import { alimEkleri, inisMaliyetleri, type AlimFaturasi } from "@/lib/alim-maliyeti";
+import { otomatikKapsamlar, alimKapsaminiDogrula } from "@/lib/ortaklik/kapsam";
 
 export type AlimDurumu = {
   hatalar?: string[];
@@ -149,7 +150,7 @@ export async function alimOlustur(
   _oncekiDurum: AlimDurumu,
   formData: FormData,
 ): Promise<AlimDurumu> {
-  await yetkiIste("alim.yaz");
+  const baglam = await yetkiIste("alim.yaz");
 
   const t = await getTranslations("Alim");
 
@@ -224,35 +225,41 @@ export async function alimOlustur(
   for (let deneme = 0; deneme < ALIM_NO_DENEME; deneme++) {
     const kod = await alimNoOlustur(prisma, tedarikci.code, new Date());
     try {
-      const alim = await prisma.purchase.create({
-        data: {
-          code: kod,
-          // Spec gereği yeni alım "sipariş verildi" durumunda başlar.
-          status: "ORDERED",
-          purchasedAt: tarih,
-          supplierId: tedarikci.id,
-          // Serbest metin alanı ARTIK YAZILMIYOR ama SİLİNMEDİ: eski
-          // kayıtların yazıldığı hâli duruyor (şemadaki not).
-          supplierOrderNo: veri.supplierOrderNo || null,
-          note: veri.note || null,
-          installmentCount: veri.installmentCount,
-          channelAccountId: veri.channelAccountId || null,
-          creditCardId: veri.creditCardId || null,
-          goodsAmount: malToplami,
-          goodsCurrency: tekParaBirimi,
-          ...faturaAlanlari(veri, tekParaBirimi),
-          items: {
-            create: veri.kalemler.map((k) => ({
-              variantId: k.variantId,
-              quantity: k.quantity,
-              unitCostAmount: k.unitCostAmount,
-              unitCostCurrency: k.unitCostCurrency,
-              promosyon: k.promosyon,
-            })),
+      const alim = await prisma.$transaction(async tx => {
+        const { kapsam, atlananlar } = await otomatikKapsamlar(tx, tarih, veri.kalemler);
+        const kayit = await tx.purchase.create({
+          data: {
+            code: kod,
+            // Spec gereği yeni alım "sipariş verildi" durumunda başlar.
+            status: "ORDERED",
+            purchasedAt: tarih,
+            supplierId: tedarikci.id,
+            // Serbest metin alanı ARTIK YAZILMIYOR ama SİLİNMEDİ: eski
+            // kayıtların yazıldığı hâli duruyor (şemadaki not).
+            supplierOrderNo: veri.supplierOrderNo || null,
+            note: veri.note || null,
+            installmentCount: veri.installmentCount,
+            channelAccountId: veri.channelAccountId || null,
+            creditCardId: veri.creditCardId || null,
+            goodsAmount: malToplami,
+            goodsCurrency: tekParaBirimi,
+            ...faturaAlanlari(veri, tekParaBirimi),
+            items: {
+              create: veri.kalemler.map((k) => ({
+                variantId: k.variantId,
+                quantity: k.quantity,
+                unitCostAmount: k.unitCostAmount,
+                unitCostCurrency: k.unitCostCurrency,
+                promosyon: k.promosyon,
+                ortaklikProjesiId: kapsam.get(k.variantId) ?? null,
+              })),
+            },
           },
-        },
-        select: { id: true },
-      });
+          select: { id: true },
+        });
+        if (kapsam.size || atlananlar.length) await izYaz({ action: "ORTAKLIK_OTOMATIK_KAPSAM", companyId: baglam.companyId, targetType: "Purchase", targetId: kayit.id, detail: JSON.stringify({ kapsam: [...kapsam], atlananlar }) }, tx);
+        return kayit;
+      }, { timeout: 30_000 });
       yeniId = alim.id;
       break;
     } catch (e) {
@@ -272,6 +279,7 @@ export async function alimOlustur(
   }
 
   revalidatePath("/alimlar");
+  revalidatePath("/ortaklik");
   redirect(basariAdresi(`/alimlar/${yeniId}`, "eklendi"));
 }
 
@@ -318,7 +326,7 @@ export async function alimGuncelle(
   _oncekiDurum: AlimDurumu,
   formData: FormData,
 ): Promise<AlimDurumu> {
-  await yetkiIste("alim.yaz");
+  const baglam = await yetkiIste("alim.yaz");
 
   const t = await getTranslations("Alim");
 
@@ -420,6 +428,8 @@ export async function alimGuncelle(
 
   try {
     await prisma.$transaction(async (tx) => {
+      const yeniKalemler = veri.kalemler.filter(k => !eskiKalemler.has(k.variantId));
+      const { kapsam, atlananlar } = await otomatikKapsamlar(tx, tarih, yeniKalemler);
       await tx.purchase.update({
         where: { id },
         data: {
@@ -455,6 +465,7 @@ export async function alimGuncelle(
               unitCostAmount: String(yeni.unitCostAmount),
               unitCostCurrency: yeni.unitCostCurrency,
               promosyon: yeni.promosyon,
+              ortaklikProjesiId: kapsam.get(yeni.variantId) ?? null,
             },
           });
           continue;
@@ -532,6 +543,8 @@ export async function alimGuncelle(
         }
       }
 
+      await alimKapsaminiDogrula(tx, id);
+      if (kapsam.size || atlananlar.length) await izYaz({ action: "ORTAKLIK_OTOMATIK_KAPSAM", companyId: baglam.companyId, targetType: "Purchase", targetId: id, detail: JSON.stringify({ kapsam: [...kapsam], atlananlar }) }, tx);
       const guncelKalemler = await tx.purchaseItem.findMany({
         where: { purchaseId: id },
         select: { id: true, quantity: true, damagedQuantity: true },
@@ -563,11 +576,16 @@ export async function alimGuncelle(
     { timeout: 30_000 });
   } catch (e) {
     console.error("[alim] guncellenemedi:", e);
+    if (e instanceof Error && (e.message === "KAPSAM_BIRIM" || e.message === "KAPSAM_ESKI_STOK")) {
+      const to = await getTranslations("Ortaklik");
+      return { hatalar: [to(e.message)] };
+    }
     return { hatalar: [t("guncellenemedi")] };
   }
 
   revalidatePath("/alimlar");
   revalidatePath(`/alimlar/${id}`);
+  revalidatePath("/ortaklik");
   revalidatePath("/stok");
   redirect(basariAdresi(`/alimlar/${id}`, "guncellendi"));
 }

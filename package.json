@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "ortaklik:dogrula": "tsx scripts/ortaklik-dogrula.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

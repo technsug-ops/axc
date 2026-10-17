@@ -155,11 +155,21 @@ export async function finansmanListesi(g: { arama: string; tur: FinansmanTuru | 
   };
 }
 
+/** K347 — yalnız henüz bir proje katılımına bağlanmamış sermaye/ortak borcu. */
+export async function baglanabilirOrtaklikKaynaklari() {
+  return prisma.finansman.findMany({
+    where: { ortaklikKatilimiId: null, tur: { in: ["SERMAYE", "ORTAK_BORCU"] } },
+    select: { id: true, kaynakAdi: true, tur: true, birim: true },
+    orderBy: { kaynakAdi: "asc" },
+  });
+}
+
 export async function finansmanDetayi(id: string) {
   const [k, fiyatlar] = await Promise.all([
     prisma.finansman.findUnique({
       where: { id },
       include: {
+        ortaklikKatilimi: { include: { proje: true, ortak: true } },
         hareketler: {
           orderBy: [{ vade: "asc" }, { createdAt: "asc" }],
           include: {

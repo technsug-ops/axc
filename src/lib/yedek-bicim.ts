@@ -46,6 +46,9 @@ export const YEDEK_TABLOLARI = [
   "User",
   "StockAdjustmentReason",
   "Company",
+  "IsOrtagi",
+  "OrtaklikProjesi",
+  "OrtaklikKatilimi",
   "Role",
   // --- yetki: rol izinleri ve üyelikler ---
   "RolePermission",
@@ -56,6 +59,7 @@ export const YEDEK_TABLOLARI = [
   // --- ürün ağacı ---
   "Product",
   "ProductVariant",
+  "OrtaklikKapsamKurali",
   "VariantOption",
   /** K287 — eski kodlar; `ProductVariant`e bağlı (RESTRICT) → varyantlardan SONRA. */
   "EskiKod",

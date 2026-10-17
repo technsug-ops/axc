@@ -108,7 +108,9 @@ export function AlimFormu({
   baslangic,
   alimId,
   hazirVaryant,
+  kapsamKurallari = [],
 }: {
+  kapsamKurallari?: { variantId: string; projeAd: string; baslangic: string; currency: string }[];
   hesaplar: HesapSecenegi[];
   kartlar: KartSecenegi[];
   tedarikciler: TedarikciSecenegi[];
@@ -137,6 +139,7 @@ export function AlimFormu({
   // Biçimlendirme dil altyapısından gelir (sunucudaki bicimlendirici() ile
   // aynı yüzey).
   const bicim = useBicim();
+  const to = useTranslations("Ortaklik");
 
   // --- Başlık alanları ---
 
@@ -677,6 +680,10 @@ export function AlimFormu({
                 key={kalem.variantId}
                 className="space-y-3 rounded-lg border p-4"
               >
+                  {!baslangic?.kalemler.some(k => k.variantId === kalem.variantId) && (() => {
+                    const kural = kapsamKurallari.find(k => k.variantId === kalem.variantId && k.baslangic <= purchasedAt);
+                    return kural ? <p className="text-sm text-muted-foreground">{kural.currency === kalem.unitCostCurrency ? to("kapsamOnizleme", { proje: kural.projeAd }) : to("kapsamBirimAtlanacak", { proje: kural.projeAd, birim: kural.currency })}</p> : <p className="text-sm text-muted-foreground">{to("projeDisi")}</p>;
+                  })()}
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="text-sm font-medium">{kalem.etiket}</div>

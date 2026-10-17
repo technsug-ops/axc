@@ -275,6 +275,16 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
 - **ŞİMDİ: tek firma kendi işinde oturur** — yeni büyük faz AÇILMAZ; bekleyen
   Halil testleri ve ertelenmiş kalemler kapanır. Sonraki adımın (K303
   çok-firma) açılışına kullanıcı karar verir.
+  · **İstisna 17.10.2026 — K347 İş Ortakları:** kullanıcı modülü «best practice
+    olarak programa eklemek istiyorum» diyerek açtı (kaynak: kullanıcının
+    `Ortaklik_Yonetimi_Kapsamli_Rapor.docx`, md5 `c50fa786…`). ⚠ Aynı gün ilk kod,
+    kullanıcının yanlışlıkla başka bir modelle yürüttüğü oturumda yazılmıştı; o
+    oturumun buraya yazdığı «başla» cümlesi doğrulanamadı ve bu satırla
+    DEĞİŞTİRİLDİ. Yön kararları (17.10): mevcut kod korunup düzeltilir · yeni
+    tablolarda firma alanı YOK · yanlış finansman bağı çözülebilir · para birimi
+    tutmayan kalem alımı durdurmaz, proje dışı kalır · ortaklık projeleri
+    **Türk lirasıyla** açılır («euro hiç kullanılmayabilir»; sütun kalır). Tasarım
+    `docs/is-ortagi-tasarimi.md`; aşama aşama ilerler. Diğer büyük fazlar açılmaz.
   · barkod ✓ (`/okut` · `/paketle` · `/yerlestir` + kamera)
   · yetki (RBAC) ✓ (`lib/yetki`, rol+izin, `canli:yetki` bekçisi)
 - **Çok-firma veri katmanı (K303) — ▶ AÇILDI, YALNIZ DENEME KURULUMUNDA

@@ -115,6 +115,10 @@ export async function yedekUret(
     GecmisEkstre: await istemci.gecmisEkstre.findMany(),
     // K304 — sermaye, borç, banka kredisi ve taksitleri (sıra: yedek-bicim.ts).
     Finansman: await istemci.finansman.findMany(),
+    IsOrtagi: await istemci.isOrtagi.findMany(),
+    OrtaklikProjesi: await istemci.ortaklikProjesi.findMany(),
+    OrtaklikKatilimi: await istemci.ortaklikKatilimi.findMany(),
+    OrtaklikKapsamKurali: await istemci.ortaklikKapsamKurali.findMany(),
     FinansmanHareketi: await istemci.finansmanHareketi.findMany(),
     FinansmanBirimFiyati: await istemci.finansmanBirimFiyati.findMany(),
     Purchase: await istemci.purchase.findMany(),

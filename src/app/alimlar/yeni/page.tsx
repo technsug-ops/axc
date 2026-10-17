@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
-import { GeriBaglanti } from "@/components/baglanti";
 import { tarihGirdisi } from "@/lib/bicim";
 import { prisma } from "@/lib/prisma";
 import { VARYANT_SECIMI, varyantiOzetle } from "@/lib/varyant-ozet";
@@ -13,6 +12,7 @@ import {
 } from "../alim-formu";
 import { type TedarikciSecenegi } from "../tedarikci-secimi";
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
+import { kapsamKurallariniOnizle } from "@/lib/ortaklik/kapsam";
 
 /**
  * Forma "bugün" yazan sayfa; statik kipte DERLEME GÜNÜ gömülü kalırdı.
@@ -33,6 +33,7 @@ export default async function YeniAlimSayfasi({
   searchParams: Promise<{ varyant?: string }>;
 }) {
   await sayfaIzni("alim.yaz");
+  const kapsamOnizlemesi = kapsamKurallariniOnizle();
 
   const { varyant: varyantId } = await searchParams;
 
@@ -98,6 +99,7 @@ export default async function YeniAlimSayfasi({
       </div>
 
       <AlimFormu
+        kapsamKurallari={await kapsamOnizlemesi}
         hesaplar={hesaplar}
         kartlar={kartlar}
         tedarikciler={tedarikciler}

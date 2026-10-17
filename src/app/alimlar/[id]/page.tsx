@@ -35,6 +35,7 @@ import { tedarikciAdi } from "@/lib/tedarikci-adi";
 import { kalemIlerlemesi, kalemTeslimAlinanlar } from "@/lib/stok";
 import { kalemToplamlari } from "@/lib/tutar";
 import { DURUM_KUTUSU } from "@/lib/renkler";
+import { AlimKapsamFormu } from "@/app/ortaklik/kapsam-formlari";
 
 export default async function AlimDetaySayfasi({
   params,
@@ -47,7 +48,7 @@ export default async function AlimDetaySayfasi({
     donus?: string;
   }>;
 }) {
-  await sayfaIzni("alim.gor");
+  const baglam = await sayfaIzni("alim.gor");
 
   const [{ id }, kabulSonucu] = await Promise.all([params, searchParams]);
   /**
@@ -63,6 +64,7 @@ export default async function AlimDetaySayfasi({
       supplier: { select: { name: true, code: true } },
       items: {
         include: {
+          ortaklikProjesi: { select: { ad: true } },
           variant: {
             include: {
               product: { select: { name: true, brand: true } },
@@ -84,6 +86,9 @@ export default async function AlimDetaySayfasi({
   const durumEtiketleri = await alimDurumEtiketleri();
   const t = await getTranslations("Alim");
   const ortak = await getTranslations("Ortak");
+  const to = await getTranslations("Ortaklik");
+  const kapsamYetkisi = baglam.izinler.has("ortaklik.yonet") && baglam.izinler.has("alim.yaz");
+  const projeler = kapsamYetkisi ? await prisma.ortaklikProjesi.findMany({ select: { id: true, ad: true }, orderBy: { ad: "asc" } }) : [];
   const toplamlar = kalemToplamlari(alim.items);
 
   // Teslim alınan sağlam adetler ledger'dan gelir (src/lib/stok.ts).
@@ -482,6 +487,14 @@ export default async function AlimDetaySayfasi({
           <p className="text-muted-foreground text-xs">{t("detayNotu")}</p>
         </CardContent>
       </Card>
+      <section className="space-y-3 rounded-lg border p-4">
+        <h2 className="font-semibold">{to("kalemKapsami")}</h2><p className="text-sm text-muted-foreground">{to("kapsamNotu")}</p>
+        {alim.items.map(k => <div key={k.id} className="space-y-2 border-t pt-3"><div className="text-sm"><p className="font-medium">{k.variant.product.name}</p><div className="flex flex-wrap items-center gap-x-3"><KopyalanabilirKod deger={k.variant.sku} etiket={ortak("sku")} /><span>{k.ortaklikProjesi?.ad ?? to("projeDisi")}</span></div></div>
+          {kapsamYetkisi && alim.status !== "CANCELLED" && !k.stockMovements.length && !k.damagedQuantity
+            ? <AlimKapsamFormu kalemId={k.id} projeId={k.ortaklikProjesiId} projeler={projeler} />
+            : <p className="text-sm text-muted-foreground">{to(k.stockMovements.length || k.damagedQuantity ? "KAPSAM_KILITLI" : "kapsamSaltOkunur")}</p>}
+        </div>)}
+      </section>
     </div>
   );
 }

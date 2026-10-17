@@ -36,6 +36,7 @@ export default async function FinansmanDetaySayfasi({ params }: { params: Promis
   const { kaynak, ozet, fiyat } = detay;
 
   const t = await getTranslations("Finansman");
+  const to = await getTranslations("Ortaklik");
   const bicim = await bicimlendirici();
   const para = (n: number) => miktarMetni(n, kaynak.birim, bicim, (b, m) => t(`birimMiktar.${b}`, { miktar: m }));
   const kalanTl = borcMu(kaynak.tur) && kaynak.birim !== "TRY" ? tlKarsiligi(ozet.kalanBorc ?? 0, kaynak.birim, fiyat?.fiyat ?? null) : null;
@@ -55,6 +56,7 @@ export default async function FinansmanDetaySayfasi({ params }: { params: Promis
           <Badge variant="outline">{t(`birim.${kaynak.birim}`)}</Badge>
         </h1>
         {kaynak.note ? <p className="text-muted-foreground max-w-2xl text-sm">{kaynak.note}</p> : null}
+        {kaynak.ortaklikKatilimi && <p className="mt-2 text-sm">{to("finansmanBagOzeti", { proje: kaynak.ortaklikKatilimi.proje.ad, ortak: kaynak.ortaklikKatilimi.ortak.ad })}</p>}
         <p className="text-muted-foreground max-w-2xl text-xs">{t("karaDokunmaz")}</p>
         {/* Yalnız hiç gerçekleşmiş/ters hareketi OLMAYAN kaynak silinebilir (yanlış açılmış kayıt). */}
         {kaynak.hareketler.every((h) => h.gerceklestiAt === null && !h.isReversal) ? (

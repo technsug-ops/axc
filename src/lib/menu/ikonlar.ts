@@ -77,6 +77,7 @@ export const MENU_IKONLARI: Record<string, LucideIcon> = {
   kartlar: CreditCard,
   kartBorcu: Landmark,
   finansman: HandCoins,
+  ortaklik: Users,
   ozellikler: ToggleRight,
   hakedis: Banknote,
   tazminat: PackageX,

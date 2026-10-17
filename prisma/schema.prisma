@@ -533,6 +533,7 @@ enum KategoriKaynagi {
 
 /// Stok, SKU ve barkodun tutulduğu seviye. Ürün seviyesinde stok YOKTUR.
 model ProductVariant {
+  ortaklikKapsamKurallari OrtaklikKapsamKurali[]
   komisyonTarifeKalemleri KomisyonTarifeKalemi[]
 
   id        String  @id @default(cuid())
@@ -1218,8 +1219,64 @@ model KartOdeme {
 //  değiştirilmez — düzeltme ters kayıtla (`isReversal`, stok defteri deseni).
 // ============================================================================
 
+/// K347 — iş ortağı kartı. Firma alanı YOK (kullanıcı kararı 17.10.2026): tek
+/// firmalı canlıda firma alanı açılmaz; çok-firma K303 deneme dalında taşınır.
+model IsOrtagi {
+  id String @id @default(cuid())
+  ad String @db.VarChar(191)
+  notlar String? @db.Text
+  createdAt DateTime @default(now())
+  katilimlar OrtaklikKatilimi[]
+}
+
+model OrtaklikProjesi {
+  id String @id @default(cuid())
+  ad String @db.VarChar(191)
+  currency Currency @default(TRY)
+  baslangic DateTime @db.Date
+  /// Bu çekirdekte projeler yalnız taslaktır; ekonomik hareket doğurmaz.
+  createdAt DateTime @default(now())
+  katilimlar OrtaklikKatilimi[]
+  alimKalemleri PurchaseItem[]
+  kapsamKurallari OrtaklikKapsamKurali[]
+}
+
+/// Bir varyant için tek kural: aynı ürün iki projeye birden otomatik damgalanamaz.
+model OrtaklikKapsamKurali {
+  id String @id @default(cuid())
+  projeId String
+  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  variantId String
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  @@unique([variantId])
+  @@index([projeId])
+}
+
+model OrtaklikKatilimi {
+  id String @id @default(cuid())
+  projeId String
+  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  ortakId String
+  ortak IsOrtagi @relation(fields: [ortakId], references: [id], onDelete: Restrict)
+  sorumluluk String @db.VarChar(1000)
+  /// Seçilen katkılar; parasal haklar anlaşma aşamasında ayrıca tanımlanır.
+  sermaye Boolean @default(false)
+  emek Boolean @default(false)
+  komisyon Boolean @default(false)
+  finansman Boolean @default(false)
+  finansmanKaynaklari Finansman[]
+  createdAt DateTime @default(now())
+  @@unique([projeId, ortakId])
+  @@index([ortakId])
+}
+
 model Finansman {
   id String @id @default(cuid())
+
+  /// K347 — tek bağ hem projeyi hem kişiyi tanımlar; hareketler kopyalanmaz.
+  ortaklikKatilimiId String?
+  ortaklikKatilimi OrtaklikKatilimi? @relation(fields: [ortaklikKatilimiId], references: [id], onDelete: Restrict)
 
   tur FinansmanTuru
   /// Kimden — kişi, ortak, kurum ya da banka adı. VERİDİR (yapıya gömülmez).
@@ -1243,6 +1300,7 @@ model Finansman {
   hareketler FinansmanHareketi[]
 
   @@index([tur])
+  @@index([ortaklikKatilimiId])
 }
 
 model FinansmanHareketi {
@@ -1422,6 +1480,9 @@ model Purchase {
 }
 
 model PurchaseItem {
+  /// K347 — FIFO girişinin bağlı olduğu alım kaleminde kapsam damgası.
+  ortaklikProjesiId String?
+  ortaklikProjesi OrtaklikProjesi? @relation(fields: [ortaklikProjesiId], references: [id], onDelete: Restrict)
   id         String         @id @default(cuid())
   purchaseId String
   purchase   Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
@@ -1458,6 +1519,7 @@ model PurchaseItem {
 
   @@index([purchaseId])
   @@index([variantId])
+  @@index([ortaklikProjesiId])
 }
 
 // ============================================================================

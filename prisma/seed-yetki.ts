@@ -79,6 +79,8 @@ export async function yetkiSeed(prisma: PrismaClient) {
    * "bütün izinlere sahip" değildir.
    */
   const SONRADAN_DOGAN: string[] = [
+    // 17.10.2026 — K347: İş Ortakları ekranı yazıldı.
+    "ortaklik.yonet",
     // 05.09.2026 — K169: kanala stok/fiyat gönderimi izne bağlandı.
     "kanal.yaz",
     // 13.08.2026 — /iadeler ekranı yazıldı.
