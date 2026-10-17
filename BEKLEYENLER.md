@@ -24,11 +24,6 @@ Bekçi `gece-turu-sonuc:dogrula` **30**; mutasyon **11/11** (bir kaçak: iki kap
 
 ---
 
-## 🟡 K333 — OPERASYON TABLOSUNUN KENAR KOVASI DÖNEM DIŞI GÜNLERİ SAYIYOR · 11.10.2026 · [KOD ✓ — HALİL TESTİ BEKLİYOR]
-· **Bulgu (K332 eşdeğerlik ölçümünde, ölçüldü yerel kopyada):** özel aralık 03.11.2025–17.02.2026, aylık kova → son satır «01.02–17.02 · Satış **497**»; o rakamın **137**'si 18–28 Şubat satışı (etiket 17.02'de bitiyor, sayı ayın sonuna kadar). İlk kova için de aynı (dönemden önceki günler). Etiketle çelişen sayı — İlke #16 «sayı = liste» ihlali: tıklanınca açılan liste 360 gösterir.
-· **Hız işi rakamı DEĞİŞTİRMEDİ** (üst okumaya iki yanda 31 gün pay kondu ki eski davranış aynen kalsın). Düzeltme ekrandaki kenar rakamlarını değiştirir → kullanıcı kararı bekliyor.
-· **KOD ✓ (11.10.2026, kullanıcı kararı «evet düzelt»):** `operasyonSerisi` dört döngüde de pencere dışı kaydı kovaya sokmuyor (`noktasi` kapısı, İstanbul gününden; kardeşi `donemCiroNetSerisi`deki kapının aynısı). **Ölçüldü (yerel kopya, aynı aralık):** son satır 497 → **360**, ilk satır 551 → **493** (1–2 Kasım); grafiğin altındaki «Dönem toplamı · satış» 2.305 → **2.110** = üstteki «Satış adedi» kutusu (eskiden 2.305 ≠ 2.110). K332'deki 31 günlük üst okuma payı yalnız bu davranışı koruyordu → kaldırıldı (panel daha az okur). Bekçi: `operasyon:dogrula` 92 (+6; ayrıca elle kurulmuş, gerçekte üretilemeyen 09:00 çapalı pencere `pencereOlustur`a çevrildi — pencere DIŞINDA 4. nokta beklentisini sabitlemişti), yeni `operasyon-mutasyon:kontrol` 8/8 (dört döngü ayrı · iki sınır · saat dilimi · zararsız).
-
 ## 🔴 K329 — YAYIN BOŞLUĞU: CANLI SÜRÜM ANA DALIN GERİSİNDEYSE ÇAN KIRMIZI · 10.10.2026 · [KOD YAZILDI — PUSH + DEPLOY + HALİL TESTİ BEKLİYOR]
 
 **Niye (kullanıcı onayı 10.10 «onayım var»):** K326 düzeltmesi 09.10 09:28'de GitHub'a gitti, Vercel üretimi `f520dbb`de kaldı; ~28 saat siparişleri ESKİ kod işledi ve 19 satışa yanlış desi yazıldı. Hiçbir şey kırmızı yanmadı — Halil testi buldu. «Push yeşil» ≠ «kod canlıda».
