@@ -62,6 +62,7 @@ import {
   type PanelKargosu,
   type PanelSatisi,
   type ParaBirimiPaneli,
+  iadeOrani,
 } from "@/lib/panel";
 import {
   birimKar,
@@ -2977,6 +2978,14 @@ export default async function AnaSayfa({
                       cocuk={
                         <Baglanti href={iadeListesiAdresi}>{blok.toplamIadeAdedi}</Baglanti>
                       }
+                      /* İADE ORANI (18.10.2026) — aynı dönemin satış sayısına göre; satış
+                         yoksa yazılmaz (sıfıra bölünmez). Telefonda da görünür: istek oradan geldi. */
+                      altNot={(() => {
+                        const oran = iadeOrani(blok.toplamIadeAdedi, blok.toplamAdet);
+                        return oran === null ? undefined : (
+                          <span className="text-muted-foreground block">{t("iadeOrani", { oran: bicim.yuzde(oran) })}</span>
+                        );
+                      })()}
                       rozet={kiyasRozeti(
                         blok.toplamIadeAdedi,
                         kb?.toplamIadeAdedi ?? null,

@@ -166,6 +166,7 @@ import {
 } from "../src/lib/panel/takvim-gruplama";
 import {
   aylikSeri,
+  iadeOrani,
   kargoHali,
   panelHesapla,
   type PanelKargosu,
@@ -7273,6 +7274,19 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     (sayfaK.match(/soldAt: \{ gte: ustBaslangic, lt: ustBitisHaric \}/g) ?? []).length === 2);
   kontrol("  ...grafiğin iade okuması SATIŞIN gününden, 12 aylık aralıkta",
     (sayfaK.match(/where: \{ sale: \{ soldAt: \{ gte: veriBaslangic, lt: veriBitisHaric \} \}, \.\.\.IADE_GECERLI \}/g) ?? []).length === 1);
+}
+
+{
+  /* İADE ORANI (18.10.2026) — saf gövde çağrılır, değeri sınanır. */
+  yakin("iade oranı: 7 iade / 248 satış = %2,82", iadeOrani(7, 248) ?? -1, 2.8226, 0.0001);
+  kontrol("  ...satış yokken oran YOK (sıfıra bölünmez, %0 da yazılmaz)", iadeOrani(0, 0) === null && iadeOrani(3, 0) === null);
+  kontrol("  ...iade yokken oran gerçekten sıfır", iadeOrani(0, 10) === 0);
+  const kartK = kaynakOku("src/app/page.tsx")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/^\s*\/\/.*$/gm, " ");
+  kontrol("  ...İade kartı oranı AYNI dönemin satış ve iade sayısından yazıyor",
+    /iadeOrani\(blok\.toplamIadeAdedi, blok\.toplamAdet\)/.test(kartK));
 }
 
 console.log("\n" + "=".repeat(70));

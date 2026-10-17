@@ -2710,6 +2710,7 @@
     "iadeOraniGrafikNotu": "Adet bazlı iade oranının aylık seyri. İstediğin kanalı seçip gizleyebilirsin; Toplam satırı, oranları ortalamaz — payları ve paydaları toplayıp yeniden böler. O ay o kanalda hiç satış yoksa çizgi KESİLİR: oran sıfır değil, hesaplanamaz.",
     "altBaslikOzet": "{aralik} · {pencere} · {kanal}",
     "iadeKisa": "İade",
+    "iadeOrani": "İade oranı: {oran}",
     "huniEtiketi": "Huni:",
     "kargoBekleyenKisa": "Kargo bekleyen",
     "kanalSiraNet2": "NET-2'ye göre",

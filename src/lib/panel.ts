@@ -535,7 +535,7 @@ export function panelHesapla(
       .kargoyaVerilenAdet++;
   }
 
-  // İADELER — satışın kanalına, İADENİN ayına.
+  // İADELER — satışın kanalına, SATIŞIN gününe (K185-③; `PanelIadesi.tarih` notu).
   // Sadece iadesi olan bir kanal da blok açar: o ay hiç satış yapılmamış
   // olabilir ama geçen ayın malı iade edilmiş olabilir; o para gerçektir.
   for (const iade of iadeler) {
@@ -838,4 +838,25 @@ export function aylikSeri(
   }
 
   return noktalar;
+}
+
+/**
+ * İADE ORANI — panelin İade kartındaki yüzde (kullanıcı isteği 18.10.2026:
+ * «satışa göre iade yüzdesi»). Değer 0–100 ölçeğinde (`bicim.yuzde` onu bekler).
+ *
+ * ⚠ PAY İLE PAYDA AYNI KÜMEDEN — ölçüldü (18.10.2026, canlı, yalnız okuma):
+ *   · iki taraf da SATIŞIN gününe yazılır (K185-③): 7 iade = bu dönemde SATILMIŞ
+ *     siparişlerden dönen 7;
+ *   · ömür boyu 246 iade kaydı 246 AYRI satışa bağlı — hiçbir satışın iki iade
+ *     kaydı yok, yani «iade adedi» = «iade edilen satış sayısı»;
+ *   · ekim: 248 satış, 7 iade, hepsi NORMAL, hiçbiri iptal edilmiş satışa bağlı değil.
+ * Bir satış ileride iki iade kaydı taşırsa pay kaydı sayar ve oran şişer — o gün
+ * pay «farklı satış» sayısına çevrilmelidir.
+ *
+ * Paydası sıfırsa `null`: sıfıra bölünmez, «%0» da yazılmaz (satış yokken
+ * «iade oranı sıfır» demek, olmayan bir ölçümü iddia etmek olurdu).
+ */
+export function iadeOrani(iadeAdedi: number, satisAdedi: number): number | null {
+  if (satisAdedi <= 0) return null;
+  return (iadeAdedi / satisAdedi) * 100;
 }
