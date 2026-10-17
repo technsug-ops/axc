@@ -1,8 +1,12 @@
-# İş ortağı modülü — tasarım belgesi
+# İş ortağı (ortaklık projesi) modülü — tasarım belgesi
 
-_K347 · 17.10.2026 · Aşama 1 (tasarım). Bu belge KOD DEĞİLDİR; şema, migration ve ekran
-yazılmadı. Kodun açılışı ayrı bir kullanıcı kararıdır (bkz. §0). Her uygulama aşaması ayrı
+_K347 · Sürüm 2 · 17.10.2026 · Aşama 1 (tasarım). Bu belge KOD DEĞİLDİR; şema, migration ve
+ekran yazılmadı. Kodun açılışı ayrı bir kullanıcı kararıdır (§0). Her uygulama aşaması ayrı
 onayla açılır._
+
+_Girdiler: kullanıcının 17.10.2026 kararları (§0) · kullanıcının verdiği «Ortaklık Yönetimi —
+Kapsamlı Ortaklık Senaryoları ve Proje Planı» raporu (Sürüm 1.0, 17.10.2026; bundan sonra
+**RAPOR**) · kod taraması ve canlı ölçüm (§1)._
 
 ---
 
@@ -11,19 +15,24 @@ onayla açılır._
 **Kullanıcı isteği 17.10.2026:** _«İş ortağı modülü: sermaye katıp benimle farklı
 sorumluluklarla birlikte çalışmak isteyen kişileri bünyeme katmak.»_
 
-**Kullanıcı kararları 17.10.2026 (soru → cevap):**
-
-| Soru | Cevap |
+| Soru (17.10.2026) | Kullanıcı cevabı |
 |---|---|
-| Ortaklar için sistem neyi takip etsin? | **Hepsi:** sermaye katkıları · kâr payı hesabı · para çekme/ödeme · görev/sorumluluk |
-| Ortaklar sisteme kendi kullanıcılarıyla girsin mi? | **Evet, sınırlı yetkiyle** |
-| Kâr payı neye göre bölünsün? | _«Bir çok varyasyon üzerinde çalışabilsin sistem.»_ → tek model değil, **kural motoru** (§4) |
-| Anayasadaki «yeni büyük faz açılmaz» kuralına takılırsa? | **Tasarım yap, kodu bekle** |
+| Ne takip edilsin? | **Hepsi:** sermaye · kâr payı · para çekme/ödeme · görev/sorumluluk |
+| Ortaklar giriş yapsın mı? | **Evet, sınırlı yetkiyle** |
+| Kâr payı neye göre? | _«Bir çok varyasyon üzerinde çalışabilsin sistem.»_ |
+| «Yeni büyük faz açılmaz» kuralına takılırsa? | **Tasarım yap, kodu bekle** |
+| (sonra) | Kullanıcı RAPOR'u verdi → kapsam ve ilkeler RAPOR'dan alındı |
+
+⚠ **SÜRÜM 1 NİYE DEĞİŞTİ (eski gerekçe silinmez).** Sürüm 1 _firmanın TÜM kârını_ (GERÇEK
+NET) ortaklar arasında bölüyordu. RAPOR'un ana ilkesi bununla çelişir: _«Mevcut envanter ve
+bundan doğan kâr proje kapsamı dışındadır»_ · _«Proje açılışından önceki stoklar ve geçmiş
+kazançlar yeni ortaklığa kendiliğinden aktarılmaz»_. Ortaklık firma değil, **PROJE** düzeyinde
+kurulur. Sürüm 1'in kademe motoru, ortak carisi, yetki ve Finansman bağı kararları **korundu**;
+değişen şey **hangi kârın bölündüğüdür** (§5).
 
 ⚠ **SIRA:** anayasa bugün _«tek firma kendi işinde oturur — yeni büyük faz AÇILMAZ»_ diyor.
-Bu modül büyük bir iştir (6 yeni tablo, yeni bir yetki kavramı, para hesabı). Bu yüzden bu
-belge yalnız tasarımdır; **kod, kullanıcı açılış kararı verince başlar** ve o karar
-anayasaya tarihiyle yazılır.
+Bu modül büyüktür. Kod, kullanıcı açılış kararı verince başlar ve karar anayasaya tarihiyle
+yazılır.
 
 ---
 
@@ -33,240 +42,289 @@ _Ölçüldü 17.10.2026 — kod taraması + canlı veritabanı (salt okuma)._
 
 | Konu | Bugün sistemde | Kaynak |
 |---|---|---|
-| Sermaye / ortak borcu | **VAR** — «Finansman» modülü: `SERMAYE` · `ORTAK_BORCU` türleri, defter (ledger) gibi çalışır, ters kayıtla düzeltilir | `src/lib/finansman/*`, `/finansman` |
-| Ortağın kimliği | **YOK** — finansman kaydında ortak yalnız serbest bir İSİM (`kaynakAdi`); kişi kaydı ve kullanıcı bağı yok | `schema.prisma` → `Finansman` |
-| Canlıdaki finansman verisi | 4 kaynak: `UCUNCU_KISI_BORCU` 3 · `ORTAK_BORCU` 1 («Deneme», çeyrek altın, 2 hareket — deneme kaydı) · **`SERMAYE` 0** | canlı, 17.10.2026 |
-| Dönem kârı (firma geneli) | **VAR** — «GERÇEK NET» = NET-2 − giderler (KDV hariç) − fire/kayıp + tazminat; para birimleri ayrı, kur çevrilmez | `src/lib/rapor.ts → raporHesapla`, `/rapor` |
-| Muhasebe dönemi kapatma | **VAR** (K108) — ay kapatılır/açılır, iz bırakır | `src/lib/muhasebe-donemi.ts` |
-| Kapatılmış dönem (canlı) | **0** — hiçbir ay kapatılmamış | canlı, 17.10.2026 |
-| Kullanıcı / rol / izin | **VAR** — kullanıcı · rol · 32 izin anahtarı; canlıda 3 aktif kullanıcı, roller CEO(32) · Sahip(32) · Operasyon(12) · Halil(5) | `src/lib/yetki/*` |
-| «Yalnız kendi kaydını görsün» (satır bazlı yetki) | **YOK** — yetki EKRAN düzeyinde; tek alan istisnası `satis.kar.gor`. `izinler.ts` başlığı alan izinlerinin çoğalmasına karşı uyarıyor | `src/lib/yetki/izinler.ts:14-21` |
-| Kâr payı · ortak cari · para çekme · kasa/banka bakiyesi | **YOK** — `nakit-takvimi.ts:109` «sistem banka/kasa bakiyesi tutmuyor» | tarama |
-| İz (AuditLog) | **VAR** — her yazım `izYaz` ile, eklenir-silinmez | `src/lib/iz.ts` |
-| Çok-firma | `main`'de iş tabloları `companyId` TAŞIMIYOR; `k303-cok-firma` dalında 52 alan taşıyor | `docs/cok-firma-tasarimi.md` |
+| Maliyet yöntemi | **FIFO** · lot kipi HİBRİT | canlı `Company` |
+| **Satışın hangi partiden çıktığı** | **VAR, %100** — her satış çıkışı (`SALE_OUT`) tükettiği partiyi `sourceMovementId` ile taşır | canlı, aşağıda |
+| ↳ son 30 gün | 426 adet · partiye bağlı **%100** · doğrudan ALIM kalemine **%83,6** (kalan: sayım fazlası 50 · iptal girişi 15 · iade girişi 4 · değişim 1) | canlı |
+| ↳ son 90 gün | 1.123 adet · **%100** · alım kalemine **%82,1** | canlı |
+| ↳ son 365 gün | 5.494 adet · **%100** · alım kalemine %64,2 (eski içe aktarılmış alımlarda kalem bağı yok: 1.826 adet) | canlı |
+| Sermaye / ortak borcu | **VAR** — Finansman (`SERMAYE` · `ORTAK_BORCU`), defter gibi, ters kayıtla düzeltilir | `src/lib/finansman/*` |
+| Ortağın kimliği | **YOK** — Finansman'da ortak yalnız serbest isim | `Finansman.kaynakAdi` |
+| Canlı finansman verisi | `SERMAYE` **0** · `ORTAK_BORCU` 1 («Deneme» — deneme kaydı) · `UCUNCU_KISI_BORCU` 3 | canlı |
+| Firma dönem kârı | VAR — GERÇEK NET (`raporHesapla`) | `src/lib/rapor.ts` |
+| Muhasebe dönemi kapatma | VAR (K108) · canlıda kapalı ay **0** | `muhasebe-donemi.ts` · canlı |
+| Gider tahsisi (bir gideri işe/projeye bölmek) | **YOK** — `Expense` bir kategoriye bağlı, başka bağı yok; ayrıca `Expense` düzenlenebilir/silinebilir (defter değil) | `schema.prisma → Expense` |
+| Onay akışı (ikinci onay, tutar limiti) | **YOK** | tarama |
+| «Yalnız kendi kaydı» yetkisi | **YOK** — yetki ekran düzeyinde | `src/lib/yetki/izinler.ts:14-21` |
+| Kâr payı · ortak cari · kasa/banka bakiyesi | **YOK** | tarama |
+| Çok-firma | `main`'de iş tablolarında `companyId` yok; `k303-cok-firma` dalında var | `docs/cok-firma-tasarimi.md` |
 
-**Sonuç:** sermayenin **hareketi** zaten tutuluyor; eksik olan **ortağın kendisi**, ortaklık
-**anlaşması**, **kâr payı hesabı** ve **ortak carisi** (ortağa borçlanılan / ortağa ödenen
-para). Tasarım Finansman'ın YANINA ikinci bir sermaye defteri açmaz, onu ortağa BAĞLAR.
+**Sonuç:** RAPOR'un en zor teknik şartı — _«satış eşleştirmesinde SKU yetmez: lot, parti,
+giriş hareketi gerekir»_ — sistemde **zaten karşılanıyor**. Proje kârı tahminle değil, FIFO
+izinden hesaplanabilir. Eksik olanlar: proje, ortak, anlaşma, gider tahsisi, onay, cari.
 
 ---
 
-## 2. Kavramlar
+## 2. Değişmez ilkeler (RAPOR §1 + anayasa)
 
-| Kavram | Ne demek | Örnek |
+1. **Satış hesabı mevcut işletmenindir.** Pazaryeri hesabı projeye geçmez.
+2. **Eski stok ve geçmiş kâr projeye girmez.** Proje açılış tarihinden önceki partiler kapsam dışıdır.
+3. **Tek işlem, tek kayıt.** Proje ikinci satış/stok kaydı açmaz; var olan kayıtları BAĞLAR.
+4. **Ayrı kavramlar ayrı tutulur:** sermaye · borç · karşılıksız destek · gider avansı · hizmet ücreti · kâr payı.
+5. **Dört ayrı gösterge** (§5.3): sonuç · nakit · dağıtılabilir · ortak hakkı.
+6. **Kural değişikliği geçmişi değiştirmez:** anlaşma sürümlüdür, geçerlilik tarihi ve onay izi taşır; kesinleşen hesap donar.
+7. **Para:** Decimal + para birimi; kur çevrilmez (anayasa).
+8. **Defter disiplini:** sermaye, cari, dağıtım kaydı silinmez; ters kayıtla düzeltilir.
+
+---
+
+## 3. Kavramlar
+
+| Kavram | Ne demek |
+|---|---|
+| **Proje** | Bir ortaklık birimi: adı · açılış tarihi · (varsa) bitiş tarihi · durum (AÇIK / KAPANIŞTA / KAPALI) · kapsam kuralları · ortaklar · anlaşma. Bir firmada birden çok proje olabilir. |
+| **Kapsam** | Projeye hangi malın girdiği (§4). |
+| **Ortak** | Kişi. Sizin kendiniz de bir projede ortak olarak durursunuz. İsteğe bağlı kullanıcıya bağlanır. |
+| **Katılım** | Ortağın bir projedeki rolü: katkı türleri · sorumluluklar · pay sınıfı. Aynı ortak birden çok projede olabilir. |
+| **Anlaşma** | Projenin kâr/zarar/dağıtım kuralları — sürümlü kademe listesi (§6). |
+| **Dönem sonucu** | Projenin bir dönemdeki hesabı: dört gösterge + ortak bazlı hak (§5). TASLAK → KESİN. |
+| **Ortak carisi** | Ortak ile proje arasındaki para hesabı (§7). |
+
+---
+
+## 4. Kapsam: projeye hangi mal girer
+
+### 4.1 Kapsam kuralları (RAPOR §3 «kapsam» satırı)
+
+| Kural | Nasıl çalışır | İlk sürümde |
 |---|---|---|
-| **Ortak** | Firmanın bir ortağı — kişi. Sizin kendiniz de bir ortaksınız (paylar ancak böyle %100'e tamamlanır). İsteğe bağlı bir kullanıcıya bağlanır. | «Ahmet Y.» · kullanıcı `ahmet@…` |
-| **Sorumluluk** | Ortağın üstlendiği iş alanı — kayıt. Sistemdeki YETKİ'yi rol belirler, sorumluluk yalnız «kim neyden sorumlu»yu yazar. | «Alım», «Depo», «Trendyol hesabı» |
-| **Sermaye katkısı** | Ortağın firmaya koyduğu para. Finansman'daki `SERMAYE` kaydı — artık bir ortağa bağlı. | 15.11.2026 · ₺200.000 |
-| **Ortaklık anlaşması** | Kârın nasıl bölüneceğini söyleyen kurallar. **Sürümlüdür:** değişince yenisi yazılır, eskisi silinmez; her sürümün geçerlilik başlangıcı vardır. | «01.01.2027'den itibaren: önce emek ücreti, sonra %60/%40» |
-| **Kâr dağıtımı** | Bir dönemin kârını anlaşmaya göre ortaklara bölen hesap. Önce TASLAK, kullanıcı onaylayınca KESİNLEŞİR. | Kasım 2026 dağıtımı |
-| **Ortak carisi** | Firma ile ortak arasındaki para hesabı: hak edilen kâr payı (+), ödenen para (−), avans/çekim (−). Bakiye = firmanın ortağa borcu. | Ahmet: hak edilen ₺18.000 − ödenen ₺10.000 = ₺8.000 alacaklı |
+| **Alım kalemi / parti** | Seçilen alım kalemleri projeye işaretlenir | ✅ **temel** — en kesin |
+| **Kural ile otomatik işaret** | Açılış tarihinden SONRA girilen alımlardan seçilen SKU · marka · kategori · tedarikçi · alım kartı olanlar **alım kaydedilirken** projeye işaretlenir; kullanıcı formda görür ve değiştirebilir | ✅ (işaret alım kalemine yazılır; kural kendisi değil) |
+| Depo / raf | Raf bazında kapsam | ⏳ sonra (bugün tek depo) |
+| Satış kanalı / kampanya | Proje malı yalnız belirli kanalda satılır | ⏳ sonra |
+
+⛔ **SKU tek başına kapsam DEĞİLDİR** (RAPOR §6, senaryo 15 riski: _«aynı SKU'nun eski ve proje
+stokunda bulunması»_). SKU/kategori kuralı yalnız **alım anında işaret koymanın** yoludur;
+satış eşleştirmesi her zaman PARTİ üzerinden yapılır.
+
+### 4.2 Ortak alım havuzu (senaryo 14)
+Bir alım kalemi projeye **tamamen** ya da **paylı** (ör. %60 proje · %40 firma) işaretlenebilir.
+Paylı kalemden satılan malın sonucu aynı oranla bölünür. (Açık soru S10 — ilk sürümde gerekli mi?)
+
+### 4.3 Proje partisinin kenar durumları (ölçülen kaynak dağılımına göre)
+
+| Durum | Karar |
+|---|---|
+| Proje malı **iade** gelir (`RETURN_IN` partisi) | iade partisi **köken satışın** projesine bağlanır (zincir: iade → satış kalemi → tükettiği parti) |
+| Proje malı satışı **iptal** edilir (`SALE_CANCEL_IN`) | aynı zincir — mal projeye döner |
+| **Sayım fazlası** partisi (`COUNT_CORRECTION`) | kökeni bilinmez → **proje DIŞI** (varsayılan); kullanıcı belgeyle projeye alabilir (iz) |
+| Sayım **eksiği / fire / hasar** proje partisinden | proje sonucuna **zarar** olarak girer (RAPOR §9: «normal ticari risk ile ihmal ayrımı» → açık soru S11) |
 
 ---
 
-## 3. Sermaye: Finansman'a bağlanır, yeni defter açılmaz
+## 5. Proje sonucu
 
-- `Finansman` kaydına isteğe bağlı **`ortakId`** bağı eklenir. `SERMAYE` ve `ORTAK_BORCU`
-  türlerinde ekranda ortak SEÇİLİR (serbest isim yerine).
-- Ortağın sermaye özeti Finansman hareketlerinden **hesaplanır**, ayrıca saklanmaz:
-  koyduğu · ortak borcundan sermayeye mahsup edilen · (iade edilen — bkz. açık soru S5).
-- Sermaye **gelir değildir** (Finansman kuralı aynen): ciroya, NET-1/NET-2'ye, KDV'ye,
-  GERÇEK NET'e girmez.
-- Birim Finansman'daki gibi **veriden** gelir (TRY · EUR · altın…); kur çevrilmez. TL
-  karşılığı gerekirse Finansman'ın beyan edilen birim fiyatı kullanılır ve «beyan» diye yazılır.
+### 5.1 Satış tarafı
+Proje partisinden çıkan her satış adedi projeye aittir. Bir satış kalemi birden çok partiden
+çıkabilir (FIFO zaten parti başına ayrı çıkış yazar) → kalem, **proje partisinden çıkan adet
+oranında** projeye girer.
 
-⚠ **Gün ağırlıklı sermaye** (bkz. §4 kademe C-b) Finansman hareketlerinin TARİHİNDEN
-hesaplanır: ayın 20'sinde konan para o ayın kârında 11/30 ağırlık alır. Bu hesap bugünkü
-veriden yeniden üretilebilir, ayrıca saklanmaz.
+**Projenin satış sonucu = Σ (proje adedine düşen) ciro − maliyet − kanal kesintileri.**
+Maliyet, proje partisinin kendi birim maliyetidir (FIFO damgası).
 
----
+⚠ **ÖLÇÜLECEK (T1):** satır (kalem) düzeyinde NET-2 bugün kârlılık kartında hesaplanıyor; ama
+sipariş düzeyindeki kesintiler (kargo, platform hizmet bedeli) kalemlere nasıl dağıtıldığı
+ayrıca ölçülmeli — kart notu: _«Kart kalem NET-2'sini gösterir; /satislar sipariş NET-2'sini
+(kargo + hizmet bedeli dahil)»_. Karma siparişte (proje + proje dışı ürün) sipariş kesintisinin
+paylaştırma kuralı Aşama 3'te ölçülerek seçilir (RAPOR §6: «karma sipariş … işlem satırı
+üzerinden uygun projeye dağıtılır»).
 
-## 4. Kâr payı: kural motoru (çok model)
+### 5.2 Gider tahsisi (RAPOR §6)
+Projeye ait giderler (reklam, personel, depo, paketleme…) **tahsis kaydı** ile projeye yazılır:
+- yöntem: **doğrudan** (tamamı) · satış tutarı oranı · sipariş sayısı oranı · adet oranı · **belgeli elle**;
+- ⛔ bir giderin tahsisleri toplamı giderin kendisini **aşamaz**; aynı gider ikinci kez yazılamaz;
+- ⚠ `Expense` bugün düzenlenebilir/silinebilir: tahsis edilmiş bir gider sonradan değişirse
+  tahsis **bayat** işaretlenir ve dönem sonucu kırmızı yazar (sessizce kaymaz).
 
-Kullanıcı tek bir model değil, **birçok varyasyon** istedi. Gerçek hayattaki ortaklık
-anlaşmalarının hepsi aynı iskelete oturur: kâr **sırayla** dağıtılır — önce sabit haklar,
-sonra sermayenin getirisi, kalan da oranlara göre. Bu yüzden anlaşma bir **kademe listesi**
-olarak tutulur; motor kademeleri sırayla uygular.
+**Proje dönem sonucu = satış sonucu − tahsis edilen giderler − proje partisi fire/kayıp ± iade etkisi.**
 
-### Kademeler
+### 5.3 Dört gösterge (RAPOR §5 — zorunlu)
 
-| Kademe | Ne yapar | Ayar |
+| # | Gösterge | Ne söyler |
 |---|---|---|
-| **A · Emek ücreti** (sabit ödeme) | Belirli ortağa dönem başına sabit tutar — kârdan ÖNCE | ortak · tutar/ay · para birimi |
-| **B · Sermaye getirisi** (öncelikli getiri) | Sermayeye yıllık % getiri, gün ağırlıklı — kalan kârdan | yıllık oran (örn. %20) · hangi ortaklar |
-| **C · Kalan kârın paylaşımı** | Kalanı böler | **a) sabit oran** (örn. %60/%40) · **b) sermaye oranı** (gün ağırlıklı) · **c) karma** (örn. kalanın %50'si sermayeye göre, %50'si sabit oranla) |
-| **D · Zarar** | Dönem zarar ederse ne olur | **a)** aynı oranlarla paylaşılır · **b)** yalnız sermayedarlara · **c)** devreder: sonraki dönemin kârından ÖNCE kapanır |
+| 1 | **Dönem sonucu** | yukarıdaki yönetimsel kâr/zarar |
+| 2 | **Nakit** | projenin cebindeki para: sermaye girişi + tahsil edilen satış − ödenen alım/gider − ortaklara ödenen. ⚠ Sistem kasa/banka bakiyesi TUTMUYOR (`nakit-takvimi.ts:109`) → nakit **hesaplanır**, «hesaplanan» diye etiketlenir; hakediş (pazaryeri ödemesi) gelmeden satış nakit sayılmaz (açık soru S12) |
+| 3 | **Dağıtılabilir** | nakit − rezerv − (yeniden yatırım kararı) − öncelikli haklar; negatif olamaz |
+| 4 | **Ortak hakkı** | anlaşmaya göre her ortağın hak ettiği (ödenmese de) |
 
-Her kademe isteğe bağlıdır. Yalnız C-a seçilirse sonuç düz bir oran paylaşımıdır.
+⛔ **Yeniden yatırılan kâr satış geliri DEĞİLDİR** (RAPOR §5). Hak (4) cariye yazılır, nakit (2)
+projede kalır; ertesi dönemin sonucunu şişirmez.
 
-### Kademe sırası ve yetmeyen kâr
-
-- Kâr A'yı karşılamaya yetmezse: A **orantılı kısılır** mı, yoksa eksik kalan kısım
-  **ortağa borç olarak devreder** mi? → anlaşmada seçilir (açık soru S3).
-- Kademeler yalnız KÂRDAN pay dağıtır; motor **olmayan parayı dağıtmaz.** Kademe toplamı her
-  zaman dönem kârına **kuruşuna eşittir** (bekçi bunu değerle sınar).
-
-### Sayısal örnek (Kasım 2026, uydurma rakamlar — yalnız mekanizmayı göstermek için)
-
-Dönem kârı (GERÇEK NET): **₺100.000**. Ortaklar: **Siz** (sermaye ₺300.000, tüm ay) ·
-**Ahmet** (sermaye ₺200.000, ayın 16'sında koydu; depo sorumlusu).
-Anlaşma: A) Ahmet'e emek ücreti ₺10.000 · B) yok · C-c) kalanın %50'si sermayeye göre, %50'si
-sabit %50/%50.
-
-1. **A:** Ahmet ₺10.000 → kalan ₺90.000
-2. **Gün ağırlıklı sermaye:** Siz 300.000 × 30/30 = 300.000 · Ahmet 200.000 × 15/30 = 100.000 → oran **%75 / %25**
-3. **C-c:** sermaye yarısı ₺45.000 → Siz ₺33.750 · Ahmet ₺11.250 · sabit yarısı ₺45.000 → Siz ₺22.500 · Ahmet ₺22.500
-4. **Sonuç:** Siz **₺56.250** · Ahmet **₺43.750** (10.000 + 11.250 + 22.500) · toplam **₺100.000** ✓
-
-### Snapshot (dondurma) kuralı
-
-Dağıtım KESİNLEŞTİĞİNDE şunlar kayda donar: kullanılan anlaşma sürümü · dönem kârı rakamı ·
-her ortağın gün ağırlıklı sermayesi · her kademenin sonucu. Anlaşma sonradan değişse eski
-dağıtım DEĞİŞMEZ (anayasa: «oran sonradan değişse eski satışın hesabı kaymaz»).
+### 5.4 Dönem ve kapanış
+- Hesap dönemi: aylık · üç aylık · yıllık · kampanya sonu · özel aralık (RAPOR §3).
+- Dönem sonucu yalnız **kapalı muhasebe dönemleri** üstünde KESİNLEŞİR (canlıda 0 kapalı ay →
+  ön şart, §12). Taslak her zaman görülebilir.
+- Kesinleşen sonuç donar (girdiler + anlaşma sürümü + sonuç). Kaynak sonradan değişirse
+  **bayat** — kırmızı, sessiz yeniden hesap yok.
 
 ---
 
-## 5. Hangi kâr bölünür
+## 6. Paylaşım: kademe motoru
 
-- **Taban: GERÇEK NET** (`raporHesapla`) — giderler düşülmüş firma kârı. NET-2 tek başına
-  giderleri düşmez; onu bölmek, ortaklara harcanmış parayı dağıtmak olurdu. (Açık soru S1 — öneri.)
-- **Yalnız KAPALI muhasebe dönemi dağıtılır.** Açık ayın kârı hâlâ değişir (iade, geç giren
-  satış, gider). Canlıda bugün **hiç kapatılmış dönem yok** — bu modül kullanılmadan önce ay
-  kapatma alışkanlığı başlamalıdır; ekran bunu söyler (kapatma ekranına bağlantıyla).
-- **Para birimi ayrı:** TRY kârı TRY olarak, EUR kârı EUR olarak bölünür; kur çevrilmez.
-- **Dönem yeniden açılırsa** o döneme ait kesinleşmiş dağıtım **«bayat»** işaretlenir ve
-  kaynak kâr rakamı değiştiyse ekranda kırmızı yazar. Sessizce yeniden hesaplanmaz — kullanıcı
-  iptal + yeniden hesap yapar (iz bırakır). _(Anayasa: «susturma kaydın hâline bağlanır».)_
+RAPOR §5'teki paylaşım kurallarının hepsi aynı iskelete oturur: sonuç **sırayla** dağıtılır.
+Anlaşma **sürümlü bir kademe listesidir**; motor kademeleri sırayla uygular.
 
----
-
-## 6. Ortak carisi: para çekme ve ödeme
-
-Ortak ile firma arasındaki para hesabı **defter (ledger)** olarak tutulur: kayıt silinmez,
-düzeltme ters kayıtla yapılır (stok ve Finansman ile aynı disiplin).
-
-| Hareket | Yön (ortağın alacağı) | Kaynak |
+| Kademe | Ne yapar | RAPOR karşılığı |
 |---|---|---|
-| `KAR_PAYI` (hak ediş) | **+** | dağıtım kesinleşince kendiliğinden |
-| `ODEME` (ortağa ödenen kâr payı) | **−** | kullanıcı girer |
-| `AVANS` (dönem kapanmadan çekilen para) | **−** | kullanıcı girer; bakiye eksiye düşebilir (ortak firmaya borçlu) |
-| `DUZELTME` | ± | yalnız ters kayıt, gerekçe zorunlu |
+| **A · Yönetim/emek ücreti** | belirli ortağa dönem başına sabit tutar (ertelenebilir) | senaryo 01 · 07 · 08 |
+| **B · Öncelikli sermaye iadesi** | dağıtılabilir nakit önce sermayeyi geri öder (şelale) | senaryo 06 |
+| **C · Öncelikli getiri** | sermayeye yıllık % getiri, gün ağırlıklı | «öncelikli getiri» |
+| **D · Kalan paylaşım** | a) sabit oran · b) sermaye ağırlıklı (gün ağırlıklı) · c) emek+sermaye katsayılı · d) kademeli (eşiklere göre oran değişir) | «sabit · sermaye ağırlıklı · emek+sermaye · kademeli oran» |
+| **E · Satış komisyonu** | ortağa ciro / tahsilat / kâr bazlı komisyon, **iadeden sonra kesinleşir** | senaryo 11 |
+| **F · Zarar** | aynı oranla · yalnız sermayedarlara · zarar sınırı · devreder | senaryo 01 «zarar sınırı» |
+| **G · Kâr kullanımı** | tam yeniden yatırım · kısmi dağıtım · rezerv önceliği · hedefe bağlı dağıtım | senaryo 16 · RAPOR §3 «kâr politikası» |
 
-- **Bakiye = Σ hareket.** Ekranda: artı → «firma ortağa borçlu», eksi → «ortak firmaya borçlu».
-- ⛔ **Ortağa ödenen para GİDER DEĞİLDİR** — NET-2'ye, GERÇEK NET'e girmez (kâr payı kârın
-  dağıtımıdır, kârı düşüren bir masraf değil). Emek ücreti kademesi de aynı: kârdan pay,
-  gider değil. _(Ortağa maaş bordrosuyla ücret ödeniyorsa o ayrı bir giderdir ve Giderler'e
-  girer — açık soru S6.)_
-- Sermaye iadesi ortak carisinden DEĞİL Finansman'dan geçer (açık soru S5).
-- Vergi: kâr payı stopajı/vergisi bu modülde HESAPLANMAZ (anayasa: «%15 gelir vergisi
-  kullanılmıyor» çizgisi). Gerekirse muhasebeciye sorulur (açık soru S7).
+- Her kademe isteğe bağlı. Kurallar **birbirini dışlıyorsa** motor kaydı reddeder ve nedenini
+  yazar (RAPOR §3: «birbirini dışlayan kurallar için öncelik sırası ve doğrulama gerekir»).
+- **Kademe toplamı = dönem sonucu, kuruşuna.** Yuvarlama artığı anlaşmada seçilen ortağa
+  (varsayılan: en büyük paya) — bekçi değerle sınar.
+- **Performansa bağlı (senaryo 18):** kademe D-d'nin eşikleri ölçülebilir göstergelere
+  bağlanır (marj · satış · stok devir hızı). Eşik GÖSTERGESİ sistemin zaten ürettiği rakamdan
+  okunur; yeni ölçü uydurulmaz.
 
----
-
-## 7. Sorumluluk ve yetki
-
-### Sorumluluk
-Ortağa bir veya birkaç **sorumluluk** yazılır (serbest liste + öneriler: Alım · Depo ·
-Paketleme · Kanal hesabı · Muhasebe). Bu bir KAYITTIR; sistemde ne yapabileceğini rol belirler.
-
-### Ortağın girişi (kullanıcı kararı: sınırlı yetkiyle)
-- Ortak, mevcut kullanıcı sistemiyle bir **kullanıcıya** bağlanır ve bir **rol** alır
-  (ör. depo sorumlusu → «Operasyon» rolü). Var olan yetki altyapısı aynen kullanılır.
-- **Yeni izinler** (iki bacaklı kural: `izinler.ts` + `seed-yetki.ts → SONRADAN_DOGAN`,
-  deploy sonrası `canli:yetki`):
-  - `ortak.yonet` — ortakları, anlaşmayı, dağıtımı ve cariyi yönetir (sizin rolünüz)
-  - `ortak.hesabim` — ortak YALNIZ kendi hesap özetini görür
-
-### ⚠ «Yalnız kendi kaydı» yeni bir kavramdır
-Bugünkü yetki modeli ekran düzeyindedir; satır bazında süzme YOK ve `izinler.ts` buna karşı
-bilinçli uyarı taşıyor. Tasarım genel bir satır süzgeci AÇMAZ. Onun yerine **tek bir ekran**
-(`/ortak-hesabim`) oturumdaki kullanıcının bağlı olduğu ortağı bulur ve yalnız onu gösterir:
-kimlik adresten DEĞİL oturumdan gelir (adres değiştirilerek başkasının hesabı açılamaz).
-Bu kapı mutasyonla sınanır (başka ortağın kimliğini adrese yazan deneme 404 almalı).
-
-Ortağın göreceği: kendi sermayesi · kendi kâr payları (her dağıtımın kademe dökümüyle) ·
-kendi cari hareketleri ve bakiyesi. **Firma geneli rakamları (dönem kârı, diğer ortakların
-payı) görüp görmeyeceği açık soru S4.**
+### Sayısal örnek (uydurma rakamlar — mekanizmayı göstermek için)
+Kasım projesi sonucu **₺100.000**. Siz (sermaye ₺300.000, tüm ay) · Ahmet (₺200.000, ayın
+16'sında; depo). Anlaşma: A) Ahmet ₺10.000 · D-c) kalanın %50'si sermayeye, %50'si sabit
+%50/%50 · G) kalanın tamamı dağıtılır.
+1. A: Ahmet ₺10.000 → kalan ₺90.000
+2. Gün ağırlıklı sermaye: Siz 300.000×30/30 · Ahmet 200.000×15/30 → **%75 / %25**
+3. Sermaye yarısı ₺45.000 → Siz ₺33.750 · Ahmet ₺11.250 · sabit yarısı → ₺22.500 / ₺22.500
+4. **Siz ₺56.250 · Ahmet ₺43.750 · toplam ₺100.000** ✓
+5. G «tam yeniden yatırım» seçilseydi: haklar aynı, **nakit ödenmez**, cari bakiyeye yazılır.
 
 ---
 
-## 8. Veri taslağı (şema DEĞİL — migration yazılmadı)
+## 7. Katkı, sermaye ve ortak carisi (RAPOR §4)
 
-Anayasa merdiveni (_mevcut alan → serbest metin → türetilebilir mi → sütun → tablo_) ile:
+| Katkı / hareket | Nerede tutulur |
+|---|---|
+| **Sermaye taahhüdü** | projede ortak başına taahhüt tutarı (ödenenden AYRI) |
+| **Fiilen yatırılan sermaye** | **Finansman** `SERMAYE` kaydı → `ortakId` + `projeId` bağı (ikinci sermaye defteri açılmaz); belge eki |
+| **Ortak borcu / avans** | Finansman `ORTAK_BORCU` (anapara · vade · geri ödeme zaten var) |
+| **Gider finansmanı** (ortak bir gideri cebinden öder) | gider + ortağa **alacak** cari hareketi; ikisi karıştırılmaz |
+| **Mal / ekipman katkısı** | değerlemesiyle cari/sermaye hareketi; stok ise alım kalemi olarak girer |
+| **Ek sermaye çağrısı** | çağrı kaydı (tutar · son tarih) + katılmama sonucu anlaşmada |
+| **Sermaye iadesi** | Finansman'da yeni hareket (bugün `SERMAYE` yalnız GİRİŞ) — **kâr dağıtımı DEĞİL** |
 
-| Ne | Karar | Neden |
-|---|---|---|
-| Ortağın sermayesi | **türetilir** (Finansman hareketleri) | yeni defter açmak iki kaynak yaratırdı |
-| Gün ağırlıklı sermaye | **türetilir** | hareket tarihlerinden yeniden üretilebilir |
-| `Finansman.ortakId` | **sütun** (isteğe bağlı) | serbest isim kimlik değildir («kimlik varken dizeyle aranmaz») |
-| Ortak | **tablo** `Ortak` (ad · `userId?` · aktif · not) | kişi kaydı yok |
-| Sorumluluk | **tablo** `OrtakSorumlulugu` (ortak · ad) | ekranda listelenir/süzülür |
-| Anlaşma | **tablo** `OrtaklikAnlasmasi` (sürüm · geçerlilik başlangıcı · not) + `AnlasmaKademesi` (sıra · tür · ayarlar) | kademeler SORGULANIR ve sürümlenir |
-| Dağıtım | **tablo** `KarDagitimi` (dönem · para birimi · durum TASLAK/KESIN/IPTAL · donmuş girdiler) + `KarDagitimiSatiri` (ortak · kademe · tutar) | bakiye ve geçmiş sorgulanır |
-| Cari | **tablo** `OrtakHareketi` (ortak · tür · tutar · para birimi · tarih · ters kayıt bağları) | bakiye = toplam sorgusu |
-
-- Para: her tutar **Decimal + para birimi**; Float yok.
-- Tarihler İstanbul günüyle (`src/i18n/ayarlar.ts`).
-- **Çok-firma uyumu:** kod açıldığında her yeni tablo `docs/cok-firma-tasarimi.md` §2–§6'ya
-  göre `companyId` taşır; benzersizlikler `(companyId, …)`. `main` ile dal arasında hangisinde
-  yazılacağı açılış anında karar verilir (anayasa şartı ①: her `main` değişikliği aynı gün dala taşınır).
-- Her yazım `izYaz` ile iz bırakır.
+**Ortak carisi** (defter): kâr payı hakkı (+) · ödeme (−) · avans/çekim (−) · gider finansmanı
+alacağı (+) · ters kayıt. Bakiye = Σ. ⛔ Ortağa ödenen kâr payı **gider değildir**; ortağa
+bordrolu ücret ödeniyorsa o ayrı bir GİDERDİR (RAPOR §7 · açık soru S6).
 
 ---
 
-## 9. Ekranlar (taslak)
+## 8. Personel ve sorumluluk (RAPOR §7)
 
-| Ekran | İçerik | İzin |
-|---|---|---|
-| `/ortaklar` | ortak listesi: ad · sorumluluklar · sermaye · cari bakiye · **toplamlar** (İlke #15) · arama (İlke #17) · satırda görünür eylemler (İlke #1) | `ortak.yonet` |
-| `/ortaklar/[id]` | ortağın hesap özeti: sermaye hareketleri · kâr payları · cari · «ödeme gir» / «avans gir» | `ortak.yonet` |
-| `/ortaklar/anlasma` | anlaşma sürümleri · kademe düzenleyici · **örnek dönemle önizleme** (kademe sonuçları + toplam = kâr kontrolü) | `ortak.yonet` |
-| `/ortaklar/dagitim` | kapalı dönem seç → TASLAK hesap (kademe kademe döküm) → onay diyaloğu → KESİN | `ortak.yonet` |
-| `/ortak-hesabim` | ortağın KENDİ özeti (§7) | `ortak.hesabim` |
-
-Yıkıcı ya da geri alınamaz her işlem (dağıtımı kesinleştir · iptal · ters kayıt) Türkçe onay
-diyaloğu ister (İlke #6). Telefonda kullanılabilir (İlke #8). Metinler sözlükten (i18n).
+- Ortağın sorumlulukları kayıt olarak tutulur (Alım · Depo · Paketleme · Kanal hesabı …).
+- Proje personel gideri **gider tahsisi** ile projeye yazılır (§5.2): işletmenin çalışanı →
+  süre/görev oranında · yatırımcının çalışanı → belgeli maliyet · ilk ayların ücretini ortak
+  öderse → avans / ek sermaye / karşılıksız katkı (seçim kayda yazılır).
+- ⚠ RAPOR'un uyarısı aynen: _«Çalışanı kimin finanse ettiği, işverenin kim olduğu sorusunun
+  yerine geçmez.»_ Sistem bordro/SGK hesabı yapmaz; ekranda bu not durur.
 
 ---
 
-## 10. Aşamalar ve teslim ölçütleri
+## 9. Yetki, onay ve ortak girişi (RAPOR §8)
 
-| Aşama | İş | Kapanış ölçütü |
+### 9.1 Ortak girişi (kullanıcı kararı: sınırlı yetkiyle)
+- Ortak bir **kullanıcıya** bağlanır ve sorumluluğuna uygun **rol** alır (mevcut yetki altyapısı).
+- Yeni izinler (iki bacaklı kural: `izinler.ts` + `seed-yetki.ts → SONRADAN_DOGAN`, deploy
+  sonrası `canli:yetki`): `ortaklik.yonet` (proje · anlaşma · dönem · cari) · `ortaklik.hesabim`
+  (ortak yalnız kendi özeti).
+- ⚠ **«Yalnız kendi kaydı» yeni bir kavramdır.** Genel satır süzgeci AÇILMAZ; tek ekran
+  (`/ortaklik/hesabim`) kimliği **oturumdan** alır, adresten değil. Başka ortağın kimliğini
+  adrese yazan deneme 404 alır — kapı mutasyonla sınanır.
+
+### 9.2 Onay merkezi
+RAPOR'un yetki tablosu (limit aşan alım · yeni tedarikçi · kâr dağıtımı · sermaye çekimi ·
+yeni ortak/çıkış · tasfiye) **bugün sistemde hiç olmayan** bir akış ister: ikinci onay / tutar
+limiti / oy oranı / veto. Bu modülün **en büyük yeni parçasıdır** ve proje çekirdeğinden bağımsız
+kurulabilir → **ayrı aşama** (§11, Aşama 6). İlk aşamalarda «onay» = `ortaklik.yonet` sahibinin
+onay diyaloğu + iz.
+
+---
+
+## 10. Senaryo kataloğu → motor bileşenleri
+
+RAPOR'un 18 senaryosu ayrı ayrı kod DEĞİLDİR; hepsi aynı bileşenlerin **ayar kombinasyonu**dur.
+Hazır şablonlar (RAPOR §12) bu ayarları önceden doldurur.
+
+| # | Senaryo | Gereken bileşen | Aşama |
+|---|---|---|---|
+| 01 | Sermaye + operasyon yöneticisi | kademe A + D + F + G | 4 |
+| 02 | Çok sermayedarlı | çok ortak · pay sınıfı · ek yatırım | 4 |
+| 03 | Kredi/finansman sağlayıcı | **Finansman zaten yapıyor** (vade · faiz · taksit) — projeye bağ yeter | 2 |
+| 04 | Pasif/sessiz yatırımcı | `ortaklik.hesabim` + raporlama; veto → onay merkezi | 5 / 6 |
+| 05 | Kademeli yatırım | sermaye taahhüdü + dilim + hedef eşiği | 4 |
+| 06 | Öncelikli sermaye iadesi | kademe B (şelale) + rezerv | 4 |
+| 07 | Yönetim ücreti + kâr payı | kademe A (ertelenmiş ücret dahil) + D | 4 |
+| 08 | Operasyon emeği | kademe A/D-c · sorumluluk | 4 |
+| 09 | Satış altyapısı/hesap sağlayıcı | hizmet ücreti/komisyon kademesi (hesap işletmede kalır — ilke 1) | 4 |
+| 10 | Çalışan sağlayan ortak | gider tahsisi + gider finansmanı alacağı | 3 |
+| 11 | Satış komisyonu | kademe E (iadeden sonra kesinleşir) | 4 |
+| 12 | Mal sağlayıcı + satışçı | mal katkısı + ödeme tarihi | 4 |
+| 13 | **Konsinye** | malın MÜLKİYETİ sağlayıcıda — bugünkü stok modeli (FIFO + maliyet) bunu taşımıyor | ⛔ **kapsam dışı** (S13) |
+| 14 | Ortak satın alma havuzu | paylı alım kalemi (§4.2) | 3 |
+| 15 | Ürün/kategori bazlı | kapsam kuralı (§4.1) | 2 |
+| 16 | Kârı içeride tutan büyüme | kademe G + dört gösterge | 4 |
+| 17 | Süreli/kampanya | bitiş tarihi + kapanış rezervi + son stok tasfiyesi | 7 |
+| 18 | Performansa bağlı | kademe D-d eşikleri | 4 |
+
+---
+
+## 11. Aşamalar ve teslim ölçütleri
+
+| Aşama | İş | Kapanış ölçütü (Halil testi) |
 |---|---|---|
 | **0** ✓ | Ölçüm (§1) | bu belge |
-| **1** ✓ | Tasarım (bu belge) | kullanıcı açık soruları cevaplar + açılış kararı |
-| **2** | Ortak kaydı + sorumluluk + Finansman bağı (`ortakId`) + `/ortaklar` listesi | Halil testi: ortak ekle → sermaye kaydını ortağa bağla → listede sermaye ve toplam doğru |
-| **3** | Ortak carisi (ödeme · avans · ters kayıt) + bakiye | Halil testi: avans gir → bakiye eksi; ters kayıt → eski hâl |
-| **4** | Anlaşma + kademe motoru (saf gövde, değer testleri: kademe toplamı = kâr, kuruşuna) + dağıtım TASLAK/KESİN | Halil testi: §4 örneğinin aynısı gerçek veriyle; ekrandaki rakamlar birebir |
-| **5** | Ortak girişi + `/ortak-hesabim` + izinler + kapı mutasyonu | Halil testi: ortak kullanıcısıyla giriş → yalnız kendi hesabı; başka ortağın adresi 404 |
+| **1** ✓ | Tasarım (bu belge) | kullanıcı açık soruları cevaplar + **açılış kararı** |
+| **2** | Proje + ortak + katılım/sorumluluk + Finansman bağı + **kapsam** (alım kalemi işareti, kural ile otomatik işaret) | yeni alım gir → projeye işaretli görünür; eski stok listede «proje dışı» |
+| **3** | Proje satış sonucu (FIFO izinden) · iade/iptal zinciri · karma sipariş paylaştırması (T1 ölçümüyle) · gider tahsisi · paylı alım | proje partisinden satılan 1 ürünün sonucu ekranda; kart/satış ekranıyla **birebir** |
+| **4** | Anlaşma + kademe motoru (saf gövde, değer testleri: toplam = sonuç) · dört gösterge · dönem TASLAK/KESİN · ortak carisi | §6 örneğinin aynısı gerçek veriyle; rakamlar birebir |
+| **5** | Ortak girişi + `/ortaklik/hesabim` + izinler + kapı mutasyonu | ortak kullanıcısı yalnız kendi hesabını görür; başka ortağın adresi 404 |
+| **6** | Onay merkezi (limit · ikinci onay · veto) | limit aşan alım onaysız kesinleşmez |
+| **7** | Çıkış/tasfiye (RAPOR §10 sırası) · pay devri · senaryo karşılaştırma (RAPOR Aşama 7) | örnek tasfiye sırası ekranda adım adım |
 
-Her aşama ayrı onayla açılır, ayrı Halil testiyle kapanır.
+RAPOR §13'ün kabul ölçütleri bekçiye çevrilir: eski stok sonucu etkilemez · karma SKU satışları
+ayrılır · iadeler doğru projeye düşer · gider/avans mükerrer yazılmaz · yeniden yatırım gelire
+dönüşmez · farklı firma verisi birleşmez · kapalı dönemin izi korunur.
 
 ---
 
-## 11. Açık sorular (kullanıcı kararı bekler)
+## 12. Ön şartlar ve riskler
+
+- **Ay kapatma:** canlıda 0 kapalı ay. Dönem sonucu ancak kapalı ay üstünde kesinleşir.
+- **Sermaye kayıtları:** canlıda `SERMAYE` 0 → gerçek katkılar tarihleriyle girilmeli (gün ağırlıklı pay buna bakar).
+- **Kalem bağsız eski alımlar:** son 365 günde 1.826 adet satış, kalem bağı olmayan eski içe aktarılmış partilerden. İlke 2 gereği bunlar zaten proje dışıdır — sorun değil, ama ekranda «proje dışı (eski stok)» diye görünür.
+- **Gider defter değil:** tahsisli gider değişirse bayat işareti (§5.2).
+- **Onay merkezi** genel bir altyapı ister; aceleyle yazılırsa yetki modelini bozar → ayrı aşama.
+- **Hukuk/vergi:** RAPOR'un hukuki notu aynen geçerli — sistem yönetimsel hesap yapar; sözleşme, işveren yükümlülüğü, vergi muhasebeci/hukukçu işidir.
+
+---
+
+## 13. Açık sorular (kullanıcı kararı bekler)
 
 | # | Soru | Öneri |
 |---|---|---|
-| S1 | Bölünecek kâr GERÇEK NET mi (giderler düşülmüş)? | **Evet** — NET-2 giderleri düşmez |
-| S2 | Dağıtım ne sıklıkla? (aylık · üç aylık · yıllık · elle seçilen dönem) | aylık hesap, ödeme elle |
-| S3 | Kâr emek ücretine (kademe A) yetmezse: orantılı kısılsın mı, eksik ortağa borç olarak devretsin mi? | anlaşmada seçilebilir |
-| S4 | Ortak firma geneli rakamları (dönem kârı, diğer ortakların payı) görsün mü? | yalnız kendi payı + kendi payının hesaplandığı dönem kârı |
-| S5 | Sermaye iadesi (ortak ayrılır ya da sermayesini çeker) nasıl kaydedilsin? Finansman'da `SERMAYE` bugün yalnız GİRİŞ kabul ediyor | Finansman'a «sermaye iadesi» hareketi |
-| S6 | Ortağa maaş/ücret bordrosuyla mı ödeniyor (o zaman GİDER), yoksa yalnız kârdan pay mı? | ikisi ayrı tutulur |
-| S7 | Kâr payı vergisi/stopajı hesaplansın mı? | hayır — muhasebeciye sorulur |
-| S8 | Siz de bir «ortak» kaydı olarak duracak mısınız? | **evet** — paylar %100'e ancak böyle tamamlanır |
-| S9 | Ortaklık başladığında geçmiş dönemler (ortak gelmeden önceki kâr) dağıtıma girer mi? | hayır — anlaşmanın geçerlilik başlangıcından itibaren |
-
----
-
-## 12. Riskler
-
-- **Kapatılmamış dönem:** canlıda 0 kapalı ay. Ay kapatılmadan dağıtım yapılamaz; ilk iş,
-  kapatma alışkanlığıdır. Aksi hâlde modül açılır ama kullanılamaz.
-- **Sermaye kayıtları boş:** canlıda `SERMAYE` 0. Gün ağırlıklı model (C-b) gerçek sermaye
-  hareketleri girilmeden doğru sonuç vermez — geçmiş katkılar tarihleriyle girilmelidir.
-- **Satır bazlı yetki emsali:** `/ortak-hesabim` modelde ilk «yalnız kendi kaydı» ekranıdır.
-  Genel bir mekanizmaya dönüştürülmez; tek ekran, tek kapı, mutasyonla sınanır.
-- **Para hesabı:** kademe motoru her dağıtımda «toplam = kâr» eşitliğini kuruşuna sağlamalı;
-  yuvarlama artığı hangi ortağa yazılacağı anlaşmada tanımlanır (varsayılan: en büyük paya).
+| S1 | ~~Bölünecek kâr GERÇEK NET mi?~~ → **RAPOR ile çözüldü:** proje sonucu bölünür (§5) | — |
+| S2 | Hesap dönemi? | aylık sonuç, dağıtım politikası anlaşmada |
+| S3 | Kâr emek ücretine (A) yetmezse: orantılı kısılır mı, ertelenip borç olarak mı devreder? | anlaşmada seçilir |
+| S4 | Ortak, proje sonucunu ve diğer ortakların payını görsün mü? | proje sonucu + kendi payı; diğerlerinin payı anlaşmaya göre |
+| S5 | Sermaye iadesi Finansman'a yeni hareket olarak eklensin mi? | evet |
+| S6 | Ortağa bordrolu ücret var mı (GİDER), yoksa yalnız kârdan pay mı? | ikisi ayrı tutulur |
+| S7 | Kâr payı vergisi hesaplansın mı? | hayır — muhasebeci |
+| S8 | Siz de projede ortak kaydı olarak duracak mısınız? | evet |
+| S9 | ~~Geçmiş dönemler dağıtıma girer mi?~~ → **RAPOR ile çözüldü:** girmez (ilke 2) | — |
+| S10 | Paylı alım kalemi (ortak alım havuzu, §4.2) ilk sürümde gerekli mi? | Aşama 3'te |
+| S11 | Proje partisinden fire/hasar: her zaman proje zararı mı, «ihmal» ayrımı mı? | proje zararı + gerekçe alanı |
+| S12 | Nakit göstergesinde satış ne zaman nakit sayılsın: satışta mı, hakediş gelince mi? | hakediş gelince |
+| S13 | Konsinye (senaryo 13) gerekli mi? Mülkiyet modeli gerektirir — kapsam dışı önerildi | kapsam dışı |
+| S14 | İlk somut proje hangisi? (RAPOR §14 örnek profili mi?) — ilk aşamalar ona göre doğrulanır | RAPOR §14 |
