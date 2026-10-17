@@ -9,6 +9,7 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { ozetTazeligi } from "@/lib/ozet/tazelik";
 import { yedekAnlatiOlustur } from "@/lib/ozet/yedek-anlati";
 import type { OzetVeriPaketi } from "@/lib/ozet/veri-toplama";
+import { cizilebilirBaglamlar } from "@/lib/ozet/cizilebilir-baglam";
 
 /**
  * ============================================================================
@@ -50,6 +51,7 @@ export default async function GunlukOzetSayfasi() {
 
   const tazelik = ozetTazeligi(son?.createdAt ?? null, new Date());
   const paket = son ? (JSON.parse(son.girdiJson) as OzetVeriPaketi) : null;
+  const baglamlar = cizilebilirBaglamlar(paket?.baglamlar);
 
   return (
     <div className="space-y-6">
@@ -103,13 +105,13 @@ export default async function GunlukOzetSayfasi() {
           )}
 
           {/* ── KAYNAKLAR — İlke #16: her kalem kendi ekranına gider ────── */}
-          {paket && paket.baglamlar.length > 0 ? (
+          {baglamlar.length > 0 ? (
             <div className="space-y-1 border-t pt-3">
               <p className="text-muted-foreground text-xs font-medium">
                 {t("kaynagaGit")}
               </p>
               <ul className="grid gap-1 text-sm sm:grid-cols-2">
-                {paket.baglamlar.map((b) => (
+                {baglamlar.map((b) => (
                   <li key={b.anahtar}>
                     <Baglanti href={b.adres}>{b.baslik}</Baglanti>
                   </li>

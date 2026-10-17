@@ -6,6 +6,8 @@ import type { UyariAnahtari, UyariSeviyesi } from "@/lib/uyari/turler";
 import { gorevSayilariniTopla } from "@/lib/panel/gorev-verisi";
 import {
   GOREV_ADRESLERI,
+  GOREV_ANAHTARLARI,
+  type CanaTasinanGorev,
   type GorevAnahtari,
 } from "@/lib/panel/bugun-ne-yapmaliyim";
 import { acikTazminatOzetiGetir } from "@/lib/panel/tazminat-ozeti";
@@ -127,7 +129,13 @@ export function ozetPaketiKur(
       paraBirimi: string | null;
       adres: string;
     }[];
-    gorevler: Record<GorevAnahtari, number>;
+    /**
+     * Tip, toplayıcının (`gorevSayilariniTopla`) GERÇEKTEN döndürdüğü şekildir: görev
+     * kutusundaki beş görev + K266'da çana taşınan iki sayı. Tip eskiden yalnız beşini
+     * söylüyordu; fazla anahtar sessizce geçiyor ve aşağıdaki döngü onları da görev
+     * sanıyordu (bkz. döngü notu).
+     */
+    gorevler: Record<GorevAnahtari | CanaTasinanGorev, number>;
     tazminat: { paraBirimi: string; tutar: number }[];
     kartBorcu: { paraBirimi: string; tutar: number }[];
     desiFarkliSayisi: number;
@@ -173,10 +181,17 @@ export function ozetPaketiKur(
     });
   }
 
-  for (const [anahtar, sayi] of Object.entries(gorevler) as [
-    GorevAnahtari,
-    number,
-  ][]) {
+  /**
+   * ⛔ CANLI ARIZA 17.10.2026 — `/ozet` çizilemedi. Döngü `Object.entries(gorevler)`
+   * idi ve sonucu `as [GorevAnahtari, number][]` diye ZORLA tipliyordu. Toplayıcı
+   * K266'dan (24.09) beri çana taşınan iki sayıyı da döndürüyor; onlar görev sanıldı,
+   * `GOREV_ADRESLERI`nde karşılıkları olmadığı için adressiz bağlam doğdu ve ekrandaki
+   * `<Link href={undefined}>` çöktü. O iki sayı özette zaten `uyari_*` olarak, adresiyle
+   * duruyor — görev kopyası fazladan.
+   * Çare: küme NESNENİN anahtarlarından değil görev LİSTESİNDEN okunur; zorla tip yok.
+   */
+  for (const anahtar of GOREV_ANAHTARLARI) {
+    const sayi = gorevler[anahtar];
     if (sayi <= 0) continue;
     const kokAnahtar = `gorev_${anahtar}`;
     sayilar.push({

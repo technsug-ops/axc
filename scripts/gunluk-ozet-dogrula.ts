@@ -5,6 +5,7 @@ import { desiFarkliMi } from "../src/lib/desi-karsilastirma";
 import { ozetTazeligi, OZET_ESIK_SAAT } from "../src/lib/ozet/tazelik";
 import { kaynakOku } from "./kaynak-oku";
 import { baslikMi, ozetTeaseri } from "../src/lib/ozet/teaser";
+import { cizilebilirBaglamlar } from "../src/lib/ozet/cizilebilir-baglam";
 
 /**
  * ============================================================================
@@ -246,6 +247,8 @@ kontrol(
           iadeBildirimi: 0,
           malKabulBekleyen: 0,
           karHesaplanamayan: 0,
+          oransizKanalSku: 0,
+          tarifePenceresi: 0,
         },
         tazminat: [],
         kartBorcu: [],
@@ -278,6 +281,8 @@ kontrol(
           iadeBildirimi: 0,
           malKabulBekleyen: 0,
           karHesaplanamayan: 0,
+          oransizKanalSku: 0,
+          tarifePenceresi: 0,
         },
         tazminat: [],
         kartBorcu: [],
@@ -311,6 +316,8 @@ kontrol(
         iadeBildirimi: 0,
         malKabulBekleyen: 0,
         karHesaplanamayan: 0,
+        oransizKanalSku: 0,
+        tarifePenceresi: 0,
       },
       tazminat: [],
       kartBorcu: [],
@@ -433,6 +440,58 @@ kontrol(
       !/anlatiMetni\.split/.test(kutu),
     );
   }
+}
+
+/* ═══ K-OZET-② ÇANA TAŞINAN SAYILAR GÖREV SANILMAZ (canlı arıza 17.10.2026) ══
+ * Toplayıcı yedi anahtar döndürüyor (beş görev + K266'da çana taşınan iki sayı).
+ * Eski örnek veri hep BEŞ anahtarla kuruluyordu — çana taşınan sayılar sıfırdan
+ * büyükken hiç denenmedi ve adressiz bağlam `/ozet`i çökertti. Örnek veri artık
+ * GERÇEK şekil ve ayrımın iki yakası: çan sayıları DOLU, bir görev DOLU. */
+console.log("  ── çana taşınan sayılar ve çizilebilir bağlam");
+{
+  const paket = ozetPaketiKur(
+    {
+      isGunu: "17 Ekim 2026",
+      uyarilar: [],
+      gorevler: { onayBekleyen: 0, kargoBekleyen: 4, iadeBildirimi: 0, malKabulBekleyen: 0, karHesaplanamayan: 0, oransizKanalSku: 7, tarifePenceresi: 1 },
+      tazminat: [],
+      kartBorcu: [],
+      desiFarkliSayisi: 0,
+    },
+    SAHTE_BICIM,
+  );
+  kontrol(
+    "her bağlamın adresi ve başlığı var (adressiz bağlam <Link>i çökertir)",
+    paket.baglamlar.every((b) => typeof b.adres === "string" && b.adres.startsWith("/") && typeof b.baslik === "string"),
+    paket.baglamlar,
+  );
+  kontrol(
+    "  ...çana taşınan iki sayı GÖREV olarak paketlenmez",
+    !paket.baglamlar.some((b) => b.anahtar === "gorev_oransizKanalSku" || b.anahtar === "gorev_tarifePenceresi"),
+    paket.baglamlar.map((b) => b.anahtar),
+  );
+  kontrol(
+    "  ...gerçek görev YİNE paketlenir (yanlış susma yok)",
+    paket.baglamlar.some((b) => b.anahtar === "gorev_kargoBekleyen" && b.adres === "/satislar?kargo=bekleyen"),
+    paket.baglamlar.map((b) => b.anahtar),
+  );
+}
+{
+  // Kayıtlı ESKİ satır (düzeltmeden önce yazılmış) sayfayı çökertmez.
+  const eski = [
+    { anahtar: "uyari_x", adres: "/hakedis", baslik: "Hakediş", onem: "kirmizi" },
+    { anahtar: "gorev_oransizKanalSku" },
+    { anahtar: "y", adres: "https://dis.example", baslik: "dış", onem: "notr" },
+    null,
+  ];
+  const cizilen = cizilebilirBaglamlar(eski);
+  kontrol("cizilebilirBaglamlar adressiz/dış/bozuk bağlamı ATLAR", cizilen.length === 1 && cizilen[0].anahtar === "uyari_x", cizilen);
+  kontrol("  ...dizi değilse boş döner (çökmez)", cizilebilirBaglamlar(undefined).length === 0 && cizilebilirBaglamlar({}).length === 0);
+  const sayfa = kaynakOku("src/app/ozet/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/.*$/gm, " ");
+  kontrol(
+    "  ...ve /ozet sayfası bağlamları bu kapıdan geçirerek çiziyor",
+    /cizilebilirBaglamlar\(paket\?\.baglamlar\)/.test(sayfa) && /\{baglamlar\.map\(/.test(sayfa) && !/paket\.baglamlar\.map\(/.test(sayfa),
+  );
 }
 
 console.log(
