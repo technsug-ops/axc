@@ -42,17 +42,17 @@ export async function katilimGuncelle(tx: Prisma.TransactionClient, id: string, 
  * Bağlar veritabanında RESTRICT; burada önceden sayılır ki ekran NEDENİNİ söylesin.
  */
 export async function katilimSil(tx: Prisma.TransactionClient, id: string) {
-  const k = await tx.ortaklikKatilimi.findUnique({ where: { id }, include: { _count: { select: { finansmanKaynaklari: true } } } });
+  const k = await tx.ortaklikKatilimi.findUnique({ where: { id }, include: { _count: { select: { finansmanKaynaklari: true, anlasmaPaylari: true } } } });
   if (!k) throw new Error("ORTAKLIK_KAYIT_YOK");
-  if (k._count.finansmanKaynaklari) throw new Error("SILINEMEZ_BAGLI");
+  if (k._count.finansmanKaynaklari || k._count.anlasmaPaylari) throw new Error("SILINEMEZ_BAGLI");
   await tx.ortaklikKatilimi.delete({ where: { id } });
   return k;
 }
 
 export async function projeSil(tx: Prisma.TransactionClient, id: string) {
-  const p = await tx.ortaklikProjesi.findUnique({ where: { id }, include: { _count: { select: { katilimlar: true, alimKalemleri: true, kapsamKurallari: true } } } });
+  const p = await tx.ortaklikProjesi.findUnique({ where: { id }, include: { _count: { select: { katilimlar: true, alimKalemleri: true, kapsamKurallari: true, giderTahsisleri: true, anlasmalar: true } } } });
   if (!p) throw new Error("ORTAKLIK_KAYIT_YOK");
-  if (p._count.katilimlar || p._count.alimKalemleri || p._count.kapsamKurallari) throw new Error("SILINEMEZ_BAGLI");
+  if (p._count.katilimlar || p._count.alimKalemleri || p._count.kapsamKurallari || p._count.giderTahsisleri || p._count.anlasmalar) throw new Error("SILINEMEZ_BAGLI");
   await tx.ortaklikProjesi.delete({ where: { id } });
   return p;
 }

@@ -72,6 +72,7 @@ export default async function ProjeSonucuSayfasi({ params, searchParams }: {
       <ListeyeDon href="/ortaklik">{t("baslik")}</ListeyeDon>
       <h1 className="text-2xl font-semibold">{t("sonucBasligi", { proje: proje.ad })}</h1>
       <p className="max-w-3xl text-sm text-muted-foreground">{t("sonucAciklama", { tarih: bicim.tarih(proje.baslangic) })}</p>
+      <Baglanti href={`/ortaklik/${proje.id}/paylasim`} className="inline-flex min-h-11 items-center text-sm md:min-h-0">{t("paylasimiAc")}</Baglanti>
     </div>
 
     <PencereSecici temelAdres={`/ortaklik/${proje.id}`} secili={tur} baslangic={p.baslangic ?? gunMetni(pencere.ilkGun)} bitis={p.bitis ?? gunMetni(pencere.sonGun)} />

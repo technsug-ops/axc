@@ -119,6 +119,8 @@ export async function yedekUret(
     IsOrtagi: await istemci.isOrtagi.findMany(),
     OrtaklikProjesi: await istemci.ortaklikProjesi.findMany(),
     OrtaklikKatilimi: await istemci.ortaklikKatilimi.findMany(),
+    OrtaklikAnlasmasi: await istemci.ortaklikAnlasmasi.findMany(),
+    OrtaklikAnlasmaPayi: await istemci.ortaklikAnlasmaPayi.findMany(),
     OrtaklikKapsamKurali: await istemci.ortaklikKapsamKurali.findMany(),
     FinansmanHareketi: await istemci.finansmanHareketi.findMany(),
     FinansmanBirimFiyati: await istemci.finansmanBirimFiyati.findMany(),

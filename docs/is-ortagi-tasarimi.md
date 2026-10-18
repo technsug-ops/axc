@@ -294,6 +294,13 @@ Anlaşma **sürümlü bir kademe listesidir**; motor kademeleri sırayla uygular
   bağlanır (marj · satış · stok devir hızı). Eşik GÖSTERGESİ sistemin zaten ürettiği rakamdan
   okunur; yeni ölçü uydurulmaz.
 
+**Uygulandı — Aşama 4a (19.10.2026):** kademe **A** (emek ücreti — kullanıcı kararı: HER AY TAM, kâr yetmezse fark
+zarardır) · **D-a/b/c** (sabit · sermaye gün ağırlıklı · karma x%) · **F** (devreder · kâr oranı · sorumluluk payı) ·
+**G** (dağıt · yeniden yatırım). Hepsi `OrtaklikAnlasmasi` tarihli sürümünde; ay, o ay geçerli en son sürümle
+hesaplanır. Sermaye katkısı Finansman ile AYNI kural (SERMAYE→GİRİŞ, ORTAK_BORCU→SERMAYEYE MAHSUP; ters kayıt eksi).
+Saf gövde `lib/ortaklik/paylasim.ts`; bu örnek bekçide birebir sınanır. Henüz yok: B (öncelikli sermaye iadesi),
+C (öncelikli getiri), D-d (kademeli eşik), E (satış komisyonu); kesinleştirme + ortak carisi (4b).
+
 ### Sayısal örnek (uydurma rakamlar — mekanizmayı göstermek için)
 Kasım projesi sonucu **₺100.000**. Siz (sermaye ₺300.000, tüm ay) · Ahmet (₺200.000, ayın
 16'sında; depo). Anlaşma: A) Ahmet ₺10.000 · D-c) kalanın %50'si sermayeye, %50'si sabit

@@ -10,6 +10,7 @@ import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 import { projeEkle, katilimEkle, katilimGuncelle, katilimSil, projeSil, ortakSil, type Katkilar } from "@/lib/ortaklik/katilim";
 import { finansmanBagla, finansmanBagCoz } from "@/lib/finansman/ortaklik";
 import { kapsamKuraliEkle, alimKapsaminiDegistir } from "@/lib/ortaklik/kapsam";
+import { anlasmaDogrula, formSayisi, type AnlasmaGirdisi } from "@/lib/ortaklik/paylasim";
 
 export type Sonuc = { tamam: boolean; hata?: string };
 
@@ -21,9 +22,11 @@ const BILINEN_HATALAR = [
   "ORTAKLIK_KAYIT_YOK", "SILINEMEZ_BAGLI", "KATKI_BAGLI",
   "KAPSAM_KAYIT_YOK", "KAPSAM_BIRIM", "KAPSAM_ESKI_STOK", "KAPSAM_KILITLI",
   "BAG_KAYIT_YOK", "BAG_BIRIM", "BAG_KATKI", "BAG_ZATEN_VAR",
+  "ANLASMA_AY", "ANLASMA_ESKI_AY", "ANLASMA_YONTEM", "ANLASMA_KARMA", "ANLASMA_KATILIM",
+  "ANLASMA_DEGER", "ANLASMA_SABIT_TOPLAM", "ANLASMA_SORUMLULUK_TOPLAM",
 ] as const;
 
-async function hataSonucu(e: unknown, yer: string, tekrarAnahtari: "tekrar" | "kuralCakisiyor" = "tekrar"): Promise<Sonuc> {
+async function hataSonucu(e: unknown, yer: string, tekrarAnahtari: "tekrar" | "kuralCakisiyor" | "anlasmaAyDolu" = "tekrar"): Promise<Sonuc> {
   const t = await getTranslations("Ortaklik");
   if (e instanceof Error && (BILINEN_HATALAR as readonly string[]).includes(e.message)) return { tamam: false, hata: t(e.message as (typeof BILINEN_HATALAR)[number]) };
   if (e && typeof e === "object" && "code" in e && e.code === "P2002") return { tamam: false, hata: t(tekrarAnahtari) };
@@ -204,5 +207,71 @@ export async function finansmanBagiCoz(_onceki: Sonuc, veri: FormData): Promise<
     });
   } catch (e) { return hataSonucu(e, "finansmanBagiCoz"); }
   tazele([`/finansman/${finansmanId}`, "/finansman"]);
+  return { tamam: true };
+}
+
+const sayi = (v: FormDataEntryValue | null) => formSayisi(String(v ?? ""));
+
+/**
+ * K347 · 4a — ANLAŞMA SÜRÜMÜ. Sürüm DÜZENLENMEZ: değişiklik yeni geçerlilik ayıyla yeni
+ * sürümdür (geçmiş aylar eski şartla kalır). Aynı aya ikinci sürüm yazılamaz (benzersiz).
+ * Kayıt + paylar + iz TEK işlemde. ⛔ 4b'de: kesinleşmiş ayda kullanılan sürüm silinemez.
+ */
+export async function anlasmaKaydet(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
+  const baglam = await yetkiIste("ortaklik.yonet");
+  const projeId = String(veri.get("projeId") ?? "");
+  const katilimIdleri = veri.getAll("katilimId").map(String);
+  const girdi: AnlasmaGirdisi = {
+    gecerlilikAyi: String(veri.get("gecerlilikAyi") ?? "").trim(),
+    kalanYontemi: String(veri.get("kalanYontemi") ?? ""),
+    karmaSermayeYuzdesi: veri.get("kalanYontemi") === "KARMA" ? sayi(veri.get("karmaSermayeYuzdesi")) : null,
+    zararYontemi: String(veri.get("zararYontemi") ?? ""),
+    karKullanimi: String(veri.get("karKullanimi") ?? ""),
+    paylar: katilimIdleri.map((katilimId) => ({
+      katilimId,
+      sabitOran: sayi(veri.get(`sabitOran_${katilimId}`)),
+      emekUcreti: sayi(veri.get(`emekUcreti_${katilimId}`)),
+      sorumlulukPayi: sayi(veri.get(`sorumlulukPayi_${katilimId}`)),
+    })),
+  };
+  try {
+    await prisma.$transaction(async (tx) => {
+      const proje = await tx.ortaklikProjesi.findUnique({ where: { id: projeId }, select: { id: true, baslangic: true, katilimlar: { select: { id: true } } } });
+      if (!proje) throw new Error("ORTAKLIK_KAYIT_YOK");
+      const hata = anlasmaDogrula(girdi, proje.baslangic.toISOString().slice(0, 7), proje.katilimlar.map((k) => k.id));
+      if (hata) throw new Error(hata);
+      const kayit = await tx.ortaklikAnlasmasi.create({
+        data: {
+          projeId,
+          gecerlilikAyi: new Date(`${girdi.gecerlilikAyi}-01T00:00:00.000Z`),
+          kalanYontemi: girdi.kalanYontemi as "SABIT" | "SERMAYE" | "KARMA",
+          karmaSermayeYuzdesi: girdi.karmaSermayeYuzdesi === null ? null : girdi.karmaSermayeYuzdesi.toFixed(2),
+          zararYontemi: girdi.zararYontemi as "DEVREDER" | "KAR_ORANI" | "SORUMLULUK",
+          karKullanimi: girdi.karKullanimi as "DAGIT" | "YENIDEN_YATIRIM",
+          aciklama: String(veri.get("aciklama") ?? "").trim() || null,
+          paylar: { create: girdi.paylar.map((p) => ({ katilimId: p.katilimId, sabitOran: p.sabitOran.toFixed(2), emekUcreti: p.emekUcreti.toFixed(2), sorumlulukPayi: p.sorumlulukPayi.toFixed(2) })) },
+        },
+      });
+      await izYaz({ action: "ORTAKLIK_ANLASMA_EKLE", companyId: baglam.companyId, targetType: "OrtaklikAnlasmasi", targetId: kayit.id, detail: JSON.stringify({ projeId, ...girdi }) }, tx);
+    });
+  } catch (e) { return hataSonucu(e, "anlasmaKaydet", "anlasmaAyDolu"); }
+  tazele([`/ortaklik/${projeId}/paylasim`]);
+  return { tamam: true };
+}
+
+export async function anlasmaSil(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
+  const baglam = await yetkiIste("ortaklik.yonet");
+  const id = String(veri.get("id") ?? "");
+  let projeId = "";
+  try {
+    await prisma.$transaction(async (tx) => {
+      const k = await tx.ortaklikAnlasmasi.findUnique({ where: { id }, include: { paylar: true } });
+      if (!k) throw new Error("ORTAKLIK_KAYIT_YOK");
+      projeId = k.projeId;
+      await tx.ortaklikAnlasmasi.delete({ where: { id } });
+      await izYaz({ action: "ORTAKLIK_ANLASMA_SIL", companyId: baglam.companyId, targetType: "OrtaklikAnlasmasi", targetId: id, detail: JSON.stringify(k) }, tx);
+    });
+  } catch (e) { return hataSonucu(e, "anlasmaSil"); }
+  tazele([`/ortaklik/${projeId}/paylasim`]);
   return { tamam: true };
 }

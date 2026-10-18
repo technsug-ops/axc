@@ -1240,6 +1240,7 @@ model OrtaklikProjesi {
   alimKalemleri PurchaseItem[]
   kapsamKurallari OrtaklikKapsamKurali[]
   giderTahsisleri OrtaklikGiderTahsisi[]
+  anlasmalar OrtaklikAnlasmasi[]
 }
 
 /// K347 · Aşama 3b — GİDERİN PROJEYE DÜŞEN PAYI. Tek proje = tek satır, bölme = birden
@@ -1250,6 +1251,61 @@ model OrtaklikProjesi {
 /// katmanında (`lib/ortaklik/gider.ts`). Gider silinirse tahsisi de gider (Cascade):
 /// gider firma sonucundan da düşmüştür, proje ondan ayrışmaz.
 /// Merdiven ölçüldü: mevcut alan yok · serbest metin toplanamaz · türetilemez.
+/// K347 · Aşama 4a — kalan kârın paylaşım yöntemi (kullanıcı kararı 19.10.2026: üçü de seçilebilir).
+enum OrtaklikKalanYontemi {
+  SABIT // ortak başına sabit oran
+  SERMAYE // gün ağırlıklı sermayeye göre (Finansman'daki bağlı katkı)
+  KARMA // kalanın belirli yüzdesi sermayeye göre, gerisi sabit oranla
+}
+
+/// Zarar (emek ücretleri yazıldıktan sonra kalan eksi) ne olur.
+enum OrtaklikZararYontemi {
+  DEVREDER // ortağa yazılmaz; sonraki ayların kârından paylaşımdan ÖNCE kapatılır
+  KAR_ORANI // kârla aynı ağırlıklarla ortaklara yazılır
+  SORUMLULUK // ortağın sorumluluk payı oranında yazılır
+}
+
+/// Hesaplanan pay ne olur — tarihli sürümle değiştirilebilir («önce yeniden yatırım, sonra dağıtım»).
+enum OrtaklikKarKullanimi {
+  DAGIT // hak yazılır, ödeme ayrıca girilir
+  YENIDEN_YATIRIM // hak yazılır, ödeme yapılmaz; projede kalır
+}
+
+/// K347 · 4a — ANLAŞMA SÜRÜMÜ. Her sürümün geçerlilik ayı var; bir ay, o ay geçerli olan EN SON
+/// sürümle hesaplanır. Böylece oranlar, ücretler ve kâr kullanımı ileri bir aydan itibaren
+/// değiştirilebilir, geçmiş aylar eski sürümle kalır (kullanıcı: «zamandan önce ve sonra»).
+model OrtaklikAnlasmasi {
+  id String @id @default(cuid())
+  projeId String
+  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  /// Ayın 1'i (UTC gece yarısı çapası, `@db.Date`).
+  gecerlilikAyi DateTime @db.Date
+  kalanYontemi OrtaklikKalanYontemi
+  /// Yalnız KARMA: kalanın yüzde kaçı sermayeye göre bölünür (0 < x < 100).
+  karmaSermayeYuzdesi Decimal? @db.Decimal(5, 2)
+  zararYontemi OrtaklikZararYontemi
+  karKullanimi OrtaklikKarKullanimi
+  aciklama String? @db.Text
+  createdAt DateTime @default(now())
+  paylar OrtaklikAnlasmaPayi[]
+  @@unique([projeId, gecerlilikAyi])
+}
+
+/// Sürümdeki her katılımcının şartı: sabit oran %, aylık emek ücreti (sorumluluk karşılığı,
+/// her ay TAM yazılır — kullanıcı kararı 19.10.2026) ve zararda kullanılan sorumluluk payı %.
+model OrtaklikAnlasmaPayi {
+  id String @id @default(cuid())
+  anlasmaId String
+  anlasma OrtaklikAnlasmasi @relation(fields: [anlasmaId], references: [id], onDelete: Cascade)
+  katilimId String
+  katilim OrtaklikKatilimi @relation(fields: [katilimId], references: [id], onDelete: Restrict)
+  sabitOran Decimal @default(0) @db.Decimal(5, 2)
+  emekUcreti Decimal @default(0) @db.Decimal(18, 4)
+  sorumlulukPayi Decimal @default(0) @db.Decimal(5, 2)
+  @@unique([anlasmaId, katilimId])
+  @@index([katilimId])
+}
+
 model OrtaklikGiderTahsisi {
   id String @id @default(cuid())
   expenseId String
@@ -1288,6 +1344,7 @@ model OrtaklikKatilimi {
   komisyon Boolean @default(false)
   finansman Boolean @default(false)
   finansmanKaynaklari Finansman[]
+  anlasmaPaylari OrtaklikAnlasmaPayi[]
   createdAt DateTime @default(now())
   @@unique([projeId, ortakId])
   @@index([ortakId])

@@ -49,6 +49,9 @@ export const YEDEK_TABLOLARI = [
   "IsOrtagi",
   "OrtaklikProjesi",
   "OrtaklikKatilimi",
+  /** K347 · 4a — projeye ve katılıma bağlı → ikisinden SONRA (pay, anlaşmadan da sonra). */
+  "OrtaklikAnlasmasi",
+  "OrtaklikAnlasmaPayi",
   "Role",
   // --- yetki: rol izinleri ve üyelikler ---
   "RolePermission",

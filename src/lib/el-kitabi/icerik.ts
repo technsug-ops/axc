@@ -1579,8 +1579,9 @@ ${neZaman(
   "Bir ortakla yeni bir iş başlattığında, ortak para koyduğunda ya da o işe ait mal aldığında.",
 )}
 <div class="ek-not dikkat"><div class="etiket">Proje şimdilik taslaktır</div>
-<p>Proje kendi satış sonucunu ve kendisine yazılan gideri gösterir ama ortağa
-henüz hak yazmaz: kârın ortaklar arasında nasıl bölüneceği sonraki aşamada gelir.
+<p>Proje kendi satış sonucunu, gideri ve kârın ortaklara nasıl bölüneceğini
+<strong>önizleme</strong> olarak gösterir; dönemi kesinleştirip ortak hesabına yazmak
+sonraki aşamada gelir.
 Projeden önce alınmış eski stok ve geçmiş kâr projeye <strong>girmez</strong>.</p></div>
 <h3>Kurulum sırası</h3>
 <ol>
@@ -1609,6 +1610,17 @@ Kâr, satışın kendi NET-2'sinden (kargo ve sipariş kesintileri dahil) projen
 payı kadar alınır — Satışlar ekranındaki rakamla aynıdır. Kârı henüz
 hesaplanmamış satış toplama girmez ve ekranda ayrıca sayılır. İade ya da iptalle
 geri gelip yeniden satılan mal bu sürümde projeye bağlanmaz.</p>
+<h3>Anlaşma ve paylaşım</h3>
+<p>Proje kartında <strong>«Paylaşımı aç»</strong>. Önce <strong>anlaşma sürümü</strong>
+eklenir: hangi aydan geçerli olduğu, kalan kârın nasıl bölüneceği (<strong>sabit oran</strong> ·
+<strong>sermayeye göre</strong> · <strong>karma</strong>), zarar olursa ne olacağı
+(<strong>sonraki kârdan mahsup</strong> · kâr oranıyla · <strong>sorumluluk payına göre</strong>)
+ve kâr kullanımı (dağıtım · yeniden yatırım). Her ortağa sabit oran, aylık emek ücreti ve
+sorumluluk payı yazılır. Emek ücreti her ay tam yazılır; kâr yetmezse fark zarar sayılır.</p>
+<p>Şartlar değişince yeni bir sürüm, ileri bir aydan geçerli olarak eklenir: önceki aylar eski
+şartla, sonraki aylar yeni şartla hesaplanır. Önizleme her ay için dönem sonucunu, ücretleri,
+kapatılan zararı, bölüneni ve devreden zararı gösterir; ortaklara yazılan toplam her zaman
+dönem sonucu ile devreden zarardaki değişimin toplamıdır.</p>
 <h3>Projeye gider yazmak</h3>
 <p>Gider formundaki <strong>«Ortaklık projesi payı»</strong> bölümünde ya
 <strong>tek proje</strong> ve yüzdesini (örn. maaşın %30'u) ya da <strong>birden çok

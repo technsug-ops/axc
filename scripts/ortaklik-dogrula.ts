@@ -18,10 +18,11 @@ import { projeEkle, katilimEkle, katilimGuncelle, katilimSil, projeSil, ortakSil
 import { finansmanBagla, finansmanBagCoz } from "../src/lib/finansman/ortaklik";
 import { kaynakOku } from "./kaynak-oku";
 import { projeSonucu, type SonucSatisi } from "../src/lib/ortaklik/sonuc";
+import { agirliklaBol, anlasmaDogrula, formSayisi, gunAgirlikliSermaye, paylasimHesapla, type AnlasmaGirdisi, type AnlasmaSurumu } from "../src/lib/ortaklik/paylasim";
 import { giderTahsisleriniDogrula, giderTahsisleriniYaz, projeGiderSonucu, tahsisDogrula, tahsisGirdisiOku } from "../src/lib/ortaklik/gider";
 import { kapsamKuraliEkle, otomatikKapsamlar, alimKapsaminiDegistir, alimKapsaminiDogrula } from "../src/lib/ortaklik/kapsam";
 
-const KONTROL_SAYISI = 75;
+const KONTROL_SAYISI = 92;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -167,6 +168,15 @@ async function main() {
         await tx.expense.delete({ where: { id: gider.id } });
         assert.equal(await tx.ortaklikGiderTahsisi.count({ where: { projeId: tahsisP.id } }), 0); assert.ok(await tx.ortaklikProjesi.findUnique({ where: { id: tahsisP.id } })); ok();
       }
+      // ═══ AŞAMA 4a — anlaşmada payı olan katılım / anlaşması olan proje silinmez ═══
+      {
+        const ap = await tx.ortaklikProjesi.create({ data: { ad: "Anlaşma", baslangic: gun } });
+        const ao = await tx.isOrtagi.create({ data: { ad: "Anlaşma ortak" } });
+        const ak = await tx.ortaklikKatilimi.create({ data: { projeId: ap.id, ortakId: ao.id, sorumluluk: "x", emek: true } });
+        await tx.ortaklikAnlasmasi.create({ data: { projeId: ap.id, gecerlilikAyi: gun, kalanYontemi: "SABIT", zararYontemi: "DEVREDER", karKullanimi: "DAGIT", paylar: { create: [{ katilimId: ak.id, sabitOran: "100" }] } } });
+        await assert.rejects(() => katilimSil(tx, ak.id), { message: "SILINEMEZ_BAGLI" }); ok();
+        await assert.rejects(() => projeSil(tx, ap.id), { message: "SILINEMEZ_BAGLI" }); ok();
+      }
       throw geriAl;
     }, { timeout: 30_000 });
   } catch (e) { if (e !== geriAl) throw e; }
@@ -255,6 +265,63 @@ async function main() {
     const eylem = kaynakOku("src/app/giderler/actions.ts").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
     assert.ok(/return \(await izinVarMi\("ortaklik\.yonet"\)\) \? girdi : null;/.test(eylem), "tahsis izni sunucuda sorulmalı");
     assert.ok(/\} else \{\s*await giderTahsisleriniDogrula\(tx, id\);/.test(eylem), "bölüm yokken tahsise dokunulmamalı, yalnız doğrulanmalı");
+    ok();
+  }
+  // ═══ AŞAMA 4a — KÂR PAYLAŞIMI (saf gövde) ═══
+  {
+    const surum = (ek: Partial<AnlasmaSurumu>): AnlasmaSurumu => ({ id: "s1", gecerlilikAyi: "2026-01", kalanYontemi: "SABIT", karmaSermayeYuzdesi: null, zararYontemi: "DEVREDER", karKullanimi: "DAGIT", paylar: [], ...ek });
+    const pay = (katilimId: string, sabitOran: number, emekUcreti = 0, sorumlulukPayi = 0) => ({ katilimId, sabitOran, emekUcreti, sorumlulukPayi });
+    const denklem = (r: ReturnType<typeof paylasimHesapla>) => r.filter((a) => a.durum === "TAMAM").every((a) => Math.round(Object.values(a.haklar).reduce((x, h) => x + h.toplam, 0) * 100) === Math.round((a.sonuc + a.devredenSonra - a.devredenOnce) * 100));
+    // ① Tasarım §6 örneğinin AYNISI: Kasım (30 gün) · sonuç 100.000 · Siz 300.000 tüm ay · Ahmet 200.000 ayın 16'sından
+    const sizS = gunAgirlikliSermaye([{ gun: "2026-11-01", tutar: 300000 }], "2026-11");
+    const ahmetS = gunAgirlikliSermaye([{ gun: "2026-11-16", tutar: 200000 }], "2026-11");
+    assert.equal(sizS, 300000); assert.equal(ahmetS, 100000); ok();
+    const ornek = paylasimHesapla([{ ay: "2026-11", sonuc: 100000, sermaye: { siz: sizS, ahmet: ahmetS } }],
+      [surum({ gecerlilikAyi: "2026-11", kalanYontemi: "KARMA", karmaSermayeYuzdesi: 50, paylar: [pay("siz", 50), pay("ahmet", 50, 10000)] })]);
+    assert.equal(ornek[0].haklar.siz.toplam, 56250); assert.equal(ornek[0].haklar.ahmet.toplam, 43750); assert.ok(denklem(ornek)); ok();
+    // %50 SİMETRİKTİR — karma yüzdeleri ters çevrilse de aynı sonuç çıkar (mutasyon kaçtı). %30 ile elle:
+    // kalan 90.000 · %30 sermayeye 27.000 → 20.250 / 6.750 · %70 sabite 63.000 → 31.500 / 31.500
+    const karma30 = paylasimHesapla([{ ay: "2026-11", sonuc: 100000, sermaye: { siz: sizS, ahmet: ahmetS } }],
+      [surum({ gecerlilikAyi: "2026-11", kalanYontemi: "KARMA", karmaSermayeYuzdesi: 30, paylar: [pay("siz", 50), pay("ahmet", 50, 10000)] })]);
+    assert.equal(karma30[0].haklar.siz.toplam, 51750); assert.equal(karma30[0].haklar.ahmet.toplam, 48250); assert.ok(denklem(karma30)); ok();
+    // ② Zarar DEVREDER → sonraki kârdan paylaşımdan ÖNCE kapatılır
+    const devir = paylasimHesapla([{ ay: "2026-01", sonuc: -1000, sermaye: {} }, { ay: "2026-02", sonuc: 3000, sermaye: {} }],
+      [surum({ paylar: [pay("a", 60), pay("b", 40)] })]);
+    assert.equal(devir[0].devredenSonra, 1000); assert.equal(devir[0].haklar.a.toplam, 0); ok();
+    assert.equal(devir[1].mahsup, 1000); assert.equal(devir[1].bolunen, 2000); assert.equal(devir[1].haklar.a.toplam, 1200); assert.equal(devir[1].devredenSonra, 0); assert.ok(denklem(devir)); ok();
+    // ③ Emek ücreti HER AY TAM (kullanıcı kararı): sonuç 5.000, ücret 8.000 → ücret 8.000 yazılır, 3.000 devreder
+    const ucret = paylasimHesapla([{ ay: "2026-01", sonuc: 5000, sermaye: {} }], [surum({ paylar: [pay("a", 50, 8000), pay("b", 50)] })]);
+    assert.equal(ucret[0].haklar.a.toplam, 8000); assert.equal(ucret[0].devredenSonra, 3000); assert.ok(denklem(ucret)); ok();
+    // ④ Zarar kâr oranıyla (60/40) ve sorumlulukla (30/70) — ikisi FARKLI sonuç verir
+    const karOrani = paylasimHesapla([{ ay: "2026-01", sonuc: -1000, sermaye: {} }], [surum({ zararYontemi: "KAR_ORANI", paylar: [pay("a", 60, 0, 30), pay("b", 40, 0, 70)] })]);
+    assert.equal(karOrani[0].haklar.a.toplam, -600); assert.equal(karOrani[0].devredenSonra, 0); ok();
+    const sorumluluk = paylasimHesapla([{ ay: "2026-01", sonuc: -1000, sermaye: {} }], [surum({ zararYontemi: "SORUMLULUK", paylar: [pay("a", 60, 0, 30), pay("b", 40, 0, 70)] })]);
+    assert.equal(sorumluluk[0].haklar.a.toplam, -300); assert.equal(sorumluluk[0].haklar.b.toplam, -700); assert.ok(denklem(sorumluluk)); ok();
+    // ⑤ Tarihli sürüm: Ocak başı yeniden yatırım, Mart başı dağıtım; Aralıkta anlaşma yok
+    const surumler = [surum({ id: "A", gecerlilikAyi: "2026-01", karKullanimi: "YENIDEN_YATIRIM", paylar: [pay("a", 100)] }), surum({ id: "B", gecerlilikAyi: "2026-03", karKullanimi: "DAGIT", paylar: [pay("a", 100)] })];
+    const tarihli = paylasimHesapla(["2025-12", "2026-02", "2026-03"].map((ay) => ({ ay, sonuc: 100, sermaye: {} })), surumler);
+    assert.equal(tarihli[0].durum, "ANLASMA_YOK"); assert.equal(tarihli[1].surumId, "A"); assert.equal(tarihli[1].karKullanimi, "YENIDEN_YATIRIM"); assert.equal(tarihli[2].surumId, "B"); ok();
+    // ⑥ Sermayeye göre ama sermaye yok → hesaplanmaz, devreden bozulmaz
+    const sermayesiz = paylasimHesapla([{ ay: "2026-01", sonuc: 100, sermaye: { a: 0 } }], [surum({ kalanYontemi: "SERMAYE", paylar: [pay("a", 0)] })]);
+    assert.equal(sermayesiz[0].durum, "SERMAYE_YOK"); assert.equal(Object.keys(sermayesiz[0].haklar).length, 0); ok();
+    // ⑦ Kuruş: 100 üçe → 33,33 · 33,33 · 33,34 (artık en büyük paya), toplam tam
+    const uc = agirliklaBol(100, { a: 1, b: 1, c: 1 })!;
+    assert.equal(Math.round((uc.a + uc.b + uc.c) * 100), 10000); assert.deepEqual([uc.a, uc.b, uc.c].sort(), [33.33, 33.33, 33.34]); ok();
+    // ⑧ Doğrulama
+    const g = (ek: Partial<AnlasmaGirdisi>): AnlasmaGirdisi => ({ gecerlilikAyi: "2026-02", kalanYontemi: "SABIT", karmaSermayeYuzdesi: null, zararYontemi: "DEVREDER", karKullanimi: "DAGIT", paylar: [pay("a", 80.01), pay("b", 19.99)], ...ek });
+    assert.equal(anlasmaDogrula(g({}), "2026-01", ["a", "b"]), null); ok();
+    assert.equal(anlasmaDogrula(g({ paylar: [pay("a", 60), pay("b", 30)] }), "2026-01", ["a", "b"]), "ANLASMA_SABIT_TOPLAM");
+    assert.equal(anlasmaDogrula(g({ zararYontemi: "SORUMLULUK" }), "2026-01", ["a", "b"]), "ANLASMA_SORUMLULUK_TOPLAM");
+    assert.equal(anlasmaDogrula(g({ paylar: [pay("a", 100)] }), "2026-01", ["a", "b"]), "ANLASMA_KATILIM");
+    assert.equal(anlasmaDogrula(g({ gecerlilikAyi: "2025-12" }), "2026-01", ["a", "b"]), "ANLASMA_ESKI_AY");
+    assert.equal(anlasmaDogrula(g({ kalanYontemi: "KARMA", karmaSermayeYuzdesi: 100 }), "2026-01", ["a", "b"]), "ANLASMA_KARMA");
+    assert.equal(anlasmaDogrula(g({ kalanYontemi: "SERMAYE", paylar: [pay("a", 0), pay("b", 0)] }), "2026-01", ["a", "b"]), null); ok();
+    // ⑨ Türkçe sayı: nokta ondalık (telefon) · virgüllüde nokta binlik
+    assert.equal(formSayisi("30.5"), 30.5); assert.equal(formSayisi("10.000,50"), 10000.5); assert.equal(formSayisi("30,5"), 30.5); assert.equal(formSayisi(""), 0); ok();
+    // ⑩ Sayfa: önizleme kâr iznine bağlı, hesap ince kabuktan
+    const pSayfa = kaynakOku("src/app/ortaklik/[id]/paylasim/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    assert.ok(/const karGorunur = baglam\.izinler\.has\("satis\.kar\.gor"\)/.test(pSayfa) && /\{karGorunur \? <section/.test(pSayfa), "önizleme satis.kar.gor iznine bağlı olmalı");
+    assert.ok(/await paylasimGetir\(proje, ay\)/.test(pSayfa), "sayfa paylaşımı ince kabuktan almalı");
     ok();
   }
   if (sayi !== KONTROL_SAYISI) {
