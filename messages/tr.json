@@ -103,6 +103,7 @@
     "sonucNet1": "NET-1: {tutar}",
     "sonucIade": "İade etkisi",
     "sonucIadeSonrasi": "NET-2 (iadeler düşülmüş)",
+    "satirIade": "iade: {tutar}",
     "sonucKarIzni": "Maliyet ve kâr rakamları için «satış kârını gör» yetkisi gerekir.",
     "sonucKarYok": "{sayi} satışın kârı henüz hesaplanmamış; toplamlara girmedi. Satışlar ekranında kârı hesaplanınca burada görünür.",
     "sonucBirimFarkli": "{sayi} satışın kârı {birim} dışında bir para biriminde; toplamlara girmedi.",

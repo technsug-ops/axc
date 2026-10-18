@@ -3,7 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import { prisma } from "@/lib/prisma";
 import { bicimlendirici } from "@/lib/bicim";
-import { GeriBaglanti, Baglanti } from "@/components/baglanti";
+import { Baglanti } from "@/components/baglanti";
+import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { IstatistikKutusu } from "@/components/istatistik-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
@@ -65,7 +66,7 @@ export default async function ProjeSonucuSayfasi({ params, searchParams }: {
 
   return <div className="min-w-0 space-y-6">
     <div className="space-y-2">
-      <GeriBaglanti href="/ortaklik">{t("baslik")}</GeriBaglanti>
+      <ListeyeDon href="/ortaklik">{t("baslik")}</ListeyeDon>
       <h1 className="text-2xl font-semibold">{t("sonucBasligi", { proje: proje.ad })}</h1>
       <p className="max-w-3xl text-sm text-muted-foreground">{t("sonucAciklama", { tarih: bicim.tarih(proje.baslangic) })}</p>
     </div>
@@ -110,7 +111,6 @@ export default async function ProjeSonucuSayfasi({ params, searchParams }: {
             {karGorunur ? <>
               <TableHead className="text-right">{t("sonucMaliyet")}</TableHead>
               <TableHead className="text-right">{t("sonucNet2")}</TableHead>
-              <TableHead className="text-right">{t("sonucIade")}</TableHead>
             </> : null}
           </TableRow></TableHeader>
           <TableBody>{satirlar.map((s) => <TableRow key={s.satisId}>
@@ -124,8 +124,9 @@ export default async function ProjeSonucuSayfasi({ params, searchParams }: {
             <TableCell className="text-right whitespace-nowrap">{para(s.ciro)}</TableCell>
             {karGorunur ? <>
               <TableCell className="text-right whitespace-nowrap">{s.maliyet === null ? "—" : para(s.maliyet)}</TableCell>
-              <TableCell className="text-right whitespace-nowrap">{s.durum === "HESAPLANDI" ? para(s.net2!) : <span className={DURUM_YAZISI.uyari}>{t(s.durum === "KAR_YOK" ? "durumKarYok" : "durumBirim")}</span>}</TableCell>
-              <TableCell className="text-right whitespace-nowrap">{s.iadeNet2 ? para(s.iadeNet2) : "—"}</TableCell>
+              {/* İade etkisi AYRI SÜTUN DEĞİL — NET-2 hücresinin altında, yalnız varsa (sütun tavanı 7). */}
+              <TableCell className="text-right whitespace-nowrap">{s.durum === "HESAPLANDI" ? para(s.net2!) : <span className={DURUM_YAZISI.uyari}>{t(s.durum === "KAR_YOK" ? "durumKarYok" : "durumBirim")}</span>}
+                {s.iadeNet2 ? <span className="text-muted-foreground block text-xs">{t("satirIade", { tutar: para(s.iadeNet2) })}</span> : null}</TableCell>
             </> : null}
           </TableRow>)}</TableBody>
           <TableFooter><TableRow>
@@ -134,8 +135,8 @@ export default async function ProjeSonucuSayfasi({ params, searchParams }: {
             <TableCell className="text-right whitespace-nowrap">{para(gorunenToplam.ciro)}</TableCell>
             {karGorunur ? <>
               <TableCell className="text-right whitespace-nowrap">{para(gorunenToplam.maliyet)}</TableCell>
-              <TableCell className="text-right whitespace-nowrap">{para(gorunenToplam.net2)}</TableCell>
-              <TableCell className="text-right whitespace-nowrap">{para(gorunenToplam.iade)}</TableCell>
+              <TableCell className="text-right whitespace-nowrap">{para(gorunenToplam.net2)}
+                {gorunenToplam.iade ? <span className="text-muted-foreground block text-xs">{t("satirIade", { tutar: para(gorunenToplam.iade) })}</span> : null}</TableCell>
             </> : null}
           </TableRow></TableFooter>
         </Table>

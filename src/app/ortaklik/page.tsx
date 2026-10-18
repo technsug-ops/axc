@@ -7,6 +7,7 @@ import { OrtaklikFormu } from "./form";
 import { FinansmanBagFormu, FinansmanBagiCoz } from "./finansman-formu";
 import Link from "@/components/niyetli-baglanti";
 import { Baglanti } from "@/components/baglanti";
+import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 import { baglanabilirOrtaklikKaynaklari } from "@/lib/finansman/veri";
 import { KapsamKuralFormu, KapsamKuralSil } from "./kapsam-formlari";
 import { AdDuzenle, KatilimDuzenle } from "./duzenle-diyaloglari";
@@ -67,6 +68,8 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
     finansmanYetkisi ? baglanabilirOrtaklikKaynaklari() : [],
   ]);
   return <div className="min-w-0 space-y-6">
+    {/* Arama hatırlanır: proje sonucundan «← İş Ortakları» aynı aramaya döner (liste hafızası). */}
+    <ListeyiHatirla temel="/ortaklik" etiket={t("baslik")} />
     <div><h1 className="text-2xl font-semibold">{t("baslik")}</h1><p className="mt-2 max-w-3xl text-sm text-muted-foreground">{t("aciklama")}</p></div>
     <p className="max-w-3xl text-sm text-muted-foreground">{t("taslakAciklama")}</p>
     <div className="grid gap-4 lg:grid-cols-3">
