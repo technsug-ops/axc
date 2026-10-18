@@ -26,6 +26,7 @@ import { formGonderimi } from "@/lib/form-gonderimi";
 
 import { giderEkle, giderGuncelle, type GiderDurumu } from "./actions";
 import { DURUM_KUTUSU } from "@/lib/renkler";
+import { TahsisBolumu, type TahsisBaslangici, type TahsisProjesi } from "./tahsis-bolumu";
 
 /**
  * ============================================================================
@@ -69,6 +70,7 @@ export function GiderFormu({
   kartlar,
   bugun,
   baslangic,
+  ortaklik,
 }: {
   kategoriler: KategoriSecenegi[];
   /** Aktif kartlar — boşsa kart alanı hiç çizilmez. */
@@ -77,6 +79,8 @@ export function GiderFormu({
   bugun: string;
   /** Doluysa düzenleme kipi. */
   baslangic?: GiderBaslangici;
+  /** K347 · 3b — yalnız `ortaklik.yonet` sahibine verilir; yoksa bölüm çizilmez ve tahsise dokunulmaz. */
+  ortaklik?: { projeler: TahsisProjesi[]; baslangic?: TahsisBaslangici };
 }) {
   const t = useTranslations("Gider");
   const tUyari = useTranslations("Gider.uyarilar");
@@ -123,6 +127,8 @@ export function GiderFormu({
       : BOS,
   );
   const [paraBirimi, setParaBirimi] = useState(baslangic?.currency ?? "TRY");
+  /** Yeni gider kaydedilince tahsis bölümü de SIFIRLANIR — önceki seçim bir sonraki gidere taşınmasın. */
+  const [tahsisTuru, setTahsisTuru] = useState(0);
 
   // Başarılı kayıttan sonra alanları temizle — bir ayın giderleri arka arkaya
   // girilir (İlke #9). Düzenlemede temizlenmez, kayıt yerinde kalır.
@@ -132,6 +138,7 @@ export function GiderFormu({
     if (durum.basari && !duzenleme) {
       setAlanlar(BOS);
       setParaBirimi("TRY");
+      setTahsisTuru((n) => n + 1);
     }
   }
 
@@ -483,6 +490,14 @@ export function GiderFormu({
           autoComplete="off"
         />
       </div>
+
+      {ortaklik ? (
+        <TahsisBolumu
+          key={tahsisTuru}
+          projeler={ortaklik.projeler}
+          baslangic={ortaklik.baslangic}
+        />
+      ) : null}
 
       <HataOzeti hatalar={durum.hatalar} />
 

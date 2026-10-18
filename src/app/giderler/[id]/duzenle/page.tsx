@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { sayfaIzni } from "@/lib/yetki";
+import { giderTahsisBaslangici, tahsisProjeleri } from "@/lib/ortaklik/gider-secenek";
 import { getTranslations } from "next-intl/server";
 
 import { GeriBaglanti } from "@/components/baglanti";
@@ -21,7 +22,7 @@ export default async function GiderDuzenleSayfasi({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await sayfaIzni("gider.yaz");
+  const baglam = await sayfaIzni("gider.yaz");
 
   const { id } = await params;
   const t = await getTranslations("Gider");
@@ -34,6 +35,10 @@ export default async function GiderDuzenleSayfasi({
   ]);
 
   if (!gider) notFound();
+
+  const ortaklik = baglam.izinler.has("ortaklik.yonet")
+    ? { projeler: await tahsisProjeleri(), baslangic: await giderTahsisBaslangici(gider.id) }
+    : undefined;
 
   // Pasif kategoriler listede DURUR — geçmiş gider kategorisiz kalmasın.
   /**
@@ -67,6 +72,7 @@ export default async function GiderDuzenleSayfasi({
         <CardContent>
           <GiderFormu
             kartlar={kartlar}
+            ortaklik={ortaklik}
             kategoriler={kategoriler}
             bugun={tarihGirdisi(new Date())}
             baslangic={{

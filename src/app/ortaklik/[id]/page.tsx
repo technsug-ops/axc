@@ -13,6 +13,7 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { gunMetni, PENCERE_TURLERI, PencereHatasi, pencereOlustur, type Pencere, type PencereTuru } from "@/lib/donem";
 import { PencereSecici } from "@/app/rapor/pencere-secici";
 import { projeSonucuGetir } from "@/lib/ortaklik/sonuc-veri";
+import { projeGiderleriGetir } from "@/lib/ortaklik/gider-veri";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,9 @@ export default async function ProjeSonucuSayfasi({ params, searchParams }: {
     pencere = pencereOlustur("BU_AY", new Date());
   }
 
-  const sonuc = await projeSonucuGetir(proje, pencere);
+  const [sonuc, gider] = await Promise.all([projeSonucuGetir(proje, pencere), projeGiderleriGetir(proje.id, pencere)]);
+  /** DÖNEM SONUCU (§5.2) = iadeler sonrası NET-2 − projeye yazılan gider (KDV hariç, raporla aynı taban). */
+  const donemSonucu = sonuc.toplam.net2 + sonuc.toplam.iadeNet2 - gider.toplam;
   const q = (p.q ?? "").trim();
   const satirlar = q ? sonuc.satirlar.filter((s) => (s.kod ?? "").includes(q)) : sonuc.satirlar;
   /** İlke #15: tablo toplamı GÖRÜNEN satırların toplamıdır; yalnız hesaplanmış satırlar toplanır. */
@@ -82,6 +85,8 @@ export default async function ProjeSonucuSayfasi({ params, searchParams }: {
         <IstatistikKutusu etiket={t("sonucNet2")} cocuk={<span>{para(sonuc.toplam.net2)}</span>} altNot={<span className="text-muted-foreground block">{t("sonucNet1", { tutar: para(sonuc.toplam.net1) })}</span>} />
         <IstatistikKutusu etiket={t("sonucIade")} cocuk={<span>{para(sonuc.toplam.iadeNet2)}</span>} />
         <IstatistikKutusu etiket={t("sonucIadeSonrasi")} cocuk={<span>{para(sonuc.toplam.net2 + sonuc.toplam.iadeNet2)}</span>} />
+        <IstatistikKutusu etiket={t("sonucGider")} cocuk={<span>{para(gider.toplam)}</span>} />
+        <IstatistikKutusu etiket={t("sonucDonem")} cocuk={<span>{para(donemSonucu)}</span>} altNot={<span className="text-muted-foreground block">{t("sonucDonemNotu")}</span>} />
       </> : null}
     </div>
     {!karGorunur ? <p className="text-sm text-muted-foreground">{t("sonucKarIzni")}</p> : null}
@@ -93,6 +98,34 @@ export default async function ProjeSonucuSayfasi({ params, searchParams }: {
       {sonuc.iadeHesaplanamayan > 0 ? <p className={`rounded-md p-3 ${DURUM_KUTUSU.uyari} ${DURUM_YAZISI.uyari}`}>{t("sonucIadeHesaplanamayan", { sayi: sonuc.iadeHesaplanamayan })}</p> : null}
       <p className="text-muted-foreground">{t("sonucSinir")}</p>
     </div>
+
+    {karGorunur ? <section className="space-y-3">
+      <h2 className="text-lg font-semibold">{t("sonucGiderler", { sayi: gider.satirlar.length })}</h2>
+      {!gider.satirlar.length ? <p className="max-w-3xl text-sm text-muted-foreground">{t("sonucGiderBos")}</p> : (
+        <Table>
+          <TableHeader><TableRow>
+            <TableHead>{t("sutunTarih")}</TableHead>
+            <TableHead>{t("sutunKategori")}</TableHead>
+            <TableHead>{t("sutunAciklama")}</TableHead>
+            <TableHead className="text-right">{t("sutunGiderKdvHaric")}</TableHead>
+            <TableHead className="text-right">{t("tahsisPay")}</TableHead>
+            <TableHead className="text-right">{t("sutunProjeyeDusen")}</TableHead>
+          </TableRow></TableHeader>
+          <TableBody>{gider.satirlar.map((g) => <TableRow key={g.giderId}>
+            <TableCell className="whitespace-nowrap">{bicim.tarih(g.tarih)}</TableCell>
+            <TableCell><Baglanti href={`/giderler/${g.giderId}/duzenle`}>{g.kategori}</Baglanti></TableCell>
+            <TableCell className="min-w-40">{g.aciklama ?? "—"}</TableCell>
+            <TableCell className="text-right whitespace-nowrap">{para(g.kdvHaric)}</TableCell>
+            <TableCell className="text-right whitespace-nowrap">{bicim.yuzde(g.pay, 2)}</TableCell>
+            <TableCell className="text-right whitespace-nowrap">{para(g.projeyeDusen)}</TableCell>
+          </TableRow>)}</TableBody>
+          <TableFooter><TableRow>
+            <TableCell colSpan={5}>{t("giderToplami")}</TableCell>
+            <TableCell className="text-right whitespace-nowrap">{para(gider.toplam)}</TableCell>
+          </TableRow></TableFooter>
+        </Table>
+      )}
+    </section> : null}
 
     <section className="space-y-3">
       <h2 className="text-lg font-semibold">{t("sonucSatislar", { sayi: sonuc.satirlar.length })}</h2>

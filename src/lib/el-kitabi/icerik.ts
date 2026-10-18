@@ -1579,8 +1579,8 @@ ${neZaman(
   "Bir ortakla yeni bir iş başlattığında, ortak para koyduğunda ya da o işe ait mal aldığında.",
 )}
 <div class="ek-not dikkat"><div class="etiket">Proje şimdilik taslaktır</div>
-<p>Proje kendi satış sonucunu gösterir ama ortağa henüz hak yazmaz: kârın
-ortaklar arasında nasıl bölüneceği ve gider tahsisi sonraki aşamada gelir.
+<p>Proje kendi satış sonucunu ve kendisine yazılan gideri gösterir ama ortağa
+henüz hak yazmaz: kârın ortaklar arasında nasıl bölüneceği sonraki aşamada gelir.
 Projeden önce alınmış eski stok ve geçmiş kâr projeye <strong>girmez</strong>.</p></div>
 <h3>Kurulum sırası</h3>
 <ol>
@@ -1609,6 +1609,13 @@ Kâr, satışın kendi NET-2'sinden (kargo ve sipariş kesintileri dahil) projen
 payı kadar alınır — Satışlar ekranındaki rakamla aynıdır. Kârı henüz
 hesaplanmamış satış toplama girmez ve ekranda ayrıca sayılır. İade ya da iptalle
 geri gelip yeniden satılan mal bu sürümde projeye bağlanmaz.</p>
+<h3>Projeye gider yazmak</h3>
+<p>Gider formundaki <strong>«Ortaklık projesi payı»</strong> bölümünde ya
+<strong>tek proje</strong> ve yüzdesini (örn. maaşın %30'u) ya da <strong>birden çok
+projeye böl</strong> seçeneğini seçersin; payların toplamı %100'ü aşamaz. Proje
+sonucunda giderin <strong>KDV hariç</strong> tutarının bu payı düşülür — dönem raporuyla
+aynı taban. «Dönem sonucu» = iadeler sonrası NET-2 − projeye yazılan gider. Proje
+başlangıcından önceki gider projeye yazılamaz.</p>
 ${ekranSemasi("İş Ortakları", [
   { no: 1, ad: "Üç form", aciklama: "Yeni proje · yeni ortak kartı · projeye ortak ekle.", genis: true, vurgulu: true },
   { no: 2, ad: "Bağ ve kural", aciklama: "Finansman kaynağını bağla · ürün kuralı ekle." },

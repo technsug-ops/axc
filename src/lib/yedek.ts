@@ -97,6 +97,7 @@ export async function yedekUret(
     KomisyonTarifeKalemi: await istemci.komisyonTarifeKalemi.findMany(),
     ExpenseTemplate: await istemci.expenseTemplate.findMany(),
     Expense: await istemci.expense.findMany(),
+    OrtaklikGiderTahsisi: await istemci.ortaklikGiderTahsisi.findMany(),
     /**
      * ⚠ ÜÇÜ DE 22.08.2026'DA EKLENDİ — ve üçü de LİSTEDE VARDI ama BURADA
      * YOKTU. Yani kapsam bekçisi yeşil yanarken yedek dosyası bu tabloları

@@ -90,6 +90,8 @@ export const YEDEK_TABLOLARI = [
   // --- gider ---
   "ExpenseTemplate",
   "Expense",
+  /** K347 · 3b — gidere ve ortaklık projesine bağlı → ikisinden SONRA. */
+  "OrtaklikGiderTahsisi",
   /**
    * Kart ödemesi: `CreditCard` VE `Expense`'ten SONRA gelmeli — ikisine de
    * yabancı anahtarı var (faiz gideri bağı dahil). Sıra bozulursa geri

@@ -244,6 +244,12 @@ Projeye ait giderler (reklam, personel, depo, paketleme…) **tahsis kaydı** il
 
 **Proje dönem sonucu = satış sonucu − tahsis edilen giderler − proje partisi fire/kayıp ± iade etkisi.**
 
+**Uygulandı — Aşama 3b (18.10.2026):** `OrtaklikGiderTahsisi` (gider · proje · pay %). Kullanıcı kararı:
+tek proje + % ya da birden çok projeye bölme, ikisi de seçilebilir — iki kip, tek yapı. Yöntem bugün yalnız
+**belgeli elle (yüzde)**; satış/sipariş/adet oranıyla otomatik bölme açılmadı (tüketicisi doğunca tek sütunla
+eklenir). Pay giderin GÜNCEL tutarına uygulanır — snapshot yok, «bayat tahsis» sorunu doğmaz; dönem kesinleşince
+(Aşama 4) donar. Proje sonucu gideri KDV hariç düşer (`rapor.ts` ile aynı `kdvAyir`).
+
 ### 5.3 Dört gösterge (RAPOR §5 — zorunlu)
 
 | # | Gösterge | Ne söyler |

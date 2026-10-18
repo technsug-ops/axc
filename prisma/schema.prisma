@@ -1239,6 +1239,28 @@ model OrtaklikProjesi {
   katilimlar OrtaklikKatilimi[]
   alimKalemleri PurchaseItem[]
   kapsamKurallari OrtaklikKapsamKurali[]
+  giderTahsisleri OrtaklikGiderTahsisi[]
+}
+
+/// K347 · Aşama 3b — GİDERİN PROJEYE DÜŞEN PAYI. Tek proje = tek satır, bölme = birden
+/// çok satır (kullanıcı kararı 18.10.2026: «ikisi de olsun ama seçebileyim») — iki kip,
+/// TEK yapı: aynı soruya iki tablo cevap vermez. Pay giderin GÜNCEL tutarına uygulanır
+/// (gider düzenlenince tahsis kendiliğinden doğru kalır; snapshot yok — Aşama 4'te
+/// kesinleşen dönem donar). Σ pay ≤ %100 ve para birimi/başlangıç kapısı uygulama
+/// katmanında (`lib/ortaklik/gider.ts`). Gider silinirse tahsisi de gider (Cascade):
+/// gider firma sonucundan da düşmüştür, proje ondan ayrışmaz.
+/// Merdiven ölçüldü: mevcut alan yok · serbest metin toplanamaz · türetilemez.
+model OrtaklikGiderTahsisi {
+  id String @id @default(cuid())
+  expenseId String
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  projeId String
+  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  /// 0 < pay ≤ 100, yüzde.
+  payYuzdesi Decimal @db.Decimal(5, 2)
+  createdAt DateTime @default(now())
+  @@unique([expenseId, projeId])
+  @@index([projeId])
 }
 
 /// Bir varyant için tek kural: aynı ürün iki projeye birden otomatik damgalanamaz.
@@ -2510,6 +2532,7 @@ model Expense {
   /// K304 — bu gider bir FİNANSMAN TAKSİTİNİN faizi + vergisiyse, doğduğu hareket.
   /// Tekil: bir taksitin faizi tek bir gidere yazılır (kart faizi deseni).
   finansmanHareketi FinansmanHareketi?
+  ortaklikTahsisleri OrtaklikGiderTahsisi[]
 
   /**
    * GİDER HANGİ KARTLA ÖDENDİ (25.08.2026).

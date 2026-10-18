@@ -1,6 +1,13 @@
 "use server";
 
-import { yetkiIste } from "@/lib/yetki";
+import { izinVarMi, yetkiIste } from "@/lib/yetki";
+import { izYaz } from "@/lib/iz";
+import {
+  giderTahsisleriniDogrula,
+  giderTahsisleriniYaz,
+  tahsisGirdisiOku,
+  type TahsisGirdisi,
+} from "@/lib/ortaklik/gider";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -150,6 +157,36 @@ function tazele() {
   revalidatePath("/giderler");
   revalidatePath("/giderler/sablonlar");
   revalidatePath("/rapor");
+  revalidatePath("/ortaklik", "layout");
+}
+
+/**
+ * K347 · 3b — tahsis bölümü YALNIZ `ortaklik.yonet` sahibinden okunur. Bölüm
+ * gelmediyse (izin yok ya da form onu çizmedi) `null`: var olan tahsise DOKUNULMAZ.
+ * İstemcinin gizli alanına güvenilmez — izin sunucuda yeniden sorulur.
+ */
+async function tahsisGirdisi(formData: FormData): Promise<TahsisGirdisi | null> {
+  const girdi = tahsisGirdisiOku(formData);
+  if (girdi === null) return null;
+  return (await izinVarMi("ortaklik.yonet")) ? girdi : null;
+}
+
+const TAHSIS_HATALARI = [
+  "TAHSIS_KIP",
+  "TAHSIS_PAY",
+  "TAHSIS_PROJE",
+  "TAHSIS_TEKRAR",
+  "TAHSIS_TOPLAM",
+  "TAHSIS_BIRIM",
+  "TAHSIS_ESKI",
+] as const;
+
+/** Tahsis hatası KODA çevrilir, ekran sözlükten okur; tanınmayan hata çağırana kalır. */
+async function tahsisHatasi(e: unknown): Promise<string | null> {
+  if (!(e instanceof Error)) return null;
+  if (!(TAHSIS_HATALARI as readonly string[]).includes(e.message)) return null;
+  const to = await getTranslations("Ortaklik");
+  return to(e.message as (typeof TAHSIS_HATALARI)[number]);
 }
 
 function formuOku(formData: FormData) {
@@ -204,7 +241,8 @@ export async function giderEkle(
   _oncekiDurum: GiderDurumu,
   formData: FormData,
 ): Promise<GiderDurumu> {
-  await yetkiIste("gider.yaz");
+  const baglam = await yetkiIste("gider.yaz");
+  const tahsis = await tahsisGirdisi(formData);
 
   const t = await getTranslations("Gider");
 
@@ -224,23 +262,35 @@ export async function giderEkle(
   if (!kategori) return { hatalar: [t("kategoriBulunamadi")] };
 
   try {
-    await prisma.expense.create({
-      data: {
-        spentAt: tarih,
-        categoryId: veri.categoryId,
-        amount: String(veri.amount),
-        currency: veri.currency as Currency,
-        vatRate: String(veri.vatRate),
-        description: veri.description?.trim() || null,
-        /** ⚠ Boş dize `null`a çevrilir: "seçilmedi" ile "" aynı şey değil. */
-        creditCardId: veri.creditCardId?.trim() || null,
-        /** ⚠ Boş = tek çekim. */
-        installmentCount: veri.installmentCount ?? 1,
-        /** ⚠ Boş = BELİRTİLMEDİ (`null`) — "Nakit" varsayılmaz. */
-        odemeYontemi: odemeYontemiDegeri(veri.odemeYontemi),
-      },
+    await prisma.$transaction(async (tx) => {
+      const yeni = await tx.expense.create({
+        data: {
+          spentAt: tarih,
+          categoryId: veri.categoryId,
+          amount: String(veri.amount),
+          currency: veri.currency as Currency,
+          vatRate: String(veri.vatRate),
+          description: veri.description?.trim() || null,
+          /** ⚠ Boş dize `null`a çevrilir: "seçilmedi" ile "" aynı şey değil. */
+          creditCardId: veri.creditCardId?.trim() || null,
+          /** ⚠ Boş = tek çekim. */
+          installmentCount: veri.installmentCount ?? 1,
+          /** ⚠ Boş = BELİRTİLMEDİ (`null`) — "Nakit" varsayılmaz. */
+          odemeYontemi: odemeYontemiDegeri(veri.odemeYontemi),
+        },
+        select: { id: true },
+      });
+      if (tahsis && tahsis.kip !== "yok") {
+        const iz = await giderTahsisleriniYaz(tx, yeni.id, tahsis);
+        await izYaz(
+          { action: "ORTAKLIK_GIDER_TAHSISI", companyId: baglam.companyId, targetType: "Expense", targetId: yeni.id, detail: JSON.stringify(iz) },
+          tx,
+        );
+      }
     });
   } catch (e) {
+    const tahsisMetni = await tahsisHatasi(e);
+    if (tahsisMetni) return { hatalar: [tahsisMetni] };
     console.error("[gider] eklenemedi:", e);
     return { hatalar: [t("eklenemedi")] };
   }
@@ -253,7 +303,8 @@ export async function giderGuncelle(
   _oncekiDurum: GiderDurumu,
   formData: FormData,
 ): Promise<GiderDurumu> {
-  await yetkiIste("gider.yaz");
+  const baglam = await yetkiIste("gider.yaz");
+  const tahsis = await tahsisGirdisi(formData);
 
   const t = await getTranslations("Gider");
 
@@ -276,24 +327,40 @@ export async function giderGuncelle(
   if (!kayit) return { hatalar: [t("bulunamadi")] };
 
   try {
-    await prisma.expense.update({
-      where: { id },
-      data: {
-        spentAt: tarih,
-        categoryId: veri.categoryId,
-        amount: String(veri.amount),
-        currency: veri.currency as Currency,
-        vatRate: String(veri.vatRate),
-        description: veri.description?.trim() || null,
-        /** ⚠ Boş dize `null`a çevrilir: "seçilmedi" ile "" aynı şey değil. */
-        creditCardId: veri.creditCardId?.trim() || null,
-        /** ⚠ Boş = tek çekim. */
-        installmentCount: veri.installmentCount ?? 1,
-        /** ⚠ Boş = BELİRTİLMEDİ (`null`) — "Nakit" varsayılmaz. */
-        odemeYontemi: odemeYontemiDegeri(veri.odemeYontemi),
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.expense.update({
+        where: { id },
+        data: {
+          spentAt: tarih,
+          categoryId: veri.categoryId,
+          amount: String(veri.amount),
+          currency: veri.currency as Currency,
+          vatRate: String(veri.vatRate),
+          description: veri.description?.trim() || null,
+          /** ⚠ Boş dize `null`a çevrilir: "seçilmedi" ile "" aynı şey değil. */
+          creditCardId: veri.creditCardId?.trim() || null,
+          /** ⚠ Boş = tek çekim. */
+          installmentCount: veri.installmentCount ?? 1,
+          /** ⚠ Boş = BELİRTİLMEDİ (`null`) — "Nakit" varsayılmaz. */
+          odemeYontemi: odemeYontemiDegeri(veri.odemeYontemi),
+        },
+      });
+      if (tahsis) {
+        const iz = await giderTahsisleriniYaz(tx, id, tahsis);
+        if (iz.once.length || iz.sonra.length) {
+          await izYaz(
+            { action: "ORTAKLIK_GIDER_TAHSISI", companyId: baglam.companyId, targetType: "Expense", targetId: id, detail: JSON.stringify(iz) },
+            tx,
+          );
+        }
+      } else {
+        // Bölüm yok → tahsise DOKUNULMAZ; ama tarih/para birimi onu geçersiz kılamaz.
+        await giderTahsisleriniDogrula(tx, id);
+      }
     });
   } catch (e) {
+    const tahsisMetni = await tahsisHatasi(e);
+    if (tahsisMetni) return { hatalar: [tahsisMetni] };
     console.error("[gider] guncellenemedi:", e);
     return { hatalar: [t("guncellenemedi")] };
   }

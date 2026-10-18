@@ -1,5 +1,6 @@
 import Link from "@/components/niyetli-baglanti";
 import { sayfaIzni } from "@/lib/yetki";
+import { tahsisProjeleri } from "@/lib/ortaklik/gider-secenek";
 import { getTranslations } from "next-intl/server";
 
 import { GeriBaglanti } from "@/components/baglanti";
@@ -27,7 +28,8 @@ export async function generateMetadata() {
 }
 
 export default async function YeniGiderSayfasi() {
-  await sayfaIzni("gider.yaz");
+  const baglam = await sayfaIzni("gider.yaz");
+  const ortaklik = baglam.izinler.has("ortaklik.yonet") ? { projeler: await tahsisProjeleri() } : undefined;
 
   const t = await getTranslations("Gider");
 
@@ -79,6 +81,7 @@ export default async function YeniGiderSayfasi() {
             <GiderFormu
               kategoriler={kategoriler}
               kartlar={kartlar}
+              ortaklik={ortaklik}
               bugun={tarihGirdisi(new Date())}
             />
           </CardContent>

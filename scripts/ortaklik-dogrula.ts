@@ -18,9 +18,10 @@ import { projeEkle, katilimEkle, katilimGuncelle, katilimSil, projeSil, ortakSil
 import { finansmanBagla, finansmanBagCoz } from "../src/lib/finansman/ortaklik";
 import { kaynakOku } from "./kaynak-oku";
 import { projeSonucu, type SonucSatisi } from "../src/lib/ortaklik/sonuc";
+import { giderTahsisleriniDogrula, giderTahsisleriniYaz, projeGiderSonucu, tahsisDogrula, tahsisGirdisiOku } from "../src/lib/ortaklik/gider";
 import { kapsamKuraliEkle, otomatikKapsamlar, alimKapsaminiDegistir, alimKapsaminiDogrula } from "../src/lib/ortaklik/kapsam";
 
-const KONTROL_SAYISI = 59;
+const KONTROL_SAYISI = 75;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -141,6 +142,31 @@ async function main() {
       await assert.rejects(() => alimKapsaminiDegistir(tx, eskiKalem.id, null), { message: "KAPSAM_KILITLI" }); ok();
       await tx.purchase.update({ where: { id: alim.id }, data: { status: "CANCELLED" } });
       await assert.rejects(() => alimKapsaminiDegistir(tx, kalem.id, null), { message: "KAPSAM_KAYIT_YOK" }); ok();
+      // ═══ AŞAMA 3b — GİDER TAHSİSİ (veritabanı, aynı geri alınan işlem) ═══
+      {
+        const kat = await tx.expenseCategory.findFirstOrThrow({ select: { id: true } });
+        const gider = await tx.expense.create({ data: { spentAt: gun, categoryId: kat.id, amount: "1200", currency: "TRY", vatRate: "20" } });
+        const tahsisP = await tx.ortaklikProjesi.create({ data: { ad: "Tahsis", baslangic: gun } });
+        const tahsisP2 = await tx.ortaklikProjesi.create({ data: { ad: "Tahsis-2", baslangic: gun } });
+        const iz = await giderTahsisleriniYaz(tx, gider.id, { kip: "cok", satirlar: [{ projeId: tahsisP.id, pay: 30 }, { projeId: tahsisP2.id, pay: 20 }] });
+        assert.equal(iz.once.length, 0); assert.equal(await tx.ortaklikGiderTahsisi.count({ where: { expenseId: gider.id } }), 2); ok();
+        // Küme DEĞİŞTİRİLİR (eklenmez): tek projeye indirince ikinci satır gider, önceki iz döner
+        const iz2 = await giderTahsisleriniYaz(tx, gider.id, { kip: "tek", satirlar: [{ projeId: tahsisP.id, pay: 40 }] });
+        assert.equal(iz2.once.length, 2); assert.equal(await tx.ortaklikGiderTahsisi.count({ where: { expenseId: gider.id } }), 1); ok();
+        const eurGider = await tx.expense.create({ data: { spentAt: gun, categoryId: kat.id, amount: "10", currency: "EUR", vatRate: "0" } });
+        await assert.rejects(() => giderTahsisleriniYaz(tx, eurGider.id, { kip: "tek", satirlar: [{ projeId: tahsisP.id, pay: 10 }] }), { message: "TAHSIS_BIRIM" }); ok();
+        const eskiGider = await tx.expense.create({ data: { spentAt: dun, categoryId: kat.id, amount: "10", currency: "TRY", vatRate: "0" } });
+        await assert.rejects(() => giderTahsisleriniYaz(tx, eskiGider.id, { kip: "tek", satirlar: [{ projeId: tahsisP.id, pay: 10 }] }), { message: "TAHSIS_ESKI" }); ok();
+        // Bölümsüz kayıt tahsise dokunmaz ama tarihi başlangıç önüne çekemez
+        await tx.expense.update({ where: { id: gider.id }, data: { spentAt: dun } });
+        await assert.rejects(() => giderTahsisleriniDogrula(tx, gider.id), { message: "TAHSIS_ESKI" }); ok();
+        await tx.expense.update({ where: { id: gider.id }, data: { spentAt: gun } });
+        await giderTahsisleriniDogrula(tx, gider.id);
+        assert.equal(await tx.ortaklikGiderTahsisi.count({ where: { expenseId: gider.id } }), 1); ok();
+        // Gider silinirse tahsisi de gider (Cascade); proje kalır
+        await tx.expense.delete({ where: { id: gider.id } });
+        assert.equal(await tx.ortaklikGiderTahsisi.count({ where: { projeId: tahsisP.id } }), 0); assert.ok(await tx.ortaklikProjesi.findUnique({ where: { id: tahsisP.id } })); ok();
+      }
       throw geriAl;
     }, { timeout: 30_000 });
   } catch (e) { if (e !== geriAl) throw e; }
@@ -194,7 +220,41 @@ async function main() {
     // ⑩ Sayfa: kâr rakamları ayrı izne bağlı ve hesap ince kabuktan geliyor
     const sonucSayfasi = kaynakOku("src/app/ortaklik/[id]/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
     assert.ok(/const karGorunur = baglam\.izinler\.has\("satis\.kar\.gor"\)/.test(sonucSayfasi) && /\{karGorunur \? <>/.test(sonucSayfasi), "kâr rakamları satis.kar.gor iznine bağlı olmalı");
-    assert.ok(/await projeSonucuGetir\(proje, pencere\)/.test(sonucSayfasi), "sayfa sonucu ince kabuktan almalı");
+    // ÖLÇÜT GÜNCELLENDİ (3b): çağrı artık gider okumasıyla Promise.all içinde — davranış aynı, yazılış değişti.
+    assert.ok(/projeSonucuGetir\(proje, pencere\)/.test(sonucSayfasi) && /projeGiderleriGetir\(proje\.id, pencere\)/.test(sonucSayfasi), "sayfa sonucu ve gideri ince kabuktan almalı");
+    ok();
+  }
+  // ═══ AŞAMA 3b — GİDER TAHSİSİ (saf gövde) ═══
+  {
+    const s1 = (pay: number, projeId = "a") => ({ projeId, pay });
+    assert.equal(tahsisDogrula({ kip: "yok", satirlar: [] }), null);
+    assert.equal(tahsisDogrula({ kip: "tek", satirlar: [s1(30)] }), null); ok();
+    assert.equal(tahsisDogrula({ kip: "tek", satirlar: [] }), "TAHSIS_KIP");
+    assert.equal(tahsisDogrula({ kip: "cok", satirlar: [s1(30)] }), "TAHSIS_KIP"); ok();
+    assert.equal(tahsisDogrula({ kip: "tek", satirlar: [s1(0)] }), "TAHSIS_PAY");
+    assert.equal(tahsisDogrula({ kip: "tek", satirlar: [s1(100.5)] }), "TAHSIS_PAY");
+    assert.equal(tahsisDogrula({ kip: "tek", satirlar: [s1(12.345)] }), "TAHSIS_PAY"); ok();
+    // Kayan nokta: 19,99 · 4,35 · 2,3 × 100 tam çıkmaz (ölçüldü) ama GEÇERLİ paydır; 33,33 × 3 = 99,99 tavanı geçmez
+    assert.equal(tahsisDogrula({ kip: "cok", satirlar: [s1(19.99, "a"), s1(4.35, "b"), s1(2.3, "c")] }), null);
+    assert.equal(tahsisDogrula({ kip: "cok", satirlar: [s1(33.33, "a"), s1(33.33, "b"), s1(33.33, "c")] }), null); ok();
+    assert.equal(tahsisDogrula({ kip: "cok", satirlar: [s1(60, "a"), s1(50, "b")] }), "TAHSIS_TOPLAM");
+    assert.equal(tahsisDogrula({ kip: "cok", satirlar: [s1(10, "a"), s1(20, "a")] }), "TAHSIS_TEKRAR");
+    assert.equal(tahsisDogrula({ kip: "tek", satirlar: [s1(10, "")] }), "TAHSIS_PROJE"); ok();
+    const form = (alanlar: Record<string, string | string[]>) => ({ get: (a: string) => { const v = alanlar[a]; return Array.isArray(v) ? v[0] : v ?? null; }, getAll: (a: string) => { const v = alanlar[a]; return v === undefined ? [] : Array.isArray(v) ? v : [v]; } });
+    // Bölüm yoksa (bayrak yok) null → çağıran tahsise DOKUNMAZ
+    assert.equal(tahsisGirdisiOku(form({ tahsisKipi: "yok" })), null); ok();
+    assert.deepEqual(tahsisGirdisiOku(form({ tahsisDuzenlenebilir: "1", tahsisKipi: "tek", tahsisProje: ["p1"], tahsisPay: ["30,5"] })), { kip: "tek", satirlar: [{ projeId: "p1", pay: 30.5 }] });
+    assert.deepEqual(tahsisGirdisiOku(form({ tahsisDuzenlenebilir: "1", tahsisKipi: "yok", tahsisProje: ["p1"], tahsisPay: ["30"] })), { kip: "yok", satirlar: [] }); ok();
+    // KDV HARİÇ taban: 1.200 (%20) → 1.000 × %30 = 300; KDV'siz maaş 1.000 × %50 = 500
+    const gs = projeGiderSonucu([
+      { giderId: "g1", tarih: new Date("2026-10-10"), kategori: "Reklam", aciklama: null, tutar: 1200, kdvOrani: 20, pay: 30 },
+      { giderId: "g2", tarih: new Date("2026-10-11"), kategori: "Maaş", aciklama: null, tutar: 1000, kdvOrani: 0, pay: 50 },
+    ]);
+    assert.equal(gs.toplam, 800); assert.equal(gs.satirlar.find((x) => x.giderId === "g1")!.projeyeDusen, 300); ok();
+    // Eylemler: bölüm yoksa YAZMA değil DOĞRULAMA; izin sunucuda yeniden sorulur
+    const eylem = kaynakOku("src/app/giderler/actions.ts").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    assert.ok(/return \(await izinVarMi\("ortaklik\.yonet"\)\) \? girdi : null;/.test(eylem), "tahsis izni sunucuda sorulmalı");
+    assert.ok(/\} else \{\s*await giderTahsisleriniDogrula\(tx, id\);/.test(eylem), "bölüm yokken tahsise dokunulmamalı, yalnız doğrulanmalı");
     ok();
   }
   if (sayi !== KONTROL_SAYISI) {
