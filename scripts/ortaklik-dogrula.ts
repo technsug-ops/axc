@@ -16,9 +16,10 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "../src/lib/prisma";
 import { projeEkle, katilimEkle, katilimGuncelle, katilimSil, projeSil, ortakSil } from "../src/lib/ortaklik/katilim";
 import { finansmanBagla, finansmanBagCoz } from "../src/lib/finansman/ortaklik";
+import { kaynakOku } from "./kaynak-oku";
 import { kapsamKuraliEkle, otomatikKapsamlar, alimKapsaminiDegistir, alimKapsaminiDogrula } from "../src/lib/ortaklik/kapsam";
 
-const KONTROL_SAYISI = 47;
+const KONTROL_SAYISI = 48;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -143,6 +144,15 @@ async function main() {
     }, { timeout: 30_000 });
   } catch (e) { if (e !== geriAl) throw e; }
   // Sayaç: bir blok sessizce atlanırsa "geçti" denmez (anayasa: ölçüt bloğu özetten önce koşar).
+  // ⛔ CANLI ARIZA 18.10.2026: sunucu sayfası tarayıcı bileşenine `ikon={Trash2}` geçirdi;
+  // fonksiyon sunucudan tarayıcıya geçemez ve İLK kayıt eklenince sayfa çöktü (liste
+  // boşken düğme çizilmediği için hiçbir test görmedi). Sunucu sayfası ikon SEÇMEZ.
+  {
+    const sayfa = kaynakOku("src/app/ortaklik/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    assert.ok(!/^\s*["']use client["']/m.test(sayfa), "ortaklik/page.tsx sunucu bileşeni olmalı");
+    assert.ok(!/\bikon=\{/.test(sayfa) && !/from "lucide-react"/.test(sayfa), "sunucu sayfası tarayıcı bileşenine ikon (fonksiyon) geçiremez");
+    ok();
+  }
   if (sayi !== KONTROL_SAYISI) {
     console.log(`KOŞUM YARIM KALDI — ${sayi}/${KONTROL_SAYISI} kontrol koştu, sonuç GEÇERSİZ`);
     process.exitCode = 1;

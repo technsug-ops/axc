@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { Trash2 } from "lucide-react";
 import { sayfaIzni } from "@/lib/yetki";
 import { prisma } from "@/lib/prisma";
 import { bicimlendirici } from "@/lib/bicim";
@@ -10,8 +9,7 @@ import Link from "@/components/niyetli-baglanti";
 import { baglanabilirOrtaklikKaynaklari } from "@/lib/finansman/veri";
 import { KapsamKuralFormu, KapsamKuralSil } from "./kapsam-formlari";
 import { AdDuzenle, KatilimDuzenle } from "./duzenle-diyaloglari";
-import { OnayliEylem } from "./onayli-eylem";
-import { kayitSil } from "./eylemler";
+import { KayitSil } from "./onayli-eylem";
 import { KATKI_TURLERI } from "./katki";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
@@ -91,7 +89,7 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
         <div className="min-w-0"><p className="font-medium">{o.ad}</p><p className="text-sm text-muted-foreground">{t("ortakProjeSayisi", { sayi: o._count.katilimlar })}</p></div>
         <div className="w-full md:w-auto"><SatirEylemleri>
           <AdDuzenle tur="ortak" id={o.id} ad={o.ad} />
-          <OnayliEylem eylem={kayitSil} alanlar={{ tur: "ortak", id: o.id }} ikon={Trash2} etiket={ortakMetin("sil")} baslik={t("silBaslik", { ad: o.ad })} aciklama={t(o._count.katilimlar ? "silinemezBagli" : "silNotu")} onayEtiketi={ortakMetin("sil")} />
+          <KayitSil tur="ortak" id={o.id} baslik={t("silBaslik", { ad: o.ad })} aciklama={t(o._count.katilimlar ? "silinemezBagli" : "silNotu")} />
         </SatirEylemleri></div>
       </li>)}</ul>
     </section>
@@ -106,7 +104,7 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
               <p className="text-sm">{t("kapsamKalemSayisi", { sayi: p._count.alimKalemleri })}</p></div>
             <div className="w-full md:w-auto"><SatirEylemleri>
               <AdDuzenle tur="proje" id={p.id} ad={p.ad} />
-              <OnayliEylem eylem={kayitSil} alanlar={{ tur: "proje", id: p.id }} ikon={Trash2} etiket={ortakMetin("sil")} baslik={t("silBaslik", { ad: p.ad })} aciklama={t(bagli ? "silinemezBagli" : "silNotu")} onayEtiketi={ortakMetin("sil")} />
+              <KayitSil tur="proje" id={p.id} baslik={t("silBaslik", { ad: p.ad })} aciklama={t(bagli ? "silinemezBagli" : "silNotu")} />
             </SatirEylemleri></div>
           </div>
           {p.kapsamKurallari.length > 0 && <div className="space-y-2"><h4 className="text-sm font-medium">{t("otomatikKurallar")}</h4>
@@ -122,7 +120,7 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
                 <p className="text-sm text-muted-foreground">{KATKI_TURLERI.filter(a => k[a]).map(a => t(a)).join(" · ")}</p></div>
               <div className="w-full md:w-auto"><SatirEylemleri>
                 <KatilimDuzenle id={k.id} sorumluluk={k.sorumluluk} katkilar={{ sermaye: k.sermaye, emek: k.emek, komisyon: k.komisyon, finansman: k.finansman }} />
-                <OnayliEylem eylem={kayitSil} alanlar={{ tur: "katilim", id: k.id }} ikon={Trash2} etiket={ortakMetin("sil")} baslik={t("katilimSilBaslik", { ortak: k.ortak.ad, proje: p.ad })} aciklama={t(k.finansmanKaynaklari.length ? "silinemezBagli" : "silNotu")} onayEtiketi={ortakMetin("sil")} />
+                <KayitSil tur="katilim" id={k.id} baslik={t("katilimSilBaslik", { ortak: k.ortak.ad, proje: p.ad })} aciklama={t(k.finansmanKaynaklari.length ? "silinemezBagli" : "silNotu")} />
               </SatirEylemleri></div>
             </div>
             {k.finansmanKaynaklari.map(f => <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 rounded border p-2 text-sm">

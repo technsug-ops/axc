@@ -2,14 +2,14 @@
 
 import { startTransition, useActionState, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { LucideIcon } from "lucide-react";
+import { Trash2, type LucideIcon } from "lucide-react";
 import {
   AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { EYLEM_SINIFI, EylemEtiketi } from "@/components/satir-eylemi";
 import { Button } from "@/components/ui/button";
-import type { Sonuc } from "./eylemler";
+import { kayitSil, type Sonuc } from "./eylemler";
 
 /**
  * Ortaklık ekranlarının onaylı eylemi (İlke #6 · #10): silme, kural kaldırma,
@@ -62,4 +62,16 @@ export function OnayliEylem({ eylem, alanlar, ikon: Ikon, etiket, baslik, acikla
     </AlertDialog>
     {!acik && sonuc.hata ? <p className="text-destructive text-xs font-medium" role="alert">{sonuc.hata}</p> : null}
   </div>;
+}
+
+/**
+ * Proje · ortak · katılım silme düğmesi. İKON BURADA, TARAYICI TARAFINDA seçilir.
+ * ⛔ CANLI ARIZA 18.10.2026: sunucu sayfası `ikon={Trash2}` geçiriyordu — ikon bir
+ * FONKSİYONDUR ve sunucudan tarayıcı bileşenine fonksiyon geçemez; ilk kayıt
+ * kaydedilince sayfa «Bu ekran çizilemedi» ile çöktü (liste boşken düğme hiç
+ * çizilmediği için görünmüyordu). Sunucu sayfası yalnız METİN geçirir.
+ */
+export function KayitSil({ tur, id, baslik, aciklama }: { tur: "proje" | "ortak" | "katilim"; id: string; baslik: string; aciklama: string }) {
+  const ortak = useTranslations("Ortak");
+  return <OnayliEylem eylem={kayitSil} alanlar={{ tur, id }} ikon={Trash2} etiket={ortak("sil")} baslik={baslik} aciklama={aciklama} onayEtiketi={ortak("sil")} />;
 }
