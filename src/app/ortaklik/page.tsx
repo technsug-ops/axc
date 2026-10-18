@@ -6,6 +6,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { OrtaklikFormu } from "./form";
 import { FinansmanBagFormu, FinansmanBagiCoz } from "./finansman-formu";
 import Link from "@/components/niyetli-baglanti";
+import { Baglanti } from "@/components/baglanti";
 import { baglanabilirOrtaklikKaynaklari } from "@/lib/finansman/veri";
 import { KapsamKuralFormu, KapsamKuralSil } from "./kapsam-formlari";
 import { AdDuzenle, KatilimDuzenle } from "./duzenle-diyaloglari";
@@ -101,7 +102,8 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0"><h3 className="font-semibold">{p.ad} <span className="ml-1 rounded bg-muted px-2 py-0.5 text-xs font-normal">{t("taslak")}</span></h3>
               <p className="text-sm text-muted-foreground">{t("projeOzeti", { tarih: bicim.tarih(p.baslangic), birim: p.currency, sayi: p.katilimlar.length })}</p>
-              <p className="text-sm">{t("kapsamKalemSayisi", { sayi: p._count.alimKalemleri })}</p></div>
+              <p className="text-sm">{t("kapsamKalemSayisi", { sayi: p._count.alimKalemleri })}</p>
+              <Baglanti href={`/ortaklik/${p.id}`} className="mt-1 inline-flex min-h-11 items-center text-sm md:min-h-0">{t("sonucuAc")}</Baglanti></div>
             <div className="w-full md:w-auto"><SatirEylemleri>
               <AdDuzenle tur="proje" id={p.id} ad={p.ad} />
               <KayitSil tur="proje" id={p.id} baslik={t("silBaslik", { ad: p.ad })} aciklama={t(bagli ? "silinemezBagli" : "silNotu")} />

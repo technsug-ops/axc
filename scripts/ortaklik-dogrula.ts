@@ -17,9 +17,10 @@ import { prisma } from "../src/lib/prisma";
 import { projeEkle, katilimEkle, katilimGuncelle, katilimSil, projeSil, ortakSil } from "../src/lib/ortaklik/katilim";
 import { finansmanBagla, finansmanBagCoz } from "../src/lib/finansman/ortaklik";
 import { kaynakOku } from "./kaynak-oku";
+import { projeSonucu, type SonucSatisi } from "../src/lib/ortaklik/sonuc";
 import { kapsamKuraliEkle, otomatikKapsamlar, alimKapsaminiDegistir, alimKapsaminiDogrula } from "../src/lib/ortaklik/kapsam";
 
-const KONTROL_SAYISI = 48;
+const KONTROL_SAYISI = 59;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -151,6 +152,49 @@ async function main() {
     const sayfa = kaynakOku("src/app/ortaklik/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
     assert.ok(!/^\s*["']use client["']/m.test(sayfa), "ortaklik/page.tsx sunucu bileşeni olmalı");
     assert.ok(!/\bikon=\{/.test(sayfa) && !/from "lucide-react"/.test(sayfa), "sunucu sayfası tarayıcı bileşenine ikon (fonksiyon) geçiremez");
+    ok();
+  }
+  // ═══ AŞAMA 3a — PROJE SATIŞ SONUCU (saf gövde; veritabanı yok) ═══
+  {
+    const P = "proje-1";
+    const cik = (adet: number, maliyet: string | null, proje: string | null) => ({ quantityDelta: -adet, birimMaliyet: maliyet, kaynakProjeId: proje });
+    const satis = (ek: Partial<SonucSatisi>): SonucSatisi => ({ id: "s", kod: "K1", tarih: new Date("2026-10-10T10:00:00Z"), kanal: "TY — A", paraBirimi: "TRY", karHesaplandi: true, net1: 300, net2: 200, kalemler: [], iadeler: [], ...ek });
+    // ① Uzlaşma: tek kalem, bütün mal projenin → sonuç satışın KENDİ NET'ine kuruşuna eşit
+    //    (kalem NET-2 = 320, sipariş kesintisi −120 → satış NET-2 = 200).
+    const tek = projeSonucu(P, "TRY", [satis({ net1: 310, net2: 200, kalemler: [{ adet: 2, birimFiyat: 1000, net1: 430, net2: 320, hareketler: [cik(2, "600", P)] }] })]);
+    assert.equal(tek.toplam.net2, 200); assert.equal(tek.toplam.net1, 310); ok();
+    assert.equal(tek.toplam.ciro, 2000); assert.equal(tek.toplam.maliyet, 1200); assert.equal(tek.toplam.adet, 2); ok();
+    // ② Adet azalışı aynası son çıkışı kapatır: 2 çıktı, 1 geri döndü → proje adedi 1, maliyet 1 adet
+    const ayna = projeSonucu(P, "TRY", [satis({ kalemler: [{ adet: 1, birimFiyat: 1000, net1: 300, net2: 200, hareketler: [cik(2, "600", P), { quantityDelta: 1, birimMaliyet: "600", kaynakProjeId: null }] }] })]);
+    assert.equal(ayna.satirlar[0].projeAdedi, 1); assert.equal(ayna.toplam.maliyet, 600); ok();
+    // ③ İki partiden çıkan kalem: 1 proje + 1 proje dışı → pay yarı
+    const yari = projeSonucu(P, "TRY", [satis({ net1: 300, net2: 200, kalemler: [{ adet: 2, birimFiyat: 1000, net1: 300, net2: 200, hareketler: [cik(1, "600", P), cik(1, "500", null)] }] })]);
+    assert.equal(yari.toplam.adet, 1); assert.equal(yari.toplam.net2, 100); assert.equal(yari.toplam.ciro, 1000); assert.equal(yari.toplam.maliyet, 600); ok();
+    // ④ Karma sipariş: sipariş farkı (−100) kalemlere CİRO oranında; proje kalemi cironun %75'i
+    const karma = projeSonucu(P, "TRY", [satis({ net1: 0, net2: 400, kalemler: [
+      { adet: 1, birimFiyat: 3000, net1: 0, net2: 300, hareketler: [cik(1, "2000", P)] },
+      { adet: 1, birimFiyat: 1000, net1: 0, net2: 200, hareketler: [cik(1, "700", null)] },
+    ] })]);
+    assert.equal(karma.toplam.net2, 225); ok();  // 300 + (400 − 500) × 0,75
+    // ⑤ Kârı hesaplanmamış satış toplama GİRMEZ ama satırı ve sayısı VAR (yanlış susma yok)
+    const yok = projeSonucu(P, "TRY", [satis({ karHesaplandi: false, net2: null, kalemler: [{ adet: 1, birimFiyat: 1000, net1: null, net2: null, hareketler: [cik(1, "600", P)] }] })]);
+    assert.equal(yok.karYok, 1); assert.equal(yok.satirlar.length, 1); assert.equal(yok.toplam.net2, 0); assert.equal(yok.toplam.ciro, 0); ok();
+    // ⑥ Kâr başka para biriminde → toplama girmez, sayılır
+    const birim = projeSonucu(P, "TRY", [satis({ paraBirimi: "EUR", kalemler: [{ adet: 1, birimFiyat: 10, net1: 300, net2: 200, hareketler: [cik(1, "6", P)] }] })]);
+    assert.equal(birim.birimFarkli, 1); assert.equal(birim.toplam.net2, 0); ok();
+    // ⑦ Proje partisinden çıkmayan satış HİÇ listelenmez (yanlış yanma yok)
+    const disarida = projeSonucu(P, "TRY", [satis({ kalemler: [{ adet: 1, birimFiyat: 1000, net1: 300, net2: 200, hareketler: [cik(1, "600", "baska-proje")] }] })]);
+    assert.equal(disarida.satirlar.length, 0); assert.equal(disarida.toplam.adet, 0); ok();
+    // ⑧ İade etkisi satışın proje payı kadar: yarı pay × (−80) = −40; hesaplanmamış iade sayılır
+    const iade = projeSonucu(P, "TRY", [satis({ net1: 300, net2: 200, iadeler: [{ net1: -90, net2: -80, hesaplandi: true }, { net1: null, net2: null, hesaplandi: false }], kalemler: [{ adet: 2, birimFiyat: 1000, net1: 300, net2: 200, hareketler: [cik(1, "600", P), cik(1, "600", null)] }] })]);
+    assert.equal(iade.toplam.iadeNet2, -40); assert.equal(iade.iadeHesaplanamayan, 1); ok();
+    // ⑨ Maliyeti bilinmeyen proje çıkışı: maliyet null (sıfır sayılmaz)
+    const bilinmez = projeSonucu(P, "TRY", [satis({ kalemler: [{ adet: 1, birimFiyat: 1000, net1: 300, net2: 200, hareketler: [cik(1, null, P)] }] })]);
+    assert.equal(bilinmez.satirlar[0].maliyet, null); ok();
+    // ⑩ Sayfa: kâr rakamları ayrı izne bağlı ve hesap ince kabuktan geliyor
+    const sonucSayfasi = kaynakOku("src/app/ortaklik/[id]/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    assert.ok(/const karGorunur = baglam\.izinler\.has\("satis\.kar\.gor"\)/.test(sonucSayfasi) && /\{karGorunur \? <>/.test(sonucSayfasi), "kâr rakamları satis.kar.gor iznine bağlı olmalı");
+    assert.ok(/await projeSonucuGetir\(proje, pencere\)/.test(sonucSayfasi), "sayfa sonucu ince kabuktan almalı");
     ok();
   }
   if (sayi !== KONTROL_SAYISI) {

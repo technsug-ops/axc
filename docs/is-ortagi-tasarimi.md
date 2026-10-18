@@ -225,6 +225,16 @@ ayrıca ölçülmeli — kart notu: _«Kart kalem NET-2'sini gösterir; /satisla
 paylaştırma kuralı Aşama 3'te ölçülerek seçilir (RAPOR §6: «karma sipariş … işlem satırı
 üzerinden uygun projeye dağıtılır»).
 
+**Uygulandı — Aşama 3a (18.10.2026, şemasız):** `/ortaklik/[id]` proje sonucu. T1 ÖLÇÜLDÜ (canlı,
+17.07'den 1.133 hesaplanmış satış): kalem NET-2 toplamı satış NET-2'sine yalnız 2 satışta eşit,
+fark ortanca −₺120,89 (sipariş kesintileri kaleme dağıtılmıyor); çok kalemli satış 2/1.133.
+→ Proje payı **satışın kendi NET-2'sinden** alınır: sipariş farkı kalemlere ciro oranında bölünür,
+kalemin proje payı (açık çıkışların proje partisinden olanı, `acikCikislar`) kadarı yazılır. Bütün
+mal projeninse sonuç satış NET-2'sine kuruşuna eşit (bekçi sabitler). İade etkisi satışın proje payı
+kadar. Kârı hesaplanmamış / başka para birimindeki satış toplama girmez, ekranda sayılır. NET ve
+maliyet ayrıca `satis.kar.gor` ister. **Sınır:** iade/iptalle geri gelip yeniden satılan mal (kaynak
+RETURN_IN/SALE_CANCEL_IN) bu sürümde projeye bağlanmaz — ölçüm 17.10: 20/426 adet (%4,7).
+
 ### 5.2 Gider tahsisi (RAPOR §6)
 Projeye ait giderler (reklam, personel, depo, paketleme…) **tahsis kaydı** ile projeye yazılır:
 - yöntem: **doğrudan** (tamamı) · satış tutarı oranı · sipariş sayısı oranı · adet oranı · **belgeli elle**;

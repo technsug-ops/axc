@@ -1579,10 +1579,9 @@ ${neZaman(
   "Bir ortakla yeni bir iş başlattığında, ortak para koyduğunda ya da o işe ait mal aldığında.",
 )}
 <div class="ek-not dikkat"><div class="etiket">Proje şimdilik taslaktır</div>
-<p>Bu aşamada proje kâr hesaplamaz ve ortağa hak yazmaz. Kim ne katkı verdi,
-hangi alım projeye ait — bunlar kaydedilir; paylaşım ve dönem sonucu sonraki
-aşamada gelir. Projeden önce alınmış eski stok ve geçmiş kâr projeye
-<strong>girmez</strong>.</p></div>
+<p>Proje kendi satış sonucunu gösterir ama ortağa henüz hak yazmaz: kârın
+ortaklar arasında nasıl bölüneceği ve gider tahsisi sonraki aşamada gelir.
+Projeden önce alınmış eski stok ve geçmiş kâr projeye <strong>girmez</strong>.</p></div>
 <h3>Kurulum sırası</h3>
 <ol>
 <li><strong>Yeni proje:</strong> ad ve başlangıç tarihi. Projeler Türk lirasıyla açılır.</li>
@@ -1603,6 +1602,13 @@ kaydedilir, form bunu önceden söyler.</p>
 girilir; sonra İş Ortakları'nda <strong>«Bağla»</strong> ile o ortağın proje
 katılımına bağlanır. Hareketler Finansman'da kalır, kopyalanmaz. Yanlış bağı
 <strong>«Bağı çöz»</strong> ile kaldırıp doğru katılıma bağlayabilirsin.</p>
+<h3>Projenin sonucu</h3>
+<p>Proje kartındaki <strong>«Sonucu aç»</strong> projeye işaretli alımlardan çıkan
+malın satışlarını gösterir: satılan adet, ciro, maliyet, NET-2 ve iade etkisi.
+Kâr, satışın kendi NET-2'sinden (kargo ve sipariş kesintileri dahil) projenin
+payı kadar alınır — Satışlar ekranındaki rakamla aynıdır. Kârı henüz
+hesaplanmamış satış toplama girmez ve ekranda ayrıca sayılır. İade ya da iptalle
+geri gelip yeniden satılan mal bu sürümde projeye bağlanmaz.</p>
 ${ekranSemasi("İş Ortakları", [
   { no: 1, ad: "Üç form", aciklama: "Yeni proje · yeni ortak kartı · projeye ortak ekle.", genis: true, vurgulu: true },
   { no: 2, ad: "Bağ ve kural", aciklama: "Finansman kaynağını bağla · ürün kuralı ekle." },

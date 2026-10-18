@@ -285,6 +285,9 @@ uygunluk kontrol edilir ve rapora "kullanıcı kolaylığı: ✓" satırı eklen
     tutmayan kalem alımı durdurmaz, proje dışı kalır · ortaklık projeleri
     **Türk lirasıyla** açılır («euro hiç kullanılmayabilir»; sütun kalır). Tasarım
     `docs/is-ortagi-tasarimi.md`; aşama aşama ilerler. Diğer büyük fazlar açılmaz.
+    ⚠ **Halil testi istisnası 18.10.2026 (kullanıcı kararı «paralel yürüsün»):**
+    Aşama 3a, Aşama 2'nin Halil testi bitmeden yazıldı. Kural GEVŞEMEDİ: 3a,
+    Aşama 2 testi geçmeden kapanmış sayılmaz; istisna yalnız yazmanın sırasıdır.
   · barkod ✓ (`/okut` · `/paketle` · `/yerlestir` + kamera)
   · yetki (RBAC) ✓ (`lib/yetki`, rol+izin, `canli:yetki` bekçisi)
 - **Çok-firma veri katmanı (K303) — ▶ AÇILDI, YALNIZ DENEME KURULUMUNDA

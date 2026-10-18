@@ -23,10 +23,13 @@ export function PencereSecici({
   secili,
   baslangic,
   bitis,
+  temelAdres = "/rapor",
 }: {
   secili: PencereTuru;
   baslangic: string;
   bitis: string;
+  /** Seçimin yazılacağı ekran — rapor dışında da aynı seçici kullanılır (İlke #10). */
+  temelAdres?: string;
 }) {
   const t = useTranslations("Rapor");
   const tPencere = useTranslations("Pencere");
@@ -52,7 +55,7 @@ export function PencereSecici({
             variant={secili === secenek.tur ? "default" : "outline"}
             onClick={() => {
               setOzelAcik(false);
-              router.push(`/rapor?pencere=${secenek.tur}`);
+              router.push(`${temelAdres}?pencere=${secenek.tur}`);
             }}
           >
             {secenek.etiket}
@@ -100,7 +103,7 @@ export function PencereSecici({
           <Button
             onClick={() =>
               router.push(
-                `/rapor?pencere=OZEL&baslangic=${alanlar.baslangic}&bitis=${alanlar.bitis}`,
+                `${temelAdres}?pencere=OZEL&baslangic=${alanlar.baslangic}&bitis=${alanlar.bitis}`,
               )
             }
           >
