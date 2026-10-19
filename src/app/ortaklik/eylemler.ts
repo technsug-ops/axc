@@ -283,15 +283,15 @@ export async function anlasmaSil(_onceki: Sonuc, veri: FormData): Promise<Sonuc>
 
 // ═══ K347 · 4b — KESİNLEŞTİRME · ORTAK HESABI ═══════════════════════════════
 
-/** Kesinleştirme ve ödeme rakam gösterir/yazar: ortaklık izni + kâr görme izni BİRLİKTE. */
-async function karliYetki() {
-  const baglam = await yetkiIste("ortaklik.yonet");
-  await yetkiIste("satis.kar.gor");
-  return baglam;
-}
+/**
+ * Kesinleştirme ve ödeme rakam gösterir/yazar: ortaklık izni + kâr görme izni BİRLİKTE.
+ * ⚠ İki çağrı her eylemin KENDİ gövdesinde yazılır (yardımcıya taşınmaz): `yetki:dogrula`
+ * korumasız eylem bekçisi gövdeyi tarar; yardımcıya saklanan kapıyı göremez (push 19.10 durdu).
+ */
 
 export async function donemKesinlestirEylem(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
-  const baglam = await karliYetki();
+  const baglam = await yetkiIste("ortaklik.yonet");
+  await yetkiIste("satis.kar.gor");
   const projeId = String(veri.get("projeId") ?? "");
   const ay = String(veri.get("ay") ?? "");
   try {
@@ -314,7 +314,8 @@ export async function donemKesinlestirEylem(_onceki: Sonuc, veri: FormData): Pro
 }
 
 export async function donemGeriAlEylem(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
-  const baglam = await karliYetki();
+  const baglam = await yetkiIste("ortaklik.yonet");
+  await yetkiIste("satis.kar.gor");
   const donemId = String(veri.get("donemId") ?? "");
   let projeId = "";
   try {
@@ -329,7 +330,8 @@ export async function donemGeriAlEylem(_onceki: Sonuc, veri: FormData): Promise<
 }
 
 export async function odemeKaydetEylem(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
-  const baglam = await karliYetki();
+  const baglam = await yetkiIste("ortaklik.yonet");
+  await yetkiIste("satis.kar.gor");
   const projeId = String(veri.get("projeId") ?? "");
   const katilimId = String(veri.get("katilimId") ?? "");
   const tarihMetni = String(veri.get("tarih") ?? "");
@@ -357,7 +359,8 @@ export async function odemeKaydetEylem(_onceki: Sonuc, veri: FormData): Promise<
 }
 
 export async function odemeTersleEylem(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
-  const baglam = await karliYetki();
+  const baglam = await yetkiIste("ortaklik.yonet");
+  await yetkiIste("satis.kar.gor");
   const hareketId = String(veri.get("hareketId") ?? "");
   let projeId = "";
   try {

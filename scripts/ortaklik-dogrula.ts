@@ -393,8 +393,11 @@ async function main() {
     assert.deepEqual(bk.a, { hak: 1000, odenen: 400, kalan: 600 }); ok();
     // Kaynak: kesinleştirme/ödeme kâr iznine bağlı; ödeme gideri gider ekranından değişmez/silinmez
     const ey = kaynakOku("src/app/ortaklik/eylemler.ts").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
-    assert.ok(/async function karliYetki\(\) \{\s*const baglam = await yetkiIste\("ortaklik\.yonet"\);\s*await yetkiIste\("satis\.kar\.gor"\);/.test(ey), "4b eylemleri kâr izni de istemeli");
-    assert.ok((ey.match(/const baglam = await karliYetki\(\);/g) ?? []).length === 4, "dört 4b eylemi de karliYetki çağırmalı");
+    for (const ad of ["donemKesinlestirEylem", "donemGeriAlEylem", "odemeKaydetEylem", "odemeTersleEylem"]) {
+      const bas = ey.indexOf(`export async function ${ad}(`);
+      const govde = ey.slice(bas, ey.indexOf("\nexport async function", bas + 1) === -1 ? undefined : ey.indexOf("\nexport async function", bas + 1));
+      assert.ok(bas >= 0 && /const baglam = await yetkiIste\("ortaklik\.yonet"\);\s*await yetkiIste\("satis\.kar\.gor"\);/.test(govde), `${ad} iki izni de KENDİ gövdesinde istemeli`);
+    }
     const ga = kaynakOku("src/app/giderler/actions.ts").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
     assert.equal((ga.match(/if \(kayit\.ortakOdemesi\) \{\s*const to = await getTranslations\("Ortaklik"\);\s*return \{ hatalar: \[to\("ortakOdemesiGideri"\)\] \};/g) ?? []).length, 2, "güncelle ve sil ortak ödemesi giderini reddetmeli");
     const hs = kaynakOku("src/app/ortaklik/[id]/hesap/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
