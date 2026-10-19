@@ -1621,6 +1621,18 @@ sorumluluk payı yazılır. Emek ücreti her ay tam yazılır; kâr yetmezse far
 şartla, sonraki aylar yeni şartla hesaplanır. Önizleme her ay için dönem sonucunu, ücretleri,
 kapatılan zararı, bölüneni ve devreden zararı gösterir; ortaklara yazılan toplam her zaman
 dönem sonucu ile devreden zarardaki değişimin toplamıdır.</p>
+<h3>Ayı kesinleştirmek ve ortak hesabı</h3>
+<p>Önizlemedeki ay, <strong>muhasebe ayı kapatıldıktan sonra</strong> «Ayı kesinleştir» ile
+kesinleşir: rakamlar donar ve her ortağın hesabına <strong>hak</strong> olarak yazılır. Aylar
+sırayla kesinleşir. Yanlışlık olursa yalnız <strong>son kesin ay</strong>, gerekçe yazılarak
+geri alınır; hiçbir şey silinmez, haklar ters kayıtla düşer. Kesin ayın kaynağı sonradan
+değişirse (geç gelen iade gibi) ekran ayı <strong>bayat</strong> diye kırmızı gösterir; rakam
+kendiliğinden değişmez.</p>
+<p>Proje kartında <strong>«Ortak hesabı»</strong> her ortağın hakkını, ödenenini ve kalanını
+gösterir. Ödeme girerken <strong>«Gider olarak da kaydet»</strong> işaretlenirse ödeme gidere de
+yazılır — dış ortağa ödemede işaretleyin, kendinize ödemede işaretlemeyin. Bu gider projeye
+yazılamaz ve gider ekranından değiştirilemez; yanlış ödeme ortak hesabında
+<strong>«Ters kayıt»</strong> ile düzeltilir.</p>
 <h3>Projeye gider yazmak</h3>
 <p>Gider formundaki <strong>«Ortaklık projesi payı»</strong> bölümünde ya
 <strong>tek proje</strong> ve yüzdesini (örn. maaşın %30'u) ya da <strong>birden çok

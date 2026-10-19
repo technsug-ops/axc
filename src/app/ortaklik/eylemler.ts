@@ -5,12 +5,14 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
 import { izYaz } from "@/lib/iz";
-import { gunMetninden } from "@/lib/donem";
+import { gunDegeri, gunMetni, gunMetninden, isTakvimGunu } from "@/lib/donem";
 import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 import { projeEkle, katilimEkle, katilimGuncelle, katilimSil, projeSil, ortakSil, type Katkilar } from "@/lib/ortaklik/katilim";
 import { finansmanBagla, finansmanBagCoz } from "@/lib/finansman/ortaklik";
 import { kapsamKuraliEkle, alimKapsaminiDegistir } from "@/lib/ortaklik/kapsam";
 import { anlasmaDogrula, formSayisi, type AnlasmaGirdisi } from "@/lib/ortaklik/paylasim";
+import { paylasimGetir } from "@/lib/ortaklik/paylasim-veri";
+import { donemGeriAl, donemKesinlestir, kesinlestirmeKontrolu, odemeKaydet, odemeKontrolu, odemeTersle } from "@/lib/ortaklik/kesinlestirme";
 
 export type Sonuc = { tamam: boolean; hata?: string };
 
@@ -24,6 +26,9 @@ const BILINEN_HATALAR = [
   "BAG_KAYIT_YOK", "BAG_BIRIM", "BAG_KATKI", "BAG_ZATEN_VAR",
   "ANLASMA_AY", "ANLASMA_ESKI_AY", "ANLASMA_YONTEM", "ANLASMA_KARMA", "ANLASMA_KATILIM",
   "ANLASMA_DEGER", "ANLASMA_SABIT_TOPLAM", "ANLASMA_SORUMLULUK_TOPLAM",
+  "KESIN_AY_YOK", "KESIN_ZATEN", "KESIN_AY_BITMEDI", "KESIN_DONEM_ACIK", "KESIN_HESAPLANAMADI", "KESIN_SIRA",
+  "GERI_SON_DEGIL", "GERI_GEREKCE",
+  "ODEME_TUTAR", "ODEME_TARIH", "ODEME_YATIRIM_ONAY", "ODEME_KATEGORI", "ODEME_ZATEN_TERS",
 ] as const;
 
 async function hataSonucu(e: unknown, yer: string, tekrarAnahtari: "tekrar" | "kuralCakisiyor" | "anlasmaAyDolu" = "tekrar"): Promise<Sonuc> {
@@ -273,5 +278,96 @@ export async function anlasmaSil(_onceki: Sonuc, veri: FormData): Promise<Sonuc>
     });
   } catch (e) { return hataSonucu(e, "anlasmaSil"); }
   tazele([`/ortaklik/${projeId}/paylasim`]);
+  return { tamam: true };
+}
+
+// ═══ K347 · 4b — KESİNLEŞTİRME · ORTAK HESABI ═══════════════════════════════
+
+/** Kesinleştirme ve ödeme rakam gösterir/yazar: ortaklık izni + kâr görme izni BİRLİKTE. */
+async function karliYetki() {
+  const baglam = await yetkiIste("ortaklik.yonet");
+  await yetkiIste("satis.kar.gor");
+  return baglam;
+}
+
+export async function donemKesinlestirEylem(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
+  const baglam = await karliYetki();
+  const projeId = String(veri.get("projeId") ?? "");
+  const ay = String(veri.get("ay") ?? "");
+  try {
+    const proje = await prisma.ortaklikProjesi.findUnique({ where: { id: projeId }, select: { id: true, currency: true, baslangic: true } });
+    if (!proje || !/^\d{4}-(0[1-9]|1[0-2])$/.test(ay)) throw new Error("ORTAKLIK_KAYIT_YOK");
+    // Hesap ince kabuktan — önizlemeyle AYNI rakam donar.
+    const veriler = await paylasimGetir(proje, ay);
+    const kapali = await prisma.muhasebeDonemi.findFirst({ where: { yil: Number(ay.slice(0, 4)), ay: Number(ay.slice(5, 7)), durum: "KAPALI" }, select: { id: true } });
+    const buAy = gunMetni(gunDegeri(isTakvimGunu(new Date()))).slice(0, 7);
+    const hata = kesinlestirmeKontrolu({ ay, buAy, muhasebeKapali: Boolean(kapali), sonuclar: veriler.sonuclar });
+    if (hata) throw new Error(hata);
+    const sonuc = veriler.sonuclar.find((x) => x.ay === ay)!;
+    await prisma.$transaction(async (tx) => {
+      const donem = await donemKesinlestir(tx, { projeId, sonuc, userId: baglam.kullaniciId });
+      await izYaz({ action: "ORTAKLIK_DONEM_KESIN", companyId: baglam.companyId, targetType: "OrtaklikDonemi", targetId: donem.id, detail: JSON.stringify(sonuc) }, tx);
+    }, { timeout: 30_000 });
+  } catch (e) { return hataSonucu(e, "donemKesinlestir"); }
+  tazele([`/ortaklik/${projeId}/paylasim`, `/ortaklik/${projeId}/hesap`]);
+  return { tamam: true };
+}
+
+export async function donemGeriAlEylem(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
+  const baglam = await karliYetki();
+  const donemId = String(veri.get("donemId") ?? "");
+  let projeId = "";
+  try {
+    await prisma.$transaction(async (tx) => {
+      const d = await donemGeriAl(tx, { donemId, gerekce: String(veri.get("gerekce") ?? ""), userId: baglam.kullaniciId, bugun: gunDegeri(isTakvimGunu(new Date())) });
+      projeId = d.projeId;
+      await izYaz({ action: "ORTAKLIK_DONEM_GERI_AL", companyId: baglam.companyId, targetType: "OrtaklikDonemi", targetId: donemId, detail: JSON.stringify({ ay: d.ay, gerekce: String(veri.get("gerekce") ?? "").trim() }) }, tx);
+    }, { timeout: 30_000 });
+  } catch (e) { return hataSonucu(e, "donemGeriAl"); }
+  tazele([`/ortaklik/${projeId}/paylasim`, `/ortaklik/${projeId}/hesap`]);
+  return { tamam: true };
+}
+
+export async function odemeKaydetEylem(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
+  const baglam = await karliYetki();
+  const projeId = String(veri.get("projeId") ?? "");
+  const katilimId = String(veri.get("katilimId") ?? "");
+  const tarihMetni = String(veri.get("tarih") ?? "");
+  const tarih = gunMetninden(tarihMetni);
+  const giderMi = veri.get("gider") === "on";
+  const kategoriId = String(veri.get("kategoriId") ?? "");
+  try {
+    if (giderMi) await yetkiIste("gider.yaz");
+    const ay = tarih ? tarihMetni.slice(0, 7) : "";
+    const surum = tarih ? await prisma.ortaklikAnlasmasi.findFirst({ where: { projeId, gecerlilikAyi: { lte: new Date(`${ay}-01T00:00:00.000Z`) } }, orderBy: { gecerlilikAyi: "desc" }, select: { karKullanimi: true } }) : null;
+    const tutar = formSayisi(String(veri.get("tutar") ?? ""));
+    const hata = odemeKontrolu({ tutar, tarihGecerli: Boolean(tarih), karKullanimi: surum?.karKullanimi ?? null, yatirimOnayi: veri.get("yatirimOnayi") === "on", giderMi, kategoriId });
+    if (hata) throw new Error(hata);
+    await prisma.$transaction(async (tx) => {
+      const k = await tx.ortaklikKatilimi.findFirst({ where: { id: katilimId, projeId }, select: { ortak: { select: { ad: true } }, proje: { select: { ad: true } } } });
+      if (!k) throw new Error("ORTAKLIK_KAYIT_YOK");
+      const t = await getTranslations("Ortaklik");
+      const aciklama = String(veri.get("aciklama") ?? "").trim() || null;
+      const h = await odemeKaydet(tx, { projeId, katilimId, tarih: new Date(`${tarihMetni}T00:00:00.000Z`), tutar, aciklama, gider: giderMi ? { kategoriId, aciklama: t("odemeGiderAciklamasi", { ortak: k.ortak.ad, proje: k.proje.ad }) } : null, userId: baglam.kullaniciId });
+      await izYaz({ action: "ORTAKLIK_ODEME", companyId: baglam.companyId, targetType: "OrtakCariHareketi", targetId: h.id, detail: JSON.stringify({ projeId, katilimId, tutar, tarih: tarihMetni, giderMi, yatirimDonemi: surum?.karKullanimi === "YENIDEN_YATIRIM" }) }, tx);
+    });
+  } catch (e) { return hataSonucu(e, "odemeKaydet"); }
+  tazele([`/ortaklik/${projeId}/hesap`, "/giderler", "/rapor"]);
+  return { tamam: true };
+}
+
+export async function odemeTersleEylem(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
+  const baglam = await karliYetki();
+  const hareketId = String(veri.get("hareketId") ?? "");
+  let projeId = "";
+  try {
+    await prisma.$transaction(async (tx) => {
+      const t = await getTranslations("Ortaklik");
+      const ters = await odemeTersle(tx, { hareketId, userId: baglam.kullaniciId, bugun: gunDegeri(isTakvimGunu(new Date())), aciklama: t("odemeTersAciklama") });
+      projeId = ters.projeId;
+      await izYaz({ action: "ORTAKLIK_ODEME_TERS", companyId: baglam.companyId, targetType: "OrtakCariHareketi", targetId: hareketId, detail: JSON.stringify({ ters: ters.id }) }, tx);
+    });
+  } catch (e) { return hataSonucu(e, "odemeTersle"); }
+  tazele([`/ortaklik/${projeId}/hesap`, "/giderler", "/rapor"]);
   return { tamam: true };
 }

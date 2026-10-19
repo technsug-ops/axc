@@ -263,6 +263,12 @@ eklenir). Pay giderin GÜNCEL tutarına uygulanır — snapshot yok, «bayat tah
 projede kalır; ertesi dönemin sonucunu şişirmez.
 
 ### 5.4 Dönem ve kapanış
+
+**Uygulandı — Aşama 4b (19.10.2026):** kesinleşme yalnız KAPALI muhasebe ayında; donan rakamlar
+`OrtaklikDonemi`, haklar `OrtakCariHareketi` (HAK) — defter, ters kayıtla düzeltilir. Kesin ay yeniden
+hesaplanmaz; bayat ölçümü aynı ay adımını (`ayAdimi`) donmuş başlangıç devredeniyle yeniden çalıştırır.
+Ödeme gideri kullanıcı kararıyla seçmeli: dış ortağa ödeme firmanın gideridir (ortaklık sözleşmeyle,
+şirket ortaklığı değil); bu gider projeye tahsis edilemez (çift sayım) ve gider ekranından değişmez.
 - Hesap dönemi: aylık · üç aylık · yıllık · kampanya sonu · özel aralık (RAPOR §3).
 - Dönem sonucu yalnız **kapalı muhasebe dönemleri** üstünde KESİNLEŞİR (canlıda 0 kapalı ay →
   ön şart, §12). Taslak her zaman görülebilir.

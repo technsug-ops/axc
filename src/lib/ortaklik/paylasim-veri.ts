@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { gunMetni, isTakvimGunu, gunDegeri, pencereOlustur } from "@/lib/donem";
 import { projeSonucuGetir } from "@/lib/ortaklik/sonuc-veri";
 import { projeGiderleriGetir } from "@/lib/ortaklik/gider-veri";
-import { gunAgirlikliSermaye, paylasimHesapla, type AnlasmaSurumu, type AyGirdisi } from "@/lib/ortaklik/paylasim";
+import { gunAgirlikliSermaye, paylasimHesapla, type AnlasmaSurumu, type AyGirdisi, type DonmusAy } from "@/lib/ortaklik/paylasim";
 
 /** İstanbul takvim günü → "YYYY-AA-GG" (saat dilimi tek yerden: `isTakvimGunu`). */
 const gunAnahtari = (an: Date) => gunMetni(gunDegeri(isTakvimGunu(an)));
@@ -30,7 +30,7 @@ export async function paylasimGetir(proje: { id: string; currency: string; basla
   const [yil, ayNo] = sonAy.split("-").map(Number);
   const sonGun = `${sonAy}-${String(new Date(Date.UTC(yil, ayNo, 0)).getUTCDate()).padStart(2, "0")}`;
 
-  const [surumKayitlari, katilimlar] = await Promise.all([
+  const [surumKayitlari, katilimlar, donemKayitlari] = await Promise.all([
     prisma.ortaklikAnlasmasi.findMany({ where: { projeId: proje.id }, include: { paylar: true }, orderBy: { gecerlilikAyi: "asc" } }),
     prisma.ortaklikKatilimi.findMany({
       where: { projeId: proje.id },
@@ -41,7 +41,21 @@ export async function paylasimGetir(proje: { id: string; currency: string; basla
       },
       orderBy: { createdAt: "asc" },
     }),
+    /** 4b — ETKİN (geri alınmamış) kesin aylar ve HAK satırları; rakamlar buradan DONMUŞ okunur. */
+    prisma.ortaklikDonemi.findMany({
+      where: { projeId: proje.id, geriAlindiAt: null },
+      include: { cariHareketleri: { where: { tur: "HAK" }, select: { katilimId: true, tutar: true, ucretTutari: true, payTutari: true } } },
+      orderBy: { ay: "asc" },
+    }),
   ]);
+  const sayi = (d: { toString(): string } | null) => (d === null ? 0 : Number(d));
+  const donmus: Record<string, DonmusAy> = Object.fromEntries(donemKayitlari.map((d) => [gunMetni(d.ay).slice(0, 7), {
+    surumId: d.anlasmaId,
+    karKullanimi: d.karKullanimi,
+    sonuc: sayi(d.sonuc), ucretToplami: sayi(d.ucretToplami), mahsup: sayi(d.mahsup), bolunen: sayi(d.bolunen),
+    devredenOnce: sayi(d.devredenOnce), devredenSonra: sayi(d.devredenSonra),
+    haklar: Object.fromEntries(d.cariHareketleri.map((h) => [h.katilimId, { ucret: sayi(h.ucretTutari), pay: sayi(h.payTutari), toplam: sayi(h.tutar) }])),
+  } satisfies DonmusAy]));
 
   const surumler: AnlasmaSurumu[] = surumKayitlari.map((s) => ({
     id: s.id,
@@ -53,7 +67,7 @@ export async function paylasimGetir(proje: { id: string; currency: string; basla
     paylar: s.paylar.map((p) => ({ katilimId: p.katilimId, sabitOran: Number(p.sabitOran), emekUcreti: Number(p.emekUcreti), sorumlulukPayi: Number(p.sorumlulukPayi) })),
   }));
 
-  if (!aylar.length) return { aylar: [], surumler, surumKayitlari, katilimlar, sonuclar: [], karYok: {} as Record<string, number> };
+  if (!aylar.length) return { aylar: [], surumler, surumKayitlari, katilimlar, donemKayitlari, sonuclar: [], karYok: {} as Record<string, number> };
 
   const pencere = pencereOlustur("OZEL", new Date(), { baslangic: `${ilkAy}-01`, bitis: sonGun });
   const [satis, gider] = await Promise.all([projeSonucuGetir(proje, pencere), projeGiderleriGetir(proje.id, pencere)]);
@@ -87,5 +101,5 @@ export async function paylasimGetir(proje: { id: string; currency: string; basla
     sermaye: Object.fromEntries(katilimlar.map((k) => [k.id, gunAgirlikliSermaye(katkilar[k.id], ay)])),
   }));
 
-  return { aylar, surumler, surumKayitlari, katilimlar, sonuclar: paylasimHesapla(girdiler, surumler), karYok };
+  return { aylar, surumler, surumKayitlari, katilimlar, donemKayitlari, sonuclar: paylasimHesapla(girdiler, surumler, donmus), karYok };
 }

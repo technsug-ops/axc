@@ -179,6 +179,7 @@ const TAHSIS_HATALARI = [
   "TAHSIS_TOPLAM",
   "TAHSIS_BIRIM",
   "TAHSIS_ESKI",
+  "TAHSIS_ORTAK_ODEMESI",
 ] as const;
 
 /** Tahsis hatası KODA çevrilir, ekran sözlükten okur; tanınmayan hata çağırana kalır. */
@@ -322,9 +323,14 @@ export async function giderGuncelle(
 
   const kayit = await prisma.expense.findUnique({
     where: { id },
-    select: { id: true },
+    select: { id: true, ortakOdemesi: { select: { id: true } } },
   });
   if (!kayit) return { hatalar: [t("bulunamadi")] };
+  /** K347 · 4b — ortak ödemesinden doğan gider burada DEĞİŞMEZ: tutar ortak hesabıyla ayrışırdı. */
+  if (kayit.ortakOdemesi) {
+    const to = await getTranslations("Ortaklik");
+    return { hatalar: [to("ortakOdemesiGideri")] };
+  }
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -383,9 +389,13 @@ export async function giderSil(
 
   const kayit = await prisma.expense.findUnique({
     where: { id },
-    select: { id: true },
+    select: { id: true, ortakOdemesi: { select: { id: true } } },
   });
   if (!kayit) return { hatalar: [t("bulunamadi")] };
+  if (kayit.ortakOdemesi) {
+    const to = await getTranslations("Ortaklik");
+    return { hatalar: [to("ortakOdemesiGideri")] };
+  }
 
   try {
     await prisma.expense.delete({ where: { id } });

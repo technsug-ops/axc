@@ -56,7 +56,15 @@ export type AySonucu = {
   /** Ücretlerden sonra kâr ya da zarar olarak ortaklara bölünen (eksi olabilir). */
   bolunen: number;
   haklar: Record<string, OrtakHakki>;
+  /** 4b — ay kesinleşmiş: rakamlar DONMUŞ kayıttan gelir. */
+  kesin: boolean;
+  /** 4b — kesin ayın kaynağı sonradan değişmiş: aynı başlangıç devredeniyle bugün yeniden
+   *  hesaplanınca sonuç ya da haklar donmuş rakamla tutmuyor. Rakam KENDİLİĞİNDEN değişmez. */
+  bayat: boolean;
 };
+
+/** 4b — kesinleşmiş ayın donmuş rakamları (`OrtaklikDonemi` + HAK satırları). */
+export type DonmusAy = Omit<AySonucu, "ay" | "durum" | "kesin" | "bayat" | "surumId" | "karKullanimi"> & { surumId: string; karKullanimi: KarKullanimi };
 
 const kurus = (n: number) => Math.round(n * 100) / 100;
 
@@ -98,50 +106,70 @@ function karAgirliklari(s: AnlasmaSurumu, sermaye: Record<string, number>): Reco
   return Object.fromEntries(s.paylar.map((p) => [p.katilimId, (x * ser[p.katilimId]) / serToplam + ((100 - x) * p.sabitOran) / 100]));
 }
 
-export function paylasimHesapla(aylar: AyGirdisi[], surumler: AnlasmaSurumu[]): AySonucu[] {
+/**
+ * TEK AYIN ADIMI — saf. Verilen başlangıç devredeniyle ayı hesaplar. Hem normal akış hem de
+ * kesin ayın «bayat mı» ölçümü bu AYNI adımı çağırır (iki yerde iki kural olmaz).
+ */
+export function ayAdimi(a: AyGirdisi, s: AnlasmaSurumu | null, devredenOnce: number): AySonucu {
+  let devreden = devredenOnce;
+  const temel = { ay: a.ay, sonuc: kurus(a.sonuc), devredenOnce, mahsup: 0, ucretToplami: 0, bolunen: 0, haklar: {} as Record<string, OrtakHakki>, kesin: false, bayat: false };
+  if (!s) return { ...temel, durum: "ANLASMA_YOK", surumId: null, karKullanimi: null, devredenSonra: devredenOnce };
+  const kar = karAgirliklari(s, a.sermaye);
+  if (!kar) return { ...temel, durum: "SERMAYE_YOK", surumId: s.id, karKullanimi: s.karKullanimi, devredenSonra: devredenOnce };
+  const haklar: Record<string, OrtakHakki> = {};
+  for (const p of s.paylar) haklar[p.katilimId] = { ucret: kurus(p.emekUcreti), pay: 0, toplam: 0 };
+  const ucretToplami = kurus(s.paylar.reduce((t, p) => t + kurus(p.emekUcreti), 0));
+  let kalan = kurus(a.sonuc - ucretToplami);
+  let mahsup = 0;
+  let bolunen = 0;
+  if (kalan > 0) {
+    mahsup = kurus(Math.min(kalan, devreden));
+    devreden = kurus(devreden - mahsup);
+    kalan = kurus(kalan - mahsup);
+    bolunen = kalan;
+  } else if (kalan < 0) {
+    if (s.zararYontemi === "DEVREDER") devreden = kurus(devreden - kalan);
+    else bolunen = kalan;
+  }
+  if (bolunen !== 0) {
+    const agirlik = bolunen < 0 && s.zararYontemi === "SORUMLULUK"
+      ? Object.fromEntries(s.paylar.map((p) => [p.katilimId, p.sorumlulukPayi]))
+      : kar;
+    const dagilim = agirliklaBol(bolunen, agirlik);
+    if (!dagilim) return { ...temel, durum: "SERMAYE_YOK", surumId: s.id, karKullanimi: s.karKullanimi, devredenSonra: devredenOnce };
+    for (const [k, v] of Object.entries(dagilim)) haklar[k] = { ...(haklar[k] ?? { ucret: 0, pay: 0, toplam: 0 }), pay: v };
+  }
+  for (const h of Object.values(haklar)) h.toplam = kurus(h.ucret + h.pay);
+  return { ...temel, durum: "TAMAM", surumId: s.id, karKullanimi: s.karKullanimi, ucretToplami, mahsup, bolunen, devredenSonra: devreden, haklar };
+}
+
+function haklarTutuyor(a: Record<string, OrtakHakki>, b: Record<string, OrtakHakki>): boolean {
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    if (Math.round((a[k]?.toplam ?? 0) * 100) !== Math.round((b[k]?.toplam ?? 0) * 100)) return false;
+  }
+  return true;
+}
+
+/**
+ * `donmus` verilirse kesin aylar YENİDEN HESAPLANMAZ: donmuş rakam gösterilir ve sonraki ayın
+ * devreden zararı DONMUŞ `devredenSonra`dan devam eder (zincir kaymaz). Aynı ay, donmuş başlangıç
+ * devredeniyle bugünkü kaynaktan yeniden hesaplanır; tutmuyorsa BAYAT (kullanıcı kararı 19.10.2026).
+ */
+export function paylasimHesapla(aylar: AyGirdisi[], surumler: AnlasmaSurumu[], donmus: Record<string, DonmusAy> = {}): AySonucu[] {
   const sonuclar: AySonucu[] = [];
   let devreden = 0;
   for (const a of [...aylar].sort((x, y) => x.ay.localeCompare(y.ay))) {
-    const s = gecerliSurum(surumler, a.ay);
-    const temel = { ay: a.ay, sonuc: kurus(a.sonuc), devredenOnce: devreden, mahsup: 0, ucretToplami: 0, bolunen: 0, haklar: {} as Record<string, OrtakHakki> };
-    if (!s) {
-      sonuclar.push({ ...temel, durum: "ANLASMA_YOK", surumId: null, karKullanimi: null, devredenSonra: devreden });
+    const d = donmus[a.ay];
+    if (d) {
+      const taze = ayAdimi(a, gecerliSurum(surumler, a.ay), d.devredenOnce);
+      const bayat = taze.durum !== "TAMAM" || Math.round(taze.sonuc * 100) !== Math.round(d.sonuc * 100) || !haklarTutuyor(taze.haklar, d.haklar);
+      sonuclar.push({ ...d, ay: a.ay, durum: "TAMAM", kesin: true, bayat });
+      devreden = d.devredenSonra;
       continue;
     }
-    const kar = karAgirliklari(s, a.sermaye);
-    if (!kar) {
-      sonuclar.push({ ...temel, durum: "SERMAYE_YOK", surumId: s.id, karKullanimi: s.karKullanimi, devredenSonra: devreden });
-      continue;
-    }
-    const haklar: Record<string, OrtakHakki> = {};
-    for (const p of s.paylar) haklar[p.katilimId] = { ucret: kurus(p.emekUcreti), pay: 0, toplam: 0 };
-    const ucretToplami = kurus(s.paylar.reduce((t, p) => t + kurus(p.emekUcreti), 0));
-    let kalan = kurus(a.sonuc - ucretToplami);
-    let mahsup = 0;
-    let bolunen = 0;
-    if (kalan > 0) {
-      mahsup = kurus(Math.min(kalan, devreden));
-      devreden = kurus(devreden - mahsup);
-      kalan = kurus(kalan - mahsup);
-      bolunen = kalan;
-    } else if (kalan < 0) {
-      if (s.zararYontemi === "DEVREDER") devreden = kurus(devreden - kalan);
-      else bolunen = kalan;
-    }
-    if (bolunen !== 0) {
-      const agirlik = bolunen < 0 && s.zararYontemi === "SORUMLULUK"
-        ? Object.fromEntries(s.paylar.map((p) => [p.katilimId, p.sorumlulukPayi]))
-        : kar;
-      const dagilim = agirliklaBol(bolunen, agirlik);
-      if (!dagilim) {
-        sonuclar.push({ ...temel, durum: "SERMAYE_YOK", surumId: s.id, karKullanimi: s.karKullanimi, devredenSonra: temel.devredenOnce });
-        devreden = temel.devredenOnce;
-        continue;
-      }
-      for (const [k, v] of Object.entries(dagilim)) haklar[k] = { ...(haklar[k] ?? { ucret: 0, pay: 0, toplam: 0 }), pay: v };
-    }
-    for (const h of Object.values(haklar)) h.toplam = kurus(h.ucret + h.pay);
-    sonuclar.push({ ...temel, durum: "TAMAM", surumId: s.id, karKullanimi: s.karKullanimi, ucretToplami, mahsup, bolunen, devredenSonra: devreden, haklar });
+    const r = ayAdimi(a, gecerliSurum(surumler, a.ay), devreden);
+    sonuclar.push(r);
+    devreden = r.devredenSonra;
   }
   return sonuclar;
 }

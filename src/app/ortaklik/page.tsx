@@ -107,7 +107,8 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
               <p className="text-sm text-muted-foreground">{t("projeOzeti", { tarih: bicim.tarih(p.baslangic), birim: p.currency, sayi: p.katilimlar.length })}</p>
               <p className="text-sm">{t("kapsamKalemSayisi", { sayi: p._count.alimKalemleri })}</p>
               <div className="mt-1 flex flex-wrap gap-x-4"><Baglanti href={`/ortaklik/${p.id}`} className="inline-flex min-h-11 items-center text-sm md:min-h-0">{t("sonucuAc")}</Baglanti>
-              <Baglanti href={`/ortaklik/${p.id}/paylasim`} className="inline-flex min-h-11 items-center text-sm md:min-h-0">{t("paylasimiAc")}</Baglanti></div></div>
+              <Baglanti href={`/ortaklik/${p.id}/paylasim`} className="inline-flex min-h-11 items-center text-sm md:min-h-0">{t("paylasimiAc")}</Baglanti>
+              <Baglanti href={`/ortaklik/${p.id}/hesap`} className="inline-flex min-h-11 items-center text-sm md:min-h-0">{t("hesabiAc")}</Baglanti></div></div>
             <div className="w-full md:w-auto"><SatirEylemleri>
               <AdDuzenle tur="proje" id={p.id} ad={p.ad} />
               <KayitSil tur="proje" id={p.id} baslik={t("silBaslik", { ad: p.ad })} aciklama={t(bagli ? "silinemezBagli" : "silNotu")} />

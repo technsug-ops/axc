@@ -52,6 +52,8 @@ export const YEDEK_TABLOLARI = [
   /** K347 · 4a — projeye ve katılıma bağlı → ikisinden SONRA (pay, anlaşmadan da sonra). */
   "OrtaklikAnlasmasi",
   "OrtaklikAnlasmaPayi",
+  /** K347 · 4b — anlaşmaya ve kullanıcıya bağlı → anlaşma paylarından SONRA. */
+  "OrtaklikDonemi",
   "Role",
   // --- yetki: rol izinleri ve üyelikler ---
   "RolePermission",
@@ -95,6 +97,8 @@ export const YEDEK_TABLOLARI = [
   "Expense",
   /** K347 · 3b — gidere ve ortaklık projesine bağlı → ikisinden SONRA. */
   "OrtaklikGiderTahsisi",
+  /** K347 · 4b — gidere (ödeme gideri), döneme, katılıma bağlı → `Expense`ten SONRA. Kendine ters kayıt bağı var. */
+  "OrtakCariHareketi",
   /**
    * Kart ödemesi: `CreditCard` VE `Expense`'ten SONRA gelmeli — ikisine de
    * yabancı anahtarı var (faiz gideri bağı dahil). Sıra bozulursa geri

@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { paylasimGetir } from "@/lib/ortaklik/paylasim-veri";
 import { AnlasmaFormu, AnlasmaSil, type FormOrtagi } from "./anlasma-formu";
+import { DonemGeriAl, DonemKesinlestir } from "./donem-eylemleri";
+import { kesinlestirmeKontrolu } from "@/lib/ortaklik/kesinlestirme";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +48,11 @@ export default async function PaylasimSayfasi({ params, searchParams }: {
   const ay = istenen < ilkAy ? ilkAy : istenen;
 
   const veri = await paylasimGetir(proje, ay);
+  /** 4b — kesinleştirme kapısı: aynı saf kontrol eylemde de sorulur (ekran ile eylem ayrışmaz). */
+  const muhasebeKapali = Boolean(await prisma.muhasebeDonemi.findFirst({ where: { yil: Number(ay.slice(0, 4)), ay: Number(ay.slice(5, 7)), durum: "KAPALI" }, select: { id: true } }));
+  const kesinHatasi = kesinlestirmeKontrolu({ ay, buAy, muhasebeKapali, sonuclar: veri.sonuclar });
+  const etkinDonem = veri.donemKayitlari.find((d) => gunMetni(d.ay).slice(0, 7) === ay) ?? null;
+  const sonEtkinMi = Boolean(etkinDonem) && !veri.donemKayitlari.some((d) => gunMetni(d.ay).slice(0, 7) > ay);
   const secili = veri.sonuclar.find((s) => s.ay === ay) ?? null;
   const adlar = Object.fromEntries(veri.katilimlar.map((k) => [k.id, k.ortak.ad]));
   const son = veri.surumKayitlari.at(-1);
@@ -67,7 +74,8 @@ export default async function PaylasimSayfasi({ params, searchParams }: {
       <ListeyeDon href="/ortaklik">{t("baslik")}</ListeyeDon>
       <h1 className="text-2xl font-semibold">{t("paylasimBasligi", { proje: proje.ad })}</h1>
       <p className="max-w-3xl text-sm text-muted-foreground">{t("paylasimAciklama")}</p>
-      <Baglanti href={`/ortaklik/${proje.id}`} className="inline-flex min-h-11 items-center text-sm md:min-h-0">{t("sonucuAc")}</Baglanti>
+      <div className="flex flex-wrap gap-x-4"><Baglanti href={`/ortaklik/${proje.id}`} className="inline-flex min-h-11 items-center text-sm md:min-h-0">{t("sonucuAc")}</Baglanti>
+        <Baglanti href={`/ortaklik/${proje.id}/hesap`} className="inline-flex min-h-11 items-center text-sm md:min-h-0">{t("hesabiAc")}</Baglanti></div>
     </div>
 
     {karGorunur ? <section className="space-y-3">
@@ -75,8 +83,14 @@ export default async function PaylasimSayfasi({ params, searchParams }: {
         <label className="block space-y-1 text-sm">{t("paylasimAy")}<Input type="month" name="ay" defaultValue={ay} min={ilkAy} className="w-44" /></label>
         <Button type="submit" variant="secondary" className="min-h-11">{t("goster")}</Button>
       </form>
-      <h2 className="text-lg font-semibold">{t("onizlemeBaslik", { ay })}</h2>
-      <p className="max-w-3xl text-sm text-muted-foreground">{t("onizlemeNotu")}</p>
+      <h2 className="text-lg font-semibold">{secili?.kesin ? t("kesinBaslik", { ay }) : t("onizlemeBaslik", { ay })}</h2>
+      <p className="max-w-3xl text-sm text-muted-foreground">{secili?.kesin ? t("kesinNotu") : t("onizlemeNotu")}</p>
+      {secili?.bayat ? <p className={`rounded-md p-3 text-sm ${DURUM_KUTUSU.olumsuz} ${DURUM_YAZISI.olumsuz}`} role="alert">{t("bayatUyari")}</p> : null}
+      <div className="max-w-3xl space-y-2">
+        {secili?.kesin ? (sonEtkinMi && etkinDonem ? <DonemGeriAl donemId={etkinDonem.id} ay={ay} /> : <p className="text-sm text-muted-foreground">{t("geriAlSonDegil")}</p>)
+          : kesinHatasi === null ? <DonemKesinlestir projeId={proje.id} ay={ay} />
+          : <p className="text-sm text-muted-foreground">{t(kesinHatasi)}{kesinHatasi === "KESIN_DONEM_ACIK" ? <> <Baglanti href="/ayarlar/donemler">{t("donemleriAc")}</Baglanti></> : null}</p>}
+      </div>
       {!secili || secili.durum === "ANLASMA_YOK" ? <p className={uyari}>{t("durum_ANLASMA_YOK")}</p> : null}
       {secili?.durum === "SERMAYE_YOK" ? <p className={uyari}>{t("durum_SERMAYE_YOK")}</p> : null}
       {veri.karYok[ay] ? <p className={uyari}>{t("paylasimKarYok", { sayi: veri.karYok[ay] })}</p> : null}
@@ -126,7 +140,7 @@ export default async function PaylasimSayfasi({ params, searchParams }: {
           <TableCell className="text-right whitespace-nowrap">{para(s.ucretToplami)}</TableCell>
           <TableCell className="text-right whitespace-nowrap">{para(s.bolunen)}</TableCell>
           <TableCell className="text-right whitespace-nowrap">{para(s.devredenSonra)}</TableCell>
-          <TableCell className={s.durum === "TAMAM" ? "" : DURUM_YAZISI.uyari}>{t(`durumKisa_${s.durum}`)}</TableCell>
+          <TableCell className={s.bayat ? DURUM_YAZISI.olumsuz : s.durum === "TAMAM" ? "" : DURUM_YAZISI.uyari}>{s.kesin ? (s.bayat ? t("durumKesinBayat") : t("durumKesin")) : t(`durumKisa_${s.durum}`)}</TableCell>
         </TableRow>)}</TableBody>
         <TableFooter><TableRow>
           <TableCell>{t("paylasimToplam")}</TableCell>

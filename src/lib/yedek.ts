@@ -98,6 +98,7 @@ export async function yedekUret(
     ExpenseTemplate: await istemci.expenseTemplate.findMany(),
     Expense: await istemci.expense.findMany(),
     OrtaklikGiderTahsisi: await istemci.ortaklikGiderTahsisi.findMany(),
+    OrtakCariHareketi: await istemci.ortakCariHareketi.findMany({ orderBy: { createdAt: "asc" } }),
     /**
      * ⚠ ÜÇÜ DE 22.08.2026'DA EKLENDİ — ve üçü de LİSTEDE VARDI ama BURADA
      * YOKTU. Yani kapsam bekçisi yeşil yanarken yedek dosyası bu tabloları
@@ -121,6 +122,7 @@ export async function yedekUret(
     OrtaklikKatilimi: await istemci.ortaklikKatilimi.findMany(),
     OrtaklikAnlasmasi: await istemci.ortaklikAnlasmasi.findMany(),
     OrtaklikAnlasmaPayi: await istemci.ortaklikAnlasmaPayi.findMany(),
+    OrtaklikDonemi: await istemci.ortaklikDonemi.findMany(),
     OrtaklikKapsamKurali: await istemci.ortaklikKapsamKurali.findMany(),
     FinansmanHareketi: await istemci.finansmanHareketi.findMany(),
     FinansmanBirimFiyati: await istemci.finansmanBirimFiyati.findMany(),

@@ -63,8 +63,10 @@ type Istemci = Pick<Prisma.TransactionClient, "ortaklikGiderTahsisi" | "ortaklik
 export async function giderTahsisleriniYaz(tx: Istemci, expenseId: string, g: TahsisGirdisi) {
   const hata = tahsisDogrula(g);
   if (hata) throw new Error(hata);
-  const gider = await tx.expense.findUnique({ where: { id: expenseId }, select: { spentAt: true, currency: true } });
+  const gider = await tx.expense.findUnique({ where: { id: expenseId }, select: { spentAt: true, currency: true, ortakOdemesi: { select: { id: true } } } });
   if (!gider) throw new Error("TAHSIS_GIDER_YOK");
+  // 4b — ortak ödemesinden doğan gider projeye yazılamaz: proje sonucu ikinci kez düşerdi (çift sayım).
+  if (gider.ortakOdemesi && g.satirlar.length) throw new Error("TAHSIS_ORTAK_ODEMESI");
   const projeler = await tx.ortaklikProjesi.findMany({ where: { id: { in: g.satirlar.map((s) => s.projeId) } } });
   for (const s of g.satirlar) {
     const p = projeler.find((x) => x.id === s.projeId);

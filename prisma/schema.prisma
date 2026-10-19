@@ -1241,6 +1241,8 @@ model OrtaklikProjesi {
   kapsamKurallari OrtaklikKapsamKurali[]
   giderTahsisleri OrtaklikGiderTahsisi[]
   anlasmalar OrtaklikAnlasmasi[]
+  donemler OrtaklikDonemi[]
+  cariHareketleri OrtakCariHareketi[]
 }
 
 /// K347 · Aşama 3b — GİDERİN PROJEYE DÜŞEN PAYI. Tek proje = tek satır, bölme = birden
@@ -1288,6 +1290,7 @@ model OrtaklikAnlasmasi {
   aciklama String? @db.Text
   createdAt DateTime @default(now())
   paylar OrtaklikAnlasmaPayi[]
+  donemler OrtaklikDonemi[]
   @@unique([projeId, gecerlilikAyi])
 }
 
@@ -1304,6 +1307,74 @@ model OrtaklikAnlasmaPayi {
   sorumlulukPayi Decimal @default(0) @db.Decimal(5, 2)
   @@unique([anlasmaId, katilimId])
   @@index([katilimId])
+}
+
+/// K347 · Aşama 4b — KESİNLEŞMİŞ AY. Önizlemenin o anki rakamları DONAR; sonraki ayların devreden
+/// zararı buradan devam eder. Yalnız muhasebe ayı KAPALI iken ve önceki anlaşmalı aylar kesinken
+/// yazılır (kullanıcı kararı 19.10.2026). Geri alma SİLMEZ: `geriAlindiAt` + gerekçe yazılır, haklar
+/// ters kayıtla düşer; yalnız SON kesin ay geri alınır. Aynı ay için en çok bir ETKİN satır (uygulama).
+model OrtaklikDonemi {
+  id String @id @default(cuid())
+  projeId String
+  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  /// Ayın 1'i (UTC gece yarısı çapası).
+  ay DateTime @db.Date
+  anlasmaId String
+  anlasma OrtaklikAnlasmasi @relation(fields: [anlasmaId], references: [id], onDelete: Restrict)
+  sonuc Decimal @db.Decimal(18, 4)
+  ucretToplami Decimal @db.Decimal(18, 4)
+  mahsup Decimal @db.Decimal(18, 4)
+  bolunen Decimal @db.Decimal(18, 4)
+  devredenOnce Decimal @db.Decimal(18, 4)
+  devredenSonra Decimal @db.Decimal(18, 4)
+  karKullanimi OrtaklikKarKullanimi
+  kesinlestirenId String?
+  kesinlestiren User? @relation("OrtaklikDonemKesinlestiren", fields: [kesinlestirenId], references: [id], onDelete: Restrict)
+  kesinlestiAt DateTime @default(now())
+  geriAlindiAt DateTime?
+  geriAlmaGerekcesi String? @db.Text
+  cariHareketleri OrtakCariHareketi[]
+  @@index([projeId, ay])
+}
+
+enum OrtakCariTuru {
+  HAK // kesinleşen ayın hakkı (emek ücreti + kâr/zarar payı) — eksi olabilir
+  HAK_TERS // ay geri alınınca
+  ODEME // ortağa ödenen (eksi tutar)
+  ODEME_TERS // yanlış ödemenin tersi
+}
+
+/// K347 · 4b — ORTAK HESABI (defter). Bakiye = Σ tutar (hak +, ödeme −). Satır DEĞİŞMEZ, SİLİNMEZ;
+/// düzeltme `reversesId` ile ters kayıt. Ödeme istenirse gider de açar (`expenseId`; kullanıcı kararı:
+/// her ödemede seçilebilir).
+model OrtakCariHareketi {
+  id String @id @default(cuid())
+  projeId String
+  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  katilimId String
+  katilim OrtaklikKatilimi @relation(fields: [katilimId], references: [id], onDelete: Restrict)
+  tur OrtakCariTuru
+  /// İşaretli: HAK +, ODEME −, ters kayıt aslının eksisi.
+  tutar Decimal @db.Decimal(18, 4)
+  /// HAK satırında dökümü: emek ücreti ve kâr/zarar payı (toplamı = tutar).
+  ucretTutari Decimal? @db.Decimal(18, 4)
+  payTutari Decimal? @db.Decimal(18, 4)
+  /// İş günü (UTC gece yarısı çapası).
+  tarih DateTime @db.Date
+  donemId String?
+  donem OrtaklikDonemi? @relation(fields: [donemId], references: [id], onDelete: Restrict)
+  expenseId String? @unique
+  expense Expense? @relation("OrtakOdemeGideri", fields: [expenseId], references: [id], onDelete: Restrict)
+  reversesId String? @unique
+  reverses OrtakCariHareketi? @relation("OrtakCariTers", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy OrtakCariHareketi? @relation("OrtakCariTers")
+  aciklama String? @db.Text
+  userId String?
+  user User? @relation("OrtakCariKaydeden", fields: [userId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  @@index([projeId])
+  @@index([katilimId])
+  @@index([donemId])
 }
 
 model OrtaklikGiderTahsisi {
@@ -1345,6 +1416,7 @@ model OrtaklikKatilimi {
   finansman Boolean @default(false)
   finansmanKaynaklari Finansman[]
   anlasmaPaylari OrtaklikAnlasmaPayi[]
+  cariHareketleri OrtakCariHareketi[]
   createdAt DateTime @default(now())
   @@unique([projeId, ortakId])
   @@index([ortakId])
@@ -2590,6 +2662,9 @@ model Expense {
   /// Tekil: bir taksitin faizi tek bir gidere yazılır (kart faizi deseni).
   finansmanHareketi FinansmanHareketi?
   ortaklikTahsisleri OrtaklikGiderTahsisi[]
+  /// K347 · 4b — bu gider bir ortak ödemesinden doğduysa. Böyle gider projeye tahsis edilemez
+  /// (çift sayım) ve tutarı gider ekranından değiştirilemez (düzeltme ortak hesabında ters kayıtla).
+  ortakOdemesi OrtakCariHareketi? @relation("OrtakOdemeGideri")
 
   /**
    * GİDER HANGİ KARTLA ÖDENDİ (25.08.2026).
@@ -2704,6 +2779,9 @@ model User {
   talepCozumleri      Talep[]           @relation("TalepCozumYazani")
   /// Bu kullanıcının iptal ettiği satışlar.
   iptalEttigiSatislar Sale[]            @relation("SatisIptalEden")
+  /// K347 · 4b
+  kesinlestirdigiOrtaklikDonemleri OrtaklikDonemi[] @relation("OrtaklikDonemKesinlestiren")
+  kaydettigiOrtakCariHareketleri OrtakCariHareketi[] @relation("OrtakCariKaydeden")
 
   @@index([isActive])
 }

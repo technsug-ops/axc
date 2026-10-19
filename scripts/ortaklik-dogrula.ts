@@ -18,11 +18,12 @@ import { projeEkle, katilimEkle, katilimGuncelle, katilimSil, projeSil, ortakSil
 import { finansmanBagla, finansmanBagCoz } from "../src/lib/finansman/ortaklik";
 import { kaynakOku } from "./kaynak-oku";
 import { projeSonucu, type SonucSatisi } from "../src/lib/ortaklik/sonuc";
-import { agirliklaBol, anlasmaDogrula, formSayisi, gunAgirlikliSermaye, paylasimHesapla, type AnlasmaGirdisi, type AnlasmaSurumu } from "../src/lib/ortaklik/paylasim";
+import { agirliklaBol, anlasmaDogrula, formSayisi, gunAgirlikliSermaye, paylasimHesapla, type AnlasmaGirdisi, type AnlasmaSurumu, type AySonucu } from "../src/lib/ortaklik/paylasim";
+import { donemGeriAl, donemKesinlestir, geriAlmaKontrolu, kesinlestirmeKontrolu, odemeKaydet, odemeKontrolu, odemeTersle, ortakBakiyeleri } from "../src/lib/ortaklik/kesinlestirme";
 import { giderTahsisleriniDogrula, giderTahsisleriniYaz, projeGiderSonucu, tahsisDogrula, tahsisGirdisiOku } from "../src/lib/ortaklik/gider";
 import { kapsamKuraliEkle, otomatikKapsamlar, alimKapsaminiDegistir, alimKapsaminiDogrula } from "../src/lib/ortaklik/kapsam";
 
-const KONTROL_SAYISI = 92;
+const KONTROL_SAYISI = 114;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -177,6 +178,38 @@ async function main() {
         await assert.rejects(() => katilimSil(tx, ak.id), { message: "SILINEMEZ_BAGLI" }); ok();
         await assert.rejects(() => projeSil(tx, ap.id), { message: "SILINEMEZ_BAGLI" }); ok();
       }
+      // ═══ AŞAMA 4b — kesinleştir · geri al · ödeme + gider · ters kayıt (veritabanı) ═══
+      {
+        const kp = await tx.ortaklikProjesi.create({ data: { ad: "Kesin", baslangic: gun } });
+        const ko1 = await tx.isOrtagi.create({ data: { ad: "Kesin A" } });
+        const ko2 = await tx.isOrtagi.create({ data: { ad: "Kesin B" } });
+        const kk1 = await tx.ortaklikKatilimi.create({ data: { projeId: kp.id, ortakId: ko1.id, sorumluluk: "x", sermaye: true } });
+        const kk2 = await tx.ortaklikKatilimi.create({ data: { projeId: kp.id, ortakId: ko2.id, sorumluluk: "y", emek: true } });
+        const an = await tx.ortaklikAnlasmasi.create({ data: { projeId: kp.id, gecerlilikAyi: new Date("2026-10-01T00:00:00Z"), kalanYontemi: "SABIT", zararYontemi: "DEVREDER", karKullanimi: "DAGIT", paylar: { create: [{ katilimId: kk1.id, sabitOran: "60" }, { katilimId: kk2.id, sabitOran: "40" }] } } });
+        const aySonucu: AySonucu = { ay: "2026-10", durum: "TAMAM", surumId: an.id, karKullanimi: "DAGIT", sonuc: 1000, ucretToplami: 0, mahsup: 0, devredenOnce: 0, devredenSonra: 0, bolunen: 1000, haklar: { [kk1.id]: { ucret: 0, pay: 600, toplam: 600 }, [kk2.id]: { ucret: 0, pay: 400, toplam: 400 } }, kesin: false, bayat: false };
+        const kd = await donemKesinlestir(tx, { projeId: kp.id, sonuc: aySonucu, userId: null });
+        assert.equal(await tx.ortakCariHareketi.count({ where: { donemId: kd.id, tur: "HAK" } }), 2); ok();
+        await assert.rejects(() => donemKesinlestir(tx, { projeId: kp.id, sonuc: aySonucu, userId: null }), { message: "KESIN_ZATEN" }); ok();
+        // Ödeme + gider; o gider projeye tahsis edilemez
+        const kat = await tx.expenseCategory.findFirstOrThrow({ select: { id: true } });
+        const od = await odemeKaydet(tx, { projeId: kp.id, katilimId: kk2.id, tarih: gun, tutar: 150, aciklama: null, gider: { kategoriId: kat.id, aciklama: "Ortak ödemesi" }, userId: null });
+        assert.ok(od.expenseId); assert.equal(Number(od.tutar), -150); ok();
+        await assert.rejects(() => giderTahsisleriniYaz(tx, od.expenseId!, { kip: "tek", satirlar: [{ projeId: kp.id, pay: 10 }] }), { message: "TAHSIS_ORTAK_ODEMESI" }); ok();
+        // Ters kayıt: ODEME_TERS + eksi gider; ikinci ters reddedilir
+        await odemeTersle(tx, { hareketId: od.id, userId: null, bugun: gun, aciklama: "ters" });
+        assert.equal(await tx.expense.count({ where: { description: "Ortak ödemesi · ters kayıt", amount: "-150" } }), 1); ok();
+        await assert.rejects(() => odemeTersle(tx, { hareketId: od.id, userId: null, bugun: gun, aciklama: "ters" }), { message: "ODEME_ZATEN_TERS" }); ok();
+        // Geri alma: kısa gerekçe reddedilir; geçerli gerekçeyle haklar ters kayıtla düşer, dönem SİLİNMEZ
+        await assert.rejects(() => donemGeriAl(tx, { donemId: kd.id, gerekce: "kısa", userId: null, bugun: gun }), { message: "GERI_GEREKCE" }); ok();
+        await donemGeriAl(tx, { donemId: kd.id, gerekce: "oran yanlış girilmiş", userId: null, bugun: gun });
+        const hk = await tx.ortakCariHareketi.findMany({ where: { projeId: kp.id }, select: { katilimId: true, tur: true, tutar: true } });
+        const bk2 = ortakBakiyeleri(hk.map((h) => ({ katilimId: h.katilimId, tur: h.tur, tutar: Number(h.tutar) })));
+        assert.equal(bk2[kk1.id].hak, 0); assert.equal(bk2[kk2.id].kalan, 0); ok();
+        assert.ok((await tx.ortaklikDonemi.findUniqueOrThrow({ where: { id: kd.id } })).geriAlindiAt); ok();
+        // Geri alınan ay yeniden kesinleşebilir; hesabında hareketi olan katılım silinmez
+        await donemKesinlestir(tx, { projeId: kp.id, sonuc: aySonucu, userId: null }); ok();
+        await assert.rejects(() => katilimSil(tx, kk1.id), { message: "SILINEMEZ_BAGLI" }); ok();
+      }
       throw geriAl;
     }, { timeout: 30_000 });
   } catch (e) { if (e !== geriAl) throw e; }
@@ -322,6 +355,50 @@ async function main() {
     const pSayfa = kaynakOku("src/app/ortaklik/[id]/paylasim/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
     assert.ok(/const karGorunur = baglam\.izinler\.has\("satis\.kar\.gor"\)/.test(pSayfa) && /\{karGorunur \? <section/.test(pSayfa), "önizleme satis.kar.gor iznine bağlı olmalı");
     assert.ok(/await paylasimGetir\(proje, ay\)/.test(pSayfa), "sayfa paylaşımı ince kabuktan almalı");
+    ok();
+  }
+  // ═══ AŞAMA 4b — KESİNLEŞTİRME · ORTAK HESABI (saf gövde) ═══
+  {
+    const ay = (ek: Partial<AySonucu> & { ay: string }): AySonucu => ({ durum: "TAMAM", surumId: "s", karKullanimi: "DAGIT", sonuc: 0, ucretToplami: 0, mahsup: 0, devredenOnce: 0, devredenSonra: 0, bolunen: 0, haklar: {}, kesin: false, bayat: false, ...ek });
+    const k = (g: Partial<Parameters<typeof kesinlestirmeKontrolu>[0]>) => kesinlestirmeKontrolu({ ay: "2026-08", buAy: "2026-10", muhasebeKapali: true, sonuclar: [ay({ ay: "2026-08" })], ...g });
+    assert.equal(k({}), null); ok();
+    assert.equal(k({ buAy: "2026-08" }), "KESIN_AY_BITMEDI");
+    assert.equal(k({ muhasebeKapali: false }), "KESIN_DONEM_ACIK");
+    assert.equal(k({ sonuclar: [ay({ ay: "2026-08", durum: "SERMAYE_YOK" })] }), "KESIN_HESAPLANAMADI");
+    assert.equal(k({ sonuclar: [ay({ ay: "2026-08", kesin: true })] }), "KESIN_ZATEN"); ok();
+    // Sıra: önceki anlaşmalı ay kesin değilse durur; ANLAŞMASIZ önceki ay zincire girmez
+    assert.equal(k({ sonuclar: [ay({ ay: "2026-07" }), ay({ ay: "2026-08" })] }), "KESIN_SIRA");
+    assert.equal(k({ sonuclar: [ay({ ay: "2026-06", durum: "ANLASMA_YOK" }), ay({ ay: "2026-07", kesin: true }), ay({ ay: "2026-08" })] }), null); ok();
+    assert.equal(geriAlmaKontrolu({ ay: "2026-07", etkinAylar: ["2026-07", "2026-08"], gerekce: "yanlış oran girildi" }), "GERI_SON_DEGIL");
+    assert.equal(geriAlmaKontrolu({ ay: "2026-08", etkinAylar: ["2026-07", "2026-08"], gerekce: "yok" }), "GERI_GEREKCE");
+    assert.equal(geriAlmaKontrolu({ ay: "2026-08", etkinAylar: ["2026-07", "2026-08"], gerekce: "yanlış oran girildi" }), null); ok();
+    const o = (g: Partial<Parameters<typeof odemeKontrolu>[0]>) => odemeKontrolu({ tutar: 19.99, tarihGecerli: true, karKullanimi: "DAGIT", yatirimOnayi: false, giderMi: false, kategoriId: "", ...g });
+    assert.equal(o({}), null); assert.equal(o({ tutar: 0 }), "ODEME_TUTAR"); assert.equal(o({ tutar: 1.005 }), "ODEME_TUTAR");
+    assert.equal(o({ karKullanimi: "YENIDEN_YATIRIM" }), "ODEME_YATIRIM_ONAY"); assert.equal(o({ karKullanimi: "YENIDEN_YATIRIM", yatirimOnayi: true }), null);
+    assert.equal(o({ giderMi: true }), "ODEME_KATEGORI"); assert.equal(o({ tarihGecerli: false }), "ODEME_TARIH"); ok();
+    // Donmuş ay: rakam DEĞİŞMEZ, kaynak değişince BAYAT; sonraki ay donmuş devredenden devam eder
+    const sv = [{ id: "s", gecerlilikAyi: "2026-01", kalanYontemi: "SABIT" as const, karmaSermayeYuzdesi: null, zararYontemi: "DEVREDER" as const, karKullanimi: "DAGIT" as const, paylar: [{ katilimId: "a", sabitOran: 100, emekUcreti: 0, sorumlulukPayi: 0 }] }];
+    const donmusOcak = { surumId: "s", karKullanimi: "DAGIT" as const, sonuc: 1000, ucretToplami: 0, mahsup: 0, bolunen: 1000, devredenOnce: 0, devredenSonra: 0, haklar: { a: { ucret: 0, pay: 1000, toplam: 1000 } } };
+    const ayni = paylasimHesapla([{ ay: "2026-01", sonuc: 1000, sermaye: {} }], sv, { "2026-01": donmusOcak });
+    assert.equal(ayni[0].kesin, true); assert.equal(ayni[0].bayat, false); ok();
+    const degisti = paylasimHesapla([{ ay: "2026-01", sonuc: 800, sermaye: {} }], sv, { "2026-01": donmusOcak });
+    assert.equal(degisti[0].bayat, true); assert.equal(degisti[0].haklar.a.toplam, 1000); assert.equal(degisti[0].sonuc, 1000); ok();
+    // Zincir: Ocak DONMUŞ −500 (devreden 500); bugünkü kaynak −200 derdi (devreden 200). Şubat donmuş
+    // 500'ü mahsup etmeli — taze 200'ü değil. Aynı ay, haklar boş ama sonuç farklı → BAYAT.
+    const zincir = paylasimHesapla([{ ay: "2026-01", sonuc: -200, sermaye: {} }, { ay: "2026-02", sonuc: 2000, sermaye: {} }], sv,
+      { "2026-01": { ...donmusOcak, sonuc: -500, bolunen: 0, devredenSonra: 500, haklar: {} } });
+    assert.equal(zincir[1].mahsup, 500); assert.equal(zincir[1].haklar.a.toplam, 1500); ok();
+    assert.equal(zincir[0].bayat, true); assert.equal(zincir[0].sonuc, -500); ok();
+    const bk = ortakBakiyeleri([{ katilimId: "a", tur: "HAK", tutar: 1000 }, { katilimId: "a", tur: "ODEME", tutar: -400 }, { katilimId: "a", tur: "ODEME", tutar: -100 }, { katilimId: "a", tur: "ODEME_TERS", tutar: 100 }]);
+    assert.deepEqual(bk.a, { hak: 1000, odenen: 400, kalan: 600 }); ok();
+    // Kaynak: kesinleştirme/ödeme kâr iznine bağlı; ödeme gideri gider ekranından değişmez/silinmez
+    const ey = kaynakOku("src/app/ortaklik/eylemler.ts").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    assert.ok(/async function karliYetki\(\) \{\s*const baglam = await yetkiIste\("ortaklik\.yonet"\);\s*await yetkiIste\("satis\.kar\.gor"\);/.test(ey), "4b eylemleri kâr izni de istemeli");
+    assert.ok((ey.match(/const baglam = await karliYetki\(\);/g) ?? []).length === 4, "dört 4b eylemi de karliYetki çağırmalı");
+    const ga = kaynakOku("src/app/giderler/actions.ts").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    assert.equal((ga.match(/if \(kayit\.ortakOdemesi\) \{\s*const to = await getTranslations\("Ortaklik"\);\s*return \{ hatalar: \[to\("ortakOdemesiGideri"\)\] \};/g) ?? []).length, 2, "güncelle ve sil ortak ödemesi giderini reddetmeli");
+    const hs = kaynakOku("src/app/ortaklik/[id]/hesap/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    assert.ok(/if \(!baglam\.izinler\.has\("satis\.kar\.gor"\)\) \{/.test(hs), "ortak hesabı kâr iznine bağlı olmalı");
     ok();
   }
   if (sayi !== KONTROL_SAYISI) {
