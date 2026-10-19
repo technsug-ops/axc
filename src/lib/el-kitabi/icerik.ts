@@ -1633,6 +1633,13 @@ gösterir. Ödeme girerken <strong>«Gider olarak da kaydet»</strong> işaretle
 yazılır — dış ortağa ödemede işaretleyin, kendinize ödemede işaretlemeyin. Bu gider projeye
 yazılamaz ve gider ekranından değiştirilemez; yanlış ödeme ortak hesabında
 <strong>«Ters kayıt»</strong> ile düzeltilir.</p>
+<h3>Ortağa kendi hesabını açmak</h3>
+<p>Ortağın kendi hakkını ve ödemelerini görmesi için önce <strong>Ayarlar → Kullanıcılar</strong>'da
+<strong>«Ortak»</strong> rolüyle bir kullanıcı açın, sonra İş Ortakları'nda o ortağın kartındaki
+<strong>«Giriş hesabı»</strong> düğmesiyle bu kullanıcıyı seçin. Ortak giriş yapınca yalnız
+<strong>«Ortaklık hesabım»</strong> ekranını görür: hakkı, ödenen, kalan, projenin kesinleşmiş
+aylarındaki kendi payı ve kendi hareketleri. Panel, menü ve diğer ekranlar ona kapalıdır;
+diğer ortakların adı ve payı görünmez. «Bağlı değil» seçerseniz ortağın girişi karttan kopar.</p>
 <h3>Projeye gider yazmak</h3>
 <p>Gider formundaki <strong>«Ortaklık projesi payı»</strong> bölümünde ya
 <strong>tek proje</strong> ve yüzdesini (örn. maaşın %30'u) ya da <strong>birden çok

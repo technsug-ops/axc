@@ -10,7 +10,7 @@ import { Baglanti } from "@/components/baglanti";
 import { ListeyiHatirla } from "@/components/liste-hafizasi-bilesenleri";
 import { baglanabilirOrtaklikKaynaklari } from "@/lib/finansman/veri";
 import { KapsamKuralFormu, KapsamKuralSil } from "./kapsam-formlari";
-import { AdDuzenle, KatilimDuzenle } from "./duzenle-diyaloglari";
+import { AdDuzenle, KatilimDuzenle, OrtakGirisi } from "./duzenle-diyaloglari";
 import { KayitSil } from "./onayli-eylem";
 import { KATKI_TURLERI } from "./katki";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
@@ -50,7 +50,9 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
   const bicim = await bicimlendirici();
   const finansmanYetkisi = baglam.izinler.has("finansman.yonet");
   const alimYetkisi = baglam.izinler.has("alim.yaz");
-  const [projeler, projeToplami, tumProjeler, ortaklar, ortakToplami, tumOrtaklar, kaynaklar] = await Promise.all([
+  // K347 · 5 — giriş bağı bir kişiye ortağın hesabını açar: kullanıcı yönetimi de gerekir.
+  const girisYetkisi = baglam.izinler.has("kullanici.yonet");
+  const [projeler, projeToplami, tumProjeler, ortaklar, ortakToplami, tumOrtaklar, kaynaklar, kullanicilar] = await Promise.all([
     prisma.ortaklikProjesi.findMany({
       where: projeAramasi(q),
       include: {
@@ -62,10 +64,11 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
     }),
     prisma.ortaklikProjesi.count(),
     prisma.ortaklikProjesi.findMany({ select: { id: true, ad: true, currency: true, katilimlar: { where: { OR: [{ sermaye: true }, { finansman: true }] }, select: { id: true, ortak: { select: { ad: true } } } } }, orderBy: { ad: "asc" } }),
-    prisma.isOrtagi.findMany({ where: q ? { ad: { contains: q } } : {}, include: { _count: { select: { katilimlar: true } } }, orderBy: { ad: "asc" } }),
+    prisma.isOrtagi.findMany({ where: q ? { ad: { contains: q } } : {}, include: { _count: { select: { katilimlar: true } }, user: { select: { email: true } } }, orderBy: { ad: "asc" } }),
     prisma.isOrtagi.count(),
     prisma.isOrtagi.findMany({ select: { id: true, ad: true }, orderBy: { ad: "asc" } }),
     finansmanYetkisi ? baglanabilirOrtaklikKaynaklari() : [],
+    girisYetkisi ? prisma.user.findMany({ where: { isActive: true }, select: { id: true, email: true, name: true, userCompanyRoles: { select: { role: { select: { name: true } } } } }, orderBy: { email: "asc" } }) : [],
   ]);
   return <div className="min-w-0 space-y-6">
     {/* Arama hatırlanır: proje sonucundan «← İş Ortakları» aynı aramaya döner (liste hafızası). */}
@@ -90,9 +93,11 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
     <section className="max-w-3xl space-y-3"><h2 className="text-lg font-semibold">{t("ortaklarSayili", { sayi: ortakToplami })}</h2>
       {!ortaklar.length && <p className="text-sm text-muted-foreground">{q ? t("aramadaYok") : t("ortakYok")}</p>}
       <ul className="divide-y rounded-lg border">{ortaklar.map(o => <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
-        <div className="min-w-0"><p className="font-medium">{o.ad}</p><p className="text-sm text-muted-foreground">{t("ortakProjeSayisi", { sayi: o._count.katilimlar })}</p></div>
+        <div className="min-w-0"><p className="font-medium">{o.ad}</p><p className="text-sm text-muted-foreground">{t("ortakProjeSayisi", { sayi: o._count.katilimlar })}</p>
+          <p className="text-sm text-muted-foreground">{o.user ? t("girisBagli", { eposta: o.user.email }) : t("girisYok")}</p></div>
         <div className="w-full md:w-auto"><SatirEylemleri>
           <AdDuzenle tur="ortak" id={o.id} ad={o.ad} />
+          {girisYetkisi && <OrtakGirisi ortakId={o.id} mevcut={o.userId} kullanicilar={kullanicilar.map(k => ({ id: k.id, ad: [k.name, k.email, k.userCompanyRoles.map(r => r.role.name).join(", ")].filter(Boolean).join(" · ") }))} />}
           <KayitSil tur="ortak" id={o.id} baslik={t("silBaslik", { ad: o.ad })} aciklama={t(o._count.katilimlar ? "silinemezBagli" : "silNotu")} />
         </SatirEylemleri></div>
       </li>)}</ul>

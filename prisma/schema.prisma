@@ -1224,6 +1224,10 @@ model KartOdeme {
 model IsOrtagi {
   id String @id @default(cuid())
   ad String @db.VarChar(191)
+  /// K347 · 5 — ortağın GİRİŞ hesabı. Bir kullanıcı en çok bir ortak kartına bağlanır. Ortak
+  /// kipindeki kullanıcı yalnız `/ortaklik/hesabim`i görür; kimlik OTURUMDAN okunur, adresten değil.
+  userId String? @unique
+  user User? @relation("OrtakGirisi", fields: [userId], references: [id], onDelete: Restrict)
   notlar String? @db.Text
   createdAt DateTime @default(now())
   katilimlar OrtaklikKatilimi[]
@@ -2782,6 +2786,8 @@ model User {
   /// K347 · 4b
   kesinlestirdigiOrtaklikDonemleri OrtaklikDonemi[] @relation("OrtaklikDonemKesinlestiren")
   kaydettigiOrtakCariHareketleri OrtakCariHareketi[] @relation("OrtakCariKaydeden")
+  /// K347 · 5 — bu kullanıcı bir ortağın giriş hesabıysa.
+  ortakKarti IsOrtagi? @relation("OrtakGirisi")
 
   @@index([isActive])
 }

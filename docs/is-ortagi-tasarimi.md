@@ -372,6 +372,14 @@ bordrolu ücret ödeniyorsa o ayrı bir GİDERDİR (RAPOR §7 · açık soru S6)
   (`/ortaklik/hesabim`) kimliği **oturumdan** alır, adresten değil. Başka ortağın kimliğini
   adrese yazan deneme 404 alır — kapı mutasyonla sınanır.
 
+**Uygulandı — Aşama 5 (19.10.2026):** kullanıcı kararları — ortak kendi hesabını + projenin
+KESİN aylarını görür; kullanıcıyı firma açar ve karta bağlar (hazır «Ortak» rolü); ortak kipinde
+yalnız kendi hesabı + parola. Ortak kipi ölçütü İZİN KÜMESİDİR (yalnız `ortaklik.hesabim`), rol adı
+değil; boş küme ortak kipi sayılmaz. Kapı iki kat: kabuk (menü/çan çizilmez) + `sayfaGirisi`
+yönlendirmesi (izin istemeyen sayfalar); izinli sayfalar zaten 404. Hesabım ekranı dönemden yalnız
+toplam sonucu okur — bütün ortakların payını taşıyan sütun sorgulanmaz. Bağ: `IsOrtagi.userId`
+tekil; başka karta bağlı kullanıcı taşınmaz, hata verir.
+
 ### 9.2 Onay merkezi
 RAPOR'un yetki tablosu (limit aşan alım · yeni tedarikçi · kâr dağıtımı · sermaye çekimi ·
 yeni ortak/çıkış · tasfiye) **bugün sistemde hiç olmayan** bir akış ister: ikinci onay / tutar

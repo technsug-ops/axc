@@ -1,6 +1,8 @@
 import {
   OPERASYON_IZINLERI,
   OPERASYON_ROLU,
+  ORTAK_IZINLERI,
+  ORTAK_ROLU,
   SAHIP_ROLU,
   TUM_IZINLER,
   FIRMA_IZINLERI,
@@ -81,6 +83,8 @@ export async function yetkiSeed(prisma: PrismaClient) {
   const SONRADAN_DOGAN: string[] = [
     // 17.10.2026 — K347: İş Ortakları ekranı yazıldı.
     "ortaklik.yonet",
+    // 19.10.2026 — K347 · 5: ortağın kendi hesabı ekranı yazıldı.
+    "ortaklik.hesabim",
     // 05.09.2026 — K169: kanala stok/fiyat gönderimi izne bağlandı.
     "kanal.yaz",
     // 13.08.2026 — /iadeler ekranı yazıldı.
@@ -228,6 +232,18 @@ export async function yetkiSeed(prisma: PrismaClient) {
       })),
     });
     console.log(`${OPERASYON_ROLU.padEnd(15)}: ${OPERASYON_IZINLERI.length} izin`);
+  }
+
+  // --- 3b) ORTAK: yalnız YOKSA kurulur (K347 · 5, 19.10.2026) ---
+  // Dış ortağın hazır rolü. Varsa DOKUNULMAZ — kullanıcı ekrandan değiştirmiş olabilir.
+  // Bu rol bilerek kısıtlıdır; yetki bekçisi eşik altındaki rolü «kısıtlı (beklenen)» sayar.
+  const mevcutOrtak = await prisma.role.findUnique({ where: { name: ORTAK_ROLU }, select: { id: true } });
+  if (mevcutOrtak) {
+    console.log(`${ORTAK_ROLU.padEnd(15)}: mevcut — dokunulmadı`);
+  } else {
+    const ortakRol = await prisma.role.create({ data: { name: ORTAK_ROLU, sortOrder: 30 } });
+    await prisma.rolePermission.createMany({ data: ORTAK_IZINLERI.map((permissionKey) => ({ roleId: ortakRol.id, permissionKey })) });
+    console.log(`${ORTAK_ROLU.padEnd(15)}: ${ORTAK_IZINLERI.length} izin (yeni)`);
   }
 
   // --- 4) MEVCUT KULLANICILAR: üyeliği olmayan AKTİF herkes SAHİP olur ---

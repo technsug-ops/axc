@@ -12,6 +12,7 @@ import { finansmanBagla, finansmanBagCoz } from "@/lib/finansman/ortaklik";
 import { kapsamKuraliEkle, alimKapsaminiDegistir } from "@/lib/ortaklik/kapsam";
 import { anlasmaDogrula, formSayisi, type AnlasmaGirdisi } from "@/lib/ortaklik/paylasim";
 import { paylasimGetir } from "@/lib/ortaklik/paylasim-veri";
+import { ortakGirisiBagla } from "@/lib/ortaklik/ortak-kipi";
 import { donemGeriAl, donemKesinlestir, kesinlestirmeKontrolu, odemeKaydet, odemeKontrolu, odemeTersle } from "@/lib/ortaklik/kesinlestirme";
 
 export type Sonuc = { tamam: boolean; hata?: string };
@@ -29,9 +30,10 @@ const BILINEN_HATALAR = [
   "KESIN_AY_YOK", "KESIN_ZATEN", "KESIN_AY_BITMEDI", "KESIN_DONEM_ACIK", "KESIN_HESAPLANAMADI", "KESIN_SIRA",
   "GERI_SON_DEGIL", "GERI_GEREKCE",
   "ODEME_TUTAR", "ODEME_TARIH", "ODEME_YATIRIM_ONAY", "ODEME_KATEGORI", "ODEME_ZATEN_TERS",
+  "GIRIS_KULLANICI_YOK", "GIRIS_ZATEN_BAGLI",
 ] as const;
 
-async function hataSonucu(e: unknown, yer: string, tekrarAnahtari: "tekrar" | "kuralCakisiyor" | "anlasmaAyDolu" = "tekrar"): Promise<Sonuc> {
+async function hataSonucu(e: unknown, yer: string, tekrarAnahtari: "tekrar" | "kuralCakisiyor" | "anlasmaAyDolu" | "girisZatenBagli" = "tekrar"): Promise<Sonuc> {
   const t = await getTranslations("Ortaklik");
   if (e instanceof Error && (BILINEN_HATALAR as readonly string[]).includes(e.message)) return { tamam: false, hata: t(e.message as (typeof BILINEN_HATALAR)[number]) };
   if (e && typeof e === "object" && "code" in e && e.code === "P2002") return { tamam: false, hata: t(tekrarAnahtari) };
@@ -112,6 +114,25 @@ export async function katilimDuzenle(_onceki: Sonuc, veri: FormData): Promise<So
       await izYaz({ action: "ORTAKLIK_KATILIM_DUZENLE", companyId: baglam.companyId, targetType: "OrtaklikKatilimi", targetId: id, detail: JSON.stringify({ once, sonra: { sorumluluk, ...katkilar } }) }, tx);
     });
   } catch (e) { return hataSonucu(e, "katilimDuzenle"); }
+  tazele();
+  return { tamam: true };
+}
+
+/**
+ * K347 · 5 — ortak kartını bir giriş hesabına bağlar (boş seçim bağı çözer). Hem ortaklık hem
+ * kullanıcı yönetimi ister: bağ, bir kişiye ortağın hesabını AÇAR. Eski ve yeni bağ ize yazılır.
+ */
+export async function ortakGirisiKaydet(_onceki: Sonuc, veri: FormData): Promise<Sonuc> {
+  const baglam = await yetkiIste("ortaklik.yonet");
+  await yetkiIste("kullanici.yonet");
+  const ortakId = String(veri.get("ortakId") ?? "");
+  const userId = String(veri.get("userId") ?? "").trim() || null;
+  try {
+    await prisma.$transaction(async (tx) => {
+      const bag = await ortakGirisiBagla(tx, { ortakId, userId });
+      await izYaz({ action: "ORTAKLIK_GIRIS_BAGI", companyId: baglam.companyId, targetType: "IsOrtagi", targetId: ortakId, detail: JSON.stringify(bag) }, tx);
+    });
+  } catch (e) { return hataSonucu(e, "ortakGirisiKaydet", "girisZatenBagli"); }
   tazele();
   return { tamam: true };
 }

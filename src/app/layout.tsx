@@ -37,6 +37,8 @@ import { DEGER_DESENI_KAYNAGI, KISISEL_DEGISKENLERI } from "@/lib/marka/kisisel-
 import { UyariCani } from "@/components/uyari-cani";
 import { KasaSesi } from "@/components/kasa-sesi";
 import { UYGULAMA } from "@/lib/uygulama";
+import { CikisButonu } from "@/components/cikis-butonu";
+import { ORTAK_ACILIS_SAYFASI, ortakKipindeMi } from "@/lib/ortaklik/ortak-kipi";
 
 /* Yazı: Rubik — Algoritmo referansının metrikleri (Halil'in analizi bölüm 2.2,
    8.1; Türkçe karakterler tam). Başlık aynı aile, kalınlıkla ayrışır. */
@@ -218,6 +220,36 @@ export default async function RootLayout({
               taşımadığı için burada olması bir şey sızdırmaz. */}
           <SwKayit />
           <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        </body>
+      </html>
+    );
+  }
+
+  /**
+   * K347 · 5 — ORTAK KİPİ KABUĞU. Dış ortağa yan menü (uygulamanın bütün yapısı), uyarı çanı
+   * (firmanın uyarıları) ve alt çubuk ÇİZİLMEZ; yalnız kendi hesabı, parola ve çıkış.
+   * Sayfaların kendi kapıları (sayfaIzni/sayfaGirisi) ayrıca kapalıdır — kabuk İKİNCİ kat.
+   */
+  if (baglam && ortakKipindeMi(baglam.izinler)) {
+    const to = await getTranslations("Ortaklik");
+    return (
+      <html lang={dil} className={cn("font-sans", govde.variable)} suppressHydrationWarning>
+        <head>
+          <meta name="theme-color" content={KABUK_RENKLERI.kobalt} />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <script dangerouslySetInnerHTML={{ __html: TEMA_BETIGI }} />
+        </head>
+        <body>
+          <SwKayit />
+          <NextIntlClientProvider>
+            <header data-kabuk="ortak" className="bg-background sticky top-0 z-10 flex min-h-14 flex-wrap items-center gap-3 border-b px-3 py-2 md:px-4 print:hidden">
+              <span className="font-semibold">{UYGULAMA.ad}</span>
+              <Link href={ORTAK_ACILIS_SAYFASI} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{to("kabukHesabim")}</Link>
+              <Link href="/parola-degistir" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{to("kabukParola")}</Link>
+              <span className="ml-auto"><CikisButonu eposta={kullanici.email} /></span>
+            </header>
+            <main className="min-w-0 p-3 md:p-6">{children}</main>
+          </NextIntlClientProvider>
         </body>
       </html>
     );

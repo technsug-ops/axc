@@ -21,9 +21,11 @@ import { projeSonucu, type SonucSatisi } from "../src/lib/ortaklik/sonuc";
 import { agirliklaBol, anlasmaDogrula, formSayisi, gunAgirlikliSermaye, paylasimHesapla, type AnlasmaGirdisi, type AnlasmaSurumu, type AySonucu } from "../src/lib/ortaklik/paylasim";
 import { donemGeriAl, donemKesinlestir, geriAlmaKontrolu, kesinlestirmeKontrolu, odemeKaydet, odemeKontrolu, odemeTersle, ortakBakiyeleri } from "../src/lib/ortaklik/kesinlestirme";
 import { giderTahsisleriniDogrula, giderTahsisleriniYaz, projeGiderSonucu, tahsisDogrula, tahsisGirdisiOku } from "../src/lib/ortaklik/gider";
+import { ortakGirisiBagla, ortakKipindeMi } from "../src/lib/ortaklik/ortak-kipi";
+import { izinTaninirMi, ORTAK_IZINLERI } from "../src/lib/yetki/izinler";
 import { kapsamKuraliEkle, otomatikKapsamlar, alimKapsaminiDegistir, alimKapsaminiDogrula } from "../src/lib/ortaklik/kapsam";
 
-const KONTROL_SAYISI = 114;
+const KONTROL_SAYISI = 130;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -209,6 +211,28 @@ async function main() {
         // Geri alınan ay yeniden kesinleşebilir; hesabında hareketi olan katılım silinmez
         await donemKesinlestir(tx, { projeId: kp.id, sonuc: aySonucu, userId: null }); ok();
         await assert.rejects(() => katilimSil(tx, kk1.id), { message: "SILINEMEZ_BAGLI" }); ok();
+      }
+      // ═══ AŞAMA 5 — ORTAK GİRİŞİ: kart ↔ kullanıcı bağı ═══
+      {
+        const kullanici = (e: string) => tx.user.create({ data: { email: `${e}-${randomUUID()}@deneme.yerel`, passwordHash: "x" } });
+        const u1 = await kullanici("ortak1"), u2 = await kullanici("ortak2");
+        const ka = await tx.isOrtagi.create({ data: { ad: "Girişli A" } }), kb = await tx.isOrtagi.create({ data: { ad: "Girişli B" } });
+        assert.deepEqual(await ortakGirisiBagla(tx, { ortakId: ka.id, userId: u1.id }), { once: null, sonra: u1.id });
+        assert.equal((await tx.isOrtagi.findUniqueOrThrow({ where: { id: ka.id } })).userId, u1.id); ok();
+        // Başka karta bağlı kullanıcı SESSİZCE taşınmaz; hedef kart değişmez, kaynak kart da.
+        await assert.rejects(() => ortakGirisiBagla(tx, { ortakId: kb.id, userId: u1.id }), { message: "GIRIS_ZATEN_BAGLI" });
+        assert.equal((await tx.isOrtagi.findUniqueOrThrow({ where: { id: kb.id } })).userId, null);
+        assert.equal((await tx.isOrtagi.findUniqueOrThrow({ where: { id: ka.id } })).userId, u1.id); ok();
+        await assert.rejects(() => ortakGirisiBagla(tx, { ortakId: kb.id, userId: randomUUID() }), { message: "GIRIS_KULLANICI_YOK" }); ok();
+        await assert.rejects(() => ortakGirisiBagla(tx, { ortakId: randomUUID(), userId: u2.id }), { message: "ORTAKLIK_KAYIT_YOK" }); ok();
+        // Aynı karta yeniden bağlamak zararsız; başka kullanıcıyla değiştirmek eskisini bırakır.
+        await ortakGirisiBagla(tx, { ortakId: ka.id, userId: u1.id });
+        assert.deepEqual(await ortakGirisiBagla(tx, { ortakId: ka.id, userId: u2.id }), { once: u1.id, sonra: u2.id }); ok();
+        // Bağ çözülünce kullanıcı başka karta bağlanabilir.
+        await ortakGirisiBagla(tx, { ortakId: ka.id, userId: null });
+        assert.equal((await tx.isOrtagi.findUniqueOrThrow({ where: { id: ka.id } })).userId, null);
+        await ortakGirisiBagla(tx, { ortakId: kb.id, userId: u2.id });
+        assert.equal((await tx.isOrtagi.findUniqueOrThrow({ where: { id: kb.id } })).userId, u2.id); ok();
       }
       throw geriAl;
     }, { timeout: 30_000 });
@@ -403,6 +427,36 @@ async function main() {
     const hs = kaynakOku("src/app/ortaklik/[id]/hesap/page.tsx").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
     assert.ok(/if \(!baglam\.izinler\.has\("satis\.kar\.gor"\)\) \{/.test(hs), "ortak hesabı kâr iznine bağlı olmalı");
     ok();
+  }
+  // ═══ AŞAMA 5 — ORTAK KİPİ (saf gövde + kapılar) ═══
+  {
+    assert.equal(ortakKipindeMi(["ortaklik.hesabim"]), true);
+    assert.equal(ortakKipindeMi(new Set(["ortaklik.hesabim"])), true); ok();
+    // Boş küme ortak kipi DEĞİLDİR (every boşta true döner) · çalışan izni olan ortak kipine girmez
+    assert.equal(ortakKipindeMi([]), false); ok();
+    assert.equal(ortakKipindeMi(["ortaklik.hesabim", "satis.gor"]), false); assert.equal(ortakKipindeMi(["satis.gor"]), false); ok();
+    assert.deepEqual([...ORTAK_IZINLERI], ["ortaklik.hesabim"]); assert.ok(izinTaninirMi("ortaklik.hesabim")); ok();
+    const temiz = (y: string) => kaynakOku(y).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    // Hesabım: kimlik OTURUMDAN; dönem satırından yalnız toplam sonuç (haklar sütunu = BÜTÜN ortakların payı)
+    const hs = temiz("src/app/ortaklik/hesabim/page.tsx");
+    assert.ok(/const baglam = await sayfaIzni\("ortaklik\.hesabim"\);/.test(hs) && /prisma\.isOrtagi\.findUnique\(\{\s*where: \{ userId: baglam\.kullaniciId \}/.test(hs), "hesabım kimliği oturumdan okumalı");
+    assert.ok(!/params/.test(hs.replace(/searchParams/g, "")), "hesabım adresten kimlik okumamalı"); ok();
+    const donemSecimi = hs.slice(hs.indexOf("donemler: {"), hs.indexOf("}", hs.indexOf("select: {", hs.indexOf("donemler: {"))) + 1);
+    assert.ok(hs.indexOf("donemler: {") >= 0 && /select: \{ id: true, ay: true, sonuc: true, karKullanimi: true \}$/.test(donemSecimi), "dönemden yalnız id/ay/sonuç/kullanım seçilmeli: " + donemSecimi);
+    assert.ok(!/include: /.test(hs) && !/katilimlar: \{[^}]*\}/.test(hs.slice(hs.indexOf("proje: {"))), "proje altından başka katılım çekilmemeli"); ok();
+    // Kapılar: sayfaGirisi ortak kipini yönlendirir · kabuk menüsüz · bağlama iki izin ister
+    const yi = temiz("src/lib/yetki/index.ts");
+    const giris = yi.slice(yi.indexOf("export async function sayfaGirisi("), yi.indexOf("\n}", yi.indexOf("export async function sayfaGirisi(")));
+    assert.ok(/if \(!baglam\) notFound\(\);\s*if \(ortakKipindeMi\(baglam\.izinler\)\) redirect\(ORTAK_ACILIS_SAYFASI\);\s*return baglam;/.test(giris), "sayfaGirisi ortak kipini hesabına yönlendirmeli"); ok();
+    const ly = temiz("src/app/layout.tsx");
+    const kbas = ly.indexOf("if (baglam && ortakKipindeMi(baglam.izinler)) {");
+    const kabuk = ly.slice(kbas, ly.indexOf("\n  }\n", kbas));
+    assert.ok(kbas >= 0 && /<main className="min-w-0 p-3 md:p-6">\{children\}<\/main>/.test(kabuk), "ortak kabuğu sayfayı çizmeli");
+    assert.ok(!/AppSidebar|UyariCani|AltCubuk|BildirButonu|KasaSesi|href="\/"/.test(kabuk), "ortak kabuğunda menü/çan/alt çubuk olmamalı"); ok();
+    assert.ok(ly.indexOf("if (baglam && ortakKipindeMi(baglam.izinler)) {") < ly.indexOf("<AppSidebar"), "ortak kabuğu ana kabuktan ÖNCE dönmeli"); ok();
+    const ey = temiz("src/app/ortaklik/eylemler.ts");
+    const gbas = ey.indexOf("export async function ortakGirisiKaydet(");
+    assert.ok(gbas >= 0 && /const baglam = await yetkiIste\("ortaklik\.yonet"\);\s*await yetkiIste\("kullanici\.yonet"\);/.test(ey.slice(gbas, ey.indexOf("\nexport async function", gbas + 1))), "giriş bağı iki izni de istemeli"); ok();
   }
   if (sayi !== KONTROL_SAYISI) {
     console.log(`KOŞUM YARIM KALDI — ${sayi}/${KONTROL_SAYISI} kontrol koştu, sonuç GEÇERSİZ`);

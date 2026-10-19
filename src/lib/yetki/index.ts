@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { kullaniciSatiri, oturumdakiKullanici } from "@/lib/oturum";
 
 import { izinTaninirMi, tamYetkiliMi, type Izin } from "./izinler";
+import { ORTAK_ACILIS_SAYFASI, ortakKipindeMi } from "@/lib/ortaklik/ortak-kipi";
 
 /**
  * ============================================================================
@@ -187,6 +188,9 @@ export async function sayfaGirisi(): Promise<YetkiBaglami> {
   if (await parolaDegismeliMi()) redirect("/parola-degistir");
   const baglam = await yetkiBaglami();
   if (!baglam) notFound();
+  // K347 · 5 — DIŞ ORTAK izinsiz sayfaları (panel · menü · destek) AÇAMAZ: panel firmanın
+  // cirosunu gösterir. Ortak kendi hesabına gider (bkz. `lib/ortaklik/ortak-kipi.ts`).
+  if (ortakKipindeMi(baglam.izinler)) redirect(ORTAK_ACILIS_SAYFASI);
   return baglam;
 }
 

@@ -53,6 +53,12 @@ export const IZINLER = [
    * `alim.yaz`, finansman bağı ayrıca `finansman.yonet` ister — iki kapı birlikte.
    */
   { anahtar: "ortaklik.yonet", grup: "para" },
+  /**
+   * 19.10.2026 — K347 · 5: ORTAĞIN KENDİ HESABI (`/ortaklik/hesabim`). Kimlik OTURUMDAN okunur.
+   * Yalnız bu izne sahip kullanıcı «ortak kipinde»dir: panel, menü, çan ve başka hiçbir ekran
+   * açılmaz (`lib/ortaklik/ortak-kipi.ts`). Tam yetkililer de alır (SONRADAN_DOGAN) — zararsız.
+   */
+  { anahtar: "ortaklik.hesabim", grup: "para" },
   // --- OPERASYON ---
   { anahtar: "urun.gor", grup: "operasyon" },
   { anahtar: "urun.yaz", grup: "operasyon" },
@@ -250,6 +256,9 @@ export const OPERASYON_IZINLERI: readonly Izin[] = [
 /** Seed'lenecek roller. "Boş rol" açılmaz — ihtiyaç doğunca ekrandan. */
 export const SAHIP_ROLU = "Sahip";
 export const OPERASYON_ROLU = "Operasyon";
+/** K347 · 5 — dış ortağın hazır rolü: YALNIZ kendi hesabı. Ad VERİDİR; ekrandan değiştirilebilir. */
+export const ORTAK_ROLU = "Ortak";
+export const ORTAK_IZINLERI: readonly Izin[] = ["ortaklik.hesabim"];
 
 /**
  * ============================================================================
