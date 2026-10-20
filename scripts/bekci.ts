@@ -296,7 +296,23 @@ async function turuKostur(): Promise<Sonuc[]> {
   const tumMutasyon = liste.filter(mutasyonAdiMi);
   const digerAdlari = liste.filter((ad) => !mutasyonAdiMi(ad));
   const degisen = degisenDosyalar();
-  const secim = mutasyonSecimi(tumMutasyon.map(denetimBagi), degisen);
+  /**
+   * ⭐ PUSH'TA MUTASYON YOK — kullanıcı kararı 20.10.2026: _«küçük bir değişiklikte
+   * bile yarım saat bekliyorum»._ Ölçüm (o sabahki tur): 158 bekçi ~7 dk, seçilen 15
+   * mutasyon denetimi ~16 dk — süreyi mutasyonlar dolduruyordu (ortak dosyalara,
+   * sözlüğe, el kitabına dokunan her paket onlarca denetimi tetikliyordu).
+   * Yeni düzen: push = BÜTÜN bekçiler (davranış korumaları HİÇ atlanmaz, 22.08
+   * kararının özü aynen) · mutasyon denetimlerinin HEPSİ gece turunda (00:30, TAM).
+   * Bedeli beyan edildi: bir bekçinin dişi körelirse en geç ertesi sabah görülür.
+   * Çapa kopması yine push'ta yakalanır (`mutasyon-capa:dogrula` bir BEKÇİDİR).
+   * ⚠ K290 seçimi (değişene dokunan) SİLİNMEDİ: `PUSH_MUTASYON=1` ile push'ta
+   * yeniden açılır; `tur-secimi:dogrula` onu sınamaya devam eder.
+   */
+  const pushKipi = degisen !== null;
+  const pushMutasyon = process.env.PUSH_MUTASYON === "1";
+  const secim = pushKipi && !pushMutasyon
+    ? { kos: [] as string[], atla: tumMutasyon, hepsiSebebi: null }
+    : mutasyonSecimi(tumMutasyon.map(denetimBagi), degisen);
   const mutasyonAdlari = tumMutasyon.filter((ad) => secim.kos.includes(ad));
   const beyanKumesi = new Set(SIRALI_MUTASYON_GRUP);
   const sirali = mutasyonAdlari.filter((ad) => beyanKumesi.has(ad));
@@ -311,7 +327,9 @@ async function turuKostur(): Promise<Sonuc[]> {
   if (degisen === null || secim.hepsiSebebi) {
     console.log(`  KİP: TAM TUR${secim.hepsiSebebi ? ` — ${secim.hepsiSebebi}` : ""}`);
   } else {
-    console.log(`  KİP: PUSH — ${degisen.length} değişen dosya · ${secim.kos.length} mutasyon denetimi koşar · ${secim.atla.length} atlanır (dosyalarına dokunulmadı; GECE turunda koşar)`);
+    console.log(pushMutasyon
+      ? `  KİP: PUSH + MUTASYON — ${degisen.length} değişen dosya · ${secim.kos.length} mutasyon denetimi koşar · ${secim.atla.length} atlanır (GECE turunda koşar)`
+      : `  KİP: PUSH — bütün bekçiler · ${secim.atla.length} mutasyon denetiminin HEPSİ GECE turunda (karar 20.10.2026; push'ta açmak için PUSH_MUTASYON=1)`);
   }
 
   const sonuclar: Sonuc[] = [];

@@ -474,6 +474,19 @@ zorlaştıracak şekilde yazılmıyor.
   birini, bozduğu HER dosya tek başına değişince seçildiğini GERÇEK veriyle
   sınar. İlk ölçümde «ortak altyapı» listesi fazla genişti ve son 4 paketin
   4'ünde seçim «hepsi»ne düşüyordu — daraltıldı, gerekçesi dosyada.
+  ⭐ **PUSH'TA MUTASYON YOK — kullanıcı kararı 20.10.2026:** _«Küçük bir
+  değişiklikte bile yarım saat bekliyorum.»_ Ölçüm (o sabahki push): 158 bekçi
+  **~7 dk**, seçilen 15 mutasyon denetimi **~16 dk**. Sözlüğe, el kitabına,
+  ortak dosyalara dokunan her paket onlarca denetimi tetikliyordu, yani K290
+  seçimi pratikte kısalmıyordu. Yeni düzen: **push = BÜTÜN bekçiler** (davranış
+  korumaları hiç atlanmaz; 22.08 kararının özü aynen) · **mutasyon
+  denetimlerinin HEPSİ gece turunda** (00:30, GitHub, TAM tur; karar günü son 3
+  gece yeşildi). Çapa kopması yine push'ta yakalanır (`mutasyon-capa:dogrula`
+  bir bekçidir). K290 seçimi silinmedi: `PUSH_MUTASYON=1` ile push'ta yeniden
+  açılır. **Bedeli beyan edildi:** bir bekçinin dişi körelirse en geç ertesi
+  sabah görülür. ⚠ Yeni yazılan bir bekçinin mutasyon sınaması YİNE teslimden
+  önce elle koşulur («mutasyonsuz teslim edilmez» kuralı değişmedi); değişen
+  yalnız push kapısının bunu her seferinde yeniden koşmasıdır.
 - Migration, silme, reset gibi geri dönüşsüz işlerde MUTLAKA onay iste
 - Her tamamlanan aşamada commit + push (mesaj formatı: tip: Türkçe açıklama).
   Push öncesi .env sızıntısı kontrolü.
