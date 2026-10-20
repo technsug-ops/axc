@@ -78,6 +78,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   ozellikler: "/ayarlar/ozellikler",
   /** K334-③ — hangi sayfa açılıyor, hangi düğmeye basılıyor, nereden nereye geçiliyor. */
   kullanimIzi: "/ayarlar/kullanim",
+  /** 20.10.2026 — anlık bildirim: telefon kilitliyken de yeni sipariş haberi (cihaz başına). */
+  bildirimler: "/bildirimler",
 
   veriAktarimi: "/ayarlar/ice-aktarma",
   veriDisari: "/ayarlar/disa-aktarma",
@@ -238,6 +240,8 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "ozellikler", varsayilanGrup: "grupAyarlar" },
   /** K334-③ — programın kendi kullanımı; iş verisi değil, sistemin kendisi → Ayarlar. */
   { anahtar: "kullanimIzi", varsayilanGrup: "grupAyarlar" },
+  /** Kişisel cihaz ayarı — firma ayarı değil ama «Ayarlar» kullanıcının aradığı yer. */
+  { anahtar: "bildirimler", varsayilanGrup: "grupAyarlar" },
 ];
 
 /**

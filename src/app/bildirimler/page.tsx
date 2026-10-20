@@ -1,0 +1,69 @@
+import { getTranslations } from "next-intl/server";
+import { sayfaIzni } from "@/lib/yetki";
+import { prisma } from "@/lib/prisma";
+import { bicimlendirici } from "@/lib/bicim";
+import { pushAyari } from "@/lib/bildirim/push-gonder";
+import { BuCihaz, CihazKaldir } from "./bu-cihaz";
+
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata() {
+  const t = await getTranslations("AnlikBildirim");
+  return { title: t("baslik") };
+}
+
+/**
+ * ANLIK BİLDİRİMLER (20.10.2026) — telefon kilitliyken / sekme kapalıyken yeni
+ * sipariş haberi. Cihaz başına açılır. Bildirimi yalnız satışları görme izni
+ * olan alır (`satis.gor`) — ekran da aynı izinle açılır.
+ */
+export default async function BildirimlerSayfasi() {
+  const baglam = await sayfaIzni("satis.gor");
+  const t = await getTranslations("AnlikBildirim");
+  const bicim = await bicimlendirici();
+  const ayar = pushAyari();
+  const [cihazlar, son] = await Promise.all([
+    prisma.pushAboneligi.findMany({ where: { userId: baglam.kullaniciId }, orderBy: { createdAt: "desc" }, select: { id: true, cihaz: true, createdAt: true } }),
+    prisma.auditLog.findFirst({ where: { action: "ANLIK_BILDIRIM_SIPARIS" }, orderBy: { createdAt: "desc" }, select: { createdAt: true, detail: true } }),
+  ]);
+  let sonSayi: number | null = null;
+  try { sonSayi = son?.detail ? Number(JSON.parse(son.detail).sayi) : null; } catch { sonSayi = null; }
+
+  return <div className="min-w-0 max-w-3xl space-y-6">
+    <div className="space-y-2">
+      <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
+      <p className="text-sm text-muted-foreground">{t("aciklama")}</p>
+    </div>
+
+    <section className="space-y-3 rounded-lg border p-4">
+      <h2 className="text-lg font-semibold">{t("buCihaz")}</h2>
+      {ayar ? <BuCihaz genelAnahtar={ayar.genel} /> : <p role="alert" className="text-destructive text-sm font-medium">{t("kurulmadi")}</p>}
+    </section>
+
+    <section className="space-y-3">
+      <h2 className="text-lg font-semibold">{t("cihazlarim", { sayi: cihazlar.length })}</h2>
+      {!cihazlar.length ? <p className="text-sm text-muted-foreground">{t("cihazYok")}</p> : <ul className="divide-y rounded-lg border">
+        {cihazlar.map((c) => <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
+          <div className="min-w-0"><p className="font-medium">{c.cihaz ?? t("bilinmeyenCihaz")}</p><p className="text-sm text-muted-foreground">{t("acildiTarih", { tarih: bicim.tarih(c.createdAt) })}</p></div>
+          <CihazKaldir id={c.id} />
+        </li>)}
+      </ul>}
+    </section>
+
+    <section className="space-y-2">
+      <h2 className="text-lg font-semibold">{t("sonGonderim")}</h2>
+      <p className="text-sm">{son ? t("sonGonderimMetni", { an: bicim.tarihSaat(son.createdAt), sayi: sonSayi ?? 0 }) : t("sonGonderimYok")}</p>
+    </section>
+
+    <section className="space-y-2 text-sm">
+      <h2 className="text-lg font-semibold">{t("sinirlarBaslik")}</h2>
+      <ul className="list-disc space-y-1 pl-5">
+        <li>{t("sinirAndroid")}</li>
+        <li>{t("sinirIphone")}</li>
+        <li>{t("sinirBilgisayar")}</li>
+        <li>{t("sinirGecikme")}</li>
+        <li>{t("sinirSes")}</li>
+      </ul>
+    </section>
+  </div>;
+}

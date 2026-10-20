@@ -1,6 +1,7 @@
 // Arka plan işi: küçük veritabanı havuzu (K332 — gerekçe lib/arka-plan-havuzu.ts).
 import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
+import { siparisBildiriminiDene } from "@/lib/bildirim/push-gonder";
 
 import { hbCekimKos } from "../../../../../scripts/canli-hb-ice-aktar";
 import { kimlikEksikleri } from "../../../../../scripts/hb/istemci";
@@ -64,6 +65,9 @@ export async function GET(istek: NextRequest) {
    * global `@unique`, ve her koşum `importBatch` ile geri alınabilir.
    */
   const ozet = await hbCekimKos({ yaz: true, dbAdresi });
+  /* Anlık bildirim (20.10.2026): çekimden sonra «son bildirimden beri N yeni
+     sipariş». Hata çekimin sonucunu bozmaz; imleç koşullu ilerler, çift gitmez. */
+  const bildirim = await siparisBildiriminiDene();
   /**
    * ⛔ ATLANAN KOŞUM 200 DÖNMEZ — BU BENİM KUSURUMDU (08.09.2026).
    *
@@ -95,5 +99,5 @@ export async function GET(istek: NextRequest) {
   }
   /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek
      olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü. */
-  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });
+  return NextResponse.json({ ...ozet, bildirim }, { status: "atlandi" in ozet ? 503 : 200 });
 }

@@ -2788,6 +2788,8 @@ model User {
   kaydettigiOrtakCariHareketleri OrtakCariHareketi[] @relation("OrtakCariKaydeden")
   /// K347 · 5 — bu kullanıcı bir ortağın giriş hesabıysa.
   ortakKarti IsOrtagi? @relation("OrtakGirisi")
+  /// Anlık bildirim (Web Push) — bu kullanıcının bildirim açtığı cihazlar.
+  pushAbonelikleri PushAboneligi[]
 
   @@index([isActive])
 }
@@ -3973,4 +3975,36 @@ model VaryantGorseli {
   createdAt DateTime       @default(now())
 
   @@unique([variantId, sira])
+}
+
+// ============================================================================
+//  ANLIK BİLDİRİM (Web Push) — 20.10.2026
+// ============================================================================
+
+/// Bir CİHAZIN (tarayıcı/telefon) anlık bildirim aboneliği. Kullanıcı «Bu cihazda
+/// bildirimleri aç» dediğinde tarayıcının verdiği uç + iki anahtar. Uç TEKİLDİR:
+/// aynı cihaz yeniden abone olursa satır güncellenir, kopya açılmaz. Bildirim
+/// servisi 404/410 derse (cihazdan silinmiş) satır silinir — bu bir defter kaydı
+/// değil, bir teslim adresidir.
+model PushAboneligi {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique @db.VarChar(700)
+  p256dh    String   @db.VarChar(255)
+  auth      String   @db.VarChar(255)
+  /// Kullanıcıya hangi cihaz olduğunu söylemek için kısa tarayıcı etiketi.
+  cihaz     String?  @db.VarChar(191)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+/// Bildirim imleci — «en son hangi ana kadar bildirildi». Tek satır / olay türü.
+/// İki zamanlayıcı aynı anda koşarsa yalnız imleci KOŞULLU güncelleyebilen
+/// (eski değer hâlâ yerindeyse) gönderir: çift bildirim yapısal olarak önlenir.
+model BildirimImleci {
+  anahtar String   @id @db.VarChar(64)
+  an      DateTime @db.DateTime(3)
 }

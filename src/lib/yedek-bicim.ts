@@ -61,6 +61,9 @@ export const YEDEK_TABLOLARI = [
   "AuditLog",
   /** K334 — kullanım izi; `User` ve `Company`ye bağlı (SetNull) → ikisinden SONRA. Veri sahipliği: ölçüm de müşterinin verisidir. */
   "KullanimOlayi",
+  /** 20.10.2026 — anlık bildirim: abonelik `User`a bağlı (Cascade) → ondan SONRA; imleç bağımsız. */
+  "PushAboneligi",
+  "BildirimImleci",
   // --- ürün ağacı ---
   "Product",
   "ProductVariant",

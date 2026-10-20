@@ -77,6 +77,8 @@ export async function yedekUret(
     UserCompanyRole: await istemci.userCompanyRole.findMany(),
     AuditLog: await istemci.auditLog.findMany(),
     KullanimOlayi: await istemci.kullanimOlayi.findMany(),
+    PushAboneligi: await istemci.pushAboneligi.findMany(),
+    BildirimImleci: await istemci.bildirimImleci.findMany(),
     Product: await istemci.product.findMany(),
     ProductVariant: await istemci.productVariant.findMany(),
     VariantOption: await istemci.variantOption.findMany(),

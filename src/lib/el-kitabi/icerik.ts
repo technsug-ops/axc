@@ -73,6 +73,7 @@ export const BOLUMLER = [
   { kimlik: "rol", ad: "Ayarlar — Roller" },
   { kimlik: "menu", ad: "Ayarlar — Menü düzeni" },
   { kimlik: "kullanim", ad: "Ayarlar — Kullanım" },
+  { kimlik: "bildirim", ad: "Ayarlar — Bildirimler" },
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
   { kimlik: "gecmisEkstre", ad: "Veri — Geçmiş ekstreler" },
   { kimlik: "komisyonKapisi", ad: "Veri — Komisyon yükleme" },
@@ -149,6 +150,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   roller: "rol",
   menuDuzeni: "menu",
   kullanimIzi: "kullanim",
+  bildirimler: "bildirim",
   talepler: "talep",
   gecmisEkstre: "gecmisEkstre",
   komisyonKapisi: "komisyonKapisi",
@@ -2261,6 +2263,25 @@ görünmez) ve yazı kutularına yazılanlar <strong>hiç</strong> okunmaz.</p>
 <div class="ek-not dikkat"><div class="etiket">Kutucuklar aramadan etkilenmez</div>
 <p>Üstteki sayılar seçili dönemin tamamıdır. Arama yalnız alttaki listeyi
 daraltır ve liste kaç satır bulduğunu ayrıca yazar.</p></div>
+</section>
+
+<section id="bildirim">
+${baslik("bildirim")}
+<p><strong>Ayarlar → Bildirimler.</strong> Telefon kilitliyken ya da program
+kapalıyken de yeni sipariş gelince haber verir: kilit ekranında «3 yeni sipariş»
+yazar, dokununca Satışlar açılır. Bildirim <strong>her cihazda ayrı</strong>
+açılır — telefonda açtıysanız bilgisayarda da ayrıca açın.</p>
+${neZaman("Siparişi anında görmek istediğinizde; yeni bir telefon ya da bilgisayar kullanmaya başladığınızda.")}
+<ol class="adimlar">
+<li><div><h3>Bu cihazda açın</h3><p><strong>«Bu cihazda bildirimleri aç»</strong> → telefonun sorduğu izne <strong>İzin ver</strong> deyin.</p></div></li>
+<li><div><h3>Deneyin</h3><p><strong>«Deneme bildirimi gönder»</strong> — birkaç saniye içinde cihazda bildirim görünmelidir.</p></div></li>
+</ol>
+<div class="ek-not dikkat"><div class="etiket">iPhone ve bilgisayar</div>
+<p>iPhone'da bildirim yalnız uygulama <strong>ana ekrana eklenmişse</strong> gelir.
+Bilgisayarda sekme kapalıyken gelir ama tarayıcı tamamen kapalıysa gelmez.
+Siparişler 5 dakikada bir çekildiği için bildirim birkaç dakika gecikebilir.</p></div>
+<p>Program ekranda açıkken bildirim sessiz düşer, çünkü kasa sesi zaten çalar.
+Bildirimi yalnız satışları görme izni olan kişiler alır.</p>
 </section>
 
 <section id="toplu">

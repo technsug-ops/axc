@@ -43,7 +43,8 @@
 /* 04.10.2026: ad değişikliğiyle `selliora-sw-2` → `bezirga-sw-3`. Statik
    dosya `UYGULAMA.teknikAd`ı içe alamaz; ön ekin ona eşit olduğunu
    `uygulama-adi:dogrula` ölçer. Numara sürmeye devam eder (geri gitmez). */
-const SURUM = "bezirga-sw-3";
+/* 20.10.2026: anlık bildirim dinleyicileri eklendi → `bezirga-sw-4`. */
+const SURUM = "bezirga-sw-4";
 const STATIK_ONBELLEK = `${SURUM}-statik`;
 const KABUK_ONBELLEK = `${SURUM}-kabuk`;
 
@@ -190,6 +191,67 @@ self.addEventListener("fetch", (olay) => {
         onbellek.put(istek, cevap.clone());
       }
       return cevap;
+    })(),
+  );
+});
+
+/**
+ * ============================================================================
+ *  ANLIK BİLDİRİM (20.10.2026) — telefon kilitliyken / sekme kapalıyken
+ * ----------------------------------------------------------------------------
+ *  Sunucu (sipariş çekimi) bildirim servisine yollar; tarayıcı bu çalışanı
+ *  uyandırır. ⚠ ÖNBELLEĞE DOKUNMAZ: yük yalnız başlık + metin + açılacak yol
+ *  taşır, burada hiçbir şey saklanmaz («çevrimdışı yok» kararı aynen geçerli).
+ *
+ *  · Metin SUNUCUDA sözlükten kurulur — burada metin yazılmaz (i18n).
+ *  · Uygulama o an EKRANDA açıksa bildirim SESSİZ düşer: kasa sesi zaten çalıyor,
+ *    çift ses olmasın. Ekran kapalıysa telefonun bildirim sesi çalar.
+ *  · Dokununca yalnız AYNI sitenin yolu açılır (`//başka-site` kabul edilmez).
+ * ============================================================================
+ */
+function bildirimAdresi(adres) {
+  if (typeof adres !== "string" || !adres.startsWith("/") || adres.startsWith("//") || adres.includes("\\")) return "/";
+  return adres;
+}
+
+self.addEventListener("push", (olay) => {
+  let yuk = {};
+  try {
+    yuk = olay.data ? olay.data.json() : {};
+  } catch {
+    yuk = {};
+  }
+  olay.waitUntil(
+    (async () => {
+      const pencereler = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      const ekranda = pencereler.some((p) => p.visibilityState === "visible");
+      await self.registration.showNotification(typeof yuk.baslik === "string" ? yuk.baslik : "", {
+        body: typeof yuk.govde === "string" ? yuk.govde : "",
+        tag: typeof yuk.etiket === "string" ? yuk.etiket : "bildirim",
+        renotify: !ekranda,
+        silent: ekranda,
+        icon: "/ikon/192.png",
+        badge: "/ikon/192.png",
+        data: { url: bildirimAdresi(yuk.url) },
+      });
+    })(),
+  );
+});
+
+self.addEventListener("notificationclick", (olay) => {
+  olay.notification.close();
+  const hedef = new URL(bildirimAdresi(olay.notification.data && olay.notification.data.url), self.location.origin).href;
+  olay.waitUntil(
+    (async () => {
+      const pencereler = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const p of pencereler) {
+        if (new URL(p.url).origin === self.location.origin && "focus" in p) {
+          await p.focus();
+          if ("navigate" in p) await p.navigate(hedef);
+          return;
+        }
+      }
+      await self.clients.openWindow(hedef);
     })(),
   );
 });
