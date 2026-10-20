@@ -2282,6 +2282,9 @@ Bilgisayarda sekme kapalıyken gelir ama tarayıcı tamamen kapalıysa gelmez.
 Siparişler 5 dakikada bir çekildiği için bildirim birkaç dakika gecikebilir.</p></div>
 <p>Program ekranda açıkken <strong>sipariş</strong> bildirimi sessiz düşer, çünkü kasa sesi zaten çalar;
 deneme bildirimi her zaman sesli gelir.
+<strong>Bildirim sesi</strong> varsayılan olarak telefonun sesidir. Kasa sesi isteyen,
+sayfadaki <strong>«Kasa sesini indir»</strong> ile dosyayı alıp telefonun ayarında
+bu site için seçer (sesi telefon belirler; bir kez yapılır).
 Bildirimi yalnız satışları görme izni olan kişiler alır.</p>
 </section>
 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { bicimlendirici } from "@/lib/bicim";
 import { pushAyari } from "@/lib/bildirim/push-gonder";
 import { BuCihaz, CihazKaldir } from "./bu-cihaz";
+import { Download } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 /** Gecikmeli deneme cevaptan sonra 10 sn bekler (`after`) — süre sınırı ona yetmeli. */
@@ -55,6 +56,22 @@ export default async function BildirimlerSayfasi() {
     <section className="space-y-2">
       <h2 className="text-lg font-semibold">{t("sonGonderim")}</h2>
       <p className="text-sm">{son ? t("sonGonderimMetni", { an: bicim.tarihSaat(son.createdAt), sayi: sonSayi ?? 0 }) : t("sonGonderimYok")}</p>
+    </section>
+
+    {/* BİLDİRİM SESİ (kullanıcı 20.10.2026): varsayılan telefonun sesi; isteyen kasa sesini
+        seçer. Seçim TELEFONDA yapılır — web bildirimi ses dosyası taşıyamaz; burada dosya + tarif. */}
+    <section className="space-y-3 rounded-lg border p-4 text-sm">
+      <h2 className="text-lg font-semibold">{t("sesBaslik")}</h2>
+      <p><strong>{t("sesVarsayilanBaslik")}</strong> — {t("sesVarsayilan")}</p>
+      <p><strong>{t("sesKasaBaslik")}</strong> — {t("sesKasa")}</p>
+      <a href="/bildirimler/kasa-sesi" download className="inline-flex min-h-11 items-center gap-2 rounded-md border px-4 font-medium underline-offset-4 hover:bg-accent hover:underline"><Download className="size-4" />{t("sesIndir")}</a>
+      <ol className="list-decimal space-y-1 pl-5">
+        <li>{t("sesAdim1")}</li>
+        <li>{t("sesAdim2")}</li>
+        <li>{t("sesAdim3")}</li>
+        <li>{t("sesAdim4")}</li>
+      </ol>
+      <p className="text-muted-foreground">{t("sesIphone")}</p>
     </section>
 
     <section className="space-y-2 text-sm">

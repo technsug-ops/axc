@@ -18,8 +18,9 @@ import {
   abonelikOku, anahtarBaytlari, bildirimHakkiVarMi, bildirimImleciKarari, cihazEtiketi, guvenliBildirimAdresi, olusAbonelikMi, SIPARIS_IMLECI,
 } from "../src/lib/bildirim/push-karar";
 import { yeniSiparisBildirimiGonder, type Gonderici, type PushYuku } from "../src/lib/bildirim/push-gonder";
+import { KASA_TARIFI, kasaOrnekleri, wavBaytlari } from "../src/lib/kasa-sesi-tarifi";
 
-const KONTROL_SAYISI = 35;
+const KONTROL_SAYISI = 40;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -188,6 +189,30 @@ async function main() {
   const sure = Number(sayfa.match(/export const maxDuration = (\d+);/)?.[1] ?? 0);
   assert.ok(sure * 1000 >= gecikme + 5_000, `sayfa süre sınırı (${sure} sn) beklemeye yetmeli`); ok();
 
+  // ═══ ④ KASA SESİ DOSYASI — uygulamadaki sesle AYNI tarif, geçerli WAV, izinli uç ═══
+  {
+    const o = kasaOrnekleri();
+    const w = Buffer.from(wavBaytlari(o));
+    assert.equal(w.toString("ascii", 0, 4), "RIFF"); assert.equal(w.toString("ascii", 8, 12), "WAVE");
+    assert.equal(w.readUInt16LE(22), 1); assert.equal(w.readUInt32LE(24), 44_100); assert.equal(w.readUInt16LE(34), 16);
+    assert.equal(w.readUInt32LE(40), o.length * 2); assert.equal(w.length, 44 + o.length * 2); ok();
+    const son = Math.max(...KASA_TARIFI.tonlar.map((t) => t.bas + t.sure));
+    assert.ok(Math.abs(o.length / 44_100 - (son + 0.05)) < 0.01, "süre tarifle uyumlu");
+    let tepe = 0; for (const x of o) tepe = Math.max(tepe, Math.abs(x));
+    assert.ok(tepe > 0.2 && tepe <= 1, `ses duyulur olmalı (tepe ${tepe})`);
+    // Hışırtı 0,07 sn'de biter; ÇAN o andan sonra da duyulmalı (yalnız hışırtı tepe ölçütünü geçirirdi — mutasyonla yakalandı)
+    let canTepesi = 0; for (let i = Math.floor(0.1 * 44_100); i < o.length; i++) canTepesi = Math.max(canTepesi, Math.abs(o[i]));
+    assert.ok(canTepesi > 0.2, `çan duyulur olmalı (tepe ${canTepesi})`); ok();
+    assert.ok(w.equals(Buffer.from(wavBaytlari(kasaOrnekleri()))), "her üretim bayt bayt aynı (deterministik)"); ok();
+    // Uygulamadaki kasa sesi AYNI tariften çalıyor — elle yazılmış ayrı frekans yok
+    const sinyal = temiz("src/lib/okuma-sinyali.ts");
+    const kasaDali = sinyal.slice(sinyal.indexOf("} else {", sinyal.indexOf('sinyal === "hata"')), sinyal.indexOf("} catch", sinyal.indexOf('sinyal === "hata"')));
+    assert.ok(/for \(const k of KASA_TARIFI\.tonlar\) ton\(ctx, k\.frekans, k\.bas, k\.sure, k\.dalga, k\.ses\);/.test(kasaDali) && /hisirti\(ctx, KASA_TARIFI\.hisirti\.bas, KASA_TARIFI\.hisirti\.sure, KASA_TARIFI\.hisirti\.ses\);/.test(kasaDali), "uygulama kasa sesi tariften çalmalı");
+    assert.ok(!/ton\(ctx, \d/.test(kasaDali), "kasa dalında elle yazılmış ton kalmamalı"); ok();
+    const uc = temiz("src/app/bildirimler/kasa-sesi/route.ts");
+    assert.ok(/export async function GET\(\) \{\s*const red = await apiIzni\("satis\.gor"\);\s*if \(red\) return red;/.test(uc) && /wavBaytlari\(kasaOrnekleri\(\)\)/.test(uc), "uç izinli ve tariften üretiyor");
+    assert.ok(/href="\/bildirimler\/kasa-sesi" download/.test(sayfa), "sayfa indirme bağlantısı uca gidiyor"); ok();
+  }
   if (sayi !== KONTROL_SAYISI) {
     console.log(`KOŞUM YARIM KALDI — ${sayi}/${KONTROL_SAYISI} kontrol koştu, sonuç GEÇERSİZ`);
     process.exitCode = 1;

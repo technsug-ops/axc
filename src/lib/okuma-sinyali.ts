@@ -19,6 +19,8 @@
  * ============================================================================
  */
 
+import { KASA_TARIFI } from "./kasa-sesi-tarifi";
+
 export type Sinyal = "onay" | "hata" | "kasa";
 
 type SesBaglami = AudioContext;
@@ -92,10 +94,9 @@ export function sesCal(sinyal: Sinyal): void {
     } else if (sinyal === "hata") {
       for (const bas of [0, 0.2, 0.4]) ton(ctx, 196, bas, 0.15, "square", 0.22);
     } else {
-      hisirti(ctx, 0, 0.07, 0.25);
-      ton(ctx, 2093, 0.06, 0.7, "triangle", 0.3);
-      ton(ctx, 2637, 0.06, 0.55, "triangle", 0.18);
-      ton(ctx, 3136, 0.16, 0.6, "triangle", 0.22);
+      /* Tarif TEK kaynaktan — indirilebilir bildirim sesi de aynı tariften üretilir. */
+      hisirti(ctx, KASA_TARIFI.hisirti.bas, KASA_TARIFI.hisirti.sure, KASA_TARIFI.hisirti.ses);
+      for (const k of KASA_TARIFI.tonlar) ton(ctx, k.frekans, k.bas, k.sure, k.dalga, k.ses);
     }
   } catch {
     /* Ses yoksa akış durmaz. */
