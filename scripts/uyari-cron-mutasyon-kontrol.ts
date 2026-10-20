@@ -110,8 +110,9 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     bekci: "cron-yollari:dogrula",
     dosya: TY_ROTA,
-    bul: '  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });',
-    koy: "  return NextResponse.json(ozet);",
+    /* 20.10.2026 (K348): cevap bildirim sonucunu da taşıyor — çapa yeni satıra taşındı, niyet aynı. */
+    bul: '  return NextResponse.json({ ...ozet, bildirim }, { status: "atlandi" in ozet ? 503 : 200 });',
+    koy: "  return NextResponse.json({ ...ozet, bildirim });",
     bozdugu: "kimlik/hesap arizasinda zamanlayici YESIL gorur - 24.09 N11 vakasi TY'de",
   },
   {
@@ -128,8 +129,9 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     bekci: "ice-aktarma:dogrula",
     dosya: N11_ROTA,
-    bul: '  return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });',
-    koy: "  return NextResponse.json(ozet);",
+    /* 20.10.2026 (K348): cevap bildirim sonucunu da taşıyor — çapa yeni satıra taşındı, niyet aynı. */
+    bul: '  return NextResponse.json({ ...ozet, bildirim }, { status: "atlandi" in ozet ? 503 : 200 });',
+    koy: "  return NextResponse.json({ ...ozet, bildirim });",
     bozdugu: "bos cekim dali yazilsa bile kimlik/hesap arizasi 200 doner",
   },
 ];
