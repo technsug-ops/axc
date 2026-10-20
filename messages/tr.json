@@ -5886,6 +5886,8 @@
     "ac": "Bu cihazda bildirimleri aç",
     "kapat": "Bu cihazda kapat",
     "dene": "Deneme bildirimi gönder",
+    "deneGecikmeli": "10 sn sonra gönder (telefonu kilitleyin)",
+    "gecikmeliKuruldu": "Deneme bildirimi 10 saniye sonra gönderilecek — şimdi telefonu kilitleyin. Kilit ekranında sesli gelmezse telefonun Chrome pil ve bildirim ayarlarına bakın.",
     "acildi": "Bildirimler bu cihazda açıldı.",
     "kapatildi": "Bildirimler kapatıldı.",
     "izinVerilmedi": "Bildirim izni verilmedi; bildirimler açılmadı.",

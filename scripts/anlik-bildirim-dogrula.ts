@@ -19,7 +19,7 @@ import {
 } from "../src/lib/bildirim/push-karar";
 import { yeniSiparisBildirimiGonder, type Gonderici, type PushYuku } from "../src/lib/bildirim/push-gonder";
 
-const KONTROL_SAYISI = 33;
+const KONTROL_SAYISI = 35;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -179,6 +179,14 @@ async function main() {
     assert.ok(b0 >= 0 && /^[^\n]*\): Promise<BildirimSonucu> \{\s*const baglam = await yetkiIste\("satis\.gor"\);/.test(ey.slice(b0)), `${ad} izni kendi gövdesinde istemeli`);
   }
   assert.ok(/deleteMany\(\{\s*where: \{ userId: baglam\.kullaniciId, /.test(ey), "kaldırma yalnız kendi cihazına dokunmalı"); ok();
+  // Gecikmeli deneme: süre SABİT (istemciden gelmez) · gönderim cevaptan SONRA (`after`) · rota süresi beklemeye yeter
+  const gecikme = Number((ey.match(/const GECIKME_MS = ([0-9_]+);/)?.[1] ?? "").replace(/_/g, ""));
+  const dBas = ey.indexOf("export async function denemeGonder(");
+  const dGovde = ey.slice(dBas);
+  assert.ok(gecikme === 10_000 && /export async function denemeGonder\(gecikmeli = false\): Promise<BildirimSonucu>/.test(ey), "gecikme sabit 10 sn, parametre yalnız aç/kapa");
+  assert.ok(/if \(gecikmeli\) \{[\s\S]*?after\(async \(\) => \{\s*await new Promise\(\(bitti\) => setTimeout\(bitti, GECIKME_MS\)\);\s*try \{\s*const sonuc = await denemeBildirimiGonder\(baglam\.kullaniciId\);/.test(dGovde), "gecikmeli gönderim after içinde, sabit süreyle"); ok();
+  const sure = Number(sayfa.match(/export const maxDuration = (\d+);/)?.[1] ?? 0);
+  assert.ok(sure * 1000 >= gecikme + 5_000, `sayfa süre sınırı (${sure} sn) beklemeye yetmeli`); ok();
 
   if (sayi !== KONTROL_SAYISI) {
     console.log(`KOŞUM YARIM KALDI — ${sayi}/${KONTROL_SAYISI} kontrol koştu, sonuç GEÇERSİZ`);

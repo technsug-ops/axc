@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import { yetkiIste } from "@/lib/yetki";
@@ -57,12 +58,37 @@ export async function abonelikKaldir(girdi: { endpoint?: string; id?: string }):
   return { tamam: true, mesaj: t("kapatildi") };
 }
 
-/** Bu kullanıcının bütün cihazlarına deneme bildirimi — sonucu SAYIYLA söyler. */
-export async function denemeGonder(): Promise<BildirimSonucu> {
+/** Gecikmeli denemenin bekleme süresi — SABİT (istemciden gelmez). */
+const GECIKME_MS = 10_000;
+
+/**
+ * Bu kullanıcının bütün cihazlarına deneme bildirimi — sonucu SAYIYLA söyler.
+ * `gecikmeli`: kullanıcı 20.10 «sipariş geldi, bildirim sesi gelmedi» → telefon
+ * KİLİTLİYKEN sınansın diye bildirim 10 sn sonra gider. Cevap HEMEN döner, gönderim
+ * `after` ile cevaptan sonra koşar — telefon kilitlenip bağlantı kopsa da düşmez.
+ * Sonuç ize yazılır (gecikmelide ekrana dönemediği için tanı oradan okunur).
+ */
+export async function denemeGonder(gecikmeli = false): Promise<BildirimSonucu> {
   const baglam = await yetkiIste("satis.gor");
   const t = await getTranslations("AnlikBildirim");
+  if (gecikmeli) {
+    if (!pushAyari()) return { tamam: false, hata: t("kurulmadi") };
+    const cihazSayisi = await prisma.pushAboneligi.count({ where: { userId: baglam.kullaniciId } });
+    if (cihazSayisi === 0) return { tamam: false, hata: t("cihazYok") };
+    after(async () => {
+      await new Promise((bitti) => setTimeout(bitti, GECIKME_MS));
+      try {
+        const sonuc = await denemeBildirimiGonder(baglam.kullaniciId);
+        await izYaz({ action: "ANLIK_BILDIRIM_DENEME", userId: baglam.kullaniciId, companyId: baglam.companyId, detail: JSON.stringify({ gecikmeli: true, ...sonuc }) });
+      } catch (hata) {
+        console.error("[anlik-bildirim] gecikmeli deneme düştü:", hata);
+      }
+    });
+    return { tamam: true, mesaj: t("gecikmeliKuruldu") };
+  }
   try {
     const sonuc = await denemeBildirimiGonder(baglam.kullaniciId);
+    if (sonuc) await izYaz({ action: "ANLIK_BILDIRIM_DENEME", companyId: baglam.companyId, detail: JSON.stringify({ gecikmeli: false, ...sonuc }) });
     if (!sonuc) return { tamam: false, hata: t("kurulmadi") };
     if (sonuc.hedef === 0) return { tamam: false, hata: t("cihazYok") };
     revalidatePath("/bildirimler");

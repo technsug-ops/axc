@@ -6,6 +6,8 @@ import { pushAyari } from "@/lib/bildirim/push-gonder";
 import { BuCihaz, CihazKaldir } from "./bu-cihaz";
 
 export const dynamic = "force-dynamic";
+/** Gecikmeli deneme cevaptan sonra 10 sn bekler (`after`) — süre sınırı ona yetmeli. */
+export const maxDuration = 60;
 
 export async function generateMetadata() {
   const t = await getTranslations("AnlikBildirim");

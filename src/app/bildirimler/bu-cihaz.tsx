@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { BellOff, BellRing, Send } from "lucide-react";
+import { BellOff, BellRing, Send, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { anahtarBaytlari, cihazEtiketi } from "@/lib/bildirim/push-karar";
 import { aboneOl, abonelikKaldir, denemeGonder, type BildirimSonucu } from "./eylemler";
@@ -78,6 +78,7 @@ export function BuCihaz({ genelAnahtar }: { genelAnahtar: string }) {
   });
 
   const dene = () => basla(async () => { setSonuc(null); setSonuc(await denemeGonder()); });
+  const geciktirerekDene = () => basla(async () => { setSonuc(null); setSonuc(await denemeGonder(true)); });
 
   return <div className="space-y-3">
     <p className="text-sm" data-durum={durum}>{t(`durum_${durum}`)}</p>
@@ -85,6 +86,7 @@ export function BuCihaz({ genelAnahtar }: { genelAnahtar: string }) {
       {durum === "kapali" ? <Button type="button" className="min-h-11" disabled={bekliyor} onClick={ac}><BellRing />{t("ac")}</Button> : null}
       {durum === "acik" ? <>
         <Button type="button" variant="outline" className="min-h-11" disabled={bekliyor} onClick={dene}><Send />{t("dene")}</Button>
+        <Button type="button" variant="outline" className="min-h-11" disabled={bekliyor} onClick={geciktirerekDene}><Timer />{t("deneGecikmeli")}</Button>
         <Button type="button" variant="outline" className="min-h-11" disabled={bekliyor} onClick={kapat}><BellOff />{t("kapat")}</Button>
       </> : null}
     </div>
