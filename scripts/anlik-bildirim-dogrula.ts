@@ -19,7 +19,7 @@ import {
 } from "../src/lib/bildirim/push-karar";
 import { yeniSiparisBildirimiGonder, type Gonderici, type PushYuku } from "../src/lib/bildirim/push-gonder";
 
-const KONTROL_SAYISI = 31;
+const KONTROL_SAYISI = 33;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -156,7 +156,14 @@ async function main() {
   const pushBas = sw.indexOf('self.addEventListener("push"');
   const pushBlok = sw.slice(pushBas, sw.indexOf('self.addEventListener("notificationclick"'));
   const tikBlok = sw.slice(sw.indexOf('self.addEventListener("notificationclick"'));
-  assert.ok(pushBas > 0 && /const ekranda = pencereler\.some\(\(p\) => p\.visibilityState === "visible"\);/.test(pushBlok) && /silent: ekranda,/.test(pushBlok) && /renotify: !ekranda,/.test(pushBlok), "ekrandayken sessiz, kapalıyken sesli"); ok();
+  assert.ok(pushBas > 0 && /const ekranda = pencereler\.some\(\(p\) => p\.visibilityState === "visible"\);/.test(pushBlok) && /const sessiz = sessizMi\(ekranda, etiket\);/.test(pushBlok) && /silent: sessiz,/.test(pushBlok) && /renotify: !sessiz,/.test(pushBlok), "sessizlik kararı sessizMi'den"); ok();
+  // Sessizlik YALNIZ ekrandaki SİPARİŞ bildiriminde (kasa sesi o an çalıyor); deneme ve kapalı ekran SESLİ.
+  const sessizMetni = sw.slice(sw.indexOf("function sessizMi("), sw.indexOf("function bildirimAdresi("));
+  const sessizMi = new Function(`${sessizMetni}; return sessizMi;`)() as (e: boolean, t: string) => boolean;
+  assert.equal(sessizMi(true, "yeni-siparis"), true); assert.equal(sessizMi(false, "yeni-siparis"), false);
+  assert.equal(sessizMi(true, "deneme"), false); assert.equal(sessizMi(true, "bildirim"), false); ok();
+  // Gönderici sipariş bildirimini bu etiketle yollar — etiket iki dosyada AYNI olmalı (yoksa sessizlik hiç tetiklenmez)
+  assert.ok(/etiket: "yeni-siparis",/.test(temiz("src/lib/bildirim/push-gonder.ts")), "sipariş etiketi servis çalışanıyla aynı"); ok();
   assert.ok(/data: \{ url: bildirimAdresi\(yuk\.url\) \}/.test(pushBlok) && /new URL\(bildirimAdresi\(olay\.notification\.data && olay\.notification\.data\.url\), self\.location\.origin\)/.test(tikBlok), "dokununca yalnız güvenli yol"); ok();
   assert.ok(!/caches\.|\.put\(/.test(sw.slice(pushBas)), "bildirim dinleyicileri önbelleğe dokunmamalı"); ok();
   // Servis çalışanındaki adres süzgeci saf gövdeyle AYNI cevabı verir

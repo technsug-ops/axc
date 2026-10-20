@@ -5908,7 +5908,7 @@
     "sinirIphone": "iPhone/iPad: yalnız uygulama ana ekrana eklenmişse gelir (iOS 16.4 ve üstü).",
     "sinirBilgisayar": "Bilgisayar: sekme kapalıyken gelir, tarayıcı tamamen kapalıyken gelmez (Chrome'da «uygulamalar kapalıyken arka planda çalışmaya devam et» açıksa gelir).",
     "sinirGecikme": "Siparişler 5 dakikada bir çekildiği için bildirim en geç birkaç dakika gecikmeyle gelir.",
-    "sinirSes": "Ekran kapalıyken telefonun bildirim sesi çalar; program ekranda açıksa bildirim sessiz düşer, kasa sesi çalar. Android'de sesi Ayarlar → Uygulamalar → Chrome → Bildirimler'den bu site için değiştirebilirsiniz.",
+    "sinirSes": "Ekran kapalıyken telefonun bildirim sesi çalar; program ekranda açıksa sipariş bildirimi sessiz düşer, kasa sesi çalar (deneme bildirimi her zaman sesli). Android'de sesi Ayarlar → Uygulamalar → Chrome → Bildirimler'den bu site için değiştirebilirsiniz.",
     "siparisBaslik": "{sayi, plural, one {1 yeni sipariş} other {# yeni sipariş}}",
     "siparisGovde": "Satışları açmak için dokunun.",
     "denemeBaslik": "Deneme bildirimi",

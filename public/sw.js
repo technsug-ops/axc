@@ -43,8 +43,8 @@
 /* 04.10.2026: ad değişikliğiyle `selliora-sw-2` → `bezirga-sw-3`. Statik
    dosya `UYGULAMA.teknikAd`ı içe alamaz; ön ekin ona eşit olduğunu
    `uygulama-adi:dogrula` ölçer. Numara sürmeye devam eder (geri gitmez). */
-/* 20.10.2026: anlık bildirim dinleyicileri eklendi → `bezirga-sw-4`. */
-const SURUM = "bezirga-sw-4";
+/* 20.10.2026: anlık bildirim dinleyicileri eklendi → `bezirga-sw-4`; sessizlik yalnız sipariş bildiriminde → `-5`. */
+const SURUM = "bezirga-sw-5";
 const STATIK_ONBELLEK = `${SURUM}-statik`;
 const KABUK_ONBELLEK = `${SURUM}-kabuk`;
 
@@ -204,11 +204,18 @@ self.addEventListener("fetch", (olay) => {
  *  taşır, burada hiçbir şey saklanmaz («çevrimdışı yok» kararı aynen geçerli).
  *
  *  · Metin SUNUCUDA sözlükten kurulur — burada metin yazılmaz (i18n).
- *  · Uygulama o an EKRANDA açıksa bildirim SESSİZ düşer: kasa sesi zaten çalıyor,
- *    çift ses olmasın. Ekran kapalıysa telefonun bildirim sesi çalar.
+ *  · Uygulama o an EKRANDA açıksa YENİ SİPARİŞ bildirimi SESSİZ düşer: kasa sesi zaten
+ *    çalıyor, çift ses olmasın. Ekran kapalıysa telefonun bildirim sesi çalar.
+ *    ⚠ Sessizlik YALNIZ sipariş bildiriminde (kullanıcı 20.10: «deneme bildirimi geliyor
+ *    ama ses yok») — deneme ve öteki bildirimlerde kasa sesi YOK, onlar her zaman sesli.
  *  · Dokununca yalnız AYNI sitenin yolu açılır (`//başka-site` kabul edilmez).
  * ============================================================================
  */
+/** Kasa sesi yalnız yeni siparişte çalar → yalnız onda, ekrandayken, sessiz. */
+function sessizMi(ekranda, etiket) {
+  return ekranda === true && etiket === "yeni-siparis";
+}
+
 function bildirimAdresi(adres) {
   if (typeof adres !== "string" || !adres.startsWith("/") || adres.startsWith("//") || adres.includes("\\")) return "/";
   return adres;
@@ -225,11 +232,13 @@ self.addEventListener("push", (olay) => {
     (async () => {
       const pencereler = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       const ekranda = pencereler.some((p) => p.visibilityState === "visible");
+      const etiket = typeof yuk.etiket === "string" ? yuk.etiket : "bildirim";
+      const sessiz = sessizMi(ekranda, etiket);
       await self.registration.showNotification(typeof yuk.baslik === "string" ? yuk.baslik : "", {
         body: typeof yuk.govde === "string" ? yuk.govde : "",
-        tag: typeof yuk.etiket === "string" ? yuk.etiket : "bildirim",
-        renotify: !ekranda,
-        silent: ekranda,
+        tag: etiket,
+        renotify: !sessiz,
+        silent: sessiz,
         icon: "/ikon/192.png",
         badge: "/ikon/192.png",
         data: { url: bildirimAdresi(yuk.url) },

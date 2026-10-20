@@ -2280,7 +2280,8 @@ ${neZaman("Siparişi anında görmek istediğinizde; yeni bir telefon ya da bilg
 <p>iPhone'da bildirim yalnız uygulama <strong>ana ekrana eklenmişse</strong> gelir.
 Bilgisayarda sekme kapalıyken gelir ama tarayıcı tamamen kapalıysa gelmez.
 Siparişler 5 dakikada bir çekildiği için bildirim birkaç dakika gecikebilir.</p></div>
-<p>Program ekranda açıkken bildirim sessiz düşer, çünkü kasa sesi zaten çalar.
+<p>Program ekranda açıkken <strong>sipariş</strong> bildirimi sessiz düşer, çünkü kasa sesi zaten çalar;
+deneme bildirimi her zaman sesli gelir.
 Bildirimi yalnız satışları görme izni olan kişiler alır.</p>
 </section>
 
