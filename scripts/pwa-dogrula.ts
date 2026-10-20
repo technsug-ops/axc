@@ -591,10 +591,18 @@ const metaEtiketi = /<meta\s+name="theme-color"/g;
 const metaSayisi = [...layout.matchAll(metaEtiketi)].length;
 const betikSayisi = [...layout.matchAll(/__html: TEMA_BETIGI/g)].length;
 kontrol("sistem çubuğu rengi bildiriliyor", metaSayisi > 0);
+/**
+ * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL (19.10.2026, K347 · 5). Sabit `=== 2` vardı (girişli +
+ * girişsiz); ortak kipinin menüsüz kabuğu ÜÇÜNCÜ kabuk oldu ve etiket + betik orada da
+ * doğru sırayla duruyordu — kontrol yine kırmızı yandı. Kabuk sayısı artık elle
+ * yazılmıyor, `<html` AÇILIŞLARINDAN türetiliyor (yorumdaki «`<html>`e» eşleşmez:
+ * ardından boşluk değil `>` geliyor). Yarın dördüncü kabuk etiketsiz eklenirse kırmızı.
+ */
+const kabukSayisi = [...layout.matchAll(/<html\s/g)].length;
 kontrol(
-  "  ...her kabukta var (girişli + girişsiz)",
-  metaSayisi === betikSayisi && betikSayisi === 2,
-  { metaSayisi, betikSayisi },
+  "  ...her kabukta var (girişli + girişsiz + ortak)",
+  kabukSayisi >= 2 && metaSayisi === kabukSayisi && betikSayisi === kabukSayisi,
+  { kabukSayisi, metaSayisi, betikSayisi },
 );
 const metaYerleri = [...layout.matchAll(metaEtiketi)].map((e) => e.index);
 const betikYerleri = [...layout.matchAll(/__html: TEMA_BETIGI/g)].map(
