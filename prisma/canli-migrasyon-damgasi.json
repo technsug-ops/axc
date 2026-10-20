@@ -1,6 +1,6 @@
 {
   "aciklama": "CANLIDA UYGULANMIS MIGRATION LISTESI. Bu dosyayi ELLE DUZENLEMEYIN — npm run canli:migrate basariyla bitince kendisi yazar. deploy-bekci.ts katman B bunu okur.",
-  "guncelleme": "2026-10-19",
+  "guncelleme": "2026-10-20",
   "uygulananlar": [
     "20260808094832_init",
     "20260808133659_alim_kanal_hesabi_taksit",
@@ -77,6 +77,7 @@
     "20261018120000_ortaklik_gider_tahsisi",
     "20261019120000_ortaklik_anlasma",
     "20261019140000_ortaklik_donem_cari",
-    "20261019160000_ortak_girisi"
+    "20261019160000_ortak_girisi",
+    "20261020090000_anlik_bildirim"
   ]
 }
