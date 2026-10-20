@@ -64,6 +64,9 @@ export const YEDEK_TABLOLARI = [
   /** 20.10.2026 — anlık bildirim: abonelik `User`a bağlı (Cascade) → ondan SONRA; imleç bağımsız. */
   "PushAboneligi",
   "BildirimImleci",
+  /** K349 — hedef `User`a bağlı (SetNull) → ondan SONRA; tebrik hedefe bağlı → hedeften SONRA. */
+  "Hedef",
+  "HedefTebrigi",
   // --- ürün ağacı ---
   "Product",
   "ProductVariant",

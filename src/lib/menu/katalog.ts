@@ -80,6 +80,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   kullanimIzi: "/ayarlar/kullanim",
   /** 20.10.2026 — anlık bildirim: telefon kilitliyken de yeni sipariş haberi (cihaz başına). */
   bildirimler: "/bildirimler",
+  /** K349 — satış hedefleri (ciro · NET-2 · sipariş adedi; gün → yıl). */
+  hedefler: "/ayarlar/hedefler",
 
   veriAktarimi: "/ayarlar/ice-aktarma",
   veriDisari: "/ayarlar/disa-aktarma",
@@ -242,6 +244,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   { anahtar: "kullanimIzi", varsayilanGrup: "grupAyarlar" },
   /** Kişisel cihaz ayarı — firma ayarı değil ama «Ayarlar» kullanıcının aradığı yer. */
   { anahtar: "bildirimler", varsayilanGrup: "grupAyarlar" },
+  { anahtar: "hedefler", varsayilanGrup: "grupAyarlar" },
 ];
 
 /**

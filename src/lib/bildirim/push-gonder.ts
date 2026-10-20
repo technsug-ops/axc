@@ -39,7 +39,7 @@ type Istemci = Prisma.TransactionClient;
 type Abonelik = { id: string; endpoint: string; p256dh: string; auth: string };
 export type Gonderici = (ayar: PushAyari, abonelikler: Abonelik[], yuk: PushYuku, istemci: Istemci) => Promise<GonderimSonucu>;
 
-async function abonelereGonder(ayar: PushAyari, abonelikler: Abonelik[], yuk: PushYuku, istemci: Istemci = prisma): Promise<GonderimSonucu> {
+export async function abonelereGonder(ayar: PushAyari, abonelikler: Abonelik[], yuk: PushYuku, istemci: Istemci = prisma): Promise<GonderimSonucu> {
   const sonuc: GonderimSonucu = { hedef: abonelikler.length, gonderilen: 0, silinen: 0, hatali: 0 };
   const govde = JSON.stringify(yuk);
   await Promise.all(

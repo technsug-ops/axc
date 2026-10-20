@@ -74,6 +74,7 @@ export const BOLUMLER = [
   { kimlik: "menu", ad: "Ayarlar — Menü düzeni" },
   { kimlik: "kullanim", ad: "Ayarlar — Kullanım" },
   { kimlik: "bildirim", ad: "Ayarlar — Bildirimler" },
+  { kimlik: "hedef", ad: "Ayarlar — Hedefler" },
   { kimlik: "toplu", ad: "Toplu veri aktarımı" },
   { kimlik: "gecmisEkstre", ad: "Veri — Geçmiş ekstreler" },
   { kimlik: "komisyonKapisi", ad: "Veri — Komisyon yükleme" },
@@ -151,6 +152,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   menuDuzeni: "menu",
   kullanimIzi: "kullanim",
   bildirimler: "bildirim",
+  hedefler: "hedef",
   talepler: "talep",
   gecmisEkstre: "gecmisEkstre",
   komisyonKapisi: "komisyonKapisi",
@@ -2286,6 +2288,25 @@ deneme bildirimi her zaman sesli gelir.
 sayfadaki <strong>«Kasa sesini indir»</strong> ile dosyayı alıp telefonun ayarında
 bu site için seçer (sesi telefon belirler; bir kez yapılır).
 Bildirimi yalnız satışları görme izni olan kişiler alır.</p>
+</section>
+
+<section id="hedef">
+${baslik("hedef")}
+<p><strong>Ayarlar → Hedefler.</strong> Bugün, bu hafta, bu ay, bu çeyrek ve bu yıl
+için <strong>ciro</strong>, <strong>kâr (NET-2)</strong> ve <strong>sipariş adedi</strong>
+hedefi koyarsınız. Rakamlar paneldekiyle aynıdır: ciro iptaller hariç ve iadeler
+düşülmüş, Türk lirası satışlardır; hafta pazartesi başlar.</p>
+${neZaman("Ayın, çeyreğin ya da yılın başında; kampanya dönemine girerken.")}
+<ol class="adimlar">
+<li><div><h3>Hedefi yazın</h3><p>Her dönemin kutusuna düz sayı yazın (örn. 500000). Boş bırakılan hedef yoktur.</p></div></li>
+<li><div><h3>Kaydedin</h3><p>Değiştirdiğiniz hedef <strong>içinde bulunduğunuz dönemden itibaren</strong> geçerli olur; geçmiş dönemler eski hedefle kalır.</p></div></li>
+</ol>
+<p>Panelde <strong>Hedefler</strong> kartı her hedefin ilerlemesini gösterir. Hedef
+geçilince kartta <strong>«Tebrikler!»</strong> çıkar ve telefona bildirim gider —
+her hedef, her dönem için bir kez. Kâr hedefini yalnız kârı görme izni olanlar görür.</p>
+<div class="ek-not dikkat"><div class="etiket">İade gelirse</div>
+<p>Hedef geçildikten sonra gelen bir iade rakamı hedefin altına düşürebilir. Panel
+güncel rakamı gösterir; verilen tebrik geri alınmaz.</p></div>
 </section>
 
 <section id="toplu">

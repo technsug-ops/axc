@@ -1313,7 +1313,8 @@
     "finansman": "",
     "ozellikler": "",
     "kullanimIzi": "",
-    "bildirimler": ""
+    "bildirimler": "",
+    "hedefler": ""
   },
   "GunlukOzet": {
     "baslik": "",
@@ -3307,6 +3308,8 @@
     "ortaklik_yonet_not": "",
     "ortaklik_hesabim": "",
     "ortaklik_hesabim_not": "",
+    "hedef_yonet": "",
+    "hedef_yonet_not": "",
     "finansman_yonet": "",
     "finansman_yonet_not": "",
     "ozet_gor": "",
@@ -5927,5 +5930,39 @@
     "siparisGovde": "",
     "denemeBaslik": "",
     "denemeGovde": ""
+  },
+  "Hedef": {
+    "baslik": "",
+    "aciklama": "",
+    "donem_GUN": "",
+    "donem_HAFTA": "",
+    "donem_AY": "",
+    "donem_CEYREK": "",
+    "donem_YIL": "",
+    "olcut_CIRO": "",
+    "olcut_NET2": "",
+    "olcut_SIPARIS": "",
+    "ornekTutar": "",
+    "ornekAdet": "",
+    "simdiki": "",
+    "simdikiOranli": "",
+    "kaydet": "",
+    "kaydediliyor": "",
+    "kaydedildi": "",
+    "degisiklikYok": "",
+    "kaydedilemedi": "",
+    "tutarGecersiz": "",
+    "gecmisBaslik": "",
+    "gecmisYok": "",
+    "gecmisSatiri": "",
+    "kaldirildi": "",
+    "kartBaslik": "",
+    "duzenle": "",
+    "hedefKoy": "",
+    "satirEtiketi": "",
+    "ilerleme": "",
+    "tebrikBaslik": "",
+    "tebrikSatiri": "",
+    "tebrikGovde": ""
   }
 }

@@ -2790,6 +2790,8 @@ model User {
   ortakKarti IsOrtagi? @relation("OrtakGirisi")
   /// Anlık bildirim (Web Push) — bu kullanıcının bildirim açtığı cihazlar.
   pushAbonelikleri PushAboneligi[]
+  /// K349 — girdiği satış hedefleri.
+  girdigiHedefler Hedef[] @relation("HedefGiren")
 
   @@index([isActive])
 }
@@ -4007,4 +4009,62 @@ model PushAboneligi {
 model BildirimImleci {
   anahtar String   @id @db.VarChar(64)
   an      DateTime @db.DateTime(3)
+}
+
+// ============================================================================
+//  SATIŞ HEDEFLERİ (K349) — 20.10.2026
+// ============================================================================
+
+/// Hedefin ölçtüğü rakam — panelle AYNI tanım (bkz. lib/hedef/hedef-veri.ts).
+enum HedefOlcutu {
+  /// Net ciro: iptaller hariç, iadeler (KAYIP_GELIR) düşülmüş — paneldeki ciro.
+  CIRO
+  /// Paneldeki NET-2 (kanal başına kırpılmış toplam).
+  NET2
+  /// İptal edilmemiş sipariş adedi.
+  SIPARIS
+}
+
+/// İstanbul takvimiyle dönem: bugün · bu hafta (pazartesi) · bu ay · bu çeyrek · bu yıl.
+enum HedefDonemi {
+  GUN
+  HAFTA
+  AY
+  CEYREK
+  YIL
+}
+
+/// Bir ölçüt × dönem için hedef tutarı — TARİHLİ SÜRÜM. Değişiklik yeni satırdır;
+/// `gecerlilik` (dönem başı günü) ve sonrası için geçerlidir, geçmiş dönemler eski
+/// hedefle değerlendirilir. `tutar` boşsa hedef o dönemden itibaren KALDIRILMIŞTIR.
+/// Satır silinmez/değiştirilmez.
+model Hedef {
+  id         String      @id @default(cuid())
+  olcut      HedefOlcutu
+  donem      HedefDonemi
+  /// TRY tutarı ya da sipariş adedi; null = hedef kaldırıldı.
+  tutar      Decimal?    @db.Decimal(18, 4)
+  /// Geçerli olduğu ilk dönemin başlangıç günü (UTC gece yarısı etiketi).
+  gecerlilik DateTime    @db.Date
+  userId     String?
+  user       User?       @relation("HedefGiren", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime    @default(now())
+  tebrikler  HedefTebrigi[]
+
+  @@index([olcut, donem, gecerlilik])
+}
+
+/// Geçilen hedef için verilen tebrik — hedef × dönem başına TEK satır (tekillik
+/// çift bildirimi yapısal olarak önler). O anki rakam donar; sonradan gelen iade
+/// rakamı düşürse de tebrik geri alınmaz.
+model HedefTebrigi {
+  id          String   @id @default(cuid())
+  hedefId     String
+  hedef       Hedef    @relation(fields: [hedefId], references: [id], onDelete: Restrict)
+  /// Dönemin başlangıç günü (UTC gece yarısı etiketi).
+  donemBasi   DateTime @db.Date
+  gerceklesen Decimal  @db.Decimal(18, 4)
+  createdAt   DateTime @default(now())
+
+  @@unique([hedefId, donemBasi])
 }

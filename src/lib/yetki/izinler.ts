@@ -59,6 +59,8 @@ export const IZINLER = [
    * açılmaz (`lib/ortaklik/ortak-kipi.ts`). Tam yetkililer de alır (SONRADAN_DOGAN) — zararsız.
    */
   { anahtar: "ortaklik.hesabim", grup: "para" },
+  /** 20.10.2026 — K349: satış hedeflerini (ciro · NET-2 · sipariş adedi) girmek/değiştirmek. Görmek panelde, mevcut izinlerle. */
+  { anahtar: "hedef.yonet", grup: "para" },
   // --- OPERASYON ---
   { anahtar: "urun.gor", grup: "operasyon" },
   { anahtar: "urun.yaz", grup: "operasyon" },

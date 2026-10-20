@@ -148,7 +148,7 @@ async function main() {
   for (const [kanal, cagri] of [["ty", "tyCekimKos({ yaz: true, gun: 7, dbAdresi })"], ["hb", "hbCekimKos({ yaz: true, dbAdresi })"], ["n11", "n11CekimKos({ yaz: true, dbAdresi })"]] as const) {
     const rota = temiz(`src/app/api/cron/${kanal}-cekim/route.ts`);
     const i = rota.indexOf(`const ozet = await ${cagri};`);
-    const j = rota.indexOf("const bildirim = await siparisBildiriminiDene();");
+    const j = rota.indexOf("const bildirim = await siparisSonrasiBildirimleri();");
     assert.ok(i >= 0 && j > i, `${kanal}: bildirim çekimden SONRA çağrılmalı`);
     assert.ok(/return NextResponse\.json\(\{ \.\.\.ozet, bildirim \}, \{ status: "atlandi" in ozet \? 503 : 200 \}\);/.test(rota), `${kanal}: cevap bildirim sonucunu taşımalı`);
   }

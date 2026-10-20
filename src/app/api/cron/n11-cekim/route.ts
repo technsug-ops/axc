@@ -1,7 +1,7 @@
 // Arka plan işi: küçük veritabanı havuzu (K332 — gerekçe lib/arka-plan-havuzu.ts).
 import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
-import { siparisBildiriminiDene } from "@/lib/bildirim/push-gonder";
+import { siparisSonrasiBildirimleri } from "@/lib/bildirim/siparis-sonrasi";
 
 import { n11CekimKos } from "../../../../../scripts/canli-n11-ice-aktar";
 
@@ -42,8 +42,9 @@ export async function GET(istek: NextRequest) {
   }
   const ozet = await n11CekimKos({ yaz: true, dbAdresi });
   /* Anlık bildirim (20.10.2026): çekimden sonra «son bildirimden beri N yeni
-     sipariş». Hata çekimin sonucunu bozmaz; imleç koşullu ilerler, çift gitmez. */
-  const bildirim = await siparisBildiriminiDene();
+     sipariş» + (K349) geçilen hedefe tebrik. Hata çekimin sonucunu bozmaz; imleç ve
+     tebrik satırı koşullu açılır, çift gitmez. */
+  const bildirim = await siparisSonrasiBildirimleri();
   /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek
      olsun. 24.09'da N11 11 saat boyunca atlandı ve zamanlayıcı yeşil gördü. */
   return NextResponse.json({ ...ozet, bildirim }, { status: "atlandi" in ozet ? 503 : 200 });

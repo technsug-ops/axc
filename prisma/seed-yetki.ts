@@ -85,6 +85,8 @@ export async function yetkiSeed(prisma: PrismaClient) {
     "ortaklik.yonet",
     // 19.10.2026 — K347 · 5: ortağın kendi hesabı ekranı yazıldı.
     "ortaklik.hesabim",
+    // 20.10.2026 — K349: satış hedefleri ekranı yazıldı.
+    "hedef.yonet",
     // 05.09.2026 — K169: kanala stok/fiyat gönderimi izne bağlandı.
     "kanal.yaz",
     // 13.08.2026 — /iadeler ekranı yazıldı.

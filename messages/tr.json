@@ -1313,7 +1313,8 @@
     "finansman": "Finansman",
     "ozellikler": "Özellikler",
     "kullanimIzi": "Kullanım",
-    "bildirimler": "Bildirimler"
+    "bildirimler": "Bildirimler",
+    "hedefler": "Hedefler"
   },
   "GunlukOzet": {
     "baslik": "Günlük Özet",
@@ -3307,6 +3308,8 @@
     "ortaklik_yonet_not": "Ortaklık projeleri, ortak kartları ve katılım şartları",
     "ortaklik_hesabim": "Kendi ortak hesabımı gör",
     "ortaklik_hesabim_not": "Ortağın yalnız kendi hakkı, ödemeleri ve projesinin kesin ayları — başka ekran açılmaz",
+    "hedef_yonet": "Satış hedeflerini gir",
+    "hedef_yonet_not": "Günlük, haftalık, aylık, çeyrek ve yıllık ciro / kâr / sipariş hedeflerini belirler",
     "finansman_yonet": "Finansmanı yönet",
     "finansman_yonet_not": "Sermaye, ortak ve üçüncü kişi borcu, banka kredisi ve taksitleri",
     "ozet_gor": "Günlük özeti gör",
@@ -5927,5 +5930,39 @@
     "siparisGovde": "Satışları açmak için dokunun.",
     "denemeBaslik": "Deneme bildirimi",
     "denemeGovde": "Bildirimler bu cihazda çalışıyor."
+  },
+  "Hedef": {
+    "baslik": "Hedefler",
+    "aciklama": "Günlük, haftalık, aylık, çeyreklik ve yıllık hedef koyun. Rakamlar paneldekiyle aynıdır: ciro (iptaller hariç, iadeler düşülmüş), kâr (NET-2) ve sipariş adedi, Türk lirası satışlar. Hedef geçilince panelde tebrik görünür ve telefona bildirim gider (dönem başına bir kez). Değiştirdiğiniz hedef içinde bulunulan dönemden itibaren geçerli olur; boş bırakılan hedef kaldırılır.",
+    "donem_GUN": "Bugün",
+    "donem_HAFTA": "Bu hafta",
+    "donem_AY": "Bu ay",
+    "donem_CEYREK": "Bu çeyrek",
+    "donem_YIL": "Bu yıl",
+    "olcut_CIRO": "Ciro hedefi (₺)",
+    "olcut_NET2": "Kâr hedefi — NET-2 (₺)",
+    "olcut_SIPARIS": "Sipariş adedi hedefi",
+    "ornekTutar": "örn. 500000",
+    "ornekAdet": "örn. 300",
+    "simdiki": "Şu an: {deger}",
+    "simdikiOranli": "Şu an: {deger} · hedefin {oran}",
+    "kaydet": "Hedefleri kaydet",
+    "kaydediliyor": "Kaydediliyor…",
+    "kaydedildi": "{sayi, plural, one {1 hedef güncellendi.} other {# hedef güncellendi.}}",
+    "degisiklikYok": "Değişiklik yok — hedefler aynı kaldı.",
+    "kaydedilemedi": "Kayıt yapılamadı. Sayfayı yenileyip tekrar deneyin.",
+    "tutarGecersiz": "{donem, select, GUN {Günlük} HAFTA {Haftalık} AY {Aylık} CEYREK {Çeyreklik} other {Yıllık}} {olcut, select, CIRO {ciro} NET2 {kâr (NET-2)} other {sipariş}} hedefi okunamadı: yalnız sayı yazın (ondalık için virgül ya da nokta, en çok 2 basamak; sipariş adedi tam sayı).",
+    "gecmisBaslik": "Son {sayi} hedef değişikliği",
+    "gecmisYok": "Henüz hedef girilmedi.",
+    "gecmisSatiri": "{gecerlilik} döneminden geçerli · {an} · {kisi}",
+    "kaldirildi": "kaldırıldı",
+    "kartBaslik": "Hedefler",
+    "duzenle": "Hedefleri düzenle",
+    "hedefKoy": "Satış hedefi koyun →",
+    "satirEtiketi": "{donem, select, GUN {Günlük} HAFTA {Haftalık} AY {Aylık} CEYREK {Çeyreklik} other {Yıllık}} {olcut, select, CIRO {ciro} NET2 {kâr (NET-2)} other {sipariş}}",
+    "ilerleme": "{gerceklesen} / {hedef}",
+    "tebrikBaslik": "Tebrikler!",
+    "tebrikSatiri": "{donem, select, GUN {Günlük} HAFTA {Haftalık} AY {Aylık} CEYREK {Çeyreklik} other {Yıllık}} {olcut, select, CIRO {ciro} NET2 {kâr (NET-2)} other {sipariş}} hedefi geçildi",
+    "tebrikGovde": "{donem, select, GUN {Günlük} HAFTA {Haftalık} AY {Aylık} CEYREK {Çeyreklik} other {Yıllık}} {olcut, select, CIRO {ciro} NET2 {kâr (NET-2)} other {sipariş}} hedefi geçildi."
   }
 }

@@ -1,7 +1,7 @@
 // Arka plan işi: küçük veritabanı havuzu (K332 — gerekçe lib/arka-plan-havuzu.ts).
 import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
-import { siparisBildiriminiDene } from "@/lib/bildirim/push-gonder";
+import { siparisSonrasiBildirimleri } from "@/lib/bildirim/siparis-sonrasi";
 
 import { hbCekimKos } from "../../../../../scripts/canli-hb-ice-aktar";
 import { kimlikEksikleri } from "../../../../../scripts/hb/istemci";
@@ -66,8 +66,9 @@ export async function GET(istek: NextRequest) {
    */
   const ozet = await hbCekimKos({ yaz: true, dbAdresi });
   /* Anlık bildirim (20.10.2026): çekimden sonra «son bildirimden beri N yeni
-     sipariş». Hata çekimin sonucunu bozmaz; imleç koşullu ilerler, çift gitmez. */
-  const bildirim = await siparisBildiriminiDene();
+     sipariş» + (K349) geçilen hedefe tebrik. Hata çekimin sonucunu bozmaz; imleç ve
+     tebrik satırı koşullu açılır, çift gitmez. */
+  const bildirim = await siparisSonrasiBildirimleri();
   /**
    * ⛔ ATLANAN KOŞUM 200 DÖNMEZ — BU BENİM KUSURUMDU (08.09.2026).
    *

@@ -5,6 +5,7 @@
   "scripts": {
     "ortaklik:dogrula": "tsx scripts/ortaklik-dogrula.ts",
     "anlik-bildirim:dogrula": "tsx scripts/anlik-bildirim-dogrula.ts",
+    "hedef:dogrula": "tsx scripts/hedef-dogrula.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
