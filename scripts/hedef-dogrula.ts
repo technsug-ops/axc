@@ -18,7 +18,7 @@ import { hedefRakamlari } from "../src/lib/hedef/hedef-veri";
 import { hedefTebrikleriniGonder } from "../src/lib/hedef/hedef-tebrik";
 import type { Gonderici, PushYuku } from "../src/lib/bildirim/push-gonder";
 
-const KONTROL_SAYISI = 25;
+const KONTROL_SAYISI = 27;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -123,6 +123,12 @@ async function main() {
   assert.ok(/CIRO: blok\.toplamGelir - blok\.toplamIadeTutari, NET2: blok\.toplamNet2, SIPARIS: blok\.toplamAdet/.test(veri), "ciro net, NET-2 ve adet panel bloğundan"); ok();
   const kart = temiz("src/app/hedef-karti.tsx");
   assert.ok(/\.filter\(\(d\) => d\.olcut !== "NET2" \|\| karGorunur\)/.test(kart), "kart kâr satırını izinle süzer"); ok();
+  // Yüzde YALNIZ çubuğun yanında (kullanıcı 21.10: iki kez yazıyordu)
+  assert.equal((kart.match(/bicim\.yuzde\(/g) ?? []).length, 1, "kartta yüzde tek yerde");
+  assert.ok(/<PayCubugu oran=\{Math\.min\(d\.oran, 1\)\} etiket=\{bicim\.yuzde\(d\.oran \* 100, 0\)\} \/>/.test(kart), "yüzde çubuğun etiketi"); ok();
+  // Hedef kutusu SAYI KUTUSU DEĞİL: tekerlek/ok tuşu değeri kuruş kuruş oynatıyordu (₺1.099.999,73 vakası)
+  const form = temiz("src/app/ayarlar/hedefler/hedef-formu.tsx");
+  assert.ok(/type="text"\s*inputMode=\{h\.olcut === "SIPARIS" \? "numeric" : "decimal"\}/.test(form) && !/type="number"/.test(form) && !/\bstep=/.test(form), "hedef kutusu metin kutusu + rakam klavyesi"); ok();
   const sayfa = temiz("src/app/ayarlar/hedefler/page.tsx");
   assert.ok(/const baglam = await sayfaIzni\("hedef\.yonet"\);/.test(sayfa) && /HEDEF_OLCUTLERI\.filter\(\(o\) => o !== "NET2" \|\| karGorunur\)/.test(sayfa) && /where: karGorunur \? \{\} : \{ olcut: \{ not: "NET2" \} \}/.test(sayfa), "sayfa izinli, kâr verisi izinsize gitmez"); ok();
   const ey = temiz("src/app/ayarlar/hedefler/eylemler.ts");

@@ -29,10 +29,12 @@ export function HedefFormu({ donemler }: { donemler: FormDonemi[] }) {
           <span className="font-medium">{t(`olcut_${h.olcut}`)}</span>
           <Input
             name={`${h.olcut}_${d.donem}`}
-            type="number"
+            /* ⛔ type="number" DEĞİL (kullanıcı 21.10: 1.100.000 yazıldı, ₺1.099.999,73 kaydedildi):
+               sayı kutusu seçiliyken fare tekerleği / ok tuşu değeri adım adım (0,01) oynatıyor.
+               Metin kutusu + rakam klavyesi; biçimi sıkı okuyucu (`hedefTutariOku`) denetler. */
+            type="text"
             inputMode={h.olcut === "SIPARIS" ? "numeric" : "decimal"}
-            min={0}
-            step={h.olcut === "SIPARIS" ? 1 : 0.01}
+            autoComplete="off"
             defaultValue={h.mevcut ?? ""}
             placeholder={t(h.olcut === "SIPARIS" ? "ornekAdet" : "ornekTutar")}
             className="min-h-11"

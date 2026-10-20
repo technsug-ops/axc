@@ -42,10 +42,8 @@ export async function HedefKarti({ karGorunur, hedefYonetir }: { karGorunur: boo
       </div> : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {durumlar.map((d) => <div key={`${d.olcut}-${d.donem}`} data-gecildi={d.gecildi ? "evet" : "hayir"} className="space-y-1 rounded-md border p-3 text-sm">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="font-medium">{t("satirEtiketi", { olcut: d.olcut, donem: d.donem })}</span>
-            <span className={d.gecildi ? `font-semibold ${DURUM_KUTU_YAZISI.olumlu}` : "text-muted-foreground"}>{bicim.yuzde(d.oran * 100, 0)}</span>
-          </div>
+          {/* Yüzde YALNIZ çubuğun yanında (kullanıcı 21.10: iki kez yazıyordu); geçilen hedefin adı yeşil. */}
+          <span className={`block font-medium ${d.gecildi ? DURUM_KUTU_YAZISI.olumlu : ""}`}>{t("satirEtiketi", { olcut: d.olcut, donem: d.donem })}</span>
           <PayCubugu oran={Math.min(d.oran, 1)} etiket={bicim.yuzde(d.oran * 100, 0)} />
           <p className="text-muted-foreground">{t("ilerleme", { gerceklesen: deger(d.olcut, d.gerceklesen), hedef: deger(d.olcut, d.hedef) })}</p>
         </div>)}
