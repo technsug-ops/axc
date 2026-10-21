@@ -696,7 +696,7 @@ ${neZaman(
 )}
 ${ekranSemasi("Panel", [
   { no: 1, ad: "Dönem, kanal ve karşılaştırma", aciklama: "Açılışta «Bugün». Hızlı seçenekler: Dün · Bugün · Bu hafta · Son 30 gün · Bu ay; «Özel aralık» altında daha uzun dönemler ve tarih seçimi. Yanında kanal seçimi ve «Karşılaştır» düğmeleri.", genis: true },
-  { no: 2, ad: "Para kutucukları", aciklama: "Ciro · NET-1 · NET-2 · NET-2 marjı · Satış adedi · İade. Seçili dönemin rakamları.", vurgulu: true, genis: true },
+  { no: 2, ad: "Para kutucukları", aciklama: "Ciro · NET-1 · NET-2 · NET-2 marjı · Sipariş sayısı · İade. Seçili dönemin rakamları.", vurgulu: true, genis: true },
   { no: 3, ad: "Huni ve bugünün işleri", aciklama: "Satın alınan · Mal kabul · Kargoya verilen; altında bekleyen işler şeridi." , genis: true },
   { no: 4, ad: "Pazaryeri performansı", aciklama: "Kanal kanal ciro, NET-2 ve marj; yanında ciro dağılımı halkası." },
   { no: 5, ad: "Rafta var, vitrinde yok · Günlük özet", aciklama: "Satılamayan stoklu ürünler ve günün kısa özeti." },
@@ -3594,7 +3594,7 @@ ${ekranSemasi("Rapor", [
   { no: 1, ad: "Dönem seçici", aciklama: "Bu ay · Son 3 ay · Son 6 ay · Özel aralık. Sağ üstte «Gider gir» düğmesi.", genis: true },
   { no: 2, ad: "Nakit ve hakediş özeti", aciklama: "Önümüzdeki günlerin nakit özeti ve beklenen hakediş — yetkiniz varsa görünür." },
   { no: 3, ad: "Karşılaştır", aciklama: "Önceki dönem · 3 ay öncesi · Geçen yıl aynı dönem. Seçili olana tekrar basınca kıyas kapanır." },
-  { no: 4, ad: "Üst kartlar", aciklama: "Satış geliri · Σ NET-1 · Σ NET-2 · Dönem giderleri · Satış adedi · İade adedi." },
+  { no: 4, ad: "Üst kartlar", aciklama: "Satış geliri · Σ NET-1 · Σ NET-2 · Dönem giderleri · Sipariş sayısı · İade adedi." },
   { no: 5, ad: "GERÇEK NET", aciklama: "Kalın çerçeveli kutu. Altında formülün rakamlı hâli yazar.", genis: true, vurgulu: true },
   { no: 6, ad: "Fire ve düzeltme · Tazminat geliri", aciklama: "Stok defterinden gelen kayıp/fazla ve tahsil edilmiş tazminatlar." },
   { no: 7, ad: "Gider dökümü · Referans göstergeler", aciklama: "Gider kategorisi başına tablo; satış başına ortalama gider ve brüt kâr." },
