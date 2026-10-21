@@ -14,13 +14,13 @@
  * ============================================================================
  */
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { EKRANLAR, EKRAN_KLASORU, ekranAdresi } from "../src/lib/el-kitabi/ekranlar";
 import { ekranlariGom } from "../src/lib/el-kitabi/uret";
 import { MENU_KATALOGU } from "../src/lib/menu/katalog";
-import { kaynakOku } from "./kaynak-oku";
+import { hamOku, kaynakOku } from "./kaynak-oku";
 
 let gecen = 0;
 let kalan = 0;
@@ -139,7 +139,7 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
   const sorunlu = EKRANLAR.flatMap((e) => {
     const dosya = join(yol, `${e.ad}.jpg`);
     if (!existsSync(dosya)) return [`${e.ad}: dosya yok`];
-    const b = readFileSync(dosya);
+    const b = hamOku(dosya);
     if (b.length < 10_000 || b.length > 400_000) return [`${e.ad}: boyut ${b.length}`];
     if (b[0] !== 0xff || b[1] !== 0xd8 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return [`${e.ad}: bozuk JPEG`];
     if (!listedekiler.includes(e.bolum)) return [`${e.ad}: bölüm yok (${e.bolum})`];
