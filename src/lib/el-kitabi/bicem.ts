@@ -67,7 +67,7 @@ export const EL_KITABI_BICEMI = `
 .ek-duzen{max-width:1180px;margin:0 auto;padding:0 24px 80px;display:grid;
   grid-template-columns:1fr;gap:40px}
 @media (min-width:1000px){.ek-duzen{grid-template-columns:232px minmax(0,1fr);gap:56px;align-items:start}}
-.ek-toc{position:sticky;top:20px;padding-top:36px;display:none}
+.ek-toc{position:sticky;top:20px;padding-top:36px;display:none;max-height:calc(100vh - 20px);overflow-y:auto;padding-bottom:24px}
 @media (min-width:1000px){.ek-toc{display:block}}
 .ek-toc h2{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--murekkep-3);margin:0 0 12px;font-weight:600}
@@ -78,6 +78,29 @@ export const EL_KITABI_BICEMI = `
 .ek-toc a:hover{color:var(--vurgu);background:var(--vurgu-yumusak)}
 .ek-toc a:hover b{color:var(--vurgu)}
 .ek-toc a:focus-visible{outline:2px solid var(--vurgu);outline-offset:2px}
+.ek-toc h2 a{color:inherit;text-decoration:none;display:inline;padding:0}
+.ek-toc details{border-top:1px solid var(--cizgi)}
+.ek-toc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;
+  gap:8px;padding:9px 6px 9px 0;font-size:13.5px;font-weight:650;color:var(--murekkep);min-height:36px}
+.ek-toc summary::-webkit-details-marker{display:none}
+.ek-toc summary::before{content:"▸";color:var(--murekkep-3);font-size:11px;width:12px}
+.ek-toc details[open] summary::before{content:"▾"}
+.ek-toc summary i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--murekkep-3);margin-left:auto}
+.ek-toc summary:hover{color:var(--vurgu)}
+.ek-toc details ol{padding:0 0 8px 12px}
+.ek-harita{display:flex;flex-direction:column;gap:15px;scroll-margin-top:20px}
+.ek-harita-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.ek-grup{background:var(--yuzey);border:1px solid var(--cizgi);border-radius:10px;padding:14px 16px;box-shadow:var(--golge)}
+.ek .ek-grup h3{margin:0 0 8px;font-size:.95rem}
+.ek-grup ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.ek-grup a{display:grid;grid-template-columns:24px 1fr;gap:6px;padding:7px 4px;min-height:44px;align-items:center;
+  color:var(--murekkep-2);text-decoration:none;font-size:14px;border-radius:5px;line-height:1.3}
+.ek-grup a b{font-family:var(--mono);font-size:11px;color:var(--murekkep-3);font-weight:500}
+.ek-grup a:hover{color:var(--vurgu);background:var(--vurgu-yumusak)}
+.ek-grup-basi{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--murekkep-3);font-weight:700;padding-top:12px}
+.ek h2.bolum .ek-yukari{margin-left:auto;font-family:var(--sans);font-size:12.5px;font-weight:500;
+  letter-spacing:0;white-space:nowrap;text-decoration:none;align-self:center;padding:10px 0 10px 8px}
 .ek-icerik{padding-top:36px;min-width:0;display:flex;flex-direction:column;gap:48px}
 .ek-icerik section{scroll-margin-top:20px;display:flex;flex-direction:column;gap:15px}
 .ek h2.bolum{font-family:var(--serif);font-size:clamp(1.45rem,3vw,1.9rem);line-height:1.15;
@@ -194,7 +217,7 @@ export const EL_KITABI_BICEMI = `
 .ek .ek-hata dd::before{content:"→ ";color:var(--vurgu);font-weight:700}
 
 @media print{
-  .ek-toc{display:none}
+  .ek-toc,.ek-yukari{display:none}
   .ekran-cerceve,.ek-hata{box-shadow:none}
   .ek-duzen{grid-template-columns:1fr}
   .ek-kart,.ek-tablo{box-shadow:none}

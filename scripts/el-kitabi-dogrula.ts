@@ -90,6 +90,42 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
   );
   const basliksiz = listedekiler.filter((k) => !basliklar.includes(k));
   kontrol("her bölüm baslik() çağırıyor", basliksiz.length === 0, basliksiz);
+
+  /**
+   * GRUPLAR (kullanıcı 21.10.2026: «57 içerik, aşağı doğru gitmekte zorlanıyor»).
+   * Gruplar bölüm listesini EKSİKSİZ, TEKRARSIZ ve AYNI SIRADA kapsamalı: bir bölüm
+   * gruba girmezse içindekilerden sessizce düşer; sıra kayarsa grup kutusundaki
+   * numaralar atlar (01, 02, 07, 03…).
+   */
+  const grupBas = KAYNAK.indexOf("export const GRUPLAR");
+  const grupBlogu = grupBas >= 0 ? KAYNAK.slice(grupBas, KAYNAK.indexOf("\n];", grupBas)) : "";
+  const grupSatirlari = [...grupBlogu.matchAll(/\{ ad: "[^"]+", kimlikler: \[([^\]]*)\] \}/g)];
+  const gruptakiler = grupSatirlari.flatMap((m) => [...m[1]!.matchAll(/"([a-zA-Z]+)"/g)].map((x) => x[1]!));
+  kontrol("grup listesi okundu (en az 5 grup)", grupSatirlari.length >= 5, grupSatirlari.length);
+  kontrol(
+    "gruplar bölüm listesini eksiksiz, tekrarsız ve AYNI SIRADA kapsıyor",
+    gruptakiler.length === listedekiler.length && gruptakiler.join(",") === listedekiler.join(","),
+    { grup: gruptakiler.length, liste: listedekiler.length, eksik: listedekiler.filter((k) => !gruptakiler.includes(k)) },
+  );
+  const fonk = (ad: string) => {
+    const b = KAYNAK.indexOf(`function ${ad}(`);
+    return b < 0 ? "" : KAYNAK.slice(b, KAYNAK.indexOf("\n}\n", b));
+  };
+  kontrol(
+    "yan menü GRUPLARDAN çiziliyor (katlanır)",
+    /GRUPLAR\.map\([\s\S]*<details>/.test(fonk("icindekiler")),
+  );
+  kontrol(
+    "konu haritası GRUPLARDAN çiziliyor ve #icindekiler kimliğini taşıyor",
+    /GRUPLAR\.map\(/.test(fonk("konuHaritasi")) && fonk("konuHaritasi").includes('id="icindekiler"'),
+  );
+  const anaBas = KAYNAK.indexOf('<main class="ek-icerik">');
+  const anaBasi = anaBas >= 0 ? KAYNAK.slice(anaBas, KAYNAK.indexOf("<section", anaBas)) : "";
+  kontrol("konu haritası içeriğin BAŞINDA çağrılıyor (telefonda tek içindekiler)", anaBasi.includes("${konuHaritasi()}"));
+  kontrol(
+    "her bölüm başlığında «↑ İçindekiler» dönüş bağlantısı var",
+    /<h2 class="bolum">[^`]*href="#icindekiler"[^`]*<\/h2>/.test(fonk("baslik")),
+  );
 }
 
 // --- 2) MENÜ ADLARI GERÇEK Mİ ----------------------------------------------

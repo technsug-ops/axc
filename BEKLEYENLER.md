@@ -71,6 +71,7 @@ Kullanıcı 21.10: _«tüm kullanım kılavuzunu gözden geçir, yenile ve detay
 **Denetimin bulduğu, AÇIK kalanlar:** sipariş çekim aralığı kodda iki yerde farklı yazıyor (5 · 10 dk) — kılavuz «birkaç dakikada bir» dedi.
 
 **K350 Halil testi:** ① El Kitabı'nı aç → İş Ortakları bölümünde «Örnek hesap» rakamları (₺56.250 / ₺43.750) ② günlük kullandığın 3 bölümü oku (Satış · Alım · Paketleme) → ekranda gördüğünle çelişen bir cümle varsa bildir ③ İş Ortakları ana sayfasında «Taslak» etiketi YOK ④ Envanter değeri → geçmiş bir tarih seç → bir ürün ara → seçili tarih korunmalı.
+─── ② İÇİNDEKİLER GRUPLANDI (kullanıcı 21.10: «57 içerik, aşağı doğru gitmekte zorlanıyor»): 10 grup (Başlarken · Günlük operasyon · Ürün ve kanal · Fiyat ve analiz · Para · Raporlar ve dönem · Tanımlar · Veri · Ayarlar · Yardım); bölümler grup sırasına dizildi, numaralar sıralı kaldı. Kitabın başında her ekranda görünen konu haritası, geniş ekranda katlanır yan menü, her bölüm başlığında «↑ İçindekiler». Bekçi +6 ölçüt, 6 mutasyon + 1 zararsız sağlama doğru sonuç verdi. **Test:** ⑤ telefonda El Kitabı → en üstte gruplu kutular görünüyor → «Para» kutusunda «Giderler»e dokun → bölüm açılır → başlıktaki «↑ İçindekiler» kutulara geri götürür ⑥ bilgisayarda soldaki menü grup başlıklarıyla kapalı gelir, başlığa tıklayınca açılır.
 
 ## 🟢 K349 — SATIŞ HEDEFLERİ + TEBRİK · 20.10.2026 · [CANLIDA 0d7b554a — HALİL TESTİ: kullanıcı 21.10.2026 «bu tamam» + ③ üst çubuk düğmesi/sayfa/panelde kart yok «bunlar tamam»; açık: kutlama penceresi + telefon tebriği GERÇEK siparişle henüz görülmedi]
 
