@@ -52,7 +52,8 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "  const kargosuzSayisi = karGorunur\n", koy: "  const kargosuzSayisi = true\n",
     bozdugu: "kar gormeyen rol kar bilgisi gorur" },
   { ad: "RAPOR BAGLANTISI DONEMSIZ", yon: "KALDIRAN", dosya: RAPOR,
-    bul: "          href={suzgecAdresi(\"/satislar\", kargosuzParam, {})}", koy: "          href=\"/satislar?kar=kargosuz\"",
+    /* Çapa 22.10.2026 taşındı: not ortak kutuya (`KargosuzNotu`) geçti, `href` → `adres`. Niyet aynı. */
+    bul: "          adres={suzgecAdresi(\"/satislar\", kargosuzParam, {})}", koy: "          adres=\"/satislar?kar=kargosuz\"",
     bozdugu: "rapor 1 der, tiklayinca 1319 acilir" },
 ];
 
