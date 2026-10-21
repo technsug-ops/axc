@@ -108,7 +108,7 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
         const bagli = p.katilimlar.length + p._count.alimKalemleri + p.kapsamKurallari.length;
         return <article key={p.id} className="space-y-3 rounded-lg border p-4">
           <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0"><h3 className="font-semibold">{p.ad} <span className="ml-1 rounded bg-muted px-2 py-0.5 text-xs font-normal">{t("taslak")}</span></h3>
+            <div className="min-w-0"><h3 className="font-semibold">{p.ad}</h3>
               <p className="text-sm text-muted-foreground">{t("projeOzeti", { tarih: bicim.tarih(p.baslangic), birim: p.currency, sayi: p.katilimlar.length })}</p>
               <p className="text-sm">{t("kapsamKalemSayisi", { sayi: p._count.alimKalemleri })}</p>
               <div className="mt-1 flex flex-wrap gap-x-4"><Baglanti href={`/ortaklik/${p.id}`} className="inline-flex min-h-11 items-center text-sm md:min-h-0">{t("sonucuAc")}</Baglanti>

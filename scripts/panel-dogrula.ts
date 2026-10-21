@@ -5421,6 +5421,24 @@ console.log("=".repeat(70));
 
   /** ── DİL KURALI: "DEĞER/FOTOĞRAF", "SAYIM" DEĞİL ──────────────────── */
   const ekran = kaynakOku("src/app/envanter-degeri/page.tsx");
+  /**
+   * ── ARAMA VE SIRALAMA SEÇİLİ TARİHİ DÜŞÜRMEZ (21.10.2026 bulgu) ──────
+   * Kılavuz denetimi buldu: geçmiş bir tarih seçiliyken arama ya da sıralama
+   * adresten `tarih`i siliyordu ve ekran SESSİZCE bugüne dönüyordu. Aralık
+   * görünümü aramaya bakmadığı için orada kutu hiç çizilmez (sıra düğmeleriyle aynı).
+   */
+  kontrol(
+    "envanter araması seçili tarihi taşır",
+    /tasinanlar=\{\{ sira, \.\.\.\(seciliTarih \? \{ tarih: seciliTarih \} : \{\}\) \}\}/.test(ekran),
+  );
+  kontrol(
+    "envanter sıra bağlantısı seçili tarihi taşır",
+    /\$\{seciliTarih \? `&tarih=\$\{encodeURIComponent\(seciliTarih\)\}` : ""\}/.test(ekran),
+  );
+  kontrol(
+    "aralık görünümünde iş yapmayan arama kutusu çizilmez",
+    /\{aralik \? null : \(\s*<KodAramaKutusu/.test(ekran),
+  );
   const disa = kaynakOku("src/lib/disa-aktarma/listeler.ts");
   const SOZ = JSON.parse(kaynakOku("messages/tr.json")) as {
     Envanter?: Record<string, string>;

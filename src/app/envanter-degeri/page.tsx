@@ -258,14 +258,19 @@ export default async function EnvanterDegeriSayfasi({
           ⚠ SIRA DA ADRESTE: aramayı bozmadan sıra değişebilsin diye gizli
           alanla taşınıyor (İlke #10 — süzgeçler birbirini silmez). */}
       <div className="flex flex-wrap items-end gap-3">
-        {/* ⚠ ARAMA ORTAK BİLEŞENDEN — kamera dahil (İlke #7). Sıra
-            `tasinanlar` ile korunuyor: arama sırayı silmez. */}
-        <KodAramaKutusu
-          temelAdres="/envanter-degeri"
-          baslangic={arama}
-          tasinanlar={{ sira }}
-          ipucu={t("aramaIpucu")}
-        />
+        {/* ⚠ ARAMA ORTAK BİLEŞENDEN — kamera dahil (İlke #7). Sıra VE seçili
+            tarih `tasinanlar` ile korunuyor: arama ne sırayı ne tarihi siler
+            (21.10.2026 bulgu: tarih düşüyor, ekran sessizce bugüne dönüyordu).
+            ⚠ ARALIK KİPİNDE ÇİZİLMEZ — sıralama düğmeleriyle aynı gerekçe: aralık
+            görünümü aramaya bakmıyor; iş yapmayan kutu sessiz başarısızlıktır (#5). */}
+        {aralik ? null : (
+          <KodAramaKutusu
+            temelAdres="/envanter-degeri"
+            baslangic={arama}
+            tasinanlar={{ sira, ...(seciliTarih ? { tarih: seciliTarih } : {}) }}
+            ipucu={t("aramaIpucu")}
+          />
+        )}
 
         {/*
           ⚠ ARALIK KİPİNDE SIRALAMA DÜĞMELERİ ÇİZİLMEZ — CANLI BULGU
@@ -287,7 +292,7 @@ export default async function EnvanterDegeriSayfasi({
               className="h-11 md:h-8"
             >
               <Link
-                href={`/envanter-degeri?sira=${sr}${arama ? `&q=${encodeURIComponent(arama)}` : ""}`}
+                href={`/envanter-degeri?sira=${sr}${arama ? `&q=${encodeURIComponent(arama)}` : ""}${seciliTarih ? `&tarih=${encodeURIComponent(seciliTarih)}` : ""}`}
               >
                 {t(`sira_${sr}`)}
               </Link>

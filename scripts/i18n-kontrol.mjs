@@ -247,7 +247,7 @@ const ornekler = [
     "Kart",
     "toplamNotu",
     {},
-    "Para birimleri ayrı toplanır ve birbirine çevrilmez. Detaylı borç ve ekstre takibi Faz 3'te gelecek.",
+    "Para birimleri ayrı toplanır ve birbirine çevrilmez. Ekstre, ödeme ve borç takibi Kart borcu ekranındadır.",
   ],
   [
     "Kart",
