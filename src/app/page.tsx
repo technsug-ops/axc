@@ -1,6 +1,7 @@
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import { donemOzeti } from "@/lib/muhasebe-donemi";
 import Link from "@/components/niyetli-baglanti";
+import { KargosuzNotu } from "@/components/kargosuz-notu";
 import { getTranslations } from "next-intl/server";
 import {
   ArrowRight,
@@ -2723,10 +2724,7 @@ export default async function AnaSayfa({
         {/* K141: kârı kargo düşülmeden hesaplanan satışlar — NET rakamlarının ÜSTÜNDE,
             tıklanınca aynı dönemle süzülmüş liste. Sıfırsa çizilmez: sayı yoksa söz de yok. */}
         {kargosuzSayisi > 0 ? (
-          <Link href={kargosuzAdresi} className={`inline-flex min-h-11 items-center gap-1.5 text-sm underline underline-offset-4 sm:min-h-0 ${DURUM_YAZISI.uyari}`}>
-            <TriangleAlert className="size-4 shrink-0" aria-hidden />
-            {t("kargosuzNotu", { sayi: kargosuzSayisi })}
-          </Link>
+          <KargosuzNotu adres={kargosuzAdresi} metin={t("kargosuzNotu", { sayi: kargosuzSayisi })} goster={t("kargosuzGoster")} />
         ) : null}
 
         {/* ==================== DÖNEM — KANAL BAZINDA ==================== */}

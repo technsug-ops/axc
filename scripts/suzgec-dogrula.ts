@@ -765,7 +765,16 @@ console.log("\nK141) kargosu düşülmemiş kâr — tek ölçüt, sayı = liste
     kontrol(`${ad}: sayı listenin süzgeç gövdesiyle sayılıyor`, /karGorunur\s*\?\s*(?:await )?prisma\.sale\.count\(\{ where: satisKosulu\(kargosuzParam, an\)\.kosul \}\)/.test(m));
     kontrol(`${ad}: not aynı parametrelerle listeye götürüyor`, m.includes('suzgecAdresi("/satislar", kargosuzParam, {})'));
     kontrol(`${ad}: not ÇİZİLİYOR (koşul + metin aynı dalda)`, /\{kargosuzSayisi > 0 \? \([\s\S]{0,400}t\("kargosuzNotu"/.test(m));
+    /* 22.10.2026 (kullanıcı): not ortak kutuya taşındı — kutu AYNI dalda, «Göster» sözlükten. */
+    kontrol(`${ad}: not ortak kutuyla çiziliyor, «Göster» sözlükten`,
+      /\{kargosuzSayisi > 0 \? \(\s*<KargosuzNotu\s[\s\S]{0,300}goster=\{t\("kargosuzGoster"\)\}/.test(m));
   }
+  /* Kutunun kendisi: tıklanan yer ADRESE gider ve telefonda 44 px (İlke #8 · #16). */
+  const kutu = yorumsuzla(kaynakOku("src/components/kargosuz-notu.tsx"));
+  const kutuBag = /<Link\s+href=\{adres\}\s+className="([^"]*)"/.exec(kutu);
+  kontrol("kutu: «Göster» bağlantısı çağıranın adresine gider", kutuBag !== null);
+  kontrol("  ...telefonda 44 px dokunma alanı", (kutuBag?.[1] ?? "").split(/\s+/).includes("min-h-11"));
+  kontrol("  ...metin ve «Göster» kutuda çiziliyor", /\{metin\}/.test(kutu) && /\{goster\}/.test(kutu));
   kosanBolumler.push("kargosuz");
 }
 

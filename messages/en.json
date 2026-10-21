@@ -2079,7 +2079,8 @@
     "veriDuzeltmesiNotu": "",
     "alimIadesiNotu": "",
     "alimIadesiEtiketi": "",
-    "kargosuzNotu": ""
+    "kargosuzNotu": "",
+    "kargosuzGoster": ""
   },
   "KarSorunu": {
     "baslik": "",
@@ -2940,7 +2941,8 @@
     "ciroNetBaslik": "",
     "ciroNetNoktaSatislari": "",
     "hizliIslemler": "",
-    "kargosuzNotu": ""
+    "kargosuzNotu": "",
+    "kargosuzGoster": ""
   },
   "Envanter": {
     "baslik": "",

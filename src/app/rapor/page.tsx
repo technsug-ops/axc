@@ -1,5 +1,6 @@
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import Link from "@/components/niyetli-baglanti";
+import { KargosuzNotu } from "@/components/kargosuz-notu";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { NakitOzeti } from "@/app/nakit-ozeti";
 import { HakedisOzeti } from "@/app/hakedis-ozeti";
@@ -1146,13 +1147,11 @@ export default async function RaporSayfasi({
 
       {/* K141: kârı kargo düşülmeden hesaplanan satışlar — rakamların ÜSTÜNDE, listeye götürür. */}
       {kargosuzSayisi > 0 ? (
-        <Link
-          href={suzgecAdresi("/satislar", kargosuzParam, {})}
-          className={`inline-flex min-h-11 items-center gap-1.5 text-sm underline underline-offset-4 sm:min-h-0 ${DURUM_YAZISI.uyari}`}
-        >
-          <TriangleAlert className="size-4 shrink-0" aria-hidden />
-          {t("kargosuzNotu", { sayi: kargosuzSayisi })}
-        </Link>
+        <KargosuzNotu
+          adres={suzgecAdresi("/satislar", kargosuzParam, {})}
+          metin={t("kargosuzNotu", { sayi: kargosuzSayisi })}
+          goster={t("kargosuzGoster")}
+        />
       ) : null}
 
       {sonuc.bos ? (
