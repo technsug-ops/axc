@@ -18,7 +18,7 @@ import { hedefRakamlari } from "../src/lib/hedef/hedef-veri";
 import { hedefTebrikleriniGonder } from "../src/lib/hedef/hedef-tebrik";
 import type { Gonderici, PushYuku } from "../src/lib/bildirim/push-gonder";
 
-const KONTROL_SAYISI = 27;
+const KONTROL_SAYISI = 29;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -126,6 +126,11 @@ async function main() {
   // Yüzde YALNIZ çubuğun yanında (kullanıcı 21.10: iki kez yazıyordu)
   assert.equal((kart.match(/bicim\.yuzde\(/g) ?? []).length, 1, "kartta yüzde tek yerde");
   assert.ok(/<PayCubugu oran=\{Math\.min\(d\.oran, 1\)\} etiket=\{bicim\.yuzde\(d\.oran \* 100, 0\)\} \/>/.test(kart), "yüzde çubuğun etiketi"); ok();
+  // Küçült/genişlet (kullanıcı 21.10): küçük hâlde satırlar ÇİZİLMEZ, tek satır özet; tercih cihazda, depo düşse de çalışır
+  const kabuk = temiz("src/app/hedef-karti-kabugu.tsx");
+  assert.ok(/\{kucuk \? null : <div className="space-y-3 px-4 pb-4">\{children\}<\/div>\}/.test(kabuk) && /\{kucuk \? <span[^>]*>[\s\S]*?t\("ozetSatiri", \{ gecilen, toplam \}\)/.test(kabuk), "küçük hâl yalnız özet satırı");
+  assert.ok(/aria-expanded=\{!kucuk\} onClick=\{\(\) => kucukYaz\(!kucuk\)\}/.test(kabuk) && /function kucukYaz\(yeni: boolean\) \{\s*tercih = yeni;\s*try \{/.test(kabuk), "düğme durumu söyler; bellek önce, depo sonra"); ok();
+  assert.ok(/<HedefKartiKabugu\s*baslik=\{t\("kartBaslik"\)\}\s*gecilen=\{gecilen\.length\}\s*toplam=\{durumlar\.length\}/.test(kart), "kart kabukla sarılı, sayılar süzülmüş kümeden"); ok();
   // Hedef kutusu SAYI KUTUSU DEĞİL: tekerlek/ok tuşu değeri kuruş kuruş oynatıyordu (₺1.099.999,73 vakası)
   const form = temiz("src/app/ayarlar/hedefler/hedef-formu.tsx");
   assert.ok(/type="text"\s*inputMode=\{h\.olcut === "SIPARIS" \? "numeric" : "decimal"\}/.test(form) && !/type="number"/.test(form) && !/\bstep=/.test(form), "hedef kutusu metin kutusu + rakam klavyesi"); ok();

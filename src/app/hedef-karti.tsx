@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { PartyPopper } from "lucide-react";
 import Link from "@/components/niyetli-baglanti";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HedefKartiKabugu } from "./hedef-karti-kabugu";
 import { PayCubugu } from "@/components/istatistik-kutusu";
 import { bicimlendirici } from "@/lib/bicim";
 import { hedefDurumuGetir } from "@/lib/hedef/hedef-veri";
@@ -29,12 +29,13 @@ export async function HedefKarti({ karGorunur, hedefYonetir }: { karGorunur: boo
   }
   const deger = (olcut: string, n: number) => (olcut === "SIPARIS" ? bicim.sayi(n) : bicim.para(n, "TRY"));
   const gecilen = durumlar.filter((d) => d.gecildi);
-  return <Card data-kart="hedefler">
-    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-      <CardTitle>{t("kartBaslik")}</CardTitle>
-      {hedefYonetir ? <Link href="/ayarlar/hedefler" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 md:min-h-0">{t("duzenle")}</Link> : null}
-    </CardHeader>
-    <CardContent className="space-y-3">
+  /* K349-② (kullanıcı 21.10): kart küçültülebilir — küçük hâl tek satır «2/6 geçildi». */
+  return <HedefKartiKabugu
+    baslik={t("kartBaslik")}
+    gecilen={gecilen.length}
+    toplam={durumlar.length}
+    ust={hedefYonetir ? <Link href="/ayarlar/hedefler" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t("duzenle")}</Link> : null}
+  >
       {gecilen.length ? <div role="status" className={`flex items-start gap-2 rounded-md border p-3 text-sm ${DURUM_KUTUSU.olumlu}`}>
         <PartyPopper className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
         <div><p className="font-semibold">{t("tebrikBaslik")}</p>
@@ -48,6 +49,5 @@ export async function HedefKarti({ karGorunur, hedefYonetir }: { karGorunur: boo
           <p className="text-muted-foreground">{t("ilerleme", { gerceklesen: deger(d.olcut, d.gerceklesen), hedef: deger(d.olcut, d.hedef) })}</p>
         </div>)}
       </div>
-    </CardContent>
-  </Card>;
+  </HedefKartiKabugu>;
 }
