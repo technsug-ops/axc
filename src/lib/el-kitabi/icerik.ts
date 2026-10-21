@@ -2301,9 +2301,11 @@ ${neZaman("Ayın, çeyreğin ya da yılın başında; kampanya dönemine girerke
 <li><div><h3>Hedefi yazın</h3><p>Her dönemin kutusuna düz sayı yazın (örn. 500000). Boş bırakılan hedef yoktur.</p></div></li>
 <li><div><h3>Kaydedin</h3><p>Değiştirdiğiniz hedef <strong>içinde bulunduğunuz dönemden itibaren</strong> geçerli olur; geçmiş dönemler eski hedefle kalır.</p></div></li>
 </ol>
-<p>Panelde <strong>Hedefler</strong> kartı her hedefin ilerlemesini gösterir. Hedef
-geçilince kartta <strong>«Tebrikler!»</strong> çıkar ve telefona bildirim gider —
-her hedef, her dönem için bir kez. Kâr hedefini yalnız kârı görme izni olanlar görür.</p>
+<p>Üst çubuktaki <strong>hedef</strong> düğmesi (◎) <strong>Hedefler</strong> sayfasını açar:
+her hedefin ilerlemesi orada. Hedef geçilince ekranda bir <strong>kutlama penceresi</strong>
+açılır, düğmenin üstünde yeşil nokta belirir ve telefona bildirim gider — her hedef, her
+dönem için bir kez («Teşekkürler» deyince o cihazda bir daha açılmaz). Kâr hedefini yalnız
+kârı görme izni olanlar görür.</p>
 <div class="ek-not dikkat"><div class="etiket">İade gelirse</div>
 <p>Hedef geçildikten sonra gelen bir iade rakamı hedefin altına düşürebilir. Panel
 güncel rakamı gösterir; verilen tebrik geri alınmaz.</p></div>

@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PartyPopper } from "lucide-react";
 import Link from "@/components/niyetli-baglanti";
-import { HedefKartiKabugu } from "./hedef-karti-kabugu";
 import { PayCubugu } from "@/components/istatistik-kutusu";
 import { bicimlendirici } from "@/lib/bicim";
 import { hedefDurumuGetir } from "@/lib/hedef/hedef-veri";
@@ -9,33 +8,26 @@ import { DURUM_KUTU_YAZISI, DURUM_KUTUSU } from "@/lib/renkler";
 
 /**
  * ============================================================================
- *  PANEL — HEDEFLER KARTI (K349, 20.10.2026)
+ *  HEDEF İLERLEMESİ (K349) — `/hedefler` sayfasının gövdesi
  * ----------------------------------------------------------------------------
  *  Hedefi konmuş her ölçüt × dönem için ilerleme; geçilen hedef «Tebrikler!».
- *  Rakamlar panelin kendi motorundan (`hedef-veri.ts`) — üstteki dönem kartlarıyla
- *  aynı tanım. Satır sayısı SABİT tavanlı (en çok 5 dönem × 3 ölçüt): veriyle
- *  büyümez, özet ekranında durabilir (İlke #13).
- *  ⛔ Kâr (NET-2) satırları yalnız `karGorunur` ile — panelin öteki kâr
- *  kutularıyla aynı kapı. Hiç hedef yoksa kart ÇİZİLMEZ; hedef girebilen
- *  kullanıcıya yalnız «hedef koy» bağlantısı görünür.
+ *  Rakamlar panelin kendi motorundan (`hedef-veri.ts`).
+ *  ⚠ 21.10.2026 (kullanıcı): panelde KART DEĞİL — üst çubukta düğme → bu sayfa;
+ *  hedef geçilince kutlama penceresi (`components/hedef-dugmesi.tsx`). Panel kartı
+ *  ve küçült/genişlet kabuğu (aynı gün yazılmıştı) kaldırıldı.
+ *  ⛔ Kâr (NET-2) satırları yalnız `karGorunur` ile.
  * ============================================================================
  */
-export async function HedefKarti({ karGorunur, hedefYonetir }: { karGorunur: boolean; hedefYonetir: boolean }) {
+export async function HedefIlerlemesi({ karGorunur, hedefYonetir }: { karGorunur: boolean; hedefYonetir: boolean }) {
   const t = await getTranslations("Hedef");
   const bicim = await bicimlendirici();
   const durumlar = (await hedefDurumuGetir()).filter((d) => d.olcut !== "NET2" || karGorunur);
   if (!durumlar.length) {
-    return hedefYonetir ? <p className="text-sm"><Link href="/ayarlar/hedefler" className="underline underline-offset-4">{t("hedefKoy")}</Link></p> : null;
+    return <p className="text-sm text-muted-foreground">{t("hedefYok")}{hedefYonetir ? <> <Link href="/ayarlar/hedefler" className="underline underline-offset-4">{t("hedefKoy")}</Link></> : null}</p>;
   }
   const deger = (olcut: string, n: number) => (olcut === "SIPARIS" ? bicim.sayi(n) : bicim.para(n, "TRY"));
   const gecilen = durumlar.filter((d) => d.gecildi);
-  /* K349-② (kullanıcı 21.10): kart küçültülebilir — küçük hâl tek satır «2/6 geçildi». */
-  return <HedefKartiKabugu
-    baslik={t("kartBaslik")}
-    gecilen={gecilen.length}
-    toplam={durumlar.length}
-    ust={hedefYonetir ? <Link href="/ayarlar/hedefler" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t("duzenle")}</Link> : null}
-  >
+  return <div data-hedef-ilerlemesi className="space-y-3">
       {gecilen.length ? <div role="status" className={`flex items-start gap-2 rounded-md border p-3 text-sm ${DURUM_KUTUSU.olumlu}`}>
         <PartyPopper className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
         <div><p className="font-semibold">{t("tebrikBaslik")}</p>
@@ -49,5 +41,5 @@ export async function HedefKarti({ karGorunur, hedefYonetir }: { karGorunur: boo
           <p className="text-muted-foreground">{t("ilerleme", { gerceklesen: deger(d.olcut, d.gerceklesen), hedef: deger(d.olcut, d.hedef) })}</p>
         </div>)}
       </div>
-  </HedefKartiKabugu>;
+  </div>;
 }

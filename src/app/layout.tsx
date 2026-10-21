@@ -38,6 +38,7 @@ import { UyariCani } from "@/components/uyari-cani";
 import { KasaSesi } from "@/components/kasa-sesi";
 import { UYGULAMA } from "@/lib/uygulama";
 import { CikisButonu } from "@/components/cikis-butonu";
+import { HedefDugmesi } from "@/components/hedef-dugmesi";
 import { ORTAK_ACILIS_SAYFASI, ortakKipindeMi } from "@/lib/ortaklik/ortak-kipi";
 
 /* Yazı: Rubik — Algoritmo referansının metrikleri (Halil'in analizi bölüm 2.2,
@@ -342,6 +343,9 @@ export default async function RootLayout({
                     sorgu koymak uygulamadaki her sayfayı bekletirdi.
                   */}
                   <div className="ms-auto flex items-center gap-2">
+                    {/* HEDEFLER (K349-③, kullanıcı 21.10.2026): panelde kart değil, üst çubukta
+                        düğme → /hedefler; hedef geçilince kutlama penceresi. Ciroyu görmeyene çizilmez. */}
+                    {baglam?.izinler.has("satis.gor") ? <HedefDugmesi /> : null}
                     {/* TEMA — Kobalt / Gece. Ayarlara gömülmedi: tema bir
                         AYAR değil TERCİHTİR ve gün içinde değişir. */}
                     <TemaSecici />

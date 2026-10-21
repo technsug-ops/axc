@@ -18,7 +18,7 @@ import { hedefRakamlari } from "../src/lib/hedef/hedef-veri";
 import { hedefTebrikleriniGonder } from "../src/lib/hedef/hedef-tebrik";
 import type { Gonderici, PushYuku } from "../src/lib/bildirim/push-gonder";
 
-const KONTROL_SAYISI = 29;
+const KONTROL_SAYISI = 30;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -121,16 +121,23 @@ async function main() {
   assert.ok(/where: \{ sale: \{ soldAt: \{ gte: bas, lt: son \} \}, \.\.\.IADE_GECERLI \}/.test(veri), "iade satışın gününe, geri alınmış iade girmez"); ok();
   assert.ok(/satislar\.map\(panelSatisiKur\)/.test(veri) && /iadeler\.map\(panelIadesiKur\)/.test(veri) && /panelHesapla\(pencereler\[donem\], panelSatislari, panelIadeleri\)\.find\(\(b\) => b\.paraBirimi === "TRY"\)/.test(veri), "panelin dönüştürmesi ve motoru");
   assert.ok(/CIRO: blok\.toplamGelir - blok\.toplamIadeTutari, NET2: blok\.toplamNet2, SIPARIS: blok\.toplamAdet/.test(veri), "ciro net, NET-2 ve adet panel bloğundan"); ok();
-  const kart = temiz("src/app/hedef-karti.tsx");
+  const kart = temiz("src/app/hedefler/hedef-ilerlemesi.tsx");
   assert.ok(/\.filter\(\(d\) => d\.olcut !== "NET2" \|\| karGorunur\)/.test(kart), "kart kâr satırını izinle süzer"); ok();
   // Yüzde YALNIZ çubuğun yanında (kullanıcı 21.10: iki kez yazıyordu)
   assert.equal((kart.match(/bicim\.yuzde\(/g) ?? []).length, 1, "kartta yüzde tek yerde");
   assert.ok(/<PayCubugu oran=\{Math\.min\(d\.oran, 1\)\} etiket=\{bicim\.yuzde\(d\.oran \* 100, 0\)\} \/>/.test(kart), "yüzde çubuğun etiketi"); ok();
-  // Küçült/genişlet (kullanıcı 21.10): küçük hâlde satırlar ÇİZİLMEZ, tek satır özet; tercih cihazda, depo düşse de çalışır
-  const kabuk = temiz("src/app/hedef-karti-kabugu.tsx");
-  assert.ok(/\{kucuk \? null : <div className="space-y-3 px-4 pb-4">\{children\}<\/div>\}/.test(kabuk) && /\{kucuk \? <span[^>]*>[\s\S]*?t\("ozetSatiri", \{ gecilen, toplam \}\)/.test(kabuk), "küçük hâl yalnız özet satırı");
-  assert.ok(/aria-expanded=\{!kucuk\} onClick=\{\(\) => kucukYaz\(!kucuk\)\}/.test(kabuk) && /function kucukYaz\(yeni: boolean\) \{\s*tercih = yeni;\s*try \{/.test(kabuk), "düğme durumu söyler; bellek önce, depo sonra"); ok();
-  assert.ok(/<HedefKartiKabugu\s*baslik=\{t\("kartBaslik"\)\}\s*gecilen=\{gecilen\.length\}\s*toplam=\{durumlar\.length\}/.test(kart), "kart kabukla sarılı, sayılar süzülmüş kümeden"); ok();
+  // K349-③ (kullanıcı 21.10): panelde KART YOK — üst çubukta düğme → /hedefler, geçilince kutlama penceresi
+  const panel = temiz("src/app/page.tsx");
+  assert.ok(!/HedefKarti|HedefIlerlemesi|hedef-ilerlemesi|hedef-karti/.test(panel), "panelde hedef kartı olmamalı");
+  const duzen = temiz("src/app/layout.tsx");
+  const ortakKabuk = duzen.slice(duzen.indexOf("if (baglam && ortakKipindeMi(baglam.izinler)) {"), duzen.indexOf("\n  }\n", duzen.indexOf("if (baglam && ortakKipindeMi(baglam.izinler)) {")));
+  assert.ok(/\{baglam\?\.izinler\.has\("satis\.gor"\) \? <HedefDugmesi \/> : null\}/.test(duzen) && !/HedefDugmesi/.test(ortakKabuk), "düğme yalnız satışı görene, ana kabukta"); ok();
+  const dugme = temiz("src/components/hedef-dugmesi.tsx");
+  assert.ok(/const gorulmemis = liste\.filter\(\(x\) => !gorulenler\(\)\.has\(x\.id\)\);\s*if \(gorulmemis\.length\) setYeniler\(gorulmemis\);/.test(dugme) && /<Dialog open=\{yeniler\.length > 0\}/.test(dugme), "pencere yalnız görülmemiş tebrikte");
+  assert.ok(/function gorulduSay\(idler: readonly string\[\]\) \{\s*const kume = gorulenler\(\);\s*for \(const id of idler\) kume\.add\(id\);\s*try \{/.test(dugme) && /<Link href="\/hedefler"/.test(dugme), "görüldü önce bellekte; düğme sayfaya gider"); ok();
+  const tebrikEylem = temiz("src/app/hedefler/tebrik-eylem.ts");
+  assert.ok(/if \(!\(await izinVarMi\("satis\.gor"\)\)\) return \[\];/.test(tebrikEylem) && /karGorunur \? \{\} : \{ olcut: \{ not: "NET2" as const \} \}/.test(tebrikEylem) && /donemBasi: hedefPenceresi\(donem, an\)\.ilkGun/.test(tebrikEylem), "tebrik listesi izinli, kâr süzgeçli, yalnız içinde bulunulan dönem");
+  assert.ok(/const baglam = await sayfaIzni\("satis\.gor"\);/.test(temiz("src/app/hedefler/page.tsx")), "hedefler sayfası izinli"); ok();
   // Hedef kutusu SAYI KUTUSU DEĞİL: tekerlek/ok tuşu değeri kuruş kuruş oynatıyordu (₺1.099.999,73 vakası)
   const form = temiz("src/app/ayarlar/hedefler/hedef-formu.tsx");
   assert.ok(/type="text"\s*inputMode=\{h\.olcut === "SIPARIS" \? "numeric" : "decimal"\}/.test(form) && !/type="number"/.test(form) && !/\bstep=/.test(form), "hedef kutusu metin kutusu + rakam klavyesi"); ok();

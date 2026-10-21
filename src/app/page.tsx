@@ -113,7 +113,6 @@ import {
 import { acikPartilerIstekte } from "@/lib/panel/acik-partiler-istekte";
 import { GorevKutusu } from "./gorev-kutusu";
 import { HizliIslemler } from "./hizli-islemler";
-import { HedefKarti } from "./hedef-karti";
 import { OzetKutusu } from "./ozet-kutusu";
 import { VitrinSerhi } from "./vitrin-serhi";
 import {
@@ -3204,11 +3203,6 @@ export default async function AnaSayfa({
         {bloklar.length === 0 ? gorevSeridi(false) : null}
         {/* HIZLI İŞLEMLER (K270) — yalnız telefonda; en sık dört iş. */}
         <HizliIslemler />
-        {/* HEDEFLER (K349) — hızlı işlemlerin ALTINDA (K270: hızlı işlemler şeridin hemen ardından);
-            kendi verisini akışla yükler, panelin geri kalanını bekletmez. */}
-        <Suspense fallback={null}>
-          <HedefKarti karGorunur={karGorunur} hedefYonetir={await izinVarMi("hedef.yonet")} />
-        </Suspense>
 
 
         {/* ⚠ 2/5 — 3/5 düzeni KORUNDU: ızgaraya dokunulmadı.
