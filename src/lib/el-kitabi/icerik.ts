@@ -4600,7 +4600,7 @@ ${baslik("geceTuru")}
 <p><strong>Sol menü → Gece bekçi turu</strong> (Veri grubunda). Bu ekran teknik
 bir bakım ekranıdır. Sistemin kendi kendini denetleyen kontrolleri iki zamanda
 koşar: her yeni sürüm gönderildiğinde davranışı koruyan <strong>bekçilerin
-hepsi</strong> ve yalnız değişen dosyalara dokunan denetimler; <strong>her gece</strong>
+hepsi</strong>; <strong>her gece</strong>
 ise bütün kontroller. Ekran son <strong>14 gecenin</strong> sonucunu ve canlı
 sitenin güncel olup olmadığını gösterir.</p>
 ${neZaman("Üst çubuktaki uyarı çanında «Gece bekçi turunda … sorun» satırı çıktığında. Günlük işte buraya gelmeniz gerekmez.")}

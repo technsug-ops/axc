@@ -5467,7 +5467,7 @@
     "yayinOLCULEMEDI_SURUM_BILGISI_YOK": "Ölçülemedi — bu kurulum Vercel'de çalışmıyor, canlı sürüm bilgisi yok. Bu «güncel» demek DEĞİLDİR.",
     "yayinOLCULEMEDI_GITHUB_OKUNAMADI": "Ölçülemedi — GitHub'daki son sürüm okunamadı (bağlantı ya da saatlik sorgu sınırı). Bu «güncel» demek DEĞİLDİR; birkaç dakika sonra yeniden bakın.",
     "baslik": "Gece bekçi turu",
-    "aciklama": "Her push'ta bekçilerin hepsi ve yalnız değişen dosyalara dokunan mutasyon denetimleri koşar. Tam tur (bütün kontroller) her gece otomatik koşar; kırmızı çıkarsa hangi push'un bozduğunu kendisi bulur.",
+    "aciklama": "Her push'ta bekçilerin hepsi koşar. Tam tur (bütün kontroller) her gece otomatik koşar; kırmızı çıkarsa hangi push'un bozduğunu kendisi bulur.",
     "izYok": "Henüz gece turu kaydı yok. İlk tur bu gece 00:30'da koşacak; ondan önceki geceler için «kayıt yok» bir sonuç değildir.",
     "gecikti": "Son gece turu {saat} saat önce koştu — en az bir gece KAÇMIŞ. Bilgisayar gece kapalı mıydı?",
     "sutunZaman": "Zaman",
