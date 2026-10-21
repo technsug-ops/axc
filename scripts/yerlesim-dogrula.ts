@@ -270,6 +270,65 @@ console.log("\n3) SÜTUN BÜTÇESİ — liste tabloları tek ekrana sığıyor m
   );
 }
 
+console.log("\n4) ÜST ÇUBUK — telefonda ekrana sığıyor mu?");
+{
+  /**
+   * NEDEN VAR (kullanıcı ekran görüntüsü 22.10.2026): telefonda menü düğmesi
+   * + «Bezirga» + altı düğme ~500 px tutuyordu, ekran 360 px. Çan dışarıda
+   * kaldı; taşan çubuk sayfayı genişletti ve telefon sayfayı UZAKLAŞTIRDI
+   * («ekran yarım çıkıyor»). 1. bölümdeki `min-w-0` zinciri bunu yakalamaz:
+   * çubuktaki öğeler `shrink-0`, küçülmezler.
+   *
+   * Ölçüt bir BÜTÇEDİR (tarayıcı yok, piksel ölçülemez — 3. bölümdeki vekil
+   * gibi): telefonda görünen her düğme 44 px (İlke #8) · aralık çubuğun
+   * telefon `gap-*` değeri · iki yan dolgu. Toplam 360 px'i (kullanıcının
+   * telefonu: 945 px ekran / 2,625 ölçek) aşamaz.
+   *
+   * Düğme sayısı ELLE YAZILMAZ: sağ bloktaki her düğme TAM BİR kendini
+   * kapatan bileşen taşır (`<HedefDugmesi />` · el kitabının `<BookOpen />`
+   * ikonu …). Yarın eklenen yedinci düğme sayıyı kendiliğinden artırır.
+   */
+  const TELEFON_GENISLIGI = 360;
+  const DUGME = 44;
+  const kod = layout.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  const bas = kod.indexOf('data-kabuk="ust"');
+  const son = bas >= 0 ? kod.indexOf("</header>", bas) : -1;
+  const cubuk = bas >= 0 && son > bas ? kod.slice(bas, son) : "";
+  kontrol("üst çubuk bloğu bulundu", cubuk.length > 0);
+
+  /** `hidden` TEK BAŞINA bir sınıf olmalı (`md:hidden` sayılmaz). */
+  const telefondaGizli = (sinif: string) => sinif.split(/\s+/).includes("hidden");
+  const tetik = /<SidebarTrigger[^>]*className="([^"]*)"/.exec(cubuk);
+  kontrol(
+    "menü düğmesi telefonda çizilmez (alt çubukta «Menü» var)",
+    tetik !== null && telefondaGizli(tetik[1] ?? "") && (tetik[1] ?? "").includes("md:inline-flex"),
+    tetik?.[1],
+  );
+  const ev = /<Link\s+href="\/"\s+className="([^"]*)"/.exec(cubuk);
+  kontrol(
+    "«Bezirga» ev bağlantısı telefonda çizilmez (alt çubukta «Panel» var)",
+    ev !== null && telefondaGizli(ev[1] ?? "") && (ev[1] ?? "").includes("md:inline-flex"),
+    ev?.[1],
+  );
+
+  const sagBas = cubuk.indexOf('className="ms-auto');
+  const sag = sagBas >= 0 ? cubuk.slice(sagBas) : "";
+  const sagSinif = /^className="([^"]*)"/.exec(sag)?.[1] ?? "";
+  const aralik = /(?:^|\s)gap-(\d+(?:\.\d+)?)(?:\s|$)/.exec(sagSinif);
+  const dolgu = /(?:^|\s)px-(\d+(?:\.\d+)?)(?:\s|$)/.exec(/<header[\s\S]*?className="([^"]*)"/.exec(kod.slice(kod.lastIndexOf("<header", bas)))?.[1] ?? "");
+  const dugmeSayisi = (sag.match(/<[A-Z][A-Za-z]*\b[^>]*\/>/g) ?? []).length;
+  kontrol(`sağ blokta düğme bulundu (${dugmeSayisi})`, dugmeSayisi >= 5);
+  kontrol("telefon aralığı ve dolgu okundu", aralik !== null && dolgu !== null, { sagSinif });
+  if (aralik !== null && dolgu !== null) {
+    const genislik =
+      dugmeSayisi * DUGME + (dugmeSayisi - 1) * Number(aralik[1]) * 4 + 2 * Number(dolgu[1]) * 4;
+    kontrol(
+      `telefonda üst çubuk ${genislik} px ≤ ${TELEFON_GENISLIGI} px (${dugmeSayisi} düğme)`,
+      genislik <= TELEFON_GENISLIGI,
+    );
+  }
+}
+
 console.log("");
 if (basarisiz === 0) {
   console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);

@@ -628,14 +628,14 @@ ${adimlar([
 
 <h3>Telefonda ekran nasıl görünür</h3>
 ${ekranSemasi("Panel", [
-  { no: 1, ad: "Üst çubuk", aciklama: "Solda menüyü açan düğme, sağda hedefler (ciroyu görme yetkiniz varsa), tema, El Kitabı kısayolu, sorun bildirme, yeni sipariş sesi ve uyarı çanı.", genis: true },
+  { no: 1, ad: "Üst çubuk", aciklama: "Telefonda yalnız düğmeler durur: hedefler (ciroyu görme yetkiniz varsa), tema, El Kitabı kısayolu, sorun bildirme, yeni sipariş sesi ve uyarı çanı. Menü ve Panel alt çubuktadır.", genis: true },
   { no: 2, ad: "Sayfanın kendisi", aciklama: "Telefonda tablolar kart kart alt alta dizilir; her kartta kodlar ve eylem düğmeleri durur.", genis: true },
   { no: 3, ad: "Alt çubuk", aciklama: "Panel · Satışlar · Paketle · Alımlar · Menü — her ekranda sabit.", genis: true, vurgulu: true },
 ])}
 ${adimlar([
   {
     ad: "Üst çubuk",
-    ne: "Sol baştaki çerçeveli düğme sol menüyü açar. Kitap simgesi bu El Kitabı'nı açar — bir şeyi bilmediğiniz anda en kısa yol odur.",
+    ne: "Menüye alt çubuktaki «Menü»den, panele «Panel»den ulaşılır; telefonda üst çubukta bu ikisi tekrar edilmez, yer düğmelere kalır. Kitap simgesi bu El Kitabı'nı açar — bir şeyi bilmediğiniz anda en kısa yol odur.",
   },
   {
     ad: "Sayfa",
@@ -703,8 +703,8 @@ ${sikHata([
 ${baslik("panel")}
 <p><strong>Sol menüde en üstteki <em>Panel</em>.</strong> Giriş yapınca açılan
 sayfa burasıdır ve tek bir soruya cevap verir: <em>bugün ne oldu, neye
-bakmam gerek.</em> Üst çubuktaki marka adına basınca da her ekrandan buraya
-dönersiniz.</p>
+bakmam gerek.</em> Bilgisayarda üst çubuktaki marka adına, telefonda alt
+çubuktaki «Panel»e basınca her ekrandan buraya dönersiniz.</p>
 ${neZaman(
   "Her sabah ilk açtığın yer. Gün içinde bir şey ters gittiğini hissedersen de önce buraya bak — rakamlar, bekleyen işler ve kanal durumları burada toplanır.",
 )}

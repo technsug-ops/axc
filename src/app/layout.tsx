@@ -323,15 +323,24 @@ export default async function RootLayout({
                     (durağan halde görünmez). Telefonda bu hem çok küçük bir
                     dokunma hedefi (Android asgarisi 48dp) hem de görünmez bir
                     düğme. Mobilde 44px + çerçeveli, masaüstünde eski boyutunda.
+
+                    ⚠ TELEFONDA ÇİZİLMEZ — bu düğme ve «Bezirga» ev bağlantısı
+                    (kullanıcı ekran görüntüsü 22.10.2026): ikisi + altı düğme
+                    ~500 px tutuyordu, ekran 360 px; çan dışarıda kalıyor, taşan
+                    çubuk sayfayı genişletip telefonu UZAKLAŞTIRIYORDU («ekran
+                    yarım çıkıyor»). İkisi telefonda alt çubukta zaten var:
+                    «Menü» ve «Panel» (`AltCubuk`, yalnız telefonda). Kalan altı
+                    düğme 6×44 + 5×6 = 294 px — 320 px telefona da sığar.
+                    Bekçi: `yerlesim:dogrula` (3. bölüm).
                   */}
                   <SidebarTrigger
                     variant="outline"
                     aria-label={ortak("menuyuAc")}
-                    className="size-11 shrink-0 md:size-8"
+                    className="hidden shrink-0 md:inline-flex md:size-8"
                   />
                   <Link
                     href="/"
-                    className="hover:bg-accent inline-flex items-center gap-2 rounded-md px-2 py-2 font-semibold transition-colors"
+                    className="hover:bg-accent hidden items-center gap-2 rounded-md px-2 py-2 font-semibold transition-colors md:inline-flex"
                   >
                     <Home className="size-4" />
                     {UYGULAMA.ad}
@@ -342,7 +351,7 @@ export default async function RootLayout({
                     Kendi verisini bağlandıktan sonra çekiyor; kök layout'a
                     sorgu koymak uygulamadaki her sayfayı bekletirdi.
                   */}
-                  <div className="ms-auto flex items-center gap-2">
+                  <div className="ms-auto flex items-center gap-1.5 md:gap-2">
                     {/* HEDEFLER (K349-③, kullanıcı 21.10.2026): panelde kart değil, üst çubukta
                         düğme → /hedefler; hedef geçilince kutlama penceresi. Ciroyu görmeyene çizilmez. */}
                     {baglam?.izinler.has("satis.gor") ? <HedefDugmesi /> : null}
