@@ -14,9 +14,11 @@
  * ============================================================================
  */
 
-import { readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import { EKRANLAR, EKRAN_KLASORU, ekranAdresi } from "../src/lib/el-kitabi/ekranlar";
+import { ekranlariGom } from "../src/lib/el-kitabi/uret";
 import { MENU_KATALOGU } from "../src/lib/menu/katalog";
 import { kaynakOku } from "./kaynak-oku";
 
@@ -125,6 +127,45 @@ console.log("\nEL KİTABI — DOĞRULAMA\n");
   kontrol(
     "her bölüm başlığında «↑ İçindekiler» dönüş bağlantısı var",
     /<h2 class="bolum">[^`]*href="#icindekiler"[^`]*<\/h2>/.test(fonk("baslik")),
+  );
+
+  /**
+   * EKRAN GÖRÜNTÜLERİ (K350-③, kullanıcı 21.10.2026). Söz: listedeki her görüntünün
+   * dosyası VAR, makul boyutta, bozuk değil, gittiği bölüm kitapta VAR; başlık onları
+   * çizer; indirilen tek dosya onları GÖMER ve gömülecek dosyalar sunucu paketine girer.
+   */
+  const yol = "public/" + EKRAN_KLASORU;
+  kontrol("ekran görüntüsü listesi dolu (en az 10)", EKRANLAR.length >= 10, EKRANLAR.length);
+  const sorunlu = EKRANLAR.flatMap((e) => {
+    const dosya = join(yol, `${e.ad}.jpg`);
+    if (!existsSync(dosya)) return [`${e.ad}: dosya yok`];
+    const b = readFileSync(dosya);
+    if (b.length < 10_000 || b.length > 400_000) return [`${e.ad}: boyut ${b.length}`];
+    if (b[0] !== 0xff || b[1] !== 0xd8 || b[b.length - 2] !== 0xff || b[b.length - 1] !== 0xd9) return [`${e.ad}: bozuk JPEG`];
+    if (!listedekiler.includes(e.bolum)) return [`${e.ad}: bölüm yok (${e.bolum})`];
+    return [];
+  });
+  kontrol("her görüntünün dosyası var, 10–400 KB, sağlam JPEG ve bölümü kitapta", sorunlu.length === 0, sorunlu);
+  kontrol("görüntü adları tekil", new Set(EKRANLAR.map((e) => e.ad)).size === EKRANLAR.length);
+  kontrol(
+    "bölüm başlığı görüntüleri çiziyor (h2'nin hemen ardından)",
+    fonk("baslik").includes("</h2>${ekranGorselleri(kimlik)}`"),
+  );
+  kontrol(
+    "görüntüler bölüme göre süzülüyor ve «örnek veri» altyazısı taşıyor",
+    /EKRANLAR\.filter\(\(e\) => e\.bolum === kimlik\)/.test(fonk("ekranGorselleri")) &&
+      fonk("ekranGorselleri").includes("Örnek veriyle çekildi."),
+  );
+  const ornekAd = EKRANLAR[0]?.ad ?? "yok";
+  const gomulu = ekranlariGom(`<img src="${ekranAdresi(ornekAd)}"><img src="${ekranAdresi("olmayan-dosya")}"><img src="/baska/${ornekAd}.jpg">`);
+  kontrol("indirilen dosyada var olan görüntü GÖMÜLÜYOR", gomulu.includes('src="data:image/jpeg;base64,'), gomulu.slice(0, 80));
+  kontrol("bulunamayan görüntünün adresi olduğu gibi KALIYOR (sessizce silinmiyor)", gomulu.includes(`src="${ekranAdresi("olmayan-dosya")}"`));
+  kontrol("başka klasördeki resme DOKUNULMUYOR", gomulu.includes(`src="/baska/${ornekAd}.jpg"`));
+  const uretKaynak = kaynakOku("src/lib/el-kitabi/uret.ts");
+  kontrol("indirilen tek dosya gövdeyi gömerek basıyor", /<body>\s*\$\{ekranlariGom\(govde\)\}\s*<\/body>/.test(uretKaynak));
+  kontrol(
+    "görüntüler indirme ucunun sunucu paketine giriyor (next.config)",
+    /outputFileTracingIncludes:\s*\{\s*"\/api\/el-kitabi":\s*\["\.\/public\/kitap-ekran\/\*\*"\]\s*\}/.test(kaynakOku("next.config.ts")),
   );
 }
 

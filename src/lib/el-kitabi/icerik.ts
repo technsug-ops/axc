@@ -1,5 +1,6 @@
 import type { ElKitabiVerisi } from "./veri";
 import { UYGULAMA } from "@/lib/uygulama";
+import { EKRANLAR, ekranAdresi } from "./ekranlar";
 
 /**
  * ============================================================================
@@ -217,12 +218,26 @@ function konuHaritasi(): string {
   return `<nav id="icindekiler" class="ek-harita" aria-label="Konu haritası"><h2 class="bolum">İçindekiler</h2><div class="ek-harita-izgara">${kutular}</div></nav>`;
 }
 
+/**
+ * Bölümün ekran görüntüleri (K350-③, kullanıcı 21.10.2026: «el kitabına ekran görüntüleriyle
+ * destek sağla»). Başlığın hemen altına konur; ÖRNEK veriden çekildikleri altyazıda yazar —
+ * okuyan, rakamları kendi defteri sanmasın. İndirilen tek dosyada `uret.ts` bunları gömer.
+ */
+function ekranGorselleri(kimlik: string): string {
+  return EKRANLAR.filter((e) => e.bolum === kimlik)
+    .map(
+      (e) =>
+        `<figure class="ek-ekran${e.boyut === "TELEFON" ? " telefon" : ""}"><img src="${ekranAdresi(e.ad)}" alt="${kacir(e.aciklama)}" loading="lazy"><figcaption>${kacir(e.aciklama)} <span>Örnek veriyle çekildi.</span></figcaption></figure>`,
+    )
+    .join("");
+}
+
 function baslik(kimlik: string): string {
   const sira = BOLUMLER.findIndex((b) => b.kimlik === kimlik);
   const b = BOLUMLER[sira];
   const grup = GRUPLAR.find((g) => g.kimlikler[0] === kimlik);
   const grupBasi = grup ? `<div class="ek-grup-basi">${grup.ad}</div>` : "";
-  return `${grupBasi}<h2 class="bolum"><b>${iki(sira + 1)}</b>${b.ad}<a class="ek-yukari" href="#icindekiler">↑ İçindekiler</a></h2>`;
+  return `${grupBasi}<h2 class="bolum"><b>${iki(sira + 1)}</b>${b.ad}<a class="ek-yukari" href="#icindekiler">↑ İçindekiler</a></h2>${ekranGorselleri(kimlik)}`;
 }
 
 /** Canlı listeden tablo. Liste boşsa "henüz tanımlı değil" der. */

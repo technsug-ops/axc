@@ -1,4 +1,7 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { EL_KITABI_BICEMI } from "./bicem";
+import { EKRAN_KLASORU } from "./ekranlar";
 import { UYGULAMA } from "@/lib/uygulama";
 import { elKitabiGovdesi } from "./icerik";
 import { elKitabiVerisi } from "./veri";
@@ -13,6 +16,24 @@ import { elKitabiVerisi } from "./veri";
 export async function elKitabiParcalari(uretimTarihi: string) {
   const veri = await elKitabiVerisi();
   return { bicem: EL_KITABI_BICEMI, govde: elKitabiGovdesi(veri, uretimTarihi) };
+}
+
+/**
+ * EKRAN GÖRÜNTÜLERİNİ GÖM (K350-③). İndirilen dosya internetsiz ve girişsiz açılır;
+ * `/kitap-ekran/…` adresi orada boşa düşerdi. Dosyalar sunucu paketine
+ * `next.config.ts` → `outputFileTracingIncludes` ile girer. Okunamayan görüntü
+ * SESSİZ düşmez: günlüğe tam yazılır ve adres olduğu gibi kalır (uygulamada görünür).
+ */
+export function ekranlariGom(govde: string, kok = process.cwd()): string {
+  return govde.replace(new RegExp(`src="/${EKRAN_KLASORU}/([a-z0-9-]+)\\.jpg"`, "g"), (tum, ad: string) => {
+    try {
+      const veri = readFileSync(join(kok, "public", EKRAN_KLASORU, `${ad}.jpg`)).toString("base64");
+      return `src="data:image/jpeg;base64,${veri}"`;
+    } catch (hata) {
+      console.error(`[el-kitabi] ekran görüntüsü gömülemedi: ${ad}`, hata);
+      return tum;
+    }
+  });
 }
 
 /** Tarayıcıda tek başına açılabilen, dışa bağımlılığı olmayan belge. */
@@ -32,7 +53,7 @@ ${bicem}
 </style>
 </head>
 <body>
-${govde}
+${ekranlariGom(govde)}
 </body>
 </html>`;
 }

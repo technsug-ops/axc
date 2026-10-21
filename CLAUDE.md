@@ -497,7 +497,9 @@ zorlaştıracak şekilde yazılmıyor.
   navigasyon, form gönderimi, diyalog açma. Sadece HTTP durum kontrolü
   yeterli değildir.
   Projede tarayıcı otomasyonu YOK (karar 08.08.2026, Faz 4'te yeniden
-  değerlendirilecek). Bu doğrulamayı kullanıcı gerçek cihazda yapar;
+  değerlendirilecek). _İstisna 21.10.2026 (kullanıcı «otomatik betik» seçti):
+  Playwright YALNIZ el kitabı ekran görüntülerini örnek veriden çeker
+  (`npm run ekran:cek`); mobil doğrulamanın yerine GEÇMEZ._ Bu doğrulamayı kullanıcı gerçek cihazda yapar;
   teslim raporunda "mobil doğrulama kullanıcıda" satırı açıkça yazılır.
 
 ## HALİL TESTİ — paketin kapanma şartı (KESİN KURAL)

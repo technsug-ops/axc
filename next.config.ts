@@ -50,6 +50,12 @@ const nextConfig: NextConfig = {
    * Üretimde (Vercel) böyle bir kısıt yoktur; bu ayarın karşılığı yoktur.
    */
   allowedDevOrigins: ["192.168.178.59"],
+  /**
+   * EL KİTABI EKRAN GÖRÜNTÜLERİ (K350-③) — indirilen tek dosya görüntüleri İÇİNE gömer
+   * (`src/lib/el-kitabi/uret.ts` → `ekranlariGom`). `public/` sunucu işlevinin paketine
+   * kendiliğinden girmez; girmezse indirilen kitap görüntüsüz çıkar.
+   */
+  outputFileTracingIncludes: { "/api/el-kitabi": ["./public/kitap-ekran/**"] },
 };
 
 export default nextIntlIle(nextConfig);

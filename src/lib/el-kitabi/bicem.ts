@@ -99,6 +99,11 @@ export const EL_KITABI_BICEMI = `
 .ek-grup a:hover{color:var(--vurgu);background:var(--vurgu-yumusak)}
 .ek-grup-basi{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--murekkep-3);font-weight:700;padding-top:12px}
+.ek-ekran{margin:4px 0 6px;display:flex;flex-direction:column;gap:6px;max-width:100%}
+.ek-ekran img{display:block;width:100%;height:auto;border:1px solid var(--cizgi);border-radius:10px;box-shadow:var(--golge);background:var(--yuzey)}
+.ek-ekran.telefon{max-width:300px}
+.ek-ekran figcaption{font-size:.84rem;color:var(--murekkep-2);max-width:68ch}
+.ek-ekran figcaption span{color:var(--murekkep-3)}
 .ek h2.bolum .ek-yukari{margin-left:auto;font-family:var(--sans);font-size:12.5px;font-weight:500;
   letter-spacing:0;white-space:nowrap;text-decoration:none;align-self:center;padding:10px 0 10px 8px}
 .ek-icerik{padding-top:36px;min-width:0;display:flex;flex-direction:column;gap:48px}
