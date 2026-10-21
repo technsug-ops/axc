@@ -7,7 +7,9 @@
  *  olsaydı biri güncellenir öteki unutulurdu.
  *
  *  Renkler konunun kendi dünyasından: sistemin çekirdeği STOK DEFTERİ, o
- *  yüzden muhasebe defteri kâğıdı (soluk yeşil zemin, ince yatay çizgiler).
+ *  yüzden muhasebe defteri tonları (soluk yeşil zemin). Kapaktaki şeritli
+ *  «defter çizgisi» 21.10.2026'da kaldırıldı: ekranda hata gibi duruyordu
+ *  (kullanıcı: «saçma bir tasarım»); kapak artık kısa, düz bir başlık bandı.
  *  Uyarı ve tehlike tonları uygulamanın kendi uyarı renkleriyle aynı aileden.
  * ============================================================================
  */
@@ -52,16 +54,15 @@ export const EL_KITABI_BICEMI = `
 }
 .ek-kapak{
   border-bottom:1px solid var(--cizgi);
-  background:repeating-linear-gradient(to bottom,transparent 0 27px,
-    color-mix(in srgb,var(--vurgu) 5%,transparent) 27px 54px),var(--yuzey);
-  padding:44px 24px 36px;
+  background:var(--yuzey);
+  padding:24px 24px 22px;
 }
-.ek-kapak-ic{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.ek-kapak-ic{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .ek-rozet{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--vurgu);display:flex;gap:10px;flex-wrap:wrap}
 .ek-rozet span::after{content:"·";margin-left:10px;color:var(--murekkep-3)}
 .ek-rozet span:last-child::after{content:""}
-.ek h1{font-family:var(--serif);font-size:clamp(2rem,5vw,3.2rem);line-height:1.06;
+.ek h1{font-family:var(--serif);font-size:clamp(1.7rem,4vw,2.3rem);line-height:1.1;
   font-weight:600;letter-spacing:-.015em;margin:0;text-wrap:balance}
 .ek-kapak p{margin:0;max-width:62ch;font-size:1.05rem;color:var(--murekkep-2)}
 .ek-duzen{max-width:1180px;margin:0 auto;padding:0 24px 80px;display:grid;

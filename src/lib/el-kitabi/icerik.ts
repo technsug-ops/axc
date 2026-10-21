@@ -373,7 +373,6 @@ export function elKitabiGovdesi(
   <div class="ek-rozet">
     <span>Kullanıcı El Kitabı</span>
     <span>${kacir(uretimTarihi)}</span>
-    <span>Sürüm bilgisi kapakta durur; kurulum sayıları DURMAZ</span>
   </div>
   <h1>${UYGULAMA.ad}</h1>
   <p>Çok kanallı e-ticaret operasyonunuzun tek defteri: ne aldınız, ne sattınız,
