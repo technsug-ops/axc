@@ -1,3 +1,4 @@
+import { izYaz } from "@/lib/iz";
 import { prisma } from "@/lib/prisma";
 import { SUNUCU_HATASI_EYLEMI, sunucuHatasiCoz, sunucuHatasiIzi, type HataBaglami, type HataIstegi } from "@/lib/hata/sunucu-hatasi";
 
@@ -10,7 +11,9 @@ export async function sunucuHatasiniKaydet(hata: unknown, istek: HataIstegi, bag
   const iz = sunucuHatasiIzi(hata, istek, baglam);
   if (iz === null) return;
   try {
-    await prisma.auditLog.create({ data: iz });
+    /* Ortak iz gövdesi (`iz:dogrula` çıplak yazımı yasaklıyor): hatayı yaşayan
+       kullanıcı kendiliğinden damgalanır; oturum okunamazsa boş kalır. */
+    await izYaz(iz);
   } catch (yazimHatasi) {
     /* Veritabanı yoksa iz yazılamaz (ekran zaten «veritabanına ulaşılamıyor» der).
        Sessiz geçilmez: hem asıl hata hem yazım hatası sunucu günlüğüne TAM. */

@@ -88,7 +88,7 @@ console.log("\n2) KANCA ve YAZICI — kaynak");
   const yazici = yorumsuz(kaynakOku("src/lib/hata/sunucu-hatasi-kaydi.ts"));
   const govdeBas = yazici.indexOf("export async function sunucuHatasiniKaydet(");
   const govde = govdeBas >= 0 ? yazici.slice(govdeBas, yazici.indexOf("\n}", govdeBas)) : "";
-  kontrol("yazıcı izi saf gövdeden kurup yazıyor", /const iz = sunucuHatasiIzi\(hata, istek, baglam\);\s*if \(iz === null\) return;\s*try \{\s*await prisma\.auditLog\.create\(\{ data: iz \}\);/.test(govde));
+  kontrol("yazıcı izi saf gövdeden kurup yazıyor", /const iz = sunucuHatasiIzi\(hata, istek, baglam\);\s*if \(iz === null\) return;\s*try \{\s*await izYaz\(iz\);/.test(govde));
   kontrol("  ...yazım düşerse SESSİZ değil (sunucu günlüğüne tam)", /\} catch \(yazimHatasi\) \{\s*console\.error\([^)]*yazimHatasi[^)]*iz\.detail\);\s*\}/.test(govde));
   kosanBolumler.push("kanca");
 }
