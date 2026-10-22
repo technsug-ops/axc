@@ -5458,6 +5458,22 @@
     "aramaListeBaslik": "Arama sonuçları ({sayi})"
   },
   "GeceTuru": {
+    "hataBaslik": "Son sunucu hataları (7 gün)",
+    "hataSayisi": "{sayi} hata",
+    "hataYok": "Son 7 günde sunucu hatası yok.",
+    "hataDogum": "Bu kayıt {tarih} tarihinde başladı; ondan önceki günler için «hata yok» bir hüküm değildir.",
+    "hataGosterilen": "En yeni {adet} tanesi gösteriliyor.",
+    "hataKod": "Hata kodu",
+    "hataKodYok": "kod yok",
+    "hataKirpildi": "Mesaj çok uzundu, kısaltılarak kaydedildi.",
+    "hataNeIse": "«Bu ekran çizilemedi» gördüğünüzde ekrandaki hata kodu burada aynı satırda durur; sebep satırın altında yazar.",
+    "hataTur": {
+      "render": "Sayfa",
+      "route": "API",
+      "action": "İşlem",
+      "proxy": "Kapı",
+      "bilinmiyor": "Bilinmiyor"
+    },
     "yayinBaslik": "Canlı yayın",
     "yayinCanli": "Canlıdaki sürüm",
     "yayinAna": "GitHub'daki son sürüm",

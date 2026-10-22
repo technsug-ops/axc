@@ -5458,6 +5458,22 @@
     "aramaListeBaslik": ""
   },
   "GeceTuru": {
+    "hataBaslik": "",
+    "hataSayisi": "",
+    "hataYok": "",
+    "hataDogum": "",
+    "hataGosterilen": "",
+    "hataKod": "",
+    "hataKodYok": "",
+    "hataKirpildi": "",
+    "hataNeIse": "",
+    "hataTur": {
+      "render": "",
+      "route": "",
+      "action": "",
+      "proxy": "",
+      "bilinmiyor": ""
+    },
     "yayinBaslik": "",
     "yayinCanli": "",
     "yayinAna": "",

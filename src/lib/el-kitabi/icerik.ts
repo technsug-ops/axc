@@ -4606,12 +4606,14 @@ sitenin güncel olup olmadığını gösterir.</p>
 ${neZaman("Üst çubuktaki uyarı çanında «Gece bekçi turunda … sorun» satırı çıktığında. Günlük işte buraya gelmeniz gerekmez.")}
 ${ekranSemasi("Gece bekçi turu", [
   { no: 1, ad: "Canlı yayın", aciklama: "Canlı site son sürümle mi çalışıyor: Güncel · Yayımlanıyor · GERİDE · Ölçülemedi.", genis: true, vurgulu: true },
-  { no: 2, ad: "Kaçan gece uyarısı", aciklama: "Yalnız son tur 36 saatten eskiyse çıkan kırmızı kutu.", genis: true },
-  { no: 3, ad: "Gece turları listesi", aciklama: "Her gece bir satır: saat, sonuç (Yeşil · 170/171 gibi), sürüm, süre ve varsa kırmızı denetimler.", genis: true },
+  { no: 2, ad: "Son sunucu hataları", aciklama: "Son 7 günde sunucuda oluşan hatalar: saat, ekran, hata kodu ve sebep. Hata yoksa «hata yok» yazar.", genis: true },
+  { no: 3, ad: "Kaçan gece uyarısı", aciklama: "Yalnız son tur 36 saatten eskiyse çıkan kırmızı kutu.", genis: true },
+  { no: 4, ad: "Gece turları listesi", aciklama: "Her gece bir satır: saat, sonuç (Yeşil · 170/171 gibi), sürüm, süre ve varsa kırmızı denetimler.", genis: true },
 ])}
 ${adimlar([
   { ad: "Canlı yayın kutusuna bakın", ne: "«Güncel» yazıyorsa canlı site son sürümle çalışıyor. «Yayımlanıyor» birkaç dakikalık normal bekleyiştir. <strong>«GERİDE»</strong> yazıyorsa son sürüm o kadar dakikadır yayımlanmamış demektir; kutunun altındaki adımları uygulayın ya da geliştiriciye haber verin. «Ölçülemedi» bir hüküm DEĞİLDİR — «güncel» anlamına gelmez." },
-  { ad: "Kırmızı kutu var mı", ne: "Son tur 36 saatten eskiyse ekran «en az bir gece KAÇMIŞ» der. Tur, bilgisayar açıkken gece 00:30'da koşar; bilgisayar kapalıysa o gece kaçar. Kaçan gece sessiz geçmez, burada yazar." },
+  { ad: "«Bu ekran çizilemedi» gördüyseniz", ne: "O ekrandaki <strong>Hata kodu</strong>nu not edin ve buraya gelin: «Son sunucu hataları» kutusunda aynı kod bir satırda durur, sebebi altında yazar. Kodu ve sebebi olduğu gibi geliştiriciye iletin." },
+  { ad: "Kırmızı kutu var mı", ne: "Son tur 36 saatten eskiyse ekran «en az bir gece KAÇMIŞ» der. Tur her gece iki yerde koşar: GitHub'da (bilgisayardan bağımsız) ve bilgisayar açıksa bilgisayarda; listede her gece iki satır görebilirsiniz. Kaçan gece sessiz geçmez, burada yazar." },
   { ad: "Son satırın sonucunu okuyun", ne: "<strong>Yeşil</strong> = bütün kontroller geçti. <strong>Kırmızı</strong> = en az bir denetim düştü; altında adı yazar. «Tur koşamadı — hazırlık düştü» ya da «sonucu okunamadı» da birer sorun satırıdır, yeşil sayılmaz." },
   { ad: "Kırmızıyı geliştiriciye iletin", ne: "Kırmızı denetimin altında «İlk kırmızı: …» satırı varsa sistem o kontrolü hangi sürümün bozduğunu kendisi bulmuştur. Denetim adını ve bu satırı olduğu gibi iletin." },
 ])}

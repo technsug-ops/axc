@@ -8,6 +8,10 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { sayfaIzni } from "@/lib/yetki";
 import { yayinDurumunuOlc } from "@/lib/yayin-boslugu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { sonSunucuHatalari, SUNUCU_HATASI_IZI_BASLANGICI } from "@/lib/hata/sunucu-hatasi-kaydi";
+
+const HATA_TURLERI = ["render", "route", "action", "proxy"] as const;
+const HATA_GOSTERILEN = 20;
 
 /**
  * ============================================================================
@@ -34,6 +38,7 @@ export default async function GeceTuruSayfasi() {
   const simdi = new Date();
   const sorun = geceTuruSorunu(kayitlar[0] ?? null, simdi);
   const yayin = await yayinDurumunuOlc(simdi);
+  const hatalar = await sonSunucuHatalari(7, HATA_GOSTERILEN);
   const saatOnce = kayitlar[0] ? Math.floor((simdi.getTime() - kayitlar[0].zaman.getTime()) / 3600_000) : 0;
 
   return (
@@ -70,6 +75,44 @@ export default async function GeceTuruSayfasi() {
               <span>{t("yayinItildi", { zaman: bicim.tarihSaat(yayin.itildiAt) })}</span>
             ) : null}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* K353 — sunucu hataları: «Bu ekran çizilemedi»nin sebebi. Sıfırken de durur ve
+          izin doğum tarihini söyler (kayıt açılmadan önceki sessizlik hüküm değildir). */}
+      <Card>
+        <CardContent className="space-y-3 p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-medium">{t("hataBaslik")}</p>
+            <p className={`text-sm ${hatalar.toplam > 0 ? DURUM_YAZISI.olumsuz : DURUM_YAZISI.olumlu}`}>
+              {hatalar.toplam > 0 ? t("hataSayisi", { sayi: hatalar.toplam }) : t("hataYok")}
+            </p>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            {t("hataNeIse")} {t("hataDogum", { tarih: SUNUCU_HATASI_IZI_BASLANGICI })}
+          </p>
+          {hatalar.satirlar.length > 0 ? (
+            <ul className="divide-y rounded-md border">
+              {hatalar.satirlar.map((h, i) => (
+                <li key={i} className="space-y-1 px-3 py-2">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                    <span className="font-medium">{bicim.tarihSaat(h.zaman)}</span>
+                    <span>{t(`hataTur.${HATA_TURLERI.find((x) => x === h.tur) ?? "bilinmiyor"}`)}</span>
+                    <span className="font-mono break-all">{h.yol}</span>
+                    <span className="flex items-center gap-1">
+                      {t("hataKod")}:{" "}
+                      {h.digest ? <KopyalanabilirKod deger={h.digest} etiket={t("hataKod")} /> : t("hataKodYok")}
+                    </span>
+                  </div>
+                  <p className={`font-mono text-xs break-words whitespace-pre-wrap ${DURUM_YAZISI.olumsuz}`}>{h.mesaj}</p>
+                  {h.mesajKirpildi ? <p className="text-muted-foreground text-xs">{t("hataKirpildi")}</p> : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {hatalar.toplam > hatalar.satirlar.length ? (
+            <p className="text-muted-foreground text-xs">{t("hataGosterilen", { adet: hatalar.satirlar.length })}</p>
+          ) : null}
         </CardContent>
       </Card>
 
