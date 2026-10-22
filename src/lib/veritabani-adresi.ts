@@ -89,10 +89,18 @@
  * Bedeli: ilave bağlantı kurulumu ~0,5 sn (12.10 ölçümü) — kesintiden çok küçük.
  * ⛔ `minimumIdle=0` YASAĞI AYNEN GEÇERLİ.
  */
+/**
+ * ⛔ 5 → 3 ve boşta fazlası 60 → 15 sn (K359, kullanıcı «1 ve 2'yi yap» 22.10.2026) —
+ * 13.10 «5 yap» kararı ve hız ölçümü SİLİNMEDİ; bedeli ölçüldü. 8 saatlik prob (22.10,
+ * dakikada bir, 481 ölçüm): bizim kullanıcı ortanca 12 · en çok 25 bağlantı; 13:55 ve
+ * 16:59 UTC'de prob `ER_TOO_MANY_USER_CONNECTIONS` aldı ve AYNI dakikalarda Vercel
+ * `pool timeout` verdi. Kopya başına tepe 5 → 3, fazla bağlantı 15 sn'de bırakılır.
+ * Bedeli: panel ana okuması ~2,1 → ~2,3 sn (13.10 yerel ölçüm, 4 ↔ 3 bağlantı).
+ */
 const UYGULAMA_HAVUZU = {
-  connectionLimit: "5",
+  connectionLimit: "3",
   minimumIdle: "1",
-  idleTimeout: "60",
+  idleTimeout: "15",
 } as const;
 
 /** Sayfa havuzunun üst sınırı (yoğunlukta açılabilecek bağlantı). */

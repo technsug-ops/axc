@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
 import { ARKA_PLAN_HAVUZU, SAYFA_HAVUZU_BOYUTU, SICAK_TUTULAN_BAGLANTI, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
 import { BOSLUK_ESIGI_MS, erisimBoslugu, erisimBosluguCoz } from "../src/lib/veritabani-erisim";
+import { havuzTakildiMi, ONARIM_ARALIGI_MS, onarimYapilsinMi } from "../src/lib/havuz-onarimi";
 
 /**
  * ============================================================================
@@ -198,8 +199,22 @@ console.log("\n5) ARKA PLAN HAVUZU (K332)");
      kuyruk kilidi riski). İki havuzu artık AYIRAN değer `minimumIdle` (3 ↔ 1). */
   /* ⚠ 13.10.2026 «5 yap»: sayfa havuzu 3 → 5 (gerekçe ve bütçe `veritabani-adresi.ts`te). */
   /* ⛔ K355 (22.10.2026): sayfa havuzu boşta 5 → 1 (kota tükenmesi; gerekçe `veritabani-adresi.ts`). */
-  kontrol("  ...değer: işaret yokken sayfa havuzu (5 · boşta 1), varken arka plan havuzu (3 · boşta 1)",
-    once.connectionLimit === "5" && once.minimumIdle === "1" && SAYFA_HAVUZU_BOYUTU === 5 && SICAK_TUTULAN_BAGLANTI === 1 && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1", { once, sonra });
+  /* ⛔ K359 (22.10.2026): sayfa havuzu 5 → 3, boşta fazlası 60 → 15 sn (8 saatlik prob: kota 25'e dayandı). */
+  kontrol("  ...değer: işaret yokken sayfa havuzu (3 · boşta 1 · 15 sn), varken arka plan havuzu (3 · boşta 1)",
+    once.connectionLimit === "3" && once.minimumIdle === "1" && once.idleTimeout === "15" && SAYFA_HAVUZU_BOYUTU === 3 && SICAK_TUTULAN_BAGLANTI === 1 && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1", { once, sonra });
+  /* K359 — TAKILAN HAVUZ KENDİNİ YENİLER: karar DEĞERLE, bağ kaynakla. */
+  const takili = new Error("pool timeout: failed to retrieve a connection from pool after 10000ms\n    (pool connections: active=0 idle=0 limit=5)");
+  kontrol("  havuz onarımı: 22.10 mesajı «takıldı» sayılır", havuzTakildiMi(takili));
+  kontrol("  ...dolu havuzda bekleme (active=3) takılma DEĞİL", !havuzTakildiMi(new Error("pool timeout: failed to retrieve a connection from pool after 10000ms (pool connections: active=3 idle=0 limit=3)")));
+  kontrol("  ...başka veritabanı hatası takılma DEĞİL", !havuzTakildiMi(new Error("Unique constraint failed")) && !havuzTakildiMi("active=0 idle=0"));
+  kontrol("  ...ilk yenileme serbest, 30 sn içinde ikincisi YOK (fırtına yok), sonra serbest",
+    onarimYapilsinMi(null, 1000) && !onarimYapilsinMi(1000, 1000 + ONARIM_ARALIGI_MS - 1) && onarimYapilsinMi(1000, 1000 + ONARIM_ARALIGI_MS));
+  const pz = yorumsuz("src/lib/prisma.ts");
+  kontrol("  ...istemci her sorguyu sarıyor: takılırsa yeniler, hatayı YİNE fırlatır",
+    /async \$allOperations\(\{ args, query \}\) \{\s*try \{\s*return await query\(args\);\s*\} catch \(hata\) \{\s*if \(havuzTakildiMi\(hata\)\) istemciyiYenile\(sarili as unknown as PrismaClient\);\s*throw hata;/.test(pz));
+  kontrol("  ...yenileme aralık kapısından geçiyor ve eski istemciyi GECİKMELİ kapatıyor",
+    /if \(istemci !== bozuk \|\| !onarimYapilsinMi\(sonOnarim, simdi\)\) return;\s*sonOnarim = simdi;\s*istemci = undefined;/.test(pz) &&
+      /setTimeout\(\(\) => void bozuk\.\$disconnect\(\)\.catch\(\(\) => \{\}\), ESKI_ISTEMCI_KAPATMA_MS\);/.test(pz));
   /* KOTA BÜTÇESİ — boştaki her kopya `minimumIdle` kadar bağlantı tutar; 25'lik kotaya kaç
      boş kopya sığar? 20'nin altına düşerse (ör. biri yine 5 yaparsa) kırmızı. */
   const KOTA = 25;

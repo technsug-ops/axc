@@ -32,6 +32,7 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 import { havuzluAdres, uygulamaHavuzu } from "@/lib/veritabani-adresi";
+import { ESKI_ISTEMCI_KAPATMA_MS, havuzTakildiMi, onarimYapilsinMi } from "@/lib/havuz-onarimi";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -64,10 +65,40 @@ function createPrismaClient(): PrismaClient {
    */
   // Çekim uçları (`maxDuration` taşıyan) `lib/arka-plan-havuzu.ts`i içe alır ve
   // küçük havuz kurdurur (K332, 13.10.2026); sayfalar `UYGULAMA_HAVUZU`nda kalır.
-  return new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(url, uygulamaHavuzu()), { useTextProtocol: true }) });
+  const temel = new PrismaClient({ adapter: new PrismaMariaDb(havuzluAdres(url, uygulamaHavuzu()), { useTextProtocol: true }) });
+  /*
+   * K359 — TAKILAN HAVUZ KENDİNİ YENİLER (`lib/havuz-onarimi.ts`). Uzantı ham sorgular
+   * dahil HER sorguyu sarar (Prisma 7 belgesi: `$allOperations`); hata yine fırlatılır,
+   * yalnız istemci bir sonraki istek için yenilenir.
+   */
+  const sarili = temel.$extends({
+    query: {
+      async $allOperations({ args, query }) {
+        try {
+          return await query(args);
+        } catch (hata) {
+          if (havuzTakildiMi(hata)) istemciyiYenile(sarili as unknown as PrismaClient);
+          throw hata;
+        }
+      },
+    },
+  });
+  return sarili as unknown as PrismaClient;
 }
 
 let istemci: PrismaClient | undefined;
+let sonOnarim: number | null = null;
+
+/** K359 — bozuk istemciyi bırakır; sonraki erişim yenisini kurar. En çok 30 sn'de bir. */
+function istemciyiYenile(bozuk: PrismaClient) {
+  const simdi = Date.now();
+  if (istemci !== bozuk || !onarimYapilsinMi(sonOnarim, simdi)) return;
+  sonOnarim = simdi;
+  istemci = undefined;
+  if (globalForPrisma.prisma === bozuk) globalForPrisma.prisma = undefined;
+  console.error("[prisma] havuz takıldı (pool timeout · active=0 idle=0) — istemci yenileniyor");
+  setTimeout(() => void bozuk.$disconnect().catch(() => {}), ESKI_ISTEMCI_KAPATMA_MS);
+}
 
 function istemciyiAl(): PrismaClient {
   if (istemci) return istemci;
