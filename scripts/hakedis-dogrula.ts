@@ -24,6 +24,8 @@ import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
 
 import { gunDegeri, isGunuEkle, isGunuFarki, haftaSonuMu } from "../src/lib/donem";
 import { hbApiSatiriniOku } from "../src/lib/hakedis/hb-api-oku";
+import { hakedisGercekKesintileri, kesintiFarki } from "../src/lib/hakedis/gercek-kesinti";
+import { karHesapla } from "../src/lib/kar";
 import { GECICI_FATURA_NO, geciciFaturaKarari, geciciKopyaMi, type MevcutHakedisSatiri } from "../src/lib/hakedis/gecici-fatura";
 import {
   gecmisOdemeAnahtari,
@@ -68,7 +70,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 12;
+const BOLUM_SAYISI = 13;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1487,6 +1489,88 @@ console.log("\nGEÇİCİ FATURA NO «.» — KOPYA YERİNE TERFİ (K325-④)");
       /action: "HB_HAKEDIS_GECICI_TERFI"/.test(cekim));
 }
 kosanBolumler.push("gecici-fatura");
+
+// ===========================================================================
+console.log("\nHB GERÇEK KESİNTİ — HAKEDİŞTE KESİLEN ESAS (K325-⑦)");
+// ===========================================================================
+{
+  /*
+   * Kullanıcı kararı 22.10.2026: stopaj · ödeme gideri · hizmet bedeli hakedişte
+   * gerçekten kesilen tutardan; hizmet bedeli 31 gün içinde gelmezse 0. Canlı örnek
+   * 4117722758: STOPAJ −198,58 · TAHSILAT_BEDELI −190,63 · hizmet bedeli yok →
+   * eski döküm 220,66 · 211,83 · 12,60 idi. DEĞER testleri saf gövdeyi çağırır.
+   */
+  const an = new Date("2026-10-22T12:00:00Z");
+  const once = (g: number) => new Date(an.getTime() - g * 24 * 60 * 60 * 1000);
+  const s = (code: string, amount: number, gunOnce = 1, externalId = "HD4X") => ({ code, amount, externalId, createdAt: once(gunOnce) });
+  const temel = [s("SIPARIS_TUTARI", 23829.1, 1, "5502983476"), s("STOPAJ", -198.58, 1, "5502983476"), s("TAHSILAT_BEDELI", -190.63)];
+
+  const r1 = hakedisGercekKesintileri(temel, an);
+  kontrol("stopaj + ödeme gideri GERÇEK tutar (pozitif)", r1.STOPAJ === 198.58 && r1.ODEME_GIDERI === 190.63, r1);
+  kontrol("  ...hizmet bedeli yok ve sipariş satırı 30 günlük → tahmin kalır (alan YOK)", r1.HIZMET_BEDELI === undefined, r1);
+  kontrol("  ...sipariş satırı 30 gün önce → hâlâ tahmin",
+    hakedisGercekKesintileri([s("SIPARIS_TUTARI", 100, 30)], an).HIZMET_BEDELI === undefined);
+  kontrol("  ...sipariş satırı 31 gün önce → 0 (kesilmedi)",
+    hakedisGercekKesintileri([s("SIPARIS_TUTARI", 100, 31)], an).HIZMET_BEDELI === 0);
+  kontrol("hizmet bedeli satırı varsa GERÇEK tutar (31 gün geçse de)",
+    hakedisGercekKesintileri([...temel.map((x) => ({ ...x, createdAt: once(40) })), s("HIZMET_BEDELI", -12.6, 35)], an).HIZMET_BEDELI === 12.6);
+  kontrol("sipariş satırı YOKSA hiçbiri verilmez (tahmin kalır)",
+    JSON.stringify(hakedisGercekKesintileri([s("STOPAJ", -5), s("TAHSILAT_BEDELI", -4, 40)], an)) === "{}");
+  kontrol("iadeli satışa dokunulmaz (`*_IADE` satırı) → boş",
+    JSON.stringify(hakedisGercekKesintileri([...temel, s("KOMISYON_IADE", 50)], an)) === "{}");
+  kontrol("  ...`IADE_TUTARI` satırı da → boş",
+    JSON.stringify(hakedisGercekKesintileri([...temel, s("IADE_TUTARI", -100)], an)) === "{}");
+  kontrol("«.» satırı gerçek numaralı eşiyle İKİNCİ KEZ sayılmaz",
+    hakedisGercekKesintileri([...temel, s("TAHSILAT_BEDELI", -190.63, 1, ".")], an).ODEME_GIDERI === 190.63);
+  kontrol("  ...eşi yoksa «.» satırı sayılır (gerçek bekleyen kesinti)",
+    hakedisGercekKesintileri([temel[0], temel[1], s("TAHSILAT_BEDELI", -190.63, 1, ".")], an).ODEME_GIDERI === 190.63);
+  kontrol("aynı koddan iki satır TOPLANIR",
+    hakedisGercekKesintileri([...temel, s("STOPAJ", -1.42, 1, "5502983477")], an).STOPAJ === 200);
+
+  /* Motor: gerçek tutar kuralın/tahminin YERİNE geçer. */
+  const kalem = (satis: number) => ({ satisTutari: satis, satisParaBirimi: "TRY" as const, maliyet: satis * 0.8, maliyetParaBirimi: "TRY" as const, kdvOrani: 20, komisyonTutari: 0, komisyonOrani: null });
+  const kurallar = [
+    { code: "ODEME_GIDERI", basis: "SALE_AMOUNT" as const, rate: 0.8 },
+    { code: "HIZMET_BEDELI", basis: "FIXED" as const, amount: 12.6 },
+  ];
+  const girdi = { kalemler: [kalem(1000), kalem(3000)], komisyonKdvOrani: 20, siparisKesintileri: kurallar, kargoTarifesi: null };
+  const tahmin = karHesapla(girdi);
+  const gercek = karHesapla({ ...girdi, gercekKesintiler: { STOPAJ: 30, ODEME_GIDERI: 25, HIZMET_BEDELI: 0 } });
+  const kod = (k: { siparisKesintileri: { code: string; tutar: number }[] }, c: string) => k.siparisKesintileri.find((x) => x.code === c)?.tutar;
+  const stopajlar = gercek.kalemler.map((k) => k.stopaj);
+  kontrol("motor: gerçek stopaj kalemlere TAHMİN oranında paylaşılır (1:3 → 7,50 · 22,50)",
+    Math.abs(stopajlar[0] - 7.5) < 1e-9 && Math.abs(stopajlar[1] - 22.5) < 1e-9, stopajlar);
+  kontrol("  ...kalem dökümündeki STOPAJ satırı da gerçek (SaleFee buradan yazılır)",
+    gercek.kalemler.every((k) => k.kesintiler.find((x) => x.code === "STOPAJ")?.tutar === k.stopaj));
+  kontrol("motor: ödeme gideri ve hizmet bedeli GERÇEK (25 · 0)", kod(gercek, "ODEME_GIDERI") === 25 && kod(gercek, "HIZMET_BEDELI") === 0);
+  kontrol("  ...gerçek yoksa tahmin (%0,8 → 32 · 12,60)", Math.abs(kod(tahmin, "ODEME_GIDERI")! - 32) < 1e-9 && kod(tahmin, "HIZMET_BEDELI") === 12.6);
+  const beklenenFark = (tahmin.kalemler.reduce((t, k) => t + k.stopaj, 0) - 30) + (32 - 25) + 12.6;
+  kontrol("NET-1 farkı = düşülmeyen tahmin farkı (birebir)", Math.abs(gercek.net1 - tahmin.net1 - beklenenFark) < 1e-6, { fark: gercek.net1 - tahmin.net1, beklenenFark });
+  kontrol("gerçek kodlar beyan edilir (ekran «hakedişten» diyebilsin)",
+    JSON.stringify(gercek.gercekKesintiKodlari) === JSON.stringify(["STOPAJ", "ODEME_GIDERI", "HIZMET_BEDELI"]) && tahmin.gercekKesintiKodlari.length === 0);
+  const yalnizOdeme = karHesapla({ ...girdi, gercekKesintiler: { ODEME_GIDERI: 25 } });
+  kontrol("  ...verilmeyen kod tahminde kalır (yalnız ödeme gideri gerçek)",
+    kod(yalnizOdeme, "HIZMET_BEDELI") === 12.6 && yalnizOdeme.kalemler[0].stopaj === tahmin.kalemler[0].stopaj);
+
+  /* Tazeleme kümesi: kayıtlı döküm ≠ gerçek. */
+  kontrol("fark: kayıtlı stopaj kalem TOPLAMI gerçeğe eşitse uyuşur",
+    kesintiFarki([{ code: "STOPAJ", amount: 7.5 }, { code: "STOPAJ", amount: 22.5 }], { STOPAJ: 30 }).length === 0);
+  kontrol("  ...hizmet bedeli 12,60 kayıtlı, gerçek 0 → aday",
+    JSON.stringify(kesintiFarki([{ code: "HIZMET_BEDELI", amount: 12.6 }], { HIZMET_BEDELI: 0 })) === '["HIZMET_BEDELI"]');
+  kontrol("  ...gerçek bilinmiyorsa (alan yok) aday DEĞİL",
+    kesintiFarki([{ code: "HIZMET_BEDELI", amount: 12.6 }], {}).length === 0);
+  kontrol("  ...kuruş altı fark aday DEĞİL",
+    kesintiFarki([{ code: "ODEME_GIDERI", amount: 190.6300001 }], { ODEME_GIDERI: 190.63 }).length === 0);
+
+  /* Bağ: motor girdisi kanal KODUYLA kapılı, çekim tazeler. */
+  const yeniden = kaynakOku("src/lib/kar-yeniden.ts").replace(/\r\n/g, "\n");
+  kontrol("karOnizle gerçek kesintiyi YALNIZ Hepsiburada'ya verir (kanal kodu)",
+    /gercekKesintiler:\s*satis\.channelAccount\.channel\.code === "HEPSIBURADA"\s*\?\s*hakedisGercekKesintileri\(/.test(yeniden));
+  const cekim = kaynakOku("scripts/canli-hb-hakedis-cekim.ts").replace(/\r\n/g, "\n");
+  kontrol("HB çekimi aday satışların kârını tazeler",
+    /for \(const a of adaylar\) \{\s*try \{\s*if \(await satisKarTazele\(a\.saleId, prisma\)\) ozet\.karTazelenen\+\+;/.test(cekim));
+}
+kosanBolumler.push("hb-gercek-kesinti");
 
 // ===========================================================================
 console.log("");

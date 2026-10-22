@@ -121,6 +121,15 @@ export type KarGirdisi = {
    * çarpılır. Verilmezse 1 — bölünmemiş sipariş.
    */
   paketSayisi?: number;
+
+  /**
+   * K325-⑦ — KANALIN HAKEDİŞTE GERÇEKTEN KESTİĞİ tutarlar (KDV DAHİL, pozitif).
+   * Verilen kod kuralın/tahminin YERİNE geçer: `STOPAJ` kalemlere tahmin oranında
+   * paylaştırılır (toplam gerçeğe birebir); `ODEME_GIDERI` · `HIZMET_BEDELI` sipariş
+   * başına kuralın tutarını ezer (0 = «kesilmedi»). Verilmeyen kod tahminde kalır.
+   * Kaynak `lib/hakedis/gercek-kesinti.ts` (motor saf kalır, veritabanına gitmez).
+   */
+  gercekKesintiler?: { STOPAJ?: number; ODEME_GIDERI?: number; HIZMET_BEDELI?: number };
 };
 
 // ---------------------------------------------------------------------------
@@ -160,7 +169,32 @@ export type KarSonucu = {
   kdv: KdvDokumu;
   net1: number;
   net2: number;
+  /** K325-⑦ — tutarı hakedişten (GERÇEK) gelen kesinti kodları; ekran «gerçek» der. */
+  gercekKesintiKodlari: string[];
 };
+
+/**
+ * K325-⑦ — gerçek toplam stopajı kalemlere TAHMİN oranında paylaştırır; son kalem
+ * kalanı alır (toplam gerçeğe birebir). Tahminlerin hepsi 0 ise eşit bölünür.
+ */
+function stopajiPaylastir(kalemler: KarKalemSonucu[], gercek: number): void {
+  if (kalemler.length === 0) return;
+  const tahminToplam = kalemler.reduce((t, k) => t + k.stopaj, 0);
+  let dagitilan = 0;
+  kalemler.forEach((k, i) => {
+    const yeni =
+      i === kalemler.length - 1
+        ? gercek - dagitilan
+        : tahminToplam > 0 ? (gercek * k.stopaj) / tahminToplam : gercek / kalemler.length;
+    dagitilan += yeni;
+    const fark = k.stopaj - yeni;
+    k.stopaj = yeni;
+    k.net1 += fark;
+    k.net2 += fark;
+    const satir = k.kesintiler.find((x) => x.code === "STOPAJ");
+    if (satir) satir.tutar = yeni;
+  });
+}
 
 // ---------------------------------------------------------------------------
 //  HESAP
@@ -232,6 +266,12 @@ export function karHesapla(girdi: KarGirdisi): KarSonucu {
   const kalemler = girdi.kalemler.map((k) =>
     kalemHesapla(k, girdi.komisyonKdvOrani),
   );
+  const gercek = girdi.gercekKesintiler ?? {};
+  const gercekKesintiKodlari: string[] = [];
+  if (gercek.STOPAJ !== undefined && kalemler.length > 0) {
+    stopajiPaylastir(kalemler, gercek.STOPAJ);
+    gercekKesintiKodlari.push("STOPAJ");
+  }
 
   // --- KDV bileşenleri (kalem tarafı) ---
   let satisKdv = 0;
@@ -307,7 +347,13 @@ export function karHesapla(girdi: KarGirdisi): KarSonucu {
      * çarpmak aynı parayı iki kez kesmek olurdu.
      */
     const kat = kural.paketBasina ? paketSayisi : 1;
-    if (kural.basis === "FIXED") {
+    /* K325-⑦ — hakedişte gerçek tutar varsa kural/tahmin YERİNE o (0 = kesilmedi). */
+    const gercekTutar =
+      kural.code === "ODEME_GIDERI" || kural.code === "HIZMET_BEDELI" ? gercek[kural.code] : undefined;
+    if (gercekTutar !== undefined) {
+      siparisKesintileri.push({ code: kural.code, tutar: gercekTutar });
+      gercekKesintiKodlari.push(kural.code);
+    } else if (kural.basis === "FIXED") {
       siparisKesintileri.push({
         code: kural.code,
         tutar: (kural.amount ?? 0) * kat,
@@ -370,5 +416,6 @@ export function karHesapla(girdi: KarGirdisi): KarSonucu {
     },
     net1,
     net2,
+    gercekKesintiKodlari,
   };
 }

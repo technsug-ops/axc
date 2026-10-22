@@ -13,6 +13,7 @@ import { karHesapla, type KarGirdisi, type KarSonucu,
 } from "@/lib/kar";
 import { kdvHaricKargo } from "@/lib/kargo-kdv";
 import { prisma } from "@/lib/prisma";
+import { hakedisGercekKesintileri } from "@/lib/hakedis/gercek-kesinti";
 
 import type { Currency } from "@/generated/prisma/enums";
 
@@ -143,7 +144,9 @@ export async function karOnizle(
   const satis = await db.sale.findUnique({
     where: { id: girdi.saleId },
     include: {
-      channelAccount: { select: { channelId: true } },
+      channelAccount: { select: { channelId: true, channel: { select: { code: true } } } },
+      /* K325-⑦ — HB'nin hakedişte GERÇEKTEN kestiği (bkz. `hakedis/gercek-kesinti.ts`). */
+      settlementItems: { select: { code: true, amount: true, externalId: true, createdAt: true } },
       items: {
         /**
          * KALDIRILMIŞ KALEM KÂRA GİRMEZ (K78).
@@ -291,6 +294,23 @@ export async function karOnizle(
      * tazelemede yeniden şişerdi.
      */
     paketSayisi: satis.paketSayisi,
+    /**
+     * K325-⑦ — YALNIZ HEPSİBURADA (kanal KODU ile, ad ile değil). Ölçüm ve
+     * zamanlama kuralı (31 gün) HB'nin fatura düzeninden çıktı; TY kendi
+     * kesintilerini başka kodlarla yazıyor ve bu kurala girmez.
+     */
+    gercekKesintiler:
+      satis.channelAccount.channel.code === "HEPSIBURADA"
+        ? hakedisGercekKesintileri(
+            satis.settlementItems.map((s) => ({
+              code: s.code,
+              amount: Number(s.amount.toString()),
+              externalId: s.externalId,
+              createdAt: s.createdAt,
+            })),
+            new Date(),
+          )
+        : undefined,
   });
 
   return {
@@ -451,6 +471,26 @@ export async function satisKarTazele(
   saleId: string,
   db: KarIstemcisi = prisma,
 ): Promise<boolean> {
+  const girdi = await tazelemeGirdisi(saleId, db);
+  return girdi === null ? false : karYenidenYaz(girdi, db);
+}
+
+/**
+ * `satisKarTazele`nin YAZMAYAN ikizi — aynı girdiyle `karOnizle`. Kuru koşum
+ * betikleri (K325-⑦ geçmiş önizlemesi) yazımla AYNI hesabı görsün diye tek gövde.
+ */
+export async function satisKarTazeleOnizle(
+  saleId: string,
+  db: KarIstemcisi = prisma,
+): Promise<YenidenHesaplaSonucu | null> {
+  const girdi = await tazelemeGirdisi(saleId, db);
+  return girdi === null ? null : karOnizle(girdi, db);
+}
+
+async function tazelemeGirdisi(
+  saleId: string,
+  db: KarIstemcisi,
+): Promise<YenidenHesaplaGirdisi | null> {
   const satis = await db.sale.findUnique({
     where: { id: saleId },
     select: {
@@ -472,7 +512,7 @@ export async function satisKarTazele(
       },
     },
   });
-  if (!satis) return false;
+  if (!satis) return null;
 
   /**
    * ⭐ KAYNAK SIRASI TEK GÖVDEDEN (K201): gerçekleşen kesinti varsa O,
@@ -517,8 +557,7 @@ export async function satisKarTazele(
     ),
   );
 
-  return karYenidenYaz(
-    {
+  return {
     saleId,
     kalemler: satis.items.map((k) => ({
       saleItemId: k.id,
@@ -556,7 +595,5 @@ export async function satisKarTazele(
             tur: kargo.kaynak === "GERCEKLESEN" ? "GERCEK" : "TAHMIN",
             tutarKdvDahil: kdvDahilKargo(kargo.tutar)!,
           },
-    },
-    db,
-  );
+  };
 }

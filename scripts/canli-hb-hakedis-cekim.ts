@@ -44,6 +44,8 @@ import { satirlariEslestir } from "../src/lib/hakedis/eslestir";
 import { satirAnahtari } from "../src/lib/hakedis/okuyucu";
 import { GECICI_FATURA_NO, geciciFaturaKarari, type MevcutHakedisSatiri } from "../src/lib/hakedis/gecici-fatura";
 import { izYaz } from "../src/lib/iz";
+import { hbGercekKesintiAdaylari } from "../src/lib/hakedis/gercek-kesinti-tazele";
+import { satisKarTazele } from "../src/lib/kar-yeniden";
 import { hbApiSatirlariniOku, type HbFinansKaydi } from "../src/lib/hakedis/hb-api-oku";
 
 const GUN_MS = 86_400_000;
@@ -75,7 +77,13 @@ export type HbHakedisCekimOzeti = {
   atlanan: number;
   netToplam: number;
   hataSayisi: number;
+  /** K325-⑦: hakedişteki gerçek kesintiyle kârı yeniden hesaplanan satış. */
+  karTazelenen: number;
+  karTazelemeHatasi: number;
 };
+
+/** K325-⑦: 31 gün eşiği + cron kaçırma payı. Daha eskisi onaylı ayrı betikle. */
+const KAR_TAZELEME_GUN = 40;
 
 export async function hbHakedisCekimKos(ayar: {
   yaz: boolean;
@@ -409,6 +417,8 @@ export async function hbHakedisCekimKos(ayar: {
     atlanan,
     netToplam: yeniToplam,
     hataSayisi: hatalar.length,
+    karTazelenen: 0,
+    karTazelemeHatasi: 0,
   };
 
   if (!YAZ) {
@@ -528,6 +538,26 @@ export async function hbHakedisCekimKos(ayar: {
   }
   if (tazelenecekler.length > 0) {
     console.log(`✓ ${tazelenecekler.length} satır ödendi olarak işaretlendi (paidAt boştan doldu).`);
+  }
+
+  /**
+   * K325-⑦ — GERÇEK KESİNTİYLE KÂR TAZELEME. Küme HÂLDEN kurulur (kayıtlı döküm ≠
+   * hakedişteki gerçek): yeni stopaj/ödeme gideri/hizmet bedeli satırı geldiyse ya da
+   * 31 gün geçip hizmet bedeli hiç gelmediyse satışın kârı yeniden hesaplanır.
+   * Satır satır, tekrar koşulabilir (tazelenen satış bir sonraki koşumda kümeye girmez).
+   * Pencere 40 gün — daha eskisi kullanıcı onaylı ayrı betikle (bkz. modül başlığı).
+   */
+  const adaylar = await hbGercekKesintiAdaylari(prisma, { simdi: new Date(), sonGun: KAR_TAZELEME_GUN });
+  for (const a of adaylar) {
+    try {
+      if (await satisKarTazele(a.saleId, prisma)) ozet.karTazelenen++;
+    } catch (e) {
+      ozet.karTazelemeHatasi++;
+      console.log(`⛔ kâr tazelenemedi ${a.code ?? a.saleId} — ${String((e as Error).message ?? e).replace(/\s+/g, " ")}`);
+    }
+  }
+  if (adaylar.length > 0) {
+    console.log(`✓ ${ozet.karTazelenen}/${adaylar.length} satışın kârı hakedişteki gerçek kesintiyle tazelendi.`);
   }
 
   /** ⭐ KALP ATIŞI — DEĞİŞİKLİK OLMASA BİLE YAZILIR (K220'deki AYNI ders). */
