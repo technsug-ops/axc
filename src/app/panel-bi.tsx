@@ -10,6 +10,7 @@ import { abcSiniflari, ABC_SINIRLARI, devirHizi, maliyetSurucuculeri, oranVeyaBo
 import { abcAdresi, abcGirdileriniYukle, type AbcKapsami } from "@/lib/panel/abc-kumesi";
 import { acikPartilerIstekte } from "@/lib/panel/acik-partiler-istekte";
 import { prisma } from "@/lib/prisma";
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 import { kisaOnbellek, PANEL_ONBELLEK_MS } from "@/lib/kisa-onbellek";
 import { yetkiBaglami } from "@/lib/yetki";
 import { OnbellekNotu } from "@/components/onbellek-notu";
@@ -98,9 +99,27 @@ export async function PanelBi({
       select: { code: true, amount: true, sale: { select: { profitStatus: true } } },
     }),
     abcGirdileriniYukle(prisma, abcKapsami, acikPartilerIstekte()),
+    /* İADELER — üstteki NET-2 kartıyla AYNI küme (`page.tsx` iade okuması): satışın
+       gününe atıf (K185-③) · geçerli iade · satışın kanalı. İptal süzgeci yok, kart da
+       koymuyor; para birimi ve «hesaplandı» süzgeci aşağıda kartla aynı kuralla. */
+    prisma.return.findMany({
+      where: {
+        sale: { soldAt: { gte: donem.baslangic, lt: donem.bitisHaric }, ...(kanal ? { channelAccount: { channel: { code: kanal } } } : {}) },
+        ...IADE_GECERLI,
+      },
+      select: { net2Amount: true, profitCurrency: true, profitStatus: true },
+    }),
   ]),
   );
-  const [satislar, kesintiler, abcVerisi] = biOnbellegi.deger;
+  const [satislar, kesintiler, abcVerisi, iadeKayitlari] = biOnbellegi.deger;
+
+  /* ── İade NET-2 etkisi — kartın kuralı: para birimi kâr snapshot'ından (yoksa TRY),
+     yalnız HESAPLANMIŞ iade (`panel.ts` → `hesaplandi`). Kullanıcı ekranı 22.10: kart
+     ₺111.203,88 · dağılım ₺115.426,39 (fark ₺4.222,51); ölçüldü (canlı, salt okuma)
+     Ekim'in 10 iadesinin NET-2 etkisi −₺4.222,52 — fark kuruş yuvarlaması. ── */
+  const iadeNet2 = iadeKayitlari
+    .filter((i) => (i.profitCurrency ?? "TRY") === para && i.profitStatus === "CALCULATED" && i.net2Amount !== null)
+    .reduce((t, i) => t + Number(i.net2Amount), 0);
 
   /* ── Stok değeri (bugün): açık partilerin kalanı × birim maliyeti — ortak yükleyiciden ── */
   const toplamStokDegeri = abcVerisi.toplamStokDegeri;
@@ -199,10 +218,17 @@ export async function PanelBi({
                   <Link href={satisListesi({ kar: "eksik" })} className={`tabular-nums ${kaynak}`}>{tl(hesaplanmayanCiro)}</Link>
                 </li>
               ) : null}
+              {/* İADE ETKİSİ — kalan NET-2 üstteki kartla AYNI rakam olsun (kullanıcı 22.10:
+                  «bu iki rakam aynı olmalı değil mi»). Sıfırsa da yazar (anayasa: sıfır satır gizlenmez). */}
+              <li className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] items-center gap-3 text-sm">
+                <span className="truncate">{t("iadeEtkisi")}</span>
+                <PayCubugu oran={Math.abs(oranVeyaBos(iadeNet2, ciro) ?? 0)} etiket={ciro > 0 ? bicim.yuzde((iadeNet2 / ciro) * 100) : yok} />
+                <Link href="/iadeler" className={`tabular-nums ${kaynak}`}>{tl(iadeNet2)}</Link>
+              </li>
               <li className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] items-center gap-3 border-t pt-2 text-sm font-medium">
                 <span>{t("net2Kalan")}</span>
-                <PayCubugu oran={Math.max(0, oranVeyaBos(net2, ciro) ?? 0)} etiket={ciro > 0 ? bicim.yuzde((net2 / ciro) * 100) : yok} />
-                <Link href={hesaplananlar} className={`tabular-nums ${kaynak}`}>{tl(net2)}</Link>
+                <PayCubugu oran={Math.max(0, oranVeyaBos(net2 + iadeNet2, ciro) ?? 0)} etiket={ciro > 0 ? bicim.yuzde(((net2 + iadeNet2) / ciro) * 100) : yok} />
+                <Link href={hesaplananlar} className={`tabular-nums ${kaynak}`}>{tl(net2 + iadeNet2)}</Link>
               </li>
             </ul>
           )}

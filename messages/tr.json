@@ -5880,6 +5880,7 @@
     "dagilimBaslik": "Paranın dağılımı",
     "dagilimNotu": "Brüt ciro {ciro} — her kesintinin ciroya oranı. Maliyet KDV dahil (FIFO partisi).",
     "net2Kalan": "Kalan NET-2",
+    "iadeEtkisi": "İadeler (NET-2 etkisi)",
     "abcBaslik": "ABC analizi",
     "abcNotu": "A = cironun ilk {a}'ini yapan ürünler · B = {b}'e kadar · C = kalan. Sınıflar klasik Pareto sözleşmesidir, ölçülmüş eşik değil.",
     "abcSinif": "Sınıf",

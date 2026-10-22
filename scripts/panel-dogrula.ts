@@ -7307,6 +7307,30 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     /iadeOrani\(blok\.toplamIadeAdedi, blok\.toplamAdet\)/.test(kartK));
 }
 
+{
+  /* PARANIN DAĞILIMI — KALAN NET-2 = ÜST KART (kullanıcı 22.10.2026: «bu iki rakam aynı
+     olmalı değil mi» · kart ₺111.203,88 · dağılım ₺115.426,39 · fark Ekim'in 10 iadesi
+     −₺4.222,52). Kart = satış NET-2 + hesaplanmış iade NET-2 (`panel.ts`); dağılım da. */
+  const biK = kaynakOku("src/app/panel-bi.tsx")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/^\s*\/\/.*$/gm, " ");
+  kontrol("dağılım: iade okuması kartla AYNI küme (satışın günü · kanal · IADE_GECERLI)",
+    /prisma\.return\.findMany\(\{\s*where: \{\s*sale: \{ soldAt: \{ gte: donem\.baslangic, lt: donem\.bitisHaric \}, \.\.\.\(kanal \? \{ channelAccount: \{ channel: \{ code: kanal \} \} \} : \{\}\) \},\s*\.\.\.IADE_GECERLI,/.test(biK));
+  kontrol("  ...yalnız HESAPLANMIŞ ve seçili para birimindeki iade (kartın `hesaplandi` kuralı)",
+    /\.filter\(\(i\) => \(i\.profitCurrency \?\? "TRY"\) === para && i\.profitStatus === "CALCULATED" && i\.net2Amount !== null\)/.test(biK));
+  const kalanBas = biK.indexOf('{t("net2Kalan")}');
+  const kalanBlok = kalanBas >= 0 ? biK.slice(kalanBas, kalanBas + 500) : "";
+  kontrol("  ...KALAN NET-2 iade etkisini içerir (net2 + iadeNet2)",
+    kalanBlok.length > 0 && /\{tl\(net2 \+ iadeNet2\)\}/.test(kalanBlok));
+  const iadeBas = biK.indexOf('{t("iadeEtkisi")}');
+  /* Satırın TAMAMI tek desende: önceki koşullu satır kapandıktan hemen sonra, kendisi
+     koşulsuz bir <li> — etiket, çubuk ve tutar birlikte (sıfır satır gizlenmez). */
+  kontrol("  ...iade satırı ekranda, kalanın ÜSTÜNDE ve sıfırken de çizilir (koşulsuz)",
+    iadeBas >= 0 && kalanBas > iadeBas &&
+      /\) : null\}\s*<li className="[^"]*">\s*<span className="truncate">\{t\("iadeEtkisi"\)\}<\/span>\s*<PayCubugu [^\n]*\/>\s*<Link href="\/iadeler" className=\{`tabular-nums \$\{kaynak\}`\}>\{tl\(iadeNet2\)\}<\/Link>\s*<\/li>/.test(biK));
+}
+
 console.log("\n" + "=".repeat(70));
 if (basarisiz === 0) {
 
