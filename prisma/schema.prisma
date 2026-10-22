@@ -2147,6 +2147,15 @@ model SaleItem {
   unitPriceAmount   Decimal  @db.Decimal(18, 4)
   unitPriceCurrency Currency
 
+  /// K325-⑧ — KANALIN KARŞILADIĞI İNDİRİM, BİRİM, KDV DAHİL (HB `hbDiscount`).
+  /// `unitPriceAmount` liste fiyatıdır (müşterinin ödediği + bu indirim) ve
+  /// ciro/komisyon oradan doğru çıkar; ama HB STOPAJI ve ÖDEME GİDERİNİ
+  /// müşterinin ÖDEDİĞİ tutardan keser. Ölçüldü 22.10.2026: `4117722758`
+  /// liste 26.479 · HB indirimi 2.649,90 → HB stopaj 198,58 = 23.829,10 ÷ 1,2 × %1
+  /// (eski hesap 220,66). Boş = indirim yok ya da bilinmiyor → taban liste fiyatı.
+  /// Geçmiş satışlarda BOŞ kalır; onları hakedişteki gerçek kesinti düzeltir (K325-⑦).
+  channelDiscountAmount Decimal? @db.Decimal(18, 4)
+
   // --- SATIŞ ANINDA ÇÖZÜLEN ORANLAR (snapshot) ---
   /// Ürün istisnası > kategori oranı > varsayılan %20 ile çözülür.
   vatRate Decimal? @db.Decimal(5, 2)

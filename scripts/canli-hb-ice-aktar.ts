@@ -133,6 +133,8 @@ type Kalem = {
   hbSku: string;
   adet: number;
   birimFiyat: number;
+  /** K325-⑧ — HB'nin karşıladığı birim indirim (KDV dahil); yoksa null. */
+  hbIndirimi: number | null;
   kdv: number | null;
   komisyon: number | null;
 };
@@ -525,6 +527,8 @@ export async function hbCekimKos(ayar: {
           adet,
           /** ⛔ BÖLME/ÇARPMA YOK — unitPrice BİRİM (ölçüldü, başlık). */
           birimFiyat: kurus(birim),
+          /** K325-⑧ — HB indirimi: stopaj ve ödeme gideri müşterinin ödediğinden kesilir. */
+          hbIndirimi: Number.isFinite(hbIndirimi) && hbIndirimi > 0 ? kurus(hbIndirimi) : null,
           kdv: ham.vatRate == null ? null : Number(ham.vatRate),
           komisyon: hbKomisyonOrani(ham.commissionRate),
         });
@@ -1155,6 +1159,7 @@ export async function hbCekimKos(ayar: {
         quantity: number;
         unitPriceAmount: number;
         unitPriceCurrency: "TRY";
+        channelDiscountAmount: number | null;
         vatRate: number | null;
         commissionRate: number | null;
       }[];
@@ -1179,6 +1184,7 @@ export async function hbCekimKos(ayar: {
           quantity: x.adet,
           unitPriceAmount: x.birimFiyat,
           unitPriceCurrency: "TRY",
+          channelDiscountAmount: x.hbIndirimi,
           vatRate: x.kdv,
           commissionRate: komisyon,
         });

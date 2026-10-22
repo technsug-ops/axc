@@ -1092,6 +1092,45 @@ console.log("=".repeat(70));
   );
 }
 
+console.log("\n── K325-⑧ — HB STOPAJ/ÖDEME GİDERİ MÜŞTERİNİN ÖDEDİĞİNDEN ──");
+{
+  /*
+   * Canlı vaka 4117722758 (HB paneli 22.10.2026): liste 26.479 · HB indirimi
+   * 2.649,90 · satış fiyatı 23.829,10 · komisyon 3.812,98 · stopaj 198,58 ·
+   * tahsilat 190,63. Eski hesap stopajı 220,66, tahsilatı 211,83 (liste tabanı).
+   */
+  const kalem = {
+    satisTutari: 26479, satisParaBirimi: "TRY" as const, maliyet: 19899, maliyetParaBirimi: "TRY" as const,
+    kdvOrani: 20, komisyonTutari: 3812.98, komisyonOrani: null,
+  };
+  const kurallar = [
+    { code: "ODEME_GIDERI", basis: "SALE_AMOUNT" as const, rate: 0.8 },
+    { code: "HIZMET_BEDELI", basis: "FIXED" as const, amount: 12.6 },
+  ];
+  const temel = { komisyonKdvOrani: 20, siparisKesintileri: kurallar, kargoTarifesi: null };
+  const indirimli = karHesapla({ ...temel, kalemler: [{ ...kalem, kanalIndirimi: 2649.9 }] });
+  const indirimsiz = karHesapla({ ...temel, kalemler: [kalem] });
+  const odeme = (s: typeof indirimli) => s.siparisKesintileri.find((k) => k.code === "ODEME_GIDERI")?.tutar ?? -1;
+  kontrol("stopaj HB ile kuruşu kuruşuna 198,58 (müşterinin ödediği 23.829,10 tabanı)",
+    Math.round(indirimli.kalemler[0].stopaj * 100) === 19858, indirimli.kalemler[0].stopaj);
+  kontrol("ödeme gideri HB ile kuruşu kuruşuna 190,63", Math.round(odeme(indirimli) * 100) === 19063, odeme(indirimli));
+  kontrol("ciro ve komisyon LİSTE fiyatında kalır (26.479 · 3.812,98)",
+    indirimli.kalemler[0].satisTutari === 26479 && indirimli.kalemler[0].komisyon === 3812.98);
+  kontrol("indirim yoksa taban liste fiyatı (eski davranış: 220,66 · 211,83)",
+    Math.round(indirimsiz.kalemler[0].stopaj * 100) === 22066 && Math.round(odeme(indirimsiz) * 100) === 21183);
+  kontrol("NET-1 farkı = düşülmeyen stopaj + ödeme gideri farkı",
+    Math.abs(indirimli.net1 - indirimsiz.net1 - (indirimsiz.kalemler[0].stopaj - indirimli.kalemler[0].stopaj) - (odeme(indirimsiz) - odeme(indirimli))) < 1e-6);
+
+  /* Bağ: içe aktarma HB indirimini kaleme yazar; kâr hesabı birim × adet okur. */
+  const ice = kaynakOku("scripts/canli-hb-ice-aktar.ts").replace(/\r\n/g, "\n");
+  kontrol("HB içe aktarma kaleme channelDiscountAmount yazar (hbDiscount'tan)",
+    /channelDiscountAmount: x\.hbIndirimi,/.test(ice) &&
+      /hbIndirimi: Number\.isFinite\(hbIndirimi\) && hbIndirimi > 0 \? kurus\(hbIndirimi\) : null,/.test(ice));
+  const yeniden = kaynakOku("src/lib/kar-yeniden.ts").replace(/\r\n/g, "\n");
+  kontrol("kâr hesabı kalem indirimini birim × adet olarak motora verir",
+    /kanalIndirimi:\s*kalem\.channelDiscountAmount === null \? null : Number\(kalem\.channelDiscountAmount\.toString\(\)\) \* kalem\.quantity,/.test(yeniden));
+}
+
 console.log(
   basarisiz === 0
     ? `TÜM KONTROLLER GEÇTİ (${calisan})`

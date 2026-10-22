@@ -81,7 +81,20 @@ export type KarKalemGirdisi = {
    */
   komisyonTutari?: number | null;
   komisyonOrani?: number | null;
+
+  /**
+   * K325-⑧ — KANALIN KARŞILADIĞI İNDİRİM, satır toplamı (adet × birim), KDV DAHİL.
+   * Ciro ve komisyon `satisTutari`ndan (liste) kalır; STOPAJ ve yüzde tabanlı
+   * sipariş kesintileri (ödeme gideri) müşterinin ÖDEDİĞİ tutardan alınır:
+   * `satisTutari − kanalIndirimi`. Verilmezse taban `satisTutari`.
+   */
+  kanalIndirimi?: number | null;
 };
+
+/** K325-⑧ — stopaj ve yüzde tabanlı kesintilerin matrahı (KDV dahil). */
+function kesintiTabani(kalem: KarKalemGirdisi): number {
+  return kalem.satisTutari - (kalem.kanalIndirimi ?? 0);
+}
 
 export type SiparisKesintisi = {
   /** KOMISYON_KDV hariç, sipariş/paket kapsamlı kurallar. */
@@ -236,7 +249,7 @@ function kalemHesapla(
 
   // --- stopaj: KDV HARİÇ tutarın %1'i, ürünün KENDİ oranıyla ---
   const stopaj =
-    (kdvHaric(kalem.satisTutari, kalem.kdvOrani) * STOPAJ_ORANI) / 100;
+    (kdvHaric(kesintiTabani(kalem), kalem.kdvOrani) * STOPAJ_ORANI) / 100;
 
   kesintiler.push({ code: "MALIYET", tutar: maliyet });
   kesintiler.push({ code: "KOMISYON", tutar: komisyonTutar });
@@ -327,8 +340,10 @@ export function karHesapla(girdi: KarGirdisi): KarSonucu {
    *  dokunmuyor.
    * ============================================================================
    */
+  /* K325-⑧ — matrah müşterinin ÖDEDİĞİ tutar (liste − kanal indirimi); HB
+     tahsilat bedelini oradan kesiyor (4117722758: 23.829,10 × %0,8 = 190,63). */
   const kdvDahilSatisToplami = girdi.kalemler.reduce(
-    (t, k) => t + k.satisTutari,
+    (t, k) => t + kesintiTabani(k),
     0,
   );
 

@@ -279,6 +279,9 @@ export async function karOnizle(
       kdvOrani: kalem.vatRate ? Number(kalem.vatRate.toString()) : 20,
       komisyonTutari: duzeltme?.commissionAmount ?? null,
       komisyonOrani: duzeltme?.commissionRate ?? null,
+      /* K325-⑧ — birim indirim × adet (stopaj/ödeme gideri tabanı). */
+      kanalIndirimi:
+        kalem.channelDiscountAmount === null ? null : Number(kalem.channelDiscountAmount.toString()) * kalem.quantity,
     };
   });
 
