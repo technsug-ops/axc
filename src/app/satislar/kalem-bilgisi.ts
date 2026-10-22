@@ -37,6 +37,12 @@ export type PartiSecenegi = {
   kalanAdet: number;
   birimMaliyet: string | null;
   paraBirimi: "TRY" | "EUR" | null;
+  /**
+   * K347 — partinin ait olduğu ORTAKLIK PROJESİ (kullanıcı 22.10.2026: «satışta parti
+   * seçerken ortaklıktan alındığına dair bir işaret yok; ben biliyorum, sistem söylemiyor»).
+   * Kaynak: girişin bağlı olduğu alım kaleminin damgası. Alım dışı parti (iade · sayım) → null.
+   */
+  projeAdi: string | null;
 };
 
 export type KalemBilgisi = {
@@ -165,6 +171,16 @@ export async function kalemBilgisiGetir(
         satisTarihi ? gunSonu(satisTarihi) : undefined,
       )
     ).get(variantId) ?? [];
+  /* K347 — açık partilerin ortaklık projesi: girişin alım kalemindeki damgadan, TEK sorguda. */
+  const partiProjeleri = new Map(
+    (partiler.length === 0
+      ? []
+      : await prisma.stockMovement.findMany({
+          where: { id: { in: partiler.map((pa) => pa.hareketId) }, purchaseItem: { ortaklikProjesiId: { not: null } } },
+          select: { id: true, purchaseItem: { select: { ortaklikProjesi: { select: { ad: true } } } } },
+        })
+    ).flatMap((h) => (h.purchaseItem?.ortaklikProjesi ? [[h.id, h.purchaseItem.ortaklikProjesi.ad] as const] : [])),
+  );
   /**
    * ⚠ TANI İÇİN VARYANTIN TÜM HAREKETİ GEREKİYOR — açık partiler yetmez.
    * Bağın doğru olup olmadığı, defterin O ANA KADARKİ akışından çıkıyor;
@@ -257,6 +273,7 @@ export async function kalemBilgisiGetir(
       kalanAdet: pa.kalanAdet,
       birimMaliyet: pa.birimMaliyet,
       paraBirimi: pa.birimMaliyetParaBirimi,
+      projeAdi: partiProjeleri.get(pa.hareketId) ?? null,
     })),
     birimMaliyet,
     zemin,

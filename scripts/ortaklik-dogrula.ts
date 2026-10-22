@@ -25,7 +25,7 @@ import { ortakGirisiBagla, ortakKipindeMi } from "../src/lib/ortaklik/ortak-kipi
 import { izinTaninirMi, ORTAK_IZINLERI } from "../src/lib/yetki/izinler";
 import { kapsamKuraliEkle, otomatikKapsamlar, alimKapsaminiDegistir, alimKapsaminiDogrula } from "../src/lib/ortaklik/kapsam";
 
-const KONTROL_SAYISI = 130;
+const KONTROL_SAYISI = 136;
 
 async function main() {
   const adres = new URL(process.env.DATABASE_URL!);
@@ -457,6 +457,23 @@ async function main() {
     const ey = temiz("src/app/ortaklik/eylemler.ts");
     const gbas = ey.indexOf("export async function ortakGirisiKaydet(");
     assert.ok(gbas >= 0 && /const baglam = await yetkiIste\("ortaklik\.yonet"\);\s*await yetkiIste\("kullanici\.yonet"\);/.test(ey.slice(gbas, ey.indexOf("\nexport async function", gbas + 1))), "giriş bağı iki izni de istemeli"); ok();
+  }
+  {
+    const temiz = (y: string) => kaynakOku(y).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+    // K347 — SATIŞTA ORTAKLIK PARTİSİ GÖRÜNÜR (kullanıcı 22.10.2026: «parti seçerken ve sipariş
+    // detayında ortaklıktan alındığına dair işaret yok»). Kaynak: girişin alım kalemindeki damga.
+    const kb = temiz("src/app/satislar/kalem-bilgisi.ts");
+    assert.ok(/where: \{ id: \{ in: partiler\.map\(\(pa\) => pa\.hareketId\) \}, purchaseItem: \{ ortaklikProjesiId: \{ not: null \} \} \}/.test(kb) &&
+      /select: \{ id: true, purchaseItem: \{ select: \{ ortaklikProjesi: \{ select: \{ ad: true \} \} \} \} \}/.test(kb), "parti listesi projeyi alım kaleminin damgasından okumalı"); ok();
+    assert.ok(/projeAdi: partiProjeleri\.get\(pa\.hareketId\) \?\? null,/.test(kb), "her parti seçeneği projeAdi taşımalı (yoksa null)"); ok();
+    const sf = temiz("src/app/satislar/satis-formu.tsx");
+    assert.ok(/t\(pa\.projeAdi \? "partiSecenekProje" : "partiSecenek", \{[\s\S]{0,700}?proje: pa\.projeAdi \?\? "",/.test(sf), "formdaki parti seçeneği ortaklık partisinde proje adını yazmalı"); ok();
+    const st = temiz("src/lib/satis.ts");
+    assert.ok(/purchase: \{ select: \{ id: true, code: true \} \},\s*ortaklikProjesi: \{ select: \{ id: true, ad: true \} \},/.test(st), "düşülen partiler projeyi seçmeli"); ok();
+    const sd = temiz("src/app/satislar/[id]/page.tsx");
+    const pk = sd.slice(sd.indexOf("function partiKaynagi("), sd.indexOf("function partiTarihi("));
+    assert.ok(/const proje = kaynak\.purchaseItem\.ortaklikProjesi;/.test(pk) && (pk.match(/t\("partiOrtaklik", \{ proje: proje\.ad \}\)/g) ?? []).length === 2, "sipariş detayı partinin projesini yazmalı (bağlantılı + bağlantısız)"); ok();
+    assert.ok(/ortaklikGorur \? \(\s*<Baglanti href=\{`\/ortaklik\/\$\{proje\.id\}`\}/.test(pk) && /const ortaklikGorur = await izinVarMi\("ortaklik\.yonet"\);/.test(sd), "proje bağlantısı yalnız ortaklık iznine (izinsize 404'e götürmez)"); ok();
   }
   if (sayi !== KONTROL_SAYISI) {
     console.log(`KOŞUM YARIM KALDI — ${sayi}/${KONTROL_SAYISI} kontrol koştu, sonuç GEÇERSİZ`);

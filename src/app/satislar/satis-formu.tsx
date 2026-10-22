@@ -954,7 +954,7 @@ export function SatisFormu({
                           <SelectItem value="">{t("partiFifo")}</SelectItem>
                           {kalem.partiler.map((pa) => (
                             <SelectItem key={pa.hareketId} value={pa.hareketId}>
-                              {t("partiSecenek", {
+                              {t(pa.projeAdi ? "partiSecenekProje" : "partiSecenek", {
                                 tarih: bicim.tarih(pa.girisTarihi),
                                 adet: pa.kalanAdet,
                                 maliyet:
@@ -964,6 +964,8 @@ export function SatisFormu({
                                         Number(pa.birimMaliyet),
                                         pa.paraBirimi ?? "TRY",
                                       ),
+                                /* K347 — ortaklık partisi listede ADIYLA görünür (kullanıcı 22.10). */
+                                proje: pa.projeAdi ?? "",
                               })}
                             </SelectItem>
                           ))}

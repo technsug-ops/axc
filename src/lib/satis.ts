@@ -715,7 +715,12 @@ export async function kalemDusumleri(kalemIdleri: string[]) {
           occurredAt: true,
           type: true,
           purchaseItem: {
-            select: { purchase: { select: { id: true, code: true } } },
+            /* K347 — partinin ortaklık projesi: satış detayında «Düşülen partiler»de görünür
+               (kullanıcı 22.10.2026: «ortaklıktan satılan ürünün sipariş detayında açıklama yok»). */
+            select: {
+              purchase: { select: { id: true, code: true } },
+              ortaklikProjesi: { select: { id: true, ad: true } },
+            },
           },
         },
       },

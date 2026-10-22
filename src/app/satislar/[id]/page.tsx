@@ -83,6 +83,8 @@ export default async function SatisDetaySayfasi({
    * dokunamasın — bu, defterin maliyet tarafına yazan bir işlem.
    */
   const maliyetDuzeltebilir = await izinVarMi("stok.duzelt");
+  /* K347 — ortaklık partisinin proje bağlantısı yalnız projeyi açabilene (`/ortaklik/[id]` → `ortaklik.yonet`). */
+  const ortaklikGorur = await izinVarMi("ortaklik.yonet");
   const iptalEdebilir = await izinVarMi("satis.iptal");
 
   const { id } = await params;
@@ -520,10 +522,24 @@ export default async function SatisDetaySayfasi({
     if (!kaynak) return <span className="text-muted-foreground">—</span>;
 
     if (kaynak.purchaseItem?.purchase) {
+      const proje = kaynak.purchaseItem.ortaklikProjesi;
       return (
-        <Baglanti href={`/alimlar/${kaynak.purchaseItem.purchase.id}`}>
-          {kaynak.purchaseItem.purchase.code}
-        </Baglanti>
+        <span className="flex flex-col gap-0.5">
+          <Baglanti href={`/alimlar/${kaynak.purchaseItem.purchase.id}`}>
+            {kaynak.purchaseItem.purchase.code}
+          </Baglanti>
+          {/* K347 — ortaklık partisi kaynağın altında ADIYLA; projenin sonuç sayfasına gider (İlke #16). */}
+          {/* Bağlantı yalnız projeyi açabilene (izinsize 404'e götürmez; ad yine görünür). */}
+          {proje ? (
+            ortaklikGorur ? (
+              <Baglanti href={`/ortaklik/${proje.id}`} className="text-xs">
+                {t("partiOrtaklik", { proje: proje.ad })}
+              </Baglanti>
+            ) : (
+              <span className="text-xs">{t("partiOrtaklik", { proje: proje.ad })}</span>
+            )
+          ) : null}
+        </span>
       );
     }
     return (
