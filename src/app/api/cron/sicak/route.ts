@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { SAYFA_HAVUZU_BOYUTU } from "@/lib/veritabani-adresi";
+import { SICAK_TUTULAN_BAGLANTI } from "@/lib/veritabani-adresi";
 
 /**
  * ============================================================================
@@ -20,8 +20,8 @@ import { SAYFA_HAVUZU_BOYUTU } from "@/lib/veritabani-adresi";
  *  hâle gelir (bekçi: `cron-yollari:dogrula`).
  *
  *  · Kapı: diğer çekim uçlarıyla AYNI `CRON_SECRET`; yanlış/boş sır 404.
- *  · İş: aynı anda havuz boyutu kadar `SELECT 1` — havuzun bütün bağlantılarını taze tutar
- *    (KAS boştaki bağlantıyı 120 sn'de kapatıyor). Hiçbir şey yazmaz.
+ *  · İş: boşta tutulan bağlantı sayısı kadar `SELECT 1` (K355'ten beri 1; KAS boştaki
+ *    bağlantıyı 120 sn'de kapatıyor). Havuzun tamamı YOKLANMAZ — kota. Hiçbir şey yazmaz.
  *  · Tetik: cron-job.org, dakikada bir (kullanıcı hesabında kurulur).
  * ============================================================================
  */
@@ -36,11 +36,12 @@ export async function GET(istek: NextRequest) {
   }
   const bas = performance.now();
   try {
-    /* Havuzun BÜTÜN bağlantıları kullanılsın diye AYNI ANDA havuz boyutu kadar yoklama
-       (`SAYFA_HAVUZU_BOYUTU`, tek kaynak `veritabani-adresi.ts`; 13.10.2026'da 3 → 5).
-       Tek yoklama yalnız birini canlı tutardı. */
+    /* Yalnız BOŞTA tutulan bağlantılar canlı tutulur (`SICAK_TUTULAN_BAGLANTI`, tek kaynak
+       `veritabani-adresi.ts`). ⛔ K355 (22.10.2026): eskiden havuzun TAMAMI (5) dakikada bir
+       yoklanıyordu → her kopya 5 bağlantıyı hep açık tutuyordu, 5 kopya KAS'ın 25'lik
+       kotasını dolduruyordu ve yeni kopya hiç bağlantı alamıyordu. */
     const sureler = await Promise.all(
-      Array.from({ length: SAYFA_HAVUZU_BOYUTU }, async () => {
+      Array.from({ length: SICAK_TUTULAN_BAGLANTI }, async () => {
         const b = performance.now();
         await prisma.$queryRawUnsafe("SELECT 1");
         return Math.round(performance.now() - b);

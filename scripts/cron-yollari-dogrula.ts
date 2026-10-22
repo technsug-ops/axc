@@ -1,7 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
-import { ARKA_PLAN_HAVUZU, SAYFA_HAVUZU_BOYUTU, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
+import { ARKA_PLAN_HAVUZU, SAYFA_HAVUZU_BOYUTU, SICAK_TUTULAN_BAGLANTI, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
 
 /**
  * ============================================================================
@@ -135,8 +135,11 @@ console.log("\n4) SICAK TUTMA UCU (K332)");
   /* 12.10.2026: tek yoklama → AYNI ANDA üç (havuzun üç bağlantısı da canlı kalsın). */
   /* ⚠ ÖLÇÜT TAŞINDI (13.10.2026): sayı elle «üç» yazılıydı; havuz 3 → 5 olunca iki yerde iki
      sayı doğardı. Artık yoklama sayısı havuzun TEK kaynağından (`SAYFA_HAVUZU_BOYUTU`). */
-  kontrol("  ...yalnız SELECT 1 (havuzun BÜTÜN bağlantılarına aynı anda, sayı tek kaynaktan), yazma yok",
-    /Array\.from\(\{ length: SAYFA_HAVUZU_BOYUTU \}, async \(\) => \{[\s\S]{0,120}?await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
+  /* ⛔ ÖLÇÜT ÇEVRİLDİ (K355, 22.10.2026): «havuzun BÜTÜN bağlantıları» sabit havuzu dakikada
+     bir dolduruyor ve 25'lik kotayı tüketiyordu (Vercel kaydı: pool timeout active=0). Artık
+     yalnız BOŞTA tutulan sayı yoklanır; sayı yine tek kaynaktan. */
+  kontrol("  ...yalnız SELECT 1 (boşta tutulan bağlantılara, sayı tek kaynaktan), yazma yok",
+    /Array\.from\(\{ length: SICAK_TUTULAN_BAGLANTI \}, async \(\) => \{[\s\S]{0,120}?await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
 }
 
 /* ═══ 5) ARKA PLAN HAVUZU (K332, 13.10.2026) ═══
@@ -174,8 +177,13 @@ console.log("\n5) ARKA PLAN HAVUZU (K332)");
   /* ⚠ 13.10.2026: arka plan sınırı 2 → 3 (çekirdekler 10'la yazılmıştı; 2 iç içe işlemde
      kuyruk kilidi riski). İki havuzu artık AYIRAN değer `minimumIdle` (3 ↔ 1). */
   /* ⚠ 13.10.2026 «5 yap»: sayfa havuzu 3 → 5 (gerekçe ve bütçe `veritabani-adresi.ts`te). */
-  kontrol("  ...değer: işaret yokken sayfa havuzu (5 · boşta 5), varken arka plan havuzu (3 · boşta 1)",
-    once.connectionLimit === "5" && once.minimumIdle === "5" && SAYFA_HAVUZU_BOYUTU === 5 && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1", { once, sonra });
+  /* ⛔ K355 (22.10.2026): sayfa havuzu boşta 5 → 1 (kota tükenmesi; gerekçe `veritabani-adresi.ts`). */
+  kontrol("  ...değer: işaret yokken sayfa havuzu (5 · boşta 1), varken arka plan havuzu (3 · boşta 1)",
+    once.connectionLimit === "5" && once.minimumIdle === "1" && SAYFA_HAVUZU_BOYUTU === 5 && SICAK_TUTULAN_BAGLANTI === 1 && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1", { once, sonra });
+  /* KOTA BÜTÇESİ — boştaki her kopya `minimumIdle` kadar bağlantı tutar; 25'lik kotaya kaç
+     boş kopya sığar? 20'nin altına düşerse (ör. biri yine 5 yaparsa) kırmızı. */
+  const KOTA = 25;
+  kontrol(`  ...boştaki kopya bütçesi: ${KOTA} ÷ ${once.minimumIdle} ≥ 20 kopya`, KOTA / Number(once.minimumIdle) >= 20);
   /* ⛔ ÇEKİRDEKLER UYGULAMANIN İSTEMCİSİNİ KULLANMIYOR (bulgu 13.10.2026): çekim uçları
      `scripts/` altındaki çekirdekleri çağırıyor ve onlar kendi istemcisini HAM adresle
      kuruyordu — sürücü varsayılanı 10 bağlantı; canlıdaki «10»lar buydu, işaret oraya

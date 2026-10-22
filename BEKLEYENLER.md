@@ -63,6 +63,20 @@
 
 ---
 
+## 🔴 K355 — BAĞLANTI KOTASI TÜKENİYORDU: SİTE 30 SN BEKLEYİP DÜŞÜYORDU · 22.10.2026 · [YAZILDI — CANLIDA ÖLÇÜLECEK]
+
+**Kullanıcı 22.10 08:34 ve 08:42:** telefonda «ilk açılış ~30 sn sürdü, açılmadı» (kod `525796683`), bilgisayarda da aynı (kod `170653203`). **Vercel kaydı (bağlayıcı erişimi bu sabah kullanıcı onayıyla açıldı — K329'daki 403 kalktı):** en sık hata `pool timeout: failed to retrieve a connection from pool after 10000ms (active=0 idle=0 limit=5)` — 282 grup kaydı (ilk 10.08), **son 72 saatte ~360 satır, 21 ayrı yayında**; `170653203` = 06:42:45Z `GET /` aynı hata. 06:22–06:42Z arası sayfalar, çekimler, sıcak tutma HEPSİ düştü; 06:49Z `/api/olcum` yine 363–797 ms (aralıklı kesinti).
+**KÖK (ölçüm + kod):** KAS `max_user_connections = 25` (13.08 ölçümü, `veritabani-adresi.ts`). Sayfa havuzu K332'de (13.10) SABİT yapılmıştı: kopya başına `minimumIdle 5` + sıcak tutma dakikada bir havuzun TAMAMINI yokluyordu → **5 kopya × 5 = 25 = kota dolu**; altıncı kopya / çekim bağlantı açamıyor. Kopya sayısını büyüten: sık yayın (açık eski sekmeler eski sürümleri ayakta tutuyor — kayıtta 06:42Z'de eski `dpl_5f3C…` ve `dpl_AbvH…`ya giden istekler var) · dakikalık sorgular (kasa sesi 15.10 · hedef 21.10) · çekimler. «Dünden beri» = en sık yayın yapılan iki gün (21.10: 6 · 22.10: 7+).
+**Düzeltme:** sayfa havuzu boşta **1** bağlantı (sınır 5 kalır, yoğunlukta açılır, 60 sn boşta 1'e iner) · sıcak tutma yalnız boşta tutulan sayıyı yoklar (`SICAK_TUTULAN_BAGLANTI`, tek kaynak) → 25'lik kotaya ~20+ boş kopya sığar. Bedeli: ilave bağlantı kurulumu ~0,5 sn (12.10 ölçümü). ⛔ `minimumIdle=0` yasağı aynen. Bekçi `cron-yollari:dogrula` 33 (ölçüt çevrildi, gerekçesi dosyada + kota bütçesi ölçütü ≥ 20 kopya); mutasyon 3/3 (zararsız yeşil · boşta 5'e dönüş · sıcak tutma tamamını yoklar). `mutasyon-capa` 1235 · `api` · `sunucu-hatasi` · `oturum` · tsc · lint temiz.
+**Canlıda ölçüm (yayından sonra):** Vercel kaydında `pool timeout` sayısı — yayın sonrası 24 saat ≈ 0 olmalı.
+**Halil testi:** ① yarın sabah programı telefonda ilk kez aç → birkaç saniyede açılır ② gün boyu «Bu ekran çizilemedi» görmezsin; görürsen kodu ilet.
+
+## 🧭 K356 — SaaS İÇİN VERİTABANI KATMANI: 25 BAĞLANTILIK PAYLAŞIMLI HOSTİNG TAŞIMAZ · 22.10.2026 · [KARAR BEKLİYOR — kullanıcı]
+
+**Kullanıcı 22.10:** _«Bu sistemi SaaS olarak satacağız. 1 kişide patlarsa ilerde ne yapacağız.»_ **Ölçülen gerçek:** bugün TEK firma, TEK kullanıcıyla KAS'ın hesap başına 25 bağlantı tavanına çarpıldı. Vercel gibi sunucusuz (serverless) bir yapıda her sunucu kopyası kendi bağlantısını açar; kullanıcı ve firma sayısı arttıkça kopya sayısı artar. K355 bu tavanı ~4 kat geniş kullanır ama **tavanı kaldırmaz** — 10 firmada yine dolar. Paylaşımlı hosting MySQL'i (KAS) SaaS için uygun değil; bu bir kod değil ALTYAPI kararıdır.
+**Seçenekler (fiyat ve kurulum ayrıca ölçülecek — tahmin yok):** ① **yönetilen MySQL** (bağlantı sınırı yüzler–binler; ör. AWS RDS / Aiven / DigitalOcean, Frankfurt) ② **araya bağlantı havuzlayıcı** (yüzlerce sunucu kopyası → birkaç gerçek bağlantı; ör. RDS Proxy, ProxySQL, Prisma Accelerate) ③ ikisi birlikte (SaaS için standart). Taşıma = veri göçü + bağlantı adresi değişikliği; şema değişmez.
+**Sıra önerisi:** K303 deneme kurulumu zaten AYRI veritabanı istiyor → yeni katman önce ORADA kurulup ölçülür, Axcali kanıtlandıktan sonra taşınır (anayasa: canlı Axcali deneme kanıtlanana kadar değişmez). Karar ve bütçe kullanıcının.
+
 ## 🔴 K354 — VERİTABANI ANLIK YANIT VERMEYİNCE KULLANICI DIŞARI ATILIYORDU · 22.10.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 22.10:** _«dünden beri baya yavaş, çok sık 404 veriyor, bir süre sonra çıkış yapıp şifre sayfasına atıyor»_ + _«kullanım kılavuzunu yenilediğimiz zamanlara denk geliyor»_.

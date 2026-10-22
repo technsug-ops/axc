@@ -76,14 +76,33 @@
  * kötü anda 3 sayfa kopyası × 6 + çekimler ≈ 27 > 25 (`max_user_connections`).
  * 5'te ≈ 24. Sıcak tutma ucu bu sayıyı buradan okur (`SAYFA_HAVUZU_BOYUTU`).
  */
+/**
+ * ⛔ `minimumIdle` 5 → 1 (K355, kullanıcı «önce problemi çöz», 22.10.2026) — 12.10/13.10
+ * gerekçeleri SİLİNMEDİ, bedeli ÖLÇÜLDÜ. Sabit havuz kopya başına 5 bağlantıyı HER ZAMAN
+ * açık tutuyordu ve sıcak tutma dakikada bir beşini birden canlı tutuyordu: 5 kopya × 5 =
+ * 25 = `max_user_connections`. Kota dolunca yeni kopya bağlantı AÇAMADI → Vercel kaydı
+ * (erişim 22.10'da açıldı): `pool timeout … active=0 idle=0`, son 72 saatte ~360 satır,
+ * 21 ayrı yayında; kullanıcı «30 sn açılmadı · 404 · şifre sayfasına attı».
+ * Kopya sayısını büyüten: sık yayın + açık eski sekmeler (eski sürümler ayakta kalır) +
+ * dakikalık sorgular (kasa sesi · hedef) + çekimler. Artık boştaki kopya 1 bağlantı
+ * tutar (kota ≈ 20+ kopyaya yeter); yoğunlukta 5'e kadar açar, 60 sn boşta 1'e iner.
+ * Bedeli: ilave bağlantı kurulumu ~0,5 sn (12.10 ölçümü) — kesintiden çok küçük.
+ * ⛔ `minimumIdle=0` YASAĞI AYNEN GEÇERLİ.
+ */
 const UYGULAMA_HAVUZU = {
   connectionLimit: "5",
-  minimumIdle: "5",
+  minimumIdle: "1",
   idleTimeout: "60",
 } as const;
 
-/** Sayfa havuzunun boyutu — sıcak tutma ucu bu kadar bağlantıyı aynı anda yoklar. */
+/** Sayfa havuzunun üst sınırı (yoğunlukta açılabilecek bağlantı). */
 export const SAYFA_HAVUZU_BOYUTU = Number(UYGULAMA_HAVUZU.connectionLimit);
+/**
+ * Sıcak tutma ucunun yokladığı bağlantı sayısı = boşta tutulan sayı (K355). Eskiden
+ * havuzun TAMAMI yoklanıyordu; `minimumIdle` düşse bile uç her dakika beşini yeniden
+ * açar ve düzeltme işe yaramazdı.
+ */
+export const SICAK_TUTULAN_BAGLANTI = Number(UYGULAMA_HAVUZU.minimumIdle);
 
 /**
  * ARKA PLAN HAVUZU (K332, 13.10.2026) — çekim uçları gibi `maxDuration` taşıyan
