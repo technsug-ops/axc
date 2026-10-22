@@ -135,8 +135,13 @@ console.log("\n4) panelin öteki rakamları kaynağına (İlke #16, 09.10.2026)"
   kontrol("  ...brüt ciro notu → dönem satışları", /<Link href=\{satisListesi\(\)\} className=\{kaynak\}>\{t\("dagilimNotu"/.test(panel));
   kontrol("  ...her kesinti tutarı → kârı hesaplanmış satışlar (dağılımın kaynağı)",
     /<Link href=\{hesaplananlar\} className=\{`tabular-nums \$\{kaynak\}`\}>\{tl\(s\.tutar\)\}<\/Link>/.test(panel));
+  /* ⚠ ÖLÇÜT GÜNCELLENDİ 22.10.2026 (K360): kalan NET-2 artık İADE ETKİSİNİ de içerir
+     (üstteki kartla aynı rakam — kullanıcı «bu iki rakam aynı olmalı»). Eski ölçüt
+     `{tl(net2)}` arıyordu; davranış doğru, ölçüt eskidi. İade satırı kendi kaynağına
+     (/iadeler) gider. */
   kontrol("  ...ödenecek KDV ve kalan NET-2 → kârı hesaplanmış satışlar",
-    /href=\{hesaplananlar\}[^>]*>\{tl\(net1 - net2\)\}/.test(panel) && /href=\{hesaplananlar\}[^>]*>\{tl\(net2\)\}/.test(panel));
+    /href=\{hesaplananlar\}[^>]*>\{tl\(net1 - net2\)\}/.test(panel) && /href=\{hesaplananlar\}[^>]*>\{tl\(net2 \+ iadeNet2\)\}/.test(panel));
+  kontrol("  ...iade etkisi → İadeler ekranı", /href="\/iadeler"[^>]*>\{tl\(iadeNet2\)\}/.test(panel));
   kontrol("  ...hesaplanmayan ciro → kârı EKSİK satışlar", /href=\{satisListesi\(\{ kar: "eksik" \}\)\}[^>]*>\{tl\(hesaplanmayanCiro\)\}/.test(panel));
   kontrol("  ...sipariş sayısı → dönem satışları; adet → kârı hesaplanmış",
     /<Link href=\{satisListesi\(\)\} className=\{kaynak\}>\{t\("aovNotu"/.test(panel) &&
