@@ -71,6 +71,10 @@
 **Canlıda ölçüm (yayından sonra):** Vercel kaydında `pool timeout` sayısı — yayın sonrası 24 saat ≈ 0 olmalı.
 **Halil testi:** ① yarın sabah programı telefonda ilk kez aç → birkaç saniyede açılır ② gün boyu «Bu ekran çizilemedi» görmezsin; görürsen kodu ilet.
 
+## 🟢 K357 — YAYIN DÜZENİ: ÇALIŞMA `gelistirme`DE, CANLIYA YALNIZ «YAYINLA» İLE · 22.10.2026 · [YAZILDI]
+
+**Kullanıcı kararı 22.10 («her ikisine de evet»):** gün içinde yayın seyrekleşsin. **Neden doğrudan otomatik yayın kapatılmadı:** K329 «canlı site geride» uyarısı her gün yalancı kırmızı yakardı — ve o uyarı bu sabah gerçek bir boşluğu yakaladı. **Düzen:** iş `gelistirme` dalında commit + push (bekçi kapısı aynen); `vercel.json` → `git.deploymentEnabled.gelistirme = false` (Vercel belgesi: dal başına kapatma; belirtilmeyen dal açık). «Yayınla» → `main` ileri sarılır + push → Vercel `main`i yayımlar → K329 uyarısı anlamını korur. Doğrulama artık ELİMDE: Vercel erişimi açık (dağıtım HAZIR + `bezirga.com` takma adı yeni dağıtımda). CLAUDE.md «Commit düzeni» + hafıza güncellendi. Bekçi `yayin-boslugu:dogrula` 35 (4. bölüm); mutasyon 4/4 (gelistirme açılır · main kapanır · genel kapatma kırmızı; başka dal eklemek yeşil). ⚠ Gece turu `main`i sınar — yayımlanmamış iş gece turuna yayından sonra girer (push kapısı bütün bekçileri zaten koşuyor).
+
 ## 🧭 K356 — SaaS İÇİN VERİTABANI KATMANI: 25 BAĞLANTILIK PAYLAŞIMLI HOSTİNG TAŞIMAZ · 22.10.2026 · [KARAR BEKLİYOR — kullanıcı]
 
 **Kullanıcı 22.10:** _«Bu sistemi SaaS olarak satacağız. 1 kişide patlarsa ilerde ne yapacağız.»_ **Ölçülen gerçek:** bugün TEK firma, TEK kullanıcıyla KAS'ın hesap başına 25 bağlantı tavanına çarpıldı. Vercel gibi sunucusuz (serverless) bir yapıda her sunucu kopyası kendi bağlantısını açar; kullanıcı ve firma sayısı arttıkça kopya sayısı artar. K355 bu tavanı ~4 kat geniş kullanır ama **tavanı kaldırmaz** — 10 firmada yine dolar. Paylaşımlı hosting MySQL'i (KAS) SaaS için uygun değil; bu bir kod değil ALTYAPI kararıdır.

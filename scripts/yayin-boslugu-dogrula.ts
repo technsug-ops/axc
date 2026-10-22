@@ -17,7 +17,7 @@ import { anaDalUcunuCoz, YAYIN_PAYI_DAKIKA, yayinBosluguSayisi, yayinDurumu } fr
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 3;
+const BOLUM_SAYISI = 4;
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -112,6 +112,22 @@ console.log("=".repeat(70));
   kontrol("ekran ölçülemediği NEDENİYLE yazar", /t\(`yayinOLCULEMEDI_\$\{yayin\.neden\}`\)/.test(sayfa));
   kontrol("ekran geride dakikayı yazar", /t\("yayinGERIDE", \{ dakika: yayin\.dakika \}\)/.test(sayfa));
   kosanBolumler.push("bag");
+}
+
+/* ═══ 4) YAYIN DÜZENİ (K357, kullanıcı kararı 22.10.2026) ═══
+   Gün içinde 6–7 yayın bağlantı kotasını zorluyordu (K355). Çalışma `gelistirme`
+   dalında ilerler ve YAYIMLANMAZ; kullanıcı «yayınla» deyince `main`e aktarılır ve
+   Vercel yalnız `main`i yayımlar. ⛔ `main` kapatılırsa canlıya hiçbir şey çıkmaz;
+   `gelistirme` açılırsa her push yine yayın olur. */
+console.log("\n4) yayın düzeni — yalnız main yayımlanır");
+{
+  const ayar = JSON.parse(oku("vercel.json")) as { git?: { deploymentEnabled?: Record<string, boolean> | boolean } };
+  const acik = ayar.git?.deploymentEnabled;
+  kontrol("dal başına yayın ayarı var (genel kapatma DEĞİL)", typeof acik === "object" && acik !== null);
+  const dallar = typeof acik === "object" && acik !== null ? acik : {};
+  kontrol("  ...`gelistirme` dalı YAYIMLANMAZ", dallar["gelistirme"] === false);
+  kontrol("  ...`main` kapatılmamış (canlıya tek yol)", dallar["main"] !== false && !Object.entries(dallar).some(([d, v]) => v === false && (d === "*" || d === "main")));
+  kosanBolumler.push("duzen");
 }
 
 console.log("=".repeat(70));

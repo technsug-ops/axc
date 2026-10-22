@@ -4277,6 +4277,16 @@ da doğrulanır.
 
 ## Commit düzeni
 - Depo: https://github.com/technsug-ops/axc — ana dal `main`
+- **YAYIN DÜZENİ — kullanıcı kararı 22.10.2026 (K357):** çalışma **`gelistirme`**
+  dalında ilerler; her iş commit + push edilir (bekçi kapısı aynen), ama Vercel o
+  dalı YAYIMLAMAZ (`vercel.json` → `git.deploymentEnabled.gelistirme = false`).
+  **Canlıya çıkış = kullanıcı «yayınla» der** → `main` `gelistirme`ye ileri sarılır
+  (`git merge --ff-only gelistirme`) ve `main` push edilir; Vercel yalnız `main`i
+  yayımlar. Yayından sonra Vercel'de dağıtımın HAZIR olduğu ve bezirga.com'un yeni
+  sürüme geçtiği doğrulanır. Acil düzeltme kullanıcı onayıyla hemen yayımlanır.
+  _Gerekçe (K355): gün içinde 6–7 yayın, eski sürümleri açık sekmelerle ayakta
+  tutup KAS'ın 25'lik bağlantı kotasını tüketiyordu._ Bekçi: `yayin-boslugu:dogrula`
+  4. bölüm (`gelistirme` açılır ya da `main` kapanırsa kırmızı).
 - Her anlamlı iş biriminde commit at; günün sonunda değil, iş bitince
 - Bir aşama (ör. "ürün ekranı") bittiğinde mutlaka commit + push
 - Büyük bir işe başlamadan önce mevcut durum temizse commit at (geri dönüş noktası)
