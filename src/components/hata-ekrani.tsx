@@ -5,6 +5,7 @@ import { AlertTriangle } from "lucide-react";
 
 import { veritabaniUlasilabilirMi } from "@/app/hata-sondasi";
 import { hataEkranDurumu, hataKodu, type Sonda } from "@/lib/hata/durum";
+import { denemeKaydiCoz, otomatikDenemeKarari } from "@/lib/hata/yeniden-deneme";
 import { DURUM_YAZISI } from "@/lib/renkler";
 
 /**
@@ -34,7 +35,34 @@ export type HataMetinleri = {
   neYapmali_SUNUCU_HATASI: string;
   tekrarDene: string;
   kodEtiketi: string;
+  /** «{sn}» yer tutucusu kalan saniyeyle değiştirilir. */
+  otomatikDeneme: string;
+  otomatikBitti: string;
 };
+
+/**
+ * Deneme kaydının deposu — `sessionStorage`. ⛔ Burada bellek YETMEZ: deneme sayfayı
+ * yeniden yükler ve bellek sıfırlanır; sayı tutulamazsa her açılış «ilk deneme» sanılır
+ * ve ekran 5 sn'de bir SONSUZA kadar yenilenirdi. Bu yüzden depo çalışmıyorsa otomatik
+ * deneme HİÇ yapılmaz, düğme kalır (gizli sekme · site verisi engeli).
+ */
+const DENEME_ANAHTARI = "hata-otomatik-deneme";
+let depoCalisiyor = true;
+function kayitOku(): string | null {
+  try {
+    return window.sessionStorage.getItem(DENEME_ANAHTARI);
+  } catch {
+    depoCalisiyor = false;
+    return null;
+  }
+}
+function kayitYaz(deger: string) {
+  try {
+    window.sessionStorage.setItem(DENEME_ANAHTARI, deger);
+  } catch {
+    depoCalisiyor = false;
+  }
+}
 
 export function HataEkrani({
   digest,
@@ -65,6 +93,39 @@ export function HataEkrani({
       });
     return () => {
       iptal = true;
+    };
+  }, []);
+
+  /**
+   * K358 — OTOMATİK YENİDEN DENEME. Karar saf gövdeden (`otomatikDenemeKarari`);
+   * süre dolunca sayfa YENİDEN YÜKLENİR (sunucu bileşeni yeniden çizilsin diye —
+   * `reset()` yalnız istemci sınırını sıfırlar). Hükümden bağımsız.
+   */
+  const [kalan, setKalan] = useState<number | null>(null);
+  const [denemeBitti, setDenemeBitti] = useState(false);
+  useEffect(() => {
+    const karar = otomatikDenemeKarari(denemeKaydiCoz(kayitOku()), window.location.pathname, Date.now());
+    kayitYaz(JSON.stringify(karar.yeniKayit));
+    /* Durum zamanlayıcı geri çağrısında kurulur — etki gövdesinde doğrudan değil (lint kuralı). */
+    if (karar.bekleSn === null || !depoCalisiyor) {
+      const z = window.setTimeout(() => setDenemeBitti(true), 0);
+      return () => window.clearTimeout(z);
+    }
+    const bitis = Date.now() + karar.bekleSn * 1000;
+    let sayac = 0;
+    const tik = () => {
+      const sn = Math.max(0, Math.ceil((bitis - Date.now()) / 1000));
+      setKalan(sn);
+      if (sn === 0) {
+        window.clearInterval(sayac);
+        window.location.reload();
+      }
+    };
+    const ilk = window.setTimeout(tik, 0);
+    sayac = window.setInterval(tik, 250);
+    return () => {
+      window.clearTimeout(ilk);
+      window.clearInterval(sayac);
     };
   }, []);
 
@@ -101,6 +162,16 @@ export function HataEkrani({
 
       {neYapmali ? (
         <p className="text-muted-foreground text-sm">{neYapmali}</p>
+      ) : null}
+
+      {/* K358 — geri sayım görünür; denemeler bitince NEDEN durduğu yazar (İlke #5). */}
+      {kalan !== null && !denemeBitti ? (
+        <p className="text-sm font-medium" aria-live="polite">
+          {metin.otomatikDeneme.replace("{sn}", String(kalan))}
+        </p>
+      ) : null}
+      {denemeBitti ? (
+        <p className="text-muted-foreground text-sm">{metin.otomatikBitti}</p>
       ) : null}
 
       {/*

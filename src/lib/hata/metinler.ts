@@ -33,4 +33,6 @@ export const HATA_METINLERI: HataMetinleri = {
   neYapmali_SUNUCU_HATASI: H.neYapmaliSUNUCU_HATASI,
   tekrarDene: H.tekrarDene,
   kodEtiketi: H.kodEtiketi,
+  otomatikDeneme: H.otomatikDeneme,
+  otomatikBitti: H.otomatikBitti,
 };

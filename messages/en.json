@@ -4839,7 +4839,9 @@
     "neYapmaliSUNUCUYA_ULASILAMADI": "",
     "neYapmaliSUNUCU_HATASI": "",
     "tekrarDene": "",
-    "kodEtiketi": ""
+    "kodEtiketi": "",
+    "otomatikDeneme": "",
+    "otomatikBitti": ""
   },
   "Donem": {
     "israrBaslik": "",
@@ -5458,6 +5460,15 @@
     "aramaListeBaslik": ""
   },
   "GeceTuru": {
+    "erisimBaslik": "",
+    "erisimSayisi": "",
+    "erisimYok": "",
+    "erisimNeIse": "",
+    "erisimDogum": "",
+    "erisimAralik": "",
+    "erisimBasarisiz": "",
+    "erisimOlculmedi": "",
+    "erisimCozulemeyen": "",
     "hataBaslik": "",
     "hataSayisi": "",
     "hataYok": "",

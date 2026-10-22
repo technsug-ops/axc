@@ -2,6 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
 import { ARKA_PLAN_HAVUZU, SAYFA_HAVUZU_BOYUTU, SICAK_TUTULAN_BAGLANTI, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
+import { BOSLUK_ESIGI_MS, erisimBoslugu, erisimBosluguCoz } from "../src/lib/veritabani-erisim";
 
 /**
  * ============================================================================
@@ -138,8 +139,27 @@ console.log("\n4) SICAK TUTMA UCU (K332)");
   /* ⛔ ÖLÇÜT ÇEVRİLDİ (K355, 22.10.2026): «havuzun BÜTÜN bağlantıları» sabit havuzu dakikada
      bir dolduruyor ve 25'lik kotayı tüketiyordu (Vercel kaydı: pool timeout active=0). Artık
      yalnız BOŞTA tutulan sayı yoklanır; sayı yine tek kaynaktan. */
-  kontrol("  ...yalnız SELECT 1 (boşta tutulan bağlantılara, sayı tek kaynaktan), yazma yok",
-    /Array\.from\(\{ length: SICAK_TUTULAN_BAGLANTI \}, async \(\) => \{[\s\S]{0,120}?await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/prisma\.\w+\.(create|update|upsert|delete)/.test(kod) && !/\$executeRaw/.test(kod));
+  /* ⛔ ÖLÇÜT DARALTILDI (K358, 22.10.2026): «yazma YOK» → «YALNIZ son erişim anı + boşluk izi».
+     Uç artık erişim boşluğunu kaydediyor (kesinti kanıtı uygulamanın kendi kaydına girsin).
+     Başka bir modele yazma hâlâ YASAK — yeni bir yazım bu ölçütü kırmızı yakar. */
+  const yazimlar = [...kod.matchAll(/prisma\.(\w+)\.(create|createMany|update|updateMany|upsert|delete|deleteMany)\(/g)].map((m) => `${m[1]}.${m[2]}`);
+  kontrol("  ...yalnız SELECT 1 (boşta tutulan bağlantılara, sayı tek kaynaktan); ham yazım yok",
+    /Array\.from\(\{ length: SICAK_TUTULAN_BAGLANTI \}, async \(\) => \{[\s\S]{0,120}?await prisma\.\$queryRawUnsafe\("SELECT 1"\);/.test(kod) && !/\$executeRaw/.test(kod));
+  kontrol("  ...yazdığı TEK model son erişim deposu (bildirimImleci)", yazimlar.length >= 1 && yazimlar.every((y) => y.startsWith("bildirimImleci.")), yazimlar);
+  kontrol("  ...son erişim KOŞULLU ilerler (iki kopya aynı boşluğu iki kez yazmaz)",
+    /prisma\.bildirimImleci\.updateMany\(\{ where: \{ anahtar: SON_ERISIM_ANAHTARI, an: onceki\.an \}, data: \{ an: simdi \} \}\);\s*if \(ilerledi\.count === 1 && bosluk\) \{\s*await izYaz\(\{ action: ERISIM_BOSLUGU_EYLEMI/.test(kod));
+  kontrol("  ...düşen yoklama sayılır, başarılı yoklamada sıfırlanır",
+    /\} catch \(hata\) \{[\s\S]{0,200}basarisizYoklama \+= 1;/.test(kod) && /basarisizYoklama = 0;\s*return NextResponse\.json\(\{ durum: "SICAK"/.test(kod));
+
+  /* Boşluk kararı DEĞERLE (saf gövde). */
+  const t0 = new Date("2026-10-22T06:21:00Z");
+  kontrol("  boşluk: önceki erişim yoksa kayıt YOK", erisimBoslugu(null, t0, 5) === null);
+  kontrol("  boşluk: eşiğin altı (2 dk 59 sn) kayıt YOK", erisimBoslugu(t0, new Date(t0.getTime() + BOSLUK_ESIGI_MS - 1000), 2) === null);
+  const yirmi = erisimBoslugu(t0, new Date("2026-10-22T06:42:30Z"), 21);
+  kontrol("  boşluk: 22.10 vakası → 22 dk · 21 başarısız · uçlar doğru",
+    yirmi?.dakika === 22 && yirmi.basarisizYoklama === 21 && yirmi.baslangic === "2026-10-22T06:21:00.000Z" && yirmi.bitis === "2026-10-22T06:42:30.000Z", yirmi);
+  kontrol("  boşluk: tam eşik (3 dk) kayıt VAR", erisimBoslugu(t0, new Date(t0.getTime() + BOSLUK_ESIGI_MS), 0)?.dakika === 3);
+  kontrol("  çözüm: bozuk iz null, sağlam iz geri gelir", erisimBosluguCoz("{x") === null && erisimBosluguCoz(JSON.stringify(yirmi))?.basarisizYoklama === 21);
 }
 
 /* ═══ 5) ARKA PLAN HAVUZU (K332, 13.10.2026) ═══

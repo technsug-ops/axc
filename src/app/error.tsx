@@ -38,6 +38,8 @@ export default function SayfaHatasi({
         neYapmali_SUNUCU_HATASI: t("neYapmaliSUNUCU_HATASI"),
         tekrarDene: t("tekrarDene"),
         kodEtiketi: t("kodEtiketi"),
+        otomatikDeneme: t("otomatikDeneme", { sn: "{sn}" }),
+        otomatikBitti: t("otomatikBitti"),
       }}
     />
   );

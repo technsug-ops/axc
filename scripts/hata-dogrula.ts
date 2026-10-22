@@ -7,6 +7,12 @@ import {
 } from "../src/lib/hata/durum";
 import { HATA_METINLERI } from "../src/lib/hata/metinler";
 import {
+  DENEME_PENCERESI_MS,
+  denemeKaydiCoz,
+  OTOMATIK_BEKLEMELER_SN,
+  otomatikDenemeKarari,
+} from "../src/lib/hata/yeniden-deneme";
+import {
   FIRMA_IZINLERI,
   SAGLAYICI_IZINLERI,
   TUM_IZINLER,
@@ -66,7 +72,7 @@ const dusen: string[] = [];
  * ⚠ BÖLÜM EKLENİNCE BU SAYI DA ARTAR. Artırmayı unutmak "yarım kaldı" der ve
  * doğru davranır; eksik bırakmak yeşil yanardı.
  */
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ipucu?: string) {
@@ -588,6 +594,47 @@ function blok(metin: string, capa: string, uzunluk: number): string {
   );
 
   kosanBolumler.push("deneme rotası");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  §8 OTOMATİK YENİDEN DENEME (K358, 22.10.2026)
+// ---------------------------------------------------------------------------
+//  Kısa veritabanı kesintisinde ekran kendisi dener. En pahalı bozulma SONSUZ
+//  YENİLEME DÖNGÜSÜ: sayı yenilemeyi atlatmazsa ya da tavan kalkarsa ekran
+//  telefonda 5 sn'de bir sonsuza kadar yenilenir. Karar DEĞERLE sınanır.
+// ═══════════════════════════════════════════════════════════════════════════
+{
+  const Y = "/satislar";
+  let kayit = null as ReturnType<typeof otomatikDenemeKarari>["yeniKayit"] | null;
+  const beklemeler: (number | null)[] = [];
+  for (let i = 0; i < 6; i++) {
+    const k = otomatikDenemeKarari(kayit, Y, 1_000_000 + i * 20_000);
+    beklemeler.push(k.bekleSn);
+    kayit = k.yeniKayit;
+  }
+  kontrol("§8 bekleme sırası 5 · 10 · 20 · 30 sn, sonra DURUR", JSON.stringify(beklemeler) === JSON.stringify([5, 10, 20, 30, null, null]), JSON.stringify(beklemeler));
+  kontrol("§8 tavandan sonra sayı ARTMAZ (sonsuz döngü yok)", kayit?.sayi === OTOMATIK_BEKLEMELER_SN.length);
+  const baskaYol = otomatikDenemeKarari(kayit, "/alimlar", 1_000_000 + 7 * 20_000);
+  kontrol("§8 başka adres = yeni olay (sıfırdan 5 sn)", baskaYol.bekleSn === 5 && baskaYol.yeniKayit.sayi === 1);
+  const pencereDisi = otomatikDenemeKarari(kayit, Y, 1_000_000 + DENEME_PENCERESI_MS + 1);
+  kontrol("§8 pencere dışı = yeni olay (eski tükenmiş sayı bugünü kilitlemez)", pencereDisi.bekleSn === 5);
+  const pencereIci = otomatikDenemeKarari(kayit, Y, 1_000_000 + DENEME_PENCERESI_MS - 1);
+  kontrol("§8 pencere içinde tükenmiş sayı yine tükenmiş", pencereIci.bekleSn === null);
+  kontrol("§8 bozuk kayıt sıfırdan başlar (uydurulmaz)",
+    denemeKaydiCoz("{bozuk") === null && denemeKaydiCoz('{"yol":"/","sayi":-1,"ilk":1}') === null &&
+      denemeKaydiCoz('{"yol":"/","sayi":2,"ilk":1}')?.sayi === 2);
+  kontrol("§8 iki sınır da yeni metinleri veriyor", HATA_METINLERI.otomatikDeneme.includes("{sn}") && HATA_METINLERI.otomatikBitti.length > 0);
+
+  const ekran = yorumsuz(oku("src/components/hata-ekrani.tsx"));
+  const etki = blok(ekran, "const karar = otomatikDenemeKarari(", 1300);
+  kontrol("§8 pencere yeterli (otomatik deneme etkisi tam)", etki.includes("}, []);"));
+  kontrol("§8 ekran kararı saf gövdeden alıyor, kaydı depodan okuyup yazıyor",
+    /const karar = otomatikDenemeKarari\(denemeKaydiCoz\(kayitOku\(\)\), window\.location\.pathname, Date\.now\(\)\);\s*kayitYaz\(JSON\.stringify\(karar\.yeniKayit\)\);/.test(etki));
+  kontrol("§8 depo çalışmıyorsa otomatik deneme YOK (sayı tutulamaz → döngü)",
+    /if \(karar\.bekleSn === null \|\| !depoCalisiyor\) \{\s*const z = window\.setTimeout\(\(\) => setDenemeBitti\(true\), 0\);\s*return \(\) => window\.clearTimeout\(z\);\s*\}/.test(etki));
+  kontrol("§8 süre dolunca sayfa yeniden yüklenir", /if \(sn === 0\) \{\s*window\.clearInterval\(sayac\);\s*window\.location\.reload\(\);/.test(etki));
+  kontrol("§8 geri sayım ve durma nedeni ekranda", /metin\.otomatikDeneme\.replace\("\{sn\}", String\(kalan\)\)/.test(ekran) && /\{metin\.otomatikBitti\}/.test(ekran));
+  kosanBolumler.push("otomatik deneme");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

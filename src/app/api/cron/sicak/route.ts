@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 import { SICAK_TUTULAN_BAGLANTI } from "@/lib/veritabani-adresi";
+import { ERISIM_BOSLUGU_EYLEMI, erisimBoslugu, SON_ERISIM_ANAHTARI } from "@/lib/veritabani-erisim";
+import { izYaz } from "@/lib/iz";
 
 /**
  * ============================================================================
@@ -21,12 +23,17 @@ import { SICAK_TUTULAN_BAGLANTI } from "@/lib/veritabani-adresi";
  *
  *  · Kapı: diğer çekim uçlarıyla AYNI `CRON_SECRET`; yanlış/boş sır 404.
  *  · İş: boşta tutulan bağlantı sayısı kadar `SELECT 1` (K355'ten beri 1; KAS boştaki
- *    bağlantıyı 120 sn'de kapatıyor). Havuzun tamamı YOKLANMAZ — kota. Hiçbir şey yazmaz.
+ *    bağlantıyı 120 sn'de kapatıyor). Havuzun tamamı YOKLANMAZ — kota.
+ *  · Yazdığı TEK şey (K358): son erişim anı (`BildirimImleci`, tek satır) ve erişim
+ *    geri geldiğinde eşikten uzun boşluğun izi. Başka hiçbir şey yazmaz.
  *  · Tetik: cron-job.org, dakikada bir (kullanıcı hesabında kurulur).
  * ============================================================================
  */
 
 export const dynamic = "force-dynamic";
+
+/** Bu kopyada son başarılı yoklamadan beri düşen yoklama sayısı (K358; bellek — kopya değişirse 0). */
+let basarisizYoklama = 0;
 
 export async function GET(istek: NextRequest) {
   const sir = process.env.CRON_SECRET?.trim() ?? "";
@@ -47,9 +54,25 @@ export async function GET(istek: NextRequest) {
         return Math.round(performance.now() - b);
       }),
     );
-    return NextResponse.json({ durum: "SICAK", veritabaniMs: Math.round(performance.now() - bas), baglantiMs: sureler, surecYasiSn: Math.round(process.uptime()) });
+    /* K358 — ERİŞİM BOŞLUĞU KAYDI (`lib/veritabani-erisim.ts`). Son erişim anı KOŞULLU
+       ilerler (okunan eski değer yerindeyse) — aynı dakikada iki kopya yoklarsa boşluğu
+       yalnız ilerletmeyi başaran yazar, iz ikilenmez (K348 imleç deseni). */
+    const simdi = new Date();
+    const onceki = await prisma.bildirimImleci.findUnique({ where: { anahtar: SON_ERISIM_ANAHTARI }, select: { an: true } });
+    const bosluk = erisimBoslugu(onceki?.an ?? null, simdi, basarisizYoklama);
+    if (onceki) {
+      const ilerledi = await prisma.bildirimImleci.updateMany({ where: { anahtar: SON_ERISIM_ANAHTARI, an: onceki.an }, data: { an: simdi } });
+      if (ilerledi.count === 1 && bosluk) {
+        await izYaz({ action: ERISIM_BOSLUGU_EYLEMI, targetType: "VERITABANI", detail: JSON.stringify(bosluk), userId: null });
+      }
+    } else {
+      await prisma.bildirimImleci.upsert({ where: { anahtar: SON_ERISIM_ANAHTARI }, create: { anahtar: SON_ERISIM_ANAHTARI, an: simdi }, update: { an: simdi } });
+    }
+    basarisizYoklama = 0;
+    return NextResponse.json({ durum: "SICAK", veritabaniMs: Math.round(performance.now() - bas), baglantiMs: sureler, surecYasiSn: Math.round(process.uptime()), bosluk });
   } catch (hata) {
     /* Yakalanmamış hata teşhisi siler (anayasa) — TAM loglanır, dışarıya kod döner. */
+    basarisizYoklama += 1;
     console.error("[sicak] veritabanı yoklaması düştü:", hata);
     return NextResponse.json({ durum: "VERITABANI_YOK" }, { status: 503 });
   }

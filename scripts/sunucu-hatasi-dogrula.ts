@@ -106,6 +106,13 @@ console.log("\n3) EKRAN — Gece bekçi turu sayfası");
   kontrol("  ...sıfırken «hata yok» YAZIYOR (kutu kaybolmuyor)", /hatalar\.toplam > 0 \? t\("hataSayisi", \{ sayi: hatalar\.toplam \}\) : t\("hataYok"\)/.test(sayfa));
   kontrol("  ...izin doğum tarihi yazıyor", /t\("hataDogum", \{ tarih: SUNUCU_HATASI_IZI_BASLANGICI \}\)/.test(sayfa));
   kontrol("  ...gösterilenden fazlası varsa SÖYLÜYOR", /hatalar\.toplam > hatalar\.satirlar\.length \? \(/.test(sayfa));
+  /* K358 — erişim boşlukları kutusu (aynı sayfa). */
+  kontrol("erişim boşlukları okunuyor", /const bosluklar = await sonErisimBosluklari\(7, HATA_GOSTERILEN\);/.test(sayfa));
+  kontrol("  ...sıfırken «boşluk yok» YAZIYOR + izin doğum tarihi",
+    /bosluklar\.toplam > 0 \? t\("erisimSayisi", \{ sayi: bosluklar\.toplam \}\) : t\("erisimYok"\)/.test(sayfa) && /t\("erisimDogum", \{ tarih: ERISIM_IZI_BASLANGICI \}\)/.test(sayfa));
+  kontrol("  ...«başarısız 0» kesinti DEĞİL «ölçülmedi» diye yazıyor (iki okuma ayrı)",
+    /b\.basarisizYoklama > 0 \? t\("erisimBasarisiz", \{ sayi: b\.basarisizYoklama \}\) : t\("erisimOlculmedi"\)/.test(sayfa));
+  kontrol("  ...okunamayan iz SAYILIYOR (gizlenmiyor)", /bosluklar\.cozulemeyen > 0 \? /.test(sayfa));
   kosanBolumler.push("ekran");
 }
 

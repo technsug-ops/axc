@@ -9,6 +9,7 @@ import { sayfaIzni } from "@/lib/yetki";
 import { yayinDurumunuOlc } from "@/lib/yayin-boslugu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { sonSunucuHatalari, SUNUCU_HATASI_IZI_BASLANGICI } from "@/lib/hata/sunucu-hatasi-kaydi";
+import { ERISIM_IZI_BASLANGICI, sonErisimBosluklari } from "@/lib/veritabani-erisim-kaydi";
 
 const HATA_TURLERI = ["render", "route", "action", "proxy"] as const;
 const HATA_GOSTERILEN = 20;
@@ -39,6 +40,7 @@ export default async function GeceTuruSayfasi() {
   const sorun = geceTuruSorunu(kayitlar[0] ?? null, simdi);
   const yayin = await yayinDurumunuOlc(simdi);
   const hatalar = await sonSunucuHatalari(7, HATA_GOSTERILEN);
+  const bosluklar = await sonErisimBosluklari(7, HATA_GOSTERILEN);
   const saatOnce = kayitlar[0] ? Math.floor((simdi.getTime() - kayitlar[0].zaman.getTime()) / 3600_000) : 0;
 
   return (
@@ -75,6 +77,37 @@ export default async function GeceTuruSayfasi() {
               <span>{t("yayinItildi", { zaman: bicim.tarihSaat(yayin.itildiAt) })}</span>
             ) : null}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* K358 — veritabanı erişim boşlukları: sıcak tutmanın dakikalık yoklamasından. Sıfırken
+          de durur (izin doğum tarihiyle); «başarısız 0» = kesinti değil «ölçülmedi». */}
+      <Card>
+        <CardContent className="space-y-3 p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-medium">{t("erisimBaslik")}</p>
+            <p className={`text-sm ${bosluklar.toplam > 0 ? DURUM_YAZISI.olumsuz : DURUM_YAZISI.olumlu}`}>
+              {bosluklar.toplam > 0 ? t("erisimSayisi", { sayi: bosluklar.toplam }) : t("erisimYok")}
+            </p>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            {t("erisimNeIse")} {t("erisimDogum", { tarih: ERISIM_IZI_BASLANGICI })}
+          </p>
+          {bosluklar.satirlar.length > 0 ? (
+            <ul className="divide-y rounded-md border">
+              {bosluklar.satirlar.map((b, i) => (
+                <li key={i} className="space-y-0.5 px-3 py-2 text-xs">
+                  <p className="font-medium">
+                    {t("erisimAralik", { baslangic: bicim.tarihSaat(new Date(b.baslangic)), bitis: bicim.tarihSaat(new Date(b.bitis)), dakika: b.dakika })}
+                  </p>
+                  <p className={b.basarisizYoklama > 0 ? DURUM_YAZISI.olumsuz : "text-muted-foreground"}>
+                    {b.basarisizYoklama > 0 ? t("erisimBasarisiz", { sayi: b.basarisizYoklama }) : t("erisimOlculmedi")}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {bosluklar.cozulemeyen > 0 ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("erisimCozulemeyen", { sayi: bosluklar.cozulemeyen })}</p> : null}
         </CardContent>
       </Card>
 

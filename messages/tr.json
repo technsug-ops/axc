@@ -4839,7 +4839,9 @@
     "neYapmaliSUNUCUYA_ULASILAMADI": "Yapman gereken bir şey yok. İnternetin çalışıyorsa sorun bizde; birkaç dakika sonra tekrar dene.",
     "neYapmaliSUNUCU_HATASI": "Tekrar dene. Aynı ekranda tekrarlıyorsa aşağıdaki kodu ilet.",
     "tekrarDene": "Tekrar dene",
-    "kodEtiketi": "Hata kodu"
+    "kodEtiketi": "Hata kodu",
+    "otomatikDeneme": "{sn} sn sonra kendiliğinden yeniden denenecek.",
+    "otomatikBitti": "Kendiliğinden deneme durdu. Birkaç dakika sonra «Tekrar dene»ye basın; sürerse aşağıdaki kodu iletin."
   },
   "Donem": {
     "israrBaslik": "Kapalı döneme yazıyorsunuz",
@@ -5458,6 +5460,15 @@
     "aramaListeBaslik": "Arama sonuçları ({sayi})"
   },
   "GeceTuru": {
+    "erisimBaslik": "Veritabanı erişim boşlukları (7 gün)",
+    "erisimSayisi": "{sayi} boşluk",
+    "erisimYok": "Son 7 günde boşluk yok.",
+    "erisimNeIse": "Sistem veritabanını dakikada bir yokluyor; 3 dakikadan uzun ulaşılamayan aralıklar burada yazar.",
+    "erisimDogum": "Bu kayıt {tarih} tarihinde başladı; ondan önceki günler için «boşluk yok» bir hüküm değildir.",
+    "erisimAralik": "{baslangic} – {bitis} · {dakika} dk",
+    "erisimBasarisiz": "{sayi} yoklama başarısız oldu — veritabanı yanıt vermedi.",
+    "erisimOlculmedi": "Başarısız yoklama sayılmadı — yoklama hiç gelmemiş ya da sunucu kopyası değişmiş olabilir; kesinti olduğu kesin değil.",
+    "erisimCozulemeyen": "{sayi} kayıt okunamadı (biçim bozuk).",
     "hataBaslik": "Son sunucu hataları (7 gün)",
     "hataSayisi": "{sayi} hata",
     "hataYok": "Son 7 günde sunucu hatası yok.",

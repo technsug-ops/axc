@@ -4006,6 +4006,10 @@ model PushAboneligi {
 /// Bildirim imleci — «en son hangi ana kadar bildirildi». Tek satır / olay türü.
 /// İki zamanlayıcı aynı anda koşarsa yalnız imleci KOŞULLU güncelleyebilen
 /// (eski değer hâlâ yerindeyse) gönderir: çift bildirim yapısal olarak önlenir.
+/// ⚠ İKİNCİ KULLANIM (K358, 22.10.2026): aynı «anahtar → an» deposu, anahtar
+/// `veritabani:son-erisim` ile sıcak tutma ucunun son başarılı veritabanı
+/// yoklamasını da tutar (erişim boşluğu kaydı, `lib/veritabani-erisim.ts`).
+/// Yeni tablo açılmadı (anayasa: şema değişikliği en pahalı çözüm); ad tarihseldir.
 model BildirimImleci {
   anahtar String   @id @db.VarChar(64)
   an      DateTime @db.DateTime(3)
