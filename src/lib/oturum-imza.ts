@@ -38,6 +38,39 @@ export type JetonGovdesi = {
   sonGecerlilik: number;
 };
 
+/**
+ * KAYAN OTURUM (kullanıcı 22.10.2026: telefonda gece birden yeniden giriş
+ * istendi). Süre eskiden GİRİŞ ANINDAN sayılıyordu ve kullanılsa da uzamıyordu:
+ * her gün kullanan biri de 30. günün sonunda habersiz dışarı atılıyordu.
+ * Artık jeton bir günden eskiyse kapı (`proxy.ts`) AYNI kullanıcı + AYNI oturum
+ * sürümüyle yenisini yazar; süre yeniden 30 gün olur. Günde en çok bir kez.
+ * ⚠ İptal bozulmaz: sürüm KOPYALANIR, artırılmaz — parola değişimi / her yerden
+ * çıkış sonrası eski sürümlü jeton yenilense de sayfa onu veritabanında reddeder.
+ * Süresi geçmiş jeton buraya hiç ulaşmaz (`jetonuCoz` null döner).
+ */
+export const YENILEME_ESIGI_MS = 24 * 60 * 60 * 1000;
+
+export function yenilenecekGovde(govde: JetonGovdesi, an: number): JetonGovdesi | null {
+  const kalan = govde.sonGecerlilik - an;
+  if (kalan > OTURUM_SURESI_MS - YENILEME_ESIGI_MS) return null;
+  return {
+    kullaniciId: govde.kullaniciId,
+    oturumSurumu: govde.oturumSurumu,
+    sonGecerlilik: an + OTURUM_SURESI_MS,
+  };
+}
+
+/** Çerez ayarları TEK yerde: giriş (`oturum.ts`) ve yenileme (`proxy.ts`) ayrışmasın. */
+export function oturumCereziAyarlari(sonGecerlilik: number) {
+  return {
+    httpOnly: true, // JavaScript okuyamaz
+    sameSite: "lax" as const, // siteler arası istekte gönderilmez
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    expires: new Date(sonGecerlilik),
+  };
+}
+
 function base64urlKodla(veri: Uint8Array): string {
   let ikili = "";
   for (const bayt of veri) ikili += String.fromCharCode(bayt);

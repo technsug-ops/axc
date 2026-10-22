@@ -6,6 +6,7 @@ import {
   jetonuCoz,
   OTURUM_CEREZI,
   OTURUM_SURESI_MS,
+  oturumCereziAyarlari,
 } from "@/lib/oturum-imza";
 import { prisma } from "@/lib/prisma";
 
@@ -57,13 +58,7 @@ export async function oturumAc(kullaniciId: string) {
   );
 
   const cerezler = await cookies();
-  cerezler.set(OTURUM_CEREZI, jeton, {
-    httpOnly: true, // JavaScript okuyamaz
-    sameSite: "lax", // siteler arası istekte gönderilmez
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    expires: new Date(sonGecerlilik),
-  });
+  cerezler.set(OTURUM_CEREZI, jeton, oturumCereziAyarlari(sonGecerlilik));
 
   await prisma.user.update({
     where: { id: kullaniciId },

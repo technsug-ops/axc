@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { jetonuCoz, OTURUM_CEREZI } from "@/lib/oturum-imza";
+import {
+  jetonuCoz,
+  jetonUret,
+  OTURUM_CEREZI,
+  oturumCereziAyarlari,
+  yenilenecekGovde,
+} from "@/lib/oturum-imza";
 
 /**
  * ============================================================================
@@ -121,10 +127,23 @@ export async function proxy(istek: NextRequest) {
   const jeton = istek.cookies.get(OTURUM_CEREZI)?.value;
   if (!jeton) return kapiyiKapat(istek, "giris");
 
-  const govde = await jetonuCoz(jeton, sir, Date.now());
+  const an = Date.now();
+  const govde = await jetonuCoz(jeton, sir, an);
   if (!govde) return kapiyiKapat(istek, "giris");
 
-  return NextResponse.next();
+  /*
+   * KAYAN OTURUM — yalnız SAYFA AÇILIŞINDA (`sec-fetch-dest: document`).
+   * Arka plan istekleri (önceden yükleme · sunucu eylemi · sayfa içi gezinme)
+   * yenilemez: çıkış anında yolda olan böyle bir istek, eski çerezle gelip
+   * silinen oturumu geri YAZABİLİRDİ. Programı açmak ya da sayfayı yenilemek
+   * belge isteğidir; günlük kullanım süreyi uzatmaya yeter.
+   */
+  const cevap = NextResponse.next();
+  const yeni = istek.headers.get("sec-fetch-dest") === "document" ? yenilenecekGovde(govde, an) : null;
+  if (yeni) {
+    cevap.cookies.set(OTURUM_CEREZI, await jetonUret(yeni, sir), oturumCereziAyarlari(yeni.sonGecerlilik));
+  }
+  return cevap;
 }
 
 function kapiyiKapat(istek: NextRequest, sebep: "giris" | "kurulum") {

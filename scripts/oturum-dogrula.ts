@@ -26,12 +26,15 @@ import {
   jetonUret,
   jetonuCoz,
   OTURUM_SURESI_MS,
+  oturumCereziAyarlari,
+  YENILEME_ESIGI_MS,
+  yenilenecekGovde,
 } from "../src/lib/oturum-imza";
 import { parolaDogrula, parolaOzetle, parolaYeterliMi } from "../src/lib/parola";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -246,6 +249,41 @@ async function main() {
     const parola = parolaBas >= 0 ? yetki.slice(parolaBas, yetki.indexOf("});", parolaBas)) : "";
     kontrol("parola kapısı AYNI satırı kullanır (ek okuma yok)", parola.includes("await kullaniciSatiri(kullanici.id)") && !parola.includes("prisma.user.findUnique"));
     kosanBolumler.push("tek-okuma");
+  }
+
+  // =========================================================================
+  console.log("\n7) KAYAN OTURUM — kullanıldıkça uzar, iptal bozulmaz (22.10.2026)");
+  // =========================================================================
+  /* Kullanıcı 22.10 gece telefonda habersiz dışarı atıldı: süre girişten
+     sayılıyor, kullanılsa da uzamıyordu. Saf karar DEĞERLE, kapıdaki bağı
+     kaynakla sınanır (yalnız sayfa açılışı yeniler — çıkış yarışı). */
+  {
+    const GUN = 24 * 60 * 60 * 1000;
+    const govde = (kalan: number, surum = 7) => ({ kullaniciId: "kul-1", oturumSurumu: surum, sonGecerlilik: AN + kalan });
+    kontrol("yeni jeton YENİLENMEZ (kalan tam 30 gün)", yenilenecekGovde(govde(OTURUM_SURESI_MS), AN) === null);
+    kontrol("bir günden genç jeton YENİLENMEZ (günde en çok bir kez)", yenilenecekGovde(govde(OTURUM_SURESI_MS - YENILEME_ESIGI_MS + 1), AN) === null);
+    const birGunluk = yenilenecekGovde(govde(OTURUM_SURESI_MS - YENILEME_ESIGI_MS), AN);
+    kontrol("tam bir günlük jeton yenilenir", birGunluk !== null);
+    const sonGun = yenilenecekGovde(govde(GUN / 2), AN);
+    kontrol("son gündeki jeton yenilenir, süre yeniden 30 gün", sonGun?.sonGecerlilik === AN + OTURUM_SURESI_MS, sonGun);
+    kontrol("  ...aynı kullanıcı", sonGun?.kullaniciId === "kul-1");
+    kontrol("  ...oturum sürümü KOPYALANIR, artırılmaz (iptal bozulmaz)", sonGun?.oturumSurumu === 7);
+    const yenilenmisJeton = sonGun ? await jetonUret(sonGun, SIR) : "";
+    const ileride = await jetonuCoz(yenilenmisJeton, SIR, AN + 29 * GUN);
+    kontrol("yenilenen jeton 29 gün sonra hâlâ geçerli (eskisi yarım günde ölürdü)", ileride?.kullaniciId === "kul-1" && ileride.oturumSurumu === 7);
+    const ayar = oturumCereziAyarlari(AN + OTURUM_SURESI_MS);
+    kontrol("çerez ayarları: httpOnly · lax · kök yol · bitiş", ayar.httpOnly === true && ayar.sameSite === "lax" && ayar.path === "/" && ayar.expires.getTime() === AN + OTURUM_SURESI_MS);
+
+    const yorumsuz7 = (k: string) => k.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+    const kapi = yorumsuz7(kaynakOku("src/proxy.ts"));
+    kontrol("kapı yalnız SAYFA AÇILIŞINDA yeniler (belge isteği şartı aynı ifadede)",
+      /const yeni = istek\.headers\.get\("sec-fetch-dest"\) === "document" \? yenilenecekGovde\(govde, an\) : null;/.test(kapi));
+    kontrol("  ...yeni jetonu ortak çerez ayarlarıyla yazar",
+      /if \(yeni\) \{\s*cevap\.cookies\.set\(OTURUM_CEREZI, await jetonUret\(yeni, sir\), oturumCereziAyarlari\(yeni\.sonGecerlilik\)\);\s*\}\s*return cevap;/.test(kapi));
+    const giris = yorumsuz7(kaynakOku("src/lib/oturum.ts"));
+    kontrol("giriş de AYNI çerez ayarlarını kullanır (iki yerde iki ayar yok)",
+      /cerezler\.set\(OTURUM_CEREZI, jeton, oturumCereziAyarlari\(sonGecerlilik\)\);/.test(giris) && !/httpOnly:/.test(giris));
+    kosanBolumler.push("kayan-oturum");
   }
 
   console.log("");
