@@ -427,7 +427,27 @@ export type GelecekOdemeKalemi = {
   paraBirimi: string;
   /** Kesinti eşleşmesi için; sipariş dışı toplu kalemlerde null olur. */
   saleId: string | null;
+  /** Kalem kodu (`SettlementItem.code`) — GERÇEK kesinti satırını tanımak için (K325-⑥). */
+  kod?: string;
 };
+
+/** Satış başına tahmini kesinti, BİLEŞEN bileşen (pozitif tutarlar; `SaleFee.code`). */
+export type TahminBileseni = "KARGO" | "SABIT_GIDER" | "STOPAJ";
+export type TahminiKesinti = Partial<Record<TahminBileseni, number>>;
+
+/**
+ * GERÇEK kesinti satırı → yerini tuttuğu TAHMİN bileşeni (K325-⑥, 22.10.2026).
+ * TY kargo faturasını, platform hizmet bedelini ve stopajı ödemede TOPLU satır olarak
+ * keser; satır deftere girince o bileşenin tahmini AYRICA düşülmez — yoksa çift kesinti.
+ * Vaka: 22.10 TY ödemesi — banka ₺57.982,20 = bizim kalemler kuruşu kuruşuna; ekran
+ * gerçek satırları (₺5.552,48) + kendi tahminini (₺5.576,04) düşüp ₺52.406,16 diyordu.
+ */
+export const GERCEK_KESINTI_BILESENI: Readonly<Record<string, TahminBileseni>> = {
+  KARGO_FATURA: "KARGO",
+  PLATFORM_HIZMET: "SABIT_GIDER",
+  ETICARET_STOPAJI: "STOPAJ",
+};
+const TAHMIN_BILESENLERI: readonly TahminBileseni[] = ["KARGO", "SABIT_GIDER", "STOPAJ"];
 
 export type GelecekOdemeGrubu = {
   anahtar: string;
@@ -458,14 +478,20 @@ export type GelecekOdemeGrubu = {
  */
 export function gelecekOdemeleriGrupla(
   kalemler: GelecekOdemeKalemi[],
-  /** Satış kimliği → o satışın toplam tahmini kesintisi (pozitif tutar). */
-  satisKesintisi: Map<string, number>,
+  /** Satış kimliği → o satışın tahmini kesintisi, bileşen bileşen (pozitif tutarlar). */
+  satisKesintisi: Map<string, TahminiKesinti>,
   /** Geçmişe düşen ödeme günü ileri kayar (bkz. `gelecekOdemeAnahtari`). */
   bugun?: Date,
 ): GelecekOdemeGrubu[] {
   const gruplar = new Map<
     string,
-    GelecekOdemeGrubu & { sayilanSatislar: Set<string> }
+    GelecekOdemeGrubu & {
+      sayilanSatislar: Set<string>;
+      /** Gruptaki satışların tahmini, bileşen bileşen (iç sayaç). */
+      tahmin: Record<TahminBileseni, number>;
+      /** Grupta GERÇEK satırı bulunan bileşenler — tahminleri düşülmez (K325-⑥). */
+      gercekBilesenler: Set<TahminBileseni>;
+    }
   >();
 
   for (const k of kalemler) {
@@ -481,10 +507,15 @@ export function gelecekOdemeleriGrupla(
       paraBirimi: k.paraBirimi,
       sayi: 0,
       sayilanSatislar: new Set<string>(),
+      tahmin: { KARGO: 0, SABIT_GIDER: 0, STOPAJ: 0 },
+      gercekBilesenler: new Set<TahminBileseni>(),
     };
 
     g.brut += k.tutar;
     g.sayi++;
+
+    const gercek = k.kod ? GERCEK_KESINTI_BILESENI[k.kod] : undefined;
+    if (gercek) g.gercekBilesenler.add(gercek);
 
     if (
       gelecekOdemeBrutMu(k.kanalAdi) &&
@@ -492,24 +523,33 @@ export function gelecekOdemeleriGrupla(
       !g.sayilanSatislar.has(k.saleId)
     ) {
       g.sayilanSatislar.add(k.saleId);
-      g.kesinti += satisKesintisi.get(k.saleId) ?? 0;
+      const s = satisKesintisi.get(k.saleId);
+      for (const b of TAHMIN_BILESENLERI) g.tahmin[b] += s?.[b] ?? 0;
     }
 
-    g.toplam = g.brut - g.kesinti;
     gruplar.set(anahtar, g);
   }
 
-  /** `sayilanSatislar` yalnız İÇ bir sayaçtır — dışarı sızdırılmaz. */
+  /**
+   * Kesinti GRUP BİTİNCE hesaplanır: gerçek satır, satışlardan SONRA da gelebilir.
+   * `sayilanSatislar` · `tahmin` · `gercekBilesenler` yalnız İÇ sayaçlardır — dışarı sızmaz.
+   */
   return [...gruplar.values()]
-    .map((g) => ({
-      anahtar: g.anahtar,
-      kanalAdi: g.kanalAdi,
-      tarih: g.tarih,
-      toplam: g.toplam,
-      brut: g.brut,
-      kesinti: g.kesinti,
-      paraBirimi: g.paraBirimi,
-      sayi: g.sayi,
-    }))
+    .map((g) => {
+      const kesinti = TAHMIN_BILESENLERI.reduce(
+        (t, b) => (g.gercekBilesenler.has(b) ? t : t + g.tahmin[b]),
+        0,
+      );
+      return {
+        anahtar: g.anahtar,
+        kanalAdi: g.kanalAdi,
+        tarih: g.tarih,
+        toplam: g.brut - kesinti,
+        brut: g.brut,
+        kesinti,
+        paraBirimi: g.paraBirimi,
+        sayi: g.sayi,
+      };
+    })
     .sort((a, b) => a.tarih.getTime() - b.tarih.getTime());
 }

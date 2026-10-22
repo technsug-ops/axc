@@ -38,6 +38,7 @@ import {
   siparisDokumu,
   sonrakiOdemeGunu,
   type OdemeKalemi,
+  type TahminiKesinti,
 } from "../src/lib/hakedis/model";
 import {
   beklenenHakedis,
@@ -893,9 +894,10 @@ console.log("\nÖDEME GÜNÜ SNAP'LEME — İSTANBUL TAKVİMİ (K222-④, 20.09.
    * bir kez sayıldığı için 1× düşer. Tek kalemli bir örnek bu ayrımı
    * gösteremezdi — iki okuma da aynı sonucu verirdi.
    */
-  const kesintiHaritasi = new Map<string, number>([
-    ["satis-A", 100],
-    ["satis-B", 40],
+  /* K325-⑥: kesinti artık BİLEŞEN bileşen (toplamlar aynı: A 100 · B 40). */
+  const kesintiHaritasi = new Map<string, TahminiKesinti>([
+    ["satis-A", { KARGO: 60, SABIT_GIDER: 13, STOPAJ: 27 }],
+    ["satis-B", { KARGO: 40 }],
   ]);
   /** 18.09.2026 Cuma — TY GERİYE kaydırır, 17 Eylül Perşembe'ye düşer. */
   const vadeCuma = gun("2026-09-18");
@@ -976,6 +978,50 @@ console.log("\nÖDEME GÜNÜ SNAP'LEME — İSTANBUL TAKVİMİ (K222-④, 20.09.
     karisik.map((g) => `${g.kanalAdi}=${g.toplam}`),
   );
   kontrol("boş liste boş dizi döner (çökmez)", gelecekOdemeleriGrupla([], kesintiHaritasi).length === 0);
+
+  /**
+   * ⛔ K325-⑥ (22.10.2026) — GERÇEK KESİNTİ SATIRI GELDİYSE O BİLEŞENİN TAHMİNİ DÜŞÜLMEZ.
+   * Vaka birebir: TY 22.10 ödemesi banka ₺57.982,20 = kalemlerimiz kuruşu kuruşuna;
+   * ekran gerçek kargo/stopaj/platform satırlarını (−5.552,48) + kendi tahminini
+   * (5.576,04) düşüp 52.406,16 diyordu. ⚠ Ayrım İKİ yakada sınanır: gerçek satırı
+   * OLAN bileşen düşülmez, OLMAYAN bileşenin tahmini düşülmeye DEVAM eder.
+   */
+  const v2210 = gun("2026-10-22");
+  const gercekli = gelecekOdemeleriGrupla(
+    [
+      { kanalAdi: "Trendyol", vade: v2210, tutar: 64848.05, paraBirimi: "TRY", saleId: "satis-A", kod: "SIPARIS_TUTARI" },
+      { kanalAdi: "Trendyol", vade: v2210, tutar: -307.79, paraBirimi: "TRY", saleId: "satis-A", kod: "KUPON" },
+      { kanalAdi: "Trendyol", vade: v2210, tutar: -1005.58, paraBirimi: "TRY", saleId: "satis-B", kod: "IADE_TUTARI" },
+      { kanalAdi: "Trendyol", vade: v2210, tutar: -4506.03, paraBirimi: "TRY", saleId: null, kod: "KARGO_FATURA" },
+      { kanalAdi: "Trendyol", vade: v2210, tutar: -599.2, paraBirimi: "TRY", saleId: null, kod: "ETICARET_STOPAJI" },
+      { kanalAdi: "Trendyol", vade: v2210, tutar: -447.25, paraBirimi: "TRY", saleId: null, kod: "PLATFORM_HIZMET" },
+    ],
+    kesintiHaritasi,
+  );
+  kontrol("K325-⑥ üç gerçek satır VARKEN tahmin düşülmez → 22.10 bankası birebir (57.982,20)",
+    gercekli.length === 1 && gercekli[0]!.kesinti === 0 && Math.round(gercekli[0]!.toplam * 100) === 5798220, gercekli[0]);
+  const yalnizKargo = gelecekOdemeleriGrupla(
+    [
+      { kanalAdi: "Trendyol", vade: v2210, tutar: 1000, paraBirimi: "TRY", saleId: "satis-A", kod: "SIPARIS_TUTARI" },
+      { kanalAdi: "Trendyol", vade: v2210, tutar: -70, paraBirimi: "TRY", saleId: null, kod: "KARGO_FATURA" },
+    ],
+    kesintiHaritasi,
+  );
+  kontrol("  ...yalnız KARGO gerçek gelince: kargo tahmini düşülmez, platform + stopaj tahmini DÜŞÜLÜR (13 + 27 = 40)",
+    yalnizKargo[0]?.kesinti === 40 && yalnizKargo[0]?.toplam === 1000 - 70 - 40, yalnizKargo[0]);
+  const sonraGelen = gelecekOdemeleriGrupla(
+    [
+      { kanalAdi: "Trendyol", vade: v2210, tutar: -70, paraBirimi: "TRY", saleId: null, kod: "KARGO_FATURA" },
+      { kanalAdi: "Trendyol", vade: v2210, tutar: 1000, paraBirimi: "TRY", saleId: "satis-A", kod: "SIPARIS_TUTARI" },
+    ],
+    kesintiHaritasi,
+  );
+  kontrol("  ...sıra bağımsız (gerçek satır satıştan ÖNCE gelse de aynı sonuç)", sonraGelen[0]?.kesinti === 40, sonraGelen[0]);
+  kontrol("  ...gerçek satır başka günün grubundaysa bu grubun tahmini AYNEN düşülür (kesintisiz grup: 100)",
+    gelecekOdemeleriGrupla([{ kanalAdi: "Trendyol", vade: v2210, tutar: 1000, paraBirimi: "TRY", saleId: "satis-A", kod: "SIPARIS_TUTARI" }], kesintiHaritasi)[0]?.kesinti === 100);
+  kontrol("  ...sayfa kalem kodunu ve bileşenli kesintiyi veriyor",
+    /saleId: k\.saleId,\s*kod: k\.code,\s*\}\)\),\s*satisKesintisi,/.test(hakedisSayfasi) &&
+      /s\[b\] = \(s\[b\] \?\? 0\) \+ Math\.abs\(Number\(f\.amount\.toString\(\)\)\);/.test(hakedisSayfasi));
 }
 kosanBolumler.push("odeme-gunu");
 

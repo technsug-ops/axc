@@ -34,6 +34,8 @@ import {
   odemeleriSuz,
   odemeToplamlari,
   type OdemeKalemi,
+  type TahminBileseni,
+  type TahminiKesinti,
 } from "@/lib/hakedis/model";
 import { prisma } from "@/lib/prisma";
 import { sayfaCoz } from "@/lib/sayfalama";
@@ -427,15 +429,19 @@ export default async function HakedisSayfasi({
             saleId: { in: gelecekTySatisIdleri },
             code: { in: TY_KESINTI_KODLARI },
           },
-          select: { saleId: true, amount: true },
+          select: { saleId: true, code: true, amount: true },
         });
-  /** Satış başına toplam tahmini kesinti (mutlak değer — hepsi gider). */
-  const satisKesintisi = new Map<string, number>();
+  /**
+   * Satış başına tahmini kesinti, BİLEŞEN bileşen (mutlak değer — hepsi gider).
+   * K325-⑥: bileşen ayrı tutulur ki grupta TY'nin GERÇEK satırı varsa yalnız o
+   * bileşenin tahmini düşülmesin (çift kesinti — 22.10 vakası).
+   */
+  const satisKesintisi = new Map<string, TahminiKesinti>();
   for (const f of kesintiKayitlari) {
-    satisKesintisi.set(
-      f.saleId,
-      (satisKesintisi.get(f.saleId) ?? 0) + Math.abs(Number(f.amount.toString())),
-    );
+    const b = f.code as TahminBileseni;
+    const s = satisKesintisi.get(f.saleId) ?? {};
+    s[b] = (s[b] ?? 0) + Math.abs(Number(f.amount.toString()));
+    satisKesintisi.set(f.saleId, s);
   }
 
   type OdemeGrubu = {
@@ -533,6 +539,7 @@ export default async function HakedisSayfasi({
       tutar: Number(k.amount.toString()),
       paraBirimi: k.currency,
       saleId: k.saleId,
+      kod: k.code,
     })),
     satisKesintisi,
     bugun,
