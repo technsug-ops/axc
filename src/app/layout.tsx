@@ -156,7 +156,20 @@ export default async function RootLayout({
    */
   const cerezler = await cookies();
   const oturumCerezi = cerezler.get(OTURUM_CEREZI)?.value;
-  const kullanici = await oturumdakiKullanici().catch(() => null);
+  /*
+   * ⛔ VERİTABANI HATASI «OTURUM YOK» DEĞİLDİR (kullanıcı 22.10.2026: «bir süre
+   * sonra çıkış yapıp şifre sayfasına atıyor»). Eskiden `.catch(() => null)`
+   * vardı: veritabanı bir an yanıt vermeyince (soğuk başlangıç · bağlantı
+   * zaman aşımı) okuma HATASI «kullanıcı yok» sayılıyor, çerez de olduğu için
+   * aşağıdaki satır /cikis'e yollayıp çerezi SİLİYORDU — geçici yavaşlık
+   * kalıcı çıkışa dönüyordu. Artık:
+   *   · çerez YOKSA veritabanına hiç gidilmez → giriş ekranı veritabanı
+   *     kapalıyken de çizilir (30.08 vakasının sözü korunuyor);
+   *   · çerez VARSA hata YUTULMAZ → kök hata ekranı «veritabanına
+   *     ulaşılamıyor · tekrar dene» der, oturum yerinde kalır.
+   * /cikis yalnız GERÇEKTEN geçersiz oturumda (null) çalışır.
+   */
+  const kullanici = oturumCerezi ? await oturumdakiKullanici() : null;
 
   /**
    * MENÜ DÜZENİ — SUNUCUDA ÇÖZÜLÜR (K51, 25.08.2026).

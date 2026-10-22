@@ -34,7 +34,7 @@ import { parolaDogrula, parolaOzetle, parolaYeterliMi } from "../src/lib/parola"
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -284,6 +284,23 @@ async function main() {
     kontrol("giriş de AYNI çerez ayarlarını kullanır (iki yerde iki ayar yok)",
       /cerezler\.set\(OTURUM_CEREZI, jeton, oturumCereziAyarlari\(sonGecerlilik\)\);/.test(giris) && !/httpOnly:/.test(giris));
     kosanBolumler.push("kayan-oturum");
+  }
+
+  // =========================================================================
+  console.log("\n8) VERİTABANI HATASI ÇIKIŞ YAPTIRMAZ (22.10.2026)");
+  // =========================================================================
+  /* Kullanıcı: «bir süre sonra çıkış yapıp şifre sayfasına atıyor». Yerleşim oturum
+     okumasının HATASINI `.catch(() => null)` ile «kullanıcı yok» sayıyor, çerez de
+     olduğu için /cikis'e yollayıp çerezi siliyordu. */
+  {
+    const yorumsuz8 = (k: string) => k.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:"'`])\/\/[^\n]*/g, "$1");
+    const duzen = yorumsuz8(kaynakOku("src/app/layout.tsx"));
+    kontrol("oturum okumasının hatası YUTULMAZ (`.catch` yok)", !/oturumdakiKullanici\(\)\s*\.catch\(/.test(duzen));
+    kontrol("  ...çerez yoksa veritabanına gidilmez (giriş ekranı veritabanı kapalıyken de çizilir)",
+      /const kullanici = oturumCerezi \? await oturumdakiKullanici\(\) : null;/.test(duzen));
+    kontrol("  .../cikis yalnız çerez VAR + oturum GEÇERSİZ iken", (duzen.match(/redirect\("\/cikis"\)/g) ?? []).length === 1 &&
+      /if \(oturumCerezi && !kullanici\) redirect\("\/cikis"\);/.test(duzen));
+    kosanBolumler.push("veritabani-hatasi");
   }
 
   console.log("");
