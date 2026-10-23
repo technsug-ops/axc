@@ -9,7 +9,7 @@ import {
 } from "@/lib/sayim-korumasi";
 import { donemKapisi } from "@/lib/donem-kapisi";
 import {
-  acikPartiler,
+  tuketilecekPartiler,
   fifoDagit,
   partileriOncele,
   satisStokZamani,
@@ -241,7 +241,7 @@ export async function onayCekirdegi(
   for (const k of satis.items) {
     const hamPartiler =
       partiDurumu.get(k.variantId) ??
-      (await acikPartiler(tx, k.variantId, stokZamani.sinir));
+      (await tuketilecekPartiler(tx, k.variantId, stokZamani.sinir));
     const secim = girdi.secimler[k.id] ?? null;
     const oncelik = partileriOncele(hamPartiler, secim);
     /** Seçim VARDI ama uygulanamadı (parti tükenmiş/bulunamadı) → sessizce

@@ -14,7 +14,7 @@ import {
   type SayimIsrari,
 } from "./sayim-korumasi";
 import {
-  acikPartiler,
+  tuketilecekPartiler,
   fifoDagit,
   gunSonu,
   partileriOncele,
@@ -325,7 +325,7 @@ export async function satisKaydet(girdi: SatisGirdisi): Promise<string> {
        * YENİ SATIŞ: kayıt şu an oluşuyor — «sisteme geç düşme» (K314
        * aktarılan sipariş) burada olamaz; sınır satış gününün sonudur.
        */
-      const partiler = await acikPartiler(tx, variantId, gunSonu(girdi.soldAt));
+      const partiler = await tuketilecekPartiler(tx, variantId, gunSonu(girdi.soldAt));
       partiDurumu.set(variantId, partiler);
       return partiler;
     }

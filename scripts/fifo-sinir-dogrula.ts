@@ -72,7 +72,8 @@ for (const kok of KOK) {
     const kod = yorumsuz(ham);
     /** ⚠ Bu dosya FIFO DAĞITIMI yapıyor mu — davranışa bağlan, ada değil. */
     const dagitiyor = /\bfifoDagit\s*\(/.test(kod);
-    const cagriDeseni = /\b(acikPartiler|acikPartilerToplu)\s*\(/g;
+    /* K362: stoktan düşen yollar artık `tuketilecekPartiler(Toplu)` çağırıyor — aynı sınır kuralı ona da işler (yeni ad kapsam dışı kalsaydı bekçi bütün satış yollarını görmezdi). */
+    const cagriDeseni = /\b(acikPartiler|acikPartilerToplu|tuketilecekPartiler|tuketilecekPartilerToplu)\s*\(/g;
 
     let m: RegExpExecArray | null;
     while ((m = cagriDeseni.exec(kod)) !== null) {
@@ -224,6 +225,13 @@ for (const kok of KOK) {
   if (!/occurredAt:\s*\{\s*lt:\s*sinir\s*\}/.test(kodP)) {
     hata++;
     bulgular.push("  ⛔ src/lib/stok.ts — süzgeç `occurredAt: { lt: sinir }` DEĞİL");
+  }
+  /* K362 — kilitli okuma (ham SQL) AYNI sınırı taşır: `<` (gün sonu hariç), `<=` değil. */
+  const kilitliGovde = yorumsuz(kaynak.slice(kaynak.indexOf("async function kilitliOku")));
+  if (!/const tarih = sinir \? Prisma\.sql`AND occurredAt < \$\{sinir\}` : Prisma\.empty;/.test(kilitliGovde) ||
+      (kilitliGovde.match(/\$\{tarih\}/g) ?? []).length !== 2) {
+    hata++;
+    bulgular.push("  ⛔ src/lib/stok.ts — kilitli okuma sınırı `occurredAt < sinir` değil ya da iki sorgudan birinde yok");
   }
   if (/occurredAt:\s*\{\s*lte:/.test(kodP)) {
     hata++;

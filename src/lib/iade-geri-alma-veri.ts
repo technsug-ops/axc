@@ -10,7 +10,7 @@ import {
 import { izYaz } from "@/lib/iz";
 import { satisKarTazele } from "@/lib/kar-yeniden";
 import { prisma, type IslemIstemcisi } from "@/lib/prisma";
-import { acikPartilerToplu } from "@/lib/stok";
+import { acikPartilerToplu, tuketilecekPartilerToplu } from "@/lib/stok";
 
 /**
  * ============================================================================
@@ -52,8 +52,12 @@ type IadeOkumasi = {
   tazminatSayisi: number;
 };
 
-/** Plan girdisini defterden kurar — HİÇBİR ŞEY YAZMAZ. */
-export async function iadeGeriAlmaOku(db: IslemIstemcisi, returnId: string): Promise<IadeOkumasi | null> {
+/**
+ * Plan girdisini defterden kurar — HİÇBİR ŞEY YAZMAZ.
+ * `kilitli`: YAZIM yolu (işlem içinde) partileri kilitli ve güncel okur (K362) —
+ * geri alma iade partilerini tüketir; önizleme kilitsiz okur.
+ */
+export async function iadeGeriAlmaOku(db: IslemIstemcisi, returnId: string, kilitli = false): Promise<IadeOkumasi | null> {
   const iade = await db.return.findUnique({
     where: { id: returnId },
     select: {
@@ -86,7 +90,9 @@ export async function iadeGeriAlmaOku(db: IslemIstemcisi, returnId: string): Pro
   const hamlar = iade.items.flatMap((k) => k.stockMovements);
   const girisVaryantlari = [...new Set(hamlar.filter((h) => h.quantityDelta > 0).map((h) => h.variantId))];
   /** Sınır YOK — "bugün itibarıyla bu parti ne kadar açık" sorusu. */
-  const partiler = await acikPartilerToplu(db, girisVaryantlari);
+  const partiler = kilitli
+    ? await tuketilecekPartilerToplu(db, girisVaryantlari)
+    : await acikPartilerToplu(db, girisVaryantlari);
   const kalan = new Map<string, number>();
   for (const liste of partiler.values()) for (const p of liste) kalan.set(p.hareketId, p.kalanAdet);
 
@@ -143,7 +149,7 @@ export async function iadeyiGeriAl(girdi: {
 }): Promise<IadeGeriAlSonucu> {
   const sonuc = await prisma.$transaction(
     async (tx) => {
-      const o = await iadeGeriAlmaOku(tx, girdi.returnId);
+      const o = await iadeGeriAlmaOku(tx, girdi.returnId, true);
       if (!o) return { durum: "YOK" as const };
       const not = girdi.not === null || girdi.not.trim() === "" ? null : girdi.not.trim();
       const plan = iadeGeriAlmaPlani({

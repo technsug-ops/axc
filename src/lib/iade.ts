@@ -11,7 +11,7 @@ import { acikCikislar, kalemMaliyeti } from "@/lib/kalem-maliyeti";
 import { GENEL_KDV_ORANI, kdvAyir, type KarDurumu } from "@/lib/kar";
 import { prisma, type IslemIstemcisi } from "@/lib/prisma";
 import { donenMalDagilimi } from "@/lib/iade/yanlis-urun";
-import { acikPartiler, fifoDagit, gunSonu, type Parti } from "@/lib/stok";
+import { fifoDagit, gunSonu, tuketilecekPartiler, type Parti } from "@/lib/stok";
 
 import type { Currency, ReturnType } from "@/generated/prisma/enums";
 import {
@@ -892,7 +892,7 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
       let degisimMaliyeti: number | null = null;
       if (g.exchangeVariantId) {
         /** ⛔ SINIR: iade gununun sonu — bkz. `gunSonu` (29.08.2026). */
-        const partiler = await acikPartiler(tx, g.exchangeVariantId, gunSonu(girdi.occurredAt));
+        const partiler = await tuketilecekPartiler(tx, g.exchangeVariantId, gunSonu(girdi.occurredAt));
         const dagitim = fifoDagit(partiler, g.iadeAdedi);
         if (!dagitim.yeterliMi) {
           throw new DegisimStokYokHatasi(
@@ -1058,7 +1058,7 @@ export async function iadeKaydet(girdi: IadeKaydiGirdisi): Promise<string> {
          * onu sınıyor.
          */
         /** ⛔ SINIR: iade gununun sonu — bkz. `gunSonu` (29.08.2026). */
-        const bPartileri = await acikPartiler(tx, donenVaryantId, gunSonu(girdi.occurredAt));
+        const bPartileri = await tuketilecekPartiler(tx, donenVaryantId, gunSonu(girdi.occurredAt));
         const bMevcut = bPartileri.reduce((t, p) => t + p.kalanAdet, 0);
 
         /** Maliyeti bilinen SON hareket — FIFO'nun yetmediği giriş için. */

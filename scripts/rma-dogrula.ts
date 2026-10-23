@@ -1545,7 +1545,8 @@ console.log("\n7) GERİ GELEN MAL — STOK ŞARTI YOK, MALİYET ŞARTI VAR");
      * olarak kirmizi yandi (sessiz kalmadi) ve susturulmak yerine
      * davranisa baglandi: cagri var mi, stok yetmezse hata firliyor mu.
      */
-    /\bacikPartiler\(\s*tx,\s*g\.exchangeVariantId\b/.test(kaynak) &&
+    /* K362: kilitli okuma (`tuketilecekPartiler`) — davranış aynı, ad değişti. */
+    /\btuketilecekPartiler\(\s*tx,\s*g\.exchangeVariantId\b/.test(kaynak) &&
       kaynak.includes("throw new DegisimStokYokHatasi("),
   );
   kontrol(

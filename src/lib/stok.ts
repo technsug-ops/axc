@@ -1,6 +1,7 @@
 import { prisma, type IslemIstemcisi } from "@/lib/prisma";
 
 import type { Currency } from "@/generated/prisma/enums";
+import { Prisma } from "@/generated/prisma/client";
 import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 
 /**
@@ -474,6 +475,21 @@ export async function acikPartilerToplu(
     }
   }
 
+  return partileriKur(girisler, tuketilen);
+}
+
+type GirisSatiri = {
+  id: string;
+  variantId: string;
+  occurredAt: Date;
+  quantityDelta: number;
+  unitCostAmount: { toString(): string } | null;
+  unitCostCurrency: Currency | null;
+  locationId: string | null;
+};
+
+/** Kilitli ve kilitsiz yolun ORTAK kurulumu — FIFO tanımı tek yerde kalır. */
+function partileriKur(girisler: GirisSatiri[], tuketilen: Map<string, number>): Map<string, Parti[]> {
   // Sorgu zaten FIFO sırasında geldi; gruplama sırayı BOZMAZ (Map ekleme
   // sırasını korur, dizilere de sırayla itiliyor).
   const sonuc = new Map<string, Parti[]>();
@@ -494,6 +510,84 @@ export async function acikPartilerToplu(
     sonuc.set(giris.variantId, liste);
   }
   return sonuc;
+}
+
+/**
+ * ============================================================================
+ *  STOK KİLİDİ — EŞZAMANLI İKİ TÜKETİM AYNI PARTİYİ YİYEMEZ (K362, 23.10.2026)
+ * ----------------------------------------------------------------------------
+ *  Kullanıcı kararı «başla». Risk bugün de var: TY/HB/N11 çekimleri arka planda,
+ *  kullanıcı aynı anda elle satış/iade/düzeltme girebiliyor. ÖLÇÜLDÜ (yerel,
+ *  `stok-kilidi:dogrula` ①, kilitsiz kod): iki işlem tek adetlik partiden İKİSİ DE
+ *  düştü, ledger −1 — hata yok, uyarı yok.
+ *
+ *  İKİ ADIM, İKİSİ DE ŞART:
+ *   1) ÜRÜN KİLİDİ — `ProductVariant` satırı `FOR UPDATE`, kimliğe göre SIRALI (iki
+ *      işlem iki ürünü ters sırada kilitleyip birbirini beklemesin). Aynı ürüne gelen
+ *      ikinci işlem birincisi bitene kadar BEKLER; farklı ürünler beklemez.
+ *   2) GÜNCEL OKUMA — kilitten sonra partiler KİLİTLİ OKUMAYLA (`LOCK IN SHARE MODE`)
+ *      okunur. ⚠ Kilit tek başına YETMEZ: InnoDB (REPEATABLE READ) işlemin ilk düz
+ *      okumasında bir «fotoğraf» alır; ikinci işlem kilidi birincisi bittikten sonra
+ *      alsa bile düz okuma o eski fotoğrafı görür ve partiyi hâlâ dolu sanır.
+ *      Kilitli okuma fotoğrafa değil en son işlenmiş hâle bakar.
+ *
+ *  AÇIK İKİ GİRİŞ: stoktan DÜŞMEK için `tuketilecekPartiler` (kilit + güncel okuma,
+ *  yalnız işlem içinde anlamlı) · GÖSTERMEK için `acikPartiler` (kilitsiz, beklemez).
+ *  ⚠ İLK TASARIM ÇÜRÜDÜ: «işlem içinden çağrıldıysa kendiliğinden kilitle» denendi;
+ *  işlem istemcisi `$transaction` taşımaz sanıldı, ama K359 uzantısından türeyen işlem
+ *  istemcisi TAŞIYOR (ölçüldü) → kilitli yol hiç çalışmadı, bekçi ① kırmızı kaldı.
+ *  Tanıma yerine AÇIK ad + bekçide desen yasağı: işlem içinde (`tx`) `acikPartiler`
+ *  çağrısı YASAK.
+ *  ⚠ İşlem DIŞINDA plan kurup sonra yazan yollar (satış düzenleme, kalem kaldırma
+ *  geri alma, iptal geri alma) bu kilidin kapsamında DEĞİL — plan kilitten önce
+ *  okunur. Panoda açık (K362).
+ * ============================================================================
+ */
+export async function tuketilecekPartilerToplu(
+  tx: IslemIstemcisi,
+  variantIdleri: string[],
+  sinir?: Date,
+): Promise<Map<string, Parti[]>> {
+  if (variantIdleri.length === 0) return new Map();
+  const k = await kilitliOku(tx, variantIdleri, sinir);
+  return partileriKur(k.girisler, k.tuketilen);
+}
+
+/** Tek ürün için `tuketilecekPartilerToplu` — stoktan düşmeden hemen önce, İŞLEM İÇİNDE. */
+export async function tuketilecekPartiler(tx: IslemIstemcisi, variantId: string, sinir?: Date): Promise<Parti[]> {
+  return (await tuketilecekPartilerToplu(tx, [variantId], sinir)).get(variantId) ?? [];
+}
+
+type HamIstemci = { $queryRaw: <T>(sorgu: Prisma.Sql) => Promise<T> };
+
+async function kilitliOku(db: IslemIstemcisi, variantIdleri: string[], sinir?: Date) {
+  const ham = db as unknown as HamIstemci;
+  const kimlikler = [...new Set(variantIdleri)].sort();
+  await ham.$queryRaw(Prisma.sql`SELECT id FROM ProductVariant WHERE id IN (${Prisma.join(kimlikler)}) ORDER BY id FOR UPDATE`);
+
+  const tarih = sinir ? Prisma.sql`AND occurredAt < ${sinir}` : Prisma.empty;
+  const girisler = await ham.$queryRaw<GirisSatiri[]>(Prisma.sql`
+    SELECT id, variantId, occurredAt, quantityDelta, unitCostAmount, unitCostCurrency, locationId
+    FROM StockMovement
+    WHERE variantId IN (${Prisma.join(kimlikler)}) AND quantityDelta > 0 ${tarih}
+    ORDER BY occurredAt ASC, createdAt ASC
+    LOCK IN SHARE MODE`);
+  const tuketilen = new Map<string, number>();
+  if (girisler.length === 0) return { girisler, tuketilen };
+
+  const cikislar = await ham.$queryRaw<{ sourceMovementId: string; quantityDelta: number }[]>(Prisma.sql`
+    SELECT sourceMovementId, quantityDelta
+    FROM StockMovement
+    WHERE sourceMovementId IN (${Prisma.join(girisler.map((g) => g.id))}) ${tarih}
+    LOCK IN SHARE MODE`);
+  /* Kilitsiz yolla AYNI kural: kaynağa bağlı hareketlerin toplamının mutlak değeri. */
+  const toplam = new Map<string, number>();
+  for (const c of cikislar) toplam.set(c.sourceMovementId, (toplam.get(c.sourceMovementId) ?? 0) + Number(c.quantityDelta));
+  for (const [id, t] of toplam) tuketilen.set(id, Math.abs(t));
+  return {
+    girisler: girisler.map((g) => ({ ...g, quantityDelta: Number(g.quantityDelta), occurredAt: new Date(g.occurredAt) })),
+    tuketilen,
+  };
 }
 
 // ---------------------------------------------------------------------------
