@@ -33,6 +33,7 @@ import {
 } from "@/lib/rapor/alim-rehberi";
 import { rehberVerisi } from "@/lib/rapor/alim-rehberi-verisi";
 import { suzgecAdresi } from "@/lib/suzgec";
+import { DURUM_YAZISI } from "@/lib/renkler";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 /**
@@ -151,9 +152,9 @@ export default async function AlimRehberiSayfasi({
       {gy ? (
         <div className="space-y-1 text-sm">
           <p className="text-muted-foreground">{t("gecenYilPencere", { bas: gyPencere.bas, bit: gyPencere.bit })}</p>
-          <p className="text-amber-700 dark:text-amber-400">{t("gecenYilUyari")}</p>
+          <p className={DURUM_YAZISI.uyari}>{t("gecenYilUyari")}</p>
           {veri.gecenYil.kapsam === "KISMI" ? (
-            <p className="text-amber-700 dark:text-amber-400">{t("gecenYilKismi", { ilk: gyIlk })}</p>
+            <p className={DURUM_YAZISI.uyari}>{t("gecenYilKismi", { ilk: gyIlk })}</p>
           ) : null}
         </div>
       ) : (
