@@ -142,6 +142,8 @@ export const MENU_BOLUM: Record<string, string | null> = {
   giderler: "gider",
   rapor: "rapor",
   urunAnalizi: "urunAnalizi",
+  /** K363 — Ürün analizinin rakamlarından kurulur; anlatımı o bölümün «Alım rehberi» başlığında. */
+  alimRehberi: "urunAnalizi",
   /** İki menü öğesi, tek bölüm: kart tanımı ile kart borcu aynı konudur. */
   kartlar: "kartBorcu",
   kartBorcu: "kartBorcu",
@@ -2688,6 +2690,34 @@ ${sikHata([
   {
     hata: "Satır sayısını düşürünce toplamın da düşeceğini sanmak",
     cozum: "Toplam süzgecin tamamıdır; satır seçimi yalnız kaç satırın görüneceğini değiştirir. Daha az ürünün toplamını görmek için süzgeç (marka, kategori, en az adet) kullanın.",
+  },
+])}
+<h3 id="alimRehberi">Alım rehberi</h3>
+<p><strong>Sol menü → Alım rehberi</strong> («Fiyatlandırma ve Analiz» grubunda). Ürün
+analizinin rakamlarını <strong>alım kararına</strong> çeviren dört hazır liste.
+Rakamlar Ürün analiziyle aynı hesaptan gelir: aynı dönemde iki ekran aynı adedi
+ve aynı NET-2'yi gösterir.</p>
+<ul>
+<li><strong>Tükenen yıldızlar</strong> — iyi kâr eden ve hızlı satan ama rafta
+1 ya da hiç kalmamış ürünler. İlk bakılacak liste.</li>
+<li><strong>Azalan</strong> — aynı yıldızlardan, bugünkü satış hızıyla stoğu
+«az stok» sınırından (başlangıç 30 gün) önce bitecek olanlar. Sınırı sayfadaki
+kutudan değiştirebilirsiniz.</li>
+<li><strong>Fazla stok</strong> — bugünkü hızla rafta çok uzun bekleyecek mal ve
+bağladığı sermaye. Yeniden almadan önce bakılacak liste.</li>
+<li><strong>Hızlı ama kârsız</strong> — çok satan ama marjı zayıf ürünler: alım
+fiyatı ya da satış fiyatı gözden geçirilmeli.</li>
+</ul>
+<div class="ek-not"><div class="etiket">«İyi kâr» ve «hızlı» sınırını sistem koymaz, verileriniz koyar</div>
+<p>Dönemde en az 3 adet satmış ürünlerin <strong>ortanca</strong> marjı ve
+ortanca satış hızı eşiktir; sayfada açıkça yazar. Dönemi değiştirince eşik de
+değişir. Kâr görme yetkisi olmayan kullanıcı bu sayfayı açamaz — listeler kâra
+dayanır. «Excel indir» ekranda ne varsa onu indirir; sayılar Excel'de
+toplanabilir.</p></div>
+${sikHata([
+  {
+    hata: "Alım rehberindeki bir ürünü listeye bakıp hemen almak",
+    cozum: "Liste geçmiş satışa bakar; kampanya ve fiyat durumunu bilmez. Ürüne tıklayıp kartında son alış fiyatını ve kanal fiyatını kontrol edin.",
   },
 ])}
 </section>

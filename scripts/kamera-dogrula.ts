@@ -99,7 +99,14 @@ console.log("\n7) KAMERA HER KOD ALANINDA — İlke #7");
      * eden mutasyon kontrolü rahatça geçti. Çıplak kutu çıplaktır, hangi
      * etiketle yazıldığı fark etmez.
      */
-    if (/<[Ii]nput[^>]*\sname="(b?q|arama)"/.test(yorumsuzMetin)) kacaklar.push(yol);
+    /**
+     * ⚠ GİZLİ ALAN KUTU DEĞİLDİR (23.10.2026, K363). Başka bir GET formu
+     * (ör. alım rehberinin «az stok» ayarı) aramayı kaybetmemek için
+     * `<input type="hidden" name="q">` taşır; kullanıcı ona yazamaz, kamera
+     * isteyecek bir kutu yoktur. Yalnız GÖRÜNÜR çıplak kutu kaçaktır.
+     */
+    const kutular = yorumsuzMetin.match(/<[Ii]nput[^>]*\sname="(b?q|arama)"[^>]*>/g) ?? [];
+    if (kutular.some((k) => !/\stype="hidden"/.test(k))) kacaklar.push(yol);
   }
   kontrol(
     "hiçbir liste araması ÇIPLAK <Input> kullanmıyor",

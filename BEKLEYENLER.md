@@ -218,7 +218,7 @@ Bekçi `gece-turu-sonuc:dogrula` **30**; mutasyon **11/11** (bir kaçak: iki kap
 ─── **15.10.2026 — ①② GEÇTİ** (kullanıcı «ok»: `11693359539` desi 5 tahmini · kargo −₺136,92 · `11691326264` desi 2). **Açık:** ③ yeni Trendyol Express siparişinde detay desisi = kart desisi · ④ teslimden sonra tartım desisi — olaya bağlı.
 ---
 
-## 🔶 K363 — ALIM REHBERİ (FAZLI) + FİYAT/STOK TAKİBİ · 23.10.2026 · [AÇILDI — kullanıcı kararı; FAZ 1 yazılıyor]
+## 🔶 K363 — ALIM REHBERİ (FAZLI) + FİYAT/STOK TAKİBİ · 23.10.2026 · [AÇILDI — kullanıcı kararı; FAZ 1 YAZILDI, yayın + Halil testi bekliyor]
 
 **Kullanıcı (23.10):** _«Bu üç özelliği sistemime almak istiyorum: alım tavsiyesi, stok sorgu, fiyat takip»_ · _«Alım rehberinin fazları olsun; ilk olarak kendi içimizden, sonrasında dışarı informasyonlara kayalım.»_ Anayasa «yeni büyük iş açılmaz» dönemi — K347 gibi KULLANICI KARARIYLA istisna. **Kaynak ölçüm (23.10, salt okuma, scratchpad betiği):** son 90 gün, ≥3 adet satan 154 aday · marj ortancası %16,5 · günlük satış ortancası 0,044 → ikisini birlikte geçen **58 ürün** (istenen 100 değil; ölçüt gevşetilmedi), 90 günde ₺162.273 NET-2 = adayların %42'si · 40'ı tükenmiş · 11'i <30 gün stok. Dosyalar `Documents\bezirga-raporlar\` (depoya girmez). Mevcut «Ürün analizi» satış ve stok eksenini AYRI gösteriyor → «hızlı + kârlı + tükendi» tek ekranda sorulamıyor (ihtiyacın kökü).
 **FAZLAR (her faz öncekinin Halil testinden sonra):**
