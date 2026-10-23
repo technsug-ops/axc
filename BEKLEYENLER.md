@@ -218,6 +218,13 @@ Bekçi `gece-turu-sonuc:dogrula` **30**; mutasyon **11/11** (bir kaçak: iki kap
 ─── **15.10.2026 — ①② GEÇTİ** (kullanıcı «ok»: `11693359539` desi 5 tahmini · kargo −₺136,92 · `11691326264` desi 2). **Açık:** ③ yeni Trendyol Express siparişinde detay desisi = kart desisi · ④ teslimden sonra tartım desisi — olaya bağlı.
 ---
 
+## 🟢 K361 — axcali2783 PARTİ BAĞI: STOK EKRANI 0, PARTİ TAKİBİ 1 · 23.10.2026 · [KOŞTU — kullanıcı «düzeltelim»]
+
+**Bulundu:** çok kullanıcı konuşmasında koşulan `canli:defter-ayrismasi` 1.813 varyantta 1 sapan verdi — `axcali2783` (Erkek Bakım Seti MG7950/15): ledger 0 · FIFO 1. **Sebep eşzamanlı satış DEĞİL** (hareket geçmişi salt okumayla izlendi): 03.09 «listeye-hizala-2» onarımı `4747680294`'ün adet-0 kaleminin fazladan düşümünü +1 ile geri aldı (`q67dgh`) ve «raf sayıldı, mal fiziki değil» diye −1 ile kapattı (`8t8cis`); ikisi de eski alım partisine (`jk0bc9`) bağlanmıştı → FIFO +1'i yeni parti sayıp kapamayı eski partiye yazdı. **Onarım (metadata, miktar/para değişmedi):** `q67dgh` kaynak → boş · `8t8cis` kaynak → `q67dgh`. Betik `scripts/canli-axcali2783-parti-bagi-onar.ts` (TEK_SEFERLIK, iki kimliğe kilitli, kuru koşum → yazım, beklenen eski bağ değilse durur, `--geri-al` var) · iz `PARTI_BAGI_ONARIM` (eski/yeni bağ). **Ölçüldü:** ledger 0 · FIFO 0 · `canli:defter-ayrismasi` 1.813/1.813 temiz, sapan **0**. Kâr değişmedi (q67dgh'yi tüketen satış yok).
+⚠ **Açık kalan (çok kullanıcı):** satış/alım stok düşümünde satır kilidi YOK (`satis.ts:328` `acikPartiler` kilitsiz okur) — eşzamanlı iki satış aynı partiyi tüketebilir; bu vakanın sebebi o değildi ama risk duruyor. Önlem ayrı karar.
+
+---
+
 ## 🔶 K360 — PANEL: «PARANIN DAĞILIMI» KALAN NET-2 = ÜST KART · 22.10.2026 · [YAYINDA 23.10 · HALİL TESTİ GEÇTİ 23.10.2026 — kullanıcı ekranı: kart ₺111.342,11 = Kalan NET-2 ₺111.342,11 · iade satırı −₺4.222,52 · «bir sonrakine geçelim»]
 
 **Kullanıcı (ekran görüntüsü, «bu ay»):** «Bu iki rakam aynı olmalı değil mi?» — kart NET-2 **₺111.203,88**, dağılım «Kalan NET-2» **₺115.426,39**. **Kök:** kart = satış NET-2 + hesaplanmış iade NET-2 (`panel.ts`, iade satışın gününe), dağılım yalnız satış NET-2'si. **Ölçüldü (canlı, salt okuma):** Ekim'in 10 iadesi, NET-2 etkisi **−₺4.222,52** (ekran farkı 4.222,51 — kuruş yuvarlaması). **Kod** `src/app/panel-bi.tsx`: kartla AYNI iade kümesi (satışın günü · kanal · `IADE_GECERLI` · para birimi · yalnız CALCULATED) → yeni satır «İadeler (NET-2 etkisi)» (`/iadeler`e gider, sıfırken de çizilir) · Kalan NET-2 = satış + iade. Sözlük `PanelBi.iadeEtkisi` (tr + en). Bekçi `panel:dogrula` 969 (+4); mutasyon 6/6 (zararsız yeşil · kalan iadesiz · etiket sıfırken gizli · tutar çizilmiyor · hesaplanmamış iade giriyor · kanal süzgeci düştü).
