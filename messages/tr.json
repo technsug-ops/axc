@@ -3651,6 +3651,8 @@
     "netPozisyon": "Net pozisyon",
     "acikVar": "Bu pencerede açık var — çıkan para girenden fazla.",
     "acikYok": "Bu pencerede açık yok.",
+    "acikDip": "Dönem sonu artıda, ama {tarih} günü kasa eksiye düşüyor ({tutar}) — o gün para yok.",
+    "acikPirinc": "Vadesi geçmiş, ödemesi ölçülmemiş {tutar} var; gelmemiş olabilir, bu yüzden «açık yok» denmiyor.",
     "gecikmisDahil": "Toplamlara gecikmiş {tutar} dahildir.",
     "gecikmisBaslik": "Gecikmiş ({sayi})",
     "kartSiniriNotu": "Vadesi geçmiş ama ödenmemiş kart borçları «Gecikmiş» bölümünde durur ve bakiyeden düşülür. Vadesi geçmiş hakediş girişleri ise ödenip ödenmediği bilinmediği için bakiyeye eklenmez.",

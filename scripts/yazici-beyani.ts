@@ -136,6 +136,19 @@ export const YAZMASI_BEYANLI: { dosya: string; gerekce: string; bekcisi: string 
     bekcisi: "hakedis-yazici:dogrula",
   },
   {
+    dosya: "canli-hb-indirim-doldur.ts",
+    gerekce:
+      "K325-⑩ — GEÇMİŞ ONARIMI: HB indirimi (`SaleItem.channelDiscountAmount`) " +
+      "migration'dan ÖNCE oluşmuş HB satışlarına hiç yazılmadı (içe aktarma onu " +
+      "yalnız yeni satışa yazıyor). HB API yalnız GET (sipariş detayı, içe " +
+      "aktarmanın okuduğu alanın aynısı). Kuru koşum varsayılan; `--yaz` + " +
+      "`--anlik` zorunlu (yazımdan ÖNCE anlık görüntü, geri okunur); kâr önizlemesi " +
+      "GERİ ALINAN işlemde; STOPAJ/ÖDEME GİDERİ dışında kesinti oynarsa satış " +
+      "yazılmaz; satış satış, tekrar koşulabilir; her satış `HB_INDIRIM_DOLDURMA` " +
+      "izi (eski kesintilerle); `--geri-al` görüntüden.",
+    bekcisi: "kar:dogrula",
+  },
+  {
     dosya: "canli-hb-hakedis-cekim.ts",
     gerekce:
       "K221 — HB hakediş API çekimi: Settlement/SettlementItem yazar. " +

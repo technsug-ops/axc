@@ -90,6 +90,34 @@ export default async function NakitTakvimiSayfasi({
     takvim.netPozisyon < 0 ||
     (takvim.enDip?.bakiye ?? 0) < 0 ||
     pirincVar;
+  /**
+   * ⛔ METİN, KIRMIZININ GERÇEK SEBEBİNİ SÖYLER (kullanıcı bulgusu 23.10.2026).
+   * 30 günde net +₺184.935 iken kutu «çıkan para girenden fazla» diyordu —
+   * kırmızıyı yakan ② dip (03.11'de −₺177.277) ve ③ pirinç kovaydı. Cümle
+   * sayının taşımadığı bir anlamı iddia ediyordu (anayasa: «metin, sahip
+   * olmadığı anlamı iddia etmez»). «Açık yok» kuralı DEĞİŞMEDİ; değişen:
+   * · dönem sonu EKSİ → olumsuz (kırmızı) + «çıkan girenden fazla»
+   * · dönem sonu ARTI ama dip/pirinç → UYARI tonu + hangi şart olduğunu söyler
+   */
+  const netEksi = takvim.netPozisyon < 0;
+  const dipEksi = (takvim.enDip?.bakiye ?? 0) < 0;
+  const netKutuTonu = netEksi ? DURUM_KUTUSU.olumsuz : acikMi ? DURUM_KUTUSU.uyari : "";
+  const acikSebepleri: string[] = netEksi
+    ? [t("acikVar")]
+    : [
+        ...(dipEksi && takvim.enDip
+          ? [
+              t("acikDip", {
+                tarih: (() => {
+                  const d = gunMetninden(takvim.enDip.gun);
+                  return d ? bicim.tarih(d) : takvim.enDip.gun;
+                })(),
+                tutar: para(takvim.enDip.bakiye),
+              }),
+            ]
+          : []),
+        ...(pirincVar ? [t("acikPirinc", { tutar: para(takvim.gecikmisGirecek) })] : []),
+      ];
 
   /** Hakediş dosyası DONMUŞ kaynak — takvimin ufku son partiyle biter. */
   const sonParti = await sonHakedisPartisi();
@@ -183,9 +211,7 @@ export default async function NakitTakvimiSayfasi({
             zemin). Önceden ham `destructive` sınıflarıyla yazılmıştı; renk
             sistemi tek kapıdan geçtiği için burası da paletten besleniyor. */}
         <div
-          className={`bg-card flex min-w-0 flex-col gap-1.5 rounded-lg border p-4 ${
-            acikMi ? DURUM_KUTUSU.olumsuz : ""
-          }`}
+          className={`bg-card flex min-w-0 flex-col gap-1.5 rounded-lg border p-4 ${netKutuTonu}`}
         >
           <span className={acikMi ? "text-xs" : "text-muted-foreground text-xs"}>
             {t("netPozisyon")}
@@ -193,9 +219,15 @@ export default async function NakitTakvimiSayfasi({
           <span className="text-2xl font-semibold tabular-nums">
             {para(takvim.netPozisyon)}
           </span>
-          <span className={acikMi ? "text-xs" : "text-muted-foreground text-xs"}>
-            {acikMi ? t("acikVar") : t("acikYok")}
-          </span>
+          {acikMi ? (
+            acikSebepleri.map((s) => (
+              <span key={s} className="text-xs">
+                {s}
+              </span>
+            ))
+          ) : (
+            <span className="text-muted-foreground text-xs">{t("acikYok")}</span>
+          )}
         </div>
       </div>
 

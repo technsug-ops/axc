@@ -2297,6 +2297,28 @@ console.log("\n9) NAKİT TAKVİMİ VE GÖREV KUTUSU — AŞAMA 3 PAKET 1");
     "  ...③ pirinç kova doluysa AÇIK",
     /pirincVar/.test(acikBloku),
   );
+  /**
+   * ⛔ METİN SEBEBİ SÖYLER (kullanıcı bulgusu 23.10.2026): net +₺184.935 iken
+   * kutu «çıkan para girenden fazla» diyordu; kırmızıyı dip ve pirinç yakmıştı.
+   * «Çıkan girenden fazla» YALNIZ dönem sonu eksiyken; artıyken uyarı tonu ve
+   * hangi şartın yaktığı yazılır.
+   */
+  kontrol(
+    "  ...«çıkan girenden fazla» YALNIZ dönem sonu eksiyken",
+    /const acikSebepleri: string\[\] = netEksi\s*\?\s*\[t\("acikVar"\)\]/.test(takvimEkran) &&
+      /const netEksi = takvim\.netPozisyon < 0;/.test(takvimEkran),
+  );
+  kontrol(
+    "  ...dönem sonu artıyken kırmızı DEĞİL uyarı tonu",
+    /const netKutuTonu = netEksi \? DURUM_KUTUSU\.olumsuz : acikMi \? DURUM_KUTUSU\.uyari : "";/.test(takvimEkran) &&
+      /rounded-lg border p-4 \$\{netKutuTonu\}/.test(takvimEkran),
+  );
+  kontrol(
+    "  ...sebepler ekranda çizilir (dip · pirinç)",
+    /acikSebepleri\.map\(\(s\) =>/.test(takvimEkran) &&
+      /t\("acikDip", \{/.test(takvimEkran) &&
+      /t\("acikPirinc", \{ tutar: para\(takvim\.gecikmisGirecek\) \}\)/.test(takvimEkran),
+  );
 
   /**
    * ⚠ PİRİNÇ KOVA BEKLENEN GİRİŞE KATILMAZ. Katılsaydı takvim ₺801 bin
