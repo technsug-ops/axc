@@ -13,17 +13,43 @@ import writeXlsxFile, { type SheetData } from "write-excel-file/node";
  * ============================================================================
  */
 
+/**
+ * SÜTUN TÜRÜ (K363, kullanıcı sorusu 23.10.2026 «best practice bu mu»).
+ * «Her hücre metin» kodlar için DOĞRU (baştaki sıfır, uzun barkod) ama sayılar
+ * için değil: Excel'de toplam alınamıyor, «100» «20»den önce sıralanıyor.
+ * Tür VERİLMEYEN sütun bugünkü gibi METİN kalır — mevcut indirmeler değişmez;
+ * listeler türlerini tek tek alır. Sayı hücresine sayı olmayan değer gelirse
+ * (ör. «hesaplanamadı») METİN yazılır — uydurulmaz, kaybolmaz.
+ */
+export type SutunTuru = "metin" | "tamsayi" | "ondalik" | "para" | "oran";
+const BICIM: Record<Exclude<SutunTuru, "metin">, string> = {
+  tamsayi: "0",
+  ondalik: "0.000",
+  para: "#,##0.00",
+  oran: "0.0",
+};
+
 export type Sayfa = {
   ad: string;
   basliklar: string[];
   satirlar: (string | number | null | undefined)[][];
   /** Sütun genişlikleri; verilmezse başlık uzunluğundan tahmin edilir. */
   genislikler?: number[];
+  /** Sütun türleri; verilmezse HEPSİ metin (geriye uyumlu). */
+  turler?: SutunTuru[];
 };
 
 function metne(deger: string | number | null | undefined): string {
   if (deger === null || deger === undefined) return "";
   return String(deger);
+}
+
+/** Tek hücre — sayı sütununda sonlu sayı SAYI olarak, başka her şey metin. */
+export function hucre(deger: string | number | null | undefined, tur: SutunTuru = "metin") {
+  if (tur !== "metin" && typeof deger === "number" && Number.isFinite(deger)) {
+    return { value: deger, type: Number, format: BICIM[tur] };
+  }
+  return { value: metne(deger), type: String };
 }
 
 export async function xlsxUret(sayfalar: Sayfa[]): Promise<Buffer> {
@@ -38,7 +64,7 @@ export async function xlsxUret(sayfalar: Sayfa[]): Promise<Buffer> {
         align: "left" as const,
       })),
       ...sayfa.satirlar.map((satir) =>
-        satir.map((hucre) => ({ value: metne(hucre), type: String })),
+        satir.map((deger, i) => hucre(deger, sayfa.turler?.[i] ?? "metin")),
       ),
     ] as SheetData,
     columns: (

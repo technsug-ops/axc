@@ -1,4 +1,5 @@
 import {
+  ShoppingBasket,
   BadgePercent,
   Banknote,
   BarChart3,
@@ -87,6 +88,7 @@ export const MENU_IKONLARI: Record<string, LucideIcon> = {
   gunlukOzet: Sparkles,
   rapor: BarChart3,
   urunAnalizi: ListFilter,
+  alimRehberi: ShoppingBasket,
 
   urunKarti: ScanBarcode,
   kanalSkulari: Tags,

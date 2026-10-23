@@ -253,6 +253,7 @@
     "canli:k201-2-onar": "tsx scripts/canli-k201-2-onar.ts",
     "canli:hb-gercek-kesinti": "tsx scripts/canli-hb-gercek-kesinti-kosum.ts",
     "stok-kilidi:dogrula": "tsx scripts/stok-kilidi-dogrula.ts",
+    "alim-rehberi:dogrula": "tsx scripts/alim-rehberi-dogrula.ts",
     "canli:k202-2-onar": "tsx scripts/canli-k202-2-onar.ts",
     "canli:kargo-yaz": "tsx scripts/canli-kargo-yaz.ts",
     "canli:test-duzeltmeleri": "tsx scripts/canli-test-duzeltmeleri.ts",

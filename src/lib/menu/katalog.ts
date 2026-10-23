@@ -51,6 +51,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   rapor: "/rapor",
   /** K129 — panelin dört analiz ekseninin tam, süzülebilir listesi. */
   urunAnalizi: "/rapor/urunler",
+  /** K363 Faz 1 — hızlı + kârlı ürünler, tükenen/azalan/fazla stok: alım kararına yön. */
+  alimRehberi: "/rapor/alim-rehberi",
 
   urunKarti: "/kart",
   kanalSkulari: "/kanal-sku",
@@ -179,6 +181,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
    * yapıp bu gruba aldı. Eski karar silinmedi, çevrildi.
    */
   { anahtar: "urunAnalizi", varsayilanGrup: "grupFiyatAnaliz" },
+  { anahtar: "alimRehberi", varsayilanGrup: "grupFiyatAnaliz" },
   { anahtar: "urunKarti", varsayilanGrup: "grupFiyatAnaliz" },
   { anahtar: "simulasyon", varsayilanGrup: "grupFiyatAnaliz" },
   { anahtar: "tarifeHesaplama", varsayilanGrup: "grupFiyatAnaliz" },
