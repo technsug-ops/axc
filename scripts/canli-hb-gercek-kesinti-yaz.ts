@@ -94,9 +94,13 @@ async function main() {
     const simdi = new Date();
     const hepsi = await hbGercekKesintiAdaylari(prisma, { simdi, sonGun: null });
     const yakin = new Set((await hbGercekKesintiAdaylari(prisma, { simdi, sonGun: YAKIN_GUN })).map((a) => a.saleId));
-    const eskiler = hepsi.filter((a) => !yakin.has(a.saleId));
-    console.log(`\nK325-⑦ ESKİ SATIŞ YAZIMI — ${YAZ ? "⚠ YAZIM" : "KURU KOŞUM (yazmaz)"} · ${simdi.toISOString()}`);
-    console.log(`Aday (döküm ≠ gerçek) ${hepsi.length} · son ${YAKIN_GUN} gün (çekim tazeler) ${yakin.size} · ESKİ ${eskiler.length}`);
+    /* K325-⑩ (kullanıcı «yaz» 24.10.2026): çekim 22.10'dan beri zaman aşımına düştüğü
+       için son 40 günün birikmişi tazelenmedi. `--yakin-dahil` onları da alır; kapı,
+       anlık görüntü ve geri alma aynı. Çift tazeleme zararsız (aynı gerçek değeri yazar). */
+    const YAKIN_DAHIL = process.argv.includes("--yakin-dahil");
+    const eskiler = YAKIN_DAHIL ? hepsi : hepsi.filter((a) => !yakin.has(a.saleId));
+    console.log(`\nK325-⑦ ${YAKIN_DAHIL ? "TÜM ADAY" : "ESKİ SATIŞ"} YAZIMI — ${YAZ ? "⚠ YAZIM" : "KURU KOŞUM (yazmaz)"} · ${simdi.toISOString()}`);
+    console.log(`Aday (döküm ≠ gerçek) ${hepsi.length} · son ${YAKIN_GUN} gün (çekim tazeler) ${yakin.size} · YAZIM KÜMESİ ${eskiler.length}`);
 
     /* ── c) beklenmeyen değişim kapısı + NET önce/sonra ── */
     const yazilacak: { saleId: string; code: string | null; onceNet2: number; sonraNet2: number }[] = [];
