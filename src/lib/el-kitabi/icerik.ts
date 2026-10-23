@@ -2707,6 +2707,13 @@ kutudan değiştirebilirsiniz.</li>
 bağladığı sermaye. Yeniden almadan önce bakılacak liste.</li>
 <li><strong>Hızlı ama kârsız</strong> — çok satan ama marjı zayıf ürünler: alım
 fiyatı ya da satış fiyatı gözden geçirilmeli.</li>
+<li><strong>Geçen yıl bu dönem</strong> — önümüzdeki 30, 60 ya da 90 günün
+<strong>geçen yılki aynı tarihlerinde</strong> en az 3 adet satıp kâr bırakmış ve
+bugün rafında o satıştan az olan ürünler. <strong>Eksik</strong> sütunu = geçen
+yıl satılan − bugün raf. Bu bir tahmin değil hatırlatmadır: geçen yılın satışı o
+dönemin kampanyasına ve o günkü alımınıza da bağlıdır; ekran bunu yazar. Geçen
+yılın o dönemi defterin ilk satışından önceyse liste boş kalır ve «bakılamadı»
+der — «temiz» demez.</li>
 </ul>
 <div class="ek-not"><div class="etiket">«İyi kâr» ve «hızlı» sınırını sistem koymaz, verileriniz koyar</div>
 <p>Dönemde en az 3 adet satmış ürünlerin <strong>ortanca</strong> marjı ve

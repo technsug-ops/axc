@@ -50,6 +50,20 @@ export const VARSAYILAN_AZ_STOK_GUN = 30;
 export const REHBER_LISTELERI = ["tukenen", "azalan", "fazla", "karsiz"] as const;
 export type RehberListesi = (typeof REHBER_LISTELERI)[number];
 
+/**
+ * SEKMELER = dört liste + «Geçen yıl bu dönem» (K363 Faz 2-a, kullanıcı onayı
+ * 23.10.2026). Beşinci sekme AYRI bir kümeye bakar (geçen yılın satışı, bugünün
+ * rafı); dört liste dönem eşiklerine bağlı, bu değil — bu yüzden `rehberListesi`
+ * switch'ine girmedi, kendi gövdesi var (`gecenYilListesi`).
+ */
+export const REHBER_SEKMELERI = [...REHBER_LISTELERI, "gecenYil"] as const;
+export type RehberSekmesi = (typeof REHBER_SEKMELERI)[number];
+
+/** «Önümüzdeki N gün» — geçen yılın aynı tarihlerine bakılır. */
+export const ILERI_GUNLER = [30, 60, 90] as const;
+export type IleriGun = (typeof ILERI_GUNLER)[number];
+export const VARSAYILAN_ILERI: IleriGun = 30;
+
 export type RehberSatiri = {
   variantId: string;
   urunId: string | null;
@@ -88,8 +102,71 @@ export function donemCoz(ham: string | undefined): RehberDonemi {
   return (REHBER_DONEMLERI as readonly string[]).includes(ham ?? "") ? (ham as RehberDonemi) : VARSAYILAN_DONEM;
 }
 
-export function listeCoz(ham: string | undefined): RehberListesi {
-  return (REHBER_LISTELERI as readonly string[]).includes(ham ?? "") ? (ham as RehberListesi) : "tukenen";
+export function listeCoz(ham: string | undefined): RehberSekmesi {
+  return (REHBER_SEKMELERI as readonly string[]).includes(ham ?? "") ? (ham as RehberSekmesi) : "tukenen";
+}
+
+export function ileriCoz(ham: string | undefined): IleriGun {
+  const n = Number(ham);
+  return (ILERI_GUNLER as readonly number[]).includes(n) ? (n as IleriGun) : VARSAYILAN_ILERI;
+}
+
+/**
+ * GEÇEN YILIN PENCERESİ — yarından başlayıp `ileri` gün, TAKVİM tarihleriyle
+ * bir yıl geri («geçen yıl aynı tarihler»; özel günler tarihe bağlı).
+ * 52 hafta (364 gün) geri gitmek haftanın gününü korurdu ama tarihi bir gün
+ * kaydırır — kampanya ve özel gün tarihe bağlı olduğu için TAKVİM seçildi.
+ * ⚠ 29 Şubat geçen yılda yoksa 28 Şubat'a düşer (sessiz mart değil).
+ * `bugun` = İstanbul takvim günü (çağıran `isTakvimGunu` ile verir).
+ */
+export function gecenYilPenceresi(
+  bugun: { yil: number; ay: number; gun: number },
+  ileri: number,
+): { baslangic: string; bitis: string } {
+  const kaydir = (g: Date) => {
+    const yil = g.getUTCFullYear() - 1;
+    const ay = g.getUTCMonth();
+    const ayinSonGunu = new Date(Date.UTC(yil, ay + 1, 0)).getUTCDate();
+    return new Date(Date.UTC(yil, ay, Math.min(g.getUTCDate(), ayinSonGunu)));
+  };
+  const metin = (d: Date) =>
+    `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  const yarin = new Date(Date.UTC(bugun.yil, bugun.ay - 1, bugun.gun + 1));
+  const son = new Date(Date.UTC(bugun.yil, bugun.ay - 1, bugun.gun + ileri));
+  return { baslangic: metin(kaydir(yarin)), bitis: metin(kaydir(son)) };
+}
+
+/**
+ * KAPSAM — geçen yılın penceresine defter BAKABİLİYOR MU? (anayasa: «boş sonuç
+ * ile temiz sonuç ayırt edilir»; «yeni izin doğum tarihi beyan edilir»).
+ * · YOK   — pencerenin tamamı defterin ilk satışından önce: liste BOŞ, ama
+ *           temiz olduğu için değil, bakılamadığı için.
+ * · KISMI — pencere ilk satıştan önce başlıyor: liste yalnız sonrasını görür.
+ * · TAM   — pencerenin tamamı defterin içinde.
+ */
+export type GecenYilKapsami = "TAM" | "KISMI" | "YOK";
+export function gecenYilKapsami(ilkSatis: Date | null, baslangic: Date, bitisHaric: Date): GecenYilKapsami {
+  if (ilkSatis === null || ilkSatis.getTime() >= bitisHaric.getTime()) return "YOK";
+  return ilkSatis.getTime() > baslangic.getTime() ? "KISMI" : "TAM";
+}
+
+/** Eksik = geçen yıl o pencerede satılan − bugün raf (en az 0). */
+export function eksikAdet(s: RehberSatiri): number {
+  return Math.max(0, s.adet - s.raf);
+}
+
+/**
+ * «GEÇEN YIL BU DÖNEM» — `satirlar` GEÇEN YILIN penceresinden kurulmuş olmalı
+ * (`rehberKur(gecenYilSatis, bugunkuStok, ileri)`). Girer: geçen yıl en az
+ * `EN_AZ_ADET` satmış · kârı hesaplanabilmiş VE pozitif · bugün rafı geçen
+ * yılki satıştan AZ. Sıra: eksik adet, eşitse NET-2.
+ * ⚠ Bir TAHMİN değil HATIRLATMA: geçen yılın satışı o kampanyaya ve o günkü
+ * alıma da bağlı (iş sabiti: «alım kampanya döngüsüne bağlıdır») — ekran yazar.
+ */
+export function gecenYilListesi(satirlar: RehberSatiri[]): RehberSatiri[] {
+  return satirlar
+    .filter((s) => s.adet >= EN_AZ_ADET && s.marj !== null && s.net2 > 0 && eksikAdet(s) > 0)
+    .sort((a, b) => eksikAdet(b) - eksikAdet(a) || b.net2 - a.net2);
 }
 
 /** 1–365 arası tam gün; değilse varsayılan (sessiz uydurma değil: ekran hangi değeri kullandığını yazar). */
@@ -211,7 +288,7 @@ export function rehberAra(satirlar: RehberSatiri[], arama: string | null): Rehbe
   );
 }
 
-export type RehberToplami = { urun: number; adet: number; net2: number; raf: number; bagliSermaye: number; sermayesiBilinmeyen: number };
+export type RehberToplami = { urun: number; adet: number; net2: number; raf: number; eksik: number; bagliSermaye: number; sermayesiBilinmeyen: number };
 
 /** Liste toplamı (İlke #15) — ekranda ne varsa onun toplamı. */
 export function rehberToplami(satirlar: RehberSatiri[]): RehberToplami {
@@ -221,10 +298,11 @@ export function rehberToplami(satirlar: RehberSatiri[]): RehberToplami {
       adet: t.adet + s.adet,
       net2: t.net2 + s.net2,
       raf: t.raf + s.raf,
+      eksik: t.eksik + eksikAdet(s),
       bagliSermaye: t.bagliSermaye + (s.raf > 0 ? (s.bagliSermaye ?? 0) : 0),
       sermayesiBilinmeyen: t.sermayesiBilinmeyen + (s.raf > 0 && s.bagliSermaye === null ? 1 : 0),
     }),
-    { urun: 0, adet: 0, net2: 0, raf: 0, bagliSermaye: 0, sermayesiBilinmeyen: 0 },
+    { urun: 0, adet: 0, net2: 0, raf: 0, eksik: 0, bagliSermaye: 0, sermayesiBilinmeyen: 0 },
   );
 }
 

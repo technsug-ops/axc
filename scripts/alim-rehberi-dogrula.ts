@@ -12,7 +12,12 @@ import {
   azStokCoz,
   donemCoz,
   donemGunu,
+  eksikAdet,
   esikleriKur,
+  gecenYilKapsami,
+  gecenYilListesi,
+  gecenYilPenceresi,
+  ileriCoz,
   listeCoz,
   ortanca,
   rehberAra,
@@ -27,7 +32,7 @@ import type { AnalizSatiri } from "../src/lib/rapor/urun-analizi";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -158,11 +163,63 @@ console.log("\n⑥ bağlar");
   kontrol("sayfa: toplam EKRANDAKİ listeden (aramadan sonra)", /const gorunen = rehberAra\(tamListe, arama\);\s*const toplam = rehberToplami\(gorunen\);/.test(sayfa));
   kontrol("sayfa: arama ortak bileşenle (kamera dahil)", /<KodAramaKutusu[\s\S]{0,80}temelAdres=\{REHBER_YOLU\}/.test(sayfa));
   kontrol("Excel: iki izin birden", /apiIzni\("rapor\.gor"\)\)\s*\?\?\s*\(await apiIzni\("satis\.kar\.gor"\)\)/.test(excel));
-  kontrol("Excel: ekrandakiyle aynı liste (aynı gövdeler, aynı arama)", /rehberAra\(rehberListesi\(liste, veri\.satirlar, esik, azStok\), arama\)/.test(excel));
+  kontrol(
+    "Excel: ekrandakiyle aynı liste (aynı gövdeler, aynı arama; geçen yıl sekmesi kendi gövdesinden)",
+    /rehberAra\(\s*gy \? gecenYilListesi\(veri\.gecenYil\.satirlar\) : rehberListesi\(liste, veri\.satirlar, esik, azStok\),\s*arama,?\s*\)/.test(excel),
+  );
+  kontrol("sayfa: geçen yıl listesi geçen yılın satırlarından", /gecenYil: gecenYilListesi\(veri\.gecenYil\.satirlar\)/.test(sayfa));
+  kontrol("sayfa: beş sekme de çizilir (REHBER_SEKMELERI)", /\{REHBER_SEKMELERI\.map\(\(l\) =>/.test(sayfa));
+  kontrol("sayfa: geçen yıl sekmesinde uyarı (tahmin değil hatırlatma) çizilir", /\{gy \? \(\s*<div[^>]*>[\s\S]{0,260}t\("gecenYilUyari"\)/.test(sayfa));
+  kontrol("sayfa: veri yoksa boş liste «temiz» değil «bakılamadı» der", /gy && veri\.gecenYil\.kapsam === "YOK" \? t\("gecenYilVeriYok"/.test(sayfa));
+  const verisi = yorumsuz(kaynakOku("src/lib/rapor/alim-rehberi-verisi.ts"));
+  kontrol("veri: geçen yıl satışı BUGÜNÜN stoğuyla birleşir (aynı stok, pencere uzunluğu gün)", /rehberKur\(gecenYilSatis, stok, ileri\)/.test(verisi));
+  kontrol("veri: geçen yıl penceresi İstanbul gününden kurulur", /gecenYilPenceresi\(isTakvimGunu\(an\), ileri\)/.test(verisi));
   kontrol("Excel: sütun türleri verildi (sayılar sayı)", /turler,/.test(excel) && /"para"/.test(excel));
   kontrol("menü: adres ve katalog kaydı", MENU_ADRESLERI.alimRehberi === "/rapor/alim-rehberi" && MENU_KATALOGU.some((k) => k.anahtar === "alimRehberi" && k.varsayilanGrup === "grupFiyatAnaliz"));
 }
 kosanBolumler.push("baglar");
+
+// ── ⑦ GEÇEN YIL BU DÖNEM (Faz 2-a) ──────────────────────────────────────
+console.log("\n⑦ geçen yıl bu dönem — pencere · kapsam · liste");
+{
+  const p = gecenYilPenceresi({ yil: 2026, ay: 10, gun: 23 }, 30);
+  kontrol("pencere: YARINDAN başlar, N gün, takvim tarihiyle bir yıl geri (2025-10-24 – 2025-11-22)", p.baslangic === "2025-10-24" && p.bitis === "2025-11-22", p);
+  const s = gecenYilPenceresi({ yil: 2028, ay: 2, gun: 28 }, 1);
+  kontrol("pencere: 29 Şubat geçen yılda yoksa 28 Şubat (mart DEĞİL)", s.baslangic === "2027-02-28" && s.bitis === "2027-02-28", s);
+  const y = gecenYilPenceresi({ yil: 2026, ay: 12, gun: 31 }, 1);
+  kontrol("pencere: yıl sınırını doğru geçer (31.12 → yarın 01.01 → geçen yıl 01.01)", y.baslangic === "2026-01-01" && y.bitis === "2026-01-01", y);
+
+  const bas = new Date("2025-10-24T00:00:00Z");
+  const bit = new Date("2025-11-23T00:00:00Z");
+  kontrol("kapsam: defter boşsa YOK", gecenYilKapsami(null, bas, bit) === "YOK");
+  kontrol("kapsam: ilk satış pencere bittikten sonra → YOK", gecenYilKapsami(new Date("2025-11-23T00:00:00Z"), bas, bit) === "YOK");
+  kontrol("kapsam: ilk satış pencerenin İÇİNDE → KISMI", gecenYilKapsami(new Date("2025-11-01T00:00:00Z"), bas, bit) === "KISMI");
+  kontrol("kapsam: ilk satış tam pencere başında → TAM (KISMI değil)", gecenYilKapsami(bas, bas, bit) === "TAM");
+  kontrol("kapsam: ilk satış pencereden önce → TAM", gecenYilKapsami(new Date("2024-08-01T00:00:00Z"), bas, bit) === "TAM");
+
+  const r = rehberKur(
+    [
+      sat("G1", 10, 1000, 100), // raf 2 → eksik 8 → GİRER
+      sat("G2", 5, 500, 50), // raf yok → eksik 5 → GİRER
+      sat("G7", 5, 500, 70), // eksik 5, NET-2 G2'den büyük → G2'den ÖNCE
+      sat("G3", 6, 600, 60), // raf 6 → eksik 0 → GİRMEZ (tam sınır)
+      sat("G4", 2, 200, 40), // 2 adet → GİRMEZ (en az 3)
+      sat("G5", 8, 800, -10), // zarar → GİRMEZ
+      satir("G6", { adet: 4, ciro: 400, net2: 0, hesaplananCiro: 0, kalemSayisi: 4, hesaplanamayanKalem: 4 }), // kâr hesaplanamadı → GİRMEZ
+      sat("G8", 3, 300, 30), // tam 3 adet, raf 0 → GİRER (alt sınır dahil)
+    ],
+    [stk("G1", 2, 200), stk("G3", 6, 600), stk("R1", 9, 900)],
+    30,
+  );
+  const liste = gecenYilListesi(r);
+  const ad = liste.map((x) => x.variantId).join(",");
+  kontrol("liste: eksiğe göre, eşitse NET-2'ye göre (G1 8 · G7 5/70 · G2 5/50 · G8 3)", ad === "G1,G7,G2,G8", ad);
+  kontrol("liste: geçen yıl hiç satmamış raftaki ürün (R1) girmez", !ad.includes("R1"));
+  kontrol("eksik: raf satıştan fazlaysa 0 (eksi değil)", eksikAdet(r.find((x) => x.variantId === "R1")!) === 0);
+  kontrol("toplam: eksik adet listenin eksiklerinin toplamı (8+5+5+3)", rehberToplami(liste).eksik === 21, rehberToplami(liste));
+  kontrol("adres: geçen yıl sekmesi ve ileri gün ayrıştırılır, bozuksa 30", listeCoz("gecenYil") === "gecenYil" && ileriCoz("60") === 60 && ileriCoz("45") === 30 && ileriCoz("x") === 30);
+}
+kosanBolumler.push("gecen-yil");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {

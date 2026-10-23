@@ -13,17 +13,23 @@ import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
 import {
   azStokCoz,
   donemCoz,
+  eksikAdet,
   EN_AZ_ADET,
   esikleriKur,
+  gecenYilListesi,
+  ileriCoz,
+  ILERI_GUNLER,
   listeCoz,
   REHBER_DONEMLERI,
   REHBER_LISTELERI,
+  REHBER_SEKMELERI,
   REHBER_YOLU,
   rehberAra,
   rehberListesi,
   rehberToplami,
   VARSAYILAN_AZ_STOK_GUN,
   type RehberSatiri,
+  type RehberSekmesi,
 } from "@/lib/rapor/alim-rehberi";
 import { rehberVerisi } from "@/lib/rapor/alim-rehberi-verisi";
 import { suzgecAdresi } from "@/lib/suzgec";
@@ -43,6 +49,9 @@ import { izinVarMi, sayfaIzni } from "@/lib/yetki";
  *  kâr göremeyen rol için sebebi yazılır, boş liste gösterilmez).
  *  ⚠ Sekme sayıları ARAMADAN BAĞIMSIZ bütün listeyi sayar (İlke #17); arama
  *  açıkken «aramada N» ayrıca yazar.
+ *  Faz 2-a (23.10.2026): beşinci sekme «Geçen yıl bu dönem» — dönem yerine
+ *  «önümüzdeki N gün», «kaç günlük stok» yerine «eksik»; uyarı ve kapsam
+ *  (defter o tarihlere bakabiliyor mu) ekranda yazar.
  * ============================================================================
  */
 
@@ -54,7 +63,7 @@ export async function generateMetadata() {
 export default async function AlimRehberiSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ donem?: string; liste?: string; az?: string; q?: string }>;
+  searchParams: Promise<{ donem?: string; liste?: string; az?: string; ileri?: string; q?: string }>;
 }) {
   await sayfaIzni("rapor.gor");
   const p = await searchParams;
@@ -64,6 +73,9 @@ export default async function AlimRehberiSayfasi({
   const donem = donemCoz(p.donem);
   const liste = listeCoz(p.liste);
   const azStok = azStokCoz(p.az);
+  const ileri = ileriCoz(p.ileri);
+  /** Faz 2-a: «Geçen yıl bu dönem» sekmesi — dönem yerine «önümüzdeki N gün», «stok günü» yerine «eksik». */
+  const gy = liste === "gecenYil";
   const arama = p.q?.trim() || null;
 
   const karGorunur = await izinVarMi("satis.kar.gor");
@@ -76,17 +88,18 @@ export default async function AlimRehberiSayfasi({
     );
   }
 
-  const veri = await rehberVerisi(donem, new Date());
+  const veri = await rehberVerisi(donem, ileri, new Date());
   const esik = esikleriKur(veri.satirlar);
-  const listeler = Object.fromEntries(
-    REHBER_LISTELERI.map((l) => [l, rehberListesi(l, veri.satirlar, esik, azStok)]),
-  ) as Record<(typeof REHBER_LISTELERI)[number], RehberSatiri[]>;
+  const listeler = {
+    ...Object.fromEntries(REHBER_LISTELERI.map((l) => [l, rehberListesi(l, veri.satirlar, esik, azStok)])),
+    gecenYil: gecenYilListesi(veri.gecenYil.satirlar),
+  } as Record<RehberSekmesi, RehberSatiri[]>;
   const tamListe = listeler[liste];
   const gorunen = rehberAra(tamListe, arama);
   const toplam = rehberToplami(gorunen);
 
   /** Adres TEK yerden — sekme, dönem, form ve Excel aynı parametreleri taşır. */
-  const tasinan = { donem, liste, az: String(azStok), q: arama ?? undefined };
+  const tasinan = { donem, liste, az: String(azStok), ileri: String(ileri), q: arama ?? undefined };
   const adres = (ek: Record<string, string | undefined>) => suzgecAdresi(REHBER_YOLU, tasinan, ek);
   const excelAdresi = suzgecAdresi(`${REHBER_YOLU}/excel`, tasinan, {});
 
@@ -97,7 +110,11 @@ export default async function AlimRehberiSayfasi({
         ? esik.fazlaStokGunu === null
           ? t("aciklama_fazlaOlcuYok")
           : t("aciklama_fazla", { gun: Math.round(esik.fazlaStokGunu) })
-        : t(`aciklama_${liste}`);
+        : liste === "gecenYil"
+          ? t("aciklama_gecenYil", { enAz: EN_AZ_ADET })
+          : t(`aciklama_${liste}`);
+  const gyPencere = { bas: bicim.tarih(veri.gecenYil.ilkGun), bit: bicim.tarih(veri.gecenYil.sonGun) };
+  const gyIlk = veri.gecenYil.ilkSatis === null ? "—" : bicim.tarih(veri.gecenYil.ilkSatis);
 
   const kimlikEtiketi = { sku: t("sku"), firmaSku: t("excelFirmaSku"), barkod: t("excelBarkod") };
   const stokGunuYaz = (s: RehberSatiri) =>
@@ -110,42 +127,52 @@ export default async function AlimRehberiSayfasi({
         <p className="text-muted-foreground text-sm">{t("notu")}</p>
       </div>
 
-      {/* ── DÖNEM — adreste yaşar ── */}
+      {/* ── DÖNEM (dört liste) ya da ÖNÜMÜZDEKİ N GÜN (geçen yıl) — adreste yaşar ── */}
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
-        {REHBER_DONEMLERI.map((d) => {
-          const aktif = d === donem;
-          return (
-            <Link
-              key={d}
-              href={adres({ donem: d })}
-              aria-current={aktif ? "true" : undefined}
-              className={
-                "inline-flex h-11 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
-                (aktif ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted")
-              }
-            >
-              {t(`donem_${d}`)}
-            </Link>
-          );
-        })}
+        {(gy
+          ? ILERI_GUNLER.map((g) => ({ anahtar: String(g), aktif: g === ileri, href: adres({ ileri: String(g) }), etiket: t("ileriGun", { gun: g }) }))
+          : REHBER_DONEMLERI.map((d) => ({ anahtar: d, aktif: d === donem, href: adres({ donem: d }), etiket: t(`donem_${d}`) }))
+        ).map((c) => (
+          <Link
+            key={c.anahtar}
+            href={c.href}
+            aria-current={c.aktif ? "true" : undefined}
+            className={
+              "inline-flex h-11 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
+              (c.aktif ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted")
+            }
+          >
+            {c.etiket}
+          </Link>
+        ))}
       </div>
 
-      {/* ── EŞİKLER VERİDEN — hangi sayıya göre süzüldüğü yazar ── */}
-      <p className="text-muted-foreground text-sm">
-        {esik.marjOrtancasi === null || esik.hizOrtancasi === null
-          ? t("esikYok", { enAz: EN_AZ_ADET })
-          : t("esikNotu", {
-              gun: veri.gun,
-              enAz: EN_AZ_ADET,
-              aday: esik.adaySayisi,
-              hiz: bicim.sayi(esik.hizOrtancasi, 3),
-              marj: bicim.yuzde(esik.marjOrtancasi),
-            })}
-      </p>
+      {/* ── EŞİKLER VERİDEN — hangi sayıya göre süzüldüğü yazar; geçen yıl sekmesinde PENCERE + uyarı + kapsam ── */}
+      {gy ? (
+        <div className="space-y-1 text-sm">
+          <p className="text-muted-foreground">{t("gecenYilPencere", { bas: gyPencere.bas, bit: gyPencere.bit })}</p>
+          <p className="text-amber-700 dark:text-amber-400">{t("gecenYilUyari")}</p>
+          {veri.gecenYil.kapsam === "KISMI" ? (
+            <p className="text-amber-700 dark:text-amber-400">{t("gecenYilKismi", { ilk: gyIlk })}</p>
+          ) : null}
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm">
+          {esik.marjOrtancasi === null || esik.hizOrtancasi === null
+            ? t("esikYok", { enAz: EN_AZ_ADET })
+            : t("esikNotu", {
+                gun: veri.gun,
+                enAz: EN_AZ_ADET,
+                aday: esik.adaySayisi,
+                hiz: bicim.sayi(esik.hizOrtancasi, 3),
+                marj: bicim.yuzde(esik.marjOrtancasi),
+              })}
+        </p>
+      )}
 
       {/* ── LİSTE SEKMELERİ — sayılar aramadan bağımsız ── */}
       <div className={SEKME_SERIDI}>
-        {REHBER_LISTELERI.map((l) => {
+        {REHBER_SEKMELERI.map((l) => {
           const aktif = l === liste;
           return (
             <Link key={l} href={adres({ liste: l })} aria-current={aktif ? "page" : undefined} className={sekmeSinifi(aktif)}>
@@ -158,9 +185,11 @@ export default async function AlimRehberiSayfasi({
 
       {/* ── AZ STOK AYARI · ARAMA · EXCEL ── */}
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
+        {gy ? null : (
         <form action={REHBER_YOLU} method="get" className="flex items-end gap-2">
           <input type="hidden" name="donem" value={donem} />
           <input type="hidden" name="liste" value={liste} />
+          <input type="hidden" name="ileri" value={ileri} />
           {arama ? <input type="hidden" name="q" value={arama} /> : null}
           <label className="space-y-1 text-sm">
             <span className="block font-medium">{t("azStokEtiketi")}</span>
@@ -180,11 +209,12 @@ export default async function AlimRehberiSayfasi({
             {t("uygula")}
           </button>
         </form>
+        )}
         <div className="min-w-0 md:flex-1">
           <KodAramaKutusu
             temelAdres={REHBER_YOLU}
             baslangic={arama ?? ""}
-            tasinanlar={{ donem, liste, az: String(azStok) }}
+            tasinanlar={{ donem, liste, az: String(azStok), ileri: String(ileri) }}
             ipucu={t("aramaIpucu")}
           />
         </div>
@@ -196,21 +226,22 @@ export default async function AlimRehberiSayfasi({
           {t("excelIndir")}
         </a>
       </div>
-      <p className="text-muted-foreground text-xs">{t("azStokNotu", { gun: VARSAYILAN_AZ_STOK_GUN })}</p>
+      {gy ? null : <p className="text-muted-foreground text-xs">{t("azStokNotu", { gun: VARSAYILAN_AZ_STOK_GUN })}</p>}
 
       {/* ── TOPLAM — EKRANDA NE VARSA ONUN (İlke #15) ── */}
       <ListeToplami
         baslik={t("toplamBaslik")}
         toplamlar={[{ paraBirimi: "TRY", tutar: toplam.bagliSermaye }]}
         altMetin={t("toplamUrun", { sayi: toplam.urun, liste: t(`liste_${liste}`) })}
-        oncekiler={[{ etiket: t("toplamAdet"), deger: String(toplam.adet) }]}
+        oncekiler={[{ etiket: gy ? t("toplamGecenYilAdet") : t("toplamAdet"), deger: String(toplam.adet) }]}
         ekler={[
-          { etiket: t("toplamNet2"), toplamlar: [{ paraBirimi: "TRY", tutar: toplam.net2 }] },
+          { etiket: gy ? t("toplamGecenYilNet2") : t("toplamNet2"), toplamlar: [{ paraBirimi: "TRY", tutar: toplam.net2 }] },
           {
             etiket: t("toplamRaf"),
             deger: String(toplam.raf),
             not: toplam.sermayesiBilinmeyen > 0 ? t("sermayesiBilinmeyen", { sayi: toplam.sermayesiBilinmeyen }) : undefined,
           },
+          ...(gy ? [{ etiket: t("toplamEksik"), deger: String(toplam.eksik) }] : []),
         ]}
       />
 
@@ -225,7 +256,9 @@ export default async function AlimRehberiSayfasi({
           {gorunen.length === 0 ? (
             <div className="space-y-1 py-8 text-center">
               <p className="text-sm font-medium">{t("listeBos")}</p>
-              <p className="text-muted-foreground text-sm">{t("listeBosSebep")}</p>
+              <p className="text-muted-foreground text-sm">
+                {gy && veri.gecenYil.kapsam === "YOK" ? t("gecenYilVeriYok", { ilk: gyIlk }) : t("listeBosSebep")}
+              </p>
             </div>
           ) : (
             <>
@@ -235,11 +268,11 @@ export default async function AlimRehberiSayfasi({
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("sutunUrun")}</TableHead>
-                      <TableHead className="text-right">{t("sutunSatilan")}</TableHead>
+                      <TableHead className="text-right">{gy ? t("sutunGecenYilSatilan") : t("sutunSatilan")}</TableHead>
                       <TableHead className="text-right">{t("sutunMarj")}</TableHead>
-                      <TableHead className="text-right">{t("sutunGunlukNet2")}</TableHead>
+                      <TableHead className="text-right">{gy ? t("sutunGecenYilNet2") : t("sutunGunlukNet2")}</TableHead>
                       <TableHead className="text-right">{t("sutunRaf")}</TableHead>
-                      <TableHead className="text-right">{t("sutunStokGunu")}</TableHead>
+                      <TableHead className="text-right">{gy ? t("sutunEksik") : t("sutunStokGunu")}</TableHead>
                       <TableHead className="text-right">{t("sutunSermaye")}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -263,9 +296,9 @@ export default async function AlimRehberiSayfasi({
                           <div className="text-muted-foreground text-xs">{t("sutunGunluk", { sayi: bicim.sayi(s.gunlukSatis, 2) })}</div>
                         </TableCell>
                         <TableCell className="text-right tabular-nums">{s.marj === null ? t("bilinmiyor") : bicim.yuzde(s.marj)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{bicim.para(s.gunlukNet2, "TRY")}</TableCell>
+                        <TableCell className="text-right tabular-nums">{bicim.para(gy ? s.net2 : s.gunlukNet2, "TRY")}</TableCell>
                         <TableCell className="text-right tabular-nums">{s.raf}</TableCell>
-                        <TableCell className="text-right tabular-nums">{stokGunuYaz(s)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{gy ? eksikAdet(s) : stokGunuYaz(s)}</TableCell>
                         <TableCell className="text-right tabular-nums">
                           {s.raf <= 0 ? "—" : s.bagliSermaye === null ? t("bilinmiyor") : bicim.para(s.bagliSermaye, "TRY")}
                         </TableCell>
@@ -291,11 +324,14 @@ export default async function AlimRehberiSayfasi({
                     }
                     altBaslik={<Kimlik s={s} etiket={kimlikEtiketi} />}
                     alanlar={[
-                      { etiket: t("sutunSatilan"), deger: `${s.adet} · ${t("sutunGunluk", { sayi: bicim.sayi(s.gunlukSatis, 2) })}` },
+                      {
+                        etiket: gy ? t("sutunGecenYilSatilan") : t("sutunSatilan"),
+                        deger: `${s.adet} · ${t("sutunGunluk", { sayi: bicim.sayi(s.gunlukSatis, 2) })}`,
+                      },
                       { etiket: t("sutunMarj"), deger: s.marj === null ? t("bilinmiyor") : bicim.yuzde(s.marj) },
-                      { etiket: t("sutunGunlukNet2"), deger: bicim.para(s.gunlukNet2, "TRY") },
+                      { etiket: gy ? t("sutunGecenYilNet2") : t("sutunGunlukNet2"), deger: bicim.para(gy ? s.net2 : s.gunlukNet2, "TRY") },
                       { etiket: t("sutunRaf"), deger: String(s.raf) },
-                      { etiket: t("sutunStokGunu"), deger: stokGunuYaz(s) },
+                      { etiket: gy ? t("sutunEksik") : t("sutunStokGunu"), deger: gy ? String(eksikAdet(s)) : stokGunuYaz(s) },
                       {
                         etiket: t("sutunSermaye"),
                         deger: s.raf <= 0 ? "—" : s.bagliSermaye === null ? t("bilinmiyor") : bicim.para(s.bagliSermaye, "TRY"),
