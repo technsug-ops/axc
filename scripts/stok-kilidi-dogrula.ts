@@ -18,6 +18,7 @@
  *   ④ kilitli yol ile kilitsiz yol AYNI partileri döndürür (sınır dahil)
  * ============================================================================
  */
+/** BETIK SINIFI: TEK_SEFERLIK — BEKCI — kendi test verisini (KILITTEST-) yazip siler, canli stoga dokunmaz. */
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import "dotenv/config";
