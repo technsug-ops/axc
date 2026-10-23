@@ -195,6 +195,7 @@ async function donguOlc() {
      hiçbir model sorgusu taşımamalı (yalnız ham `SELECT 1`). */
   const DONGU_MUAF: Record<string, string> = {
     "src/app/api/cron/sicak/route.ts": "sunucu parçasını ve havuz bağlantılarını uyanık tutar (K332); firma verisine dokunmaz, yalnız SELECT 1",
+    "src/app/api/cron/gece-turu-sonuc/route.ts": "GitHub gece turunun sonucunu yazar (K343); tur SİSTEM genelidir, firma işi değil — iz `izYaz` ile bağlamsız (sistem istemcisi, companyId boş) yazılır",
   };
   const betikler = new Set<string>();
   for (const u of uclar) {

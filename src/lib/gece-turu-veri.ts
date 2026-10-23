@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { sistemPrisma } from "@/lib/prisma";
 
 /**
  * ============================================================================
@@ -56,7 +56,10 @@ function coz(zaman: Date, detay: string | null): GeceTuruKaydi {
 }
 
 export async function geceTuruKayitlari(adet = 14): Promise<GeceTuruKaydi[]> {
-  const izler = await prisma.auditLog.findMany({
+  // SISTEM: gece turu firma işi değil, SİSTEM genelidir — iz bağlamsız (companyId boş)
+  // yazılır (`izYaz`); firma süzgeçli istemci onu hiçbir firmada göremezdi (K339 yedek izi
+  // vakasının aynısı).
+  const izler = await sistemPrisma.auditLog.findMany({
     where: { action: GECE_TURU_EYLEMI },
     orderBy: { createdAt: "desc" },
     take: adet,
