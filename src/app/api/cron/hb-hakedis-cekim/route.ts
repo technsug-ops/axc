@@ -22,7 +22,15 @@ import { hbHakedisCekimKos } from "../../../../../scripts/canli-hb-hakedis-cekim
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+/**
+ * K325-⑦b — kâr tazelemenin bütçesi: istek başından 45 sn. Kalan 15 sn kalp
+ * atışı ve bağlantı kapatma için; 60 sn dolarsa Vercel işlemi KESER ve kalp
+ * atışı hiç yazılmaz (22.10–23.10 arızası, bkz. `butceliTazele`).
+ */
+const KAR_TAZELEME_BUTCESI_MS = 45_000;
+
 export async function GET(istek: NextRequest) {
+  const baslangic = Date.now();
   const sir = process.env.CRON_SECRET?.trim() ?? "";
   const gelen = istek.headers.get("authorization") ?? "";
   if (sir === "" || gelen !== `Bearer ${sir}`) {
@@ -32,7 +40,7 @@ export async function GET(istek: NextRequest) {
   if (dbAdresi === "") {
     return NextResponse.json({ hata: "VERITABANI_TANIMSIZ" }, { status: 500 });
   }
-  const ozet = await hbHakedisCekimKos({ yaz: true, dbAdresi });
+  const ozet = await hbHakedisCekimKos({ yaz: true, dbAdresi, karTazelemeBitis: baslangic + KAR_TAZELEME_BUTCESI_MS });
   /* K264: «atlandı» 200 DEĞİL 503 — zamanlayıcının yeşili «koştu» demek olsun. */
   return NextResponse.json(ozet, { status: "atlandi" in ozet ? 503 : 200 });
 }

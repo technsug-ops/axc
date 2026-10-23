@@ -25,6 +25,7 @@ import { eslemeOzeti, yenidenEsle } from "../src/lib/hakedis/yeniden-esle";
 import { gunDegeri, isGunuEkle, isGunuFarki, haftaSonuMu } from "../src/lib/donem";
 import { hbApiSatiriniOku } from "../src/lib/hakedis/hb-api-oku";
 import { hakedisGercekKesintileri, kesintiFarki } from "../src/lib/hakedis/gercek-kesinti";
+import { butceliTazele } from "../src/lib/hakedis/gercek-kesinti-tazele";
 import { karHesapla } from "../src/lib/kar";
 import { GECICI_FATURA_NO, geciciFaturaKarari, geciciKopyaMi, type MevcutHakedisSatiri } from "../src/lib/hakedis/gecici-fatura";
 import {
@@ -71,6 +72,10 @@ import {
 let basarisiz = 0;
 let calisan = 0;
 const BOLUM_SAYISI = 13;
+/** Asenkron ölçütler (K325-⑦b) — özet bunlar BİTTİKTEN sonra yazılır; sayı da ayrıca kanıtlanır. */
+const bekleyenler: Promise<unknown>[] = [];
+let asenkronKontrol = 0;
+const ASENKRON_KONTROL_SAYISI = 3;
 const kosanBolumler: string[] = [];
 
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
@@ -1567,22 +1572,57 @@ console.log("\nHB GERÇEK KESİNTİ — HAKEDİŞTE KESİLEN ESAS (K325-⑦)");
   kontrol("karOnizle gerçek kesintiyi YALNIZ Hepsiburada'ya verir (kanal kodu)",
     /gercekKesintiler:\s*satis\.channelAccount\.channel\.code === "HEPSIBURADA"\s*\?\s*hakedisGercekKesintileri\(/.test(yeniden));
   const cekim = kaynakOku("scripts/canli-hb-hakedis-cekim.ts").replace(/\r\n/g, "\n");
-  kontrol("HB çekimi aday satışların kârını tazeler",
-    /for \(const a of adaylar\) \{\s*try \{\s*if \(await satisKarTazele\(a\.saleId, prisma\)\) ozet\.karTazelenen\+\+;/.test(cekim));
+  kontrol("HB çekimi aday satışların kârını SÜRE BÜTÇESİYLE tazeler (K325-⑦b)",
+    /butceliTazele\(\s*adaylar,\s*\(a\) => satisKarTazele\(a\.saleId, prisma\),\s*ayar\.karTazelemeBitis \?\? null,/.test(cekim));
+  kontrol("  ...kalan sayısı özete girer (kalp atışında görünür)", /ozet\.karKalan = tazeleme\.kalan;/.test(cekim));
+  const hakedisUcu = kaynakOku("src/app/api/cron/hb-hakedis-cekim/route.ts").replace(/\r\n/g, "\n");
+  kontrol("  ...sunucu ucu bitiş anını İSTEK BAŞINDAN verir (60 sn sınırının altında)",
+    /const baslangic = Date\.now\(\);/.test(hakedisUcu) &&
+      /karTazelemeBitis: baslangic \+ KAR_TAZELEME_BUTCESI_MS/.test(hakedisUcu) &&
+      /const KAR_TAZELEME_BUTCESI_MS = (\d+)_?(\d*);/.test(hakedisUcu) &&
+      Number(/const KAR_TAZELEME_BUTCESI_MS = ([\d_]+);/.exec(hakedisUcu)![1].replace(/_/g, "")) <= 50_000 &&
+      /export const maxDuration = 60;/.test(hakedisUcu));
+
+  /* Değer: bütçe dolunca durur, kalanı sayar; bütçesiz hepsini; hata döngüyü kesmez.
+     ⚠ Asenkron — `bekleyenler`e girer, özet ONLARI BEKLEDİKTEN sonra yazılır (CJS: üst düzey await yok). */
+  bekleyenler.push((async () => {
+    let saatDeger = 0;
+    const sahteSaat = () => saatDeger;
+    const isle = async (n: number) => { saatDeger += 10; if (n === 3) throw new Error("x"); return n !== 4; };
+    const hepsi = await butceliTazele([1, 2, 3, 4, 5], isle, null, sahteSaat);
+    kontrol("bütçesiz (yerel betik): hepsi denenir · hata sayılır · false tazelenmiş sayılmaz",
+      hepsi.tazelenen === 3 && hepsi.hata === 1 && hepsi.kalan === 0, hepsi);
+    saatDeger = 0;
+    const butceli = await butceliTazele([1, 2, 5, 6, 7], isle, 20, sahteSaat);
+    kontrol("bütçe dolunca DURUR ve kalanı sayar (2 işlendi, 3 kaldı)",
+      butceli.tazelenen === 2 && butceli.kalan === 3, butceli);
+    saatDeger = 0;
+    const sinir = await butceliTazele([1, 2], isle, 10, sahteSaat);
+    kontrol("bitiş anına TAM gelindiğinde de durur (≥)", sinir.tazelenen === 1 && sinir.kalan === 1, sinir);
+    asenkronKontrol += 3;
+  })());
 }
 kosanBolumler.push("hb-gercek-kesinti");
 
 // ===========================================================================
-console.log("");
-if (kosanBolumler.length !== BOLUM_SAYISI) {
-  console.log(
-    `KOŞUM YARIM KALDI — sonuç GEÇERSİZ (${kosanBolumler.length}/${BOLUM_SAYISI})`,
-  );
-  process.exit(1);
-} else if (basarisiz === 0) {
-  console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
-  process.exit(0);
-} else {
-  console.log(`${basarisiz} KONTROL BAŞARISIZ (${calisan} kontrol içinde)`);
-  process.exit(1);
-}
+Promise.all(bekleyenler).then(
+  () => {
+    console.log("");
+    if (kosanBolumler.length !== BOLUM_SAYISI || asenkronKontrol !== ASENKRON_KONTROL_SAYISI) {
+      console.log(
+        `KOŞUM YARIM KALDI — sonuç GEÇERSİZ (${kosanBolumler.length}/${BOLUM_SAYISI} bölüm · ${asenkronKontrol}/${ASENKRON_KONTROL_SAYISI} asenkron)`,
+      );
+      process.exit(1);
+    } else if (basarisiz === 0) {
+      console.log(`TÜM KONTROLLER GEÇTİ (${calisan})`);
+      process.exit(0);
+    } else {
+      console.log(`${basarisiz} KONTROL BAŞARISIZ (${calisan} kontrol içinde)`);
+      process.exit(1);
+    }
+  },
+  (e) => {
+    console.log("ASENKRON ÖLÇÜT ÇÖKTÜ — sonuç GEÇERSİZ:", String((e as Error)?.message ?? e));
+    process.exit(1);
+  },
+);

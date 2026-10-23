@@ -64,3 +64,44 @@ export async function hbGercekKesintiAdaylari(
   }
   return adaylar;
 }
+
+/**
+ * ============================================================================
+ *  SÜRE BÜTÇELİ TAZELEME (K325-⑦b, canlı arıza 23.10.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ VAKA: sunucu ucu 60 sn ile sınırlı (`maxDuration`). K325-⑦ yayına çıkınca
+ *  (22.10 akşam) aday kümesi 361 satıştı; tazeleme döngüsü süreyi doldurdu,
+ *  Vercel işlemi KESTİ ve döngünün ARDINDAKİ kalp atışı (`HB_HAKEDIS_CEKIM_
+ *  CALISTI`) bir daha yazılmadı — son kayıt 22.10 09:39. Satırlar yazılıyor,
+ *  kârlar tazelenmiyordu; hata yok, kırmızı yok (kullanıcı stopajdan buldu).
+ *
+ *  Çare: döngü bir BİTİŞ anı alır; o an geçince durur, kalanı SAYAR ve çağıran
+ *  kalp atışını yine yazar. Küme hâlden kurulduğu için kalan, bir sonraki
+ *  koşumda kendiliğinden yeniden aday olur (liste saklanmaz).
+ *  `bitis = null` → bütçe yok (yerel betik, onaylı toplu yazım).
+ * ============================================================================
+ */
+export type ButceliTazelemeSonucu = { tazelenen: number; hata: number; kalan: number };
+
+export async function butceliTazele<T>(
+  adaylar: readonly T[],
+  tazele: (aday: T) => Promise<boolean>,
+  bitis: number | null,
+  saat: () => number = Date.now,
+  hataBildir: (aday: T, hata: unknown) => void = () => undefined,
+): Promise<ButceliTazelemeSonucu> {
+  const sonuc: ButceliTazelemeSonucu = { tazelenen: 0, hata: 0, kalan: 0 };
+  for (let i = 0; i < adaylar.length; i++) {
+    if (bitis !== null && saat() >= bitis) {
+      sonuc.kalan = adaylar.length - i;
+      break;
+    }
+    try {
+      if (await tazele(adaylar[i])) sonuc.tazelenen++;
+    } catch (e) {
+      sonuc.hata++;
+      hataBildir(adaylar[i], e);
+    }
+  }
+  return sonuc;
+}

@@ -44,7 +44,7 @@ import { satirlariEslestir } from "../src/lib/hakedis/eslestir";
 import { satirAnahtari } from "../src/lib/hakedis/okuyucu";
 import { GECICI_FATURA_NO, geciciFaturaKarari, type MevcutHakedisSatiri } from "../src/lib/hakedis/gecici-fatura";
 import { izYaz } from "../src/lib/iz";
-import { hbGercekKesintiAdaylari } from "../src/lib/hakedis/gercek-kesinti-tazele";
+import { butceliTazele, hbGercekKesintiAdaylari } from "../src/lib/hakedis/gercek-kesinti-tazele";
 import { satisKarTazele } from "../src/lib/kar-yeniden";
 import { hbApiSatirlariniOku, type HbFinansKaydi } from "../src/lib/hakedis/hb-api-oku";
 
@@ -80,6 +80,8 @@ export type HbHakedisCekimOzeti = {
   /** K325-⑦: hakedişteki gerçek kesintiyle kârı yeniden hesaplanan satış. */
   karTazelenen: number;
   karTazelemeHatasi: number;
+  /** K325-⑦b: süre bütçesi dolduğu için bu koşumda tazelenmeyen (sonraki koşum alır). */
+  karKalan: number;
 };
 
 /** K325-⑦: 31 gün eşiği + cron kaçırma payı. Daha eskisi onaylı ayrı betikle. */
@@ -89,6 +91,11 @@ export async function hbHakedisCekimKos(ayar: {
   yaz: boolean;
   dbAdresi?: string;
   taramaGun?: number;
+  /**
+   * K325-⑦b — kâr tazelemenin DURACAĞI an (epoch ms). Sunucu ucu verir (60 sn
+   * sınırı); verilmezse bütçe yok (yerel betik). Bkz. `butceliTazele`.
+   */
+  karTazelemeBitis?: number;
 }): Promise<HbHakedisCekimOzeti | { atlandi: "KIMLIK" | "VERITABANI" | "HESAP" }> {
   const YAZ = ayar.yaz;
   const TARAMA_GUN = ayar.taramaGun ?? TARAMA_GUN_VARSAYILAN;
@@ -419,6 +426,7 @@ export async function hbHakedisCekimKos(ayar: {
     hataSayisi: hatalar.length,
     karTazelenen: 0,
     karTazelemeHatasi: 0,
+    karKalan: 0,
   };
 
   if (!YAZ) {
@@ -548,16 +556,22 @@ export async function hbHakedisCekimKos(ayar: {
    * Pencere 40 gün — daha eskisi kullanıcı onaylı ayrı betikle (bkz. modül başlığı).
    */
   const adaylar = await hbGercekKesintiAdaylari(prisma, { simdi: new Date(), sonGun: KAR_TAZELEME_GUN });
-  for (const a of adaylar) {
-    try {
-      if (await satisKarTazele(a.saleId, prisma)) ozet.karTazelenen++;
-    } catch (e) {
-      ozet.karTazelemeHatasi++;
-      console.log(`⛔ kâr tazelenemedi ${a.code ?? a.saleId} — ${String((e as Error).message ?? e).replace(/\s+/g, " ")}`);
-    }
-  }
+  /* K325-⑦b — süre bütçeli: bütçe dolunca durur, kalan sayılır, kalp atışı AŞAĞIDA yine yazılır. */
+  const tazeleme = await butceliTazele(
+    adaylar,
+    (a) => satisKarTazele(a.saleId, prisma),
+    ayar.karTazelemeBitis ?? null,
+    Date.now,
+    (a, e) => console.log(`⛔ kâr tazelenemedi ${a.code ?? a.saleId} — ${String((e as Error).message ?? e).replace(/\s+/g, " ")}`),
+  );
+  ozet.karTazelenen = tazeleme.tazelenen;
+  ozet.karTazelemeHatasi = tazeleme.hata;
+  ozet.karKalan = tazeleme.kalan;
   if (adaylar.length > 0) {
     console.log(`✓ ${ozet.karTazelenen}/${adaylar.length} satışın kârı hakedişteki gerçek kesintiyle tazelendi.`);
+  }
+  if (ozet.karKalan > 0) {
+    console.log(`⏭ süre bütçesi doldu — ${ozet.karKalan} satış bir sonraki koşumda tazelenecek.`);
   }
 
   /** ⭐ KALP ATIŞI — DEĞİŞİKLİK OLMASA BİLE YAZILIR (K220'deki AYNI ders). */
