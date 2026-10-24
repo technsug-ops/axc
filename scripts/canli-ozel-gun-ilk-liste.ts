@@ -16,7 +16,9 @@
  *   TÜRKİYE TAKVİMİ ESAS (kullanıcı kararı 24.10.2026: «Türkiye'yi baz al»).
  *   · KURALLA HESAPLANAN günler (Black Friday = Kasım'ın son Cuması · 11.11 ·
  *     Anneler Günü = Mayıs'ın 2. Pazarı · Babalar Günü = Haziran'ın 3. Pazarı ·
- *     14 Şubat · 31 Aralık) → `dogrulandi: true`, kaynak «takvim kuralı».
+ *     14 Şubat · 31 Aralık · 24 Kasım · 8 Mart) → `dogrulandi: true`, kaynak
+ *     «takvim kuralı». Öğretmenler Günü ile Kadınlar Günü kullanıcı onayıyla
+ *     eklendi (24.10.2026, «ekle») — satış ölçümü sonrasında.
  *   · BAYRAMLAR → Diyanet dini günler takviminden okundu (24.10.2026,
  *     vakithesaplama.diyanet.gov.tr — 2025 · 2026 · 2027 sayfaları; altısı da
  *     birebir) → `dogrulandi: true`.
@@ -68,6 +70,16 @@ const LISTE: Gun[] = [
     { bas: "2025-06-15", kaynak: KURAL, dogrulandi: true },
     { bas: "2026-06-21", kaynak: KURAL, dogrulandi: true },
     { bas: "2027-06-20", kaynak: KURAL, dogrulandi: true },
+  ] },
+  { ad: "Öğretmenler Günü", tur: "SATIS_GUNU", aciklama: "24 Kasım. Toplam satışı büyütmüyor, hediyelik ürünlerin payını artırıyor (ölçüm 24.10.2026); hediye alımı öne kayıyorsa başlangıcı ekrandan öne alın.", tarihler: [
+    { bas: "2025-11-24", kaynak: KURAL, dogrulandi: true },
+    { bas: "2026-11-24", kaynak: KURAL, dogrulandi: true },
+    { bas: "2027-11-24", kaynak: KURAL, dogrulandi: true },
+  ] },
+  { ad: "Kadınlar Günü", tur: "SATIS_GUNU", aciklama: "8 Mart. Toplam satışı büyütmüyor, bazı ürünlerin payını artırıyor (ölçüm 24.10.2026); hediye alımı öne kayıyorsa başlangıcı ekrandan öne alın.", tarihler: [
+    { bas: "2025-03-08", kaynak: KURAL, dogrulandi: true },
+    { bas: "2026-03-08", kaynak: KURAL, dogrulandi: true },
+    { bas: "2027-03-08", kaynak: KURAL, dogrulandi: true },
   ] },
   { ad: "Ramazan Bayramı", tur: "SATIS_GUNU", aciklama: "Bayramın üç günü (arefe hariç).", tarihler: [
     { bas: "2025-03-30", bit: "2025-04-01", kaynak: DIYANET, dogrulandi: true },
