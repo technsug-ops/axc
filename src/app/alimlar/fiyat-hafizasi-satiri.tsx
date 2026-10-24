@@ -85,6 +85,7 @@ export function FiyatHafizasiSatiri({
           sonTarih: bicim.tarih(h.son.tarih),
         })}
         {disarida > 0 ? ` ${t("hafizaKiyasDisi", { sayi: disarida })}` : ""}
+        {h.cariKullanilan > 0 ? ` ${t("hafizaCariKullanildi", { sayi: h.cariKullanilan })}` : ""}
       </p>
       {!yazildi ? null : !kiyasGecerli ? (
         <p>{t("hafizaFarkliTaban")}</p>

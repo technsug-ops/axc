@@ -1671,6 +1671,14 @@ model PurchaseItem {
   /// ZORUNLU. Ayrım türetilemez (0 hata da olabilir), o yüzden yapısal alan.
   promosyon Boolean @default(false)
 
+  /// CARİ FİYAT (KUPONSUZ) — K363 Faz 2-d, kullanıcı kararı 24.10.2026: «kupon
+  /// fiyatlar değil cari fiyatlar olsun». Kupon/özel indirimle alınan kalemde o
+  /// gün rafta yazan KUPONSUZ birim fiyat; para birimi `unitCostCurrency`.
+  /// ⛔ MALİYETE GİRMEZ: maliyet ve kâr kasadan fiilen çıkan `unitCostAmount`la
+  /// (19.08 «kasa gerçeği gömülmez»). YALNIZ alım fiyatı hafızası okur. Boş =
+  /// kuponsuz alış (ödenen fiyat zaten cari fiyattır) — doldurulması isteğe bağlı.
+  cariFiyatAmount Decimal? @db.Decimal(18, 4)
+
   stockMovements StockMovement[]
 
   @@index([purchaseId])

@@ -30,7 +30,13 @@ export type ParaBirimi = "TRY" | "EUR";
 
 export type AlisKaydi = {
   tarih: Date;
+  /** Ödenen birim fiyat (maliyet). */
   birim: number;
+  /**
+   * Kuponsuz CARİ fiyat (kullanıcı kararı 24.10.2026: «kupon fiyatlar değil cari
+   * fiyatlar olsun»). Doluysa KIYAS bu fiyatla yapılır; boşsa ödenen fiyatla.
+   */
+  cari: number | null;
   paraBirimi: ParaBirimi;
   kdvDahil: boolean;
   kargoDahil: boolean;
@@ -53,11 +59,18 @@ export type FiyatHafizasi = {
   son: FiyatNoktasi;
   /** Bu para biriminde olup tabanı farklı / bedava olduğu için kıyasa GİRMEYEN kalem. */
   kiyasDisi: number;
+  /** Kıyasa giren kalemlerden kaçında ödenen yerine CARİ fiyat kullanıldı (ekranda yazar). */
+  cariKullanilan: number;
 };
+
+/** Kıyasta kullanılan fiyat: cari (kuponsuz) girildiyse o, yoksa ödenen. */
+export function kiyasFiyati(k: AlisKaydi): number {
+  return k.cari !== null && k.cari > 0 ? k.cari : k.birim;
+}
 
 /** Kıyasa girer mi — aynı para birimi, KDV+kargo dahil, gümrüksüz, bedava değil, fiyat > 0. */
 export function kiyaslanabilirMi(k: AlisKaydi, paraBirimi: ParaBirimi): boolean {
-  return k.paraBirimi === paraBirimi && k.kdvDahil && k.kargoDahil && !k.gumrukVar && !k.promosyon && k.birim > 0;
+  return k.paraBirimi === paraBirimi && k.kdvDahil && k.kargoDahil && !k.gumrukVar && !k.promosyon && kiyasFiyati(k) > 0;
 }
 
 export function ortanca(degerler: readonly number[]): number | null {
@@ -79,15 +92,16 @@ export function fiyatHafizasi(kayitlar: readonly AlisKaydi[], paraBirimi: ParaBi
   /* Tarihe göre KARARLI sıra — aynı gün içindeki kayıtlar geliş sırasını korur. */
   const sirali = uygun.map((k, i) => ({ k, i })).sort((a, b) => a.k.tarih.getTime() - b.k.tarih.getTime() || a.i - b.i).map((x) => x.k);
   let enUcuz = sirali[0];
-  for (const k of sirali) if (k.birim <= enUcuz.birim) enUcuz = k;
+  for (const k of sirali) if (kiyasFiyati(k) <= kiyasFiyati(enUcuz)) enUcuz = k;
   const son = sirali[sirali.length - 1];
   return {
     alisSayisi: sirali.length,
     gunSayisi: new Set(sirali.map((k) => k.tarih.toISOString().slice(0, 10))).size,
-    enUcuz: { fiyat: enUcuz.birim, tarih: enUcuz.tarih },
-    normal: ortanca(sirali.map((k) => k.birim)) as number,
-    son: { fiyat: son.birim, tarih: son.tarih },
+    enUcuz: { fiyat: kiyasFiyati(enUcuz), tarih: enUcuz.tarih },
+    normal: ortanca(sirali.map(kiyasFiyati)) as number,
+    son: { fiyat: kiyasFiyati(son), tarih: son.tarih },
     kiyasDisi: ayniBirim.length - uygun.length,
+    cariKullanilan: sirali.filter((k) => kiyasFiyati(k) !== k.birim).length,
   };
 }
 
@@ -130,6 +144,18 @@ export function iyiAlimListesi(satirlar: readonly RehberSatiri[], hafizalar: Rea
     liste.push({ satir, hafiza, fark });
   }
   return liste.sort((a, b) => b.fark - a.fark || b.satir.adet - a.satir.adet);
+}
+
+/**
+ * Formdaki CARİ FİYAT kutusu → gönderilecek değer: boş → null (kuponsuz alış) ·
+ * sayı → sayı · okunamayan → metnin KENDİSİ. `NaN` JSON'da `null`a dönüşür ve
+ * yazılan değer sessizce düşerdi; metin gidince sunucu «sayı olmalı» der.
+ */
+export function cariFiyatGonderimi(metin: string | undefined): number | string | null {
+  const m = (metin ?? "").trim();
+  if (m === "") return null;
+  const n = Number(m.replace(",", "."));
+  return Number.isFinite(n) ? n : m;
 }
 
 /** Arama — ad · SKU · Firma SKU · barkod (rehberle aynı kural). */

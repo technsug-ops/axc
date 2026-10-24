@@ -11,8 +11,10 @@
  */
 import { kaynakOku } from "./kaynak-oku";
 import {
+  cariFiyatGonderimi,
   enUcuzaGoreFark,
   fiyatHafizasi,
+  kiyasFiyati,
   iyiAlimAra,
   iyiAlimListesi,
   iyiAlimToplami,
@@ -26,7 +28,7 @@ import { REHBER_SEKMELERI, type RehberSatiri } from "../src/lib/rapor/alim-rehbe
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -39,7 +41,7 @@ function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
 }
 const g = (s: string) => new Date(`${s}T00:00:00Z`);
 const a = (tarih: string, birim: number, o: Partial<AlisKaydi> = {}): AlisKaydi => ({
-  tarih: g(tarih), birim, paraBirimi: "TRY", kdvDahil: true, kargoDahil: true, gumrukVar: false, promosyon: false, ...o,
+  tarih: g(tarih), birim, cari: null, paraBirimi: "TRY", kdvDahil: true, kargoDahil: true, gumrukVar: false, promosyon: false, ...o,
 });
 const yorumsuz = (s: string) => s.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
 const blok = (metin: string, capa: string, uzunluk: number) => {
@@ -85,9 +87,29 @@ console.log("\n② hafıza — en ucuz · normal · son · gün sayısı");
   const ayniGun = fiyatHafizasi([a("2026-01-01", 500), a("2026-02-01", 700), a("2026-02-01", 650)], "TRY") as FiyatHafizasi;
   kontrol("aynı gün iki kalem: son = sıradaki SONUNCU (650) · gün sayısı 2", ayniGun.son.fiyat === 650 && ayniGun.gunSayisi === 2 && ayniGun.alisSayisi === 3);
   const kupon = fiyatHafizasi([a("2025-08-01", 27), a("2025-11-01", 1000), a("2026-01-01", 1050), a("2026-06-01", 1049)], "TRY") as FiyatHafizasi;
-  kontrol("uç değer (kupon ₺27): en ucuz 27 yazar AMA normal onu dengeler (1.024,5)", kupon.enUcuz.fiyat === 27 && kupon.normal === 1024.5, kupon.normal);
+  kontrol("uç değer (kupon ₺27, cari girilmemiş): en ucuz 27 yazar AMA normal onu dengeler (1.024,5)", kupon.enUcuz.fiyat === 27 && kupon.normal === 1024.5, kupon.normal);
 }
 kosanBolumler.push("hafiza");
+
+// ── ②b CARİ FİYAT (kullanıcı kararı 24.10.2026: «kupon fiyatlar değil cari fiyatlar olsun») ──
+console.log("\n②b cari fiyat — kuponlu alışta kıyas kuponsuz fiyatla");
+{
+  const k = [a("2025-08-01", 27, { cari: 1299 }), a("2025-11-01", 1000), a("2026-01-01", 1050), a("2026-06-01", 1049)];
+  const h = fiyatHafizasi(k, "TRY") as FiyatHafizasi;
+  kontrol("kupon ₺27 cari ₺1.299 ile kıyaslanır → en ucuz artık 1.000 (01.11.2025)", h.enUcuz.fiyat === 1000 && h.enUcuz.tarih.getTime() === g("2025-11-01").getTime(), h.enUcuz);
+  kontrol("normal de cari fiyatla (1.049,5)", h.normal === 1049.5, h.normal);
+  kontrol("cari kullanılan kalem sayılır (1) — ekranda yazar", h.cariKullanilan === 1);
+  /* Ayrım örneği: en ucuz alışın KENDİSİ kuponlu — ödenenle (900) ve cariyle (950) iki farklı sonuç verir (mutasyonla görüldü 24.10). */
+  const enUcuzKuponlu = fiyatHafizasi([a("2025-11-01", 900, { cari: 950 }), a("2026-06-01", 1000)], "TRY") as FiyatHafizasi;
+  kontrol("en ucuz alış kuponluysa en ucuz fiyat CARİ (950, 900 değil)", enUcuzKuponlu.enUcuz.fiyat === 950, enUcuzKuponlu.enUcuz);
+  const sonCari = fiyatHafizasi([a("2025-11-01", 1000), a("2026-06-01", 800, { cari: 1200 })], "TRY") as FiyatHafizasi;
+  kontrol("son alış kuponluysa son fiyat da cari (1.200)", sonCari.son.fiyat === 1200);
+  kontrol("cari boşsa ödenen kullanılır (kiyasFiyati)", kiyasFiyati(a("2026-01-01", 500)) === 500 && kiyasFiyati(a("2026-01-01", 500, { cari: 700 })) === 700);
+  kontrol("cari girilmiş BEDAVA kalem yine kıyasa girmez", !kiyaslanabilirMi(a("2026-01-01", 0, { promosyon: true, cari: 999 }), "TRY"));
+  kontrol("formdan gönderim: boş → null · «1.299» değil «1299,5» → 1299,5 · okunamayan metin olduğu gibi (sessiz null değil)",
+    cariFiyatGonderimi("  ") === null && cariFiyatGonderimi(undefined) === null && cariFiyatGonderimi("1299,5") === 1299.5 && cariFiyatGonderimi("12a") === "12a");
+}
+kosanBolumler.push("cari");
 
 // ── ③ FARK ─────────────────────────────────────────────────────────────
 console.log("\n③ fark — ölçü, yargı değil");
@@ -135,7 +157,8 @@ console.log("\n⑤ şüphe üretmez · engellemez · doldurmaz (iş sabiti «fiy
   kontrol("form satırı: kalemi DEĞİŞTİRMEZ (fiyat doldurulmaz — yalnız okur)", !/kalemGuncelle|setKalemler|onChange/.test(satiri));
   const form = yorumsuz(kaynakOku("src/app/alimlar/alim-formu.tsx"));
   kontrol("form: yeni kalem maliyeti yine BOŞ başlar (iki giriş yolu)", (form.match(/unitCostAmount: "",/g) ?? []).length === 2);
-  kontrol("form: satıra yalnız okunan değer verilir (yazilan = kalemin metni)", /<FiyatHafizasiSatiri[\s\S]{0,400}yazilan=\{kalem\.unitCostAmount\}/.test(form) && !/<FiyatHafizasiSatiri[\s\S]{0,400}(onChange|kalemGuncelle)/.test(form));
+  kontrol("form: satıra yalnız okunan değer verilir (yazilan = cari girildiyse cari, yoksa ödenen metni)",
+    /<FiyatHafizasiSatiri[\s\S]{0,400}yazilan=\{\(kalem\.cariFiyat \?\? ""\)\.trim\(\) !== "" \? \(kalem\.cariFiyat \?\? ""\) : kalem\.unitCostAmount\}/.test(form) && !/<FiyatHafizasiSatiri[\s\S]{0,500}(onChange|kalemGuncelle)/.test(form));
   const sekme = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/iyi-alim-sekmesi.tsx"));
   kontrol("rehber sekmesi: uyarı/olumsuz rengi yok", !/DURUM_YAZISI|text-(red|amber|orange)/.test(sekme));
   const govde = yorumsuz(kaynakOku("src/lib/alim-fiyat-hafizasi.ts"));
@@ -172,10 +195,28 @@ console.log("\n⑥ bağlar — veri · eylem · form · rehber · Excel · sözl
   const excel = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/excel/route.ts"));
   kontrol("Excel: adres elle yazılırsa başka liste inmez, nedeni söylenir (400)", /if \(liste === "iyiAlim"\) return new Response\(t\("excelIyiAlimYok"\), \{ status: 400/.test(excel));
 
+  // ── cari fiyat zinciri: sorar · okur · doğrular · yazar · geri verir · gösterir ──
+  const eylemler = yorumsuz(kaynakOku("src/app/alimlar/actions.ts"));
+  kontrol("kayıt: cari fiyat isteğe bağlı, pozitif sayı (boş → null)", /cariFiyatAmount: z\s*\.number\(\{ message: t\("cariFiyatSayiOlmali"\) \}\)\s*\.positive\(t\("cariFiyatPozitif"\)\)\s*\.nullable\(\)\s*\.optional\(\)\s*\.default\(null\),/.test(eylemler));
+  kontrol("kayıt: cari ödenen fiyattan düşük olamaz", /if \(k\.cariFiyatAmount !== null && k\.cariFiyatAmount < k\.unitCostAmount\) \{\s*ctx\.addIssue\(\{[\s\S]{0,120}t\("cariFiyatOdenendenDusuk"\)/.test(eylemler));
+  const cariYazimi = eylemler.match(/cariFiyatAmount: (k|yeni)\.cariFiyatAmount === null \? null : String\((k|yeni)\.cariFiyatAmount\),/g) ?? [];
+  kontrol("kayıt: üç yazım yolunun üçü de cari fiyatı yazar (yeni alım · düzenlemede yeni kalem · düzenlemede var olan kalem)", cariYazimi.length === 3, cariYazimi.length);
+  const defterBlogu = blok(eylemler, "const guncellenen = await tx.stockMovement.updateMany({", 500);
+  kontrol("⛔ cari fiyat MALİYETE GİRMEZ: defter damgası ve maliyet değişti ölçütü cariye bakmaz",
+    defterBlogu.length > 0 && !/cari/i.test(defterBlogu) && !/cari/i.test(blok(eylemler, "const maliyetDegisti =", 400)) && !/cari/i.test(blok(eylemler, "const yeniMaliyet =", 120)));
+  kontrol("form: gönderimde cari fiyat okunur (okunamayan sessizce düşmez)", /cariFiyatAmount: cariFiyatGonderimi\(k\.cariFiyat\),/.test(form));
+  kontrol("form: cari kutusu çizilir ve kaleme yazar, bedava kalemde çizilmez", /\{kalem\.promosyon \? null : \(\s*<div className="space-y-1">[\s\S]{0,300}id=\{`cari-\$\{sira\}`\}[\s\S]{0,200}onChange=\{\(e\) => kalemGuncelle\(sira, \{ cariFiyat: e\.target\.value \}\)\}/.test(form));
+  const duzenle = yorumsuz(kaynakOku("src/app/alimlar/[id]/duzenle/page.tsx"));
+  kontrol("düzenleme: kayıtlı cari forma GERİ verilir (yoksa düzenleyip kaydetmek siler)", /cariFiyat: k\.cariFiyatAmount === null \? "" : String\(Number\(k\.cariFiyatAmount\.toString\(\)\)\),/.test(duzenle));
+  const detay = yorumsuz(kaynakOku("src/app/alimlar/[id]/page.tsx"));
+  kontrol("detay: girilen cari fiyat masaüstü ve telefonda görünür", (detay.match(/t\("cariFiyatDetay", \{ fiyat: bicim\.para\(kalem\.cariFiyatAmount, kalem\.unitCostCurrency\) \}\)/g) ?? []).length === 2);
+  kontrol("veri: cari fiyat okunur", /cariFiyatAmount: true,/.test(veri) && /cari: k\.cariFiyatAmount === null \? null : Number\(k\.cariFiyatAmount\.toString\(\)\),/.test(veri));
+  kontrol("satır: cari kullanıldığı ekranda yazar", /h\.cariKullanilan > 0 \? ` \$\{t\("hafizaCariKullanildi", \{ sayi: h\.cariKullanilan \}\)\}` : ""/.test(satiri));
+
   const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>;
   const yazilan = tr.Alim?.hafizaYazilan ?? "";
   kontrol("sözlük: yön metni bileşenin üç yönünü karşılar (ayni · asagi · diğer)", /\{yon, select, ayni \{/.test(yazilan) && /asagi \{/.test(yazilan) && /other \{/.test(yazilan));
-  const gerekli = { Alim: ["hafizaYukleniyor", "hafizaYetkisiz", "hafizaOkunamadi", "hafizaYok", "hafizaHepsiKiyasDisi", "hafizaOzet", "hafizaKiyasDisi", "hafizaFarkliTaban", "hafizaYazilan"], AlimRehberi: ["liste_iyiAlim", "aciklama_iyiAlim", "iyiNotu", "iyiBos", "iyiFiyatTarih", "iyiAlisSayisi", "toplamIyiUrun", "sutunIyiEnUcuz", "sutunIyiNormal", "sutunIyiSon", "sutunIyiFark", "excelIyiAlimYok"] };
+  const gerekli = { Alim: ["cariFiyatEtiketi", "cariFiyatIpucu", "cariFiyatNotu", "cariFiyatSayiOlmali", "cariFiyatPozitif", "cariFiyatOdenendenDusuk", "cariFiyatDetay", "hafizaCariKullanildi", "hafizaYukleniyor", "hafizaYetkisiz", "hafizaOkunamadi", "hafizaYok", "hafizaHepsiKiyasDisi", "hafizaOzet", "hafizaKiyasDisi", "hafizaFarkliTaban", "hafizaYazilan"], AlimRehberi: ["liste_iyiAlim", "aciklama_iyiAlim", "iyiNotu", "iyiBos", "iyiFiyatTarih", "iyiAlisSayisi", "toplamIyiUrun", "sutunIyiEnUcuz", "sutunIyiNormal", "sutunIyiSon", "sutunIyiFark", "excelIyiAlimYok"] };
   const eksik = Object.entries(gerekli).flatMap(([ns, anahtarlar]) => anahtarlar.filter((k) => !(tr[ns]?.[k] ?? "").length).map((k) => `${ns}.${k}`));
   kontrol("sözlük: bütün metinler DOLU", eksik.length === 0, eksik);
 }

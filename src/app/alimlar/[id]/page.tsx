@@ -360,7 +360,15 @@ export default async function AlimDetaySayfasi({
                           {t("promosyonEtiketi")}
                         </span>
                       ) : (
-                        bicim.para(kalem.unitCostAmount, kalem.unitCostCurrency)
+                        <>
+                          {bicim.para(kalem.unitCostAmount, kalem.unitCostCurrency)}
+                          {/* K363 Faz 2-d: kuponsuz cari fiyat girildiyse görünür (maliyet yine ödenen). */}
+                          {kalem.cariFiyatAmount === null ? null : (
+                            <div className="text-muted-foreground text-xs">
+                              {t("cariFiyatDetay", { fiyat: bicim.para(kalem.cariFiyatAmount, kalem.unitCostCurrency) })}
+                            </div>
+                          )}
+                        </>
                       )}
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
@@ -437,10 +445,9 @@ export default async function AlimDetaySayfasi({
                     etiket: ortak("sutunBirimFiyat"),
                     deger: kalem.promosyon
                       ? t("promosyonEtiketi")
-                      : bicim.para(
-                          kalem.unitCostAmount,
-                          kalem.unitCostCurrency,
-                        ),
+                      : kalem.cariFiyatAmount === null
+                        ? bicim.para(kalem.unitCostAmount, kalem.unitCostCurrency)
+                        : `${bicim.para(kalem.unitCostAmount, kalem.unitCostCurrency)} · ${t("cariFiyatDetay", { fiyat: bicim.para(kalem.cariFiyatAmount, kalem.unitCostCurrency) })}`,
                   },
                   {
                     etiket: t("sutunSatirToplami"),

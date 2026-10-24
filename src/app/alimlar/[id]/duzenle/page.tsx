@@ -137,6 +137,8 @@ export default async function AlimDuzenleSayfasi({
       unitCostAmount: String(Number(k.unitCostAmount.toString())),
       unitCostCurrency: k.unitCostCurrency,
       promosyon: k.promosyon,
+      /** K363 Faz 2-d — kayıtlı cari fiyat forma GERİ verilir; verilmeseydi düzenleyip kaydetmek onu sessizce silerdi. */
+      cariFiyat: k.cariFiyatAmount === null ? "" : String(Number(k.cariFiyatAmount.toString())),
       kdvOrani: kdvOraniniCoz(k.variant.product).oran,
       gelen: k.stockMovements.reduce((t2, h) => t2 + h.quantityDelta, 0),
     })),

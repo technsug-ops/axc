@@ -21,6 +21,7 @@ export async function alisKayitlari(p: { variantIds?: readonly string[]; haricAl
       unitCostAmount: true,
       unitCostCurrency: true,
       promosyon: true,
+      cariFiyatAmount: true,
       purchase: { select: { purchasedAt: true, fiyatKdvDahil: true, kargoDahil: true, customsAmount: true } },
     },
     orderBy: [{ purchase: { purchasedAt: "asc" } }, { id: "asc" }],
@@ -31,6 +32,7 @@ export async function alisKayitlari(p: { variantIds?: readonly string[]; haricAl
     liste.push({
       tarih: k.purchase.purchasedAt,
       birim: Number(k.unitCostAmount.toString()),
+      cari: k.cariFiyatAmount === null ? null : Number(k.cariFiyatAmount.toString()),
       paraBirimi: k.unitCostCurrency,
       kdvDahil: k.purchase.fiyatKdvDahil,
       kargoDahil: k.purchase.kargoDahil,

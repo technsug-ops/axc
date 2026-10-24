@@ -33,6 +33,7 @@ import {
 import { kodDizisi, type VaryantSonucu } from "@/lib/varyant-ozet";
 import { type AlimDurumu } from "./actions";
 import { FiyatHafizasiSatiri } from "./fiyat-hafizasi-satiri";
+import { cariFiyatGonderimi } from "@/lib/alim-fiyat-hafizasi";
 import {
   TedarikciSecimi,
   type TedarikciSecenegi,
@@ -55,6 +56,8 @@ type Kalem = {
   unitCostCurrency: "TRY" | "EUR";
   /** K171: promosyon (bedava) — işaretliyse maliyet 0. */
   promosyon: boolean;
+  /** K363 Faz 2-d: kuponsuz CARİ fiyat (metin, isteğe bağlı) — maliyete girmez, yalnız fiyat hafızası. */
+  cariFiyat?: string;
   /** Ürünün KDV oranı — «KDV hariç» faturada girilen KDV bununla kıyaslanır. */
   kdvOrani?: number;
   /** Bu kalemden KABUL EDİLMİŞ adet. Düzenlemede adet bunun altına inemez. */
@@ -361,6 +364,11 @@ export function AlimFormu({
             : null,
         unitCostCurrency: k.unitCostCurrency,
         promosyon: k.promosyon,
+        /**
+         * Boş → null (kuponsuz alış). Okunamayan metin METİN olarak gider — `NaN` JSON'da `null`a dönüşür ve
+         * yazılan değer SESSİZCE düşerdi; metin gidince sunucu «sayı olmalı» der (İlke #5).
+         */
+        cariFiyatAmount: cariFiyatGonderimi(k.cariFiyat),
       };
     }),
   };
@@ -750,7 +758,7 @@ export function AlimFormu({
                         variantId={kalem.variantId}
                         haricAlimId={alimId ?? null}
                         paraBirimi={kalem.unitCostCurrency}
-                        yazilan={kalem.unitCostAmount}
+                        yazilan={(kalem.cariFiyat ?? "").trim() !== "" ? (kalem.cariFiyat ?? "") : kalem.unitCostAmount}
                         kiyasGecerli={fatura.fiyatKdvDahil && fatura.kargoDahil && (gumrukSayi === null || gumrukSayi === 0)}
                       />
                     )}
@@ -775,6 +783,22 @@ export function AlimFormu({
                       />
                       {t("promosyonKutusu")}
                     </label>
+                    {/* K363 Faz 2-d: CARİ FİYAT (kuponsuz) — isteğe bağlı; maliyete GİRMEZ, yalnız fiyat hafızası kullanır. */}
+                    {kalem.promosyon ? null : (
+                      <div className="space-y-1">
+                        <Label htmlFor={`cari-${sira}`} className="text-xs font-normal">
+                          {t("cariFiyatEtiketi")}
+                        </Label>
+                        <Input
+                          id={`cari-${sira}`}
+                          value={kalem.cariFiyat ?? ""}
+                          inputMode="decimal"
+                          placeholder={t("cariFiyatIpucu")}
+                          onChange={(e) => kalemGuncelle(sira, { cariFiyat: e.target.value })}
+                        />
+                        <p className="text-muted-foreground text-xs">{t("cariFiyatNotu")}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor={`para-${sira}`}>

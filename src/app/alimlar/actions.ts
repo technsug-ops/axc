@@ -47,6 +47,16 @@ function alimSemasiKur(t: Ceviri) {
       }),
       /** K171: promosyon (bedava) beyanı. Yoksa false. */
       promosyon: z.boolean().optional().default(false),
+      /**
+       * K363 Faz 2-d — CARİ FİYAT (kuponsuz), isteğe bağlı. MALİYETE GİRMEZ;
+       * yalnız alım fiyatı hafızası okur. Boş = null (kuponsuz alış).
+       */
+      cariFiyatAmount: z
+        .number({ message: t("cariFiyatSayiOlmali") })
+        .positive(t("cariFiyatPozitif"))
+        .nullable()
+        .optional()
+        .default(null),
     })
     /**
      * K171 — SIFIR MALİYET İKİ YÖNLÜ KAPILANIR (İlke #11 sessiz sıfır):
@@ -67,6 +77,14 @@ function alimSemasiKur(t: Ceviri) {
           code: z.ZodIssueCode.custom,
           message: t("maliyetSifirPromosyonIsaretle"),
           path: ["unitCostAmount"],
+        });
+      }
+      /* Kupon fiyatı DÜŞÜRÜR: kuponsuz fiyat ödenenden aşağıda olamaz — yazım hatası (yer değişmiş iki kutu) yakalanır. */
+      if (k.cariFiyatAmount !== null && k.cariFiyatAmount < k.unitCostAmount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t("cariFiyatOdenendenDusuk"),
+          path: ["cariFiyatAmount"],
         });
       }
     });
@@ -251,6 +269,7 @@ export async function alimOlustur(
                 unitCostAmount: k.unitCostAmount,
                 unitCostCurrency: k.unitCostCurrency,
                 promosyon: k.promosyon,
+                cariFiyatAmount: k.cariFiyatAmount === null ? null : String(k.cariFiyatAmount),
                 ortaklikProjesiId: kapsam.get(k.variantId) ?? null,
               })),
             },
@@ -465,6 +484,7 @@ export async function alimGuncelle(
               unitCostAmount: String(yeni.unitCostAmount),
               unitCostCurrency: yeni.unitCostCurrency,
               promosyon: yeni.promosyon,
+              cariFiyatAmount: yeni.cariFiyatAmount === null ? null : String(yeni.cariFiyatAmount),
               ortaklikProjesiId: kapsam.get(yeni.variantId) ?? null,
             },
           });
@@ -495,6 +515,8 @@ export async function alimGuncelle(
             unitCostAmount: String(yeni.unitCostAmount),
             unitCostCurrency: yeni.unitCostCurrency,
             promosyon: yeni.promosyon,
+            /* Cari fiyat maliyete girmez — değişmesi defter damgasını (aşağıdaki KURAL 3) tetiklemez. */
+            cariFiyatAmount: yeni.cariFiyatAmount === null ? null : String(yeni.cariFiyatAmount),
           },
         });
 
