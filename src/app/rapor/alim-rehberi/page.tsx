@@ -1,3 +1,4 @@
+/* SUTUN TAVANI ISTISNASI: 8 — 8. sutun (Piyasa/Buybox) YALNIZ «Piyasa fiyatini getir» basilinca cizilir, varsayilan 7; piksel genisligi OLCULMEDI. K363 Faz 3-a · gercek cihazda bakilacak 25.10.2026. */
 import { getTranslations } from "next-intl/server";
 import Link from "@/components/niyetli-baglanti";
 import { Download } from "lucide-react";
