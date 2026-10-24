@@ -36,6 +36,9 @@ import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { YAKLASAN_GUN, yaklasanlar } from "@/lib/ozel-gun/ozel-gun";
 import { ozelGunDetayi, ozelGunKayitlari } from "@/lib/ozel-gun/ozel-gun-verisi";
 import { OzelGunSekmesi } from "./ozel-gun-sekmesi";
+import { IyiAlimSekmesi } from "./iyi-alim-sekmesi";
+import { iyiAlimListesi } from "@/lib/alim-fiyat-hafizasi";
+import { tryHafizalari } from "@/lib/alim-fiyat-hafizasi-verisi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
@@ -86,6 +89,8 @@ export default async function AlimRehberiSayfasi({
   const gy = liste === "gecenYil";
   /** Faz 2-b: «Özel günler» sekmesi — kendi bileşeni çizer; dönem, eşik, az stok ve Excel bu sekmede yok. */
   const oz = liste === "ozelGun";
+  /** Faz 2-d: «Kampanyada iyi aldıkların» — dönem seçimi kalır (satılan dönemde ölçülür); eşik, az stok ve Excel bu sekmede yok. */
+  const ia = liste === "iyiAlim";
   const arama = p.q?.trim() || null;
 
   const karGorunur = await izinVarMi("satis.kar.gor");
@@ -100,16 +105,23 @@ export default async function AlimRehberiSayfasi({
 
   const an = new Date();
   const bugun = gunDegeri(isTakvimGunu(an));
-  const [veri, ozelKayitlar, ayarlariGorebilir] = await Promise.all([rehberVerisi(donem, ileri, an), ozelGunKayitlari(), izinVarMi("ayar.yaz")]);
+  const [veri, ozelKayitlar, ayarlariGorebilir, hafizalar] = await Promise.all([
+    rehberVerisi(donem, ileri, an),
+    ozelGunKayitlari(),
+    izinVarMi("ayar.yaz"),
+    tryHafizalari(),
+  ]);
   const esik = esikleriKur(veri.satirlar);
   const yaklasan = yaklasanlar(ozelKayitlar, bugun);
+  const iyiAlim = iyiAlimListesi(veri.satirlar, hafizalar);
   const listeler = {
     ...Object.fromEntries(REHBER_LISTELERI.map((l) => [l, rehberListesi(l, veri.satirlar, esik, azStok)])),
     gecenYil: gecenYilListesi(veri.gecenYil.satirlar),
     ozelGun: [] as RehberSatiri[],
+    iyiAlim: [] as RehberSatiri[],
   } as Record<RehberSekmesi, RehberSatiri[]>;
-  /** Sekme sayısı: özel gün sekmesinde yaklaşan GÜN sayısı, ötekilerde ürün sayısı (sayı = açılan liste). */
-  const sekmeSayisi = (l: RehberSekmesi) => (l === "ozelGun" ? yaklasan.length : listeler[l].length);
+  /** Sekme sayısı: özel gün sekmesinde yaklaşan GÜN sayısı, iyi alımda kendi listesi, ötekilerde ürün sayısı (sayı = açılan liste). */
+  const sekmeSayisi = (l: RehberSekmesi) => (l === "ozelGun" ? yaklasan.length : l === "iyiAlim" ? iyiAlim.length : listeler[l].length);
   const seciliGun = oz ? (yaklasan.find((y) => y.tarih.id === p.gun) ?? yaklasan[0] ?? null) : null;
   const ozelDetay = seciliGun ? await ozelGunDetayi(seciliGun, an, veri.stok, veri.satirlar) : null;
   const tamListe = listeler[liste];
@@ -132,7 +144,9 @@ export default async function AlimRehberiSayfasi({
           ? t("aciklama_gecenYil", { enAz: EN_AZ_ADET })
           : liste === "ozelGun"
             ? t("aciklama_ozelGun", { gun: YAKLASAN_GUN })
-            : t(`aciklama_${liste}`);
+            : liste === "iyiAlim"
+              ? t("aciklama_iyiAlim", { donem: t(`donem_${donem}`) })
+              : t(`aciklama_${liste}`);
   const gyPencere = { bas: bicim.tarih(veri.gecenYil.ilkGun), bit: bicim.tarih(veri.gecenYil.sonGun) };
   const gyIlk = veri.gecenYil.ilkSatis === null ? "—" : bicim.tarih(veri.gecenYil.ilkSatis);
 
@@ -170,7 +184,7 @@ export default async function AlimRehberiSayfasi({
       )}
 
       {/* ── EŞİKLER VERİDEN — hangi sayıya göre süzüldüğü yazar; geçen yıl sekmesinde PENCERE + uyarı + kapsam ── */}
-      {oz ? null : gy ? (
+      {oz || ia ? null : gy ? (
         <div className="space-y-1 text-sm">
           <p className="text-muted-foreground">{t("gecenYilPencere", { bas: gyPencere.bas, bit: gyPencere.bit })}</p>
           <p className={DURUM_YAZISI.uyari}>{t("gecenYilUyari")}</p>
@@ -207,7 +221,7 @@ export default async function AlimRehberiSayfasi({
 
       {/* ── AZ STOK AYARI · ARAMA · EXCEL ── */}
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
-        {gy || oz ? null : (
+        {gy || oz || ia ? null : (
         <form action={REHBER_YOLU} method="get" className="flex items-end gap-2">
           <input type="hidden" name="donem" value={donem} />
           <input type="hidden" name="liste" value={liste} />
@@ -240,7 +254,7 @@ export default async function AlimRehberiSayfasi({
             ipucu={t("aramaIpucu")}
           />
         </div>
-        {oz ? null : (
+        {oz || ia ? null : (
         <a
           href={excelAdresi}
           className="border-input hover:bg-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium underline-offset-4"
@@ -250,7 +264,7 @@ export default async function AlimRehberiSayfasi({
         </a>
         )}
       </div>
-      {gy || oz ? null : <p className="text-muted-foreground text-xs">{t("azStokNotu", { gun: VARSAYILAN_AZ_STOK_GUN })}</p>}
+      {gy || oz || ia ? null : <p className="text-muted-foreground text-xs">{t("azStokNotu", { gun: VARSAYILAN_AZ_STOK_GUN })}</p>}
 
       {oz ? (
         <OzelGunSekmesi
@@ -263,6 +277,8 @@ export default async function AlimRehberiSayfasi({
           ayarlariGorebilir={ayarlariGorebilir}
           bugun={bugun}
         />
+      ) : ia ? (
+        <IyiAlimSekmesi liste={iyiAlim} arama={arama} />
       ) : (
       <>
       {/* ── TOPLAM — EKRANDA NE VARSA ONUN (İlke #15) ── */}

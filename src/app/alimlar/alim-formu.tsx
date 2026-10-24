@@ -32,6 +32,7 @@ import {
 } from "../varyant-arama";
 import { kodDizisi, type VaryantSonucu } from "@/lib/varyant-ozet";
 import { type AlimDurumu } from "./actions";
+import { FiyatHafizasiSatiri } from "./fiyat-hafizasi-satiri";
 import {
   TedarikciSecimi,
   type TedarikciSecenegi,
@@ -743,6 +744,16 @@ export function AlimFormu({
                         kalemGuncelle(sira, { unitCostAmount: e.target.value })
                       }
                     />
+                    {/* K363 Faz 2-d: geçmiş alış fiyatları — hatırlatma, kutu DOLDURULMAZ. */}
+                    {kalem.promosyon ? null : (
+                      <FiyatHafizasiSatiri
+                        variantId={kalem.variantId}
+                        haricAlimId={alimId ?? null}
+                        paraBirimi={kalem.unitCostCurrency}
+                        yazilan={kalem.unitCostAmount}
+                        kiyasGecerli={fatura.fiyatKdvDahil && fatura.kargoDahil && (gumrukSayi === null || gumrukSayi === 0)}
+                      />
+                    )}
                     {/* K171: PROMOSYON BEYANI — işaretlenince maliyet 0'a
                         kilitlenir; "bedava geldi" bilerek söylenir (İlke #11:
                         sessiz sıfır değil, açık beyan). */}

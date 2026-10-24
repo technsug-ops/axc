@@ -44,6 +44,8 @@ export async function GET(istek: Request) {
   const arama = u.get("q")?.trim() || null;
   /* Özel gün sekmesinin Excel'i yok (ekranda düğmesi çizilmez); adres elle yazılırsa NEDENİ söylenir, başka liste inmez. */
   if (liste === "ozelGun") return new Response(t("excelOzelGunYok"), { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  /* «Kampanyada iyi aldıkların» sekmesinin de Excel'i yok (Faz 2-d) — aynı ilke. */
+  if (liste === "iyiAlim") return new Response(t("excelIyiAlimYok"), { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   const gy = liste === "gecenYil";
 
   const veri = await rehberVerisi(donem, ileri, new Date());

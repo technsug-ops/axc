@@ -161,10 +161,12 @@ console.log("\n⑥ bağlar");
   kontrol("sayfa: izinler (rapor.gor sayfa + satis.kar.gor)", /await sayfaIzni\("rapor\.gor"\)/.test(sayfa) && /izinVarMi\("satis\.kar\.gor"\)/.test(sayfa));
   /* Faz 2-b (24.10): sekme sayısı tek gövdeden (`sekmeSayisi`) — özel gün sekmesinde GÜN sayısı, ötekilerde
      yine tam liste uzunluğu. Ölçüt iki halkayı birlikte sınar: çizim o gövdeyi çağırıyor VE gövde aramasız listeyi sayıyor. */
+  /* Faz 2-d (24.10): yedinci sekme kendi listesini sayar (`iyiAlim.length` — aramasız tam liste). */
   kontrol(
-    "sayfa: sekme sayısı ARAMADAN BAĞIMSIZ (tam liste uzunluğu; özel günlerde gün sayısı)",
+    "sayfa: sekme sayısı ARAMADAN BAĞIMSIZ (tam liste uzunluğu; özel günlerde gün sayısı; iyi alımda kendi tam listesi)",
     /\{t\(`liste_\$\{l\}`\)\} \(\{sekmeSayisi\(l\)\}\)/.test(sayfa) &&
-      /const sekmeSayisi = \(l: RehberSekmesi\) => \(l === "ozelGun" \? yaklasan\.length : listeler\[l\]\.length\);/.test(sayfa),
+      /const sekmeSayisi = \(l: RehberSekmesi\) => \(l === "ozelGun" \? yaklasan\.length : l === "iyiAlim" \? iyiAlim\.length : listeler\[l\]\.length\);/.test(sayfa) &&
+      /const iyiAlim = iyiAlimListesi\(veri\.satirlar, hafizalar\);/.test(sayfa),
   );
   kontrol("sayfa: toplam EKRANDAKİ listeden (aramadan sonra)", /const gorunen = rehberAra\(tamListe, arama\);\s*const toplam = rehberToplami\(gorunen\);/.test(sayfa));
   kontrol("sayfa: arama ortak bileşenle (kamera dahil)", /<KodAramaKutusu[\s\S]{0,80}temelAdres=\{REHBER_YOLU\}/.test(sayfa));
@@ -176,7 +178,8 @@ console.log("\n⑥ bağlar");
   kontrol("sayfa: geçen yıl listesi geçen yılın satırlarından", /gecenYil: gecenYilListesi\(veri\.gecenYil\.satirlar\)/.test(sayfa));
   kontrol("sayfa: beş sekme de çizilir (REHBER_SEKMELERI)", /\{REHBER_SEKMELERI\.map\(\(l\) =>/.test(sayfa));
   /* Faz 2-b (24.10): koşul `oz ? null : gy ? (` oldu — özel gün sekmesi kendi uyarısını kendi bileşeninde çizer. */
-  kontrol("sayfa: geçen yıl sekmesinde uyarı (tahmin değil hatırlatma) çizilir", /\{oz \? null : gy \? \(\s*<div[^>]*>[\s\S]{0,260}t\("gecenYilUyari"\)/.test(sayfa));
+  /* Faz 2-d (24.10): koşul `oz || ia ? null : gy ? (` — iyi alım sekmesi de kendi notunu kendi bileşeninde çizer. */
+  kontrol("sayfa: geçen yıl sekmesinde uyarı (tahmin değil hatırlatma) çizilir", /\{oz \|\| ia \? null : gy \? \(\s*<div[^>]*>[\s\S]{0,260}t\("gecenYilUyari"\)/.test(sayfa));
   kontrol("sayfa: veri yoksa boş liste «temiz» değil «bakılamadı» der", /gy && veri\.gecenYil\.kapsam === "YOK" \? t\("gecenYilVeriYok"/.test(sayfa));
   const verisi = yorumsuz(kaynakOku("src/lib/rapor/alim-rehberi-verisi.ts"));
   kontrol("veri: geçen yıl satışı BUGÜNÜN stoğuyla birleşir (aynı stok, pencere uzunluğu gün)", /rehberKur\(gecenYilSatis, stok, ileri\)/.test(verisi));
