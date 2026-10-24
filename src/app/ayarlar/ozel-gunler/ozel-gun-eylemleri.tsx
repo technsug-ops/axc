@@ -266,8 +266,10 @@ export function OzelGunKarti({ gun, kanallar }: { gun: GunVerisi; kanallar: Kana
 
   return (
     <div className={`space-y-2 rounded-lg border p-4 ${gun.aktif ? "" : "opacity-70"}`}>
-      <div className="flex flex-wrap items-start gap-2">
-        <div className="min-w-0 flex-1 space-y-1">
+      {/* Telefonda başlık ÜSTTE tam genişlik, düğmeler altında (kullanıcı 24.10: `flex-1` taban 0
+          olduğu için düğmeler satıra sığıyor, başlık kelime kelime eziliyordu). */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+        <div className="min-w-0 space-y-1 sm:flex-1">
           <p className="font-semibold">{gun.ad}</p>
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <Badge variant="secondary">{t(`tur_${gun.tur}`)}</Badge>
