@@ -11,6 +11,7 @@ import {
   type RehberDonemi,
   type RehberSatiri,
 } from "./alim-rehberi";
+import type { AnalizSatiri } from "./urun-analizi";
 import { satisEkseniVerisi, stokEkseniVerisi } from "./urun-analizi-verisi";
 
 /**
@@ -36,6 +37,8 @@ export async function rehberVerisi(donem: RehberDonemi, ileri: IleriGun, an: Dat
   baslangic: Date;
   bitisHaric: Date;
   gecenYil: GecenYilVerisi;
+  /** Bugünkü stok ekseni — özel gün sekmesi (Faz 2-b) aynı okumayı kullanır, ikinci kez okunmaz. */
+  stok: AnalizSatiri[];
 }> {
   const pencere = pencereOlustur(donem, an);
   const gun = donemGunu(pencere.baslangic, pencere.bitisHaric, an);
@@ -61,5 +64,6 @@ export async function rehberVerisi(donem: RehberDonemi, ileri: IleriGun, an: Dat
       sonGun: gy.sonGun,
       ilkSatis,
     },
+    stok,
   };
 }

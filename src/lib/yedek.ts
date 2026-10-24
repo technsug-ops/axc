@@ -99,6 +99,8 @@ export async function yedekUret(
      */
     KomisyonTarifesi: await istemci.komisyonTarifesi.findMany(),
     KomisyonTarifeKalemi: await istemci.komisyonTarifeKalemi.findMany(),
+    OzelGun: await istemci.ozelGun.findMany(),
+    OzelGunTarihi: await istemci.ozelGunTarihi.findMany(),
     ExpenseTemplate: await istemci.expenseTemplate.findMany(),
     Expense: await istemci.expense.findMany(),
     OrtaklikGiderTahsisi: await istemci.ortaklikGiderTahsisi.findMany(),

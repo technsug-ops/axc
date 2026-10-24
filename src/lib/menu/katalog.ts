@@ -84,6 +84,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   bildirimler: "/bildirimler",
   /** K349 — satış hedefleri (ciro · NET-2 · sipariş adedi; gün → yıl). */
   hedefler: "/ayarlar/hedefler",
+  /** K363 Faz 2-b — özel gün takvimi (satış günü · alım kampanyası); Alım rehberi okur. */
+  ozelGunler: "/ayarlar/ozel-gunler",
 
   veriAktarimi: "/ayarlar/ice-aktarma",
   veriDisari: "/ayarlar/disa-aktarma",
@@ -248,6 +250,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
   /** Kişisel cihaz ayarı — firma ayarı değil ama «Ayarlar» kullanıcının aradığı yer. */
   { anahtar: "bildirimler", varsayilanGrup: "grupAyarlar" },
   { anahtar: "hedefler", varsayilanGrup: "grupAyarlar" },
+  { anahtar: "ozelGunler", varsayilanGrup: "grupAyarlar" },
 ];
 
 /**

@@ -32,6 +32,10 @@ import {
   type RehberSekmesi,
 } from "@/lib/rapor/alim-rehberi";
 import { rehberVerisi } from "@/lib/rapor/alim-rehberi-verisi";
+import { gunDegeri, isTakvimGunu } from "@/lib/donem";
+import { YAKLASAN_GUN, yaklasanlar } from "@/lib/ozel-gun/ozel-gun";
+import { ozelGunDetayi, ozelGunKayitlari } from "@/lib/ozel-gun/ozel-gun-verisi";
+import { OzelGunSekmesi } from "./ozel-gun-sekmesi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
@@ -53,6 +57,9 @@ import { izinVarMi, sayfaIzni } from "@/lib/yetki";
  *  Faz 2-a (23.10.2026): beşinci sekme «Geçen yıl bu dönem» — dönem yerine
  *  «önümüzdeki N gün», «kaç günlük stok» yerine «eksik»; uyarı ve kapsam
  *  (defter o tarihlere bakabiliyor mu) ekranda yazar.
+ *  Faz 2-b (24.10.2026): altıncı sekme «Özel günler» — yaklaşan günün geçen
+ *  yılki karşılığı (`lib/ozel-gun`); çizimi `ozel-gun-sekmesi.tsx`. Sekme
+ *  sayısı GÜN sayısıdır; Excel düğmesi bu sekmede çizilmez.
  * ============================================================================
  */
 
@@ -64,7 +71,7 @@ export async function generateMetadata() {
 export default async function AlimRehberiSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ donem?: string; liste?: string; az?: string; ileri?: string; q?: string }>;
+  searchParams: Promise<{ donem?: string; liste?: string; az?: string; ileri?: string; q?: string; gun?: string }>;
 }) {
   await sayfaIzni("rapor.gor");
   const p = await searchParams;
@@ -77,6 +84,8 @@ export default async function AlimRehberiSayfasi({
   const ileri = ileriCoz(p.ileri);
   /** Faz 2-a: «Geçen yıl bu dönem» sekmesi — dönem yerine «önümüzdeki N gün», «stok günü» yerine «eksik». */
   const gy = liste === "gecenYil";
+  /** Faz 2-b: «Özel günler» sekmesi — kendi bileşeni çizer; dönem, eşik, az stok ve Excel bu sekmede yok. */
+  const oz = liste === "ozelGun";
   const arama = p.q?.trim() || null;
 
   const karGorunur = await izinVarMi("satis.kar.gor");
@@ -89,18 +98,26 @@ export default async function AlimRehberiSayfasi({
     );
   }
 
-  const veri = await rehberVerisi(donem, ileri, new Date());
+  const an = new Date();
+  const bugun = gunDegeri(isTakvimGunu(an));
+  const [veri, ozelKayitlar, ayarlariGorebilir] = await Promise.all([rehberVerisi(donem, ileri, an), ozelGunKayitlari(), izinVarMi("ayar.yaz")]);
   const esik = esikleriKur(veri.satirlar);
+  const yaklasan = yaklasanlar(ozelKayitlar, bugun);
   const listeler = {
     ...Object.fromEntries(REHBER_LISTELERI.map((l) => [l, rehberListesi(l, veri.satirlar, esik, azStok)])),
     gecenYil: gecenYilListesi(veri.gecenYil.satirlar),
+    ozelGun: [] as RehberSatiri[],
   } as Record<RehberSekmesi, RehberSatiri[]>;
+  /** Sekme sayısı: özel gün sekmesinde yaklaşan GÜN sayısı, ötekilerde ürün sayısı (sayı = açılan liste). */
+  const sekmeSayisi = (l: RehberSekmesi) => (l === "ozelGun" ? yaklasan.length : listeler[l].length);
+  const seciliGun = oz ? (yaklasan.find((y) => y.tarih.id === p.gun) ?? yaklasan[0] ?? null) : null;
+  const ozelDetay = seciliGun ? await ozelGunDetayi(seciliGun, an, veri.stok, veri.satirlar) : null;
   const tamListe = listeler[liste];
   const gorunen = rehberAra(tamListe, arama);
   const toplam = rehberToplami(gorunen);
 
   /** Adres TEK yerden — sekme, dönem, form ve Excel aynı parametreleri taşır. */
-  const tasinan = { donem, liste, az: String(azStok), ileri: String(ileri), q: arama ?? undefined };
+  const tasinan = { donem, liste, az: String(azStok), ileri: String(ileri), q: arama ?? undefined, gun: oz ? seciliGun?.tarih.id : undefined };
   const adres = (ek: Record<string, string | undefined>) => suzgecAdresi(REHBER_YOLU, tasinan, ek);
   const excelAdresi = suzgecAdresi(`${REHBER_YOLU}/excel`, tasinan, {});
 
@@ -113,7 +130,9 @@ export default async function AlimRehberiSayfasi({
           : t("aciklama_fazla", { gun: Math.round(esik.fazlaStokGunu) })
         : liste === "gecenYil"
           ? t("aciklama_gecenYil", { enAz: EN_AZ_ADET })
-          : t(`aciklama_${liste}`);
+          : liste === "ozelGun"
+            ? t("aciklama_ozelGun", { gun: YAKLASAN_GUN })
+            : t(`aciklama_${liste}`);
   const gyPencere = { bas: bicim.tarih(veri.gecenYil.ilkGun), bit: bicim.tarih(veri.gecenYil.sonGun) };
   const gyIlk = veri.gecenYil.ilkSatis === null ? "—" : bicim.tarih(veri.gecenYil.ilkSatis);
 
@@ -129,6 +148,7 @@ export default async function AlimRehberiSayfasi({
       </div>
 
       {/* ── DÖNEM (dört liste) ya da ÖNÜMÜZDEKİ N GÜN (geçen yıl) — adreste yaşar ── */}
+      {oz ? null : (
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
         {(gy
           ? ILERI_GUNLER.map((g) => ({ anahtar: String(g), aktif: g === ileri, href: adres({ ileri: String(g) }), etiket: t("ileriGun", { gun: g }) }))
@@ -147,9 +167,10 @@ export default async function AlimRehberiSayfasi({
           </Link>
         ))}
       </div>
+      )}
 
       {/* ── EŞİKLER VERİDEN — hangi sayıya göre süzüldüğü yazar; geçen yıl sekmesinde PENCERE + uyarı + kapsam ── */}
-      {gy ? (
+      {oz ? null : gy ? (
         <div className="space-y-1 text-sm">
           <p className="text-muted-foreground">{t("gecenYilPencere", { bas: gyPencere.bas, bit: gyPencere.bit })}</p>
           <p className={DURUM_YAZISI.uyari}>{t("gecenYilUyari")}</p>
@@ -177,7 +198,7 @@ export default async function AlimRehberiSayfasi({
           const aktif = l === liste;
           return (
             <Link key={l} href={adres({ liste: l })} aria-current={aktif ? "page" : undefined} className={sekmeSinifi(aktif)}>
-              {t(`liste_${l}`)} ({listeler[l].length})
+              {t(`liste_${l}`)} ({sekmeSayisi(l)})
             </Link>
           );
         })}
@@ -186,7 +207,7 @@ export default async function AlimRehberiSayfasi({
 
       {/* ── AZ STOK AYARI · ARAMA · EXCEL ── */}
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
-        {gy ? null : (
+        {gy || oz ? null : (
         <form action={REHBER_YOLU} method="get" className="flex items-end gap-2">
           <input type="hidden" name="donem" value={donem} />
           <input type="hidden" name="liste" value={liste} />
@@ -215,10 +236,11 @@ export default async function AlimRehberiSayfasi({
           <KodAramaKutusu
             temelAdres={REHBER_YOLU}
             baslangic={arama ?? ""}
-            tasinanlar={{ donem, liste, az: String(azStok), ileri: String(ileri) }}
+            tasinanlar={{ donem, liste, az: String(azStok), ileri: String(ileri), gun: oz ? seciliGun?.tarih.id : undefined }}
             ipucu={t("aramaIpucu")}
           />
         </div>
+        {oz ? null : (
         <a
           href={excelAdresi}
           className="border-input hover:bg-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium underline-offset-4"
@@ -226,9 +248,23 @@ export default async function AlimRehberiSayfasi({
           <Download className="size-4" />
           {t("excelIndir")}
         </a>
+        )}
       </div>
-      {gy ? null : <p className="text-muted-foreground text-xs">{t("azStokNotu", { gun: VARSAYILAN_AZ_STOK_GUN })}</p>}
+      {gy || oz ? null : <p className="text-muted-foreground text-xs">{t("azStokNotu", { gun: VARSAYILAN_AZ_STOK_GUN })}</p>}
 
+      {oz ? (
+        <OzelGunSekmesi
+          yaklasan={yaklasan}
+          secili={seciliGun}
+          detay={ozelDetay}
+          arama={arama}
+          gunAdresi={Object.fromEntries(yaklasan.map((y) => [y.tarih.id, adres({ gun: y.tarih.id })]))}
+          donemEtiketi={t(`donem_${donem}`)}
+          ayarlariGorebilir={ayarlariGorebilir}
+          bugun={bugun}
+        />
+      ) : (
+      <>
       {/* ── TOPLAM — EKRANDA NE VARSA ONUN (İlke #15) ── */}
       <ListeToplami
         baslik={t("toplamBaslik")}
@@ -345,6 +381,8 @@ export default async function AlimRehberiSayfasi({
           )}
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   );
 }

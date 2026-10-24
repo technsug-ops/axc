@@ -98,6 +98,9 @@ export const YEDEK_TABLOLARI = [
    */
   "KomisyonTarifesi",
   "KomisyonTarifeKalemi",
+  /** K363 Faz 2-b — özel gün `Channel`a bağlı (SetNull) → ondan SONRA; tarihi özel güne bağlı (Cascade) → ondan SONRA. */
+  "OzelGun",
+  "OzelGunTarihi",
   // --- gider ---
   "ExpenseTemplate",
   "Expense",

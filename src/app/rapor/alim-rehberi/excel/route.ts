@@ -42,6 +42,8 @@ export async function GET(istek: Request) {
   const azStok = azStokCoz(u.get("az") ?? undefined);
   const ileri = ileriCoz(u.get("ileri") ?? undefined);
   const arama = u.get("q")?.trim() || null;
+  /* Özel gün sekmesinin Excel'i yok (ekranda düğmesi çizilmez); adres elle yazılırsa NEDENİ söylenir, başka liste inmez. */
+  if (liste === "ozelGun") return new Response(t("excelOzelGunYok"), { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   const gy = liste === "gecenYil";
 
   const veri = await rehberVerisi(donem, ileri, new Date());

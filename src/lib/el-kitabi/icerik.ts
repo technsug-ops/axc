@@ -144,6 +144,8 @@ export const MENU_BOLUM: Record<string, string | null> = {
   urunAnalizi: "urunAnalizi",
   /** K363 — Ürün analizinin rakamlarından kurulur; anlatımı o bölümün «Alım rehberi» başlığında. */
   alimRehberi: "urunAnalizi",
+  /** K363 Faz 2-b — özel gün takvimi; anlatımı Alım rehberi başlığında («Özel günler» sekmesiyle birlikte). */
+  ozelGunler: "urunAnalizi",
   /** İki menü öğesi, tek bölüm: kart tanımı ile kart borcu aynı konudur. */
   kartlar: "kartBorcu",
   kartBorcu: "kartBorcu",
@@ -2714,7 +2716,23 @@ yıl satılan − bugün raf. Bu bir tahmin değil hatırlatmadır: geçen yıl�
 dönemin kampanyasına ve o günkü alımınıza da bağlıdır; ekran bunu yazar. Geçen
 yılın o dönemi defterin ilk satışından önceyse liste boş kalır ve «bakılamadı»
 der — «temiz» demez.</li>
+<li><strong>Özel günler</strong> — önümüzdeki 90 günün özel günleri (Black Friday,
+bayram, kampanya dönemi…). Bir gün seçince takvimdeki <strong>geçen yılki
+karşılığına</strong> bakılır. <em>Satış gününde</em> önce mağazanın o günlerde
+<strong>normalin kaç katı</strong> sipariş aldığı yazar (normal = önceki 28 günün
+ortalaması); sonra o günlerde satılıp bugün rafta eksik kalan kârlı ürünler gelir.
+Pencere çoğu zaman tek gün olduğu için burada «en az 3 adet» şartı yoktur.
+<em>Alım kampanyasında</em> geçen kampanyada aldığınız ürünler, bugünkü rafı ve
+bugünkü talebiyle listelenir. Geçen yılın tarihi takvimde yoksa liste «bakılamadı»
+der. Bu sekmenin Excel dosyası yoktur.</li>
 </ul>
+<p><strong>Özel gün takvimi</strong>: <strong>Sol menü → Özel günler</strong> («Ayarlar» grubunda).
+Her özel günün türü (satış günü ya da alım kampanyası), isteğe bağlı kanalı ve
+<strong>her yılın tarihi ayrı satır</strong> olarak girilir: Black Friday ve bayramlar
+her yıl başka güne düştüğü için rehber bu yılki tarihi geçen yılkiyle böyle eşler.
+Resmî kaynaktan kontrol edilmemiş tarih <strong>«Doğrulanacak»</strong> rozeti taşır;
+rehber de bunu yazar. Geçmiş tarihi olan özel gün silinmez, <strong>pasife alınır</strong>
+(geçen yılla kıyas onu kullanır).</p>
 <div class="ek-not"><div class="etiket">«İyi kâr» ve «hızlı» sınırını sistem koymaz, verileriniz koyar</div>
 <p>Dönemde en az 3 adet satmış ürünlerin <strong>ortanca</strong> marjı ve
 ortanca satış hızı eşiktir; sayfada açıkça yazar. Dönemi değiştirince eşik de

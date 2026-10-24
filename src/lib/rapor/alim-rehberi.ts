@@ -55,8 +55,10 @@ export type RehberListesi = (typeof REHBER_LISTELERI)[number];
  * 23.10.2026). Beşinci sekme AYRI bir kümeye bakar (geçen yılın satışı, bugünün
  * rafı); dört liste dönem eşiklerine bağlı, bu değil — bu yüzden `rehberListesi`
  * switch'ine girmedi, kendi gövdesi var (`gecenYilListesi`).
+ * Altıncı sekme «Özel günler» (Faz 2-b, 24.10.2026): yaklaşan özel günün GEÇEN
+ * YILKI KARŞILIĞINA bakar (`lib/ozel-gun`); sekme sayısı ürün değil GÜN sayısıdır.
  */
-export const REHBER_SEKMELERI = [...REHBER_LISTELERI, "gecenYil"] as const;
+export const REHBER_SEKMELERI = [...REHBER_LISTELERI, "gecenYil", "ozelGun"] as const;
 export type RehberSekmesi = (typeof REHBER_SEKMELERI)[number];
 
 /** «Önümüzdeki N gün» — geçen yılın aynı tarihlerine bakılır. */
