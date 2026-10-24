@@ -1283,6 +1283,7 @@
     "rapor": "",
     "urunAnalizi": "",
     "alimRehberi": "",
+    "buybox": "",
     "veriAktarimi": "",
     "kanalSku": "",
     "kanalSkulari": "",
@@ -5180,7 +5181,26 @@
     "sutunIyiNormal": "",
     "sutunIyiSon": "",
     "sutunIyiFark": "",
-    "excelIyiAlimYok": ""
+    "excelIyiAlimYok": "",
+    "piyasaGetir": "",
+    "piyasaNotu": "",
+    "piyasaTavan": "",
+    "piyasaKapat": "",
+    "piyasaSorun": "",
+    "piyasaHucre": "",
+    "piyasaSorulmadi": "",
+    "sutunPiyasa": ""
+  },
+  "Buybox": {
+    "baslik": "", "notu": "", "kanal_TY": "", "kanal_HB": "", "sorguAni": "", "hesapYok": "", "sorunlar": "", "kimlikYok": "", "magazaAdiYok": "",
+    "ozetIncelenen": "", "ozetBirinci": "", "ozetKaybedilen": "", "ozetGorunmuyor": "", "ozetSorgulanamadi": "",
+    "liste_kaybedilen": "", "liste_birinci": "", "liste_gorunmuyor": "", "liste_hepsi": "",
+    "aciklama_kaybedilen": "", "aciklama_birinci": "", "aciklama_gorunmuyor": "", "aciklama_hepsi": "",
+    "aramaIpucu": "", "aramaSonucu": "", "toplamUrun": "", "toplamRaf": "", "listeBos": "", "listeBosSebep": "", "urunYok": "",
+    "sutunUrun": "", "sutunStok": "", "sutunBizim": "", "sutunBuybox": "", "sutunSira": "", "sutunFark": "", "sutunIkinci": "",
+    "sira": "", "siraSatici": "", "fark": "", "bilinmiyor": "",
+    "durum_BIRINCI": "", "durum_KAYBEDILDI": "", "durum_GORUNMUYOR": "", "durum_SORGULANAMADI": "",
+    "kartaGit": "", "rakipler": "", "listeFiyati": "", "sku": "", "firmaSku": "", "barkod": "", "kanalKodu_TY": "", "kanalKodu_HB": ""
   },
   "UrunAnalizi": {
     "baslik": "",

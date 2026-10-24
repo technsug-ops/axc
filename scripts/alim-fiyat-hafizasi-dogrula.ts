@@ -189,7 +189,8 @@ console.log("\n⑥ bağlar — veri · eylem · form · rehber · Excel · sözl
   kontrol("rehber: sekme listede", (REHBER_SEKMELERI as readonly string[]).includes("iyiAlim"));
   const sayfa = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/page.tsx"));
   kontrol("rehber: liste dönemin satırlarından ve TRY hafızalarından", /const iyiAlim = iyiAlimListesi\(veri\.satirlar, hafizalar\);/.test(sayfa) && /tryHafizalari\(\),/.test(sayfa));
-  kontrol("rehber: sekme bileşeni TAM listeyi alır, aramayı kendisi uygular", /ia \? \(\s*<IyiAlimSekmesi liste=\{iyiAlim\} arama=\{arama\} \/>/.test(sayfa));
+  /* K363 Faz 3-a (25.10): sekmeye istek üzerine piyasa metni de geçer — liste yine TAM, arama yine bileşende. */
+  kontrol("rehber: sekme bileşeni TAM listeyi alır, aramayı kendisi uygular", /ia \? \(\s*<IyiAlimSekmesi liste=\{iyiAlim\} arama=\{arama\} piyasa=\{piyasaMetni\} \/>/.test(sayfa));
   const excelDali = blok(sayfa, "{oz || ia ? null : (\n        <a", 200) || blok(sayfa, "{oz || ia ? null : (\r\n        <a", 200);
   kontrol("rehber: bu sekmede Excel düğmesi ÇİZİLMEZ", /href=\{excelAdresi\}/.test(excelDali));
   const excel = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/excel/route.ts"));

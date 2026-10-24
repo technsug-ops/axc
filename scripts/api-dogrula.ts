@@ -196,9 +196,44 @@ const KANALA_YAZMASI_BEYANLI = new Map<string, { gerekce: string; bekcisi: strin
   ],
 ]);
 
+/**
+ * ═══ K363 FAZ 3-a — OKUMA AMAÇLI POST: DAR İSTİSNA (kullanıcı kararı 25.10.2026) ═══
+ * TY Buybox ucu SORGUYU POST gövdesiyle alıyor ama kanalda hiçbir şey
+ * değiştirmiyor. Bu bir YAZICI değildir — `KANALA_YAZMASI_BEYANLI`ye KONMAZ
+ * (ad da sınıf beyanıdır). Beyanlı dosya şunları AYRICA kanıtlar:
+ *   · tam BİR `method: "POST"`, PUT/DELETE/PATCH yok, tam BİR `fetch(`;
+ *   · fetch hedefi beyan edilen UÇ — başka adrese POST gidemez;
+ *   · gövde YALNIZ `{ barcodes: [...] }` (tek `body:`);
+ *   · prisma'ya ULAŞMAZ (okuma POST'u defter yazamaz).
+ */
+const OKUMA_POST_BEYANLI = new Map<string, { gerekce: string; uc: string; govde: string }>([
+  [
+    "scripts/ty/buybox.ts",
+    {
+      gerekce: "K363 Faz 3-a: TY Buybox Kontrol (resmî uç, barkod listesini POST gövdesinde ister, kanala YAZMAZ). Kullanıcı kararı 25.10.2026 «dar istisna aç».",
+      uc: "/products/buybox-information`, {",
+      govde: "body: JSON.stringify({ barcodes: [...barkodlar] }),",
+    },
+  ],
+]);
+
 for (const yol of apiDosyalari) {
   const y = yorumsuzla(kaynakOku(yol));
   const bulunanlar = YASAK.filter((x) => y.includes(x.desen)).map((x) => x.ad);
+  const okumaBeyani = OKUMA_POST_BEYANLI.get(yol.split("\\").join("/"));
+  if (okumaBeyani) {
+    const say = (d: string) => y.split(d).length - 1;
+    kontrol(
+      `  ${yol} — OKUMA POST beyanlı: tek POST · başka fiil yok · tek fetch`,
+      say('method: "POST"') === 1 && !bulunanlar.some((f) => f !== "POST") && say("fetch(") === 1,
+      { post: say('method: "POST"'), fetch: say("fetch("), fiiller: bulunanlar },
+    );
+    const fetchBlogu = y.slice(y.indexOf("fetch("), y.indexOf("fetch(") + 400);
+    kontrol(`    ...fetch hedefi beyanlı uç (${okumaBeyani.uc.split("`")[0]})`, fetchBlogu.includes(okumaBeyani.uc) && fetchBlogu.indexOf(okumaBeyani.uc) < fetchBlogu.indexOf('method: "POST"'));
+    kontrol(`    ...gövde YALNIZ barkod listesi (tek body)`, say("body:") === 1 && fetchBlogu.includes(okumaBeyani.govde));
+    kontrol(`    ...prisma'ya ULAŞMAZ`, !prismayaUlasiyorMu(y));
+    continue;
+  }
   const kanalBeyani = KANALA_YAZMASI_BEYANLI.get(yol.split("\\").join("/"));
   if (kanalBeyani) {
     const komutlar = JSON.parse(kaynakOku("package.json")) as {

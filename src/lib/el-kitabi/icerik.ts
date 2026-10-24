@@ -144,6 +144,7 @@ export const MENU_BOLUM: Record<string, string | null> = {
   urunAnalizi: "urunAnalizi",
   /** K363 — Ürün analizinin rakamlarından kurulur; anlatımı o bölümün «Alım rehberi» başlığında. */
   alimRehberi: "urunAnalizi",
+  buybox: "urunAnalizi",
   /** K363 Faz 2-b — özel gün takvimi; anlatımı Alım rehberi başlığında («Özel günler» sekmesiyle birlikte). */
   ozelGunler: "urunAnalizi",
   /** İki menü öğesi, tek bölüm: kart tanımı ile kart borcu aynı konudur. */
@@ -2725,7 +2726,22 @@ Pencere çoğu zaman tek gün olduğu için burada «en az 3 adet» şartı yokt
 <em>Alım kampanyasında</em> geçen kampanyada aldığınız ürünler, bugünkü rafı ve
 bugünkü talebiyle listelenir. Geçen yılın tarihi takvimde yoksa liste «bakılamadı»
 der. Bu sekmenin Excel dosyası yoktur.</li>
+<li><strong>Kampanyada iyi aldıkların</strong> — seçili dönemde satılan ve
+<strong>son alışı, en ucuz alışından pahalı</strong> olan ürünler: en ucuz alış
+(tarihiyle — hangi kampanya), normal fiyat (ortanca), son alış ve aradaki fark.
+Bir sonraki kampanyada hedefin olabilecek fiyatı hatırlatır; fiyat farkı tek başına
+hata değildir. Yalnız KDV ve kargo dahil, bedava olmayan TL alışlar kıyaslanır.
+Bu sekmenin Excel dosyası yoktur.</li>
 </ul>
+<p><strong>Alım girerken fiyat hafızası</strong>: Alımlar → Yeni alım'da ürünü
+eklediğinizde fiyat kutusunun altında o ürünün geçmişi yazar: «9 alış · en ucuz …
+(tarih) · normal … · son … (tarih)». Fiyatı yazınca en ucuz alışa göre ne kadar
+yukarıda ya da aşağıda olduğunu söyler. Kutu kendiliğinden dolmaz, kayıt hiçbir
+zaman engellenmez. Kupon ya da özel indirimle aldığınız kalemde
+<strong>«Cari fiyat (kuponsuz)»</strong> kutusuna o gün rafta yazan fiyatı girin:
+maliyet ve kâr yine ödediğiniz fiyattan hesaplanır, fiyat hafızası ise cari
+fiyatı kullanır — böylece kuponla çok ucuza alınmış bir ürün hedef fiyatı
+bozmaz.</p>
 <p><strong>Özel gün takvimi</strong>: <strong>Sol menü → Özel günler</strong> («Ayarlar» grubunda).
 Her özel günün türü (satış günü ya da alım kampanyası), isteğe bağlı kanalı ve
 <strong>her yılın tarihi ayrı satır</strong> olarak girilir: Black Friday ve bayramlar
@@ -2745,6 +2761,24 @@ ${sikHata([
     cozum: "Liste geçmiş satışa bakar; kampanya ve fiyat durumunu bilmez. Ürüne tıklayıp kartında son alış fiyatını ve kanal fiyatını kontrol edin.",
   },
 ])}
+<h3 id="buybox">Buybox durumu</h3>
+<p><strong>Sol menü → Buybox durumu</strong> («Fiyatlandırma ve Analiz» grubunda).
+Rafta olan ve kanalda ilanı bulunan ürünlerde <strong>Buybox kimde, biz
+kaçıncıyız</strong>. Trendyol ve Hepsiburada'nın <strong>resmî satıcı API'sinden</strong>,
+sayfa her açıldığında canlı sorulur (birkaç saniye sürebilir); hiçbir şey
+kaydedilmez. Üstten kanalı seçin.</p>
+<ul>
+<li><strong>Buybox'ı kaybettiklerim</strong> — başka satıcı önde. Buybox'a en yakın
+olanlar önce gelir: en az fiyat hareketiyle geri alınabilecekler.</li>
+<li><strong>Buybox bizde</strong> — «2. fiyat» öndeki payınızı gösterir.</li>
+<li><strong>Görünmüyor / sorgulanamadı</strong> — kanal bizi satıcı listesinde
+göstermedi ya da sorgu tamamlanamadı; ekran nedenini yazar.</li>
+</ul>
+<p>Hepsiburada o üründeki <strong>bütün satıcıları</strong> adıyla ve fiyatıyla verir
+(«Satıcılar» açılır listesi); Trendyol yalnız Buybox fiyatını, sıramızı ve 2. ile 3.
+fiyatı verir, rakip adını vermez. İki kanal da rakibin stoğunu vermez.
+<strong>Fiyat bu ekrandan değişmez</strong>: satırdaki «Ürün kartı» bağlantısı
+önizlemeli gönderim ekranına götürür.</p>
 </section>
 
 <section id="gunlukOzet">

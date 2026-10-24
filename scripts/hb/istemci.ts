@@ -369,7 +369,20 @@ export const UCLAR = {
    */
   yuklemeDurumu: (k: Kimlik, uc: "stock-uploads" | "price-uploads", id: string) =>
     `${taban("listing", k.ortam)}/listings/merchantid/${k.merchantId}/${uc}/id/${encodeURIComponent(id)}`,
+
+  /**
+   * K363 Faz 3-a — BUYBOX SIRALAMASI (salt okuma, GET). Ölçüldü 25.10.2026
+   * (canlı): her SKU için o üründeki BÜTÜN satıcılar sırasıyla — rank ·
+   * merchantName · price (indirimli) · originalPrice · dispatchTime ·
+   * merchantRating. ⚠ `skuList` EN ÇOK 10 (11+ → 400 «maximum length of
+   * skuList is 10») — `HB_BUYBOX_PARTI`. Rakip STOĞU yok.
+   */
+  buyboxSiralama: (k: Kimlik, skular: readonly string[]) =>
+    `${taban("listing", k.ortam)}/buybox-orders/merchantid/${k.merchantId}?skuList=${skular.map((s) => encodeURIComponent(s)).join(",")}`,
 };
+
+/** HB buybox sıralamasında tek istekte en çok SKU (ölçüldü 25.10.2026). */
+export const HB_BUYBOX_PARTI = 10;
 
 /**
  * OFFSET SAYFALAMASI — TÜM kayıtları toplar.

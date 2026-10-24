@@ -53,6 +53,8 @@ export const MENU_ADRESLERI: Record<string, string> = {
   urunAnalizi: "/rapor/urunler",
   /** K363 Faz 1 — hızlı + kârlı ürünler, tükenen/azalan/fazla stok: alım kararına yön. */
   alimRehberi: "/rapor/alim-rehberi",
+  /** K363 Faz 3-a — resmî satıcı API'lerinden canlı Buybox durumu. */
+  buybox: "/rapor/buybox",
 
   urunKarti: "/kart",
   kanalSkulari: "/kanal-sku",
@@ -184,6 +186,7 @@ export const MENU_KATALOGU: KatalogOgesi[] = [
    */
   { anahtar: "urunAnalizi", varsayilanGrup: "grupFiyatAnaliz" },
   { anahtar: "alimRehberi", varsayilanGrup: "grupFiyatAnaliz" },
+  { anahtar: "buybox", varsayilanGrup: "grupFiyatAnaliz" },
   { anahtar: "urunKarti", varsayilanGrup: "grupFiyatAnaliz" },
   { anahtar: "simulasyon", varsayilanGrup: "grupFiyatAnaliz" },
   { anahtar: "tarifeHesaplama", varsayilanGrup: "grupFiyatAnaliz" },

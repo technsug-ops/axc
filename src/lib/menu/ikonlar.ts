@@ -5,6 +5,7 @@ import {
   BarChart3,
   BellRing,
   Target,
+  Trophy,
   CalendarHeart,
   BookOpen,
   Boxes,
@@ -90,6 +91,7 @@ export const MENU_IKONLARI: Record<string, LucideIcon> = {
   rapor: BarChart3,
   urunAnalizi: ListFilter,
   alimRehberi: ShoppingBasket,
+  buybox: Trophy,
 
   urunKarti: ScanBarcode,
   kanalSkulari: Tags,

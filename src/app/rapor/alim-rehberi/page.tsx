@@ -37,7 +37,9 @@ import { YAKLASAN_GUN, yaklasanlar } from "@/lib/ozel-gun/ozel-gun";
 import { ozelGunDetayi, ozelGunKayitlari } from "@/lib/ozel-gun/ozel-gun-verisi";
 import { OzelGunSekmesi } from "./ozel-gun-sekmesi";
 import { IyiAlimSekmesi } from "./iyi-alim-sekmesi";
-import { iyiAlimListesi } from "@/lib/alim-fiyat-hafizasi";
+import { iyiAlimAra, iyiAlimListesi } from "@/lib/alim-fiyat-hafizasi";
+import { PIYASA_TAVAN } from "@/lib/buybox";
+import { piyasaFiyatlari } from "@/lib/buybox-verisi";
 import { tryHafizalari } from "@/lib/alim-fiyat-hafizasi-verisi";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { DURUM_YAZISI } from "@/lib/renkler";
@@ -66,6 +68,9 @@ import { izinVarMi, sayfaIzni } from "@/lib/yetki";
  * ============================================================================
  */
 
+/** K363 Faz 3-a: «Piyasa fiyatını getir» canlı Buybox sorgusu yapar (en çok 100 ürün × 2 kanal) — süre payı. */
+export const maxDuration = 60;
+
 export async function generateMetadata() {
   const t = await getTranslations("AlimRehberi");
   return { title: t("baslik") };
@@ -74,7 +79,7 @@ export async function generateMetadata() {
 export default async function AlimRehberiSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ donem?: string; liste?: string; az?: string; ileri?: string; q?: string; gun?: string }>;
+  searchParams: Promise<{ donem?: string; liste?: string; az?: string; ileri?: string; q?: string; gun?: string; piyasa?: string }>;
 }) {
   await sayfaIzni("rapor.gor");
   const p = await searchParams;
@@ -127,6 +132,25 @@ export default async function AlimRehberiSayfasi({
   const tamListe = listeler[liste];
   const gorunen = rehberAra(tamListe, arama);
   const toplam = rehberToplami(gorunen);
+
+  /**
+   * K363 Faz 3-a — PİYASA FİYATI İSTEK ÜZERİNE (`?piyasa=1`): ekrandaki listenin
+   * ilk `PIYASA_TAVAN` ürünü için TY + HB Buybox fiyatı (canlı, resmî API).
+   * Taşınan parametrelere GİRMEZ: sekme/dönem/arama değişince kendiliğinden
+   * kapanır — her tıklamada onlarca canlı sorgu gitmesin. Özel gün sekmesinde yok.
+   */
+  const piyasaIstendi = p.piyasa === "1" && !oz;
+  const piyasaKumesi = ia ? iyiAlimAra(iyiAlim, arama).map((x) => x.satir.variantId) : gorunen.map((s) => s.variantId);
+  const piyasa = piyasaIstendi ? await piyasaFiyatlari(piyasaKumesi.slice(0, PIYASA_TAVAN)) : null;
+  const piyasaMetni: Record<string, string> | null = piyasa
+    ? Object.fromEntries(
+        [...piyasa.harita].map(([id, f]) => [
+          id,
+          t("piyasaHucre", { ty: f.TY === null ? "—" : bicim.para(f.TY, "TRY"), hb: f.HB === null ? "—" : bicim.para(f.HB, "TRY") }),
+        ]),
+      )
+    : null;
+  const piyasaYaz = (variantId: string) => piyasaMetni?.[variantId] ?? t("piyasaSorulmadi");
 
   /** Adres TEK yerden — sekme, dönem, form ve Excel aynı parametreleri taşır. */
   const tasinan = { donem, liste, az: String(azStok), ileri: String(ileri), q: arama ?? undefined, gun: oz ? seciliGun?.tarih.id : undefined };
@@ -266,6 +290,31 @@ export default async function AlimRehberiSayfasi({
       </div>
       {gy || oz || ia ? null : <p className="text-muted-foreground text-xs">{t("azStokNotu", { gun: VARSAYILAN_AZ_STOK_GUN })}</p>}
 
+      {/* ── PİYASA FİYATI — istek üzerine canlı Buybox (K363 Faz 3-a) ── */}
+      {oz ? null : (
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          {piyasa === null ? (
+            <Link
+              href={adres({ piyasa: "1" })}
+              className="border-input hover:bg-muted inline-flex h-11 items-center rounded-md border px-4 font-medium underline-offset-4"
+            >
+              {t("piyasaGetir")}
+            </Link>
+          ) : (
+            <>
+              <span className="text-muted-foreground">{t("piyasaNotu", { an: bicim.saat(an), sayi: Math.min(piyasaKumesi.length, PIYASA_TAVAN) })}</span>
+              {piyasaKumesi.length > PIYASA_TAVAN ? (
+                <span className={DURUM_YAZISI.uyari}>{t("piyasaTavan", { tavan: PIYASA_TAVAN, toplam: piyasaKumesi.length })}</span>
+              ) : null}
+              <Link href={adres({})} className="inline-flex min-h-11 items-center underline underline-offset-2 hover:no-underline">
+                {t("piyasaKapat")}
+              </Link>
+            </>
+          )}
+          {piyasa && piyasa.sebepler.length > 0 ? <span className={DURUM_YAZISI.uyari}>{t("piyasaSorun", { sebep: piyasa.sebepler.join(" · ") })}</span> : null}
+        </div>
+      )}
+
       {oz ? (
         <OzelGunSekmesi
           yaklasan={yaklasan}
@@ -278,7 +327,7 @@ export default async function AlimRehberiSayfasi({
           bugun={bugun}
         />
       ) : ia ? (
-        <IyiAlimSekmesi liste={iyiAlim} arama={arama} />
+        <IyiAlimSekmesi liste={iyiAlim} arama={arama} piyasa={piyasaMetni} />
       ) : (
       <>
       {/* ── TOPLAM — EKRANDA NE VARSA ONUN (İlke #15) ── */}
@@ -327,6 +376,7 @@ export default async function AlimRehberiSayfasi({
                       <TableHead className="text-right">{t("sutunRaf")}</TableHead>
                       <TableHead className="text-right">{gy ? t("sutunEksik") : t("sutunStokGunu")}</TableHead>
                       <TableHead className="text-right">{t("sutunSermaye")}</TableHead>
+                      {piyasaMetni ? <TableHead className="text-right">{t("sutunPiyasa")}</TableHead> : null}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -355,6 +405,7 @@ export default async function AlimRehberiSayfasi({
                         <TableCell className="text-right tabular-nums">
                           {s.raf <= 0 ? "—" : s.bagliSermaye === null ? t("bilinmiyor") : bicim.para(s.bagliSermaye, "TRY")}
                         </TableCell>
+                        {piyasaMetni ? <TableCell className="text-right whitespace-nowrap tabular-nums">{piyasaYaz(s.variantId)}</TableCell> : null}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -389,6 +440,7 @@ export default async function AlimRehberiSayfasi({
                         etiket: t("sutunSermaye"),
                         deger: s.raf <= 0 ? "—" : s.bagliSermaye === null ? t("bilinmiyor") : bicim.para(s.bagliSermaye, "TRY"),
                       },
+                      ...(piyasaMetni ? [{ etiket: t("sutunPiyasa"), deger: piyasaYaz(s.variantId) }] : []),
                     ]}
                   />
                 ))}

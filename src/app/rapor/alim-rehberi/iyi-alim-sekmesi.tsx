@@ -19,7 +19,16 @@ import { bicimlendirici } from "@/lib/bicim";
  *  Hesap `lib/alim-fiyat-hafizasi.ts`te; burası yalnız çizer.
  * ============================================================================
  */
-export async function IyiAlimSekmesi({ liste, arama }: { liste: IyiAlimSatiri[]; arama: string | null }) {
+export async function IyiAlimSekmesi({
+  liste,
+  arama,
+  piyasa = null,
+}: {
+  liste: IyiAlimSatiri[];
+  arama: string | null;
+  /** K363 Faz 3-a: istek üzerine piyasa (Buybox) metni, varyant → «TY … · HB …». `null` = sorulmadı, sütun çizilmez. */
+  piyasa?: Record<string, string> | null;
+}) {
   const t = await getTranslations("AlimRehberi");
   const bicim = await bicimlendirici();
   const gorunen = iyiAlimAra(liste, arama);
@@ -61,6 +70,7 @@ export async function IyiAlimSekmesi({ liste, arama }: { liste: IyiAlimSatiri[];
                       <TableHead className="text-right">{t("sutunIyiNormal")}</TableHead>
                       <TableHead className="text-right">{t("sutunIyiSon")}</TableHead>
                       <TableHead className="text-right">{t("sutunIyiFark")}</TableHead>
+                      {piyasa ? <TableHead className="text-right">{t("sutunPiyasa")}</TableHead> : null}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -79,6 +89,7 @@ export async function IyiAlimSekmesi({ liste, arama }: { liste: IyiAlimSatiri[];
                         <TableCell className="text-right tabular-nums">{bicim.para(h.normal, "TRY")}</TableCell>
                         <TableCell className="text-right tabular-nums">{nokta(h.son.fiyat, h.son.tarih)}</TableCell>
                         <TableCell className="text-right tabular-nums">{bicim.yuzde(fark)}</TableCell>
+                        {piyasa ? <TableCell className="text-right whitespace-nowrap tabular-nums">{piyasa[s.variantId] ?? t("piyasaSorulmadi")}</TableCell> : null}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -97,6 +108,7 @@ export async function IyiAlimSekmesi({ liste, arama }: { liste: IyiAlimSatiri[];
                       { etiket: t("sutunIyiFark"), deger: bicim.yuzde(fark) },
                       { etiket: t("sutunSatilan"), deger: String(s.adet) },
                       { etiket: t("sutunRaf"), deger: String(s.raf) },
+                      ...(piyasa ? [{ etiket: t("sutunPiyasa"), deger: piyasa[s.variantId] ?? t("piyasaSorulmadi") }] : []),
                     ]}
                   />
                 ))}
