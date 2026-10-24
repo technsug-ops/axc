@@ -759,6 +759,7 @@ model Channel {
   fees           ChannelFee[]
   cargoTariffs   CargoTariff[]
   penaltyTariffs PenaltyTariff[]
+  ozelGunler     OzelGun[]
 }
 
 // ============================================================================
@@ -4080,4 +4081,55 @@ model HedefTebrigi {
   createdAt   DateTime @default(now())
 
   @@unique([hedefId, donemBasi])
+}
+
+// ============================================================================
+//  ÖZEL GÜN TAKVİMİ (K363 Faz 2-b) — 24.10.2026
+// ----------------------------------------------------------------------------
+//  Alım rehberi «yaklaşan özel günler» bu tablolardan okur: bu yılki tarihin
+//  geçen yılki KARŞILIĞI aynı `OzelGun`un bir önceki tarih satırıdır (bayram ve
+//  Black Friday her yıl başka güne düşer; takvim günüyle eşlenemez).
+//  Takvim AYARLANABİLİR VERİDİR — hangi günün önemli olduğu koda gömülmez,
+//  önemi kendi satışımızla ölçülür. Kim neyi değiştirdi: AuditLog.
+// ============================================================================
+
+/// SATIS_GUNU: müşteri talebinin arttığı gün (stokla girilir) ·
+/// ALIM_KAMPANYASI: ucuz mal alınan kampanya dönemi (alım zamanı kaçırılmaz).
+enum OzelGunTuru {
+  SATIS_GUNU
+  ALIM_KAMPANYASI
+}
+
+model OzelGun {
+  id        String          @id @default(cuid())
+  ad        String          @unique
+  tur       OzelGunTuru
+  /// Kanala özgü gün («HB Efsane Kasım»); boş = bütün kanallar.
+  channelId String?
+  channel   Channel?        @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  aciklama  String?         @db.Text
+  /// Geçmişi olan gün silinmez, pasife alınır (geçmiş karşılaştırma kalır).
+  aktif     Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  tarihler  OzelGunTarihi[]
+}
+
+/// Bir özel günün bir yıldaki tarihi. Günler İstanbul takvim günüdür (UTC gece
+/// yarısı etiketi); `bitis` DAHİLDİR.
+model OzelGunTarihi {
+  id         String   @id @default(cuid())
+  ozelGunId  String
+  ozelGun    OzelGun  @relation(fields: [ozelGunId], references: [id], onDelete: Cascade)
+  baslangic  DateTime @db.Date
+  bitis      DateTime @db.Date
+  /// Tarihin nereden geldiği («Diyanet takvimi», «kullanıcı»); doğrulanmamışsa
+  /// `dogrulandi` false ve ekran bunu yazar.
+  kaynak     String?
+  dogrulandi Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([ozelGunId, baslangic])
+  @@index([baslangic])
 }
