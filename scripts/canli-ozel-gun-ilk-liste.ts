@@ -13,12 +13,15 @@
  *  kendisi; liste tutulmaz.
  *
  *  ⛔ TAHMİN EDİLEN TARİH KESİNMİŞ GİBİ DURMAZ:
- *   · KURALLA HESAPLANAN günler (Black Friday = Şükran Günü'nden sonraki Cuma ·
- *     11.11 · Anneler Günü = Mayıs'ın 2. Pazarı · Babalar Günü = Haziran'ın 3.
- *     Pazarı · 14 Şubat · 31 Aralık) → `dogrulandi: true`, kaynak «takvim kuralı».
- *   · BAYRAM ve OKUL AÇILIŞI → `dogrulandi: false`. Kaynak haber siteleri
- *     (Diyanet / MEB takvimine atıf yapıyorlar; resmî sayfa okunmadı, 24.10.2026).
- *     Ekran «Doğrulanacak» rozeti gösterir; kullanıcı resmî kaynaktan bakıp işaretler.
+ *   TÜRKİYE TAKVİMİ ESAS (kullanıcı kararı 24.10.2026: «Türkiye'yi baz al»).
+ *   · KURALLA HESAPLANAN günler (Black Friday = Kasım'ın son Cuması · 11.11 ·
+ *     Anneler Günü = Mayıs'ın 2. Pazarı · Babalar Günü = Haziran'ın 3. Pazarı ·
+ *     14 Şubat · 31 Aralık) → `dogrulandi: true`, kaynak «takvim kuralı».
+ *   · BAYRAMLAR → Diyanet dini günler takviminden okundu (24.10.2026,
+ *     vakithesaplama.diyanet.gov.tr — 2025 · 2026 · 2027 sayfaları; altısı da
+ *     birebir) → `dogrulandi: true`.
+ *   · OKUL AÇILIŞI → MEB çalışma takvimi duyurularından (meb.gov.tr, 24.10.2026:
+ *     08.09.2025 · 14.09.2026) → `dogrulandi: true`.
  *   · ALIM KAMPANYASI ADAYLARI — alım geçmişinin en yoğun günlerinden (canlı
  *     ölçüm 24.10.2026, salt okuma). Hangi kampanya olduğunu sistem BİLMİYOR:
  *     ad «Alım adayı: …» ve `dogrulandi: false`; kullanıcı adını verir ya da siler.
@@ -35,13 +38,12 @@ type Tarih = { bas: string; bit?: string; kaynak: string; dogrulandi: boolean };
 type Gun = { ad: string; tur: "SATIS_GUNU" | "ALIM_KAMPANYASI"; aciklama: string | null; tarihler: Tarih[] };
 
 const KURAL = "takvim kuralı";
-const HABER_DIYANET = "haber siteleri, Diyanet takvimine atıf (resmî sayfa okunmadı)";
-const HABER_MEB = "haber siteleri, MEB çalışma takvimine atıf (resmî genelge okunmadı)";
-const HAFIZA = "genel bilgi, kaynak okunmadı";
+const DIYANET = "Diyanet dini günler takvimi";
+const MEB = "MEB çalışma takvimi";
 const ALIM_OLCUMU = "alım geçmişinden aday (canlı ölçüm 24.10.2026)";
 
 const LISTE: Gun[] = [
-  { ad: "Black Friday", tur: "SATIS_GUNU", aciklama: "Kasım'ın Şükran Günü'nden sonraki Cuması. 28.11.2025 geçmişin en yoğun satış günüydü (48 sipariş).", tarihler: [
+  { ad: "Black Friday", tur: "SATIS_GUNU", aciklama: "Kasım'ın son Cuması. 28.11.2025 geçmişin en yoğun satış günüydü (48 sipariş).", tarihler: [
     { bas: "2025-11-28", kaynak: KURAL, dogrulandi: true },
     { bas: "2026-11-27", kaynak: KURAL, dogrulandi: true },
   ] },
@@ -68,18 +70,18 @@ const LISTE: Gun[] = [
     { bas: "2027-06-20", kaynak: KURAL, dogrulandi: true },
   ] },
   { ad: "Ramazan Bayramı", tur: "SATIS_GUNU", aciklama: "Bayramın üç günü (arefe hariç).", tarihler: [
-    { bas: "2025-03-30", bit: "2025-04-01", kaynak: HAFIZA, dogrulandi: false },
-    { bas: "2026-03-20", bit: "2026-03-22", kaynak: HABER_DIYANET, dogrulandi: false },
-    { bas: "2027-03-09", bit: "2027-03-11", kaynak: HABER_DIYANET, dogrulandi: false },
+    { bas: "2025-03-30", bit: "2025-04-01", kaynak: DIYANET, dogrulandi: true },
+    { bas: "2026-03-20", bit: "2026-03-22", kaynak: DIYANET, dogrulandi: true },
+    { bas: "2027-03-09", bit: "2027-03-11", kaynak: DIYANET, dogrulandi: true },
   ] },
   { ad: "Kurban Bayramı", tur: "SATIS_GUNU", aciklama: "Bayramın dört günü (arefe hariç).", tarihler: [
-    { bas: "2025-06-06", bit: "2025-06-09", kaynak: HAFIZA, dogrulandi: false },
-    { bas: "2026-05-27", bit: "2026-05-30", kaynak: HABER_DIYANET, dogrulandi: false },
-    { bas: "2027-05-16", bit: "2027-05-19", kaynak: HABER_DIYANET, dogrulandi: false },
+    { bas: "2025-06-06", bit: "2025-06-09", kaynak: DIYANET, dogrulandi: true },
+    { bas: "2026-05-27", bit: "2026-05-30", kaynak: DIYANET, dogrulandi: true },
+    { bas: "2027-05-16", bit: "2027-05-19", kaynak: DIYANET, dogrulandi: true },
   ] },
   { ad: "Okul açılışı", tur: "SATIS_GUNU", aciklama: "Derslerin başladığı gün; alışveriş öncesindeki haftalarda ise başlangıcı ekrandan öne alın.", tarihler: [
-    { bas: "2025-09-08", kaynak: HAFIZA, dogrulandi: false },
-    { bas: "2026-09-14", kaynak: HABER_MEB, dogrulandi: false },
+    { bas: "2025-09-08", kaynak: MEB, dogrulandi: true },
+    { bas: "2026-09-14", kaynak: MEB, dogrulandi: true },
   ] },
   { ad: "Alım adayı: 30–31 Ekim", tur: "ALIM_KAMPANYASI", aciklama: "30.10.2025 alım geçmişinin zirvesi (tek günde 97 adet). Hangi kampanya olduğunu yazın ya da silin.", tarihler: [
     { bas: "2025-10-30", bit: "2025-10-31", kaynak: ALIM_OLCUMU, dogrulandi: false },

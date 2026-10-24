@@ -35,9 +35,11 @@ function yenile() {
   revalidatePath("/rapor/alim-rehberi");
 }
 
+const YETKISIZ = { tamam: false, hata: "YETKISIZ" } as const;
+
+/** Beklenmeyen hatayı TAM günlüğe yazar, kod döner; başarıda ekranları tazeler. İzin ÇAĞIRANDA sorulur. */
 async function sar(ad: string, is: () => Promise<{ tamam: true } | { tamam: false; hata: YazHatasi }>): Promise<EylemSonucu> {
   try {
-    if (!(await izinVarMi("ayar.yaz"))) return { tamam: false, hata: "YETKISIZ" };
     const s = await is();
     if (!s.tamam) return s;
     yenile();
@@ -49,29 +51,36 @@ async function sar(ad: string, is: () => Promise<{ tamam: true } | { tamam: fals
 }
 
 export async function ozelGunEkleEylemi(g: GunGirdisi, t: TarihGirdisi): Promise<EylemSonucu> {
+  if (!(await izinVarMi("ayar.yaz"))) return YETKISIZ;
   return sar("ozelGunEkle", () => ozelGunEkle(g, t));
 }
 
 export async function ozelGunGuncelleEylemi(id: string, g: GunGirdisi): Promise<EylemSonucu> {
+  if (!(await izinVarMi("ayar.yaz"))) return YETKISIZ;
   return sar("ozelGunGuncelle", () => ozelGunGuncelle(id, g));
 }
 
 export async function ozelGunAktifEylemi(id: string, aktif: boolean): Promise<EylemSonucu> {
+  if (!(await izinVarMi("ayar.yaz"))) return YETKISIZ;
   return sar("ozelGunAktif", () => ozelGunAktifDegistir(id, aktif));
 }
 
 export async function ozelGunSilEylemi(id: string): Promise<EylemSonucu> {
+  if (!(await izinVarMi("ayar.yaz"))) return YETKISIZ;
   return sar("ozelGunSil", () => ozelGunSil(id, gunDegeri(isTakvimGunu(new Date()))));
 }
 
 export async function tarihEkleEylemi(ozelGunId: string, t: TarihGirdisi): Promise<EylemSonucu> {
+  if (!(await izinVarMi("ayar.yaz"))) return YETKISIZ;
   return sar("tarihEkle", () => tarihEkle(ozelGunId, t));
 }
 
 export async function tarihGuncelleEylemi(tarihId: string, t: TarihGirdisi): Promise<EylemSonucu> {
+  if (!(await izinVarMi("ayar.yaz"))) return YETKISIZ;
   return sar("tarihGuncelle", () => tarihGuncelle(tarihId, t));
 }
 
 export async function tarihSilEylemi(tarihId: string): Promise<EylemSonucu> {
+  if (!(await izinVarMi("ayar.yaz"))) return YETKISIZ;
   return sar("tarihSil", () => tarihSil(tarihId));
 }

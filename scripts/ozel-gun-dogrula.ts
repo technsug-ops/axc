@@ -213,7 +213,11 @@ console.log("\n⑦ bağlar — sayfa · yazma · Excel · yedek · menü");
     kontrol(`yazma: ${ad} iz bırakır (işlem içinde, tx ile)`, /await izYaz\(\s*\{[\s\S]*?action: [^,]*?"OZEL_GUN_[A-Z_]+"[\s\S]*?\},\s*tx,?\s*\)/.test(govde));
   }
   const eylem = yorumsuz(kaynakOku("src/app/ayarlar/ozel-gunler/eylemler.ts"));
-  kontrol("eylem: izin eylemin KENDİ gövdesinde (ayar.yaz) ve hata günlüğe TAM", /if \(!\(await izinVarMi\("ayar\.yaz"\)\)\) return \{ tamam: false, hata: "YETKISIZ" \};/.test(eylem) && /console\.error\(`\[\$\{ad\}\] beklenmeyen hata:`, e\);/.test(eylem));
+  /* Her DIŞA AÇIK eylem izni KENDİ gövdesinin ilk satırında sorar (yetki:dogrula ile aynı kural) — sayım dışa aktarılan eylem sayısına bağlı. */
+  const eylemAdlari = [...eylem.matchAll(/export async function (\w+)\(/g)].map((m) => m[1]);
+  const izinsiz = eylemAdlari.filter((ad) => !new RegExp(`export async function ${ad}\\([^)]*\\): Promise<EylemSonucu> \\{\\s*if \\(!\\(await izinVarMi\\("ayar\\.yaz"\\)\\)\\) return YETKISIZ;`).test(eylem));
+  kontrol("eylem: her eylem izni KENDİ gövdesinde sorar (ayar.yaz)", eylemAdlari.length >= 7 && izinsiz.length === 0, { eylemAdlari, izinsiz });
+  kontrol("eylem: beklenmeyen hata günlüğe TAM yazılır", /console\.error\(`\[\$\{ad\}\] beklenmeyen hata:`, e\);/.test(eylem));
   kontrol("eylem: silmede bugün İSTANBUL günüyle verilir", /ozelGunSil\(id, gunDegeri\(isTakvimGunu\(new Date\(\)\)\)\)/.test(eylem));
 
   const iO = YEDEK_TABLOLARI.indexOf("OzelGun" as never);
