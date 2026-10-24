@@ -31,6 +31,17 @@ export type GecenYilVerisi = {
   ilkSatis: Date | null;
 };
 
+/**
+ * Rehberin «bugünkü stok» okuması. TEK gövde: çandaki özel gün uyarısı (Faz 2-c)
+ * da bunu çağırır — iki taraf ayrı gün etiketiyle okusaydı çanın saydığı ürün
+ * sayısı ile açılan liste ayrışabilirdi (sayı = liste).
+ */
+export async function rehberStoku(an: Date): Promise<AnalizSatiri[]> {
+  const bugun = new Date(an);
+  bugun.setUTCHours(0, 0, 0, 0);
+  return stokEkseniVerisi(bugun);
+}
+
 export async function rehberVerisi(donem: RehberDonemi, ileri: IleriGun, an: Date): Promise<{
   satirlar: RehberSatiri[];
   gun: number;
@@ -43,12 +54,10 @@ export async function rehberVerisi(donem: RehberDonemi, ileri: IleriGun, an: Dat
   const pencere = pencereOlustur(donem, an);
   const gun = donemGunu(pencere.baslangic, pencere.bitisHaric, an);
   const gy = pencereOlustur("OZEL", an, gecenYilPenceresi(isTakvimGunu(an), ileri));
-  const bugun = new Date(an);
-  bugun.setUTCHours(0, 0, 0, 0);
   const [satis, gecenYilSatis, stok, ilk] = await Promise.all([
     satisEkseniVerisi(pencere, "TRY", null),
     satisEkseniVerisi(gy, "TRY", null),
-    stokEkseniVerisi(bugun),
+    rehberStoku(an),
     prisma.sale.findFirst({ where: { iptalTarihi: null }, orderBy: { soldAt: "asc" }, select: { soldAt: true } }),
   ]);
   const ilkSatis = ilk?.soldAt ?? null;

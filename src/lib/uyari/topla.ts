@@ -18,6 +18,7 @@ import { tyKategoriKarsiliksizSayisi } from "@/lib/kategori-eslesme-yaz";
 import { geceTuruSorunSayisi } from "@/lib/gece-turu-veri";
 import { yayinBosluguSayisiOlc } from "@/lib/yayin-boslugu";
 import { kdvUyusmayanKanalSkulari } from "@/lib/kdv-uyusmazligi";
+import { ozelGunCanOlcumu } from "@/lib/ozel-gun/ozel-gun-verisi";
 
 /**
  * ============================================================================
@@ -178,6 +179,7 @@ export async function uyarilariTopla(
     zararinaSatisSayisi,
     /* K266: tarife kapsamı çana taşındı — «acele» kararı SAF KURALDAN. */
     tarifeKapsam,
+    ozelGunOlcumu,
   ] = await Promise.all([
       takvimSatirlariniTopla(bugun),
       gorevSayilariniTopla(),
@@ -249,6 +251,7 @@ export async function uyarilariTopla(
         },
       }),
       tarifeKapsaminiOlc(),
+      ozelGunCanOlcumu(new Date()),
     ]);
 
   const takvim = nakitTakvimiKur({
@@ -318,6 +321,8 @@ export async function uyarilariTopla(
     kdvOraniUyusmuyor: { sayi: (await kdvUyusmayanKanalSkulari()).kimlikler.length },
     /** K329 — gece turu ekranındaki yayın kutusuyla AYNI gövde (`yayinDurumunuOlc`). */
     yayinBoslugu: { sayi: await yayinBosluguSayisiOlc() },
+    /** K363 Faz 2-c — rehberin özel gün sekmesiyle AYNI gövde (`ozelGunDetayi`); sayı = o günün listesi. */
+    ozelGunYaklasiyor: ozelGunOlcumu,
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:

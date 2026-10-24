@@ -1,14 +1,19 @@
-import { pencereOlustur } from "@/lib/donem";
+import { gunDegeri, isTakvimGunu, pencereOlustur } from "@/lib/donem";
 import { prisma } from "@/lib/prisma";
 import { gecenYilKapsami, rehberKur, type GecenYilKapsami, type RehberSatiri } from "@/lib/rapor/alim-rehberi";
+import { rehberStoku } from "@/lib/rapor/alim-rehberi-verisi";
 import type { AnalizSatiri } from "@/lib/rapor/urun-analizi";
 import { satisEkseniVerisi } from "@/lib/rapor/urun-analizi-verisi";
 
 import {
   alimKampanyasiListesi,
   aralikGunu,
+  canAdaylari,
   carpan,
   gunMetni,
+  kalanGun,
+  ozelGunRehberAdresi,
+  yaklasanlar,
   satisGunuListesi,
   tabanPenceresi,
   TABAN_GUN,
@@ -172,4 +177,39 @@ export async function ozelGunDetayi(
       : null,
     satirlar: satisGunuListesi(rehberKur(satis, stok, pencereGun)),
   };
+}
+
+export type OzelGunCanOlcumu = {
+  /** Seçilen günün listesindeki ürün sayısı — rehberde açılan listeyle AYNI gövde (`ozelGunDetayi`). 0 = uyarı yok. */
+  sayi: number;
+  adres?: string;
+  /** Başlık metnine gider (`baslik_ozelGunYaklasiyor`); eylem metni parametresizdir (uyari:dogrula sözleşmesi). */
+  degiskenler?: { ad: string; tur: OzelGunTuru; kalan: number; diger: number };
+};
+
+/**
+ * ÇAN — ÖNCEDEN HABER (K363 Faz 2-c). Aday yoksa hiçbir ağır okuma yapılmaz
+ * (stok ekseni yalnız 30 gün içinde gün varken okunur — ölçüldü 24.10.2026:
+ * ~0,7 sn, soğuk 1,3 sn; çan sayfayı bekletmez).
+ * Seçim: başlangıç sırasıyla listesi DOLU ilk aday. Listesi boş aday (geçen yıl
+ * satılanların hepsi rafta yeterli) atlanır ama `diger` sayısında yer alır.
+ * ⚠ SAYI = LİSTE: rehber aynı `ozelGunDetayi`ni aynı `rehberStoku` ile çağırır;
+ * alım listesinde `donemSatirlari` yalnız sütun doldurur, süzmez — [] verilir.
+ */
+export async function ozelGunCanOlcumu(an: Date): Promise<OzelGunCanOlcumu> {
+  const bugun = gunDegeri(isTakvimGunu(an));
+  const adaylar = canAdaylari(yaklasanlar(await ozelGunKayitlari(), bugun), bugun);
+  if (adaylar.length === 0) return { sayi: 0 };
+  const stok = adaylar.some((a) => a.gun.tur === "SATIS_GUNU") ? await rehberStoku(an) : [];
+  for (const a of adaylar) {
+    const d = await ozelGunDetayi(a, an, stok, []);
+    const sayi = d.durum === "ONCEKI_YOK" ? 0 : d.satirlar.length;
+    if (sayi === 0) continue;
+    return {
+      sayi,
+      adres: ozelGunRehberAdresi(a.tarih.id),
+      degiskenler: { ad: a.gun.ad, tur: a.gun.tur, kalan: kalanGun(a.tarih, bugun), diger: adaylar.length - 1 },
+    };
+  }
+  return { sayi: 0 };
 }

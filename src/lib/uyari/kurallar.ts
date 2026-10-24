@@ -29,12 +29,15 @@ import {
  * doluluğu bekçide AYRICA ölçülür — boş küme her koşulu sağlar.
  */
 /** K283: Trendyol kategori eşleşmesi ölçümü de İSTEĞE BAĞLI — aynı gerekçe. */
-type IstegeBagliOlcum = CanaTasinanGorev | "tyKategoriKarsiliksiz" | "geceTuruSorunlu" | "kdvOraniUyusmuyor" | "yayinBoslugu";
-export type UyariOlcumleri = Record<
-  Exclude<UyariAnahtari, IstegeBagliOlcum>,
-  { sayi: number; tutar?: number | null }
-> &
-  Partial<Record<IstegeBagliOlcum, { sayi: number; tutar?: number | null }>>;
+type IstegeBagliOlcum = CanaTasinanGorev | "tyKategoriKarsiliksiz" | "geceTuruSorunlu" | "kdvOraniUyusmuyor" | "yayinBoslugu" | "ozelGunYaklasiyor";
+/**
+ * `adres` — ölçüm SEÇİLİ kaydı açan adresi taşıyabilir (K363 Faz 2-c: özel gün
+ * sekmesinde o gün seçili). Verilmezse haritadaki taban adres; `degiskenler`
+ * metne gider.
+ */
+type Olcum = { sayi: number; tutar?: number | null; adres?: string; degiskenler?: Record<string, string | number> };
+export type UyariOlcumleri = Record<Exclude<UyariAnahtari, IstegeBagliOlcum>, Olcum> &
+  Partial<Record<IstegeBagliOlcum, Olcum>>;
 
 /**
  * NAKİT AÇIĞI — YALNIZ EKSİ POZİSYON UYARIR.
@@ -76,8 +79,9 @@ export function uyarilariKur(olcumler: UyariOlcumleri): Uyari[] {
       tutar: olcum.tutar ?? null,
       // Faz 1'in tamamı TRY; EUR uyarısı doğduğunda ölçüm taşıyacak.
       paraBirimi: olcum.tutar == null ? null : "TRY",
-      adres: UYARI_ADRESLERI[anahtar],
+      adres: olcum.adres ?? UYARI_ADRESLERI[anahtar],
       izin: UYARI_IZINLERI[anahtar],
+      ...(olcum.degiskenler ? { degiskenler: olcum.degiskenler } : {}),
     });
   }
   return liste;

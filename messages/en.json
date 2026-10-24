@@ -3791,7 +3791,9 @@
     "eylem_yayinBoslugu": "",
     "eylem_geceTuruSorunlu": "",
     "baslik_kdvOraniUyusmuyor": "",
-    "eylem_kdvOraniUyusmuyor": ""
+    "eylem_kdvOraniUyusmuyor": "",
+    "baslik_ozelGunYaklasiyor": "",
+    "eylem_ozelGunYaklasiyor": ""
   },
   "Talep": {
     "bildirEtiketi": "",

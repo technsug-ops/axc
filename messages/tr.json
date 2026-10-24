@@ -3791,7 +3791,9 @@
     "eylem_yayinBoslugu": "Ayrıntıya bak — GitHub'daki son düzeltme canlıda değil; Vercel'den elle yayımlayın",
     "eylem_geceTuruSorunlu": "Ayrıntıya bak — kırmızı denetim ve onu bozan push yazıyor",
     "baslik_kdvOraniUyusmuyor": "{sayi} ilanda KDV oranı uyuşmuyor",
-    "eylem_kdvOraniUyusmuyor": "Trendyol ilanı ile ürün kartının KDV oranı farklı — hangisi yanlışsa onu düzelt"
+    "eylem_kdvOraniUyusmuyor": "Trendyol ilanı ile ürün kartının KDV oranı farklı — hangisi yanlışsa onu düzelt",
+    "baslik_ozelGunYaklasiyor": "{ad} · {kalan, plural, =0 {sürüyor} other {# gün kaldı}} · {tur, select, ALIM_KAMPANYASI {geçen kampanyada {sayi} üründen alım yapılmıştı} other {geçen yıl satılıp bugün eksik {sayi} ürün}}{diger, plural, =0 {} other { (+# özel gün daha)}}",
+    "eylem_ozelGunYaklasiyor": "Alım rehberinde listeyi aç — 30 gün önceden haber verilir (varsayım, ölçülmedi)"
   },
   "Talep": {
     "bildirEtiketi": "Hata veya istek bildir",

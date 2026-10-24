@@ -25,6 +25,7 @@
 
 import type { Izin } from "@/lib/yetki/izinler";
 import { KDV_UYUSMAZLIGI_ADRESI } from "@/lib/kdv-uyusmazligi-kurali";
+import { ozelGunRehberAdresi } from "@/lib/ozel-gun/ozel-gun";
 
 export const UYARI_SEVIYELERI = ["kirmizi", "amber", "notr"] as const;
 export type UyariSeviyesi = (typeof UYARI_SEVIYELERI)[number];
@@ -157,6 +158,10 @@ export const UYARI_ANAHTARLARI = [
   // ── K329 (10.10.2026): canlı sürüm ana dalın gerisinde — push yeşil geçti ama
   //    Vercel yayımlamadı (09.10: 28 saat eski kod, 19 satışa yanlış desi). ──
   "yayinBoslugu",
+  // ── K363 Faz 2-c (24.10.2026): özel gün 30 gün içinde — geçen yıl o gün satıp
+  //    bugün rafta eksik olan (satış günü) ya da geçen kampanyada alınan (alım
+  //    kampanyası) ürünler. Sayı ve liste `ozel-gun-verisi.ts`teki AYNI gövdeden. ──
+  "ozelGunYaklasiyor",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -219,6 +224,12 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
   kdvOraniUyusmuyor: KDV_UYUSMAZLIGI_ADRESI,
   /** Yayın durumu gece turu ekranında (teknik bakım sayfası, aynı gövde). */
   yayinBoslugu: "/ayarlar/gece-turu",
+  /**
+   * TABAN adres (sekme). Ölçüm seçilen günün TARİHİNİ ekleyip `adres` olarak
+   * taşır (`ozelGunRehberAdresi`) — çan o günü açar, sayı o günün listesidir.
+   * Adres sahibinden (İlke #16).
+   */
+  ozelGunYaklasiyor: ozelGunRehberAdresi(null),
 };
 
 /**
@@ -266,6 +277,8 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   kdvOraniUyusmuyor: "amber",
   /* Düzeltme kodda ama canlıda değil: siparişler ESKİ kurallarla işleniyor — kırmızı. */
   yayinBoslugu: "kirmizi",
+  /* Kaçırılan fırsat — para kaybı değil, eylem var (alım) — nötr; rozeti şişirmez. */
+  ozelGunYaklasiyor: "notr",
 };
 
 /**
@@ -305,6 +318,8 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   kdvOraniUyusmuyor: "kanalsku.yaz",
   /* Ekran `ayar.yaz` ister — teknik bakım uyarısı. */
   yayinBoslugu: "ayar.yaz",
+  /* Liste kârı pozitif ürünleri süzer; rehber `satis.kar.gor` olmadan listeyi göstermez. */
+  ozelGunYaklasiyor: "satis.kar.gor",
 };
 
 export type Uyari = {
@@ -317,4 +332,9 @@ export type Uyari = {
   paraBirimi: "TRY" | "EUR" | null;
   adres: string;
   izin: Izin | null;
+  /**
+   * Başlık/eylem metnine giden ek değişkenler (K363 Faz 2-c: günün adı, kalan
+   * gün). Yoksa metin yalnız `sayi` alır — öteki uyarılar değişmedi.
+   */
+  degiskenler?: Record<string, string | number>;
 };

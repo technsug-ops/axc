@@ -1,4 +1,4 @@
-import { eksikAdet, type RehberSatiri } from "@/lib/rapor/alim-rehberi";
+import { eksikAdet, REHBER_YOLU, type RehberSatiri } from "@/lib/rapor/alim-rehberi";
 
 /**
  * ============================================================================
@@ -149,6 +149,34 @@ export function yaklasanlar<T extends TarihSatiri, G extends { id: string; aktif
 /** Bugünden kaç gün sonra başlıyor (sürüyorsa 0). */
 export function kalanGun(t: TarihSatiri, bugun: Date): number {
   return Math.max(0, Math.round((t.baslangic.getTime() - bugun.getTime()) / GUN_MS));
+}
+
+/**
+ * ÖNCEDEN HABER (Faz 2-c, kullanıcı kararı 24.10.2026 «30 gün»): özel gün bu
+ * kadar gün içinde başlıyorsa çan haber verir. ⚠ VARSAYIM — alım + kargo + rafa
+ * koyma süresi ÖLÇÜLMEDİ; ekran bunu yazar. Ölçüm gelirse buradan değişir.
+ */
+export const ONCEDEN_HABER_GUN = 30;
+
+/**
+ * ÇANA ADAY GÜNLER — yaklaşanlardan `ONCEDEN_HABER_GUN` içinde başlayan (sürenler
+ * dahil) VE geçen yılki karşılığı OLAN günler, başlangıç sırasıyla. Karşılığı
+ * olmayan gün ADAY DEĞİL: liste kurulamaz, çan söyleyecek ürün bulamaz.
+ * Hangisinin çanda yazacağına veri tarafı karar verir (listesi dolu ilk aday);
+ * öteki adaylar satırda «+N gün daha» diye SAYILIR — seçilmeyen gün sessizce
+ * düşmez (anayasa: seçici ölçüt, kaybedeni görünür kılar).
+ */
+export function canAdaylari<Y extends { tarih: TarihSatiri; onceki: TarihSatiri | null }>(
+  yaklasan: readonly Y[],
+  bugun: Date,
+): Y[] {
+  return yaklasan.filter((y) => y.onceki !== null && kalanGun(y.tarih, bugun) <= ONCEDEN_HABER_GUN);
+}
+
+/** Rehberin özel gün sekmesi, o tarih seçili. Adres SAHİBİNDEN — çan da bunu kullanır (İlke #16). */
+export function ozelGunRehberAdresi(tarihId: string | null): string {
+  const temel = `${REHBER_YOLU}?liste=ozelGun`;
+  return tarihId === null ? temel : `${temel}&gun=${encodeURIComponent(tarihId)}`;
 }
 
 /** Çarpanın taban penceresi: başlangıçtan önceki `gun` gün (iki uç dahil, metin). */

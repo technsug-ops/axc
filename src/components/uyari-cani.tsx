@@ -214,7 +214,7 @@ export function UyariCani() {
                       />
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-medium">
-                          {t(`baslik_${u.anahtar}`, { sayi: u.sayi })}
+                          {t(`baslik_${u.anahtar}`, { sayi: u.sayi, ...u.degiskenler })}
                         </span>
                         <span className="text-muted-foreground block text-xs">
                           {u.tutar !== null && u.paraBirimi !== null

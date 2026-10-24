@@ -81,6 +81,8 @@ const UYARI_BAGLAMI: Record<UyariAnahtari, string> = {
   geceTuruSorunlu: "Gece bekçi turunda kırmızı denetim ya da koşmayan gece (teknik bakım)",
   kdvOraniUyusmuyor: "Trendyol ilanındaki KDV oranı ürün kartındakiyle uyuşmayan kanal SKU",
   yayinBoslugu: "Canlı site ana daldaki son sürümün gerisinde (yayımlanmamış düzeltme)",
+  ozelGunYaklasiyor:
+    "30 gün içinde başlayan özel gün için listedeki ürün sayısı (satış günü: geçen yıl o gün satılıp bugün rafta eksik olan; alım kampanyası: geçen kampanyada alınan)",
 };
 
 /**

@@ -16,11 +16,14 @@ import {
   alimKampanyasiListesi,
   alimToplami,
   aralikGunu,
+  canAdaylari,
   carpan,
   EN_UZUN_ARALIK_GUN,
   gunCoz,
   kalanGun,
   oncekiTarih,
+  ONCEDEN_HABER_GUN,
+  ozelGunRehberAdresi,
   satisGunuListesi,
   tabanPenceresi,
   tarihDogrula,
@@ -35,10 +38,12 @@ import { gecenYilListesi, rehberKur } from "../src/lib/rapor/alim-rehberi";
 import type { AnalizSatiri } from "../src/lib/rapor/urun-analizi";
 import { MENU_ADRESLERI, MENU_KATALOGU } from "../src/lib/menu/katalog";
 import { YEDEK_TABLOLARI } from "../src/lib/yedek-bicim";
+import { uyarilariKur } from "../src/lib/uyari/kurallar";
+import { UYARI_ADRESLERI, UYARI_IZINLERI, UYARI_SEVIYESI } from "../src/lib/uyari/turler";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -50,6 +55,11 @@ function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   }
 }
 const g = (s: string) => new Date(`${s}T00:00:00Z`);
+const yorumsuz = (s: string) => s.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+const blok = (metin: string, capa: string, uzunluk: number) => {
+  const i = metin.indexOf(capa);
+  return i < 0 ? "" : metin.slice(i, i + uzunluk);
+};
 const tarih = (id: string, ozelGunId: string, bas: string, bit = bas): TarihSatiri => ({ id, ozelGunId, baslangic: g(bas), bitis: g(bit), dogrulandi: true });
 
 // ── ① GİRDİ KAPILARI ────────────────────────────────────────────────────
@@ -179,11 +189,6 @@ kosanBolumler.push("alim-listesi");
 // ── ⑦ BAĞLAR ─────────────────────────────────────────────────────────────
 console.log("\n⑦ bağlar — sayfa · yazma · Excel · yedek · menü");
 {
-  const yorumsuz = (s: string) => s.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
-  const blok = (metin: string, capa: string, uzunluk: number) => {
-    const i = metin.indexOf(capa);
-    return i < 0 ? "" : metin.slice(i, i + uzunluk);
-  };
   const sayfa = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/page.tsx"));
   kontrol("rehber: ayrıntı bugünkü stokla ve seçili dönemle kurulur", /await ozelGunDetayi\(seciliGun, an, veri\.stok, veri\.satirlar\)/.test(sayfa));
   kontrol("rehber: yaklaşanlar İSTANBUL günüyle (çalışma ortamı saati değil)", /const bugun = gunDegeri\(isTakvimGunu\(an\)\);/.test(sayfa) && /yaklasanlar\(ozelKayitlar, bugun\)/.test(sayfa));
@@ -234,6 +239,63 @@ console.log("\n⑦ bağlar — sayfa · yazma · Excel · yedek · menü");
   kontrol("ayar sayfası: «geçmişi var» bugünden önce başlayan tarihle (sunucu kapısıyla AYNI ölçüt)", /gecmisiVar: k\.tarihler\.some\(\(x\) => x\.baslangic\.getTime\(\) < bugun\.getTime\(\)\)/.test(ayar));
 }
 kosanBolumler.push("baglar");
+
+// ── ⑧ ÇAN — ÖNCEDEN HABER (Faz 2-c) ─────────────────────────────────────
+console.log("\n⑧ çan — 30 gün önceden haber · sayı = liste · seçilen gün açılır");
+{
+  const bugun = g("2026-10-24");
+  const gunSonra = (n: number) => new Date(bugun.getTime() + n * 86_400_000).toISOString().slice(0, 10);
+  const once = tarih("once", "X", "2025-11-01");
+  const y = (id: string, bas: string, onceki: TarihSatiri | null, bit = bas) => ({ tarih: tarih(id, "X", bas, bit), onceki });
+  const aday = canAdaylari(
+    [
+      y("suruyor", "2026-10-20", once, "2026-10-25"), // sürüyor (kalan 0) → GİRER
+      y("sinir", gunSonra(ONCEDEN_HABER_GUN), once), // tam 30 → GİRER
+      y("karsiliksiz", gunSonra(5), null), // karşılığı yok → GİRMEZ
+      y("dis", gunSonra(ONCEDEN_HABER_GUN + 1), once), // 31 → GİRMEZ
+    ],
+    bugun,
+  ).map((a) => a.tarih.id).join(",");
+  kontrol(`aday: süren girer · tam ${ONCEDEN_HABER_GUN} gün girer · ${ONCEDEN_HABER_GUN + 1} girmez · karşılıksız girmez`, aday === "suruyor,sinir", aday);
+  kontrol("önceden haber 30 gün (kullanıcı kararı 24.10.2026)", ONCEDEN_HABER_GUN === 30);
+
+  kontrol("adres: taban sekme, seçili gün tarihin kimliğiyle", ozelGunRehberAdresi(null) === "/rapor/alim-rehberi?liste=ozelGun" && ozelGunRehberAdresi("t1") === "/rapor/alim-rehberi?liste=ozelGun&gun=t1");
+  kontrol("uyarı tanımı: taban adres · nötr · satis.kar.gor", UYARI_ADRESLERI.ozelGunYaklasiyor === ozelGunRehberAdresi(null) && UYARI_SEVIYESI.ozelGunYaklasiyor === "notr" && UYARI_IZINLERI.ozelGunYaklasiyor === "satis.kar.gor");
+
+  const taban = { nakitAcigi: { sayi: 0 }, maliyetsizStok: { sayi: 0 }, karHesaplanamayan: { sayi: 0 }, hakedisGecikti: { sayi: 0 }, cevapsizTalep: { sayi: 0 }, yedekEski: { sayi: 0 }, yedekYok: { sayi: 0 }, yedekIzden: { sayi: 0 }, veriSupheli: { sayi: 0 }, iadeSayaciDoluyor: { sayi: 0 }, kanalKodsuzStok: { sayi: 0 }, hakedisBaglanmamis: { sayi: 0 }, zararinaSatis: { sayi: 0 } };
+  const degiskenler = { ad: "11.11", tur: "SATIS_GUNU", kalan: 18, diger: 0 };
+  const u = uyarilariKur({ ...taban, ozelGunYaklasiyor: { sayi: 20, adres: ozelGunRehberAdresi("t1"), degiskenler } });
+  const oz = u.find((x) => x.anahtar === "ozelGunYaklasiyor");
+  kontrol("kural: ölçümün adresi (seçili gün) ve değişkenleri uyarıya geçer", oz?.adres === ozelGunRehberAdresi("t1") && oz?.sayi === 20 && oz?.degiskenler?.ad === "11.11", oz);
+  const sifir = uyarilariKur({ ...taban, ozelGunYaklasiyor: { sayi: 0, adres: "/x" } });
+  kontrol("kural: sayı 0 → uyarı yok", !sifir.some((x) => x.anahtar === "ozelGunYaklasiyor"));
+  const adressiz = uyarilariKur({ ...taban, ozelGunYaklasiyor: { sayi: 3 } }).find((x) => x.anahtar === "ozelGunYaklasiyor");
+  kontrol("kural: adres verilmezse taban adres · değişken yoksa alan da yok", adressiz?.adres === ozelGunRehberAdresi(null) && adressiz !== undefined && !("degiskenler" in adressiz));
+
+  const verisi = yorumsuz(kaynakOku("src/lib/ozel-gun/ozel-gun-verisi.ts"));
+  const canGovde = blok(verisi, "export async function ozelGunCanOlcumu(", 1600);
+  kontrol("veri: çan rehberle AYNI detay gövdesini AYNI stokla çağırır (sayı = liste)", /await ozelGunDetayi\(a, an, stok, \[\]\)/.test(canGovde) && /await rehberStoku\(an\)/.test(canGovde));
+  kontrol("veri: listesi boş aday atlanır, öteki adaylar «diger» sayılır", /if \(sayi === 0\) continue;/.test(canGovde) && /diger: adaylar\.length - 1/.test(canGovde) && /adres: ozelGunRehberAdresi\(a\.tarih\.id\)/.test(canGovde));
+  kontrol("veri: aday yoksa ağır okuma yapılmaz", canGovde.indexOf("if (adaylar.length === 0) return { sayi: 0 };") >= 0 && canGovde.indexOf("if (adaylar.length === 0) return { sayi: 0 };") < canGovde.indexOf("rehberStoku(an)"));
+  const rehberV = yorumsuz(kaynakOku("src/lib/rapor/alim-rehberi-verisi.ts"));
+  kontrol("rehber: stok aynı gövdeden (rehberStoku(an))", /rehberStoku\(an\),/.test(blok(rehberV, "export async function rehberVerisi(", 1500)));
+  const sayfa = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/page.tsx"));
+  kontrol("rehber: adresteki gün tarih kimliğiyle seçilir", /yaklasan\.find\(\(y\) => y\.tarih\.id === p\.gun\)/.test(sayfa));
+  const topla = yorumsuz(kaynakOku("src/lib/uyari/topla.ts"));
+  kontrol("toplayıcı: ölçüm çağrılır ve uyarıya verilir", /ozelGunCanOlcumu\(new Date\(\)\),/.test(topla) && /ozelGunYaklasiyor: ozelGunOlcumu,/.test(topla));
+  const can = yorumsuz(kaynakOku("src/components/uyari-cani.tsx"));
+  kontrol("çan: başlık metni ölçümün değişkenlerini alır", /t\(`baslik_\$\{u\.anahtar\}`, \{ sayi: u\.sayi, \.\.\.u\.degiskenler \}\)/.test(can));
+  const tr = JSON.parse(kaynakOku("messages/tr.json")).Uyari as Record<string, string>;
+  const baslik = tr.baslik_ozelGunYaklasiyor ?? "";
+  /* Başlıktaki her değişken ölçümün verdiği kümeden olmalı — eksik değişken next-intl'de ÇALIŞMA ANINDA hata verir. */
+  const verilen = new Set(["sayi", "ad", "tur", "kalan", "diger"]);
+  const kullanilan = [...baslik.matchAll(/\{(\w+)[,}]/g)].map((m) => m[1]);
+  kontrol("sözlük: başlık yalnız ölçümün verdiği değişkenleri kullanır (gün adı · kalan · tür · +N gün)",
+    ["ad", "kalan", "tur", "diger", "sayi"].every((d) => kullanilan.includes(d)) && kullanilan.every((d) => verilen.has(d)) && /ALIM_KAMPANYASI/.test(baslik), kullanilan);
+  kontrol("veri: ölçüm başlığın dört değişkenini verir", /degiskenler: \{ ad: a\.gun\.ad, tur: a\.gun\.tur, kalan: kalanGun\(a\.tarih, bugun\), diger: adaylar\.length - 1 \}/.test(canGovde));
+  kontrol(`sözlük: eylem önceden haber süresini (${ONCEDEN_HABER_GUN}) ve varsayım olduğunu yazar`, (tr.eylem_ozelGunYaklasiyor ?? "").includes(`${ONCEDEN_HABER_GUN} gün`) && /varsayım/.test(tr.eylem_ozelGunYaklasiyor ?? ""));
+}
+kosanBolumler.push("can");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {
