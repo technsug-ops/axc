@@ -8,8 +8,9 @@
  *  kurar.
  *  ⛔ FİYAT DEĞİŞTİRMEZ, ÖNERMEZ: gösterir. Fiyat gönderimi ürün kartındaki
  *  mevcut (önizlemeli, izli) akıştır.
- *  ⛔ HİÇBİR ŞEY KAYDEDİLMEZ (anayasa: kaydetme kararı tüketicisi doğduğunda) —
- *  ekran her açılışta o anın fotoğrafını çeker; geçmiş/alarm Faz 3-b.
+ *  Ekran her açılışta o anın fotoğrafını çeker. Geçmiş (saatlik sayılar +
+ *  durum değişimleri) Faz 3-b'de tüketicisiyle (grafik) birlikte doğdu:
+ *  `buybox-istatistik.ts`.
  * ============================================================================
  */
 

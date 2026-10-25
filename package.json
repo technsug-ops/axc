@@ -257,6 +257,7 @@
     "ozel-gun:dogrula": "tsx scripts/ozel-gun-dogrula.ts",
     "alim-fiyat-hafizasi:dogrula": "tsx scripts/alim-fiyat-hafizasi-dogrula.ts",
     "buybox:dogrula": "tsx scripts/buybox-dogrula.ts",
+    "buybox-istatistik:dogrula": "tsx scripts/buybox-istatistik-dogrula.ts",
     "canli:k202-2-onar": "tsx scripts/canli-k202-2-onar.ts",
     "canli:kargo-yaz": "tsx scripts/canli-kargo-yaz.ts",
     "canli:test-duzeltmeleri": "tsx scripts/canli-test-duzeltmeleri.ts",

@@ -5192,7 +5192,10 @@
     "sutunPiyasa": ""
   },
   "Buybox": {
-    "baslik": "", "notu": "", "kanal_TY": "", "kanal_HB": "", "sorguAni": "", "hesapYok": "", "sorunlar": "", "kimlikYok": "", "magazaAdiYok": "",
+    "baslik": "", "notu": "",
+    "gecmisBaslik": "", "gecmisNotu_bugun": "", "gecmisNotu_hafta": "", "gecmisNotu_ay": "", "aralik_bugun": "", "aralik_hafta": "", "aralik_ay": "",
+    "kazanmaOrani": "", "rakipliUrun": "", "rakipliOran": "", "kazanmaNotu": "", "grafikBirinci": "", "grafikOran": "", "gecmisBos": "", "olculmedi": "",
+    "kanal_TY": "", "kanal_HB": "", "sorguAni": "", "hesapYok": "", "sorunlar": "", "kimlikYok": "", "magazaAdiYok": "",
     "ozetIncelenen": "", "ozetBirinci": "", "ozetKaybedilen": "", "ozetGorunmuyor": "", "ozetSorgulanamadi": "",
     "liste_kaybedilen": "", "liste_birinci": "", "liste_gorunmuyor": "", "liste_hepsi": "",
     "aciklama_kaybedilen": "", "aciklama_birinci": "", "aciklama_gorunmuyor": "", "aciklama_hepsi": "",

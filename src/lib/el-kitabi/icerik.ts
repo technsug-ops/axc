@@ -2765,8 +2765,15 @@ ${sikHata([
 <p><strong>Sol menü → Buybox durumu</strong> («Fiyatlandırma ve Analiz» grubunda).
 Rafta olan ve kanalda ilanı bulunan ürünlerde <strong>Buybox kimde, biz
 kaçıncıyız</strong>. Trendyol ve Hepsiburada'nın <strong>resmî satıcı API'sinden</strong>,
-sayfa her açıldığında canlı sorulur (birkaç saniye sürebilir); hiçbir şey
-kaydedilmez. Üstten kanalı seçin.</p>
+sayfa her açıldığında canlı sorulur (birkaç saniye sürebilir). Üstten kanalı seçin.</p>
+<p><strong>Buybox geçmişi</strong> (listenin üstünde) — sistem saatte bir kendiliğinden
+ölçer ve iki grafik çizer: <strong>Buybox bizde</strong> (ürün sayısı) ve
+<strong>kazanma oranı</strong>. <strong>Bugün</strong> saat saat gösterir (o saatin son
+ölçümü); <strong>7 gün / 30 gün</strong> günlük ortalamayı gösterir. Kazanma oranı
+yalnız <strong>birden fazla satıcılı</strong> ürünlerde ölçülür («9 / 120» gibi): tek
+satıcılı üründe Buybox zaten sizdedir, sayılsaydı oranı şişirirdi. Ölçülemeyen saat
+uydurulmaz: grafikte boş kalır ve altında «ölçülmeyen dilimler» diye adıyla yazar.
+Liste canlıdır; kaydedilen yalnız saatlik sayılar ve durumu değişen ürünlerdir.</p>
 <ul>
 <li><strong>Buybox'ı kaybettiklerim</strong> — başka satıcı önde. Buybox'a en yakın
 olanlar önce gelir: en az fiyat hareketiyle geri alınabilecekler.</li>

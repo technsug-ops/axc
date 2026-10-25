@@ -598,6 +598,8 @@ model ProductVariant {
   sayimSatirlari     StokSayimSatiri[]
   /// K287 — yeniden kodlamada bırakılan ESKİ kodlar; aramada ve okutmada yaşar.
   eskiKodlar         EskiKod[]
+  /// K363 Faz 3-b — Buybox durum değişimleri.
+  buyboxDegisimleri  BuyboxDegisimi[]
 
   /// SAYIM GECERSIZLESTI — fiziksel sayimdan SONRA, sayim tarihinden ONCEYE
   /// bir hareket yazildiginda damgalanir. O varyantin sayimi artik gecerli
@@ -999,6 +1001,8 @@ model ChannelAccount {
   sales           Sale[]
   settlements     Settlement[]
   settlementItems SettlementItem[]
+  buyboxOlcumleri   BuyboxOlcumu[]
+  buyboxDegisimleri BuyboxDegisimi[]
 
   @@unique([channelId, code])
   @@index([channelId])
@@ -4140,4 +4144,74 @@ model OzelGunTarihi {
 
   @@unique([ozelGunId, baslangic])
   @@index([baslangic])
+}
+
+// ============================================================================
+//  BUYBOX İSTATİSTİĞİ (K363 Faz 3-b) — 25.10.2026, kullanıcı kararı
+// ----------------------------------------------------------------------------
+//  «Gün içindeki Buybox aldığım sayıları grafik hâline getir ve istatistik
+//  olarak tut.» Kararlar (25.10): saatte bir ölçüm · toplam sayılar HER
+//  ölçümde + ürün bazında yalnız durumu DEĞİŞEN ürün.
+//  NİYE YENİ TABLO (merdiven): grafik zamana göre GRUPLAR ve TOPLAR — bu bir
+//  SORGU ihtiyacıdır; `AuditLog.detail` serbest metni geriye bakmaya yeter,
+//  sorguya yetmez. Tüketicisi doğdu: Buybox ekranının grafiği.
+//  Kayıtlar silinmez/değiştirilmez (ledger gibi); ölçülemeyen saat SATIR
+//  YAZMAZ — grafikte «ölçülmedi» boşluğu olarak görünür, uydurulmaz.
+// ============================================================================
+
+/// Bir ürünün o ölçümdeki Buybox durumu. «Sorgulanamadı» burada YOK: sorgusu
+/// düşen ürünün durumu bilinmiyor, değişim sayılmaz (son bilinen durum kalır).
+enum BuyboxKayitDurumu {
+  BIRINCI
+  KAYBEDILDI
+  GORUNMUYOR
+}
+
+/// Bir kanal hesabının bir ölçümdeki toplam sayıları.
+model BuyboxOlcumu {
+  id               String         @id @default(cuid())
+  channelAccountId String
+  channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
+  /// Sorgunun GERÇEKTEN yapıldığı an (zamanlayıcının planladığı saat değil).
+  olculduAt        DateTime
+  incelenen        Int
+  birinci          Int
+  kaybedilen       Int
+  gorunmuyor       Int
+  sorgulanamadi    Int
+  /// Kazanma oranı için: birden fazla satıcılı ürün sayısı ve onlardan Buybox
+  /// bizde olanlar (tanım `rakipliOzet`, lib/buybox-istatistik.ts).
+  rakipli          Int
+  rakipliBirinci   Int
+  createdAt        DateTime       @default(now())
+  degisimler       BuyboxDegisimi[]
+
+  @@index([channelAccountId, olculduAt])
+}
+
+/// Bir ürünün Buybox durumunun DEĞİŞTİĞİ an. Bir ürünün ilk görüldüğü ölçümde
+/// de yazılır (`oncekiDurum` boş = başlangıç kaydı, değişim değil).
+/// Ürünün güncel durumu = o hesap+varyant için EN YENİ satır.
+model BuyboxDegisimi {
+  id               String             @id @default(cuid())
+  olcumId          String
+  olcum            BuyboxOlcumu       @relation(fields: [olcumId], references: [id], onDelete: Restrict)
+  channelAccountId String
+  channelAccount   ChannelAccount     @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
+  variantId        String
+  variant          ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  olculduAt        DateTime
+  oncekiDurum      BuyboxKayitDurumu?
+  yeniDurum        BuyboxKayitDurumu
+  siramiz          Int?
+  /// Fiyatlar o anın fotoğrafı; boş = kanal vermedi / bilinmiyor.
+  bizimFiyatAmount  Decimal?          @db.Decimal(18, 4)
+  buyboxFiyatAmount Decimal?          @db.Decimal(18, 4)
+  currency          Currency
+  /// Buybox'taki satıcı — yalnız HB verir.
+  buyboxSaticisi   String?
+  createdAt        DateTime           @default(now())
+
+  @@index([channelAccountId, variantId, olculduAt])
+  @@index([olculduAt])
 }

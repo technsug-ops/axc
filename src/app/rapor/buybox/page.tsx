@@ -19,11 +19,14 @@ import {
   type BuyboxListesi,
   type BuyboxSatiri,
 } from "@/lib/buybox";
+import { ISTATISTIK_ARALIKLARI, rakipliOzet, type IstatistikAraligi } from "@/lib/buybox-istatistik";
 import { buyboxDurumlari, buyboxUrunleri } from "@/lib/buybox-verisi";
 import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { sayfaIzni } from "@/lib/yetki";
+
+import { BuyboxGecmisi } from "./buybox-gecmisi";
 
 /**
  * ============================================================================
@@ -34,7 +37,8 @@ import { sayfaIzni } from "@/lib/yetki";
  *  o anki canlı sorguyla (resmî satıcı API'leri). Hesap `lib/buybox.ts`te,
  *  okuma `lib/buybox-verisi.ts`te; burası çizer.
  *  ⛔ Fiyat buradan DEĞİŞTİRİLMEZ — satırdaki «Ürün kartı» bağlantısı mevcut
- *  önizlemeli/izli gönderim akışına götürür. Hiçbir şey kaydedilmez.
+ *  önizlemeli/izli gönderim akışına götürür. Liste canlıdır ve kaydedilmez;
+ *  geçmiş grafiği saatlik zamanlayıcının yazdığı ölçümlerden okur (Faz 3-b).
  *  Denetim sayıları AYRI yazılır: incelenen · Buybox bizde · kaybedilen ·
  *  görünmüyor · sorgulanamadı (boş sonuç «temiz» sayılmaz).
  * ============================================================================
@@ -56,8 +60,11 @@ function kanalCoz(ham: string | undefined): BuyboxKanali {
 function listeCoz(ham: string | undefined): BuyboxListesi {
   return (BUYBOX_LISTELERI as readonly string[]).includes(ham ?? "") ? (ham as BuyboxListesi) : "kaybedilen";
 }
+function aralikCoz(ham: string | undefined): IstatistikAraligi {
+  return (ISTATISTIK_ARALIKLARI as readonly string[]).includes(ham ?? "") ? (ham as IstatistikAraligi) : "bugun";
+}
 
-export default async function BuyboxSayfasi({ searchParams }: { searchParams: Promise<{ kanal?: string; liste?: string; q?: string }> }) {
+export default async function BuyboxSayfasi({ searchParams }: { searchParams: Promise<{ kanal?: string; liste?: string; q?: string; aralik?: string }> }) {
   await sayfaIzni("rapor.gor");
   const p = await searchParams;
   const t = await getTranslations("Buybox");
@@ -65,6 +72,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
   const kanal = kanalCoz(p.kanal);
   const liste = listeCoz(p.liste);
   const arama = p.q?.trim() || null;
+  const aralik = aralikCoz(p.aralik);
 
   const sorguAni = new Date();
   const urunler = await buyboxUrunleri(kanal, { yalnizStoklu: true });
@@ -76,7 +84,8 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
   const gorunen = buyboxAra(tamListe, arama);
   const rafta = gorunen.reduce((s, x) => s + x.stok, 0);
 
-  const tasinan = { kanal, liste, q: arama ?? undefined };
+  /** Aralık varsayılanı adrese yazılmaz (temiz adres); seçilince taşınır. */
+  const tasinan = { kanal, liste, q: arama ?? undefined, aralik: aralik === "bugun" ? undefined : aralik };
   const adres = (ek: Record<string, string | undefined>) => suzgecAdresi(YOL, tasinan, ek);
   const kimlikEtiketi = { sku: t("sku"), firmaSku: t("firmaSku"), barkod: t("barkod"), kanalKodu: t(`kanalKodu_${kanal}`) };
   const para = (n: number | null) => (n === null ? t("bilinmiyor") : bicim.para(n, "TRY"));
@@ -131,6 +140,14 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
         <Link href={adres({ liste: "gorunmuyor" })} className="no-underline"><IstatistikKutusu etiket={t("ozetSorgulanamadi")} cocuk={ozet.sorgulanamadi} /></Link>
       </div>
 
+      {/* ── GEÇMİŞ (K363 Faz 3-b) — saatlik ölçümlerden grafik + kazanma oranı ── */}
+      <BuyboxGecmisi
+        kanal={kanal}
+        aralik={aralik}
+        adres={(a) => adres({ aralik: a === "bugun" ? undefined : a })}
+        canli={rakipliOzet(sonuc.satirlar)}
+      />
+
       {/* ── LİSTE SEKMELERİ — sayılar aramadan bağımsız ── */}
       <div className={SEKME_SERIDI}>
         {BUYBOX_LISTELERI.map((l) => (
@@ -142,7 +159,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
       <p className="text-sm">{t(`aciklama_${liste}`)}</p>
 
       <div className="max-w-3xl">
-        <KodAramaKutusu temelAdres={YOL} baslangic={arama ?? ""} tasinanlar={{ kanal, liste }} ipucu={t("aramaIpucu")} />
+        <KodAramaKutusu temelAdres={YOL} baslangic={arama ?? ""} tasinanlar={{ kanal, liste, ...(tasinan.aralik ? { aralik: tasinan.aralik } : {}) }} ipucu={t("aramaIpucu")} />
       </div>
 
       {/* ── TOPLAM — ekranda ne varsa onun (İlke #15) ── */}

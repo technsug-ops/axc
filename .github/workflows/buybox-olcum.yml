@@ -1,0 +1,36 @@
+# ============================================================================
+#  K363 Faz 3-b — SAATLIK BUYBOX OLCUMU — YEDEK TETIKLEYICI (25.10.2026)
+# ----------------------------------------------------------------------------
+#  BIRINCIL: cron-job.org (saatte bir, K205 karari — GitHub schedule'i olculdu,
+#  kisa araliklarda SAATLERCE sarkiyor). Bu akis YEDEK: birincil kacirirsa
+#  grafikte o saat bos kalmasin diye. Cift tetik zararsiz — uc, son olcum
+#  45 dk'dan yeniyse kanali ATLAR (`CIFT_TETIK_DK`).
+#  Vercel Cron bu is icin KULLANILMAZ: Hobby planinda gunde bir tetik.
+#
+#  ⚠ DAKIKA :35 — birincil :00'da vurur; ikisi ayni dakikaya konsaydi ikisi
+#  de "son olcum yok" gorup ayni saatte iki olcum yazabilirdi (kapi okuma ile
+#  yazma arasinda kilit tutmaz).
+#
+#  SIR: depo Secrets → CRON_SECRET (diger cron isleriyle AYNI deger).
+# ============================================================================
+name: Buybox olcumu (saatlik, yedek)
+
+on:
+  schedule:
+    - cron: "35 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  olc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Ucu cagir
+        run: |
+          KOD=$(curl -s -o cevap.json -w "%{http_code}" --max-time 150 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://axc-seven.vercel.app/api/cron/buybox-olcum")
+          echo "HTTP $KOD"
+          cat cevap.json || true
+          # 500 = bir kanal dustu; yesil yanarsa yarim olcum "basarili" sayilir.
+          test "$KOD" = "200"

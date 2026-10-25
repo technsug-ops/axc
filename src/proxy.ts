@@ -79,6 +79,9 @@ const ACIK_YOLLAR = [
   // buraya POST eder (canlı DB'ye doğrudan bağlanamaz). Aynı sınıf, aynı
   // CRON_SECRET kapısı; gövde ayrıca denetlenir (`gece-turu-sonuc.ts`).
   "/api/cron/gece-turu-sonuc",
+  // K363 Faz 3-b (25.10.2026) — saatlik Buybox ölçümü: aynı sınıf, aynı
+  // CRON_SECRET kapısı; yalnız okur (kanala yazmaz), deftere sayı yazar.
+  "/api/cron/buybox-olcum",
   // A3/K50-a — canlı ölçüm ucu: yerel makineden canlı DB'ye TCP seviyesinde
   // erişilemediği için Vercel'in kendi havuzundan koşuyor; aynı sınıf, aynı
   // sır kapısı. ⛔ BU SATIR DA EKSİKTİ (10.09.2026'da HB ile birlikte
