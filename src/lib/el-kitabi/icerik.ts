@@ -2792,12 +2792,14 @@ yeşil Buybox bizde, kırmızı kaybedildi ve pahalıyız, sarı görünmüyor.
 <strong>Sarı fark</strong> özel bir durumdur: Buybox kaybedilmiş ama fiyatımız Buybox'tan
 <strong>pahalı değil</strong> (eşit ya da ucuz). Kaybı fiyat açıklamıyor; kanal başka bir
 ölçüte bakıyor ve fiyatı eşitlemek Buybox'ı getirmez — ekran bunu satırda yazar.</p>
-<p><strong>Fiyat sütunu</strong> (tablonun en sağında, kâr görme yetkisi olanlarda) — kutu
-Buybox fiyatıyla dolu gelir. Altındaki <strong>hızlı düğmeler</strong> kutuyu tek tıkla
-doldurur: kaybedilmiş üründe «Buybox −1 ₺» ve «Buybox»; Buybox bizdeyse «2. fiyat −1 ₺»
-(öndeliği koruyup fiyatı yükseltme adayı; yalnız bizim fiyatımızdan yüksekse çıkar).
-Hızlı düğme yalnız kutuya yazar ve hesabı açar, <strong>hiçbir şey göndermez</strong>.
-<strong>«Hesapla»</strong>ya basın: girilen fiyatta,
+<p><strong>Fiyatla</strong> (satırın «Eylemler» sütununda, hesap makinesi simgesi; kâr görme
+yetkisi olanlarda) — Satışlar'daki gibi satırın işi bu düğmeden açılır. Pencere
+açılınca hesap kendiliğinden yapılır ve kutu Buybox fiyatıyla dolu gelir.
+<strong>Hızlı düğmeler</strong> kutuyu tek tıkla doldurur: kaybedilmiş üründe «Buybox −1 ₺»
+ve «Buybox»; Buybox bizdeyse «2. fiyat −1 ₺» (öndeliği koruyup fiyatı yükseltme adayı;
+yalnız bizim fiyatımızdan yüksekse çıkar). Hızlı düğme yalnız kutuya yazar,
+<strong>hiçbir şey göndermez</strong>. Pencere kapanınca her şey sıfırlanır. Penceredeki
+üç kutu: girilen fiyatta,
 bizim fiyatta ve Buybox fiyatında <strong>NET-2 kâr ve marj</strong> çıkar; fiyatı
 değiştirdikçe anında yeniden hesaplanır. Hesap ürün kartının fiyat denemesiyle
 aynı motordur (komisyon dilimi, kanal kesintileri, stopaj, KDV), iki farkla:

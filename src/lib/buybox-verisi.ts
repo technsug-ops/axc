@@ -55,7 +55,7 @@ export async function buyboxUrunleri(kanal: BuyboxKanali, p: { variantIds?: read
     select: {
       variantId: true,
       channelSku: true,
-      variant: { select: { sku: true, barcode: true, companySku: true, product: { select: { id: true, name: true } } } },
+      variant: { select: { sku: true, barcode: true, companySku: true, gorselUrl: true, gorselKaynak: true, product: { select: { id: true, name: true } } } },
     },
   });
   const stok = await varyantStoklari(kodlar.map((k) => k.variantId));
@@ -74,6 +74,8 @@ export async function buyboxUrunleri(kanal: BuyboxKanali, p: { variantIds?: read
       firmaSku: k.variant.companySku,
       kanalKodu,
       stok: adet,
+      gorselUrl: k.variant.gorselUrl,
+      gorselKaynak: k.variant.gorselKaynak,
     });
   }
   return { urunler, magazaAdi: hesap.magazaAdi, hesapVar: true };

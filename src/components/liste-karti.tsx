@@ -15,6 +15,7 @@ export function ListeKarti({
   altBaslik,
   alanlar,
   eylemler,
+  not,
   iptal = false,
 }: {
   baslik: ReactNode;
@@ -24,6 +25,12 @@ export function ListeKarti({
   /** Etiket-değer çiftleri; değeri boş olanlar gösterilmez. */
   alanlar: { etiket: string; deger: ReactNode }[];
   eylemler?: ReactNode;
+  /**
+   * Kutucuklarla eylemler ARASINDA tam genişlik kısa not (26.10.2026, Buybox
+   * «fiyat dışı ölçüt»). Alt başlık kırpılır (`truncate`), eylemler ızgaradır —
+   * sarması gereken bir cümlenin ikisinde de yeri yoktu.
+   */
+  not?: ReactNode;
   /**
    * İPTAL EDİLMİŞ KAYIT (09.10.2026): masaüstü tablodaki satırla AYNI görünüm —
    * başlık ve alanlar üstü çizili ve solgun (İlke #10). Düğmeler çizilmez:
@@ -59,6 +66,8 @@ export function ListeKarti({
           </div>
         ))}
       </dl>
+
+      {not ? <div className="min-w-0">{not}</div> : null}
 
       {eylemler ? (
         /* Eylemler TEK SATIR, eşit sütun (K272) — `SatirEylemleri` ile aynı kural. */

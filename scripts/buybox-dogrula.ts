@@ -150,10 +150,16 @@ console.log("\n⑤ ekran — izin · sayılar · arama · yönlendirme · menü"
   /**
    * ⚠ ÖLÇÜT ESKİDİ VE GÜNCELLENDİ (25.10.2026, Faz 3-c): burada «fiyat buradan
    * DEĞİŞMEZ» ölçülüyordu; kullanıcı satırdan Trendyol'a fiyat gönderimini
-   * istedi. Gönderim artık YALNIZ fiyat kutusunda (`fiyat-kutusu.tsx`, kendi
+   * istedi. Gönderim artık YALNIZ fiyat penceresinde (`fiyat-penceresi.tsx`, kendi
    * bekçisi `buybox-fiyat:dogrula`); sayfanın kendisi doğrudan göndermez.
    */
-  kontrol("satır ürün kartına götürür (iki görünümde); sayfa doğrudan GÖNDERMEZ (gönderim yalnız fiyat kutusunda)", (s.match(/href=\{`\/kart\/\$\{s\.variantId\}`\}/g) ?? []).length === 2 && !/StokFiyatGonder|Gonder\(/.test(s));
+  /**
+   * ⚠ ÖLÇÜT İKİNCİ KEZ GÜNCELLENDİ (26.10.2026, Satışlar düzeni): kart bağlantısı
+   * iki görünümde AYRI yazılıyordu ve sayısı (2) ölçülüyordu; artık tek
+   * `eylemler()` fonksiyonunda, iki görünüm onu çağırır.
+   */
+  kontrol("satır ürün kartına götürür (tek eylem fonksiyonu, iki görünüm); sayfa doğrudan GÖNDERMEZ (gönderim yalnız fiyat penceresinde)",
+    (s.match(/href=\{`\/kart\/\$\{s\.variantId\}`\}/g) ?? []).length === 1 && /<SatirEylemleri>\{eylemler\(s\)\}<\/SatirEylemleri>/.test(s) && /eylemler=\{eylemler\(s\)\}/.test(s) && !/StokFiyatGonder|Gonder\(/.test(s));
   kontrol("arama ortak bileşenle (kamera dahil, İlke #17)", /<KodAramaKutusu temelAdres=\{YOL\}/.test(s));
   kontrol("menü: «Buybox durumu» Fiyatlandırma grubunda ve sayfası var",
     MENU_ADRESLERI.buybox === "/rapor/buybox" && MENU_KATALOGU.some((m) => m.anahtar === "buybox" && m.varsayilanGrup === "grupFiyatAnaliz") && existsSync("src/app/rapor/buybox/page.tsx"));

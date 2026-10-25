@@ -5193,8 +5193,8 @@
   },
   "Buybox": {
     "baslik": "", "notu": "",
-    "fiyatEtiketi": "", "fiyatIpucu": "", "fiyatGecersiz": "", "hesapla": "", "hesaplaniyor": "", "kaydet": "", "girilenFiyatta": "", "bizimFiyatta": "", "buyboxFiyatinda": "",
-    "rozetKar": "", "rozetZarar": "", "karBilinmiyor": "", "maliyetNotu": "", "maliyetYok": "", "kargoDahil": "", "kargoDahilKanal": "", "kargoHaric_DESI_YOK": "", "kargoHaric_FIRMA_YOK": "", "kargoHaric_TARIFE_YOK": "", "komisyonNotu": "", "hizli_buyboxAlti": "", "hizli_buybox": "", "hizli_ikinciAlti": "", "esitAmaKayip": "",
+    "fiyatEtiketi": "", "fiyatIpucu": "", "fiyatGecersiz": "", "fiyatla": "", "fiyatlaEtiketi": "", "pencereBaslik": "", "yeniFiyat": "", "geri": "", "hesaplaniyor": "", "kaydet": "", "girilenFiyatta": "", "bizimFiyatta": "", "buyboxFiyatinda": "",
+    "rozetKar": "", "rozetZarar": "", "karBilinmiyor": "", "maliyetNotu": "", "maliyetYok": "", "kargoDahil": "", "kargoDahilKanal": "", "kargoHaric_DESI_YOK": "", "kargoHaric_FIRMA_YOK": "", "kargoHaric_TARIFE_YOK": "", "komisyonNotu": "", "hizli_buyboxAlti": "", "hizli_buybox": "", "hizli_ikinciAlti": "", "esitAmaKayip": "", "esitKisa": "",
     "zeminHata_KANAL_KODU_YOK": "", "zeminHata_YETKI_YOK": "", "zeminHata_OKUNAMADI": "",
     "onayBaslik": "", "onayMetni": "", "onayKar": "", "onayYalnizFiyat_TY": "", "onayYalnizFiyat_HB": "", "onayZararKutu": "", "onayKarBilinmiyorKutu": "", "onayKutuGerekli": "", "onayEvet": "",
     "gonderim_BASARILI": "", "gonderim_BASARISIZ": "", "gonderim_ISLEMDE": "", "gonderim_SORGULANAMADI": "",
@@ -5206,7 +5206,7 @@
     "liste_kaybedilen": "", "liste_birinci": "", "liste_gorunmuyor": "", "liste_hepsi": "",
     "aciklama_kaybedilen": "", "aciklama_birinci": "", "aciklama_gorunmuyor": "", "aciklama_hepsi": "",
     "aramaIpucu": "", "aramaSonucu": "", "toplamUrun": "", "toplamRaf": "", "listeBos": "", "listeBosSebep": "", "urunYok": "",
-    "sutunUrun": "", "sutunStok": "", "sutunBizim": "", "sutunBuybox": "", "sutunSira": "", "sutunFark": "", "sutunIkinci": "", "sutunDurum": "", "sutunFiyat": "",
+    "sutunUrun": "", "sutunStok": "", "sutunBizim": "", "sutunBuybox": "", "sutunSira": "", "sutunFark": "", "sutunIkinci": "", "sutunDurum": "", "sutunFiyatlar": "", "sutunEylemler": "", "bizimKisa": "", "buyboxKisa": "", "buyboxKisaSatici": "",
     "sira": "", "siraSatici": "", "fark": "", "bilinmiyor": "",
     "durum_BIRINCI": "", "durum_KAYBEDILDI": "", "durum_GORUNMUYOR": "", "durum_SORGULANAMADI": "",
     "kartaGit": "", "rakipler": "", "listeFiyati": "", "sku": "", "firmaSku": "", "barkod": "", "kanalKodu_TY": "", "kanalKodu_HB": ""

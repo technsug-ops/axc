@@ -15,6 +15,8 @@
  * ============================================================================
  */
 
+import type { GorselKaynagi } from "./urun-gorseli";
+
 export const BUYBOX_KANALLARI = ["TY", "HB"] as const;
 export type BuyboxKanali = (typeof BUYBOX_KANALLARI)[number];
 
@@ -28,6 +30,9 @@ export type BuyboxUrunu = {
   /** Kanaldaki kod: TY'de barkod, HB'de hepsiburadaSku. */
   kanalKodu: string;
   stok: number;
+  /** Küçük resim (Satışlar'la aynı `UrunGorseli`); yoksa baş harf kutusu. */
+  gorselUrl?: string | null;
+  gorselKaynak?: GorselKaynagi | null;
 };
 
 export type HbRakip = { sira: number; satici: string; fiyat: number; listeFiyati: number | null };

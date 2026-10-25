@@ -145,9 +145,12 @@ console.log("\n⑥ veri + ekran");
     /if \(firmaId === null\) \{\s*const sik = await prisma\.sale\.groupBy\(/.test(v) && /orderBy: \{ _count: \{ cargoCarrierId: "desc" \} \}/.test(v) && /firmaKaynagi = "KANAL";/.test(v));
   kontrol("kargo tarifesi: en yeni geçerli (bugün), kâr motoruyla aynı arama", /effectiveFrom: \{ lte: an \} \},\s*orderBy: \{ effectiveFrom: "desc" \}/.test(v));
   const s = yorumsuz(kaynakOku("src/app/rapor/buybox/page.tsx"));
-  kontrol("kutu yalnız kâr görme izniyle; Kaydet kanala yazma izniyle", /izinVarMi\("satis\.kar\.gor"\), izinVarMi\("kanal\.yaz"\)/.test(s) && /karGorunur \? \(\s*<FiyatKutusu/.test(s));
-  kontrol("kutu iki görünümde (tablo + telefon)", (s.match(/\{kutu\(s\)\}/g) ?? []).length === 2);
-  const k = yorumsuz(kaynakOku("src/app/rapor/buybox/fiyat-kutusu.tsx"));
+  kontrol("pencere yalnız kâr görme izniyle; Kaydet kanala yazma izniyle", /izinVarMi\("satis\.kar\.gor"\), izinVarMi\("kanal\.yaz"\)/.test(s) && /karGorunur \? \(\s*<FiyatPenceresi/.test(s));
+  kontrol("eylemler iki görünümde aynı fonksiyondan (tablo + telefon)", /<SatirEylemleri>\{eylemler\(s\)\}<\/SatirEylemleri>/.test(s) && /eylemler=\{eylemler\(s\)\}/.test(s));
+  kontrol("pencere KANAL + ürünle anahtarlı (TY durumu HB satırına taşınmaz)", /<FiyatPenceresi\s*key=\{`\$\{kanal\}:\$\{s\.variantId\}`\}/.test(s));
+  const k = yorumsuz(kaynakOku("src/app/rapor/buybox/fiyat-penceresi.tsx"));
+  kontrol("pencere açılınca hesap kendiliğinden başlar", /const ac = \(\) => \{\s*setAcik\(true\);\s*hesapla\(\);\s*\};/.test(k) && /onClick=\{ac\}/.test(k));
+  kontrol("kapanınca fiyat ve zemin sıfırlanır (bayat değer bir sonraki açılışa kalmaz)", /if \(!a\) \{\s*setFiyatMetni\(ilkMetin\);\s*setZemin\(null\);/.test(blok(k, "const kapat = (a: boolean) => {", 400)));
   kontrol("Kaydet hesap yapılınca + kanala yazma izniyle (iki kanalda da)", /\{zemin\?\.tamam && gonderebilir \? \(/.test(k) && !/kanal === "TY" && gonderebilir/.test(k));
   kontrol("HB sonucu kartın HB hükmüyle yazılır (ilan geri okunur)", /tHb\(`hukum_\$\{p\.hukum\}`/.test(k) && /const p = s\.fiyat;/.test(k));
   kontrol("onay metni kanal adını taşır; açıklama kanala göre", /kanal: kanalAdi,/.test(k) && /t\(`onayYalnizFiyat_\$\{kanal\}`\)/.test(k));
@@ -157,7 +160,7 @@ console.log("\n⑥ veri + ekran");
   kontrol("kutu Buybox fiyatıyla dolu açılır", /useState\(buyboxFiyati === null \? "" : bicim\.sayi\(buyboxFiyati, 2\)\)/.test(k));
   kontrol("kargo hariçse ekranda SEBEBİYLE yazar", /t\(`kargoHaric_\$\{zemin\.kargo\.sebep \?\? "TARIFE_YOK"\}`\)/.test(k));
   const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>;
-  const gerekli = ["hesapla", "kaydet", "rozetKar", "rozetZarar", "maliyetNotu", "maliyetYok", "kargoDahil", "kargoHaric_DESI_YOK", "kargoHaric_FIRMA_YOK", "kargoHaric_TARIFE_YOK", "onayMetni", "onayZararKutu", "onayKarBilinmiyorKutu", "gonderimHata_ZARAR_ONAYI_GEREKLI", "gonderimHata_KANAL_GECERSIZ", "gonderimHata_FIYAT_GECERSIZ", "gonderimHata_ZEMIN_YOK", "gonderimHata_YETKI_YOK", "gonderimHata_OKUNAMADI", "gonderim_BASARILI", "gonderim_ISLEMDE", "onayYalnizFiyat_TY", "onayYalnizFiyat_HB", "gonderimHbSonucYok", "hizli_buyboxAlti", "hizli_buybox", "hizli_ikinciAlti", "esitAmaKayip", "komisyonNotu", "sutunDurum", "sutunFiyat"];
+  const gerekli = ["fiyatla", "pencereBaslik", "esitKisa", "sutunFiyatlar", "sutunEylemler", "kaydet", "rozetKar", "rozetZarar", "maliyetNotu", "maliyetYok", "kargoDahil", "kargoHaric_DESI_YOK", "kargoHaric_FIRMA_YOK", "kargoHaric_TARIFE_YOK", "onayMetni", "onayZararKutu", "onayKarBilinmiyorKutu", "gonderimHata_ZARAR_ONAYI_GEREKLI", "gonderimHata_KANAL_GECERSIZ", "gonderimHata_FIYAT_GECERSIZ", "gonderimHata_ZEMIN_YOK", "gonderimHata_YETKI_YOK", "gonderimHata_OKUNAMADI", "gonderim_BASARILI", "gonderim_ISLEMDE", "onayYalnizFiyat_TY", "onayYalnizFiyat_HB", "gonderimHbSonucYok", "hizli_buyboxAlti", "hizli_buybox", "hizli_ikinciAlti", "esitAmaKayip", "komisyonNotu", "sutunDurum"];
   const eksik = gerekli.filter((x) => !(tr.Buybox?.[x] ?? "").length);
   kontrol("sözlük: kutu metinleri dolu", eksik.length === 0, eksik);
   kontrol("sayfa notu artık «fiyat buradan değişmez» DEMİYOR", !/fiyat buradan değişmez/.test(tr.Buybox?.notu ?? ""));
@@ -186,10 +189,11 @@ console.log("\n⑦ hızlı doldurma + rozet tonu");
   kontrol("fark: bizde → yeşil, not yok", farkTonu(r("BIRINCI", 1800, 1800)) === "olumlu" && !esitAmaKayip(r("BIRINCI", 1800, 1800)));
   kontrol("fark bilinmiyor → nötr (uydurulmaz), not yok", farkTonu(r("KAYBEDILDI", null, 1835)) === "notr" && !esitAmaKayip(r("KAYBEDILDI", null, 1835)));
   const s = yorumsuz(kaynakOku("src/app/rapor/buybox/page.tsx"));
-  kontrol("rozetler ortak tonla, iki görünümde (tablo rozet · telefon renkli yazı)",
-    /DURUM_ZEMINI\[durumTonu\(s\.durum\)\]/.test(s) && /DURUM_ZEMINI\[farkTonu\(s\)\]/.test(s) && /DURUM_YAZISI\[durumTonu\(s\.durum\)\]/.test(s) && /DURUM_YAZISI\[farkTonu\(s\)\]/.test(s));
-  kontrol("«fiyat dışı» notu iki görünümde", (s.match(/esitAmaKayip\(s\) \?/g) ?? []).length === 2);
-  kontrol("fiyat sütunu yalnız kâr görme izniyle (başlık + hücre)", /\{karGorunur \? <TableHead>\{t\("sutunFiyat"\)\}<\/TableHead> : null\}/.test(s) && /\{karGorunur \? <TableCell className="align-top">\{kutu\(s\)\}<\/TableCell> : null\}/.test(s));
+  kontrol("rozetler ortak tonla, iki görünümde (tablo `DurumRozeti` · telefon renkli yazı)",
+    /<DurumRozeti durum=\{durumTonu\(s\.durum\)\}>/.test(s) && /<DurumRozeti durum=\{farkTonu\(s\)\}>/.test(s) && /DURUM_YAZISI\[durumTonu\(s\.durum\)\]/.test(s) && /DURUM_YAZISI\[farkTonu\(s\)\]/.test(s));
+  kontrol("«fiyat dışı» notu iki görünümde + pencerede uzun hâli",
+    /\{esitAmaKayip\(s\) \? <span[^>]*>\{t\("esitKisa"\)\}<\/span> : null\}/.test(s) && /not=\{esitAmaKayip\(s\) \? <p[^>]*>\{t\("esitKisa"\)\}<\/p> : undefined\}/.test(s) && /esitNotu=\{esitAmaKayip\(s\) \? t\("esitAmaKayip"\) : null\}/.test(s));
+  kontrol("ürün kartı eylemi izinden bağımsız (kâr izni yoksa da kart açılır)", /\) : null\}\s*<SatirEylemi href=\{`\/kart\/\$\{s\.variantId\}`\}/.test(blok(s, "const eylemler = (s: BuyboxSatiri) => (", 1200)));
 }
 kosanBolumler.push("hizli");
 
