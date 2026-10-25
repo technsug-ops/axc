@@ -5,16 +5,18 @@
  *  Saf gövdeler ÇAĞRILIR (maliyet tabanı · motor eşliği · fiyat çözümü · zarar
  *  kapısı). Kaynak taraması yalnız bağlar için (yorumsuz kodda, kullanım
  *  bloğuna daraltılmış): sunucunun ekrana güvenmemesi, zarar kapısının
- *  gönderimden ÖNCE durması, yalnız Trendyol + yalnız fiyat, izin kapıları.
+ *  gönderimden ÖNCE durması, yalnız TY/HB + yalnız fiyat, izin kapıları.
+ *  ⑦ (25.10.2026, «frontend zayıf»): hızlı doldurma adayları + rozet tonu.
  * ============================================================================
  */
 import { kaynakOku } from "./kaynak-oku";
-import { enDusukAcikMaliyet, fiyatMetniCoz, fiyatSonucu, zararOnayiGerekirMi, type FiyatZemini } from "../src/lib/buybox-fiyat";
+import { durumTonu, esitAmaKayip, farkTonu, type BuyboxDurumu } from "../src/lib/buybox";
+import { enDusukAcikMaliyet, fiyatMetniCoz, fiyatSonucu, hizliFiyatlar, zararOnayiGerekirMi, type FiyatZemini } from "../src/lib/buybox-fiyat";
 import { simulasyonKur } from "../src/lib/fiyatlama/simulasyon";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 6;
+const BOLUM_SAYISI = 7;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -113,20 +115,23 @@ console.log("\n⑤ eylemler — sunucu ekrana güvenmez");
   const e = yorumsuz(kaynakOku("src/app/rapor/buybox/fiyat-eylemleri.ts"));
   const z = blok(e, "export async function buyboxFiyatZeminiGetir(", 600);
   kontrol("zemin kâr görme izni ister", /if \(!\(await izinVarMi\("satis\.kar\.gor"\)\)\) return \{ tamam: false, kod: "YETKI_YOK" \};/.test(z));
-  const g = blok(e, "export async function buyboxFiyatGonder(", 2600);
+  const g = blok(e, "export async function buyboxFiyatGonder(", 3000);
   const i = (d: string) => g.indexOf(d);
   const iYetki = i('await yetkiIste("kanal.yaz");');
-  const iKanal = i('if (kanal !== "TY") return { tamam: false, kod: "YALNIZ_TRENDYOL" };');
+  const iKanal = i('if (kanal !== "TY" && kanal !== "HB") return hata("KANAL_GECERSIZ");');
+  const iZemin = i("const z = await buyboxFiyatZemini(variantId, kanal, an);");
   const iHesap = i("const s = fiyatSonucu(z.zemin, fiyat, an);");
-  const iKapi = i('if (!zararOnayi) return { tamam: false, kod: "ZARAR_ONAYI_GEREKLI" };');
+  const iKapi = i('if (!zararOnayi) return hata("ZARAR_ONAYI_GEREKLI");');
   const iIz = i('action: "ZARARINA_FIYAT_ONAYI"');
-  const iGonder = i("return await tyStokFiyatGonder(variantId, { stokGonder: false, fiyat });");
-  kontrol("sıra: yetki → yalnız TY → SUNUCUDA kâr → zarar kapısı → iz → gönder",
-    [iYetki, iKanal, iHesap, iKapi, iIz, iGonder].every((x) => x >= 0) && iYetki < iKanal && iKanal < iHesap && iHesap < iKapi && iKapi < iIz && iIz < iGonder,
-    { iYetki, iKanal, iHesap, iKapi, iIz, iGonder });
+  const iTy = i('if (kanal === "TY") return { kanal: "TY", sonuc: await tyStokFiyatGonder(variantId, { stokGonder: false, fiyat }) };');
+  const iHb = i('return { kanal: "HB", sonuc: await hbStokFiyatGonder(variantId, { stokGonder: false, fiyat }) };');
+  kontrol("sıra: yetki → yalnız TY/HB → zemin O KANALDAN → SUNUCUDA kâr → zarar kapısı → iz → gönder (TY, sonra HB)",
+    [iYetki, iKanal, iZemin, iHesap, iKapi, iIz, iTy, iHb].every((x) => x >= 0) && iYetki < iKanal && iKanal < iZemin && iZemin < iHesap && iHesap < iKapi && iKapi < iIz && iIz < iTy && iTy < iHb,
+    { iYetki, iKanal, iZemin, iHesap, iKapi, iIz, iTy, iHb });
   kontrol("zarar kapısı ortak gövdeden, SUNUCU sonucu üstünde", /if \(zararOnayiGerekirMi\(s\)\) \{/.test(g));
+  kontrol("izdeki kanal adı gönderilen kanaldan (sabit «Trendyol» değil)", /kanal: KANAL_ADI\[kanal\],/.test(g) && !/kanal: "Trendyol",/.test(g));
   kontrol("YALNIZ fiyat (stok gönderilmez)", !/stokGonder: true/.test(e));
-  kontrol("gönderim tek yoldan: kartın eylemi (izli)", (e.match(/tyStokFiyatGonder\(/g) ?? []).length === 1);
+  kontrol("gönderim tek yoldan: kartın iki eylemi, birer kez (izli)", (e.match(/tyStokFiyatGonder\(/g) ?? []).length === 1 && (e.match(/hbStokFiyatGonder\(/g) ?? []).length === 1);
 }
 kosanBolumler.push("eylem");
 
@@ -143,17 +148,50 @@ console.log("\n⑥ veri + ekran");
   kontrol("kutu yalnız kâr görme izniyle; Kaydet kanala yazma izniyle", /izinVarMi\("satis\.kar\.gor"\), izinVarMi\("kanal\.yaz"\)/.test(s) && /karGorunur \? \(\s*<FiyatKutusu/.test(s));
   kontrol("kutu iki görünümde (tablo + telefon)", (s.match(/\{kutu\(s\)\}/g) ?? []).length === 2);
   const k = yorumsuz(kaynakOku("src/app/rapor/buybox/fiyat-kutusu.tsx"));
-  kontrol("Kaydet yalnız Trendyol + izin", /\{zemin\?\.tamam && kanal === "TY" && gonderebilir \? \(/.test(k));
+  kontrol("Kaydet hesap yapılınca + kanala yazma izniyle (iki kanalda da)", /\{zemin\?\.tamam && gonderebilir \? \(/.test(k) && !/kanal === "TY" && gonderebilir/.test(k));
+  kontrol("HB sonucu kartın HB hükmüyle yazılır (ilan geri okunur)", /tHb\(`hukum_\$\{p\.hukum\}`/.test(k) && /const p = s\.fiyat;/.test(k));
+  kontrol("onay metni kanal adını taşır; açıklama kanala göre", /kanal: kanalAdi,/.test(k) && /t\(`onayYalnizFiyat_\$\{kanal\}`\)/.test(k));
+  kontrol("hızlı düğme kutuya yazar VE hesabı açar (gönderMEZ)",
+    /setFiyatMetni\(bicim\.sayi\(h\.fiyat, 2\)\);\s*setSonuc\(null\);\s*hesapla\(\);\s*\}\}/.test(k) && !/hizli[\s\S]{0,400}buyboxFiyatGonder/.test(blok(k, "{hizli.map(", 900)));
   kontrol("onay düğmesi zarar kutusu işaretlenmeden kapalı", /disabled=\{gonderiliyor \|\| !fiyatGecerli \|\| \(onayGerekli && !zararOnayi\)\}/.test(k));
   kontrol("kutu Buybox fiyatıyla dolu açılır", /useState\(buyboxFiyati === null \? "" : bicim\.sayi\(buyboxFiyati, 2\)\)/.test(k));
   kontrol("kargo hariçse ekranda SEBEBİYLE yazar", /t\(`kargoHaric_\$\{zemin\.kargo\.sebep \?\? "TARIFE_YOK"\}`\)/.test(k));
   const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>;
-  const gerekli = ["hesapla", "kaydet", "rozetKar", "rozetZarar", "maliyetNotu", "maliyetYok", "kargoDahil", "kargoHaric_DESI_YOK", "kargoHaric_FIRMA_YOK", "kargoHaric_TARIFE_YOK", "onayMetni", "onayZararKutu", "onayKarBilinmiyorKutu", "gonderimHata_ZARAR_ONAYI_GEREKLI", "gonderim_BASARILI", "gonderim_ISLEMDE"];
+  const gerekli = ["hesapla", "kaydet", "rozetKar", "rozetZarar", "maliyetNotu", "maliyetYok", "kargoDahil", "kargoHaric_DESI_YOK", "kargoHaric_FIRMA_YOK", "kargoHaric_TARIFE_YOK", "onayMetni", "onayZararKutu", "onayKarBilinmiyorKutu", "gonderimHata_ZARAR_ONAYI_GEREKLI", "gonderimHata_KANAL_GECERSIZ", "gonderimHata_FIYAT_GECERSIZ", "gonderimHata_ZEMIN_YOK", "gonderimHata_YETKI_YOK", "gonderimHata_OKUNAMADI", "gonderim_BASARILI", "gonderim_ISLEMDE", "onayYalnizFiyat_TY", "onayYalnizFiyat_HB", "gonderimHbSonucYok", "hizli_buyboxAlti", "hizli_buybox", "hizli_ikinciAlti", "esitAmaKayip", "komisyonNotu", "sutunDurum", "sutunFiyat"];
   const eksik = gerekli.filter((x) => !(tr.Buybox?.[x] ?? "").length);
   kontrol("sözlük: kutu metinleri dolu", eksik.length === 0, eksik);
   kontrol("sayfa notu artık «fiyat buradan değişmez» DEMİYOR", !/fiyat buradan değişmez/.test(tr.Buybox?.notu ?? ""));
 }
 kosanBolumler.push("ekran");
+
+// ── ⑦ HIZLI DOLDURMA + ROZET TONU ────────────────────────────────────────
+console.log("\n⑦ hızlı doldurma + rozet tonu");
+{
+  const h = (durum: string, bizimFiyat: number | null, buyboxFiyati: number | null, ikinciFiyat: number | null) =>
+    hizliFiyatlar({ durum, bizimFiyat, buyboxFiyati, ikinciFiyat }).map((x) => `${x.anahtar}:${x.fiyat}`).join(",");
+  kontrol("kaybedilmiş: Buybox −1 ₺ ve Buybox", h("KAYBEDILDI", 1840, 1835, 1840) === "buyboxAlti:1834,buybox:1835", h("KAYBEDILDI", 1840, 1835, 1840));
+  kontrol("kaybedilmiş, Buybox bilinmiyor: aday yok", h("KAYBEDILDI", 1840, null, null) === "");
+  kontrol("kaybedilmiş, Buybox ₺1: −1 ₺ adayı üretilmez (sıfır fiyat yok)", h("KAYBEDILDI", 5, 1, null) === "buybox:1");
+  kontrol("bizde: 2. fiyatın 1 ₺ altı, bizim fiyattan yüksekse", h("BIRINCI", 1800, 1800, 1900) === "ikinciAlti:1899");
+  kontrol("bizde ama 2. fiyat −1 bizim fiyattan yüksek DEĞİL: aday yok", h("BIRINCI", 1800, 1800, 1801) === "" && h("BIRINCI", 1800, 1800, null) === "");
+  kontrol("görünmüyor/sorgulanamadı: aday yok", h("GORUNMUYOR", 1800, 1700, 1900) === "" && h("SORGULANAMADI", null, null, null) === "");
+  kontrol("kuruş yuvarlaması (Buybox 1.555,906 → 1554,91 · 1555,91)", h("KAYBEDILDI", 1600, 1555.906, null) === "buyboxAlti:1554.91,buybox:1555.91", h("KAYBEDILDI", 1600, 1555.906, null));
+
+  const r = (durum: BuyboxDurumu, bizimFiyat: number | null, buyboxFiyati: number | null) => ({ durum, bizimFiyat, buyboxFiyati });
+  kontrol("durum tonu: bizde yeşil · kaybedildi kırmızı · görünmüyor sarı · sorgulanamadı nötr",
+    durumTonu("BIRINCI") === "olumlu" && durumTonu("KAYBEDILDI") === "olumsuz" && durumTonu("GORUNMUYOR") === "uyari" && durumTonu("SORGULANAMADI") === "notr");
+  kontrol("fark: kaybedilmiş + pahalıyız → kırmızı", farkTonu(r("KAYBEDILDI", 1840, 1835)) === "olumsuz" && !esitAmaKayip(r("KAYBEDILDI", 1840, 1835)));
+  kontrol("fark: kaybedilmiş + EŞİT fiyat → sarı, «fiyat dışı» notu", farkTonu(r("KAYBEDILDI", 2299, 2299)) === "uyari" && esitAmaKayip(r("KAYBEDILDI", 2299, 2299)));
+  kontrol("fark: kaybedilmiş + UCUZUZ → sarı", farkTonu(r("KAYBEDILDI", 2200, 2299)) === "uyari");
+  kontrol("fark: bizde → yeşil, not yok", farkTonu(r("BIRINCI", 1800, 1800)) === "olumlu" && !esitAmaKayip(r("BIRINCI", 1800, 1800)));
+  kontrol("fark bilinmiyor → nötr (uydurulmaz), not yok", farkTonu(r("KAYBEDILDI", null, 1835)) === "notr" && !esitAmaKayip(r("KAYBEDILDI", null, 1835)));
+  const s = yorumsuz(kaynakOku("src/app/rapor/buybox/page.tsx"));
+  kontrol("rozetler ortak tonla, iki görünümde (tablo rozet · telefon renkli yazı)",
+    /DURUM_ZEMINI\[durumTonu\(s\.durum\)\]/.test(s) && /DURUM_ZEMINI\[farkTonu\(s\)\]/.test(s) && /DURUM_YAZISI\[durumTonu\(s\.durum\)\]/.test(s) && /DURUM_YAZISI\[farkTonu\(s\)\]/.test(s));
+  kontrol("«fiyat dışı» notu iki görünümde", (s.match(/esitAmaKayip\(s\) \?/g) ?? []).length === 2);
+  kontrol("fiyat sütunu yalnız kâr görme izniyle (başlık + hücre)", /\{karGorunur \? <TableHead>\{t\("sutunFiyat"\)\}<\/TableHead> : null\}/.test(s) && /\{karGorunur \? <TableCell className="align-top">\{kutu\(s\)\}<\/TableCell> : null\}/.test(s));
+}
+kosanBolumler.push("hizli");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {

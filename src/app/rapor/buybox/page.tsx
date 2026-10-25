@@ -16,6 +16,9 @@ import {
   buyboxFarki,
   buyboxListesi,
   buyboxOzeti,
+  durumTonu,
+  esitAmaKayip,
+  farkTonu,
   type BuyboxKanali,
   type BuyboxListesi,
   type BuyboxSatiri,
@@ -23,7 +26,7 @@ import {
 import { ISTATISTIK_ARALIKLARI, rakipliOzet, type IstatistikAraligi } from "@/lib/buybox-istatistik";
 import { buyboxDurumlari, buyboxUrunleri } from "@/lib/buybox-verisi";
 import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
-import { DURUM_YAZISI } from "@/lib/renkler";
+import { DURUM_YAZISI, DURUM_ZEMINI } from "@/lib/renkler";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
@@ -38,8 +41,9 @@ import { FiyatKutusu } from "./fiyat-kutusu";
  *  Rafta olan ve kanalda ilanı bulunan ürünlerin Buybox durumu, kanal başına,
  *  o anki canlı sorguyla (resmî satıcı API'leri). Hesap `lib/buybox.ts`te,
  *  okuma `lib/buybox-verisi.ts`te; burası çizer.
- *  FİYAT: Faz 3-c'den beri satırdaki fiyat kutusundan (Hesapla → kâr → Kaydet
- *  → onay) YALNIZ Trendyol'a, YALNIZ fiyat gönderilir (`fiyat-kutusu.tsx`).
+ *  FİYAT: Faz 3-c'den beri satırın «Fiyat» sütunundaki kutudan (Hesapla → kâr →
+ *  Kaydet → onay) Trendyol'a ya da Hepsiburada'ya YALNIZ fiyat gönderilir
+ *  (`fiyat-kutusu.tsx`).
  *  ESKİ KURAL VE NİYE ÇEVRİLDİ: «Fiyat buradan DEĞİŞTİRİLMEZ — Ürün kartına
  *  götürülür» yazılıydı (Faz 3-a); kullanıcı 25.10 satırda gönderim istedi.
  *  Gönderim kartın eylemiyle aynı (izli, sunucu yeniden çözer). Liste canlıdır ve kaydedilmez;
@@ -89,7 +93,16 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
   const [karGorunur, gonderebilir] = await Promise.all([izinVarMi("satis.kar.gor"), izinVarMi("kanal.yaz")]);
   const kutu = (s: BuyboxSatiri) =>
     karGorunur ? (
-      <FiyatKutusu variantId={s.variantId} kanal={kanal} urunAdi={s.urunAdi} bizimFiyat={s.bizimFiyat} buyboxFiyati={s.buyboxFiyati} gonderebilir={gonderebilir} />
+      <FiyatKutusu
+        variantId={s.variantId}
+        kanal={kanal}
+        urunAdi={s.urunAdi}
+        durum={s.durum}
+        bizimFiyat={s.bizimFiyat}
+        buyboxFiyati={s.buyboxFiyati}
+        ikinciFiyat={s.ikinciFiyat}
+        gonderebilir={gonderebilir}
+      />
     ) : null;
 
   const sorguAni = new Date();
@@ -218,34 +231,37 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                       <TableHead className="text-right">{t("sutunStok")}</TableHead>
                       <TableHead className="text-right">{t("sutunBizim")}</TableHead>
                       <TableHead className="text-right">{t("sutunBuybox")}</TableHead>
-                      <TableHead className="text-right">{t("sutunSira")}</TableHead>
-                      <TableHead className="text-right">{t("sutunFark")}</TableHead>
+                      <TableHead>{t("sutunDurum")}</TableHead>
                       <TableHead className="text-right">{t("sutunIkinci")}</TableHead>
+                      {karGorunur ? <TableHead>{t("sutunFiyat")}</TableHead> : null}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {gorunen.map((s) => (
-                      <TableRow key={s.variantId}>
-                        <TableCell className="max-w-md align-top whitespace-normal">
-                          <div className="min-w-0 space-y-0.5">
+                      <TableRow key={s.variantId} className="hover:bg-muted/30">
+                        <TableCell className="max-w-xs min-w-56 align-top whitespace-normal">
+                          <div className="min-w-0 space-y-1">
                             <UrunAdi s={s} />
                             <Kodlar s={s} etiket={kimlikEtiketi} />
-                            <Link href={`/kart/${s.variantId}`} className="text-xs underline underline-offset-2 hover:no-underline">
-                              {t("kartaGit")}
-                            </Link>
-                            <Rakipler s={s} baslik={t("rakipler", { sayi: s.rakipler.length })} listeFiyati={(f) => t("listeFiyati", { fiyat: f })} para={para} />
-                            {kutu(s)}
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                              <Link href={`/kart/${s.variantId}`} className="underline underline-offset-2 hover:no-underline">
+                                {t("kartaGit")}
+                              </Link>
+                              <Rakipler s={s} baslik={t("rakipler", { sayi: s.rakipler.length })} listeFiyati={(f) => t("listeFiyati", { fiyat: f })} para={para} />
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right align-top tabular-nums">{s.stok}</TableCell>
-                        <TableCell className="text-right align-top tabular-nums">{para(s.bizimFiyat)}</TableCell>
+                        <TableCell className="text-right align-top font-medium tabular-nums">{para(s.bizimFiyat)}</TableCell>
                         <TableCell className="text-right align-top tabular-nums">
-                          {para(s.buyboxFiyati)}
+                          <span className="font-medium">{para(s.buyboxFiyati)}</span>
                           {s.buyboxSaticisi ? <div className="text-muted-foreground text-xs">{s.buyboxSaticisi}</div> : null}
                         </TableCell>
-                        <TableCell className="text-right align-top tabular-nums">{siraYaz(s)}</TableCell>
-                        <TableCell className="text-right align-top tabular-nums">{farkYaz(s)}</TableCell>
+                        <TableCell className="align-top">
+                          <DurumRozetleri s={s} sira={siraYaz(s)} fark={farkYaz(s)} esitNotu={t("esitAmaKayip")} />
+                        </TableCell>
                         <TableCell className="text-right align-top tabular-nums">{s.ikinciFiyat === null ? "—" : para(s.ikinciFiyat)}</TableCell>
+                        {karGorunur ? <TableCell className="align-top">{kutu(s)}</TableCell> : null}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -262,17 +278,24 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                         <Link href={`/kart/${s.variantId}`} className="inline-flex min-h-11 items-center text-xs underline underline-offset-2">
                           {t("kartaGit")}
                         </Link>
-                        {kutu(s)}
                       </div>
                     }
                     alanlar={[
-                      { etiket: t("sutunSira"), deger: siraYaz(s) },
+                      { etiket: t("sutunSira"), deger: <span className={DURUM_YAZISI[durumTonu(s.durum)]}>{siraYaz(s)}</span> },
                       { etiket: t("sutunBizim"), deger: para(s.bizimFiyat) },
                       { etiket: t("sutunBuybox"), deger: s.buyboxSaticisi ? `${para(s.buyboxFiyati)} · ${s.buyboxSaticisi}` : para(s.buyboxFiyati) },
-                      { etiket: t("sutunFark"), deger: farkYaz(s) },
+                      { etiket: t("sutunFark"), deger: <span className={DURUM_YAZISI[farkTonu(s)]}>{farkYaz(s)}</span> },
                       { etiket: t("sutunIkinci"), deger: s.ikinciFiyat === null ? "—" : para(s.ikinciFiyat) },
                       { etiket: t("sutunStok"), deger: String(s.stok) },
                     ]}
+                    eylemler={
+                      esitAmaKayip(s) || karGorunur ? (
+                        <div className="space-y-2">
+                          {esitAmaKayip(s) ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("esitAmaKayip")}</p> : null}
+                          {kutu(s)}
+                        </div>
+                      ) : undefined
+                    }
                   />
                 ))}
               </div>
@@ -280,6 +303,22 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * Sıra ve fark — renkli rozet (kullanıcı «frontend zayıf», 25.10.2026). Renk
+ * hükmü saf gövdeden (`durumTonu` · `farkTonu`); kaybedilmiş ama fiyatımız
+ * pahalı değilse SARI ve nedeni yazılır: fiyatı eşitlemek Buybox'ı getirmez.
+ */
+function DurumRozetleri({ s, sira, fark, esitNotu }: { s: BuyboxSatiri; sira: string; fark: string; esitNotu: string }) {
+  const rozet = "inline-flex w-fit rounded-md px-2 py-0.5 text-xs font-medium tabular-nums whitespace-nowrap";
+  return (
+    <div className="flex max-w-44 flex-col items-start gap-1">
+      <span className={`${rozet} ${DURUM_ZEMINI[durumTonu(s.durum)]}`}>{sira}</span>
+      {fark !== "—" ? <span className={`${rozet} ${DURUM_ZEMINI[farkTonu(s)]}`}>{fark}</span> : null}
+      {esitAmaKayip(s) ? <span className={`text-xs leading-snug ${DURUM_YAZISI.uyari}`}>{esitNotu}</span> : null}
     </div>
   );
 }

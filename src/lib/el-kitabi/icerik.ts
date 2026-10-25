@@ -2787,18 +2787,31 @@ göstermedi ya da sorgu tamamlanamadı; ekran nedenini yazar.</li>
 <p>Hepsiburada o üründeki <strong>bütün satıcıları</strong> adıyla ve fiyatıyla verir
 («Satıcılar» açılır listesi); Trendyol yalnız Buybox fiyatını, sıramızı ve 2. ile 3.
 fiyatı verir, rakip adını vermez. İki kanal da rakibin stoğunu vermez.</p>
-<p><strong>Fiyat kutusu</strong> (her satırda, kâr görme yetkisi olanlarda) — kutu
-Buybox fiyatıyla dolu gelir. <strong>«Hesapla»</strong>ya basın: girilen fiyatta,
+<p><strong>Durum ve fark rozetleri</strong> — sıramız ve Buybox'a farkımız renkli yazar:
+yeşil Buybox bizde, kırmızı kaybedildi ve pahalıyız, sarı görünmüyor.
+<strong>Sarı fark</strong> özel bir durumdur: Buybox kaybedilmiş ama fiyatımız Buybox'tan
+<strong>pahalı değil</strong> (eşit ya da ucuz). Kaybı fiyat açıklamıyor; kanal başka bir
+ölçüte bakıyor ve fiyatı eşitlemek Buybox'ı getirmez — ekran bunu satırda yazar.</p>
+<p><strong>Fiyat sütunu</strong> (tablonun en sağında, kâr görme yetkisi olanlarda) — kutu
+Buybox fiyatıyla dolu gelir. Altındaki <strong>hızlı düğmeler</strong> kutuyu tek tıkla
+doldurur: kaybedilmiş üründe «Buybox −1 ₺» ve «Buybox»; Buybox bizdeyse «2. fiyat −1 ₺»
+(öndeliği koruyup fiyatı yükseltme adayı; yalnız bizim fiyatımızdan yüksekse çıkar).
+Hızlı düğme yalnız kutuya yazar ve hesabı açar, <strong>hiçbir şey göndermez</strong>.
+<strong>«Hesapla»</strong>ya basın: girilen fiyatta,
 bizim fiyatta ve Buybox fiyatında <strong>NET-2 kâr ve marj</strong> çıkar; fiyatı
 değiştirdikçe anında yeniden hesaplanır. Hesap ürün kartının fiyat denemesiyle
 aynı motordur (komisyon dilimi, kanal kesintileri, stopaj, KDV), iki farkla:
 <strong>maliyet</strong> rafta duran partilerin <strong>en düşüğüdür</strong> (stoku
 bitmiş alış girmez) ve <strong>kargo dahildir</strong> (ürünün desisi + o kanaldaki son
-satışın kargo firması + bugünkü tarife). Kargo bilinemiyorsa kutu «Kargo HARİÇ» diye
-sebebiyle yazar. <strong>«Kaydet»</strong> (yalnız Trendyol) → onay penceresi eski ve
-yeni fiyatı gösterir → «Evet, gönder». Yalnız fiyat gider, stok değişmez. Fiyat
-zarar ettiriyorsa ya da kârı hesaplanamıyorsa, kutu işaretlenmeden gönderilmez ve bu
-onay kayda geçer. Hepsiburada'ya gönderim şimdilik ürün kartından.</p>
+satışın kargo firması — yoksa kanalda en sık kullanılan firma — + bugünkü tarife). Kargo
+bilinemiyorsa kutu «Kargo HARİÇ» diye sebebiyle yazar. <strong>«Kaydet»</strong>
+(Trendyol ve Hepsiburada) → onay penceresi eski ve yeni fiyatı gösterir → «Evet,
+gönder». Yalnız fiyat gider, stok değişmez. Fiyat zarar ettiriyorsa ya da kârı
+hesaplanamıyorsa, kutu işaretlenmeden gönderilmez ve bu onay kayda geçer.
+<strong>Trendyol</strong> birkaç dakikada işler; <strong>Hepsiburada</strong> birkaç
+saniyede işler ve sistem ilanı yeniden okuyup «görüldü, tamam» ya da «henüz görünmüyor»
+der. Hepsiburada fiyatı reddederse ya da kilitlerse sebebi (ve önerdiği aralık) kutuda
+yazar.</p>
 </section>
 
 <section id="gunlukOzet">

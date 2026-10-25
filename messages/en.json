@@ -5194,11 +5194,11 @@
   "Buybox": {
     "baslik": "", "notu": "",
     "fiyatEtiketi": "", "fiyatIpucu": "", "fiyatGecersiz": "", "hesapla": "", "hesaplaniyor": "", "kaydet": "", "girilenFiyatta": "", "bizimFiyatta": "", "buyboxFiyatinda": "",
-    "rozetKar": "", "rozetZarar": "", "karBilinmiyor": "", "maliyetNotu": "", "maliyetYok": "", "kargoDahil": "", "kargoDahilKanal": "", "kargoHaric_DESI_YOK": "", "kargoHaric_FIRMA_YOK": "", "kargoHaric_TARIFE_YOK": "", "hbGonderimYok": "",
+    "rozetKar": "", "rozetZarar": "", "karBilinmiyor": "", "maliyetNotu": "", "maliyetYok": "", "kargoDahil": "", "kargoDahilKanal": "", "kargoHaric_DESI_YOK": "", "kargoHaric_FIRMA_YOK": "", "kargoHaric_TARIFE_YOK": "", "komisyonNotu": "", "hizli_buyboxAlti": "", "hizli_buybox": "", "hizli_ikinciAlti": "", "esitAmaKayip": "",
     "zeminHata_KANAL_KODU_YOK": "", "zeminHata_YETKI_YOK": "", "zeminHata_OKUNAMADI": "",
-    "onayBaslik": "", "onayMetni": "", "onayKar": "", "onayYalnizFiyat": "", "onayZararKutu": "", "onayKarBilinmiyorKutu": "", "onayKutuGerekli": "", "onayEvet": "",
+    "onayBaslik": "", "onayMetni": "", "onayKar": "", "onayYalnizFiyat_TY": "", "onayYalnizFiyat_HB": "", "onayZararKutu": "", "onayKarBilinmiyorKutu": "", "onayKutuGerekli": "", "onayEvet": "",
     "gonderim_BASARILI": "", "gonderim_BASARISIZ": "", "gonderim_ISLEMDE": "", "gonderim_SORGULANAMADI": "",
-    "gonderimHata_ZARAR_ONAYI_GEREKLI": "", "gonderimHata_YALNIZ_TRENDYOL": "", "gonderimHata_YETKI_YOK": "", "gonderimHata_ZEMIN_YOK": "", "gonderimHata_OKUNAMADI": "",
+    "gonderimHata_ZARAR_ONAYI_GEREKLI": "", "gonderimHata_KANAL_GECERSIZ": "", "gonderimHata_FIYAT_GECERSIZ": "", "gonderimHata_YETKI_YOK": "", "gonderimHata_ZEMIN_YOK": "", "gonderimHata_OKUNAMADI": "", "gonderimHbSonucYok": "",
     "gecmisBaslik": "", "gecmisNotu_bugun": "", "gecmisNotu_hafta": "", "gecmisNotu_ay": "", "aralik_bugun": "", "aralik_hafta": "", "aralik_ay": "",
     "kazanmaOrani": "", "rakipliUrun": "", "rakipliOran": "", "kazanmaNotu": "", "grafikBirinci": "", "grafikOran": "", "gecmisBos": "", "olcumBasladi": "", "grafikGoster": "", "grafikGizle": "", "olculmedi": "",
     "kanal_TY": "", "kanal_HB": "", "sorguAni": "", "hesapYok": "", "sorunlar": "", "kimlikYok": "", "magazaAdiYok": "",
@@ -5206,7 +5206,7 @@
     "liste_kaybedilen": "", "liste_birinci": "", "liste_gorunmuyor": "", "liste_hepsi": "",
     "aciklama_kaybedilen": "", "aciklama_birinci": "", "aciklama_gorunmuyor": "", "aciklama_hepsi": "",
     "aramaIpucu": "", "aramaSonucu": "", "toplamUrun": "", "toplamRaf": "", "listeBos": "", "listeBosSebep": "", "urunYok": "",
-    "sutunUrun": "", "sutunStok": "", "sutunBizim": "", "sutunBuybox": "", "sutunSira": "", "sutunFark": "", "sutunIkinci": "",
+    "sutunUrun": "", "sutunStok": "", "sutunBizim": "", "sutunBuybox": "", "sutunSira": "", "sutunFark": "", "sutunIkinci": "", "sutunDurum": "", "sutunFiyat": "",
     "sira": "", "siraSatici": "", "fark": "", "bilinmiyor": "",
     "durum_BIRINCI": "", "durum_KAYBEDILDI": "", "durum_GORUNMUYOR": "", "durum_SORGULANAMADI": "",
     "kartaGit": "", "rakipler": "", "listeFiyati": "", "sku": "", "firmaSku": "", "barkod": "", "kanalKodu_TY": "", "kanalKodu_HB": ""

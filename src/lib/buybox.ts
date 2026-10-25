@@ -132,6 +132,28 @@ export function buyboxFarki(s: Pick<BuyboxSatiri, "bizimFiyat" | "buyboxFiyati">
   return { tl: s.bizimFiyat - s.buyboxFiyati, yuzde: ((s.bizimFiyat - s.buyboxFiyati) / s.buyboxFiyati) * 100 };
 }
 
+/** Durum rozetinin tonu: bizde yeşil · kaybedildi kırmızı · görünmüyor sarı · sorgulanamadı nötr (hüküm yok). */
+export function durumTonu(d: BuyboxDurumu): "olumlu" | "olumsuz" | "uyari" | "notr" {
+  return d === "BIRINCI" ? "olumlu" : d === "KAYBEDILDI" ? "olumsuz" : d === "GORUNMUYOR" ? "uyari" : "notr";
+}
+
+/**
+ * Fark rozetinin tonu. Kaybedilmiş üründe fiyatımız Buybox'tan PAHALI DEĞİLSE
+ * (fark ≤ 0) sarı: kaybı fiyat açıklamıyor, fiyatı eşitlemek yetmez — ekran bunu
+ * ayrıca yazar (`esitAmaKayip`). Fark bilinmiyorsa nötr (uydurulmaz).
+ */
+export function farkTonu(s: Pick<BuyboxSatiri, "durum" | "bizimFiyat" | "buyboxFiyati">): "olumlu" | "olumsuz" | "uyari" | "notr" {
+  if (s.durum === "BIRINCI") return "olumlu";
+  const f = buyboxFarki(s);
+  if (s.durum !== "KAYBEDILDI" || f === null) return "notr";
+  return f.tl <= 0 ? "uyari" : "olumsuz";
+}
+
+/** Kaybedilmiş ama fiyatımız Buybox'tan pahalı değil — fiyat dışı bir ölçüt belirliyor. */
+export function esitAmaKayip(s: Pick<BuyboxSatiri, "durum" | "bizimFiyat" | "buyboxFiyati">): boolean {
+  return farkTonu(s) === "uyari";
+}
+
 export const BUYBOX_LISTELERI = ["kaybedilen", "birinci", "gorunmuyor", "hepsi"] as const;
 export type BuyboxListesi = (typeof BUYBOX_LISTELERI)[number];
 

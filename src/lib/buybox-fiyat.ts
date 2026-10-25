@@ -10,6 +10,7 @@ import { ciroMarji } from "./marj-gosterge";
  *  NET ve marj. Motor ürün kartının fiyat denemesiyle AYNI (`simulasyonKur` →
  *  `karHesapla`); zemin de aynı gövdeden (`simulasyonZeminleri`). Tarayıcıda
  *  da çalışır (veritabanına gitmez).
+ *  Gönderim (25.10.2026'dan beri) iki kanala: Trendyol + Hepsiburada.
  *  İki fark beyanlıdır:
  *  · MALİYET = RAFTA DURAN partilerin EN DÜŞÜĞÜ (kullanıcı kararı: «stoktaki en
  *    düşük fiyat olmalı ama stok olması önemli» — stoku bitmiş alış girmez).
@@ -100,6 +101,29 @@ export function fiyatMetniCoz(metin: string): number | null {
   if (temiz === "") return null;
   const sayi = Number(temiz.replace(/\./g, "").replace(",", "."));
   return Number.isFinite(sayi) && sayi > 0 ? Math.round(sayi * 100) / 100 : Number.NaN;
+}
+
+export type HizliFiyat = { anahtar: "buyboxAlti" | "buybox" | "ikinciAlti"; fiyat: number };
+
+/**
+ * HIZLI DOLDURMA (25.10.2026, kullanıcı «frontend zayıf»): kutuyu tek tıkla
+ * dolduran adaylar. ÖNERİ DEĞİL — yalnız kutuya yazar; kâr hesabı ve onay aynı.
+ * · Kaybedilmişse: Buybox'ın 1 ₺ altı · Buybox fiyatı.
+ * · Buybox bizdeyse: 2. fiyatın 1 ₺ altı (yalnız bizim fiyatımızdan YÜKSEKSE —
+ *   öndeliği koruyup fiyatı yükseltme adayı; değilse aday yok).
+ * Sıfır/eksi aday üretilmez.
+ */
+export function hizliFiyatlar(s: { durum: string; bizimFiyat: number | null; buyboxFiyati: number | null; ikinciFiyat: number | null }): HizliFiyat[] {
+  const yuvarla = (n: number) => Math.round(n * 100) / 100;
+  const sonuc: HizliFiyat[] = [];
+  if (s.durum === "KAYBEDILDI" && s.buyboxFiyati !== null && s.buyboxFiyati > 0) {
+    if (s.buyboxFiyati - 1 > 0) sonuc.push({ anahtar: "buyboxAlti", fiyat: yuvarla(s.buyboxFiyati - 1) });
+    sonuc.push({ anahtar: "buybox", fiyat: yuvarla(s.buyboxFiyati) });
+  }
+  if (s.durum === "BIRINCI" && s.ikinciFiyat !== null && s.bizimFiyat !== null && s.ikinciFiyat - 1 > s.bizimFiyat) {
+    sonuc.push({ anahtar: "ikinciAlti", fiyat: yuvarla(s.ikinciFiyat - 1) });
+  }
+  return sonuc;
 }
 
 /**
