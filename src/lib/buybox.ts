@@ -6,8 +6,9 @@
  *  HB buybox sıralaması. Burası veritabanına ve ağa gitmez; iki kanalın
  *  cevabını tek satır biçimine indirir ve «Buybox'ı kaybettiklerim» listesini
  *  kurar.
- *  ⛔ FİYAT DEĞİŞTİRMEZ, ÖNERMEZ: gösterir. Fiyat gönderimi ürün kartındaki
- *  mevcut (önizlemeli, izli) akıştır.
+ *  ⛔ FİYAT ÖNERMEZ: gösterir. Fiyat gönderimi (Faz 3-c) satırdaki fiyat
+ *  kutusundan, kartın izli eylemiyle yapılır (`buybox-fiyat.ts`); bu dosya
+ *  gönderime dokunmaz.
  *  Ekran her açılışta o anın fotoğrafını çeker. Geçmiş (saatlik sayılar +
  *  durum değişimleri) Faz 3-b'de tüketicisiyle (grafik) birlikte doğdu:
  *  `buybox-istatistik.ts`.

@@ -147,7 +147,13 @@ console.log("\n⑤ ekran — izin · sayılar · arama · yönlendirme · menü"
   kontrol("toplam ekrandaki (aramadan sonraki) listeden", /const gorunen = buyboxAra\(tamListe, arama\);\s*const rafta = gorunen\.reduce/.test(s) && /cocuk=\{gorunen\.length\}/.test(s));
   kontrol("denetim sayılarının beşi de ayrı çizilir", ["ozet.incelenen", "ozet.birinci", "ozet.kaybedilen", "ozet.gorunmuyor", "ozet.sorgulanamadi"].every((x) => s.includes(`cocuk={${x}}`)));
   kontrol("sorun sebepleri ekrana yazılır", /sonuc\.sebepler\.length > 0 \? \(/.test(s) && /sonuc\.sebepler\.map\(/.test(s));
-  kontrol("fiyat buradan DEĞİŞMEZ: satır ürün kartına götürür (iki görünümde)", (s.match(/href=\{`\/kart\/\$\{s\.variantId\}`\}/g) ?? []).length === 2 && !/StokFiyatGonder|Gonder\(/.test(s));
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ VE GÜNCELLENDİ (25.10.2026, Faz 3-c): burada «fiyat buradan
+   * DEĞİŞMEZ» ölçülüyordu; kullanıcı satırdan Trendyol'a fiyat gönderimini
+   * istedi. Gönderim artık YALNIZ fiyat kutusunda (`fiyat-kutusu.tsx`, kendi
+   * bekçisi `buybox-fiyat:dogrula`); sayfanın kendisi doğrudan göndermez.
+   */
+  kontrol("satır ürün kartına götürür (iki görünümde); sayfa doğrudan GÖNDERMEZ (gönderim yalnız fiyat kutusunda)", (s.match(/href=\{`\/kart\/\$\{s\.variantId\}`\}/g) ?? []).length === 2 && !/StokFiyatGonder|Gonder\(/.test(s));
   kontrol("arama ortak bileşenle (kamera dahil, İlke #17)", /<KodAramaKutusu temelAdres=\{YOL\}/.test(s));
   kontrol("menü: «Buybox durumu» Fiyatlandırma grubunda ve sayfası var",
     MENU_ADRESLERI.buybox === "/rapor/buybox" && MENU_KATALOGU.some((m) => m.anahtar === "buybox" && m.varsayilanGrup === "grupFiyatAnaliz") && existsSync("src/app/rapor/buybox/page.tsx"));

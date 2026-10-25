@@ -5193,6 +5193,12 @@
   },
   "Buybox": {
     "baslik": "", "notu": "",
+    "fiyatEtiketi": "", "fiyatIpucu": "", "fiyatGecersiz": "", "hesapla": "", "hesaplaniyor": "", "kaydet": "", "girilenFiyatta": "", "bizimFiyatta": "", "buyboxFiyatinda": "",
+    "rozetKar": "", "rozetZarar": "", "karBilinmiyor": "", "maliyetNotu": "", "maliyetYok": "", "kargoDahil": "", "kargoDahilKanal": "", "kargoHaric_DESI_YOK": "", "kargoHaric_FIRMA_YOK": "", "kargoHaric_TARIFE_YOK": "", "hbGonderimYok": "",
+    "zeminHata_KANAL_KODU_YOK": "", "zeminHata_YETKI_YOK": "", "zeminHata_OKUNAMADI": "",
+    "onayBaslik": "", "onayMetni": "", "onayKar": "", "onayYalnizFiyat": "", "onayZararKutu": "", "onayKarBilinmiyorKutu": "", "onayKutuGerekli": "", "onayEvet": "",
+    "gonderim_BASARILI": "", "gonderim_BASARISIZ": "", "gonderim_ISLEMDE": "", "gonderim_SORGULANAMADI": "",
+    "gonderimHata_ZARAR_ONAYI_GEREKLI": "", "gonderimHata_YALNIZ_TRENDYOL": "", "gonderimHata_YETKI_YOK": "", "gonderimHata_ZEMIN_YOK": "", "gonderimHata_OKUNAMADI": "",
     "gecmisBaslik": "", "gecmisNotu_bugun": "", "gecmisNotu_hafta": "", "gecmisNotu_ay": "", "aralik_bugun": "", "aralik_hafta": "", "aralik_ay": "",
     "kazanmaOrani": "", "rakipliUrun": "", "rakipliOran": "", "kazanmaNotu": "", "grafikBirinci": "", "grafikOran": "", "gecmisBos": "", "olcumBasladi": "", "grafikGoster": "", "grafikGizle": "", "olculmedi": "",
     "kanal_TY": "", "kanal_HB": "", "sorguAni": "", "hesapYok": "", "sorunlar": "", "kimlikYok": "", "magazaAdiYok": "",

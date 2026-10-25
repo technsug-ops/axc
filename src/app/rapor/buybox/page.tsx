@@ -25,9 +25,10 @@ import { buyboxDurumlari, buyboxUrunleri } from "@/lib/buybox-verisi";
 import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { suzgecAdresi } from "@/lib/suzgec";
-import { sayfaIzni } from "@/lib/yetki";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 import { BuyboxGecmisi } from "./buybox-gecmisi";
+import { FiyatKutusu } from "./fiyat-kutusu";
 
 /**
  * ============================================================================
@@ -37,8 +38,11 @@ import { BuyboxGecmisi } from "./buybox-gecmisi";
  *  Rafta olan ve kanalda ilanı bulunan ürünlerin Buybox durumu, kanal başına,
  *  o anki canlı sorguyla (resmî satıcı API'leri). Hesap `lib/buybox.ts`te,
  *  okuma `lib/buybox-verisi.ts`te; burası çizer.
- *  ⛔ Fiyat buradan DEĞİŞTİRİLMEZ — satırdaki «Ürün kartı» bağlantısı mevcut
- *  önizlemeli/izli gönderim akışına götürür. Liste canlıdır ve kaydedilmez;
+ *  FİYAT: Faz 3-c'den beri satırdaki fiyat kutusundan (Hesapla → kâr → Kaydet
+ *  → onay) YALNIZ Trendyol'a, YALNIZ fiyat gönderilir (`fiyat-kutusu.tsx`).
+ *  ESKİ KURAL VE NİYE ÇEVRİLDİ: «Fiyat buradan DEĞİŞTİRİLMEZ — Ürün kartına
+ *  götürülür» yazılıydı (Faz 3-a); kullanıcı 25.10 satırda gönderim istedi.
+ *  Gönderim kartın eylemiyle aynı (izli, sunucu yeniden çözer). Liste canlıdır ve kaydedilmez;
  *  geçmiş grafiği saatlik zamanlayıcının yazdığı ölçümlerden okur (Faz 3-b).
  *  Denetim sayıları AYRI yazılır: incelenen · Buybox bizde · kaybedilen ·
  *  görünmüyor · sorgulanamadı (boş sonuç «temiz» sayılmaz).
@@ -80,6 +84,13 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
    * (İlke #13: sekme/açılış URL'ye yazılır); kapalıyken geçmiş sorgulanmaz.
    */
   const grafikAcik = p.grafik === "1";
+
+  /** Faz 3-c fiyat kutusu: kâr görme izni (kartla aynı kapı) · Kaydet yalnız kanala yazma izniyle. */
+  const [karGorunur, gonderebilir] = await Promise.all([izinVarMi("satis.kar.gor"), izinVarMi("kanal.yaz")]);
+  const kutu = (s: BuyboxSatiri) =>
+    karGorunur ? (
+      <FiyatKutusu variantId={s.variantId} kanal={kanal} urunAdi={s.urunAdi} bizimFiyat={s.bizimFiyat} buyboxFiyati={s.buyboxFiyati} gonderebilir={gonderebilir} />
+    ) : null;
 
   const sorguAni = new Date();
   const urunler = await buyboxUrunleri(kanal, { yalnizStoklu: true });
@@ -223,6 +234,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                               {t("kartaGit")}
                             </Link>
                             <Rakipler s={s} baslik={t("rakipler", { sayi: s.rakipler.length })} listeFiyati={(f) => t("listeFiyati", { fiyat: f })} para={para} />
+                            {kutu(s)}
                           </div>
                         </TableCell>
                         <TableCell className="text-right align-top tabular-nums">{s.stok}</TableCell>
@@ -250,6 +262,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                         <Link href={`/kart/${s.variantId}`} className="inline-flex min-h-11 items-center text-xs underline underline-offset-2">
                           {t("kartaGit")}
                         </Link>
+                        {kutu(s)}
                       </div>
                     }
                     alanlar={[

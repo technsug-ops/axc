@@ -2786,9 +2786,19 @@ göstermedi ya da sorgu tamamlanamadı; ekran nedenini yazar.</li>
 </ul>
 <p>Hepsiburada o üründeki <strong>bütün satıcıları</strong> adıyla ve fiyatıyla verir
 («Satıcılar» açılır listesi); Trendyol yalnız Buybox fiyatını, sıramızı ve 2. ile 3.
-fiyatı verir, rakip adını vermez. İki kanal da rakibin stoğunu vermez.
-<strong>Fiyat bu ekrandan değişmez</strong>: satırdaki «Ürün kartı» bağlantısı
-önizlemeli gönderim ekranına götürür.</p>
+fiyatı verir, rakip adını vermez. İki kanal da rakibin stoğunu vermez.</p>
+<p><strong>Fiyat kutusu</strong> (her satırda, kâr görme yetkisi olanlarda) — kutu
+Buybox fiyatıyla dolu gelir. <strong>«Hesapla»</strong>ya basın: girilen fiyatta,
+bizim fiyatta ve Buybox fiyatında <strong>NET-2 kâr ve marj</strong> çıkar; fiyatı
+değiştirdikçe anında yeniden hesaplanır. Hesap ürün kartının fiyat denemesiyle
+aynı motordur (komisyon dilimi, kanal kesintileri, stopaj, KDV), iki farkla:
+<strong>maliyet</strong> rafta duran partilerin <strong>en düşüğüdür</strong> (stoku
+bitmiş alış girmez) ve <strong>kargo dahildir</strong> (ürünün desisi + o kanaldaki son
+satışın kargo firması + bugünkü tarife). Kargo bilinemiyorsa kutu «Kargo HARİÇ» diye
+sebebiyle yazar. <strong>«Kaydet»</strong> (yalnız Trendyol) → onay penceresi eski ve
+yeni fiyatı gösterir → «Evet, gönder». Yalnız fiyat gider, stok değişmez. Fiyat
+zarar ettiriyorsa ya da kârı hesaplanamıyorsa, kutu işaretlenmeden gönderilmez ve bu
+onay kayda geçer. Hepsiburada'ya gönderim şimdilik ürün kartından.</p>
 </section>
 
 <section id="gunlukOzet">
