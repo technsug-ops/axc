@@ -3,6 +3,7 @@ import { varyantinTarifeKalemleri } from "@/lib/komisyon/tarife-eslesme-veri";
 import type { TarifeDizinleri } from "@/lib/komisyon/tarife-eslesme";
 import { VARSAYILAN_KDV_ORANI } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
+import { komisyonKdvOrani, siparisKesintiKurallari, type SiparisKesintiKurali } from "@/lib/siparis-kesintileri";
 import type { TarifeDilimi } from "@/lib/komisyon/tarife-okuyucu";
 
 /**
@@ -29,12 +30,8 @@ export type SimulasyonZemini = {
   pencereBitis: Date | null;
   tekOran: number | null;
   komisyonKdvOrani: number | null;
-  siparisKesintileri: {
-    code: string;
-    basis: "SALE_AMOUNT" | "FIXED";
-    rate: number | null;
-    amount: number | null;
-  }[];
+  /** Ortak gövdeden (`siparisKesintiKurallari`) — sipariş VE paket başına kurallar. */
+  siparisKesintileri: SiparisKesintiKurali[];
 };
 
 /**
@@ -109,10 +106,6 @@ export async function simulasyonZeminleri(
       where: { channelId: e.channelAccount.channelId, isActive: true, validFrom: { lte: an } },
       orderBy: { validFrom: "desc" },
     });
-    const gecerli = new Map<string, (typeof kurallar)[number]>();
-    for (const k of kurallar) if (!gecerli.has(k.code)) gecerli.set(k.code, k);
-
-    const komisyonKdv = gecerli.get("KOMISYON_KDV");
 
     zeminler.push({
       kanalAdi: `${e.channelAccount.channel.name} — ${e.channelAccount.name}`,
@@ -120,15 +113,16 @@ export async function simulasyonZeminleri(
       dilimler,
       pencereBitis: tarife?.pencereBitis ?? null,
       tekOran: e.commissionRate === null ? null : Number(e.commissionRate.toString()),
-      komisyonKdvOrani: komisyonKdv?.rate ? Number(komisyonKdv.rate.toString()) : null,
-      siparisKesintileri: [...gecerli.values()]
-        .filter((k) => k.scope === "PER_SALE")
-        .map((k) => ({
-          code: k.code,
-          basis: k.basis === "FIXED" ? ("FIXED" as const) : ("SALE_AMOUNT" as const),
-          rate: k.rate ? Number(k.rate.toString()) : null,
-          amount: k.amount ? Number(k.amount.toString()) : null,
-        })),
+      komisyonKdvOrani: komisyonKdvOrani(kurallar),
+      /**
+       * ⛔ ORTAK GÖVDE (25.10.2026). Burada kendi süzgeci vardı ve YALNIZ
+       * `PER_SALE` alıyordu; Trendyol'un ₺13,19 sabit gideri `PER_PACKAGE`
+       * olduğu için fiyat denemesi TY kârını her satışta ₺13,19 FAZLA
+       * gösteriyordu (canlı ChannelFee ölçümü 25.10: TY SABIT_GIDER
+       * PER_PACKAGE FIXED 13,19). Satış kaydı ve kâr yenileme zaten ortak
+       * gövdedeydi; deneme paket sayısını bilmez → motorun varsayılanı 1 paket.
+       */
+      siparisKesintileri: siparisKesintiKurallari(kurallar),
     });
   }
 

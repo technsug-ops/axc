@@ -1,3 +1,5 @@
+import { readdirSync } from "node:fs";
+
 import { siparisKesintiKurallari } from "../src/lib/siparis-kesintileri";
 import { kaynakOku } from "./kaynak-oku";
 /**
@@ -804,18 +806,32 @@ console.log("=".repeat(70));
      * ⚠ İŞARET ADA DEĞİL ÇAĞRIYA BAĞLI: `siparisKesintiKurallari(kurallar)`
      * — import satırı da o adı taşıyor ve ad araması onu bulurdu.
      */
-    for (const yol of ["src/lib/satis.ts", "src/lib/kar-yeniden.ts"]) {
+    /**
+     * ⛔ 25.10.2026: bu liste elle tutuluyordu (satış + kâr yenileme) ve fiyat
+     * denemesinin zemini (`fiyatlama/kart-verisi.ts`) LİSTEDE YOKTU — orada
+     * kendi `PER_SALE` süzgeci yaşıyor, TY'nin `PER_PACKAGE` ₺13,19'unu
+     * düşürüyordu. Liste korundu (bilinen üç çağıranın BAĞI ölçülür); asıl
+     * koruma aşağıdaki DESEN YASAĞI — yarın doğan dördüncü okuyucu da yakalanır.
+     */
+    for (const yol of ["src/lib/satis.ts", "src/lib/kar-yeniden.ts", "src/lib/fiyatlama/kart-verisi.ts"]) {
       const kaynak = kaynakOku(yol);
       kontrol(
         `${yol}: ortak gövdeyi ÇAĞIRIYOR`,
         kaynak.includes("siparisKesintiKurallari(kurallar)"),
       );
-      /** ⚠ VE KENDİ KOPYASINI GERİ GETİRMEMİŞ. */
-      kontrol(
-        `  ...ve kendi süzgecini geri getirmemiş`,
-        !/\.filter\(\(k\) => k\.scope === "PER_SALE"/.test(kaynak),
-      );
     }
+    /** DESEN YASAĞI: ortak gövde DIŞINDA hiçbir kaynak kesinti kapsamını kendisi süzemez. */
+    const kendiSuzgeci: string[] = [];
+    const tara = (kok: string) => {
+      for (const ad of readdirSync(kok, { withFileTypes: true })) {
+        const yol = `${kok}/${ad.name}`;
+        if (ad.isDirectory()) { if (ad.name !== "generated") tara(yol); continue; }
+        if (!/\.tsx?$/.test(ad.name) || yol === "src/lib/siparis-kesintileri.ts") continue;
+        if (/\.scope === "PER_SALE"/.test(kaynakOku(yol))) kendiSuzgeci.push(yol);
+      }
+    };
+    tara("src");
+    kontrol("  ...ve ortak gövde dışında kesinti kapsamını süzen kaynak YOK (desen yasağı)", kendiSuzgeci.length === 0, kendiSuzgeci);
   }
 
   /**
