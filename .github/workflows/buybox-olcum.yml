@@ -4,7 +4,8 @@
 #  BIRINCIL: cron-job.org (saatte bir, K205 karari — GitHub schedule'i olculdu,
 #  kisa araliklarda SAATLERCE sarkiyor). Bu akis YEDEK: birincil kacirirsa
 #  grafikte o saat bos kalmasin diye. Cift tetik zararsiz — uc, son olcum
-#  45 dk'dan yeniyse kanali ATLAR (`CIFT_TETIK_DK`).
+#  AYNI SAAT DILIMINDE varsa kanali ATLAR (`olcumAlinsinMi`) — yani bu yedek
+#  yalniz birincil o saati kacirinca yazar.
 #  Vercel Cron bu is icin KULLANILMAZ: Hobby planinda gunde bir tetik.
 #
 #  ⚠ DAKIKA :35 — birincil :00'da vurur; ikisi ayni dakikaya konsaydi ikisi

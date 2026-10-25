@@ -16,7 +16,7 @@ import { buyboxDurumlari, buyboxUrunleri } from "./buybox-verisi";
  *  ⚠ BÜTÜN ÜRÜNLER SORGULANAMADIYSA ölçüm YAZILMAZ: «0 Buybox» bir ölçüm
  *  değil, sorgunun düşmesidir; grafikte sahte bir çukur açardı. O saat
  *  «ölçülmedi» kalır ve sebep cevapta döner.
- *  ⚠ İDEMPOTENT: son ölçüm `CIFT_TETIK_DK`dan yeniyse atlanır (çift tetik
+ *  ⚠ İDEMPOTENT: aynı saat diliminde ölçüm varsa atlanır (çift tetik
  *  zararsız). Yazım tek işlemde — yarım ölçüm (sayı var, değişim yok) olmaz.
  * ============================================================================
  */

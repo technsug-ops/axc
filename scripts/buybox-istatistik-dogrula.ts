@@ -13,7 +13,6 @@ import { existsSync } from "node:fs";
 import { kaynakOku } from "./kaynak-oku";
 import type { BuyboxDurumu } from "../src/lib/buybox";
 import {
-  CIFT_TETIK_DK,
   degisimler,
   gunlukSeri,
   kazanmaOrani,
@@ -43,18 +42,16 @@ const blok = (metin: string, capa: string, uzunluk: number) => {
   const i = metin.indexOf(capa);
   return i < 0 ? "" : metin.slice(i, i + uzunluk);
 };
-const DK = 60_000;
 const an = (iso: string) => new Date(iso);
 
 // ── ① ÇİFT TETİK ─────────────────────────────────────────────────────────
 console.log("\n① çift tetik kapısı");
 {
-  const simdi = an("2026-10-25T10:00:00Z");
-  kontrol("hiç ölçüm yoksa alınır", olcumAlinsinMi(null, simdi));
-  kontrol("kapı 45 dk (birincil :00 · yedek :35 aynı saatte iki kez yazmaz)", CIFT_TETIK_DK === 45);
-  kontrol("35 dk önce ölçüldüyse ATLANIR (yedek, birincil yazdıysa yazmaz)", !olcumAlinsinMi(new Date(simdi.getTime() - 35 * DK), simdi));
-  kontrol("tam 45 dk → alınır (sınır dahil)", olcumAlinsinMi(new Date(simdi.getTime() - 45 * DK), simdi));
-  kontrol("60 dk önce → alınır", olcumAlinsinMi(new Date(simdi.getTime() - 60 * DK), simdi));
+  kontrol("hiç ölçüm yoksa alınır", olcumAlinsinMi(null, an("2026-10-25T10:00:00Z")));
+  kontrol("aynı saatte :00 yazdıysa :35 (yedek) ATLANIR", !olcumAlinsinMi(an("2026-10-25T10:00:20Z"), an("2026-10-25T10:35:00Z")));
+  kontrol("yedek :35'te yazdıysa SONRAKİ :00 (25 dk sonra) YİNE yazar — birincil kilitlenmez", olcumAlinsinMi(an("2026-10-25T10:35:00Z"), an("2026-10-25T11:00:05Z")));
+  kontrol("saatin son saniyesi ile sonraki saatin ilk saniyesi ayrı dilim", olcumAlinsinMi(an("2026-10-25T10:59:59Z"), an("2026-10-25T11:00:00Z")));
+  kontrol("aynı saatin içinde 59 dk sonra bile atlanır", !olcumAlinsinMi(an("2026-10-25T10:00:00Z"), an("2026-10-25T10:59:59Z")));
 }
 kosanBolumler.push("tetik");
 

@@ -13,7 +13,7 @@ import { buyboxOlcumleriniYaz } from "@/lib/buybox-istatistik-verisi";
  *  ekranının AYNI sorgusu koşar; sayılar ve durumu değişen ürünler deftere
  *  yazılır (`lib/buybox-istatistik-verisi.ts`).
  *  ⚠ KAPI: `Authorization: Bearer <CRON_SECRET>`; tutmayan istek 404 alır.
- *  ⚠ İDEMPOTENT: son ölçüm 45 dk'dan yeniyse kanal ATLANIR (çift tetik zararsız).
+ *  ⚠ İDEMPOTENT: aynı saat diliminde ölçüm varsa kanal ATLANIR (çift tetik zararsız).
  *  ⛔ PAZARYERİNE HİÇBİR ŞEY YAZILMAZ — yalnız okuma uçları.
  *  ⛔ DÜŞEN KANAL DURUM KODUNA YANSIR (500): yarısı koşmayan ölçüm «başarılı»
  *  görünmesin. «Atlandı» düşmek değildir (çift tetik, hesap yok).

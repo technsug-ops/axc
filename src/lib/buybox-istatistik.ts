@@ -16,18 +16,27 @@ import type { BuyboxDurumu } from "./buybox";
 
 export type KayitDurumu = "BIRINCI" | "KAYBEDILDI" | "GORUNMUYOR";
 
+export const SAAT_MS = 3_600_000;
+
 /**
- * Çift tetik kapısı: aynı hesap için son ölçüm bu kadar dakikadan YENİYSE
- * yeni ölçüm alınmaz. İki tetik var: birincil (cron-job.org) :00'da, yedek
- * (GitHub) :35'te. 45 dk ile yedek YALNIZ birincil o saati kaçırınca yazar
- * (:00 yazdıysa :35 atlanır); yedek yazdıysa bir sonraki :00 atlanır ama o
- * saat yine kendi :35'iyle ölçülür — saat boş kalmaz.
+ * Çift tetik kapısı: aynı hesap için AYNI SAAT DİLİMİNDE ölçüm varsa yeni
+ * ölçüm alınmaz. İki tetik var: birincil (cron-job.org) :00'da, yedek
+ * (GitHub) :35'te. Yedek yalnız birincil o saati kaçırdıysa yazar.
+ * ⛔ ESKİ KURAL VE NİYE ÇEVRİLDİ (25.10.2026, ilk canlı ölçümden sonra):
+ * «son ölçüm 45 dk'dan yeniyse atla» yazılıydı. Yedek :35'te bir kez yazınca
+ * sonraki :00 (25 dk) hep atlanıyor, ölçüm fiilen güvenilmeyen yedeğe
+ * kalıyordu; yedek bir saati kaçırınca o saat BOŞ kalırdı — birincil o saat
+ * çalışmış olsa bile. Dilim ölçütü bu kilitlenmeyi kurmaz.
+ * İstanbul ofseti tam saat (UTC+3) olduğu için UTC saat dilimi = İstanbul saat
+ * dilimi; ölçüt saat dilimi okumaz.
  */
-export const CIFT_TETIK_DK = 45;
+export function saatDilimi(an: Date): number {
+  return Math.floor(an.getTime() / SAAT_MS);
+}
 
 export function olcumAlinsinMi(sonOlcum: Date | null, simdi: Date): boolean {
   if (sonOlcum === null) return true;
-  return simdi.getTime() - sonOlcum.getTime() >= CIFT_TETIK_DK * 60_000;
+  return saatDilimi(simdi) > saatDilimi(sonOlcum);
 }
 
 /**
@@ -90,7 +99,6 @@ export type SeriNoktasi = {
   olcumSayisi: number;
 };
 
-export const SAAT_MS = 3_600_000;
 
 /**
  * BUGÜN — saatlik seri. `gunBasi` İstanbul gece yarısı (mutlak an), `simdi`
