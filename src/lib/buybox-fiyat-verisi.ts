@@ -51,7 +51,7 @@ export async function buyboxFiyatZemini(variantId: string, kanal: BuyboxKanali, 
     prisma.productVariant.findUnique({ where: { id: variantId }, select: { product: { select: { desi: true } } } }),
     /** Kargo firması: bu ürünün BU HESAPTAKİ son satışının firması. */
     prisma.sale.findFirst({
-      where: { channelAccountId: zemin.channelAccountId, cargoCarrierId: { not: null }, items: { some: { variantId } } },
+      where: { channelAccountId: zemin.channelAccountId, iptalTarihi: null, cargoCarrierId: { not: null }, items: { some: { variantId } } },
       orderBy: { soldAt: "desc" },
       select: { cargoCarrierId: true, cargoCarrier: { select: { name: true } } },
     }),
@@ -72,7 +72,7 @@ export async function buyboxFiyatZemini(variantId: string, kanal: BuyboxKanali, 
   if (firmaId === null) {
     const sik = await prisma.sale.groupBy({
       by: ["cargoCarrierId"],
-      where: { channelAccountId: hesap.id, cargoCarrierId: { not: null }, soldAt: { gte: new Date(an.getTime() - 365 * 86_400_000) } },
+      where: { channelAccountId: hesap.id, iptalTarihi: null, cargoCarrierId: { not: null }, soldAt: { gte: new Date(an.getTime() - 365 * 86_400_000) } },
       _count: { _all: true },
       orderBy: { _count: { cargoCarrierId: "desc" } },
       take: 1,
