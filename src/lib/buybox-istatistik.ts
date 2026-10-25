@@ -152,9 +152,17 @@ export function gunlukSeri(olcumler: readonly OlcumNoktasi[], gunBaslari: readon
   });
 }
 
-/** Ölçülmeyen dilimler — ekranda AYRICA yazılır (görünmeyen boşluk sorulamaz). */
-export function olculmeyenler(seri: readonly SeriNoktasi[]): SeriNoktasi[] {
-  return seri.filter((n) => n.olcumSayisi === 0);
+/**
+ * Ölçülmeyen dilimler — ekranda AYRICA yazılır (görünmeyen boşluk sorulamaz).
+ * ⚠ YALNIZ ÖLÇÜM BAŞLADIKTAN SONRAKİ dilimler: `baslangic` o kanalın İLK
+ * ölçümünün düştüğü dilimin başıdır. Öncesi kaçırma değil, sistemin görüş
+ * alanının başlangıcıdır (anayasa: «tutanak, kusur ile sınırı ayırt ettirir»)
+ * — 25.10.2026'da ekran 00:00–13:00'ı «zamanlayıcı kaçırdı» diye yazıyordu,
+ * oysa ölçüm 14:43'te başlamıştı. Hiç ölçüm yoksa (`null`) kaçırma da yoktur.
+ */
+export function olculmeyenler(seri: readonly SeriNoktasi[], baslangic: Date | null): SeriNoktasi[] {
+  if (baslangic === null) return [];
+  return seri.filter((n) => n.olcumSayisi === 0 && n.an.getTime() >= baslangic.getTime());
 }
 
 export const ISTATISTIK_ARALIKLARI = ["bugun", "hafta", "ay"] as const;

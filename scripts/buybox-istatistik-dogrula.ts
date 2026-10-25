@@ -112,7 +112,10 @@ console.log("\n④ saatlik / günlük seri — ölçülmeyen dilim uydurulmaz");
   kontrol("saatin SON ölçümü alınır (01 → 13, ilk 11 değil)", seri[1]?.birinci === 13 && seri[1]?.olcumSayisi === 2);
   kontrol("o saatin oranı son ölçümden (5/20 = %25)", seri[1]?.oran === 25);
   kontrol("ölçülmeyen saat (02) null — önceki değerle DOLDURULMAZ", seri[2]?.birinci === null && seri[2]?.oran === null && seri[2]?.olcumSayisi === 0);
-  kontrol("ölçülmeyenler listesi yalnız 02", olculmeyenler(seri).map((n) => n.anahtar).join(",") === "2");
+  kontrol("ölçülmeyenler listesi yalnız 02 (ölçüm 00'da başladı)", olculmeyenler(seri, gunBasi).map((n) => n.anahtar).join(",") === "2");
+  kontrol("ilk ölçümden ÖNCEKİ dilim kaçırma sayılmaz (başlangıç 01 → 00 listede yok)",
+    olculmeyenler(saatlikSeri(olcumler.slice(1), gunBasi, simdi), new Date(gunBasi.getTime() + 3_600_000)).map((n) => n.anahtar).join(",") === "2");
+  kontrol("hiç ölçüm yoksa kaçırma da yok (boş liste)", olculmeyenler(seri, null).length === 0);
   kontrol("günün öncesindeki ölçüm sayılmaz", saatlikSeri([o("2026-10-24T20:59:00Z", 50)], gunBasi, simdi).every((n) => n.birinci === null));
 
   const g1 = an("2026-10-23T21:00:00Z");
@@ -171,11 +174,15 @@ console.log("\n⑦ ekran — grafik · aralık · ölçülmedi");
 {
   const s = yorumsuz(kaynakOku("src/app/rapor/buybox/page.tsx"));
   kontrol("sayfa geçmişi çizer, kazanma oranı CANLI sorgudan", /<BuyboxGecmisi[\s\S]{0,200}canli=\{rakipliOzet\(sonuc\.satirlar\)\}/.test(s));
+  kontrol("geçmiş YALNIZ istenince (grafik=1) çizilir — varsayılan kapalı", /const grafikAcik = p\.grafik === "1";/.test(s) && /\{grafikAcik \? \(\s*<BuyboxGecmisi/.test(s));
+  kontrol("düğme sayı kutularının yanında, adresi aç/kapa", /href=\{adres\(\{ grafik: grafikAcik \? undefined : "1" \}\)\}/.test(s) && /\{grafikAcik \? t\("grafikGizle"\) : t\("grafikGoster"\)\}/.test(s));
   kontrol("aralık adreste taşınır (arama kutusu dahil)", /aralik: aralik === "bugun" \? undefined : aralik/.test(s) && /tasinanlar=\{\{ kanal, liste, \.\.\.\(tasinan\.aralik/.test(s));
   const g = yorumsuz(kaynakOku("src/app/rapor/buybox/buybox-gecmisi.tsx"));
   kontrol("bugün → saatlik seri; 7/30 gün → günlük seri", /if \(aralik === "bugun"\) \{\s*seri = saatlikSeri\(/.test(g) && /seri = gunlukSeri\(/.test(g));
   kontrol("iki grafik: Buybox bizde + kazanma oranı", /noktalar=\{birinciNoktalari\}/.test(g) && /noktalar=\{oranNoktalari\}/.test(g));
   kontrol("ölçülmeyen dilim adıyla yazılır", /\{eksik\.length > 0 \? \(/.test(g) && /t\("olculmedi", \{ sayi: eksik\.length/.test(g));
+  kontrol("kaçırma sayımı İLK ölçümden başlar, başlangıç ayrıca yazılır",
+    /const eksik = olculmeyenler\(seri, baslangic\);/.test(g) && /const ilk = await ilkOlcumAni\(kanal\);/.test(g) && /\{baslangicGorunuyor && ilk \? \(/.test(g));
   kontrol("oran yoksa «—» (0/0 %0 yazılmaz)", /oran === null \? "—" : bicim\.yuzde\(oran\)/.test(g));
   const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>;
   const gerekli = ["gecmisBaslik", "gecmisNotu_bugun", "gecmisNotu_hafta", "gecmisNotu_ay", "aralik_bugun", "aralik_hafta", "aralik_ay", "kazanmaOrani", "grafikBirinci", "grafikOran", "gecmisBos", "olculmedi"];

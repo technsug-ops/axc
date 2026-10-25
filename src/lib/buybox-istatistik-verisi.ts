@@ -105,6 +105,16 @@ export async function buyboxOlcumleri(kanal: BuyboxKanali, bas: Date, bit: Date)
   });
 }
 
+/** Kanalın İLK ölçüm anı — ondan önceki boşluk kaçırma sayılmaz. Hiç yoksa `null`. */
+export async function ilkOlcumAni(kanal: BuyboxKanali): Promise<Date | null> {
+  const ilk = await prisma.buyboxOlcumu.findFirst({
+    where: { channelAccount: { channel: { name: KANAL_ADI[kanal] }, satisIcin: true, isActive: true } },
+    orderBy: { olculduAt: "asc" },
+    select: { olculduAt: true },
+  });
+  return ilk?.olculduAt ?? null;
+}
+
 /** Zamanlayıcının bütün kanalları — biri düşerse öteki yine koşar. */
 export async function buyboxOlcumleriniYaz(simdi: Date): Promise<(KanalOlcumSonucu | { kanal: BuyboxKanali; durum: "COKTU"; mesaj: string })[]> {
   const sonuc: (KanalOlcumSonucu | { kanal: BuyboxKanali; durum: "COKTU"; mesaj: string })[] = [];

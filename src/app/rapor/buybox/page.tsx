@@ -1,3 +1,4 @@
+import { ChartLine } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "@/components/niyetli-baglanti";
 
@@ -64,7 +65,7 @@ function aralikCoz(ham: string | undefined): IstatistikAraligi {
   return (ISTATISTIK_ARALIKLARI as readonly string[]).includes(ham ?? "") ? (ham as IstatistikAraligi) : "bugun";
 }
 
-export default async function BuyboxSayfasi({ searchParams }: { searchParams: Promise<{ kanal?: string; liste?: string; q?: string; aralik?: string }> }) {
+export default async function BuyboxSayfasi({ searchParams }: { searchParams: Promise<{ kanal?: string; liste?: string; q?: string; aralik?: string; grafik?: string }> }) {
   await sayfaIzni("rapor.gor");
   const p = await searchParams;
   const t = await getTranslations("Buybox");
@@ -73,6 +74,12 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
   const liste = listeCoz(p.liste);
   const arama = p.q?.trim() || null;
   const aralik = aralikCoz(p.aralik);
+  /**
+   * Geçmiş grafiği İSTENİNCE açılır (kullanıcı kararı 25.10.2026: «grafik
+   * istendiği zaman sayı kutularının yanında düğme olabilir»). Seçim adreste
+   * (İlke #13: sekme/açılış URL'ye yazılır); kapalıyken geçmiş sorgulanmaz.
+   */
+  const grafikAcik = p.grafik === "1";
 
   const sorguAni = new Date();
   const urunler = await buyboxUrunleri(kanal, { yalnizStoklu: true });
@@ -85,7 +92,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
   const rafta = gorunen.reduce((s, x) => s + x.stok, 0);
 
   /** Aralık varsayılanı adrese yazılmaz (temiz adres); seçilince taşınır. */
-  const tasinan = { kanal, liste, q: arama ?? undefined, aralik: aralik === "bugun" ? undefined : aralik };
+  const tasinan = { kanal, liste, q: arama ?? undefined, aralik: aralik === "bugun" ? undefined : aralik, grafik: grafikAcik ? "1" : undefined };
   const adres = (ek: Record<string, string | undefined>) => suzgecAdresi(YOL, tasinan, ek);
   const kimlikEtiketi = { sku: t("sku"), firmaSku: t("firmaSku"), barkod: t("barkod"), kanalKodu: t(`kanalKodu_${kanal}`) };
   const para = (n: number | null) => (n === null ? t("bilinmiyor") : bicim.para(n, "TRY"));
@@ -132,21 +139,32 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
       ) : null}
 
       {/* ── DENETİM SAYILARI — hepsi ayrı; tıklanınca o liste açılır (İlke #16) ── */}
-      <div className="grid max-w-4xl grid-cols-2 gap-2 md:grid-cols-5">
+      <div className="grid max-w-5xl grid-cols-2 gap-2 md:grid-cols-6">
         <IstatistikKutusu etiket={t("ozetIncelenen")} cocuk={ozet.incelenen} />
         <Link href={adres({ liste: "birinci" })} className="no-underline"><IstatistikKutusu etiket={t("ozetBirinci")} cocuk={ozet.birinci} /></Link>
         <Link href={adres({ liste: "kaybedilen" })} className="no-underline"><IstatistikKutusu etiket={t("ozetKaybedilen")} cocuk={ozet.kaybedilen} /></Link>
         <Link href={adres({ liste: "gorunmuyor" })} className="no-underline"><IstatistikKutusu etiket={t("ozetGorunmuyor")} cocuk={ozet.gorunmuyor} /></Link>
         <Link href={adres({ liste: "gorunmuyor" })} className="no-underline"><IstatistikKutusu etiket={t("ozetSorgulanamadi")} cocuk={ozet.sorgulanamadi} /></Link>
+        {/* Grafik düğmesi — kutularla aynı boy, görünür eylem (İlke #1/#2). */}
+        <Link
+          href={adres({ grafik: grafikAcik ? undefined : "1" })}
+          aria-expanded={grafikAcik}
+          className="bg-card hover:bg-muted flex min-h-11 items-center justify-center gap-2 rounded-lg border p-3 text-sm font-medium underline-offset-2 transition-colors hover:underline"
+        >
+          <ChartLine className="size-5 shrink-0" aria-hidden />
+          {grafikAcik ? t("grafikGizle") : t("grafikGoster")}
+        </Link>
       </div>
 
-      {/* ── GEÇMİŞ (K363 Faz 3-b) — saatlik ölçümlerden grafik + kazanma oranı ── */}
-      <BuyboxGecmisi
-        kanal={kanal}
-        aralik={aralik}
-        adres={(a) => adres({ aralik: a === "bugun" ? undefined : a })}
-        canli={rakipliOzet(sonuc.satirlar)}
-      />
+      {/* ── GEÇMİŞ (K363 Faz 3-b) — istenince: saatlik ölçümlerden grafik + kazanma oranı ── */}
+      {grafikAcik ? (
+        <BuyboxGecmisi
+          kanal={kanal}
+          aralik={aralik}
+          adres={(a) => adres({ aralik: a === "bugun" ? undefined : a })}
+          canli={rakipliOzet(sonuc.satirlar)}
+        />
+      ) : null}
 
       {/* ── LİSTE SEKMELERİ — sayılar aramadan bağımsız ── */}
       <div className={SEKME_SERIDI}>
@@ -159,7 +177,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
       <p className="text-sm">{t(`aciklama_${liste}`)}</p>
 
       <div className="max-w-3xl">
-        <KodAramaKutusu temelAdres={YOL} baslangic={arama ?? ""} tasinanlar={{ kanal, liste, ...(tasinan.aralik ? { aralik: tasinan.aralik } : {}) }} ipucu={t("aramaIpucu")} />
+        <KodAramaKutusu temelAdres={YOL} baslangic={arama ?? ""} tasinanlar={{ kanal, liste, ...(tasinan.aralik ? { aralik: tasinan.aralik } : {}), ...(tasinan.grafik ? { grafik: tasinan.grafik } : {}) }} ipucu={t("aramaIpucu")} />
       </div>
 
       {/* ── TOPLAM — ekranda ne varsa onun (İlke #15) ── */}

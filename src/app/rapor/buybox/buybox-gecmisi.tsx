@@ -12,11 +12,13 @@ import {
   gunlukSeri,
   kazanmaOrani,
   olculmeyenler,
+  SAAT_MS,
+  saatDilimi,
   saatlikSeri,
   type IstatistikAraligi,
   type SeriNoktasi,
 } from "@/lib/buybox-istatistik";
-import { buyboxOlcumleri } from "@/lib/buybox-istatistik-verisi";
+import { buyboxOlcumleri, ilkOlcumAni } from "@/lib/buybox-istatistik-verisi";
 import { gunBasiAni, gunDegeri, gunEkle, isTakvimGunu } from "@/lib/donem";
 
 /**
@@ -62,7 +64,12 @@ export async function BuyboxGecmisi({
   const tamEtiket = (n: SeriNoktasi) => (aralik === "bugun" ? `${bicim.tarih(n.an)} · ${bicim.saat(n.an)}` : bicim.tarih(n.an));
   const birinciNoktalari: TekNokta[] = seri.map((n) => ({ etiket: etiket(n), tamEtiket: tamEtiket(n), deger: n.birinci }));
   const oranNoktalari: TekNokta[] = seri.map((n) => ({ etiket: etiket(n), tamEtiket: tamEtiket(n), deger: n.oran }));
-  const eksik = olculmeyenler(seri);
+  /** Kaçırma sayımı ilk ölçümün düştüğü DİLİMDEN başlar (öncesi görüş alanı dışı). */
+  const ilk = await ilkOlcumAni(kanal);
+  const baslangic =
+    ilk === null ? null : aralik === "bugun" ? new Date(saatDilimi(ilk) * SAAT_MS) : gunBasiAni(isTakvimGunu(ilk));
+  const eksik = olculmeyenler(seri, baslangic);
+  const baslangicGorunuyor = ilk !== null && seri.length > 0 && ilk.getTime() > seri[0].an.getTime();
   const oran = kazanmaOrani(canli.rakipliBirinci, canli.rakipli);
 
   return (
@@ -106,6 +113,10 @@ export async function BuyboxGecmisi({
           </div>
         </div>
 
+        {/* İlk ölçümden önceki boşluk kaçırma değil — başlangıç olarak yazar. */}
+        {baslangicGorunuyor && ilk ? (
+          <p className="text-muted-foreground text-xs">{t("olcumBasladi", { an: bicim.tarihSaat(ilk) })}</p>
+        ) : null}
         {/* ⛔ Görünmeyen boşluk sorulamaz — ölçülmeyen dilim adıyla yazar. */}
         {eksik.length > 0 ? (
           <p className="text-muted-foreground text-xs">
