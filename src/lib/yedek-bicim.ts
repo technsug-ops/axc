@@ -101,6 +101,9 @@ export const YEDEK_TABLOLARI = [
   /** K363 Faz 2-b — özel gün `Channel`a bağlı (SetNull) → ondan SONRA; tarihi özel güne bağlı (Cascade) → ondan SONRA. */
   "OzelGun",
   "OzelGunTarihi",
+  /** K363 Faz 3-b — ölçüm `ChannelAccount`a bağlı; değişim ölçüme + hesaba + varyanta bağlı → ölçümden SONRA. */
+  "BuyboxOlcumu",
+  "BuyboxDegisimi",
   // --- gider ---
   "ExpenseTemplate",
   "Expense",

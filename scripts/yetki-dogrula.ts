@@ -369,6 +369,10 @@ const API_ISTISNALARI = new Map<string, string>([
     "src/app/api/cron/sicak/route.ts",
     "K332 (12.10.2026): sıcak tutma ucu — dış zamanlayıcı (cron-job.org, dakikada bir) çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. SALT OKUMA: yalnız `SELECT 1`; kapıyı `api:dogrula` 4. bölüm dizinden tarayıp sınıyor.",
   ],
+  [
+    "src/app/api/cron/buybox-olcum/route.ts",
+    "K363 Faz 3-b (25.10.2026): saatlik Buybox ölçümü — dış zamanlayıcı (cron-job.org :00 + GitHub :35 yedek) çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. Kanala YAZMAZ; deftere yalnız ölçüm sayıları + durum değişimi yazar. Kapıyı `buybox-istatistik:dogrula` ⑥ + mutasyon ve `api:dogrula` 4. bölüm sınıyor. ⚠ İlk yazımda bu satır UNUTULDU, bekçi push'u durdurdu.",
+  ],
 ]);
 {
   const korumasiz: string[] = [];
