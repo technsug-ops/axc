@@ -237,6 +237,10 @@ console.log("\n⑧ HB kendi indirimi — kutu LİSTE fiyatı, Buybox MÜŞTERİ 
     /grid grid-cols-\[7\.75rem_7\.75rem_7\.75rem_8\.25rem\]/.test(blok(s, "if (hizali) {", 1400)) &&
     /* Yuva KOŞULSUZ (satır başında) — koşul yuvanın İÇİNDE; yuvayı koşula sokan kaydırır. */
     (blok(s, "if (hizali) {", 1400).match(/^\s*<span className=\{yuva\}>/gm) ?? []).length === 4);
+  /* Kullanıcı 26.10.2026 «hem Buybox hem ürün kartı eşit büyümeli»: satırın İKİ eylemi aynı iri sınıfta. */
+  kontrol("iki satır eylemi (Fiyatla + Ürün kartı) aynı iri ölçüde",
+    /className=\{cn\(EYLEM_SINIFI, IRI_EYLEM_SINIFI\)\}/.test(k) &&
+    /<SatirEylemi href=\{`\/kart\/\$\{s\.variantId\}`\} ikon=\{IdCard\} etiket=\{t\("kartaGit"\)\} className=\{IRI_EYLEM_SINIFI\} \/>/.test(s));
   kontrol("liste iki görünümde liste fiyatını da yazar", /t\("bizimKisa", \{ fiyat: bizimYaz\(s\) \}\)/.test(s) && /etiket: t\("sutunBizim"\), deger: bizimYaz\(s\) \}/.test(s));
   const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>;
   const eksik = ["yeniListeFiyati", "musteriGorur", "musteriKisa", "indirimNotu", "bizimListeli"].filter((x) => !(tr.Buybox?.[x] ?? "").length);

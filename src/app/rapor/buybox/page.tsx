@@ -8,7 +8,7 @@ import { IstatistikKutusu } from "@/components/istatistik-kutusu";
 import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { ListeKarti } from "@/components/liste-karti";
-import { SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
+import { IRI_EYLEM_SINIFI, SatirEylemi, SatirEylemleri } from "@/components/satir-eylemi";
 import { UrunGorseli } from "@/components/urun-gorseli";
 import { UzunAd } from "@/components/uzun-ad";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -120,7 +120,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
           gonderebilir={gonderebilir}
         />
       ) : null}
-      <SatirEylemi href={`/kart/${s.variantId}`} ikon={IdCard} etiket={t("kartaGit")} />
+      <SatirEylemi href={`/kart/${s.variantId}`} ikon={IdCard} etiket={t("kartaGit")} className={IRI_EYLEM_SINIFI} />
     </>
   );
 

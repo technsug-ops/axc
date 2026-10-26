@@ -8,7 +8,8 @@ import { Calculator, UploadCloud } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EYLEM_SINIFI, EylemEtiketi } from "@/components/satir-eylemi";
+import { EYLEM_SINIFI, EylemEtiketi, IRI_EYLEM_SINIFI } from "@/components/satir-eylemi";
+import { cn } from "@/lib/utils";
 import type { BuyboxDurumu, BuyboxKanali } from "@/lib/buybox";
 import { fiyatMetniCoz, fiyatSonucu, hizliFiyatlar, listeFiyatiIcin, musteriFiyati, zararOnayiGerekirMi, type FiyatSonucu } from "@/lib/buybox-fiyat";
 import { useBicim } from "@/lib/bicim-istemci";
@@ -157,7 +158,7 @@ export function FiyatPenceresi({
 
   return (
     <Dialog open={acik} onOpenChange={kapat}>
-      <Button type="button" size="sm" onClick={ac} title={t("fiyatla")} aria-label={t("fiyatlaEtiketi", { urun: urunAdi })} className={EYLEM_SINIFI}>
+      <Button type="button" size="sm" onClick={ac} title={t("fiyatla")} aria-label={t("fiyatlaEtiketi", { urun: urunAdi })} className={cn(EYLEM_SINIFI, IRI_EYLEM_SINIFI)}>
         <Calculator />
         <EylemEtiketi>{t("fiyatla")}</EylemEtiketi>
       </Button>

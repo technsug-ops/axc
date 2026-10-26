@@ -51,6 +51,18 @@ export const EYLEM_SINIFI =
  */
 export const DURUM_EYLEMI_SINIFI =
   "max-md:h-[52px] max-md:w-full max-md:min-w-0 max-md:flex-col max-md:gap-0.5 max-md:px-1 max-md:text-[11px]";
+/**
+ * İRİ MASAÜSTÜ EYLEMİ (kullanıcı 26.10.2026, Buybox: «butonları biraz daha
+ * büyütebilirsin … hem Buybox hem ürün kartı eşit büyümeli»). `EYLEM_SINIFI`nın
+ * ÜSTÜNE eklenir (`cn` sonrakini kazandırır): masaüstünde 32 → 36 px, ikon 18 px;
+ * telefon aynen. ⚠ GENEL ayar bilerek değiştirilmedi: yazılı durum düğmeleri
+ * (`DURUM_EYLEMI_SINIFI`, kanal SKU) 32 px kalır ve aynı satırda iki boy olurdu.
+ * Bir ekranda kullanılıyorsa o satırın BÜTÜN eylemleri kullanır.
+ */
+/* ⚠ İkon seçicisi düğmenin `sm` boyundakiyle AYNI (`:not([class*='size-'])`):
+   düz `[&_svg]` daha zayıf seçici olur ve ikon 14 px'te kalırdı. */
+export const IRI_EYLEM_SINIFI = "md:h-9 md:w-9 md:[&_svg:not([class*='size-'])]:size-[18px]";
+
 /** Izgara hücresinde kutuyu saran öğe — telefonda hücreyi doldurur, taşmaz. */
 export const DURUM_EYLEMI_KABI = "max-md:w-full max-md:min-w-0";
 
