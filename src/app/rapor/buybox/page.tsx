@@ -266,7 +266,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                         <UrunGorseli ekleyebilir={resimEkleyebilir} variantId={s.variantId} url={s.gorselUrl ?? null} kaynak={s.gorselKaynak ?? null} ad={s.urunAdi} />
                         <div className="min-w-0 space-y-0.5">
                           <UzunAd metin={s.urunAdi} href={s.urunId === null ? undefined : `/urunler/${s.urunId}`} className="max-w-[20rem]" />
-                          <Kodlar s={s} etiket={kimlikEtiketi} />
+                          <Kodlar s={s} etiket={kimlikEtiketi} hizali />
                           <Rakipler s={s} baslik={t("rakipler", { sayi: s.rakipler.length })} listeFiyati={(f) => t("listeFiyati", { fiyat: f })} para={para} />
                         </div>
                       </div>
@@ -276,7 +276,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                         ust={<span className="font-medium">{t("bizimKisa", { fiyat: bizimYaz(s) })}</span>}
                         alt={s.buyboxSaticisi ? t("buyboxKisaSatici", { fiyat: para(s.buyboxFiyati), satici: s.buyboxSaticisi }) : t("buyboxKisa", { fiyat: para(s.buyboxFiyati) })}
                         altIpucu={s.buyboxSaticisi ?? undefined}
-                        enGenis="max-w-[13rem] ml-auto"
+                        enGenis="max-w-[19rem] ml-auto"
                       />
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
@@ -334,7 +334,24 @@ function UrunAdi({ s }: { s: BuyboxSatiri }) {
   );
 }
 
-function Kodlar({ s, etiket }: { s: BuyboxSatiri; etiket: { sku: string; firmaSku: string; barkod: string; kanalKodu: string } }) {
+function Kodlar({ s, etiket, hizali = false }: { s: BuyboxSatiri; etiket: { sku: string; firmaSku: string; barkod: string; kanalKodu: string }; hizali?: boolean }) {
+  /**
+   * HİZALI (masaüstü tablo, kullanıcı 26.10.2026 «bunlar bir düzende olsun»):
+   * dört kod SABİT genişlikte dört yuvada — eksik kod yuvasını boş bırakır, sonraki
+   * kod kaymaz; satırlar alt alta aynı hizada okunur. Telefonda kart alt başlığı
+   * tek satır kırpılır, orada akış düzeni kalır.
+   */
+  if (hizali) {
+    const yuva = "min-w-0";
+    return (
+      <div className="text-muted-foreground grid grid-cols-[7.75rem_7.75rem_7.75rem_8.25rem] items-center gap-x-2 text-xs">
+        <span className={yuva}><KopyalanabilirKod deger={s.sku} etiket={etiket.sku} /></span>
+        <span className={yuva}>{s.firmaSku ? <KopyalanabilirKod deger={s.firmaSku} etiket={etiket.firmaSku} /> : null}</span>
+        <span className={yuva}>{s.barkod ? <KopyalanabilirKod deger={s.barkod} etiket={etiket.barkod} /> : null}</span>
+        <span className={yuva}>{s.kanalKodu !== s.barkod ? <KopyalanabilirKod deger={s.kanalKodu} etiket={etiket.kanalKodu} /> : null}</span>
+      </div>
+    );
+  }
   return (
     <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
       <KopyalanabilirKod deger={s.sku} etiket={etiket.sku} />

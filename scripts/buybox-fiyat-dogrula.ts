@@ -231,6 +231,12 @@ console.log("\n⑧ HB kendi indirimi — kutu LİSTE fiyatı, Buybox MÜŞTERİ 
     (k.match(/\{indirimli && fiyatGecerli \? <p[^>]*>\{musteriMetni\(fiyat\)\}<\/p> : null\}/g) ?? []).length === 2);
   const s = yorumsuz(kaynakOku("src/app/rapor/buybox/page.tsx"));
   kontrol("sayfa pencereye ilan fiyatını ve oranı verir", /bizimListeFiyati=\{s\.bizimListeFiyati\}\s*indirim=\{s\.kanalIndirimi\}/.test(s));
+  /* Kullanıcı 26.10.2026 «bunlar bir düzende olsun»: kodlar satırdan satıra kayıyordu. */
+  kontrol("tablo kodları sabit yuvalarda (eksik kod yuvayı boş bırakır, kaymaz); telefon akış düzeninde",
+    /<Kodlar s=\{s\} etiket=\{kimlikEtiketi\} hizali \/>/.test(s) && /altBaslik=\{<Kodlar s=\{s\} etiket=\{kimlikEtiketi\} \/>\}/.test(s) &&
+    /grid grid-cols-\[7\.75rem_7\.75rem_7\.75rem_8\.25rem\]/.test(blok(s, "if (hizali) {", 1400)) &&
+    /* Yuva KOŞULSUZ (satır başında) — koşul yuvanın İÇİNDE; yuvayı koşula sokan kaydırır. */
+    (blok(s, "if (hizali) {", 1400).match(/^\s*<span className=\{yuva\}>/gm) ?? []).length === 4);
   kontrol("liste iki görünümde liste fiyatını da yazar", /t\("bizimKisa", \{ fiyat: bizimYaz\(s\) \}\)/.test(s) && /etiket: t\("sutunBizim"\), deger: bizimYaz\(s\) \}/.test(s));
   const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>;
   const eksik = ["yeniListeFiyati", "musteriGorur", "musteriKisa", "indirimNotu", "bizimListeli"].filter((x) => !(tr.Buybox?.[x] ?? "").length);
