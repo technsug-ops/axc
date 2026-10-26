@@ -58,15 +58,40 @@ export type BuyboxSatiri = BuyboxUrunu & {
   siramiz: number | null;
   /** Ürünü satan kaç satıcı (HB tam liste; TY yalnız «tek/çok»). */
   saticiSayisi: number | null;
-  /** Buybox bizdeyse bizden SONRAKİ (2.) fiyat — öndeliğimizin payı. */
+  /**
+   * Sıralamada 2. satıcının fiyatı (iki kanalda AYNI anlam). Buybox bizdeyse
+   * bizden sonraki = öndeliğimizin payı. ⚠ ESKİ HÂL (26.10.2026'ya dek): HB'de
+   * Buybox kaybedilmişken «bizden HEMEN SONRAKİ» satıcıydı (biz 5. isek 6.) —
+   * başlık «2. fiyat» derken TY'den farklı şey gösteriyordu (kullanıcı «bu fiyat ne»).
+   */
   ikinciFiyat: number | null;
+  /**
+   * HB «KENDİ İNDİRİMİ» (ölçüldü 26.10.2026, `scripts/hb-indirim-olcum.ts`):
+   * sıralamadaki `originalPrice` = İLANA GÖNDERDİĞİMİZ fiyat (12/12), `price` =
+   * HB'nin ÜRÜN BAŞINA YÜZDE indirimi düşülmüş müşteri fiyatı (bizim 195
+   * satırın 154'ünde; %15 · %13 · %10 · %20). Aynı üründe liste fiyatı 11.649 ile
+   * 20.000 arasında değişen satıcıların hepsinde %13,00 → sabit TUTAR değil
+   * YÜZDE. Ödeme ve komisyon LİSTE fiyatından (kullanıcı beyanı). `bizimFiyat`
+   * müşteri fiyatıdır; `bizimListeFiyati` ilandaki fiyat — kâr ve gönderim onunla.
+   * TY: `null` (girilen fiyat = müşteri fiyatı sayılır; indirim 0).
+   */
+  bizimListeFiyati: number | null;
+  /** 0 ≤ oran < 1 — müşteri = liste × (1 − oran). Bilinmiyorsa/yoksa 0. */
+  kanalIndirimi: number;
   /** HB: o üründeki bütün satıcılar (sırasıyla). TY: boş. */
   rakipler: HbRakip[];
 };
 
 const bos = (u: BuyboxUrunu, kanal: BuyboxKanali, durum: BuyboxDurumu): BuyboxSatiri => ({
   ...u, kanal, durum, bizimFiyat: null, buyboxFiyati: null, buyboxSaticisi: null, siramiz: null, saticiSayisi: null, ikinciFiyat: null, rakipler: [],
+  bizimListeFiyati: null, kanalIndirimi: 0,
 });
+
+/** HB müşteri fiyatı ile liste fiyatından indirim oranı; tutarsız değerde 0 (uydurulmaz). */
+export function indirimOrani(musteri: number, liste: number | null): number {
+  if (liste === null || !(liste > 0) || !(musteri > 0) || musteri >= liste) return 0;
+  return 1 - musteri / liste;
+}
 
 /** Sorgu başarısız — her ürün «sorgulanamadı» (boş sonuç TEMİZ sayılmaz). */
 export function sorgulanamadi(u: BuyboxUrunu, kanal: BuyboxKanali): BuyboxSatiri {
@@ -127,7 +152,9 @@ export function hbSatiri(u: BuyboxUrunu, rakipler: readonly HbRakip[] | null, ma
     ...ortak,
     bizimFiyat: biz.fiyat,
     siramiz: biz.sira,
-    ikinciFiyat: sirali.find((r) => r.sira > biz.sira)?.fiyat ?? null,
+    ikinciFiyat: sirali[1]?.fiyat ?? null,
+    bizimListeFiyati: biz.listeFiyati ?? biz.fiyat,
+    kanalIndirimi: indirimOrani(biz.fiyat, biz.listeFiyati),
   };
 }
 

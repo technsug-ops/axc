@@ -80,7 +80,11 @@ console.log("\n② Hepsiburada — satıcı listesi → durum");
   const s = hbSatiri(urun("A"), liste, "axcali");
   kontrol("biz mağaza ADIYLA bulunuruz (büyük/küçük harf duyarsız) · sıra 5", s.durum === "KAYBEDILDI" && s.siramiz === 5 && s.bizimFiyat === 1391.13);
   kontrol("Buybox: 1. sıradaki satıcı ve fiyatı (liste sırasız gelse de)", s.buyboxFiyati === 1043.13 && s.buyboxSaticisi === "AlGo");
-  kontrol("2. fiyat = bizden SONRAKİ satıcı (Miatek 2.349)", s.ikinciFiyat === 2349);
+  /* ⚠ ÖLÇÜT ÇEVRİLDİ 26.10.2026: eskiden «bizden SONRAKİ satıcı (Miatek 2.349)»
+     sabitleniyordu — o, kodun o anki DAVRANIŞIYDI ve TY'deki «2. fiyat»tan
+     (secondBuyboxPrice = sıralamada 2.) farklıydı; kullanıcı «bu fiyat ne»
+     diye sordu. Kural artık iki kanalda aynı: sıralamada 2. satıcı. */
+  kontrol("2. fiyat = sıralamada 2. satıcı (Ayz 1.099), biz 5. olsak da", s.ikinciFiyat === 1099);
   kontrol("satıcı sayısı ve sıralı tam liste", s.saticiSayisi === 4 && s.rakipler.map((x) => x.sira).join(",") === "1,2,5,6");
   const bir = hbSatiri(urun("B"), [r(1, "AXCALI", 999), r(2, "X", 1010)], "AXCALI");
   kontrol("biz 1. → BUYBOX BİZDE · 2. fiyat 1.010", bir.durum === "BIRINCI" && bir.ikinciFiyat === 1010);

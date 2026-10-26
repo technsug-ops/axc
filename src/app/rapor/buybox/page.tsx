@@ -112,6 +112,8 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
           urunAdi={s.urunAdi}
           durum={s.durum}
           bizimFiyat={s.bizimFiyat}
+          bizimListeFiyati={s.bizimListeFiyati}
+          indirim={s.kanalIndirimi}
           buyboxFiyati={s.buyboxFiyati}
           ikinciFiyat={s.ikinciFiyat}
           esitNotu={esitAmaKayip(s) ? t("esitAmaKayip") : null}
@@ -141,6 +143,9 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
     const f = buyboxFarki(s);
     return f === null ? "—" : t("fark", { tl: bicim.para(f.tl, "TRY"), yuzde: bicim.yuzde(f.yuzde) });
   };
+  /** HB kendi indirimi varsa müşteri fiyatının yanında ilandaki fiyatımız (kâr ve ödeme tabanı). */
+  const bizimYaz = (s: BuyboxSatiri) =>
+    s.kanalIndirimi > 0 && s.bizimListeFiyati !== null ? t("bizimListeli", { fiyat: para(s.bizimFiyat), liste: para(s.bizimListeFiyati) }) : para(s.bizimFiyat);
   const siraYaz = (s: BuyboxSatiri) =>
     s.siramiz === null ? t(`durum_${s.durum}`) : s.saticiSayisi === null ? t("sira", { sira: s.siramiz }) : t("siraSatici", { sira: s.siramiz, satici: s.saticiSayisi });
 
@@ -268,7 +273,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap tabular-nums">
                       <IkiSatir
-                        ust={<span className="font-medium">{t("bizimKisa", { fiyat: para(s.bizimFiyat) })}</span>}
+                        ust={<span className="font-medium">{t("bizimKisa", { fiyat: bizimYaz(s) })}</span>}
                         alt={s.buyboxSaticisi ? t("buyboxKisaSatici", { fiyat: para(s.buyboxFiyati), satici: s.buyboxSaticisi }) : t("buyboxKisa", { fiyat: para(s.buyboxFiyati) })}
                         altIpucu={s.buyboxSaticisi ?? undefined}
                         enGenis="max-w-[13rem] ml-auto"
@@ -302,7 +307,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                 altBaslik={<Kodlar s={s} etiket={kimlikEtiketi} />}
                 alanlar={[
                   { etiket: t("sutunSira"), deger: <span className={DURUM_YAZISI[durumTonu(s.durum)]}>{siraYaz(s)}</span> },
-                  { etiket: t("sutunBizim"), deger: para(s.bizimFiyat) },
+                  { etiket: t("sutunBizim"), deger: bizimYaz(s) },
                   { etiket: t("sutunBuybox"), deger: s.buyboxSaticisi ? `${para(s.buyboxFiyati)} · ${s.buyboxSaticisi}` : para(s.buyboxFiyati) },
                   { etiket: t("sutunFark"), deger: <span className={DURUM_YAZISI[farkTonu(s)]}>{farkYaz(s)}</span> },
                   { etiket: t("sutunIkinci"), deger: s.ikinciFiyat === null ? "—" : para(s.ikinciFiyat) },

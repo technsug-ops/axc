@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EYLEM_SINIFI, EylemEtiketi } from "@/components/satir-eylemi";
 import type { BuyboxDurumu, BuyboxKanali } from "@/lib/buybox";
-import { fiyatMetniCoz, fiyatSonucu, hizliFiyatlar, zararOnayiGerekirMi, type FiyatSonucu } from "@/lib/buybox-fiyat";
+import { fiyatMetniCoz, fiyatSonucu, hizliFiyatlar, listeFiyatiIcin, musteriFiyati, zararOnayiGerekirMi, type FiyatSonucu } from "@/lib/buybox-fiyat";
 import { useBicim } from "@/lib/bicim-istemci";
 import { HB_HATA_ANAHTARLARI } from "@/lib/kanal-gonderim-hb";
 import { DURUM_SERIDI, DURUM_YAZISI } from "@/lib/renkler";
@@ -39,6 +39,11 @@ import { buyboxFiyatGonder, buyboxFiyatZeminiGetir, type BuyboxGonderimSonucu, t
  *    HB 2.299 iken kutu 2.099); sayfa da bileşeni kanal+ürünle anahtarlar.
  *  · Kaydet Trendyol + Hepsiburada, YALNIZ fiyat; onay adımı eski → yeni fiyatı
  *    ve NET'i gösterir. Zarar/bilinmeyen kâr → onay kutusu işaretlenmeden geçmez.
+ *  · HB KENDİ İNDİRİMİ (26.10.2026): kutu LİSTE fiyatıdır (ilana giden, ödeme ve
+ *    komisyon tabanı); müşterinin göreceği fiyat altında yazar. ⚠ ESKİ HÂL:
+ *    kutu HB'nin indirimli müşteri fiyatıyla açılıyor ve kâr onun üstünden
+ *    hesaplanıyordu — Emsan'da 2.170'lik ilan 1.887,90 görünüp «zarar» dedi ve
+ *    1.882'yi önerdi; gönderilseydi müşteri fiyatı ~1.638'e düşerdi.
  * ============================================================================
  */
 export function FiyatPenceresi({
@@ -47,6 +52,8 @@ export function FiyatPenceresi({
   urunAdi,
   durum,
   bizimFiyat,
+  bizimListeFiyati,
+  indirim,
   buyboxFiyati,
   ikinciFiyat,
   esitNotu,
@@ -56,7 +63,12 @@ export function FiyatPenceresi({
   kanal: BuyboxKanali;
   urunAdi: string;
   durum: BuyboxDurumu;
+  /** Müşterinin gördüğü fiyatımız (Buybox yarışı bununla). */
   bizimFiyat: number | null;
+  /** İlandaki fiyatımız (HB); `null` = müşteri fiyatıyla aynı. */
+  bizimListeFiyati: number | null;
+  /** HB kendi indirimi (0–1); TY ve indirimsiz üründe 0. */
+  indirim: number;
   buyboxFiyati: number | null;
   ikinciFiyat: number | null;
   /** Kaybedilmiş ama pahalı değiliz — pencerede açıklaması yazar (`null` = yok). */
@@ -68,9 +80,12 @@ export function FiyatPenceresi({
   const tk = useTranslations("KanalGonderim");
   const bicim = useBicim();
   const router = useRouter();
-  const ilkMetin = buyboxFiyati === null ? "" : bicim.sayi(buyboxFiyati, 2);
+  /** Şu anki fiyatımız LİSTE fiyatıyla (kâr ve onay bununla); Buybox'a eşit müşteri fiyatını veren liste fiyatı. */
+  const mevcut = bizimListeFiyati ?? bizimFiyat;
+  const buyboxListe = buyboxFiyati === null ? null : listeFiyatiIcin(buyboxFiyati, indirim);
+  const ilkMetin = buyboxListe === null ? "" : bicim.sayi(buyboxListe, 2);
   const [acik, setAcik] = useState(false);
-  const [fiyatMetni, setFiyatMetni] = useState(buyboxFiyati === null ? "" : bicim.sayi(buyboxFiyati, 2));
+  const [fiyatMetni, setFiyatMetni] = useState(ilkMetin);
   const [zemin, setZemin] = useState<ZeminCevabi | null>(null);
   const [yukleniyor, yukle] = useTransition();
   const [adim, setAdim] = useState<"fiyat" | "onay">("fiyat");
@@ -83,8 +98,10 @@ export function FiyatPenceresi({
   const bugun = new Date();
   const hesap = (f: number | null): FiyatSonucu | null => (zemin?.tamam && f !== null ? fiyatSonucu(zemin.zemin, f, bugun) : null);
   const girilen = fiyatGecerli ? hesap(fiyat) : null;
-  const hizli = hizliFiyatlar({ durum, bizimFiyat, buyboxFiyati, ikinciFiyat });
+  const hizli = hizliFiyatlar({ durum, bizimFiyat, buyboxFiyati, ikinciFiyat, indirim });
   const para = (n: number) => bicim.para(n, "TRY");
+  const indirimli = indirim > 0;
+  const musteriMetni = (f: number) => t("musteriGorur", { fiyat: para(musteriFiyati(f, indirim)), oran: bicim.yuzde(indirim * 100) });
   const kanalAdi = t(`kanal_${kanal}`);
 
   const hesapla = () => {
@@ -122,6 +139,7 @@ export function FiyatPenceresi({
       <div className={`bg-card min-w-0 rounded-lg border p-2.5 ${vurgulu && s ? DURUM_SERIDI[ton(s)] : ""}`}>
         <p className="text-muted-foreground truncate text-xs">{etiket}</p>
         <p className="truncate text-xs tabular-nums">{f === null ? "—" : para(f)}</p>
+        {indirimli && f !== null ? <p className="text-muted-foreground truncate text-[11px] tabular-nums">{t("musteriKisa", { fiyat: para(musteriFiyati(f, indirim)) })}</p> : null}
         <p className={`mt-1 text-sm font-semibold tabular-nums ${s ? DURUM_YAZISI[ton(s)] : ""}`}>{s ? karMetni(s) : "—"}</p>
       </div>
     );
@@ -154,7 +172,7 @@ export function FiyatPenceresi({
             {esitNotu ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{esitNotu}</p> : null}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium" htmlFor={`fiyat-${kanal}-${variantId}`}>{t("yeniFiyat")}</label>
+              <label className="text-xs font-medium" htmlFor={`fiyat-${kanal}-${variantId}`}>{t(indirimli ? "yeniListeFiyati" : "yeniFiyat")}</label>
               <div className="flex flex-wrap items-center gap-1.5">
                 <Input
                   id={`fiyat-${kanal}-${variantId}`}
@@ -190,6 +208,8 @@ export function FiyatPenceresi({
                 })}
               </div>
               {fiyat !== null && Number.isNaN(fiyat) ? <p className={`text-xs ${DURUM_YAZISI.olumsuz}`}>{t("fiyatGecersiz")}</p> : null}
+              {indirimli && fiyatGecerli ? <p className="text-xs font-medium" role="status">{musteriMetni(fiyat)}</p> : null}
+              {indirimli ? <p className="text-muted-foreground text-xs">{t("indirimNotu")}</p> : null}
             </div>
 
             {zemin === null || yukleniyor ? (
@@ -200,8 +220,8 @@ export function FiyatPenceresi({
               <>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {karKutusu(t("girilenFiyatta"), fiyatGecerli ? fiyat : null, true)}
-                  {karKutusu(t("bizimFiyatta"), bizimFiyat, false)}
-                  {karKutusu(t("buyboxFiyatinda"), buyboxFiyati, false)}
+                  {karKutusu(t("bizimFiyatta"), mevcut, false)}
+                  {karKutusu(t("buyboxFiyatinda"), buyboxListe, false)}
                 </div>
                 <ul className="text-muted-foreground space-y-0.5 text-xs">
                   <li>
@@ -225,10 +245,11 @@ export function FiyatPenceresi({
               {t("onayMetni", {
                 urun: urunAdi,
                 kanal: kanalAdi,
-                eski: bizimFiyat === null ? "—" : para(bizimFiyat),
+                eski: mevcut === null ? "—" : para(mevcut),
                 yeni: fiyatGecerli ? para(fiyat) : "—",
               })}
             </p>
+            {indirimli && fiyatGecerli ? <p className="text-xs">{musteriMetni(fiyat)}</p> : null}
             {girilen ? (
               <p>
                 {t("onayKar")} <span className={`font-semibold tabular-nums ${DURUM_YAZISI[ton(girilen)]}`}>{karMetni(girilen)}</span>

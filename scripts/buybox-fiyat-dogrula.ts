@@ -10,13 +10,13 @@
  * ============================================================================
  */
 import { kaynakOku } from "./kaynak-oku";
-import { durumTonu, esitAmaKayip, farkTonu, type BuyboxDurumu } from "../src/lib/buybox";
-import { enDusukAcikMaliyet, fiyatMetniCoz, fiyatSonucu, hizliFiyatlar, zararOnayiGerekirMi, type FiyatZemini } from "../src/lib/buybox-fiyat";
+import { durumTonu, esitAmaKayip, farkTonu, hbSatiri, indirimOrani, type BuyboxDurumu } from "../src/lib/buybox";
+import { enDusukAcikMaliyet, fiyatMetniCoz, fiyatSonucu, hizliFiyatlar, listeFiyatiIcin, musteriFiyati, zararOnayiGerekirMi, type FiyatZemini } from "../src/lib/buybox-fiyat";
 import { simulasyonKur } from "../src/lib/fiyatlama/simulasyon";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -157,7 +157,8 @@ console.log("\n⑥ veri + ekran");
   kontrol("hızlı düğme kutuya yazar VE hesabı açar (gönderMEZ)",
     /setFiyatMetni\(bicim\.sayi\(h\.fiyat, 2\)\);\s*setSonuc\(null\);\s*hesapla\(\);\s*\}\}/.test(k) && !/hizli[\s\S]{0,400}buyboxFiyatGonder/.test(blok(k, "{hizli.map(", 900)));
   kontrol("onay düğmesi zarar kutusu işaretlenmeden kapalı", /disabled=\{gonderiliyor \|\| !fiyatGecerli \|\| \(onayGerekli && !zararOnayi\)\}/.test(k));
-  kontrol("kutu Buybox fiyatıyla dolu açılır", /useState\(buyboxFiyati === null \? "" : bicim\.sayi\(buyboxFiyati, 2\)\)/.test(k));
+  kontrol("kutu Buybox'a eşit müşteri fiyatını veren LİSTE fiyatıyla dolu açılır",
+    /const buyboxListe = buyboxFiyati === null \? null : listeFiyatiIcin\(buyboxFiyati, indirim\);/.test(k) && /const ilkMetin = buyboxListe === null \? "" : bicim\.sayi\(buyboxListe, 2\);/.test(k) && /useState\(ilkMetin\)/.test(k));
   kontrol("kargo hariçse ekranda SEBEBİYLE yazar", /t\(`kargoHaric_\$\{zemin\.kargo\.sebep \?\? "TARIFE_YOK"\}`\)/.test(k));
   const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>;
   const gerekli = ["fiyatla", "pencereBaslik", "esitKisa", "sutunFiyatlar", "sutunEylemler", "kaydet", "rozetKar", "rozetZarar", "maliyetNotu", "maliyetYok", "kargoDahil", "kargoHaric_DESI_YOK", "kargoHaric_FIRMA_YOK", "kargoHaric_TARIFE_YOK", "onayMetni", "onayZararKutu", "onayKarBilinmiyorKutu", "gonderimHata_ZARAR_ONAYI_GEREKLI", "gonderimHata_KANAL_GECERSIZ", "gonderimHata_FIYAT_GECERSIZ", "gonderimHata_ZEMIN_YOK", "gonderimHata_YETKI_YOK", "gonderimHata_OKUNAMADI", "gonderim_BASARILI", "gonderim_ISLEMDE", "onayYalnizFiyat_TY", "onayYalnizFiyat_HB", "gonderimHbSonucYok", "hizli_buyboxAlti", "hizli_buybox", "hizli_ikinciAlti", "esitAmaKayip", "komisyonNotu", "sutunDurum"];
@@ -171,7 +172,7 @@ kosanBolumler.push("ekran");
 console.log("\n⑦ hızlı doldurma + rozet tonu");
 {
   const h = (durum: string, bizimFiyat: number | null, buyboxFiyati: number | null, ikinciFiyat: number | null) =>
-    hizliFiyatlar({ durum, bizimFiyat, buyboxFiyati, ikinciFiyat }).map((x) => `${x.anahtar}:${x.fiyat}`).join(",");
+    hizliFiyatlar({ durum, bizimFiyat, buyboxFiyati, ikinciFiyat, indirim: 0 }).map((x) => `${x.anahtar}:${x.fiyat}`).join(",");
   kontrol("kaybedilmiş: Buybox −1 ₺ ve Buybox", h("KAYBEDILDI", 1840, 1835, 1840) === "buyboxAlti:1834,buybox:1835", h("KAYBEDILDI", 1840, 1835, 1840));
   kontrol("kaybedilmiş, Buybox bilinmiyor: aday yok", h("KAYBEDILDI", 1840, null, null) === "");
   kontrol("kaybedilmiş, Buybox ₺1: −1 ₺ adayı üretilmez (sıfır fiyat yok)", h("KAYBEDILDI", 5, 1, null) === "buybox:1");
@@ -196,6 +197,46 @@ console.log("\n⑦ hızlı doldurma + rozet tonu");
   kontrol("ürün kartı eylemi izinden bağımsız (kâr izni yoksa da kart açılır)", /\) : null\}\s*<SatirEylemi href=\{`\/kart\/\$\{s\.variantId\}`\}/.test(blok(s, "const eylemler = (s: BuyboxSatiri) => (", 1200)));
 }
 kosanBolumler.push("hizli");
+
+// ── ⑧ HB KENDİ İNDİRİMİ + 2. FİYAT (26.10.2026) ──────────────────────────
+console.log("\n⑧ HB kendi indirimi — kutu LİSTE fiyatı, Buybox MÜŞTERİ fiyatıyla yarışır");
+{
+  /* Emsan vakası: ilan 2.170, HB %13 → müşteri 1.887,90; Buybox (ShopAVM) 1.882,68. */
+  const r = indirimOrani(1887.9, 2170);
+  kontrol("indirim oranı müşteri/liste'den (2.170 → 1.887,90 = %13)", Math.abs(r - 0.13) < 1e-9, r);
+  kontrol("indirim yoksa / tutarsızsa 0 (uydurulmaz)", indirimOrani(2000, 2000) === 0 && indirimOrani(2000, null) === 0 && indirimOrani(2100, 2000) === 0 && indirimOrani(0, 2000) === 0);
+  kontrol("müşteri fiyatı = liste × (1 − oran)", musteriFiyati(2170, r) === 1887.9 && musteriFiyati(2164, r) === 1882.68);
+  kontrol("Buybox'a eşit liste fiyatı 2.164 (1.882,68'i değil)", listeFiyatiIcin(1882.68, r) === 2164, listeFiyatiIcin(1882.68, r));
+  const alti = listeFiyatiIcin(1881.68, r);
+  kontrol("−1 ₺ hedefi: müşteri fiyatı hedefi AŞMAZ, kuruş fazlası aşar", musteriFiyati(alti, r) <= 1881.68 && musteriFiyati(alti + 0.02, r) > 1881.68, { alti, m: musteriFiyati(alti, r) });
+  kontrol("indirim 0 → liste = hedef (TY bugünkü gibi)", listeFiyatiIcin(1835, 0) === 1835);
+  const hz = hizliFiyatlar({ durum: "KAYBEDILDI", bizimFiyat: 1887.9, buyboxFiyati: 1882.68, ikinciFiyat: 1887.9, indirim: r });
+  kontrol("hızlı adaylar LİSTE fiyatı yazar, müşteri karşılığını taşır",
+    hz.length === 2 && hz[1].anahtar === "buybox" && hz[1].fiyat === 2164 && hz[1].musteri === 1882.68 && hz[0].musteri <= 1881.68, hz);
+
+  const u = { variantId: "v", urunId: null, urunAdi: "Emsan", sku: "S", barkod: null, firmaSku: null, kanalKodu: "HB1", stok: 1 };
+  const rk = (sira: number, satici: string, fiyat: number, listeFiyati: number | null) => ({ sira, satici, fiyat, listeFiyati });
+  const kayip = hbSatiri(u, [rk(1, "ShopAVM", 1882.68, 2164), rk(2, "Venax", 1885, 2166.67), rk(3, "AXCALI", 1887.9, 2170), rk(4, "Latte", 2087.13, 2399)], "Axcali");
+  kontrol("HB satırı: müşteri fiyatımız + ilandaki fiyatımız + oran", kayip.bizimFiyat === 1887.9 && kayip.bizimListeFiyati === 2170 && Math.abs(kayip.kanalIndirimi - 0.13) < 1e-9, kayip);
+  kontrol("HB «2. fiyat» = sıralamada 2. satıcı (biz 3. iken bizden sonraki DEĞİL)", kayip.ikinciFiyat === 1885, kayip.ikinciFiyat);
+  const bizde = hbSatiri(u, [rk(2, "Venax", 1885, null), rk(1, "AXCALI", 1880, 1880)], "Axcali");
+  kontrol("bizdeyken 2. fiyat bizden sonraki; liste yoksa liste = müşteri, oran 0", bizde.ikinciFiyat === 1885 && bizde.bizimListeFiyati === 1880 && bizde.kanalIndirimi === 0, bizde);
+
+  const k = yorumsuz(kaynakOku("src/app/rapor/buybox/fiyat-penceresi.tsx"));
+  kontrol("pencere: şu anki fiyat LİSTE fiyatıyla (kâr kutusu + onay eskisi)",
+    /const mevcut = bizimListeFiyati \?\? bizimFiyat;/.test(k) && /karKutusu\(t\("bizimFiyatta"\), mevcut, false\)/.test(k) && /eski: mevcut === null \? "—" : para\(mevcut\),/.test(k));
+  kontrol("pencere: Buybox kutusu Buybox'a eşit LİSTE fiyatında", /karKutusu\(t\("buyboxFiyatinda"\), buyboxListe, false\)/.test(k));
+  kontrol("pencere: hızlı adaylara indirim verilir", /hizliFiyatlar\(\{ durum, bizimFiyat, buyboxFiyati, ikinciFiyat, indirim \}\)/.test(k));
+  kontrol("pencere: girilen fiyatın müşteri karşılığı ekranda (kutu altı + onay)",
+    (k.match(/\{indirimli && fiyatGecerli \? <p[^>]*>\{musteriMetni\(fiyat\)\}<\/p> : null\}/g) ?? []).length === 2);
+  const s = yorumsuz(kaynakOku("src/app/rapor/buybox/page.tsx"));
+  kontrol("sayfa pencereye ilan fiyatını ve oranı verir", /bizimListeFiyati=\{s\.bizimListeFiyati\}\s*indirim=\{s\.kanalIndirimi\}/.test(s));
+  kontrol("liste iki görünümde liste fiyatını da yazar", /t\("bizimKisa", \{ fiyat: bizimYaz\(s\) \}\)/.test(s) && /etiket: t\("sutunBizim"\), deger: bizimYaz\(s\) \}/.test(s));
+  const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>;
+  const eksik = ["yeniListeFiyati", "musteriGorur", "musteriKisa", "indirimNotu", "bizimListeli"].filter((x) => !(tr.Buybox?.[x] ?? "").length);
+  kontrol("sözlük: indirim metinleri dolu", eksik.length === 0, eksik);
+}
+kosanBolumler.push("indirim");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {

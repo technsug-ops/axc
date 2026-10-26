@@ -103,7 +103,31 @@ export function fiyatMetniCoz(metin: string): number | null {
   return Number.isFinite(sayi) && sayi > 0 ? Math.round(sayi * 100) / 100 : Number.NaN;
 }
 
-export type HizliFiyat = { anahtar: "buyboxAlti" | "buybox" | "ikinciAlti"; fiyat: number };
+/**
+ * HB KENDİ İNDİRİMİ (26.10.2026, kullanıcı: «HB onu 1.887,90'a indirmiş ama bana
+ * 2.170'ten ödeyecek … liste fiyatından ne kadar indirmemiz gerek ona bakacağız»).
+ * Kutuya yazılan ve kanala giden fiyat LİSTE fiyatıdır; müşteri onu
+ * `liste × (1 − indirim)` görür. Kâr liste fiyatından hesaplanır. İndirim 0 →
+ * iki fiyat aynı (TY ve indirimsiz HB ürünü bugünkü gibi çalışır).
+ */
+export function musteriFiyati(liste: number, indirim: number): number {
+  return Math.round(liste * (1 - indirim) * 100) / 100;
+}
+
+/**
+ * Müşteri fiyatını EN ÇOK `hedef` yapacak en yüksek liste fiyatı (kuruşa).
+ * Aşağı yuvarlanır: yukarı yuvarlamak müşteri fiyatını hedefin ÜSTÜNE
+ * çıkarabilirdi (Buybox'ı kaçırır). Sonuç yine sınanır.
+ */
+export function listeFiyatiIcin(hedef: number, indirim: number): number {
+  if (!(indirim > 0) || indirim >= 1) return Math.round(hedef * 100) / 100;
+  let kurus = Math.floor((hedef / (1 - indirim)) * 100 + 1e-6);
+  while (kurus > 1 && musteriFiyati(kurus / 100, indirim) > hedef + 1e-9) kurus -= 1;
+  return kurus / 100;
+}
+
+/** `fiyat` LİSTE fiyatı (kutuya yazılır, kanala gider); `musteri` HB indirimi düşülmüş hâli. */
+export type HizliFiyat = { anahtar: "buyboxAlti" | "buybox" | "ikinciAlti"; fiyat: number; musteri: number };
 
 /**
  * HIZLI DOLDURMA (25.10.2026, kullanıcı «frontend zayıf»): kutuyu tek tıkla
@@ -111,17 +135,22 @@ export type HizliFiyat = { anahtar: "buyboxAlti" | "buybox" | "ikinciAlti"; fiya
  * · Kaybedilmişse: Buybox'ın 1 ₺ altı · Buybox fiyatı.
  * · Buybox bizdeyse: 2. fiyatın 1 ₺ altı (yalnız bizim fiyatımızdan YÜKSEKSE —
  *   öndeliği koruyup fiyatı yükseltme adayı; değilse aday yok).
+ * Hedefler MÜŞTERİ fiyatıdır (Buybox müşteri fiyatıyla yarışır); kutuya o
+ * müşteri fiyatını veren LİSTE fiyatı yazılır (`indirim`; TY'de 0).
  * Sıfır/eksi aday üretilmez.
  */
-export function hizliFiyatlar(s: { durum: string; bizimFiyat: number | null; buyboxFiyati: number | null; ikinciFiyat: number | null }): HizliFiyat[] {
-  const yuvarla = (n: number) => Math.round(n * 100) / 100;
+export function hizliFiyatlar(s: { durum: string; bizimFiyat: number | null; buyboxFiyati: number | null; ikinciFiyat: number | null; indirim: number }): HizliFiyat[] {
+  const aday = (anahtar: HizliFiyat["anahtar"], hedef: number): HizliFiyat => {
+    const fiyat = listeFiyatiIcin(hedef, s.indirim);
+    return { anahtar, fiyat, musteri: musteriFiyati(fiyat, s.indirim) };
+  };
   const sonuc: HizliFiyat[] = [];
   if (s.durum === "KAYBEDILDI" && s.buyboxFiyati !== null && s.buyboxFiyati > 0) {
-    if (s.buyboxFiyati - 1 > 0) sonuc.push({ anahtar: "buyboxAlti", fiyat: yuvarla(s.buyboxFiyati - 1) });
-    sonuc.push({ anahtar: "buybox", fiyat: yuvarla(s.buyboxFiyati) });
+    if (s.buyboxFiyati - 1 > 0) sonuc.push(aday("buyboxAlti", s.buyboxFiyati - 1));
+    sonuc.push(aday("buybox", s.buyboxFiyati));
   }
   if (s.durum === "BIRINCI" && s.ikinciFiyat !== null && s.bizimFiyat !== null && s.ikinciFiyat - 1 > s.bizimFiyat) {
-    sonuc.push({ anahtar: "ikinciAlti", fiyat: yuvarla(s.ikinciFiyat - 1) });
+    sonuc.push(aday("ikinciAlti", s.ikinciFiyat - 1));
   }
   return sonuc;
 }

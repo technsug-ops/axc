@@ -2780,7 +2780,8 @@ Liste canlıdır; kaydedilen yalnız saatlik sayılar ve durumu değişen ürün
 <ul>
 <li><strong>Buybox'ı kaybettiklerim</strong> — başka satıcı önde. Buybox'a en yakın
 olanlar önce gelir: en az fiyat hareketiyle geri alınabilecekler.</li>
-<li><strong>Buybox bizde</strong> — «2. fiyat» öndeki payınızı gösterir.</li>
+<li><strong>Buybox bizde</strong> — «2. fiyat» öndeki payınızı gösterir. «2. fiyat» iki
+kanalda da sıralamada ikinci satıcının fiyatıdır.</li>
 <li><strong>Görünmüyor / sorgulanamadı</strong> — kanal bizi satıcı listesinde
 göstermedi ya da sorgu tamamlanamadı; ekran nedenini yazar.</li>
 </ul>
@@ -2806,7 +2807,15 @@ aynı motordur (komisyon dilimi, kanal kesintileri, stopaj, KDV), iki farkla:
 <strong>maliyet</strong> rafta duran partilerin <strong>en düşüğüdür</strong> (stoku
 bitmiş alış girmez) ve <strong>kargo dahildir</strong> (ürünün desisi + o kanaldaki son
 satışın kargo firması — yoksa kanalda en sık kullanılan firma — + bugünkü tarife). Kargo
-bilinemiyorsa kutu «Kargo HARİÇ» diye sebebiyle yazar. <strong>«Kaydet»</strong>
+bilinemiyorsa kutu «Kargo HARİÇ» diye sebebiyle yazar.
+<strong>Hepsiburada'nın kendi indirimi:</strong> Hepsiburada birçok üründe kendi
+bütçesinden yüzde indirim yapar (çoğu %13 ya da %15). Müşteri indirimli fiyatı görür,
+ama size ödeme ve komisyon <strong>liste fiyatından</strong> (ilana gönderdiğiniz
+fiyattan) yapılır. Bu yüzden Hepsiburada'da kutuya <strong>liste fiyatı</strong>
+yazılır; hemen altında «Müşteri ₺X görür» yazar ve kâr liste fiyatından hesaplanır.
+Hızlı düğmeler de Buybox'ı alacak müşteri fiyatını veren liste fiyatını yazar. Listede
+fiyatımız «₺1.887,90 (liste ₺2.170,00)» gibi iki rakamla görünür.
+<strong>«Kaydet»</strong>
 (Trendyol ve Hepsiburada) → onay penceresi eski ve yeni fiyatı gösterir → «Evet,
 gönder». Yalnız fiyat gider, stok değişmez. Fiyat zarar ettiriyorsa ya da kârı
 hesaplanamıyorsa, kutu işaretlenmeden gönderilmez ve bu onay kayda geçer.
