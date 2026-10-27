@@ -83,19 +83,39 @@ export async function buyboxUrunleri(kanal: BuyboxKanali, p: { variantIds?: read
 
 export type BuyboxSonucu = { satirlar: BuyboxSatiri[]; sebepler: string[]; kimlikVar: boolean };
 
+/** Onaylı ürün listesi gövdesi → barkod → müşteri fiyatı (priceSeenByCustomer, yoksa salePrice). */
+function tyFiyatOku(govde: unknown, fiyat: Map<string, number>) {
+  for (const u of ((govde as { content?: Record<string, unknown>[] }).content ?? [])) {
+    for (const v of ((u.variants as Record<string, unknown>[] | undefined) ?? [])) {
+      const p = v.price as { priceSeenByCustomer?: unknown; salePrice?: unknown } | undefined;
+      const deger = typeof p?.priceSeenByCustomer === "number" ? p.priceSeenByCustomer : typeof p?.salePrice === "number" ? p.salePrice : null;
+      if (typeof v.barcode === "string" && deger !== null) fiyat.set(v.barcode, deger);
+    }
+  }
+}
+
+/**
+ * TY: kendi fiyatımız — BARKOD BARKOD (K366 otomatik iş). Onaylı liste ucu
+ * `barcode` süzgecini kabul ediyor (ölçüldü 27.10.2026, salt okuma: tek barkod
+ * → 1 kayıt, 430 ms). Az ürünlü otomatik turda 17 sayfalık tam tarama yerine
+ * ürün başına bir istek. Okunamayan barkod sebebiyle yazılır, fiyatı boş kalır.
+ */
+async function tyFiyatlarimizBarkodla(k: NonNullable<ReturnType<typeof ty.kimlikOku>>, barkodlar: readonly string[], sebepler: Set<string>): Promise<Map<string, number>> {
+  const b = ty.baslikKur(k);
+  const fiyat = new Map<string, number>();
+  const sonuclar = await paralel(barkodlar, (x) => ty.apiGet(`${ty.UCLAR.onayliUrunler(k.saticiId, 0, 100)}&barcode=${encodeURIComponent(x)}`, b));
+  for (const s of sonuclar) {
+    if (s.tur === "VERI") tyFiyatOku(s.govde, fiyat);
+    else sebepler.add(`TY fiyat (barkodla): ${s.tur}`);
+  }
+  return fiyat;
+}
+
 /** TY: kendi müşteri fiyatımız — onaylı ürün listesinin bütün sayfaları (paralel). Barkod → priceSeenByCustomer. */
 async function tyFiyatlarimiz(k: NonNullable<ReturnType<typeof ty.kimlikOku>>, sebepler: Set<string>): Promise<Map<string, number>> {
   const b = ty.baslikKur(k);
   const fiyat = new Map<string, number>();
-  const oku = (govde: unknown) => {
-    for (const u of ((govde as { content?: Record<string, unknown>[] }).content ?? [])) {
-      for (const v of ((u.variants as Record<string, unknown>[] | undefined) ?? [])) {
-        const p = v.price as { priceSeenByCustomer?: unknown; salePrice?: unknown } | undefined;
-        const deger = typeof p?.priceSeenByCustomer === "number" ? p.priceSeenByCustomer : typeof p?.salePrice === "number" ? p.salePrice : null;
-        if (typeof v.barcode === "string" && deger !== null) fiyat.set(v.barcode, deger);
-      }
-    }
-  };
+  const oku = (govde: unknown) => tyFiyatOku(govde, fiyat);
   const ilk = await ty.apiGet(ty.UCLAR.onayliUrunler(k.saticiId, 0, 100), b);
   if (ilk.tur !== "VERI") {
     sebepler.add(`TY fiyat listesi: ${ilk.tur}`);
@@ -116,7 +136,7 @@ async function tyFiyatlarimiz(k: NonNullable<ReturnType<typeof ty.kimlikOku>>, s
  * `fiyatlarimiz: false` — TY'de kendi fiyatımızı okumak için onaylı listenin 17
  * sayfası taranmaz (alım rehberinin piyasa sütunu yalnız Buybox fiyatını ister).
  */
-export async function buyboxDurumlari(kanal: BuyboxKanali, k: KanalUrunleri, secenek: { fiyatlarimiz?: boolean } = {}): Promise<BuyboxSonucu> {
+export async function buyboxDurumlari(kanal: BuyboxKanali, k: KanalUrunleri, secenek: { fiyatlarimiz?: boolean | "BARKODLA" } = {}): Promise<BuyboxSonucu> {
   const sebepler = new Set<string>();
   if (k.urunler.length === 0) return { satirlar: [], sebepler: [], kimlikVar: true };
 
@@ -124,7 +144,11 @@ export async function buyboxDurumlari(kanal: BuyboxKanali, k: KanalUrunleri, sec
     const kimlik = ty.kimlikOku();
     if (!kimlik) return { satirlar: k.urunler.map((u) => sorgulanamadi(u, "TY")), sebepler: ["KIMLIK_YOK"], kimlikVar: false };
     const [fiyatlar, partiler] = await Promise.all([
-      secenek.fiyatlarimiz === false ? Promise.resolve(new Map<string, number>()) : tyFiyatlarimiz(kimlik, sebepler),
+      secenek.fiyatlarimiz === false
+        ? Promise.resolve(new Map<string, number>())
+        : secenek.fiyatlarimiz === "BARKODLA"
+          ? tyFiyatlarimizBarkodla(kimlik, k.urunler.map((u) => u.kanalKodu), sebepler)
+          : tyFiyatlarimiz(kimlik, sebepler),
       paralel(partilere(k.urunler, TY_BUYBOX_PARTI), async (parti) => ({ parti, sonuc: await tyBuyboxSorgula(kimlik, parti.map((u) => u.kanalKodu)) })),
     ]);
     const satirlar: BuyboxSatiri[] = [];

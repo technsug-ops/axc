@@ -178,3 +178,54 @@ export function tekBasinaKargo(
   }
   return null;
 }
+
+/**
+ * ============================================================================
+ *  OTOMATİK GÖNDERİM KAPISI (K366 adım 3, kullanıcı onayı 27.10.2026 «tamamla»)
+ * ----------------------------------------------------------------------------
+ *  Öneri «gönder» dese bile zamanlanmış iş fiyatı ancak bu kapıdan geçerse
+ *  kanala yollar. Tasarımdaki emniyet: «otomatik gönderim tabanın altına ASLA
+ *  inmez; maliyet, kargo ya da rakip fiyatı okunamayan üründe hiçbir şey
+ *  göndermez». Öneri gövdesi bunları zaten sağlıyor — kapı İKİNCİ savunmadır
+ *  ve onaylı moddaki «zararına fiyat onayı»nın otomatik karşılığıdır: onay
+ *  verecek kimse olmadığı için NET-2'si sıfır ya da eksi fiyat HİÇ gitmez.
+ * ============================================================================
+ */
+export type OtomatikKarar =
+  | { gonder: true; fiyat: number }
+  | {
+      gonder: false;
+      /**
+       * ONERI_YOK: öneri «dokunma» ya da hesaplanamadı · ZARAR: NET-2 sıfır,
+       * eksi ya da bilinmiyor · TABAN: Buybox'ı alma fiyatında marj minimumun
+       * altında · FIYAT_GECERSIZ: gönderilecek fiyat 0 ya da sayı değil.
+       */
+      sebep: "ONERI_YOK" | "ZARAR" | "TABAN" | "FIYAT_GECERSIZ";
+    };
+
+export function otomatikKarar(o: Oneri, kural: Pick<GenelKural, "minMarj">): OtomatikKarar {
+  if (o.tur !== "GONDER") return { gonder: false, sebep: "ONERI_YOK" };
+  if (!(Number.isFinite(o.listeFiyati) && o.listeFiyati > 0)) return { gonder: false, sebep: "FIYAT_GECERSIZ" };
+  if (o.sonuc.net2 === null || o.sonuc.net2 <= 0) return { gonder: false, sebep: "ZARAR" };
+  if (o.neden === "BUYBOX_AL" && (o.sonuc.marj === null || o.sonuc.marj < kural.minMarj)) return { gonder: false, sebep: "TABAN" };
+  return { gonder: true, fiyat: o.listeFiyati };
+}
+
+/**
+ * TEKRAR KAPISI — aynı ürüne aynı kanalda aynı fiyat kısa süre önce otomatik
+ * gönderildiyse yeniden gönderilmez. Süre Trendyol'un KENDİ kuralı: aynı istek
+ * 15 dakika içinde tekrarlanırsa reddediliyor (kanalın mesajı «15 minutes»,
+ * kart eylemi bunu `TEKRAR_15DK` diye ayırıyor). Kanal fiyatı yansıtmadan bir
+ * sonraki tur aynı öneriyi üretirse istek kanala gitmeden durur.
+ */
+export const TEKRAR_PENCERESI_DK = 15;
+
+export function yakindaGonderildiMi(
+  izler: readonly { kanal: string; fiyat: number; an: Date }[],
+  kanal: string,
+  fiyat: number,
+  simdi: Date,
+): boolean {
+  const sinir = simdi.getTime() - TEKRAR_PENCERESI_DK * 60_000;
+  return izler.some((i) => i.kanal === kanal && Math.abs(i.fiyat - fiyat) < 0.005 && i.an.getTime() >= sinir);
+}

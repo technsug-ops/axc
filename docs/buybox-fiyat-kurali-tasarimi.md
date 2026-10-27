@@ -57,6 +57,23 @@ bugünkü kutu rakamları değişmez.
 - Emniyet: otomatik gönderim tabanın altına ASLA inmez; maliyet, kargo ya da
   rakip fiyatı okunamayan üründe hiçbir şey göndermez (sebep yazar).
 
+**Yazıldı (adım 3, 27.10.2026):**
+- Mod seçimi: genel ayar penceresinde ve ürünün «Fiyatla» penceresindeki ürün
+  kuralında (boş = genel ayarı izle). Genel varsayılan Onaylı.
+- Gönderim kapısı `otomatikKarar` (ikinci savunma): öneri «gönder» değilse,
+  NET-2 sıfır/eksi/bilinmiyorsa ya da Buybox'ı alma fiyatında marj minimumun
+  altındaysa GİTMEZ. Onaylı moddaki «zararına fiyat onayı»nın otomatik
+  karşılığı: onay verecek kimse yok, zararına fiyat hiç gitmez.
+- Tekrar kapısı: aynı ürüne aynı kanalda aynı fiyat 15 dk içinde ikinci kez
+  gönderilmez (TY'nin kendi «aynı istek 15 dk» kuralı).
+- Gönderim, ürün kartının AYNI gövdesiyle (`lib/kanal-fiyat-yaz.ts` — kart
+  eylemlerinden taşındı, davranış aynı): kanal kuralları, KANAL_GONDERIMI izi,
+  HB'de ilan geri okuma. YALNIZ fiyat; stok gönderilmez.
+- İz: her gönderim `BUYBOX_OTOMATIK_FIYAT` (eski → yeni · neden · rakip · NET-2
+  · marj), her tur `BUYBOX_OTOMATIK_KOSUM`. Ekranda «Son otomatik
+  değişiklikler (en yeni 20)» + «son kontrol»; otomatik ürün varken iş 45 dk
+  koşmadıysa kırmızı.
+
 ## Sıklık
 
 Bugün buybox **saatte bir** ölçülüyor (cron-job.org :00, yedek GitHub :35) ve ölçüm
@@ -67,6 +84,17 @@ saatlik istatistiğe yazılıyor. Kullanıcı daha sık istedi ve öneriyi onayl
 - ⚠ Önce ölçülecek: TY Buybox Kontrol ve HB uçlarının istek sınırı, ve her
   koşumun KAS bağlantı kotasına (25) etkisi. Sınır izin vermezse aralık büyütülür
   ve gerekçesi yazılır.
+- **Ölçüldü 27.10.2026 (salt okuma, canlı anahtarla):** TY Buybox 20 ardışık
+  istek 3,2 sn, 20/20 cevap (sınır görülmedi) · HB Buybox 30 ardışık istek
+  3,6 sn, hiçbiri sınıra takılmadı (bilinmeyen SKU ile — 404 de olsa uç
+  cevapladı, kısma yok) · TY onaylı liste `barcode` süzgecini kabul ediyor
+  (1 kayıt, 430 ms) → otomatik turda kendi fiyatımız ürün başına tek istek
+  (17'den az ürün), tam tarama yerine. Tur yalnız Otomatik ürünleri sorar;
+  uç küçük havuzla koşar (en çok 3 bağlantı, K332). Aralık 15 dk kaldı.
+  ⚠ Kanıtlanmayan: kanalların YAYIMLANMIŞ sınırı (belge yok); ölçülen,
+  bugünkü hacmin sınıra takılmadığıdır.
+- Tetikleyici: birincil cron-job.org (:00 :15 :30 :45 — kullanıcı kurar),
+  yedek GitHub (:07 :22 :37 :52).
 
 ## Veri
 
@@ -81,4 +109,4 @@ saatlik istatistiğe yazılıyor. Kullanıcı daha sık istedi ve öneriyi onayl
 
 1. Şema + ayar ekranı + öneri hesabı (saf gövde, bekçili) + Buybox satırında öneri — Onaylı mod.
 2. Halil testi: öneriler gerçek ürünlerde kontrol edilir.
-3. Otomatik mod + 15 dakikalık uç.
+3. Otomatik mod + 15 dakikalık uç. ✓ yazıldı 27.10.2026 — Halil testi bekliyor.

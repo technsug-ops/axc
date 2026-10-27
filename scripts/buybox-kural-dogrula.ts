@@ -4,17 +4,20 @@
  * ----------------------------------------------------------------------------
  *  Saf gövdeler ÇAĞRILIR, kaynak taranmaz: maliyet tercihi · genel/ürün ayarı
  *  · öneri (öndeyken yükselt · kaybedince Buybox'ı al · taban · tek satıcı ·
- *  fiyat dışı kayıp · dilim atlaması) · HB liste fiyatı · tek başına kargo.
+ *  fiyat dışı kayıp · dilim atlaması) · HB liste fiyatı · tek başına kargo ·
+ *  otomatik gönderim kapısı ve tekrar kapısı (⑨, K366 adım 3).
  *  Eşikler motorun KENDİ ürettiği marjdan kurulur (min = marj ± 1): ölçüt,
  *  ayrımın iki yakasını da çalıştırır, elle hesaplanmış bir sayıya bağlı değil.
  * ============================================================================
  */
 import { kaynakOku } from "./kaynak-oku";
 import { fiyatSonucu, MALIYET_TERCIHLERI, type FiyatZemini } from "../src/lib/buybox-fiyat";
-import { acikMaliyet, etkinKural, fiyatOnerisi, tekBasinaKargo, VARSAYILAN_KURAL, type OneriGirdisi } from "../src/lib/buybox-kural";
+import { readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { acikMaliyet, etkinKural, fiyatOnerisi, otomatikKarar, tekBasinaKargo, TEKRAR_PENCERESI_DK, VARSAYILAN_KURAL, yakindaGonderildiMi, type Oneri, type OneriGirdisi } from "../src/lib/buybox-kural";
 
 let basarisiz = 0;
-const BOLUM_SAYISI = 8;
+const BOLUM_SAYISI = 9;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   if (kosul) console.log(`  OK    ${ad}`);
@@ -189,7 +192,14 @@ console.log("\n⑧ bağlar — pencere kuralı okur, öneri göndermez, satır v
   const u = blok(e, "export async function buyboxUrunKuraliKaydet(", 2600);
   kontrol("genel kural: ilk iş ayar.yaz izni · iz bırakır", /^export async function buyboxGenelKuralKaydet\([^)]*\): Promise<KuralSonucu> \{\s*if \(!\(await izinVarMi\("ayar\.yaz"\)\)\) return/.test(g) && /action: "BUYBOX_KURALI"/.test(g));
   kontrol("ürün kuralı: ilk iş kanal.yaz izni · iz bırakır", /\): Promise<KuralSonucu> \{\s*if \(!\(await izinVarMi\("kanal\.yaz"\)\)\) return/.test(u) && /action: "BUYBOX_KURALI"/.test(u));
-  kontrol("mod bu turda yazılmaz (otomatik gönderim yok — tutulamayacak söz)", !/\bmod:/.test(g.replace(/select: \{[^}]*\}/g, "")) && !/mod: veri/.test(u));
+  /**
+   * ESKİ ÖLÇÜT VE NİYE ÇEVRİLDİ: adım 1'de «mod bu turda yazılmaz (otomatik
+   * gönderim yok — tutulamayacak söz)» ölçülüyordu. Adım 3'te gönderim yazıldı
+   * (`lib/buybox-otomatik.ts`); söz artık tutulabiliyor, ölçüt «mod yazılır VE
+   * kapalı kümeden doğrulanır»a döndü.
+   */
+  kontrol("genel kural: mod doğrulanır ve yazılır", /if \(!modGecerli\(veri\.mod\)\) return \{ tamam: false, kod: "MOD_GECERSIZ" \};/.test(g) && /buyboxMod: veri\.mod/.test(g));
+  kontrol("ürün kuralı: mod doğrulanır ve yazılır (boş = genel ayarı izle)", /if \(veri\.mod !== null && !modGecerli\(veri\.mod\)\) return \{ tamam: false, kod: "MOD_GECERSIZ" \};/.test(u) && /\n\s*mod,\n/.test(u));
   const tr = JSON.parse(kaynakOku("messages/tr.json")) as Record<string, Record<string, string>>;
   const b = tr.Buybox ?? {};
   const gerekli = [
@@ -197,7 +207,10 @@ console.log("\n⑧ bağlar — pencere kuralı okur, öneri göndermez, satır v
     ...["RAKIP_YOK", "YAKIN", "TABAN", "TABAN_SIFIR", "FIYAT_DISI", "KAZANC_YOK"].map((x) => `dokunma_${x}`),
     ...["DURUM_YOK", "FIYAT_YOK", "MALIYET_YOK", "KARGO_YOK", "NET_YOK"].map((x) => `hesaplanamaz_${x}`),
     ...MALIYET_TERCIHLERI.map((x) => `maliyetTercihi_${x}`),
-    ...["YETKI_YOK", "MARJ_GECERSIZ", "ADIM_GECERSIZ", "MALIYET_GECERSIZ", "VARYANT_YOK", "OKUNAMADI", "SAYI"].map((x) => `kuralHata_${x}`),
+    ...["YETKI_YOK", "MARJ_GECERSIZ", "ADIM_GECERSIZ", "MALIYET_GECERSIZ", "MOD_GECERSIZ", "VARYANT_YOK", "OKUNAMADI", "SAYI"].map((x) => `kuralHata_${x}`),
+    ...["ONAYLI", "OTOMATIK"].map((x) => `mod_${x}`),
+    "alanMod", "genelModOtomatikNotu", "urunModOtomatikNotu", "otomatikRozet", "otomatikBaslik", "otomatikHicKosmadi", "otomatikKacti",
+    "otomatikSonKontrol", "otomatikKayitYok", "otomatikGonderildi", "otomatikReddedildi", "otomatikFiyat", "otomatikNeden_IKINCI_ALTI", "otomatikNeden_BUYBOX_AL", "otomatikKar",
     "desiBekliyor", "desiBekliyorUzun", "kargoDahilSatis", "kuralOzeti", "genelKuralDugme",
   ];
   const eksik = gerekli.filter((x) => !(b[x] ?? "").length);
@@ -205,6 +218,103 @@ console.log("\n⑧ bağlar — pencere kuralı okur, öneri göndermez, satır v
   kontrol("maliyet notu seçilen tercihi söyler (sabit «en düşük» değil)", /\{tercih\}/.test(b.maliyetNotu ?? "") && !/en düşük/.test(b.maliyetNotu ?? ""));
 }
 kosanBolumler.push("baglar");
+
+// ── ⑨ OTOMATİK GÖNDERİM (K366 adım 3) ───────────────────────────────────
+console.log("\n⑨ otomatik — kapı, tekrar kapısı, uç, gönderim çekirdeği");
+{
+  /** Öneriyi motordan üret (elle kurulmuş nesne değil) — kapı gerçek öneriyle sınanır. */
+  const z = zemin();
+  const yukselt = fiyatOnerisi(satir({ ikinciFiyat: 1000, bizimFiyat: 900 }), z, { minMarj: 6, adim: 50 }, bugun);
+  kontrol("öndeyken yükseltme önerisi kapıdan GEÇER ve LİSTE fiyatı gider", yukselt.tur === "GONDER" && otomatikKarar(yukselt, { minMarj: 6 }).gonder === true && (otomatikKarar(yukselt, { minMarj: 6 }) as { fiyat: number }).fiyat === yukselt.listeFiyati, yukselt);
+  const mYuk = yukselt.tur === "GONDER" ? (yukselt.sonuc.marj as number) : 0;
+  kontrol("YÜKSELTME en az marja takılmaz (kârı artırır) — min marjın üstünde bile gider", otomatikKarar(yukselt, { minMarj: mYuk + 1 }).gonder === true);
+  const al = fiyatOnerisi(satir({ durum: "KAYBEDILDI", bizimFiyat: 1100, buyboxFiyati: 1000 }), z, { minMarj: 6, adim: 50 }, bugun);
+  const mAl = al.tur === "GONDER" ? (al.sonuc.marj as number) : Number.NaN;
+  kontrol("Buybox'ı alma önerisi (marj ≥ min) GEÇER", al.tur === "GONDER" && otomatikKarar(al, { minMarj: mAl - 1 }).gonder === true, al);
+  const kd = (o: Oneri, m: number) => {
+    const k = otomatikKarar(o, { minMarj: m });
+    return k.gonder ? "GONDER" : k.sebep;
+  };
+  kontrol("Buybox'ı alma: marj min'in altına düşerse ikinci savunma TABAN der", al.tur === "GONDER" && kd(al, mAl + 1) === "TABAN");
+  kontrol("«dokunma» önerisi gönderilmez (ONERI_YOK)", kd(fiyatOnerisi(satir({ ikinciFiyat: null }), z, { minMarj: 6, adim: 50 }, bugun), 6) === "ONERI_YOK");
+  kontrol("hesaplanamayan öneri gönderilmez (ONERI_YOK)", kd(fiyatOnerisi(satir({}), zemin({ maliyet: null }), { minMarj: 6, adim: 50 }, bugun), 6) === "ONERI_YOK");
+  if (yukselt.tur === "GONDER") {
+    const zarar: Oneri = { ...yukselt, sonuc: { ...yukselt.sonuc, net2: -0.01 } };
+    const sifir: Oneri = { ...yukselt, sonuc: { ...yukselt.sonuc, net2: 0 } };
+    const bilinmez: Oneri = { ...yukselt, sonuc: { ...yukselt.sonuc, net2: null } };
+    kontrol("NET-2 eksi / sıfır / bilinmiyor → ASLA gönderilmez (ZARAR)", kd(zarar, -50) === "ZARAR" && kd(sifir, -50) === "ZARAR" && kd(bilinmez, -50) === "ZARAR");
+    kontrol("NET-2 bir kuruş artıda → gönderilir (sınırın iki yakası)", kd({ ...yukselt, sonuc: { ...yukselt.sonuc, net2: 0.01 } }, -50) === "GONDER");
+    kontrol("fiyat 0 / sayı değil → gönderilmez", kd({ ...yukselt, listeFiyati: 0 }, -50) === "FIYAT_GECERSIZ" && kd({ ...yukselt, listeFiyati: Number.NaN }, -50) === "FIYAT_GECERSIZ");
+  }
+
+  const simdi = new Date("2026-10-27T10:00:00Z");
+  const once = (dk: number) => new Date(simdi.getTime() - dk * 60_000);
+  kontrol("tekrar penceresi TY'nin kendi kuralı: 15 dk", TEKRAR_PENCERESI_DK === 15);
+  kontrol("aynı kanal + aynı fiyat 14 dk önce → tekrar gönderilmez", yakindaGonderildiMi([{ kanal: "TY", fiyat: 950, an: once(14) }], "TY", 950, simdi));
+  kontrol("16 dk önce → yeniden gönderilebilir", !yakindaGonderildiMi([{ kanal: "TY", fiyat: 950, an: once(16) }], "TY", 950, simdi));
+  kontrol("başka kanal ya da başka fiyat tekrar sayılmaz", !yakindaGonderildiMi([{ kanal: "HB", fiyat: 950, an: once(1) }, { kanal: "TY", fiyat: 940, an: once(1) }], "TY", 950, simdi));
+  kontrol("boş geçmiş tekrar sayılmaz", !yakindaGonderildiMi([], "TY", 950, simdi));
+
+  const yorumsuz = (x: string) => x.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+  const o = yorumsuz(kaynakOku("src/lib/buybox-otomatik.ts"));
+  const bu = (() => {
+    const i = o.indexOf("async function birUrun(");
+    return i < 0 ? "" : o.slice(i);
+  })();
+  kontrol("motor: ürün gövdesi bulundu", bu.length > 0);
+  const iKarar = bu.indexOf("const karar = otomatikKarar(oneri, z.kural.etkin);");
+  const iRet = bu.indexOf("if (!karar.gonder) {");
+  const iTekrar = bu.indexOf("if (yakindaGonderildiMi(gecmis, kanal, karar.fiyat, simdi)) return atla(\"YAKINDA_GONDERILDI\");");
+  const iTy = bu.indexOf("await tyStokFiyatYaz(");
+  const iHb = bu.indexOf("await hbStokFiyatYaz(");
+  kontrol("motor: kapı → tekrar kapısı → gönderim SIRASI", iKarar >= 0 && iRet > iKarar && iTekrar > iRet && iTy > iTekrar && iHb > iTekrar, { iKarar, iRet, iTekrar, iTy, iHb });
+  kontrol("motor: öneri pencereyle AYNI gövdeden (fiyatOnerisi + etkin kural)", /const oneri = fiyatOnerisi\(\s*\{ durum: s\.durum, bizimFiyat: s\.bizimFiyat, bizimListeFiyati: s\.bizimListeFiyati, buyboxFiyati: s\.buyboxFiyati, ikinciFiyat: s\.ikinciFiyat, kanalIndirimi: s\.kanalIndirimi \},\s*z\.zemin,\s*z\.kural\.etkin,/.test(bu));
+  kontrol("motor: mod gönderimden hemen önce TAZE kuraldan yeniden sorulur", /if \(z\.kural\.etkin\.mod !== "OTOMATIK"\) return atla\("MOD_ONAYLI"\);/.test(bu) && bu.indexOf('return atla("MOD_ONAYLI")') < iKarar);
+  kontrol("motor: YALNIZ fiyat — stok gönderilmez, giden fiyat kapının fiyatı (iki kanal)",
+    bu.includes("tyStokFiyatYaz(s.variantId, { stokGonder: false, fiyat: karar.fiyat })") && bu.includes("hbStokFiyatYaz(s.variantId, { stokGonder: false, fiyat: karar.fiyat })") && (bu.match(/StokFiyatYaz\(/g) ?? []).length === 2);
+  kontrol("motor: her gönderim (kabul/red) iz bırakır, kullanıcısız", /await izYaz\(\{\s*action: OTOMATIK_FIYAT_IZI,[\s\S]{0,120}userId: null,/.test(bu) && bu.indexOf("action: OTOMATIK_FIYAT_IZI") > iHb);
+  kontrol("motor: çözülemeyen eski iz tekrar kapısını AÇMAZ (ürün atlanır)", /if \(gecmis\.some\(\(g\) => g\.kanal === "\*"\)\) return atla\("IZ_OKUNAMADI"\);/.test(bu));
+  kontrol("motor: zaman dolunca kalan ürünler SAYILIR (sessiz kalmaz)", /if \(Date\.now\(\) >= sonAn\) \{\s*atla\(s\.variantId, "ZAMAN_YETMEDI"\);/.test(o));
+  const v = kaynakOku("src/lib/buybox-otomatik-verisi.ts");
+  kontrol("ekran ile motor AYNI iz adlarını kullanır", /OTOMATIK_FIYAT_IZI = "BUYBOX_OTOMATIK_FIYAT"/.test(o) && /OTOMATIK_KOSUM_IZI = "BUYBOX_OTOMATIK_KOSUM"/.test(o) && /const FIYAT_IZI = "BUYBOX_OTOMATIK_FIYAT";/.test(v) && /const KOSUM_IZI = "BUYBOX_OTOMATIK_KOSUM";/.test(v));
+  kontrol("ekran motoru (gönderim çekirdeğini) içe ALMAZ", !/from "\.\/buybox-otomatik"|kanal-fiyat-yaz/.test(v));
+
+  const r = yorumsuz(kaynakOku("src/app/api/cron/buybox-otomatik/route.ts"));
+  kontrol("uç: sır kapısı — tutmayan istek 404", /if \(sir === "" \|\| gelen !== `Bearer \$\{sir\}`\) \{\s*return new NextResponse\(null, \{ status: 404 \}\);/.test(r));
+  kontrol("uç: kapı motordan ÖNCE", r.indexOf("status: 404") >= 0 && r.indexOf("status: 404") < r.indexOf("await buyboxOtomatikTur("));
+  kontrol("uç: düşen kanal ya da reddedilen gönderim 500", /k\.coktu \|\| k\.reddedilen > 0/.test(r) && /status: sorunlu > 0 \? 500 : 200/.test(r));
+  kontrol("uç: oturum kapısının açık yollarında", yorumsuz(kaynakOku("src/proxy.ts")).includes('"/api/cron/buybox-otomatik",'));
+  const w = kaynakOku(".github/workflows/buybox-otomatik.yml");
+  kontrol("yedek zamanlayıcı 15 dk, birincilden kaydırılmış (:07)", /- cron: "7,22,37,52 \* \* \* \*"/.test(w) && /\/api\/cron\/buybox-otomatik"/.test(w) && /test "\$KOD" = "200"/.test(w));
+
+  /**
+   * GÖNDERİM ÇEKİRDEĞİNİN İZİN KAPISI ÇAĞIRANDADIR — kim içe alıyor, DESENDEN
+   * türetilir (elle liste değil); beyansız içe alan KIRMIZI. Çekirdek
+   * `"use server"` taşırsa her dışa aktarımı tarayıcıdan izinsiz çağrılır.
+   */
+  const lib = kaynakOku("src/lib/kanal-fiyat-yaz.ts");
+  kontrol("çekirdek \"use server\" TAŞIMAZ", !/^\s*["']use server["']/m.test(lib));
+  const BEYANLI = new Map<string, string>([
+    ["src/app/kart/[variantId]/actions.ts", "kart eylemleri — her gönderim ilk satırda yetkiIste(\"kanal.yaz\")"],
+    ["src/lib/buybox-otomatik.ts", "Buybox otomatik işi — yalnız CRON_SECRET kapılı uçtan"],
+  ]);
+  const dosyalar: string[] = [];
+  const gez = (d: string) => {
+    for (const ad of readdirSync(d)) {
+      const y = join(d, ad);
+      if (statSync(y).isDirectory()) gez(y);
+      else if (/\.(ts|tsx)$/.test(ad)) dosyalar.push(y.split("\\").join("/"));
+    }
+  };
+  gez("src");
+  const iceAlanlar = dosyalar.filter((y) => y !== "src/lib/kanal-fiyat-yaz.ts" && /from ["'](@\/lib\/|\.\/|\.\.\/)+(lib\/)?kanal-fiyat-yaz["']/.test(kaynakOku(y)));
+  kontrol("çekirdeği içe alan dosya bulundu (taban DOLU)", iceAlanlar.length >= 2, iceAlanlar);
+  const beyansiz = iceAlanlar.filter((y) => !BEYANLI.has(y));
+  kontrol("çekirdeği yalnız BEYANLI dosyalar içe alır", beyansiz.length === 0, beyansiz);
+  const sarmal = yorumsuz(kaynakOku("src/lib/buybox-otomatik.ts"));
+  kontrol("otomatik iş YALNIZ kapılı uçtan çağrılır (motoru içe alan tek dosya uç)", dosyalar.filter((y) => y !== "src/lib/buybox-otomatik.ts" && /from ["']@\/lib\/buybox-otomatik["']/.test(kaynakOku(y))).join() === "src/app/api/cron/buybox-otomatik/route.ts" && sarmal.length > 0);
+}
+kosanBolumler.push("otomatik");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {

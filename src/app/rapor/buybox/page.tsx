@@ -30,6 +30,7 @@ import {
 import { ISTATISTIK_ARALIKLARI, rakipliOzet, type IstatistikAraligi } from "@/lib/buybox-istatistik";
 import { buyboxDurumlari, buyboxUrunleri } from "@/lib/buybox-verisi";
 import { desiBekleyenler, genelKuralOku } from "@/lib/buybox-kural-verisi";
+import { otomatikGecmisi, satirModlari } from "@/lib/buybox-otomatik-verisi";
 import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { suzgecAdresi } from "@/lib/suzgec";
@@ -38,6 +39,7 @@ import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 import { BuyboxGecmisi } from "./buybox-gecmisi";
 import { FiyatPenceresi } from "./fiyat-penceresi";
 import { GenelKuralPenceresi } from "./genel-kural";
+import { OtomatikGecmisi } from "./otomatik-gecmisi";
 
 /**
  * ============================================================================
@@ -139,6 +141,12 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
     genelKuralOku(),
     karGorunur ? desiBekleyenler(sonuc.satirlar.map((x) => x.variantId), kanal) : Promise.resolve(new Set<string>()),
   ]);
+  /** K366 adım 3 — otomatik mod: satır rozeti + «Son otomatik değişiklikler». */
+  const [modlar, otomatik] = await Promise.all([
+    satirModlari(sonuc.satirlar.map((x) => x.variantId), genelKural.mod),
+    otomatikGecmisi(kanal, genelKural.mod, sorguAni),
+  ]);
+  const otomatikRozeti = (s: BuyboxSatiri) => (modlar.get(s.variantId) === "OTOMATIK" ? <DurumRozeti durum="bilgi">{t("otomatikRozet")}</DurumRozeti> : null);
   const desiUyarisi = (s: BuyboxSatiri) =>
     desiBekleyen.has(s.variantId) ? (
       s.urunId === null ? (
@@ -226,6 +234,8 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
         </Link>
       </div>
 
+      <OtomatikGecmisi gecmis={otomatik} karGorunur={karGorunur} />
+
       {/* ── GEÇMİŞ (K363 Faz 3-b) — istenince: saatlik ölçümlerden grafik + kazanma oranı ── */}
       {grafikAcik ? (
         <BuyboxGecmisi
@@ -309,6 +319,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                         {farkYaz(s) !== "—" ? <DurumRozeti durum={farkTonu(s)}>{farkYaz(s)}</DurumRozeti> : null}
                         {esitAmaKayip(s) ? <span className={`max-w-[11rem] text-xs leading-snug whitespace-normal ${DURUM_YAZISI.uyari}`}>{t("esitKisa")}</span> : null}
                         {desiUyarisi(s)}
+                        {otomatikRozeti(s)}
                       </div>
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap tabular-nums">{s.ikinciFiyat === null ? "—" : para(s.ikinciFiyat)}</TableCell>
@@ -339,10 +350,11 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                   { etiket: t("sutunStok"), deger: String(s.stok) },
                 ]}
                 not={
-                  esitAmaKayip(s) || desiBekleyen.has(s.variantId) ? (
+                  esitAmaKayip(s) || desiBekleyen.has(s.variantId) || modlar.get(s.variantId) === "OTOMATIK" ? (
                     <div className="space-y-1">
                       {esitAmaKayip(s) ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("esitKisa")}</p> : null}
                       {desiUyarisi(s)}
+                      {otomatikRozeti(s)}
                     </div>
                   ) : undefined
                 }

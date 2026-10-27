@@ -142,15 +142,25 @@ for (const yol of yazicilar) {
   }
   kontrol("② gönderim eylemi VAR (" + gonderAd + ")", eylem.includes("export async function " + gonderAd));
 
-  /* ③ İZ — KABUL VE RED */
-  const gBasi = eylem.indexOf("export async function " + gonderAd);
-  const gBlok =
-    gBasi >= 0
-      ? eylem.slice(gBasi, (() => {
-          const s = eylem.indexOf("export async function", gBasi + 10);
-          return s < 0 ? eylem.length : s;
-        })())
-      : "";
+  /**
+   * ③ İZ — KABUL VE RED.
+   * ⚠ K366 adım 3 (27.10.2026): TY ve HB'nin gönderim GÖVDESİ
+   * `src/lib/kanal-fiyat-yaz.ts`e taşındı (oturumsuz Buybox otomatik işi de
+   * aynı gövdeyi kullanır); eylem artık «izin + gövde». Gövde ölçütleri
+   * gövdenin YENİ yerinde, izin ölçütü (⑤) eylemde aranır. N11 taşınmadı.
+   */
+  const govdeLibde = kod === "ty" || kod === "hb";
+  const govdeKaynak = govdeLibde ? yorumsuz(kaynakOku("src/lib/kanal-fiyat-yaz.ts")) : eylem;
+  const govdeAd = govdeLibde ? kod + "StokFiyatYaz" : gonderAd;
+  const sonrakiExport = (m: string, bas: number) => {
+    const s = m.indexOf("export async function", bas + 10);
+    return s < 0 ? m.length : s;
+  };
+  const gBasi = govdeKaynak.indexOf("export async function " + govdeAd);
+  const gBlok = gBasi >= 0 ? govdeKaynak.slice(gBasi, sonrakiExport(govdeKaynak, gBasi)) : "";
+  kontrol("③ gönderim gövdesi bulundu (" + govdeAd + ")", gBlok.length > 0);
+  const eBasi = eylem.indexOf("export async function " + gonderAd);
+  const eBlok = eBasi >= 0 ? eylem.slice(eBasi, sonrakiExport(eylem, eBasi)) : "";
   kontrol(
     "③ KABUL izi yazılıyor",
     gBlok.includes('sonuc: "KABUL"') && gBlok.includes('action: "KANAL_GONDERIMI"'),
@@ -180,8 +190,16 @@ for (const yol of yazicilar) {
   );
   kontrol(
     "⑤ izin kapısı GÖNDERİMDE",
-    gBlok.includes('yetkiIste("kanal.yaz")'),
+    eBlok.includes('yetkiIste("kanal.yaz")'),
   );
+  if (govdeLibde) {
+    /** Eylem: ilk iş izin, sonra gövde — başka yol yok. Gövdede izin kapısı YOK (çağıranda). */
+    const sarmal = "{\n  await yetkiIste(\"kanal.yaz\");\n  return " + govdeAd + "(variantId, niyet);\n}";
+    kontrol(
+      "⑤   ...eylem = izin + gövde (" + gonderAd + " → " + govdeAd + ")",
+      eBlok.replace(/\r\n/g, "\n").includes(sarmal),
+    );
+  }
 
   /**
    * ⛔ K201-3 (16.09.2026) — TY'YE GİDEN `barcode`, `ChannelSku.channelSku`
@@ -204,18 +222,18 @@ for (const yol of yazicilar) {
      * (`\n}\n`) daraltılmış ayrı bir blok kullanılır.
      * _(Anayasa: "pencere ölçülür — gövde büyüyünce sessizce kör kalır".)_
      */
-    const tbBasi = eylem.indexOf("async function tyBaglami");
-    const tbSonu = tbBasi >= 0 ? eylem.indexOf("\n}\n", tbBasi) : -1;
-    const tbBlok = tbBasi >= 0 && tbSonu > tbBasi ? eylem.slice(tbBasi, tbSonu) : "";
+    const tbBasi = govdeKaynak.indexOf("async function tyBaglami");
+    const tbSonu = tbBasi >= 0 ? govdeKaynak.indexOf("\n}\n", tbBasi) : -1;
+    const tbBlok = tbBasi >= 0 && tbSonu > tbBasi ? govdeKaynak.slice(tbBasi, tbSonu) : "";
     kontrol(
       "K201-3 tyBaglami VARYANTIN GERÇEK barkodunu çözüyor (channelSku'dan değil)",
       tbBlok.includes("varyant.barcode") && !tbBlok.includes("kanalSku.channelSku"),
     );
 
-    const gSarBasi = eylem.indexOf("export async function tyStokFiyatGonder");
-    const gSarSonu = gSarBasi >= 0 ? eylem.indexOf("\n}\n", gSarBasi) : -1;
+    const gSarBasi = govdeKaynak.indexOf("export async function tyStokFiyatYaz");
+    const gSarSonu = gSarBasi >= 0 ? govdeKaynak.indexOf("\n}\n", gSarBasi) : -1;
     const gSarBlok =
-      gSarBasi >= 0 && gSarSonu > gSarBasi ? eylem.slice(gSarBasi, gSarSonu) : "";
+      gSarBasi >= 0 && gSarSonu > gSarBasi ? govdeKaynak.slice(gSarBasi, gSarSonu) : "";
     kontrol(
       "K201-3 gönderilen kalem.barcode, çözülen GERÇEK barkoddan geliyor (channelSku değil)",
       gSarBlok.includes("barcode: b.barkod") && !gSarBlok.includes("channelSku"),
@@ -328,9 +346,11 @@ kontrol("TY: bilinmeyen kalem durumu → ISLEMDE (başarı denmez)", tyBatchCoz(
 kontrol("TY: üstte status olsa da kalem yoksa başarı DENMEZ", tyBatchCoz({ status: "COMPLETED" }).durum === "SORGULANAMADI");
 {
   const e = yorumsuz(kaynakOku("src/app/kart/[variantId]/actions.ts"));
-  const gBasi = e.indexOf("export async function tyStokFiyatGonder");
-  const gSonu = e.indexOf("export async function", gBasi + 10);
-  const tyGovde = gBasi >= 0 ? e.slice(gBasi, gSonu >= 0 ? gSonu : undefined) : "";
+  /* Gövde K366 adım 3'te `lib/kanal-fiyat-yaz.ts`e taşındı (yukarıdaki ③ notu). */
+  const lib = yorumsuz(kaynakOku("src/lib/kanal-fiyat-yaz.ts"));
+  const gBasi = lib.indexOf("export async function tyStokFiyatYaz");
+  const gSonu = lib.indexOf("export async function", gBasi + 10);
+  const tyGovde = gBasi >= 0 ? lib.slice(gBasi, gSonu >= 0 ? gSonu : undefined) : "";
   kontrol("TY: gönderim gövdesi bulundu", tyGovde.length > 0);
   kontrol("TY: sonuç tyBatchCoz ile okunuyor", tyGovde.includes('sonucOkuma = batch.tur === "VERI" ? tyBatchCoz(batch.govde) :'));
   kontrol("TY: sonuç 12 sn'ye kadar tekrar sorgulanıyor", /for \(let deneme = 0; deneme < 5; deneme\+\+\)/.test(tyGovde) && tyGovde.includes("const batch = await gonderimSonucu(k, sonuc.batchRequestId);"));
@@ -442,7 +462,8 @@ async function hbBolumu() {
   const eylemKilit = yorumsuz(kaynakOku("src/app/kart/[variantId]/actions.ts"));
   kontrol("HB: önizleme AYNI kilit kararını gösteriyor", eylemKilit.includes("canliKapali: !hbYazmaAcikMi(ortam, HB_CANLI_YAZMA_ACIK),"));
   kontrol("HB: uç adresi kapalı kümeden (iki değer)", /const YUKLEME_UCLARI = \{\s*STOK: "stock-uploads",\s*FIYAT: "price-uploads",\s*\} as const;/.test(yazici) && yazici.includes("/${YUKLEME_UCLARI[tur]}`"));
-  const eylem = yorumsuz(kaynakOku("src/app/kart/[variantId]/actions.ts"));
+  /* Gövde K366 adım 3'te `lib/kanal-fiyat-yaz.ts`e taşındı. */
+  const eylem = yorumsuz(kaynakOku("src/lib/kanal-fiyat-yaz.ts"));
   kontrol("HB: hüküm GERİ OKUNAN ilandan veriliyor (stok ve fiyat)", eylem.includes("const hukum = parcaHukmu(durum, p.gonderilen, kanaldaki(p.tur));") && eylem.includes("ilan = await hbKanaldakiIlan(k, hbSku);"));
   kontrol("HB: geri okuma 12 sn'ye kadar tekrarlanıyor (ölçülen yansıma ~5–6 sn)", /for \(let deneme = 0; kabulEdilenler\.length > 0 && deneme < 5; deneme\+\+\)/.test(eylem));
   const pencere = yorumsuz(kaynakOku("src/app/kart/[variantId]/hb-gonderim.tsx"));

@@ -373,6 +373,10 @@ const API_ISTISNALARI = new Map<string, string>([
     "src/app/api/cron/buybox-olcum/route.ts",
     "K363 Faz 3-b (25.10.2026): saatlik Buybox ölçümü — dış zamanlayıcı (cron-job.org :00 + GitHub :35 yedek) çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. Kanala YAZMAZ; deftere yalnız ölçüm sayıları + durum değişimi yazar. Kapıyı `buybox-istatistik:dogrula` ⑥ + mutasyon ve `api:dogrula` 4. bölüm sınıyor. ⚠ İlk yazımda bu satır UNUTULDU, bekçi push'u durdurdu.",
   ],
+  [
+    "src/app/api/cron/buybox-otomatik/route.ts",
+    "K366 adım 3 (27.10.2026, kullanıcı onayı «tamamla»): Buybox otomatik fiyat — dış zamanlayıcı (cron-job.org 15 dk + GitHub yedek) çağırır; kendi CRON_SECRET kapısı var (yanlış/boş sır 404), tarayıcı oturumu taşıyamaz. ⚠ KANALA FİYAT YAZAR: yalnız modu OTOMATİK ürünler, `otomatikKarar` kapısından geçen fiyat (NET-2 ≤ 0 ve taban altı asla); her gönderim BUYBOX_OTOMATIK_FIYAT izi. Kapıyı `buybox-kural:dogrula` ⑨ + mutasyon sınıyor.",
+  ],
 ]);
 {
   const korumasiz: string[] = [];

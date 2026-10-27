@@ -1,0 +1,34 @@
+# ============================================================================
+#  K366 adim 3 — BUYBOX OTOMATIK FIYAT — YEDEK TETIKLEYICI (27.10.2026)
+# ----------------------------------------------------------------------------
+#  BIRINCIL: cron-job.org (15 dakikada bir, :00 :15 :30 :45 — K205 karari:
+#  GitHub schedule'i kisa araliklarda SAATLERCE sarkiyor). Bu akis YEDEK.
+#  Uc yalniz modu OTOMATIK olan urunlere bakar ve fiyati kanala YAZAR.
+#
+#  ⚠ DAKIKA :07 :22 :37 :52 — birincilden 7 dk kaydirildi: ayni dakikaya
+#  konsaydi iki tur ayni fiyati iki kez yollayabilirdi (tekrar kapisi iz
+#  okur, eszamanli iki turu ayiramaz).
+#
+#  SIR: depo Secrets → CRON_SECRET (diger cron isleriyle AYNI deger).
+# ============================================================================
+name: Buybox otomatik fiyat (15 dk, yedek)
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  fiyat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Ucu cagir
+        run: |
+          KOD=$(curl -s -o cevap.json -w "%{http_code}" --max-time 320 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "https://axc-seven.vercel.app/api/cron/buybox-otomatik")
+          echo "HTTP $KOD"
+          cat cevap.json || true
+          # 500 = bir kanal dustu ya da bir gonderim reddedildi.
+          test "$KOD" = "200"

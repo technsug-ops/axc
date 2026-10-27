@@ -82,6 +82,10 @@ const ACIK_YOLLAR = [
   // K363 Faz 3-b (25.10.2026) — saatlik Buybox ölçümü: aynı sınıf, aynı
   // CRON_SECRET kapısı; yalnız okur (kanala yazmaz), deftere sayı yazar.
   "/api/cron/buybox-olcum",
+  // K366 adım 3 (27.10.2026) — Buybox otomatik fiyat ucu (15 dk): aynı sınıf,
+  // aynı CRON_SECRET kapısı. ⚠ Bu uç kanala FİYAT YAZAR — yalnız modu
+  // OTOMATİK seçilmiş ürünlere, kural kapısından geçen fiyatı.
+  "/api/cron/buybox-otomatik",
   // A3/K50-a — canlı ölçüm ucu: yerel makineden canlı DB'ye TCP seviyesinde
   // erişilemediği için Vercel'in kendi havuzundan koşuyor; aynı sınıf, aynı
   // sır kapısı. ⛔ BU SATIR DA EKSİKTİ (10.09.2026'da HB ile birlikte

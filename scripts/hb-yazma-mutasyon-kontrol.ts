@@ -20,6 +20,8 @@ const BEKCI_BASLIGI = "KANAL-YAZMA BEKÇİSİ";
 const YAZICI = "scripts/hb/yazici.ts";
 const HUKUM = "src/lib/kanal-gonderim-hb.ts";
 const EYLEM = "src/app/kart/[variantId]/actions.ts";
+/** K366 adım 3 (27.10.2026): TY/HB gönderim GÖVDESİ buraya taşındı; eylem = izin + gövde. */
+const GOVDE = "src/lib/kanal-fiyat-yaz.ts";
 const PENCERE = "src/app/kart/[variantId]/hb-gonderim.tsx";
 const TY_COZ = "src/lib/kanal-gonderim-ty.ts";
 const UC = "src/app/kart/[variantId]/uc-kanal-stok.tsx";
@@ -48,20 +50,20 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "ILK ILAN OKUNUYOR (suzgec yok sayilinca)", yon: "FAZLADAN", dosya: YAZICI,
     bul: "  const ilan = liste.find((x) => (x as { hepsiburadaSku?: unknown })?.hepsiburadaSku === hbSku) as", koy: "  const ilan = liste[0] as",
     bozdugu: "baska ilanin stogu dogrulama sanilir" },
-  { ad: "STOK DURUMDAN BASARILI SAYILIYOR", yon: "FAZLADAN", dosya: EYLEM,
+  { ad: "STOK DURUMDAN BASARILI SAYILIYOR", yon: "FAZLADAN", dosya: GOVDE,
     bul: "const hukum = parcaHukmu(durum, p.gonderilen, kanaldaki(p.tur));", koy: "const hukum: ParcaHukmu = \"DOGRULANDI\";",
     bozdugu: "olmayan SKU'ya giden stok 'tamam' gorunur (HB hata vermiyor)" },
   { ad: "DONE BASARI SAYILIYOR", yon: "FAZLADAN", dosya: HUKUM,
     bul: "  return durum.durum === \"Done\" ? \"KANALDA_GORUNMUYOR\" : \"ISLENIYOR\";", koy: "  return durum.durum === \"Done\" ? \"DOGRULANDI\" : \"ISLENIYOR\";",
     bozdugu: "Done dendigi anda ilan eski fiyattayken 'tamam' denir (olculen vaka)" },
-  { ad: "GERI OKUMA TEK DENEME", yon: "KALDIRAN", dosya: EYLEM,
+  { ad: "GERI OKUMA TEK DENEME", yon: "KALDIRAN", dosya: GOVDE,
     bul: "kabulEdilenler.length > 0 && deneme < 5; deneme++", koy: "kabulEdilenler.length > 0 && deneme < 1; deneme++",
     bozdugu: "HB ~5-6 sn'de yansitiyor; tek okuma basariyi hep 'gorunmuyor' der" },
   /* ─── K169 TY sonuç okuması (01.10.2026) ─── */
-  { ad: "TY: USTTEKI status GERI GELDI", yon: "KALDIRAN", dosya: EYLEM,
+  { ad: "TY: USTTEKI status GERI GELDI", yon: "KALDIRAN", dosya: GOVDE,
     bul: "sonucOkuma = batch.tur === \"VERI\" ? tyBatchCoz(batch.govde) :", koy: "sonucOkuma = batch.tur === \"VERI\" ? { durum: \"ISLEMDE\" as TyBatchDurumu, sebepler: [] } :",
     bozdugu: "TY isleseydi de ekran hep ISLEMDE der (olculen vaka)" },
-  { ad: "TY: TEK SORGU", yon: "KALDIRAN", dosya: EYLEM,
+  { ad: "TY: TEK SORGU", yon: "KALDIRAN", dosya: GOVDE,
     bul: "for (let deneme = 0; deneme < 5; deneme++) {", koy: "for (let deneme = 0; deneme < 1; deneme++) {",
     bozdugu: "TY birkac saniyede isliyor; tek sorgu basariyi hep 'isleniyor' gosterir" },
   { ad: "TY: FAILED BASARI SAYILIYOR", yon: "FAZLADAN", dosya: TY_COZ,
@@ -85,6 +87,13 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "TY: SONUC IZI HER SORGUDA", yon: "FAZLADAN", dosya: EYLEM,
     bul: "    if (yazilmis === 0) {", koy: "    if (yazilmis >= 0) {",
     bozdugu: "her sorgu ayni sonucu tekrar ize yazar, sure olcumu kirlenir" },
+  /* ─── K366 adım 3: eylem = izin + gövde (27.10.2026) ─── */
+  { ad: "HB: EYLEMIN IZIN KAPISI KALKTI", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "  await yetkiIste(\"kanal.yaz\");\n  return hbStokFiyatYaz(variantId, niyet);", koy: "  return hbStokFiyatYaz(variantId, niyet);",
+    bozdugu: "kanal.yaz izni olmayan kullanici HB'ye fiyat/stok gonderir" },
+  { ad: "TY: EYLEM GOVDEYI ATLIYOR", yon: "KALDIRAN", dosya: EYLEM,
+    bul: "  return tyStokFiyatYaz(variantId, niyet);", koy: "  return { tamam: false, kod: \"ULASILAMADI\" };",
+    bozdugu: "karttan TY gonderimi hic yapilmaz ama ekran sebebi yanlis yazar" },
   /* ─── Üç kanala stok — tek düğme (01.10.2026) ─── */
   { ad: "UC: TY'YE FIYAT GIDIYOR", yon: "FAZLADAN", dosya: UC,
     bul: "tyStokFiyatGonder(variantId, { stokGonder: true, fiyat: null })", koy: "tyStokFiyatGonder(variantId, { stokGonder: true, fiyat: 100 })",

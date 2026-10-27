@@ -8,7 +8,7 @@ import Link from "@/components/niyetli-baglanti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fiyatMetniCoz } from "@/lib/buybox-fiyat";
-import { MALIYET_TERCIHLERI, type EtkinKural, type GenelKural, type Oneri, type UrunKurali } from "@/lib/buybox-kural";
+import { KURAL_MODLARI, MALIYET_TERCIHLERI, type EtkinKural, type GenelKural, type Oneri, type UrunKurali } from "@/lib/buybox-kural";
 import { useBicim } from "@/lib/bicim-istemci";
 import { DURUM_SERIDI, DURUM_YAZISI } from "@/lib/renkler";
 
@@ -109,6 +109,7 @@ export function KuralOzeti({ kural }: { kural: EtkinKural }) {
         marj: bicim.yuzde(kural.minMarj) + ayri(kural.ayri.minMarj),
         adim: bicim.para(kural.adim, "TRY") + ayri(kural.ayri.adim),
         maliyet: t(`maliyetTercihi_${kural.maliyet}`) + ayri(kural.ayri.maliyet),
+        mod: t(`mod_${kural.mod}`) + ayri(kural.ayri.mod),
       })}
     </p>
   );
@@ -139,6 +140,7 @@ export function UrunKuraliFormu({
   const [marjMetni, setMarjMetni] = useState(urun?.minMarj == null ? "" : bicim.sayi(urun.minMarj, 2));
   const [adimMetni, setAdimMetni] = useState(urun?.adim == null ? "" : bicim.sayi(urun.adim, 2));
   const [maliyet, setMaliyet] = useState<string>(urun?.maliyet ?? "");
+  const [mod, setMod] = useState<string>(urun?.mod ?? "");
   const [kaydediliyor, kaydet] = useTransition();
   const [sonuc, setSonuc] = useState<{ tamam: true } | { tamam: false; kod: KuralHatasi | "SAYI" } | null>(null);
 
@@ -152,7 +154,7 @@ export function UrunKuraliFormu({
       return;
     }
     kaydet(async () => {
-      const s = await buyboxUrunKuraliKaydet(variantId, { minMarj: marj, adim, maliyet: maliyet === "" ? null : maliyet });
+      const s = await buyboxUrunKuraliKaydet(variantId, { minMarj: marj, adim, maliyet: maliyet === "" ? null : maliyet, mod: mod === "" ? null : mod });
       setSonuc(s);
       if (s.tamam) kaydedildi();
     });
@@ -163,7 +165,7 @@ export function UrunKuraliFormu({
       <summary className="cursor-pointer text-xs font-medium underline underline-offset-2">{t("urunKuraliBaslik")}</summary>
       <div className="mt-2 space-y-2">
         <p className="text-muted-foreground text-xs">{t("urunKuraliNotu")}</p>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <label className="space-y-1 text-xs">
             <span className="font-medium">{t("alanMarj")}</span>
             <Input inputMode="decimal" value={marjMetni} onChange={(e) => { setMarjMetni(e.target.value); setSonuc(null); }} placeholder={t("marjIpucu")} className="h-11 tabular-nums md:h-9" />
@@ -183,7 +185,17 @@ export function UrunKuraliFormu({
               ))}
             </select>
           </label>
+          <label className="space-y-1 text-xs">
+            <span className="font-medium">{t("alanMod")}</span>
+            <select value={mod} onChange={(e) => { setMod(e.target.value); setSonuc(null); }} className="border-input bg-background h-11 w-full rounded-md border px-2 text-sm md:h-9">
+              <option value="">{t("genelIzle", { deger: t(`mod_${genel.mod}`) })}</option>
+              {KURAL_MODLARI.map((m) => (
+                <option key={m} value={m}>{t(`mod_${m}`)}</option>
+              ))}
+            </select>
+          </label>
         </div>
+        {(mod === "" ? genel.mod : mod) === "OTOMATIK" ? <p className={`text-xs ${DURUM_YAZISI.uyari}`} role="alert">{t("urunModOtomatikNotu")}</p> : null}
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" className="h-11 md:h-9" disabled={kaydediliyor} onClick={gonder}>
             {kaydediliyor ? t("kuralKaydediliyor") : t("kuralKaydet")}

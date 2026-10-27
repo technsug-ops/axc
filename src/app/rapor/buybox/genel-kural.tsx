@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fiyatMetniCoz } from "@/lib/buybox-fiyat";
-import { MALIYET_TERCIHLERI, type GenelKural } from "@/lib/buybox-kural";
+import { KURAL_MODLARI, MALIYET_TERCIHLERI, type GenelKural } from "@/lib/buybox-kural";
 import { useBicim } from "@/lib/bicim-istemci";
 import { DURUM_YAZISI } from "@/lib/renkler";
 
@@ -33,6 +33,7 @@ export function GenelKuralPenceresi({ genel }: { genel: GenelKural }) {
   const [marjMetni, setMarjMetni] = useState(bicim.sayi(genel.minMarj, 2));
   const [adimMetni, setAdimMetni] = useState(bicim.sayi(genel.adim, 2));
   const [maliyet, setMaliyet] = useState<string>(genel.maliyet);
+  const [mod, setMod] = useState<string>(genel.mod);
   const [kaydediliyor, kaydet] = useTransition();
   const [sonuc, setSonuc] = useState<{ tamam: true } | { tamam: false; kod: KuralHatasi | "SAYI" } | null>(null);
 
@@ -43,6 +44,7 @@ export function GenelKuralPenceresi({ genel }: { genel: GenelKural }) {
       setMarjMetni(bicim.sayi(genel.minMarj, 2));
       setAdimMetni(bicim.sayi(genel.adim, 2));
       setMaliyet(genel.maliyet);
+      setMod(genel.mod);
       setSonuc(null);
     }
   };
@@ -56,7 +58,7 @@ export function GenelKuralPenceresi({ genel }: { genel: GenelKural }) {
       return;
     }
     kaydet(async () => {
-      const s = await buyboxGenelKuralKaydet({ minMarj: marj, adim, maliyet });
+      const s = await buyboxGenelKuralKaydet({ minMarj: marj, adim, maliyet, mod });
       setSonuc(s);
       if (s.tamam) router.refresh();
     });
@@ -91,7 +93,17 @@ export function GenelKuralPenceresi({ genel }: { genel: GenelKural }) {
             </select>
           </label>
         </div>
-        <p className="text-muted-foreground text-xs">{t("genelKuralModNotu")}</p>
+        <label className="space-y-1 text-xs">
+          <span className="font-medium">{t("alanMod")}</span>
+          <select value={mod} onChange={(e) => { setMod(e.target.value); setSonuc(null); }} className="border-input bg-background h-11 w-full rounded-md border px-2 text-sm md:h-9">
+            {KURAL_MODLARI.map((m) => (
+              <option key={m} value={m}>{t(`mod_${m}`)}</option>
+            ))}
+          </select>
+        </label>
+        <p className={`text-xs ${mod === "OTOMATIK" ? DURUM_YAZISI.uyari : "text-muted-foreground"}`} role={mod === "OTOMATIK" ? "alert" : undefined}>
+          {t(mod === "OTOMATIK" ? "genelModOtomatikNotu" : "genelKuralModNotu")}
+        </p>
         {sonuc?.tamam ? <p className={`text-sm ${DURUM_YAZISI.olumlu}`} role="status">{t("kuralKaydedildi")}</p> : null}
         {sonuc && !sonuc.tamam ? <p className={`text-sm ${DURUM_YAZISI.olumsuz}`} role="alert">{t(`kuralHata_${sonuc.kod}`)}</p> : null}
         <DialogFooter>

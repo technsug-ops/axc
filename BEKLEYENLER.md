@@ -218,7 +218,7 @@ Bekçi `gece-turu-sonuc:dogrula` **30**; mutasyon **11/11** (bir kaçak: iki kap
 ─── **15.10.2026 — ①② GEÇTİ** (kullanıcı «ok»: `11693359539` desi 5 tahmini · kargo −₺136,92 · `11691326264` desi 2). **Açık:** ③ yeni Trendyol Express siparişinde detay desisi = kart desisi · ④ teslimden sonra tartım desisi — olaya bağlı.
 ---
 
-## 🔶 K366 — BUYBOX FİYAT KURALI (ÖNERİ · ONAYLI / OTOMATİK) · 27.10.2026 · [AÇIK — ADIM 1 CANLIDA, HALİL TESTİ GEÇTİ 27.10; ADIM 3 onay bekliyor]
+## 🔶 K366 — BUYBOX FİYAT KURALI (ÖNERİ · ONAYLI / OTOMATİK) · 27.10.2026 · [AÇIK — ADIM 1 GEÇTİ; ADIM 3 (otomatik) YAZILDI 27.10, yayın + Halil testi bekliyor]
 
 **Açılış:** «yeni büyük iş açılmaz» kuralına kullanıcı kararıyla İSTİSNA (27.10.2026: «bu şekilde başla»). Tasarım `docs/buybox-fiyat-kurali-tasarimi.md`.
 **Kural (kullanıcı):** Buybox bizdeyse 2. satıcının bir adım altına YÜKSELT (fark zaten adımdan küçükse dokunma — düşürme yok) · kaybedilmişse Buybox'ın bir adım altı, marj (NET-2 / satış fiyatı) en az %6 değilse fiyatı düşürme · tek satıcıysak dokunma · yükseltme komisyon dilimi yüzünden NET-2'yi düşürüyorsa yapma. Genel ayar: marj %6 · adım ₺50 · maliyet stoktaki EN DÜŞÜK alış (seçilebilir: en düşük / ortalama / en yüksek, hepsi elde kalan stoktan) · mod ONAYLI. Ürüne ayrı değer kullanıcı değiştirene kadar kalır; genel değişince ayrı değeri olmayanlar yeniye geçer. Kargo: ürünün o kanalda TEK BAŞINA satıldığı son siparişte ödenen; yoksa ürün desisi + tarife; desi de yoksa satırda «Desi bekliyor».
@@ -226,7 +226,7 @@ Bekçi `gece-turu-sonuc:dogrula` **30**; mutasyon **11/11** (bir kaçak: iki kap
 **Bekçi:** `buybox-kural:dogrula` 8 bölüm · mutasyon 17/17 (zararsız yeşil; kural kapıları · maliyet tercihi · tek başına kargo · pencere/satır aynı ölçüt · öneri göndermez · izin). `buybox-fiyat:dogrula`da iki ölçüt GÜNCELLENDİ (maliyet artık tercihe göre; telefon notu iki uyarı taşıyor) — gerekçe dosyada.
 **Migration:** `20261027120000_buybox_fiyat_kurali` — Company'ye 5 varsayılanlı kolon + `BuyboxKurali` tablosu; veri yazmaz/silmez. Kullanıcı onayladı (27.10); canlıda KOŞTU 27.10 (damga commit'i), yayın `042ccfde` (Vercel READY, `canli:yetki` 34/34).
 **Adım 2 Halil testi GEÇTİ (kullanıcı 27.10: «Bu testler ok»)** — genel kural %9/₺10/en düşük kaydedildi; Mario Kart'ta pencere 2.'nin ₺10 altını önerdi; sonuç: fiyat kendiliğinden değişmez (onaylı adım), öneri «Fiyatla» penceresinde.
-**Sonra:** Adım 3 otomatik mod + 15 dk'lık uç (önce TY/HB istek sınırı ve KAS kotası ölçülür).
+**Adım 3 YAZILDI (kullanıcı «tamamla», 27.10):** mod seçimi (genel + ürün) · `/api/cron/buybox-otomatik` (15 dk; yedek GitHub :07, birincil cron-job.org KULLANICI KURACAK) · `otomatikKarar` kapısı (NET-2 ≤ 0 / taban altı ASLA) · 15 dk tekrar kapısı · gönderim çekirdeği kart eylemlerinden `lib/kanal-fiyat-yaz.ts`e taşındı (davranış aynı; `kanal-yazma:dogrula` 119/119, `hb-yazma-mutasyon` 27/27) · «Son otomatik değişiklikler» + kaçan iş kırmızı · satırda «Otomatik» rozeti. Bekçi `buybox-kural:dogrula` ⑨ · mutasyon 21/21 (+ adım 1 17/17). Ölçüm: TY/HB Buybox ardışık 20–30 istekte sınır görülmedi; TY kendi fiyatı barkodla tek istek. ⚠ Açık risk (kullanıcıya soruldu): 2. satıcının fiyatı uçuk yüksekse kural fiyatı ona kadar yükseltir — tavan yok.
 
 ## 🔶 K365 — ADDA NOKTASIZ «ı» OLAN ÜRÜN ARAMADA BULUNMUYOR · 27.10.2026 · [AÇIK — kullanıcı kararı bekliyor]
 
