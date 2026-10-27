@@ -140,7 +140,12 @@ console.log("\n⑥ veri + ekran");
 {
   const v = yorumsuz(kaynakOku("src/lib/buybox-fiyat-verisi.ts"));
   kontrol("zemin kartın gövdesinden, hesap KİMLİĞİYLE seçilir (ad etikettir)", /simulasyonZeminleri\(variantId, an\)/.test(v) && /zeminler\.find\(\(z\) => z\.channelAccountId === hesap\.id\)/.test(v));
-  kontrol("maliyet açık partilerden ortak gövdeyle", /acikPartiler\(prisma, variantId\)/.test(v) && /const m = enDusukAcikMaliyet\(partiler, paraBirimi\);/.test(v));
+  /**
+   * ÖLÇÜT GÜNCELLENDİ (K366, 27.10.2026): maliyet artık ürünün kural tercihiyle
+   * (en düşük · ortalama · en yüksek; varsayılan en düşük — 25.10 kararının
+   * aynısı). Eski ölçüt sabit «en düşük» çağrısını arıyordu.
+   */
+  kontrol("maliyet açık partilerden ortak gövdeyle, ürünün kural tercihine göre", /acikPartiler\(prisma, variantId\)/.test(v) && /const m = acikMaliyet\(partiler, paraBirimi, kural\.etkin\.maliyet\);/.test(v));
   kontrol("kargo firması: ürünün son satışı yoksa kanalın EN SIK firması (kaynağı ekrana gider)",
     /if \(firmaId === null\) \{\s*const sik = await prisma\.sale\.groupBy\(/.test(v) && /orderBy: \{ _count: \{ cargoCarrierId: "desc" \} \}/.test(v) && /firmaKaynagi = "KANAL";/.test(v));
   kontrol("kargo tarifesi: en yeni geçerli (bugün), kâr motoruyla aynı arama", /effectiveFrom: \{ lte: an \} \},\s*orderBy: \{ effectiveFrom: "desc" \}/.test(v));
@@ -193,7 +198,10 @@ console.log("\n⑦ hızlı doldurma + rozet tonu");
   kontrol("rozetler ortak tonla, iki görünümde (tablo `DurumRozeti` · telefon renkli yazı)",
     /<DurumRozeti durum=\{durumTonu\(s\.durum\)\}>/.test(s) && /<DurumRozeti durum=\{farkTonu\(s\)\}>/.test(s) && /DURUM_YAZISI\[durumTonu\(s\.durum\)\]/.test(s) && /DURUM_YAZISI\[farkTonu\(s\)\]/.test(s));
   kontrol("«fiyat dışı» notu iki görünümde + pencerede uzun hâli",
-    /\{esitAmaKayip\(s\) \? <span[^>]*>\{t\("esitKisa"\)\}<\/span> : null\}/.test(s) && /not=\{esitAmaKayip\(s\) \? <p[^>]*>\{t\("esitKisa"\)\}<\/p> : undefined\}/.test(s) && /esitNotu=\{esitAmaKayip\(s\) \? t\("esitAmaKayip"\) : null\}/.test(s));
+    /\{esitAmaKayip\(s\) \? <span[^>]*>\{t\("esitKisa"\)\}<\/span> : null\}/.test(s) &&
+    /** ÖLÇÜT GÜNCELLENDİ (K366): telefon notu artık iki uyarı taşır (fiyat dışı · desi bekliyor); not bloğunda aranır. */
+    /\{esitAmaKayip\(s\) \? <p[^>]*>\{t\("esitKisa"\)\}<\/p> : null\}/.test(blok(s, "not={", 500)) &&
+    /esitNotu=\{esitAmaKayip\(s\) \? t\("esitAmaKayip"\) : null\}/.test(s));
   kontrol("ürün kartı eylemi izinden bağımsız (kâr izni yoksa da kart açılır)", /\) : null\}\s*<SatirEylemi href=\{`\/kart\/\$\{s\.variantId\}`\}/.test(blok(s, "const eylemler = (s: BuyboxSatiri) => (", 1200)));
 }
 kosanBolumler.push("hizli");

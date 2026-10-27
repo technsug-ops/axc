@@ -5209,7 +5209,8 @@
     "sutunUrun": "", "sutunStok": "", "sutunBizim": "", "sutunBuybox": "", "sutunSira": "", "sutunFark": "", "sutunIkinci": "", "sutunDurum": "", "sutunFiyatlar": "", "sutunEylemler": "", "bizimKisa": "", "buyboxKisa": "", "buyboxKisaSatici": "",
     "sira": "", "siraSatici": "", "fark": "", "bilinmiyor": "",
     "durum_BIRINCI": "", "durum_KAYBEDILDI": "", "durum_GORUNMUYOR": "", "durum_SORGULANAMADI": "",
-    "kartaGit": "", "rakipler": "", "listeFiyati": "", "sku": "", "firmaSku": "", "barkod": "", "kanalKodu_TY": "", "kanalKodu_HB": ""
+    "kartaGit": "", "rakipler": "", "listeFiyati": "", "sku": "", "firmaSku": "", "barkod": "", "kanalKodu_TY": "", "kanalKodu_HB": "",
+    "maliyetTercihi_EN_DUSUK": "", "maliyetTercihi_ORTALAMA": "", "maliyetTercihi_EN_YUKSEK": "", "kargoDahilSatis": "", "oneriBaslik": "", "oneri_IKINCI_ALTI": "", "oneri_BUYBOX_AL": "", "oneriKullan": "", "dokunma_RAKIP_YOK": "", "dokunma_YAKIN": "", "dokunma_TABAN": "", "dokunma_TABAN_SIFIR": "", "dokunma_FIYAT_DISI": "", "dokunma_KAZANC_YOK": "", "hesaplanamaz_DURUM_YOK": "", "hesaplanamaz_FIYAT_YOK": "", "hesaplanamaz_MALIYET_YOK": "", "hesaplanamaz_KARGO_YOK": "", "hesaplanamaz_NET_YOK": "", "desiBekliyor": "", "desiBekliyorUzun": "", "desiGir": "", "kuralOzeti": "", "kuralAyri": "", "urunKuraliBaslik": "", "urunKuraliNotu": "", "alanMarj": "", "alanAdim": "", "alanMaliyet": "", "genelIzle": "", "marjIpucu": "", "adimIpucu": "", "kuralKaydet": "", "kuralKaydediliyor": "", "kuralKaydedildi": "", "kuralHata_YETKI_YOK": "", "kuralHata_MARJ_GECERSIZ": "", "kuralHata_ADIM_GECERSIZ": "", "kuralHata_MALIYET_GECERSIZ": "", "kuralHata_VARYANT_YOK": "", "kuralHata_OKUNAMADI": "", "kuralHata_SAYI": "", "genelKuralDugme": "", "genelKuralBaslik": "", "genelKuralNotu": "", "genelKuralModNotu": ""
   },
   "UrunAnalizi": {
     "baslik": "",

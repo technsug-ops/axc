@@ -600,6 +600,8 @@ model ProductVariant {
   eskiKodlar         EskiKod[]
   /// K363 Faz 3-b — Buybox durum değişimleri.
   buyboxDegisimleri  BuyboxDegisimi[]
+  /// K366 — ürüne ayrı Buybox fiyat kuralı (yoksa firma geneli izlenir).
+  buyboxKurali       BuyboxKurali?
 
   /// SAYIM GECERSIZLESTI — fiziksel sayimdan SONRA, sayim tarihinden ONCEYE
   /// bir hareket yazildiginda damgalanir. O varyantin sayimi artik gecerli
@@ -3262,6 +3264,18 @@ model Company {
   /// USD/altın kayıtları GİZLENMEZ (veri saklanmaz, yalnız yeni seçim daralır).
   finansmanCokBirim Boolean @default(false)
 
+  /// K366 — BUYBOX FİYAT KURALI, FİRMA GENELİ (kullanıcı kararları 27.10.2026).
+  /// Ürüne ayrı değeri olmayan her ürün bunları izler; genel değer değişince
+  /// (ör. %6 → %8) o ürünler kendiliğinden yeniye geçer. Ürüne ayrı değerler
+  /// `BuyboxKurali`nda. Varsayılanlar kullanıcının verdiği değerler: marj %6
+  /// (NET-2 / satış fiyatı) · adım ₺50 · maliyet stoktaki EN DÜŞÜK alış · ONAYLI.
+  /// Saf kural: `src/lib/buybox-kural.ts`.
+  buyboxMinMarj      Decimal              @default(6) @db.Decimal(5, 2)
+  buyboxAdimAmount   Decimal              @default(50) @db.Decimal(18, 4)
+  buyboxAdimCurrency Currency             @default(TRY)
+  buyboxMaliyet      BuyboxMaliyetTercihi @default(EN_DUSUK)
+  buyboxMod          BuyboxKuralModu      @default(ONAYLI)
+
   uyelikler UserCompanyRole[]
   auditLogs AuditLog[]
   kullanimOlaylari KullanimOlayi[]
@@ -4214,4 +4228,37 @@ model BuyboxDegisimi {
 
   @@index([channelAccountId, variantId, olculduAt])
   @@index([olculduAt])
+}
+
+/// K366 — Buybox fiyat kuralında elde kalan stoktan hangi alış fiyatı maliyet sayılır.
+enum BuyboxMaliyetTercihi {
+  EN_DUSUK
+  ORTALAMA // kalan adetle ağırlıklı
+  EN_YUKSEK
+}
+
+/// K366 — önerilen fiyat kullanıcı onayıyla mı gider, kendiliğinden mi.
+enum BuyboxKuralModu {
+  ONAYLI
+  OTOMATIK
+}
+
+/// K366 — ÜRÜNE AYRI BUYBOX FİYAT KURALI (kullanıcı kararları 27.10.2026).
+/// Varyant başına en çok bir satır. BOŞ alan = firma genelini izle
+/// (`Company.buybox*`); dolu alan, kullanıcı yeniden değiştirene kadar kalır.
+/// ⚠ `0` meşru bir değerdir (ör. marj %0), «genel ayarı izle» demek DEĞİL —
+/// o anlam yalnız `null`da. Satır her iki Buybox kanalına (TY · HB) birlikte
+/// uygulanır. Kim/ne zaman değiştirdi `AuditLog`ta.
+/// Firma alanı YOK: varyant zaten firmaya bağlı yapının parçası (K347 kararı).
+model BuyboxKurali {
+  id           String                @id @default(cuid())
+  variantId    String                @unique
+  variant      ProductVariant        @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  minMarj      Decimal?              @db.Decimal(5, 2)
+  adimAmount   Decimal?              @db.Decimal(18, 4)
+  adimCurrency Currency?
+  maliyet      BuyboxMaliyetTercihi?
+  mod          BuyboxKuralModu?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
 }

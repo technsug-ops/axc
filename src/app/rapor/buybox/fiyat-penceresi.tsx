@@ -13,11 +13,13 @@ import { cn } from "@/lib/utils";
 import type { BuyboxDurumu, BuyboxKanali } from "@/lib/buybox";
 import { fiyatMetniCoz, fiyatSonucu, hizliFiyatlar, listeFiyatiIcin, musteriFiyati, zararOnayiGerekirMi, type FiyatSonucu } from "@/lib/buybox-fiyat";
 import { useBicim } from "@/lib/bicim-istemci";
+import { fiyatOnerisi } from "@/lib/buybox-kural";
 import { HB_HATA_ANAHTARLARI } from "@/lib/kanal-gonderim-hb";
 import { DURUM_SERIDI, DURUM_YAZISI } from "@/lib/renkler";
 
 import { HATA_ANAHTARI as HB_HATA } from "../../kart/[variantId]/hb-gonderim";
 import { buyboxFiyatGonder, buyboxFiyatZeminiGetir, type BuyboxGonderimSonucu, type ZeminCevabi } from "./fiyat-eylemleri";
+import { KuralOzeti, OneriKutusu, UrunKuraliFormu } from "./kural-kutulari";
 
 /**
  * ============================================================================
@@ -49,6 +51,7 @@ import { buyboxFiyatGonder, buyboxFiyatZeminiGetir, type BuyboxGonderimSonucu, t
  */
 export function FiyatPenceresi({
   variantId,
+  urunId,
   kanal,
   urunAdi,
   durum,
@@ -61,6 +64,8 @@ export function FiyatPenceresi({
   gonderebilir,
 }: {
   variantId: string;
+  /** Ürün kartı (desi girişi) bağlantısı için; yoksa bağlantı çizilmez. */
+  urunId: string | null;
   kanal: BuyboxKanali;
   urunAdi: string;
   durum: BuyboxDurumu;
@@ -109,6 +114,22 @@ export function FiyatPenceresi({
     if (zemin?.tamam || yukleniyor) return;
     yukle(async () => setZemin(await buyboxFiyatZeminiGetir(variantId, kanal)));
   };
+  /** K366 — ürün kuralı kaydedilince zemin (maliyet tercihi) ve öneri yeniden kurulur. */
+  /**
+   * Zemin SIFIRLANMAZ: sıfırlansaydı form kapanır ve «kaydedildi» onayı
+   * görünmeden kaybolurdu (İlke #5). Yeni zemin gelince öneri yenilenir.
+   */
+  const yenidenHesapla = () => {
+    yukle(async () => setZemin(await buyboxFiyatZeminiGetir(variantId, kanal)));
+    router.refresh();
+  };
+  /**
+   * K366 — ÖNERİLEN FİYAT (onaylı mod): kuralın saf gövdesi, pencerenin zeminiyle.
+   * «Kutuya yaz» yalnız kutuyu doldurur; gönderim yine Kaydet → onay adımından.
+   */
+  const oneri = zemin?.tamam
+    ? fiyatOnerisi({ durum, bizimFiyat, bizimListeFiyati, buyboxFiyati, ikinciFiyat, kanalIndirimi: indirim }, zemin.zemin, zemin.kural.etkin, bugun)
+    : null;
   /** Pencere açılınca hesap kendiliğinden yapılır (Hesapla tıklaması yerine «Fiyatla»). */
   const ac = () => {
     setAcik(true);
@@ -172,6 +193,22 @@ export function FiyatPenceresi({
           <div className="min-w-0 space-y-3">
             {esitNotu ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{esitNotu}</p> : null}
 
+            {zemin?.tamam && oneri !== null && !yukleniyor ? (
+              <OneriKutusu
+                oneri={oneri}
+                kural={zemin.kural.etkin}
+                ikinciFiyat={ikinciFiyat}
+                buyboxFiyati={buyboxFiyati}
+                indirimli={indirimli}
+                desiYok={zemin.kargo.sebep === "DESI_YOK"}
+                urunId={urunId}
+                kutuyaYaz={(f) => {
+                  setFiyatMetni(bicim.sayi(f, 2));
+                  setSonuc(null);
+                }}
+              />
+            ) : null}
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium" htmlFor={`fiyat-${kanal}-${variantId}`}>{t(indirimli ? "yeniListeFiyati" : "yeniFiyat")}</label>
               <div className="flex flex-wrap items-center gap-1.5">
@@ -213,7 +250,7 @@ export function FiyatPenceresi({
               {indirimli ? <p className="text-muted-foreground text-xs">{t("indirimNotu")}</p> : null}
             </div>
 
-            {zemin === null || yukleniyor ? (
+            {zemin === null ? (
               <p className="text-muted-foreground text-sm" role="status">{t("hesaplaniyor")}</p>
             ) : !zemin.tamam ? (
               <p className={`text-sm ${DURUM_YAZISI.olumsuz}`} role="alert">{t(`zeminHata_${zemin.kod}`)}</p>
@@ -228,15 +265,19 @@ export function FiyatPenceresi({
                   <li>
                     {zemin.zemin.maliyet === null
                       ? t("maliyetYok")
-                      : t("maliyetNotu", { maliyet: para(zemin.zemin.maliyet), parti: zemin.partiSayisi })}
+                      : t("maliyetNotu", { maliyet: para(zemin.zemin.maliyet), parti: zemin.partiSayisi, tercih: t(`maliyetTercihi_${zemin.kural.etkin.maliyet}`) })}
                   </li>
                   <li>
                     {zemin.zemin.kargoTarifesi !== null
-                      ? t(zemin.kargo.firmaKaynagi === "KANAL" ? "kargoDahilKanal" : "kargoDahil", { firma: zemin.kargo.firma ?? "—", desi: bicim.sayi(zemin.kargo.desi ?? 0, 1) })
+                      ? zemin.kargo.firmaKaynagi === "SATIS"
+                        ? t("kargoDahilSatis", { tutar: para(zemin.zemin.kargoTarifesi), desi: zemin.kargo.desi === null ? "—" : bicim.sayi(zemin.kargo.desi, 1) })
+                        : t(zemin.kargo.firmaKaynagi === "KANAL" ? "kargoDahilKanal" : "kargoDahil", { firma: zemin.kargo.firma ?? "—", desi: bicim.sayi(zemin.kargo.desi ?? 0, 1) })
                       : t(`kargoHaric_${zemin.kargo.sebep ?? "TARIFE_YOK"}`)}
                   </li>
                   {girilen?.komisyonOrani != null ? <li>{t("komisyonNotu", { oran: bicim.yuzde(girilen.komisyonOrani) })}</li> : null}
                 </ul>
+                <KuralOzeti kural={zemin.kural.etkin} />
+                {gonderebilir ? <UrunKuraliFormu variantId={variantId} genel={zemin.kural.genel} urun={zemin.kural.urun} kaydedildi={yenidenHesapla} /> : null}
               </>
             )}
           </div>

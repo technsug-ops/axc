@@ -29,6 +29,7 @@ import {
 } from "@/lib/buybox";
 import { ISTATISTIK_ARALIKLARI, rakipliOzet, type IstatistikAraligi } from "@/lib/buybox-istatistik";
 import { buyboxDurumlari, buyboxUrunleri } from "@/lib/buybox-verisi";
+import { desiBekleyenler, genelKuralOku } from "@/lib/buybox-kural-verisi";
 import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { suzgecAdresi } from "@/lib/suzgec";
@@ -36,6 +37,7 @@ import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 import { BuyboxGecmisi } from "./buybox-gecmisi";
 import { FiyatPenceresi } from "./fiyat-penceresi";
+import { GenelKuralPenceresi } from "./genel-kural";
 
 /**
  * ============================================================================
@@ -94,7 +96,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
   const grafikAcik = p.grafik === "1";
 
   /** Faz 3-c fiyat penceresi: kâr görme izni (kartla aynı kapı) · Kaydet yalnız kanala yazma izniyle. */
-  const [karGorunur, gonderebilir, resimEkleyebilir] = await Promise.all([izinVarMi("satis.kar.gor"), izinVarMi("kanal.yaz"), izinVarMi("urun.yaz")]);
+  const [karGorunur, gonderebilir, resimEkleyebilir, ayarYazabilir] = await Promise.all([izinVarMi("satis.kar.gor"), izinVarMi("kanal.yaz"), izinVarMi("urun.yaz"), izinVarMi("ayar.yaz")]);
   /**
    * SATIR EYLEMLERİ — Satışlar'la aynı düzen (kullanıcı 26.10.2026: «çok
    * düzensiz, Satışlar sayfasını referans al»): masaüstünde ikon, telefonda
@@ -108,6 +110,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
         <FiyatPenceresi
           key={`${kanal}:${s.variantId}`}
           variantId={s.variantId}
+          urunId={s.urunId}
           kanal={kanal}
           urunAdi={s.urunAdi}
           durum={s.durum}
@@ -128,6 +131,24 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
   const urunler = await buyboxUrunleri(kanal, { yalnizStoklu: true });
   const sonuc = await buyboxDurumlari(kanal, urunler);
   const ozet = buyboxOzeti(sonuc.satirlar);
+  /**
+   * K366 — fiyat kuralı: genel ayar (başlık düğmesi) + «Desi bekliyor» satır
+   * uyarısı. Uyarı yalnız kârı görebilene (kural kâr hesabıdır).
+   */
+  const [genelKural, desiBekleyen] = await Promise.all([
+    genelKuralOku(),
+    karGorunur ? desiBekleyenler(sonuc.satirlar.map((x) => x.variantId), kanal) : Promise.resolve(new Set<string>()),
+  ]);
+  const desiUyarisi = (s: BuyboxSatiri) =>
+    desiBekleyen.has(s.variantId) ? (
+      s.urunId === null ? (
+        <DurumRozeti durum="uyari">{t("desiBekliyor")}</DurumRozeti>
+      ) : (
+        <Link href={`/urunler/${s.urunId}/duzenle`} title={t("desiBekliyorUzun")} className="no-underline">
+          <DurumRozeti durum="uyari">{t("desiBekliyor")}</DurumRozeti>
+        </Link>
+      )
+    ) : null;
   /** Sekme sayısı: aramadan BAĞIMSIZ tam liste (İlke #17). */
   const sekmeSayisi = (l: BuyboxListesi) => buyboxListesi(sonuc.satirlar, l).length;
   const tamListe = buyboxListesi(sonuc.satirlar, liste);
@@ -151,9 +172,12 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
 
   return (
     <div className="min-w-0 space-y-4 p-4 md:p-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
-        <p className="text-muted-foreground text-sm">{t("notu")}</p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
+          <p className="text-muted-foreground text-sm">{t("notu")}</p>
+        </div>
+        {ayarYazabilir ? <GenelKuralPenceresi genel={genelKural} /> : null}
       </div>
 
       {/* ── KANAL — adreste yaşar ── */}
@@ -284,6 +308,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                         <DurumRozeti durum={durumTonu(s.durum)}>{siraYaz(s)}</DurumRozeti>
                         {farkYaz(s) !== "—" ? <DurumRozeti durum={farkTonu(s)}>{farkYaz(s)}</DurumRozeti> : null}
                         {esitAmaKayip(s) ? <span className={`max-w-[11rem] text-xs leading-snug whitespace-normal ${DURUM_YAZISI.uyari}`}>{t("esitKisa")}</span> : null}
+                        {desiUyarisi(s)}
                       </div>
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap tabular-nums">{s.ikinciFiyat === null ? "—" : para(s.ikinciFiyat)}</TableCell>
@@ -313,7 +338,14 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                   { etiket: t("sutunIkinci"), deger: s.ikinciFiyat === null ? "—" : para(s.ikinciFiyat) },
                   { etiket: t("sutunStok"), deger: String(s.stok) },
                 ]}
-                not={esitAmaKayip(s) ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("esitKisa")}</p> : undefined}
+                not={
+                  esitAmaKayip(s) || desiBekleyen.has(s.variantId) ? (
+                    <div className="space-y-1">
+                      {esitAmaKayip(s) ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("esitKisa")}</p> : null}
+                      {desiUyarisi(s)}
+                    </div>
+                  ) : undefined
+                }
                 eylemler={eylemler(s)}
               />
             ))}

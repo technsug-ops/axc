@@ -24,12 +24,28 @@ import { ciroMarji } from "./marj-gosterge";
 export type AcikParti = { kalanAdet: number; birimMaliyet: string | null; birimMaliyetParaBirimi: string | null };
 
 /**
- * Rafta duran (kalanAdet > 0) partilerin EN DÜŞÜK birim maliyeti (KDV dahil).
+ * K366 (27.10.2026): maliyet tercihi ÜRÜN ÜRÜN seçilir — elde kalan stoğun en
+ * düşük · ortalama · en yüksek alışı (varsayılan en düşük, 25.10 kararının
+ * aynısı). Kutu ve öneri aynı tercihi okur (İlke #10).
+ */
+export const MALIYET_TERCIHLERI = ["EN_DUSUK", "ORTALAMA", "EN_YUKSEK"] as const;
+export type MaliyetTercihi = (typeof MALIYET_TERCIHLERI)[number];
+
+/**
+ * Rafta duran (kalanAdet > 0) partilerden seçilen maliyet (KDV dahil):
+ * en düşük · ADETLE AĞIRLIKLI ortalama · en yüksek. Stoku bitmiş alış girmez.
  * Para birimi tutmayan ya da maliyeti boş parti sayılmaz — `null` = rafta
  * maliyeti bilinen mal yok (NET hesaplanmaz, uydurulmaz).
  */
-export function enDusukAcikMaliyet(partiler: readonly AcikParti[], paraBirimi: string): { maliyet: number | null; partiSayisi: number; rafAdedi: number } {
-  let maliyet: number | null = null;
+export function acikMaliyet(
+  partiler: readonly AcikParti[],
+  paraBirimi: string,
+  tercih: MaliyetTercihi,
+): { maliyet: number | null; partiSayisi: number; rafAdedi: number } {
+  let enDusuk: number | null = null;
+  let enYuksek: number | null = null;
+  let toplam = 0;
+  let adet = 0;
   let partiSayisi = 0;
   let rafAdedi = 0;
   for (const p of partiler) {
@@ -39,9 +55,19 @@ export function enDusukAcikMaliyet(partiler: readonly AcikParti[], paraBirimi: s
     const m = Number(p.birimMaliyet);
     if (!Number.isFinite(m)) continue;
     partiSayisi += 1;
-    if (maliyet === null || m < maliyet) maliyet = m;
+    if (enDusuk === null || m < enDusuk) enDusuk = m;
+    if (enYuksek === null || m > enYuksek) enYuksek = m;
+    toplam += m * p.kalanAdet;
+    adet += p.kalanAdet;
   }
+  const maliyet =
+    partiSayisi === 0 ? null : tercih === "EN_DUSUK" ? enDusuk : tercih === "EN_YUKSEK" ? enYuksek : Math.round((toplam / adet) * 100) / 100;
   return { maliyet, partiSayisi, rafAdedi };
+}
+
+/** Rafta duran partilerin EN DÜŞÜĞÜ — `acikMaliyet(…, "EN_DUSUK")`. */
+export function enDusukAcikMaliyet(partiler: readonly AcikParti[], paraBirimi: string) {
+  return acikMaliyet(partiler, paraBirimi, "EN_DUSUK");
 }
 
 export type FiyatZemini = {

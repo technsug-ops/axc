@@ -80,7 +80,7 @@ export async function buyboxFiyatGonder(
           net1: s.net1,
           net2: s.net2,
           maliyet: z.zemin.maliyet,
-          maliyetTabani: "rafta en düşük parti (KDV dahil)",
+          maliyetTabani: `rafta ${z.kural.etkin.maliyet} (KDV dahil)`,
           kargoDahil: s.kargoDahil,
           komisyonOrani: s.komisyonOrani,
         }),

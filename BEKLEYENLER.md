@@ -218,6 +218,15 @@ Bekçi `gece-turu-sonuc:dogrula` **30**; mutasyon **11/11** (bir kaçak: iki kap
 ─── **15.10.2026 — ①② GEÇTİ** (kullanıcı «ok»: `11693359539` desi 5 tahmini · kargo −₺136,92 · `11691326264` desi 2). **Açık:** ③ yeni Trendyol Express siparişinde detay desisi = kart desisi · ④ teslimden sonra tartım desisi — olaya bağlı.
 ---
 
+## 🔶 K366 — BUYBOX FİYAT KURALI (ÖNERİ · ONAYLI / OTOMATİK) · 27.10.2026 · [AÇILDI — kullanıcı kararı; ADIM 1 YAZILDI, migration canlıda koşmadı]
+
+**Açılış:** «yeni büyük iş açılmaz» kuralına kullanıcı kararıyla İSTİSNA (27.10.2026: «bu şekilde başla»). Tasarım `docs/buybox-fiyat-kurali-tasarimi.md`.
+**Kural (kullanıcı):** Buybox bizdeyse 2. satıcının bir adım altına YÜKSELT (fark zaten adımdan küçükse dokunma — düşürme yok) · kaybedilmişse Buybox'ın bir adım altı, marj (NET-2 / satış fiyatı) en az %6 değilse fiyatı düşürme · tek satıcıysak dokunma · yükseltme komisyon dilimi yüzünden NET-2'yi düşürüyorsa yapma. Genel ayar: marj %6 · adım ₺50 · maliyet stoktaki EN DÜŞÜK alış (seçilebilir: en düşük / ortalama / en yüksek, hepsi elde kalan stoktan) · mod ONAYLI. Ürüne ayrı değer kullanıcı değiştirene kadar kalır; genel değişince ayrı değeri olmayanlar yeniye geçer. Kargo: ürünün o kanalda TEK BAŞINA satıldığı son siparişte ödenen; yoksa ürün desisi + tarife; desi de yoksa satırda «Desi bekliyor».
+**Adım 1 (yazıldı, yayında DEĞİL):** saf kural `src/lib/buybox-kural.ts` · okuma `buybox-kural-verisi.ts` · «Fiyatla» penceresinde önerilen fiyat + gerekçe + «kutuya yaz» (göndermez; Kaydet → onay aynen) · pencerede «Bu ürünün kuralını değiştir» · başlıkta «Fiyat kuralı» (genel ayar, `ayar.yaz`) · satırda «Desi bekliyor» rozeti (ürün kartına götürür). Fiyat kutusunun maliyeti de ürünün tercihine bağlandı (varsayılan en düşük → bugünkü rakamlar değişmez). Mod seçimi bu adımda AÇILMADI (otomatik gönderim yokken «otomatik» düğmesi tutulamayacak söz olurdu).
+**Bekçi:** `buybox-kural:dogrula` 8 bölüm · mutasyon 17/17 (zararsız yeşil; kural kapıları · maliyet tercihi · tek başına kargo · pencere/satır aynı ölçüt · öneri göndermez · izin). `buybox-fiyat:dogrula`da iki ölçüt GÜNCELLENDİ (maliyet artık tercihe göre; telefon notu iki uyarı taşıyor) — gerekçe dosyada.
+**Migration:** `20261027120000_buybox_fiyat_kurali` — Company'ye 5 varsayılanlı kolon + `BuyboxKurali` tablosu; veri yazmaz/silmez. Kullanıcı onayladı (27.10); canlıda koşum otomatik izin süzgecine takıldı → kullanıcı koşacak ya da izin verecek. ⛔ Koşmadan push YOK (şema commit kuralı).
+**Sonra:** Adım 2 Halil testi (gerçek ürünlerde öneri) · Adım 3 otomatik mod + 15 dk'lık uç (önce TY/HB istek sınırı ve KAS kotası ölçülür).
+
 ## 🔶 K365 — ADDA NOKTASIZ «ı» OLAN ÜRÜN ARAMADA BULUNMUYOR · 27.10.2026 · [AÇIK — kullanıcı kararı bekliyor]
 
 K364 (kelime kelime ad araması, kapandı 27.10 → ARSIV) sırasında ölçüldü: adı noktasız «ı» ile kayıtlı ürünler («Braun … Multiquıck 5 Varıo») «multiquick» yazınca bulunmaz — veritabanı `utf8mb4_unicode_ci` ı ≠ i. Açılış şartı: kullanıcı kararı.

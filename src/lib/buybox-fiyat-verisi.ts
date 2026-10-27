@@ -2,7 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { acikPartiler } from "@/lib/stok";
 
 import type { BuyboxKanali } from "./buybox";
-import { enDusukAcikMaliyet, type FiyatZemini } from "./buybox-fiyat";
+import { acikMaliyet, type FiyatZemini } from "./buybox-fiyat";
+import { tekBasinaKargo, type EtkinKural, type GenelKural, type UrunKurali } from "./buybox-kural";
+import { etkinKuralOku, SON_SATIS_SAYISI } from "./buybox-kural-verisi";
+import { kargoSecimi } from "./kargo-kaynagi";
 import { simulasyonZeminleri, varyantKdvOrani } from "./fiyatlama/kart-verisi";
 
 /**
@@ -22,14 +25,18 @@ const KANAL_ADI: Record<BuyboxKanali, string> = { TY: "Trendyol", HB: "Hepsibura
 export type KargoBilgisi = {
   desi: number | null;
   firma: string | null;
-  /** Firma nereden: ürünün bu kanaldaki son satışı · kanalda en sık kullanılan firma. */
-  firmaKaynagi: "URUN" | "KANAL" | null;
+  /**
+   * Kargo nereden: SATIS = ürünün bu hesapta TEK BAŞINA satıldığı en son
+   * siparişte ödenen kargo (K366) · URUN = ürün desisi + ürünün son satışının
+   * firması + tarife · KANAL = ürün desisi + kanalın en sık firması + tarife.
+   */
+  firmaKaynagi: "SATIS" | "URUN" | "KANAL" | null;
   /** Bilinmiyorsa NEDEN — ekran yazar, NET kargo hariç hesaplanır. */
   sebep: "DESI_YOK" | "FIRMA_YOK" | "TARIFE_YOK" | null;
 };
 
 export type FiyatZeminiSonucu =
-  | { tamam: true; zemin: FiyatZemini; kargo: KargoBilgisi; partiSayisi: number; rafAdedi: number }
+  | { tamam: true; zemin: FiyatZemini; kargo: KargoBilgisi; partiSayisi: number; rafAdedi: number; kural: { genel: GenelKural; urun: UrunKurali | null; etkin: EtkinKural } }
   | { tamam: false; kod: "KANAL_KODU_YOK" };
 
 export async function buyboxFiyatZemini(variantId: string, kanal: BuyboxKanali, an: Date): Promise<FiyatZeminiSonucu> {
@@ -45,7 +52,7 @@ export async function buyboxFiyatZemini(variantId: string, kanal: BuyboxKanali, 
   if (hesap === null || zemin === null) return { tamam: false, kod: "KANAL_KODU_YOK" };
   const paraBirimi = hesap.defaultCurrency === "EUR" ? "EUR" : "TRY";
 
-  const [kdvOrani, partiler, varyant, sonSatis] = await Promise.all([
+  const [kdvOrani, partiler, varyant, sonSatis, kural, tekSatislar] = await Promise.all([
     varyantKdvOrani(variantId),
     acikPartiler(prisma, variantId),
     prisma.productVariant.findUnique({ where: { id: variantId }, select: { product: { select: { desi: true } } } }),
@@ -55,8 +62,56 @@ export async function buyboxFiyatZemini(variantId: string, kanal: BuyboxKanali, 
       orderBy: { soldAt: "desc" },
       select: { cargoCarrierId: true, cargoCarrier: { select: { name: true } } },
     }),
+    etkinKuralOku(variantId),
+    /**
+     * K366 — ürünün bu hesaptaki son satışları (yeniden eskiye); «tek başına»
+     * olanı saf gövde seçer (`tekBasinaKargo`). 30 satış: tek başına satışı
+     * bulmaya yeter, sorgu küçük kalır (KAS bağlantı kotası).
+     */
+    prisma.sale.findMany({
+      where: { channelAccountId: zemin.channelAccountId, iptalTarihi: null, items: { some: { variantId } } },
+      orderBy: { soldAt: "desc" },
+      take: SON_SATIS_SAYISI,
+      select: {
+        paketSayisi: true,
+        cargoAmount: true,
+        tahminiKargo: true,
+        kanalKargoDesi: true,
+        cargoDesi: true,
+        cargoCarrier: { select: { name: true } },
+        /** Kaldırılmış kalem pakette değildir — «tek başına» sayımına girmez. */
+        items: { where: { kaldirildiAt: null }, select: { quantity: true } },
+      },
+    }),
   ]);
-  const m = enDusukAcikMaliyet(partiler, paraBirimi);
+  /** Maliyet ürünün kural tercihine göre (K366; varsayılan en düşük — 25.10 kararı). */
+  const m = acikMaliyet(partiler, paraBirimi, kural.etkin.maliyet);
+  const sayi = (d: { toString(): string } | null) => (d === null ? null : Number(d.toString()));
+  const tekSatis = tekBasinaKargo(
+    tekSatislar.map((x) => ({
+      kalemSayisi: x.items.length,
+      adet: x.items[0]?.quantity ?? 0,
+      paketSayisi: x.paketSayisi,
+      tutar: kargoSecimi({ cargoAmount: sayi(x.cargoAmount), tahminiKargo: sayi(x.tahminiKargo) }).tutar,
+      desi: sayi(x.kanalKargoDesi) ?? sayi(x.cargoDesi),
+    })),
+  );
+  if (tekSatis !== null) {
+    /**
+     * Kullanıcı kararı 27.10.2026: «daha önce satılmışsa desisi ve ona ödenen
+     * ücret hafızada — onu baz al». Tutar KDV hariç (motorun beklediği taban).
+     * Firma adı yalnız gösterim için: tutar zaten o satışta ödenen.
+     */
+    const kaynakSatis = tekSatislar[tekSatis.sira];
+    return {
+      tamam: true,
+      zemin: { zemin, kdvOrani, paraBirimi, maliyet: m.maliyet, kargoTarifesi: tekSatis.tutar },
+      kargo: { desi: tekSatis.desi, firma: kaynakSatis?.cargoCarrier?.name ?? null, firmaKaynagi: "SATIS", sebep: null },
+      partiSayisi: m.partiSayisi,
+      rafAdedi: m.rafAdedi,
+      kural,
+    };
+  }
 
   /**
    * KARGO FİRMASI — ürünün bu hesaptaki son satışının firması; yoksa bu
@@ -107,5 +162,6 @@ export async function buyboxFiyatZemini(variantId: string, kanal: BuyboxKanali, 
     kargo,
     partiSayisi: m.partiSayisi,
     rafAdedi: m.rafAdedi,
+    kural,
   };
 }
