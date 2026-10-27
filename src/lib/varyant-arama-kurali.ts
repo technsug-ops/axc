@@ -170,6 +170,36 @@ export function eskiKodDali(e: string) {
   return { eskiKodlar: { some: { kod: { contains: e } } } };
 }
 
+/**
+ * ============================================================================
+ *  AD ARAMASI KELİME KELİME (kullanıcı 27.10.2026)
+ * ----------------------------------------------------------------------------
+ *  _«Ürünün ismi ile ararken neredeyse tam ismi yazmadan bulmuyor.»_ Ad dalı
+ *  yazılanı BİTİŞİK bir parça olarak arıyordu: «karaca seti», «Karaca Gris
+ *  Biogranit 7 Parça Tencere Seti»yi bulmuyordu.
+ *  Ölçüldü (canlı, salt okuma, 1940 ürün): adın ilk + son kelimesiyle arama
+ *  1934 denemenin 13'ünü buluyordu, kelime kelime 1934'ünü. «philips
+ *  oneblade» 4 → 10 · «anker soundcore» 42 → 68.
+ *
+ *  KURAL: iki ve daha çok kelime yazıldıysa HER kelime ürün adında YA DA
+ *  markada geçmeli; sıra ve aradaki kelimeler önemsiz. Eski dallar AYNEN
+ *  durur — dal yalnız EKLENİR, bugün bulunan hiçbir ürün düşmez. Tek
+ *  kelimede dal kurulmaz (ad dalının kendisiyle aynı olurdu).
+ *  ⚠ Noktasız «ı» ile yazılmış adlar («Multiquıck») `i` ile bulunmaz —
+ *  veritabanı karşılaştırması ikisini ayrı harf sayıyor; bu dal onu ÇÖZMEZ.
+ * ============================================================================
+ */
+export function aramaKelimeleri(sorgu: string): string[] {
+  return [...new Set(sorgu.trim().split(/\s+/).filter(Boolean))];
+}
+
+/** Ürün düzeyinde kelime dalı — `/urunler` (ürün sorgular) bunu kullanır. */
+export function urunKelimeDali(sorgu: string) {
+  const kelimeler = aramaKelimeleri(sorgu);
+  if (kelimeler.length < 2) return null;
+  return { AND: kelimeler.map((k) => ({ OR: [{ name: { contains: k } }, { brand: { contains: k } }] })) };
+}
+
 export function aramaKosulu(sorgu: string) {
   /**
    * ⚠ EŞDEĞERLER SERBEST METİNDE DE GEÇERLİ — VE BURASI DAHA SİNSİ.
@@ -177,7 +207,7 @@ export function aramaKosulu(sorgu: string) {
    * `0194644037598`, kayıtlı `194644037598`den UZUN olduğu için hiçbir
    * satırı tutturmaz. Yani "kısmi eşleşme zaten yakalar" sanısı yanlıştır.
    */
-  return kodEsdegerleri(sorgu).flatMap((e) => [
+  const dallar: object[] = kodEsdegerleri(sorgu).flatMap((e) => [
     { sku: { contains: e } },
     { companySku: { contains: e } },
     { barcode: { contains: e } },
@@ -185,6 +215,10 @@ export function aramaKosulu(sorgu: string) {
     eskiKodDali(e),
     { product: { name: { contains: e } } },
   ]);
+  /** Varyant sorgusunda kelime dalı ürüne sarılır (ad ve marka ÜRÜNÜN alanı). */
+  const kelime = urunKelimeDali(sorgu);
+  if (kelime) dallar.push({ product: kelime });
+  return dallar;
 }
 
 /**

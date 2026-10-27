@@ -19,6 +19,7 @@ import {
   okunanKodlar,
   okuyucuDuzeltmesi,
   satisKodKosulu,
+  urunKelimeDali,
 } from "../src/lib/varyant-arama-kurali";
 import { rafAramasi } from "../src/lib/raf-arama";
 import { urunAramaSuzgeci } from "../src/lib/urun-arama";
@@ -594,6 +595,36 @@ console.log("");
     kontrol("K302 satış kimliğinden gelen varyant süzgece giriyor", JSON.stringify(urunAramaSuzgeci("403-1", ["v1"])).includes('{"id":{"in":["v1"]}}'));
     kontrol("K302 boş satış kümesinde id dalı YOK", !JSON.stringify(urunAramaSuzgeci("x1", [])).includes('"id":{"in"'));
     kontrol("K302 boş arama → süzgeç yok", urunAramaSuzgeci("", ["v1"]) === undefined);
+
+    /*
+     * KELİME KELİME AD ARAMASI (27.10.2026) — DAVRANIŞ, kaynak taraması değil:
+     * üretilen koşul küçük bir değerlendiriciyle gerçek bir ürün adına uygulanır
+     * (veritabanı karşılaştırması harfe duyarsız → değerlendirici de öyle).
+     */
+    type Urun = { name: string; brand: string | null };
+    const eslesir = (k: unknown, u: Urun): boolean => {
+      if (!k || typeof k !== "object") return false;
+      const o = k as Record<string, unknown>;
+      if (Array.isArray(o.OR)) return o.OR.some((x) => eslesir(x, u));
+      if (Array.isArray(o.AND)) return o.AND.every((x) => eslesir(x, u));
+      for (const alan of ["name", "brand"] as const) {
+        const c = (o[alan] as { contains?: string } | undefined)?.contains;
+        if (c !== undefined) return (u[alan] ?? "").toLocaleLowerCase("tr").includes(c.toLocaleLowerCase("tr"));
+      }
+      return false;
+    };
+    const karaca: Urun = { name: "Karaca Gris Biogranit 7 Parça Tencere Seti", brand: "Karaca" };
+    const oneblade: Urun = { name: "Qp2824/10 Oneblade Tıraş Makinesi", brand: "Philips" };
+    kontrol("kelime: «karaca seti» araya kelime girse de bulur", eslesir(urunAramaSuzgeci("karaca seti", []), karaca));
+    kontrol("kelime: «seti karaca» sıra önemsiz", eslesir(urunAramaSuzgeci("seti karaca", []), karaca));
+    kontrol("kelime: marka adda geçmese de bulur («philips oneblade»)", eslesir(urunAramaSuzgeci("philips oneblade", []), oneblade));
+    kontrol("kelime: HER kelime şart — biri yoksa BULMAZ", !eslesir(urunAramaSuzgeci("karaca tava", []), karaca));
+    kontrol("kelime: tam ifade dalı yerinde (yalnız genişler)", eslesir(urunAramaSuzgeci("Biogranit 7", []), karaca) && JSON.stringify(urunAramaSuzgeci("karaca seti", [])).includes('{"name":{"contains":"karaca seti"}}'));
+    kontrol("kelime: tek kelimede kelime dalı YOK", urunKelimeDali("karaca") === null && urunKelimeDali("  karaca  ") === null && !JSON.stringify(aramaKosulu("ABC")).includes('"AND"'));
+    /* Varyant düzeyi (Stok · alım seçici · kart araması): dal ÜRÜNE sarılı. */
+    const varyantKelime = aramaKosulu("karaca seti").find((d) => JSON.stringify(d).includes('"AND"')) as { product?: unknown } | undefined;
+    kontrol("kelime: varyant aramasında da var, ürüne sarılı", !!varyantKelime?.product && eslesir(varyantKelime.product, karaca));
+    kontrol("kelime: varyant aramasında da her kelime şart", !!varyantKelime?.product && !eslesir(varyantKelime.product, { ...karaca, brand: null, name: "Karaca Tava" }));
   }
 
   // ── ŞEMA: BENZERSİZ ──────────────────────────────────────────────────

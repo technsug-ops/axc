@@ -218,6 +218,17 @@ Bekçi `gece-turu-sonuc:dogrula` **30**; mutasyon **11/11** (bir kaçak: iki kap
 ─── **15.10.2026 — ①② GEÇTİ** (kullanıcı «ok»: `11693359539` desi 5 tahmini · kargo −₺136,92 · `11691326264` desi 2). **Açık:** ③ yeni Trendyol Express siparişinde detay desisi = kart desisi · ④ teslimden sonra tartım desisi — olaya bağlı.
 ---
 
+## 🔶 K364 — ÜRÜN ADIYLA ARAMA KELİME KELİME · 27.10.2026 · [YAZILDI + YAYIN — Halil testi bekliyor]
+
+**Kullanıcı:** _«Ürünün ismi ile ararken neredeyse tam ismi yazmadan bulmuyor.»_ Ad araması yazılanı bitişik parça olarak arıyordu.
+**Ölçüldü (canlı, salt okuma, 1940 ürün):** adın ilk + son kelimesiyle arama 1934 denemenin **13**'ünü buluyordu, kelime kelime **1934**'ünü · «philips oneblade» 4 → 10 · «anker soundcore» 42 → 68 · «kahve makinesi» 77 → 89.
+**Kural:** iki ve daha çok kelimede HER kelime ad ya da markada geçmeli, sıra önemsiz. Dal yalnız EKLENDİ (bugün bulunan hiçbir ürün düşmez); tek kelime ve kod araması aynen. Tek gövde (`aramaKosulu` · `urunKelimeDali`) → Ürünler + Excel · Stok · alım ürün seçici · kart araması · etiket · kanal listeleme · ortaklık.
+**Bekçi:** `arama:dogrula` 8 davranış ölçütü (koşul değerlendiriciyle gerçek ada uygulanıyor) · mutasyon 6/6 (zararsız yeşil; dal silme ×2 · AND→OR · marka dalı · tek kelime eşiği kırmızı).
+⚠ **AÇIK — ÇÖZÜLMEDİ:** noktasız «ı» ile kayıtlı adlar («Braun … Multiquıck 5 Varıo») «multiquick» ile bulunmaz (veritabanı `utf8mb4_unicode_ci` ı ≠ i). Ayrı iş; açılış şartı kullanıcı kararı.
+**Halil testi:** Ürünler → arama kutusuna `karaca seti` → «Karaca Gris Biogranit 7 Parça Tencere Seti» listede · `philips oneblade` → ≈10 ürün · `seti karaca` aynı sonuç · Alımlar → Yeni alım → ürün seçiciye `philips oneblade` → OneBlade çıkar · Stok → aynı arama. Telefonda bir kez.
+
+---
+
 ## 🔶 K363 — ALIM REHBERİ (FAZLI) + FİYAT/STOK TAKİBİ · 23.10.2026 · [AÇILDI — kullanıcı kararı; FAZ 1 YAZILDI, yayın + Halil testi bekliyor]
 
 **Kullanıcı (23.10):** _«Bu üç özelliği sistemime almak istiyorum: alım tavsiyesi, stok sorgu, fiyat takip»_ · _«Alım rehberinin fazları olsun; ilk olarak kendi içimizden, sonrasında dışarı informasyonlara kayalım.»_ Anayasa «yeni büyük iş açılmaz» dönemi — K347 gibi KULLANICI KARARIYLA istisna. **Kaynak ölçüm (23.10, salt okuma, scratchpad betiği):** son 90 gün, ≥3 adet satan 154 aday · marj ortancası %16,5 · günlük satış ortancası 0,044 → ikisini birlikte geçen **58 ürün** (istenen 100 değil; ölçüt gevşetilmedi), 90 günde ₺162.273 NET-2 = adayların %42'si · 40'ı tükenmiş · 11'i <30 gün stok. Dosyalar `Documents\bezirga-raporlar\` (depoya girmez). Mevcut «Ürün analizi» satış ve stok eksenini AYRI gösteriyor → «hızlı + kârlı + tükendi» tek ekranda sorulamıyor (ihtiyacın kökü).

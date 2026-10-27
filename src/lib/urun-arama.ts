@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { satisKodundanVaryantIdleri } from "@/lib/satis-kodundan-varyant";
-import { aramaKosulu, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
+import { aramaKosulu, kodEsdegerleri, urunKelimeDali } from "@/lib/varyant-arama-kurali";
 
 /**
  * ============================================================================
@@ -21,6 +21,7 @@ import { aramaKosulu, kodEsdegerleri } from "@/lib/varyant-arama-kurali";
  */
 export function urunAramaSuzgeci(arama: string, satisVaryantIdleri: readonly string[]) {
   if (!arama) return undefined;
+  const kelimeDali = urunKelimeDali(arama);
   const suzgec = {
     /**
      * ⚠ EŞDEĞER KODLAR AÇILIR (K100) — UPC-A ↔ EAN-13. Rol kümesi
@@ -56,6 +57,12 @@ export function urunAramaSuzgeci(arama: string, satisVaryantIdleri: readonly str
         { brand: { contains: e } },
       ]),
       ...aramaKosulu(arama).map((k) => ({ variants: { some: k } })),
+      /**
+       * Kelime kelime ad araması (27.10.2026) — ÜRÜN düzeyinde, `name`/`brand`
+       * dallarıyla aynı gerekçe: varyantsız ürün de bulunur. Gerekçe ve ölçüm
+       * `urunKelimeDali` başlığında.
+       */
+      ...(kelimeDali ? [kelimeDali] : []),
     ],
   };
   /**
