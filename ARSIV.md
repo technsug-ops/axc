@@ -16459,3 +16459,32 @@ Bekçi `grafik-nokta` 28 → **63** (eski «aynı noktaya dokun kapatır» ölç
 · **Bulgu (K332 eşdeğerlik ölçümünde, ölçüldü yerel kopyada):** özel aralık 03.11.2025–17.02.2026, aylık kova → son satır «01.02–17.02 · Satış **497**»; o rakamın **137**'si 18–28 Şubat satışı (etiket 17.02'de bitiyor, sayı ayın sonuna kadar). İlk kova için de aynı (dönemden önceki günler). Etiketle çelişen sayı — İlke #16 «sayı = liste» ihlali: tıklanınca açılan liste 360 gösterir.
 · **Hız işi rakamı DEĞİŞTİRMEDİ** (üst okumaya iki yanda 31 gün pay kondu ki eski davranış aynen kalsın). Düzeltme ekrandaki kenar rakamlarını değiştirir → kullanıcı kararı bekliyor.
 · **KOD ✓ (11.10.2026, kullanıcı kararı «evet düzelt»):** `operasyonSerisi` dört döngüde de pencere dışı kaydı kovaya sokmuyor (`noktasi` kapısı, İstanbul gününden; kardeşi `donemCiroNetSerisi`deki kapının aynısı). **Ölçüldü (yerel kopya, aynı aralık):** son satır 497 → **360**, ilk satır 551 → **493** (1–2 Kasım); grafiğin altındaki «Dönem toplamı · satış» 2.305 → **2.110** = üstteki «Satış adedi» kutusu (eskiden 2.305 ≠ 2.110). K332'deki 31 günlük üst okuma payı yalnız bu davranışı koruyordu → kaldırıldı (panel daha az okur). Bekçi: `operasyon:dogrula` 92 (+6; ayrıca elle kurulmuş, gerçekte üretilemeyen 09:00 çapalı pencere `pencereOlustur`a çevrildi — pencere DIŞINDA 4. nokta beklentisini sabitlemişti), yeni `operasyon-mutasyon:kontrol` 8/8 (dört döngü ayrı · iki sınır · saat dilimi · zararsız).
+
+## ✅ K364 — ÜRÜN ADIYLA ARAMA KELİME KELİME · 27.10.2026 · [KAPANDI 27.10.2026 — Halil testi geçti]
+
+> **KAPANDI 27.10.2026.** Kullanıcı canlıda kelime kelime aramayı «Bura tamam» diye onayladı. Noktasız «ı» ile kayıtlı adlar (Multiquıck) açık kalan ayrı konu olarak panoda K365 başlığıyla duruyor.
+
+**Kullanıcı:** _«Ürünün ismi ile ararken neredeyse tam ismi yazmadan bulmuyor.»_ Ad araması yazılanı bitişik parça olarak arıyordu.
+**Ölçüldü (canlı, salt okuma, 1940 ürün):** adın ilk + son kelimesiyle arama 1934 denemenin **13**'ünü buluyordu, kelime kelime **1934**'ünü · «philips oneblade» 4 → 10 · «anker soundcore» 42 → 68 · «kahve makinesi» 77 → 89.
+**Kural:** iki ve daha çok kelimede HER kelime ad ya da markada geçmeli, sıra önemsiz. Dal yalnız EKLENDİ (bugün bulunan hiçbir ürün düşmez); tek kelime ve kod araması aynen. Tek gövde (`aramaKosulu` · `urunKelimeDali`) → Ürünler + Excel · Stok · alım ürün seçici · kart araması · etiket · kanal listeleme · ortaklık.
+**Bekçi:** `arama:dogrula` 8 davranış ölçütü (koşul değerlendiriciyle gerçek ada uygulanıyor) · mutasyon 6/6 (zararsız yeşil; dal silme ×2 · AND→OR · marka dalı · tek kelime eşiği kırmızı).
+⚠ **AÇIK — ÇÖZÜLMEDİ:** noktasız «ı» ile kayıtlı adlar («Braun … Multiquıck 5 Varıo») «multiquick» ile bulunmaz (veritabanı `utf8mb4_unicode_ci` ı ≠ i). Ayrı iş; açılış şartı kullanıcı kararı.
+**Halil testi:** Ürünler → arama kutusuna `karaca seti` → «Karaca Gris Biogranit 7 Parça Tencere Seti» listede · `philips oneblade` → ≈10 ürün · `seti karaca` aynı sonuç · Alımlar → Yeni alım → ürün seçiciye `philips oneblade` → OneBlade çıkar · Stok → aynı arama. Telefonda bir kez.
+
+---
+
+## ✅ K311 — İADE NET-2: STOĞA DÖNEN MALIN ALIŞ KDV'Sİ GERİ ALINMIYORDU · 02.10.2026 · [KAPANDI 27.10.2026 — Halil testi geçti]
+
+> **KAPANDI 27.10.2026.** Kullanıcı bekleyen Halil testleri listesinde K311'i «ok» olarak bildirdi (27.10.2026).
+
+**Kullanıcı bulgusu:** TY 11629354592 (₺2.945, normal iade) işlenince NET-1 6.242,18 → 5.775,35 (−466,83), NET-2 yalnız 5.138,53 → 5.106,26 (−32,27). Beklenen gerçek kayıp: gidiş kargo 106,75 + sabit 13,19 + dönüş kargo 106,70 = **226,64** (kullanıcının «334,59»u toplama hatası; üç kalem 226,59).
+**NET-1 DOĞRU:** iade −466,83 = satışın kârı silinir (−240,19) + gerçek kayıp (−226,64).
+**NET-2 YANLIŞTI:** satış NET-2'si ödenecek KDV'den malın ALIŞ KDV'sini (2.310 × 20/120 = 385) düşüyor; iade satış KDV'sini (490,83) ve komisyon KDV'sini geri alıyor ama **alış KDV'sini geri almıyordu** → mal stoğa dönüp yeniden satılınca aynı 385 ikinci kez düşülüyor. İade NET-2'si +0,06 yazıyordu, olması gereken **−384,94**; satış + iade birlikte −188,87 (= kayıp − kargo/hizmet KDV'si).
+**Mekanizma:** `iade.ts` `maliyetKdvIptali` — yalnız STOĞA DÖNEN (sağlam) adet, ürünün kendi KDV oranıyla (satış tarafıyla aynı); hasarlıda geri alınmaz. Kod başlığındaki «S6 varsayımı — muhasebeci teyidi bekliyor» bloğunun eksik satırıydı. `iade:dogrula` 112 (ölçülen vaka −384,94 · hasarlı · kısmi sağlam · %10 ürün; iki eski beklenti çift düşmeyi sabitliyordu → gerekçesiyle çevrildi) · yeni `iade-kdv-mutasyon` 5/5.
+**Geçmiş:** `scripts/canli-iade-alis-kdv-kosum.ts` KURU: 234 incelenen · **211 düzeltilecek · NET-2 −₺67.872,48** · 23 zaten doğru · **iki formülle de tutmayan 0**. (İlk tahmin ₺79.077 hasarlı payı da sayıyordu — aşıldı, geçerli 67.872.) Ölçüt kayıtlı `ReturnFee` satırlarından yeniden kurulur; satır satır, ikinci koşum zararsız; anlık görüntü + iz `IADE_ALIS_KDV_DUZELTME`.
+**Kullanıcı teyidi (02.10.2026):** _«İade demek muhasebe işlemlerinin tersi demek, her şey negatifi ile sıfırlanıyor; iade olan siparişlere kestiğim faturaları her ay gider pusulası ile bildiriyorum.»_ — iade satışın KDV hesabını TAMAMEN sıfırlamalı; eskiden yalnız satış tarafı sıfırlanıyordu.
+**✅ GEÇMİŞ YAZILDI (kullanıcı «yaz», 02.10.2026 10:47Z):** 211/211 · sapan 0 · NET-2 −₺67.872,48 · anlık görüntü `raporlar/iade-alis-kdv-once-2026-10-02T10-46-47-171Z.json` · iz `IADE_ALIS_KDV_DUZELTME`. Tekrar kuru koşum: 234/234 zaten doğru, tutmayan 0. 11629354592 iadesi: NET-1 −466,83 · NET-2 −384,94.
+**Halil testi (yazımdan sonra):** Panel → dönem 02.10 seçili hâlde NET-2 ≈ 5.138,53 − 384,94'ün kırpma sonrası değeri · 11629354592 iade detayında NET-2 −384,94.
+
+─── **15.10.2026 — ① GEÇTİ** (`11629354592` iade: NET-1 −466,83 · NET-2 −384,94). ② panel rakamı panoda yazılı değildi — beklenen rakam yeniden ölçülüp yazılmadıkça SINANMADI.
+---
