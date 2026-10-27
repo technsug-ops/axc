@@ -104,6 +104,8 @@ export const YEDEK_TABLOLARI = [
   /** K363 Faz 3-b — ölçüm `ChannelAccount`a bağlı; değişim ölçüme + hesaba + varyanta bağlı → ölçümden SONRA. */
   "BuyboxOlcumu",
   "BuyboxDegisimi",
+  /** K366 — ürüne ayrı Buybox fiyat kuralı; varyanta bağlı (Cascade) → varyanttan SONRA. */
+  "BuyboxKurali",
   // --- gider ---
   "ExpenseTemplate",
   "Expense",
