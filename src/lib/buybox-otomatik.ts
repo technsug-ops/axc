@@ -165,12 +165,27 @@ async function birUrun(
   if (z.kural.etkin.mod !== "OTOMATIK") return atla("MOD_ONAYLI");
 
   const oneri = fiyatOnerisi(
-    { durum: s.durum, bizimFiyat: s.bizimFiyat, bizimListeFiyati: s.bizimListeFiyati, buyboxFiyati: s.buyboxFiyati, ikinciFiyat: s.ikinciFiyat, kanalIndirimi: s.kanalIndirimi },
+    {
+      durum: s.durum,
+      bizimFiyat: s.bizimFiyat,
+      bizimListeFiyati: s.bizimListeFiyati,
+      buyboxFiyati: s.buyboxFiyati,
+      ikinciFiyat: s.ikinciFiyat,
+      kanalIndirimi: s.kanalIndirimi,
+      kampanya: s.kampanya,
+      artisKapali: s.hbIlan?.artisKapali === true,
+    },
     z.zemin,
     z.kural.etkin,
     simdi,
   );
-  const karar = otomatikKarar(oneri, z.kural.etkin);
+  const karar = otomatikKarar(oneri, z.kural.etkin, {
+    kanal,
+    ilanOkundu: s.hbIlan !== null,
+    kampanya: s.kampanya,
+    artisKapali: s.hbIlan?.artisKapali === true,
+    listeFiyati: s.bizimListeFiyati,
+  });
   if (!karar.gonder) {
     return atla(oneri.tur === "DOKUNMA" ? `DOKUNMA_${oneri.neden}` : oneri.tur === "HESAPLANAMAZ" ? `HESAPLANAMAZ_${oneri.sebep}` : `KAPI_${karar.sebep}`);
   }

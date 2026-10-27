@@ -61,6 +61,9 @@ export function FiyatPenceresi({
   buyboxFiyati,
   ikinciFiyat,
   esitNotu,
+  kampanya,
+  kampanyaNotu,
+  artisKapali,
   gonderebilir,
 }: {
   variantId: string;
@@ -79,6 +82,16 @@ export function FiyatPenceresi({
   ikinciFiyat: number | null;
   /** Kaybedilmiş ama pahalı değiliz — pencerede açıklaması yazar (`null` = yok). */
   esitNotu: string | null;
+  /**
+   * HB kampanyası (27.10.2026): liste fiyatı değişince müşterinin göreceğini
+   * Hepsiburada belirler — pencere müşteri fiyatı TAHMİNİ yapmaz, hızlı aday
+   * ve hazır kutu değeri vermez (ikisi de o tahmine dayanır). Kâr liste fiyatından.
+   */
+  kampanya: boolean;
+  /** Satırdaki kampanya cümlesi (sayfa kurar); `null` = kampanya yok. */
+  kampanyaNotu: string | null;
+  /** HB fiyat artışını kilitlemiş. */
+  artisKapali: boolean;
   /** `kanal.yaz` izni var mı (sayfa çözer; sunucu yine kendisi sınar). */
   gonderebilir: boolean;
 }) {
@@ -89,7 +102,7 @@ export function FiyatPenceresi({
   /** Şu anki fiyatımız LİSTE fiyatıyla (kâr ve onay bununla); Buybox'a eşit müşteri fiyatını veren liste fiyatı. */
   const mevcut = bizimListeFiyati ?? bizimFiyat;
   const buyboxListe = buyboxFiyati === null ? null : listeFiyatiIcin(buyboxFiyati, indirim);
-  const ilkMetin = buyboxListe === null ? "" : bicim.sayi(buyboxListe, 2);
+  const ilkMetin = buyboxListe === null || kampanya ? "" : bicim.sayi(buyboxListe, 2);
   const [acik, setAcik] = useState(false);
   const [fiyatMetni, setFiyatMetni] = useState(ilkMetin);
   const [zemin, setZemin] = useState<ZeminCevabi | null>(null);
@@ -104,9 +117,9 @@ export function FiyatPenceresi({
   const bugun = new Date();
   const hesap = (f: number | null): FiyatSonucu | null => (zemin?.tamam && f !== null ? fiyatSonucu(zemin.zemin, f, bugun) : null);
   const girilen = fiyatGecerli ? hesap(fiyat) : null;
-  const hizli = hizliFiyatlar({ durum, bizimFiyat, buyboxFiyati, ikinciFiyat, indirim });
+  const hizli = kampanya ? [] : hizliFiyatlar({ durum, bizimFiyat, buyboxFiyati, ikinciFiyat, indirim });
   const para = (n: number) => bicim.para(n, "TRY");
-  const indirimli = indirim > 0;
+  const indirimli = indirim > 0 && !kampanya;
   const musteriMetni = (f: number) => t("musteriGorur", { fiyat: para(musteriFiyati(f, indirim)), oran: bicim.yuzde(indirim * 100) });
   const kanalAdi = t(`kanal_${kanal}`);
 
@@ -128,7 +141,7 @@ export function FiyatPenceresi({
    * «Kutuya yaz» yalnız kutuyu doldurur; gönderim yine Kaydet → onay adımından.
    */
   const oneri = zemin?.tamam
-    ? fiyatOnerisi({ durum, bizimFiyat, bizimListeFiyati, buyboxFiyati, ikinciFiyat, kanalIndirimi: indirim }, zemin.zemin, zemin.kural.etkin, bugun)
+    ? fiyatOnerisi({ durum, bizimFiyat, bizimListeFiyati, buyboxFiyati, ikinciFiyat, kanalIndirimi: indirim, kampanya, artisKapali }, zemin.zemin, zemin.kural.etkin, bugun)
     : null;
   /** Pencere açılınca hesap kendiliğinden yapılır (Hesapla tıklaması yerine «Fiyatla»). */
   const ac = () => {
@@ -192,6 +205,13 @@ export function FiyatPenceresi({
         {adim === "fiyat" ? (
           <div className="min-w-0 space-y-3">
             {esitNotu ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{esitNotu}</p> : null}
+            {kampanyaNotu ? (
+              <div className={`space-y-0.5 text-xs ${DURUM_YAZISI.uyari}`}>
+                <p className="font-medium">{kampanyaNotu}</p>
+                <p>{t("kampanyaPencere")}</p>
+              </div>
+            ) : null}
+            {artisKapali ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("artisKilitliUzun")}</p> : null}
 
             {zemin?.tamam && oneri !== null && !yukleniyor ? (
               <OneriKutusu
@@ -210,7 +230,7 @@ export function FiyatPenceresi({
             ) : null}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium" htmlFor={`fiyat-${kanal}-${variantId}`}>{t(indirimli ? "yeniListeFiyati" : "yeniFiyat")}</label>
+              <label className="text-xs font-medium" htmlFor={`fiyat-${kanal}-${variantId}`}>{t(indirimli || kampanya ? "yeniListeFiyati" : "yeniFiyat")}</label>
               <div className="flex flex-wrap items-center gap-1.5">
                 <Input
                   id={`fiyat-${kanal}-${variantId}`}

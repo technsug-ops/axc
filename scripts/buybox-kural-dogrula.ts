@@ -14,10 +14,11 @@ import { kaynakOku } from "./kaynak-oku";
 import { fiyatSonucu, MALIYET_TERCIHLERI, type FiyatZemini } from "../src/lib/buybox-fiyat";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { acikMaliyet, etkinKural, fiyatOnerisi, otomatikKarar, tekBasinaKargo, TEKRAR_PENCERESI_DK, VARSAYILAN_KURAL, yakindaGonderildiMi, type Oneri, type OneriGirdisi } from "../src/lib/buybox-kural";
+import { acikMaliyet, etkinKural, fiyatOnerisi, otomatikKarar, tekBasinaKargo, TEKRAR_PENCERESI_DK, VARSAYILAN_KURAL, yakindaGonderildiMi, type Oneri, type OneriGirdisi, type OtomatikSatir } from "../src/lib/buybox-kural";
+import { hbIlanOku, hbSatiri, type BuyboxUrunu, type HbRakip } from "../src/lib/buybox";
 
 let basarisiz = 0;
-const BOLUM_SAYISI = 9;
+const BOLUM_SAYISI = 10;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   if (kosul) console.log(`  OK    ${ad}`);
@@ -52,6 +53,8 @@ const satir = (ek: Partial<OneriGirdisi>): OneriGirdisi => ({
   buyboxFiyati: 900,
   ikinciFiyat: 1000,
   kanalIndirimi: 0,
+  kampanya: false,
+  artisKapali: false,
   ...ek,
 });
 const marjAt = (z: FiyatZemini, fiyat: number) => fiyatSonucu(z, fiyat, bugun).marj as number;
@@ -183,7 +186,7 @@ console.log("\n⑧ bağlar — pencere kuralı okur, öneri göndermez, satır v
   kontrol("satır uyarısı pencerenin AYNI saf kapısıyla (tekBasinaKargo)", /const uygun = tekBasinaKargo\(/.test(blok(kv, "export async function desiBekleyenler(", 2500)));
   const p = yorumsuz(kaynakOku("src/app/rapor/buybox/fiyat-penceresi.tsx"));
   kontrol("pencere öneriyi ürünün ETKİN kuralıyla kurar",
-    /fiyatOnerisi\(\{ durum, bizimFiyat, bizimListeFiyati, buyboxFiyati, ikinciFiyat, kanalIndirimi: indirim \}, zemin\.zemin, zemin\.kural\.etkin, bugun\)/.test(p));
+    /fiyatOnerisi\(\{ durum, bizimFiyat, bizimListeFiyati, buyboxFiyati, ikinciFiyat, kanalIndirimi: indirim, kampanya, artisKapali \}, zemin\.zemin, zemin\.kural\.etkin, bugun\)/.test(p));
   const kutu = blok(p, "<OneriKutusu", 700);
   kontrol("«kutuya yaz» yalnız kutuyu doldurur — GÖNDERMEZ", kutu.length > 0 && /kutuyaYaz=\{\(f\) => \{\s*setFiyatMetni\(bicim\.sayi\(f, 2\)\);/.test(kutu) && !/buyboxFiyatGonder|gonder\(/.test(kutu));
   kontrol("ürün kuralı formu yalnız kanala yazma izniyle", /\{gonderebilir \? <UrunKuraliFormu /.test(p));
@@ -224,15 +227,17 @@ console.log("\n⑨ otomatik — kapı, tekrar kapısı, uç, gönderim çekirde�
 {
   /** Öneriyi motordan üret (elle kurulmuş nesne değil) — kapı gerçek öneriyle sınanır. */
   const z = zemin();
+  /** Kapının kanal durumu: TY (ilan sorusu yok), kampanyasız. */
+  const TYS: OtomatikSatir = { kanal: "TY", ilanOkundu: false, kampanya: false, artisKapali: false, listeFiyati: null };
   const yukselt = fiyatOnerisi(satir({ ikinciFiyat: 1000, bizimFiyat: 900 }), z, { minMarj: 6, adim: 50 }, bugun);
-  kontrol("öndeyken yükseltme önerisi kapıdan GEÇER ve LİSTE fiyatı gider", yukselt.tur === "GONDER" && otomatikKarar(yukselt, { minMarj: 6 }).gonder === true && (otomatikKarar(yukselt, { minMarj: 6 }) as { fiyat: number }).fiyat === yukselt.listeFiyati, yukselt);
+  kontrol("öndeyken yükseltme önerisi kapıdan GEÇER ve LİSTE fiyatı gider", yukselt.tur === "GONDER" && otomatikKarar(yukselt, { minMarj: 6 }, TYS).gonder === true && (otomatikKarar(yukselt, { minMarj: 6 }, TYS) as { fiyat: number }).fiyat === yukselt.listeFiyati, yukselt);
   const mYuk = yukselt.tur === "GONDER" ? (yukselt.sonuc.marj as number) : 0;
-  kontrol("YÜKSELTME en az marja takılmaz (kârı artırır) — min marjın üstünde bile gider", otomatikKarar(yukselt, { minMarj: mYuk + 1 }).gonder === true);
+  kontrol("YÜKSELTME en az marja takılmaz (kârı artırır) — min marjın üstünde bile gider", otomatikKarar(yukselt, { minMarj: mYuk + 1 }, TYS).gonder === true);
   const al = fiyatOnerisi(satir({ durum: "KAYBEDILDI", bizimFiyat: 1100, buyboxFiyati: 1000 }), z, { minMarj: 6, adim: 50 }, bugun);
   const mAl = al.tur === "GONDER" ? (al.sonuc.marj as number) : Number.NaN;
-  kontrol("Buybox'ı alma önerisi (marj ≥ min) GEÇER", al.tur === "GONDER" && otomatikKarar(al, { minMarj: mAl - 1 }).gonder === true, al);
+  kontrol("Buybox'ı alma önerisi (marj ≥ min) GEÇER", al.tur === "GONDER" && otomatikKarar(al, { minMarj: mAl - 1 }, TYS).gonder === true, al);
   const kd = (o: Oneri, m: number) => {
-    const k = otomatikKarar(o, { minMarj: m });
+    const k = otomatikKarar(o, { minMarj: m }, TYS);
     return k.gonder ? "GONDER" : k.sebep;
   };
   kontrol("Buybox'ı alma: marj min'in altına düşerse ikinci savunma TABAN der", al.tur === "GONDER" && kd(al, mAl + 1) === "TABAN");
@@ -262,13 +267,14 @@ console.log("\n⑨ otomatik — kapı, tekrar kapısı, uç, gönderim çekirde�
     return i < 0 ? "" : o.slice(i);
   })();
   kontrol("motor: ürün gövdesi bulundu", bu.length > 0);
-  const iKarar = bu.indexOf("const karar = otomatikKarar(oneri, z.kural.etkin);");
+  const iKarar = bu.indexOf("const karar = otomatikKarar(oneri, z.kural.etkin, {");
   const iRet = bu.indexOf("if (!karar.gonder) {");
   const iTekrar = bu.indexOf("if (yakindaGonderildiMi(gecmis, kanal, karar.fiyat, simdi)) return atla(\"YAKINDA_GONDERILDI\");");
   const iTy = bu.indexOf("await tyStokFiyatYaz(");
   const iHb = bu.indexOf("await hbStokFiyatYaz(");
   kontrol("motor: kapı → tekrar kapısı → gönderim SIRASI", iKarar >= 0 && iRet > iKarar && iTekrar > iRet && iTy > iTekrar && iHb > iTekrar, { iKarar, iRet, iTekrar, iTy, iHb });
-  kontrol("motor: öneri pencereyle AYNI gövdeden (fiyatOnerisi + etkin kural)", /const oneri = fiyatOnerisi\(\s*\{ durum: s\.durum, bizimFiyat: s\.bizimFiyat, bizimListeFiyati: s\.bizimListeFiyati, buyboxFiyati: s\.buyboxFiyati, ikinciFiyat: s\.ikinciFiyat, kanalIndirimi: s\.kanalIndirimi \},\s*z\.zemin,\s*z\.kural\.etkin,/.test(bu));
+  kontrol("motor: öneri pencereyle AYNI gövdeden (fiyatOnerisi + etkin kural)", /const oneri = fiyatOnerisi\(\s*\{\s*durum: s\.durum,\s*bizimFiyat: s\.bizimFiyat,\s*bizimListeFiyati: s\.bizimListeFiyati,\s*buyboxFiyati: s\.buyboxFiyati,\s*ikinciFiyat: s\.ikinciFiyat,\s*kanalIndirimi: s\.kanalIndirimi,\s*kampanya: s\.kampanya,\s*artisKapali: s\.hbIlan\?\.artisKapali === true,\s*\},\s*z\.zemin,\s*z\.kural\.etkin,/.test(bu));
+  kontrol("motor: kapıya satırın İLAN durumu gider (okundu mu · kampanya · artış kilidi · liste)", /const karar = otomatikKarar\(oneri, z\.kural\.etkin, \{\s*kanal,\s*ilanOkundu: s\.hbIlan !== null,\s*kampanya: s\.kampanya,\s*artisKapali: s\.hbIlan\?\.artisKapali === true,\s*listeFiyati: s\.bizimListeFiyati,\s*\}\);/.test(bu));
   kontrol("motor: mod gönderimden hemen önce TAZE kuraldan yeniden sorulur", /if \(z\.kural\.etkin\.mod !== "OTOMATIK"\) return atla\("MOD_ONAYLI"\);/.test(bu) && bu.indexOf('return atla("MOD_ONAYLI")') < iKarar);
   kontrol("motor: YALNIZ fiyat — stok gönderilmez, giden fiyat kapının fiyatı (iki kanal)",
     bu.includes("tyStokFiyatYaz(s.variantId, { stokGonder: false, fiyat: karar.fiyat })") && bu.includes("hbStokFiyatYaz(s.variantId, { stokGonder: false, fiyat: karar.fiyat })") && (bu.match(/StokFiyatYaz\(/g) ?? []).length === 2);
@@ -315,6 +321,74 @@ console.log("\n⑨ otomatik — kapı, tekrar kapısı, uç, gönderim çekirde�
   kontrol("otomatik iş YALNIZ kapılı uçtan çağrılır (motoru içe alan tek dosya uç)", dosyalar.filter((y) => y !== "src/lib/buybox-otomatik.ts" && /from ["']@\/lib\/buybox-otomatik["']/.test(kaynakOku(y))).join() === "src/app/api/cron/buybox-otomatik/route.ts" && sarmal.length > 0);
 }
 kosanBolumler.push("otomatik");
+
+// ── ⑩ HB KAMPANYASI (kullanıcı bulgusu 27.10.2026, Tefal HBCV000053RNYF) ──
+console.log("\n⑩ HB kampanyası — liste ilandan, kampanyaya öneri/otomatik fiyat yok");
+{
+  const simdi = new Date("2026-10-27T18:00:00Z");
+  /** GERÇEK kayıtlar (27.10.2026 ölçümü, yalnız GET): ilan ucu + sıralama. */
+  const tefalIlan = {
+    hepsiburadaSku: "HBCV000053RNYF", price: 6389, availableStock: 2, isSalable: true, priceIncreaseDisabled: true,
+    pricings: [{ finalPrice: 5622.32, startDate: "2026-10-26T08:55:00Z", endDate: "2026-10-31T20:59:00Z", debtors: [{ debtor: "Hepsiburada", amount: 100 }] }],
+  };
+  const tefalSira: HbRakip[] = [
+    { sira: 1, satici: "TeknoLab Elektronik", fiyat: 5446.32, listeFiyati: 5446.32 },
+    { sira: 2, satici: "GÖRALAVM", fiyat: 5456, listeFiyati: 5456 },
+    { sira: 4, satici: "AXCALI", fiyat: 5622.32, listeFiyati: 5622.32 },
+  ];
+  const u: BuyboxUrunu = { variantId: "v", urunId: null, urunAdi: "Tefal", sku: "S", barkod: null, firmaSku: null, kanalKodu: "HBCV000053RNYF", stok: 2 };
+  const t = hbIlanOku(tefalIlan, simdi);
+  kontrol("ilan okunur: liste 6.389 · kampanya 5.622,32 · HB öder · artış kilitli", t !== null && t.sku === "HBCV000053RNYF" && t.ilan.liste === 6389 && t.ilan.kampanyaFiyati === 5622.32 && t.ilan.hbOduyor && t.ilan.artisKapali && t.ilan.kampanyaBitis === "2026-10-31T20:59:00Z", t);
+  kontrol("süresi geçmiş kampanya sayılmaz", hbIlanOku(tefalIlan, new Date("2026-11-01T00:00:00Z"))?.ilan.kampanyaFiyati === null);
+  kontrol("fiyatı olmayan ilan okunmaz (uydurulmaz)", hbIlanOku({ ...tefalIlan, price: null }, simdi) === null && hbIlanOku({ ...tefalIlan, price: 0 }, simdi) === null);
+  kontrol("indirimi HB tam ödemiyorsa hbOduyor=false (iki borçlu)", hbIlanOku({ ...tefalIlan, pricings: [{ ...tefalIlan.pricings[0], debtors: [{ debtor: "Hepsiburada", amount: 50 }, { debtor: "Merchant", amount: 50 }] }] }, simdi)?.ilan.hbOduyor === false);
+  kontrol("tek borçlu Hepsiburada ama %100 DEĞİLSE hbOduyor=false", hbIlanOku({ ...tefalIlan, pricings: [{ ...tefalIlan.pricings[0], debtors: [{ debtor: "Hepsiburada", amount: 60 }] }] }, simdi)?.ilan.hbOduyor === false);
+
+  const s = hbSatiri(u, tefalSira, "Axcali", t?.ilan ?? null);
+  kontrol("Tefal satırı: müşteri 5.622,32 · LİSTE 6.389 (ilandan) · kampanya", s.bizimFiyat === 5622.32 && s.bizimListeFiyati === 6389 && s.kampanya && s.hbIlan?.artisKapali === true, s);
+  const eski = hbSatiri(u, tefalSira, "Axcali");
+  kontrol("ilan okunamadıysa liste sıralamadan (eski yol) ve ilan YOK diye işaretli", eski.bizimListeFiyati === 5622.32 && eski.hbIlan === null && !eski.kampanya);
+  const yuzde = hbSatiri({ ...u, kanalKodu: "HBCV00007PRC72" }, [{ sira: 1, satici: "AXCALI", fiyat: 2209.15, listeFiyati: 2599 }], "Axcali", { liste: 2599, kampanyaFiyati: null, kampanyaBitis: null, hbOduyor: false, artisKapali: false });
+  kontrol("HB yüzde indirimi (kampanya kaydı yok, sıralama = ilan) KAMPANYA DEĞİL", !yuzde.kampanya && yuzde.bizimListeFiyati === 2599 && Math.abs(yuzde.kanalIndirimi - 0.15) < 0.001, yuzde);
+  const ozel = hbSatiri(u, [{ sira: 1, satici: "AXCALI", fiyat: 1999, listeFiyati: 1999 }], "Axcali", { liste: 2999, kampanyaFiyati: null, kampanyaBitis: null, hbOduyor: false, artisKapali: false });
+  kontrol("kampanya kaydı yokken sıralama ilandan AYRIYSA da kampanya sayılır (HBV000013CESA)", ozel.kampanya && ozel.bizimListeFiyati === 2999);
+  const sen = hbSatiri(u, tefalSira, "Axcali", { liste: 6389, kampanyaFiyati: 5622.32, kampanyaBitis: null, hbOduyor: false, artisKapali: false });
+  kontrol("indirimi HB ödemiyorsa kâr tabanı KAMPANYA fiyatı (fazla kâr gösterilmez)", sen.kampanya && sen.bizimListeFiyati === 5622.32);
+
+  const z = zemin();
+  const TYS: OtomatikSatir = { kanal: "TY", ilanOkundu: false, kampanya: false, artisKapali: false, listeFiyati: null };
+  const kural = { minMarj: 0, adim: 50 };
+  const yuk = satir({ ikinciFiyat: 1000, bizimFiyat: 900 });
+  const al = satir({ durum: "KAYBEDILDI", bizimFiyat: 1100, buyboxFiyati: 1000 });
+  kontrol("öneri: kampanyasızken iki yön de GÖNDER (ayrımın öteki yakası)", fiyatOnerisi(yuk, z, kural, bugun).tur === "GONDER" && fiyatOnerisi(al, z, kural, bugun).tur === "GONDER");
+  const kd = (o: Oneri) => (o.tur === "DOKUNMA" ? o.neden : o.tur);
+  kontrol("öneri: kampanyada yükseltme de düşürme de YOK (KAMPANYA)", kd(fiyatOnerisi({ ...yuk, kampanya: true }, z, kural, bugun)) === "KAMPANYA" && kd(fiyatOnerisi({ ...al, kampanya: true }, z, kural, bugun)) === "KAMPANYA");
+  kontrol("öneri: artış kilidinde YÜKSELTME yok", kd(fiyatOnerisi({ ...yuk, artisKapali: true }, z, kural, bugun)) === "ARTIS_KAPALI");
+  kontrol("öneri: artış kilidinde DÜŞÜRME serbest", fiyatOnerisi({ ...al, artisKapali: true }, z, kural, bugun).tur === "GONDER");
+
+  const o = fiyatOnerisi(al, z, kural, bugun);
+  const ks = (x: OtomatikSatir) => {
+    const k = otomatikKarar(o, { minMarj: 0 }, x);
+    return k.gonder ? "GONDER" : k.sebep;
+  };
+  const hb: OtomatikSatir = { ...TYS, kanal: "HB", ilanOkundu: true, listeFiyati: 1100 };
+  kontrol("kapı: HB ilanı okunduysa ve kampanyasızsa GÖNDER", o.tur === "GONDER" && ks(hb) === "GONDER");
+  kontrol("kapı: HB ilanı okunamadıysa GÖNDERMEZ (ILAN_YOK)", ks({ ...hb, ilanOkundu: false }) === "ILAN_YOK");
+  kontrol("kapı: TY'de ilan sorusu yok", ks(TYS) === "GONDER");
+  kontrol("kapı: kampanyada GÖNDERMEZ (öneri gönder dese bile)", ks({ ...hb, kampanya: true }) === "KAMPANYA");
+  kontrol("kapı: artış kilidinde ilandakinden YÜKSEK fiyat gitmez", o.tur === "GONDER" && ks({ ...hb, artisKapali: true, listeFiyati: o.listeFiyati - 1 }) === "ARTIS_KAPALI");
+  kontrol("kapı: artış kilidinde DÜŞÜRME gider", o.tur === "GONDER" && ks({ ...hb, artisKapali: true, listeFiyati: o.listeFiyati + 1 }) === "GONDER");
+
+  const yorumsuz = (x: string) => x.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+  const vr = yorumsuz(kaynakOku("src/lib/buybox-verisi.ts"));
+  kontrol("veri: HB satırına ilan kaydı GEÇİRİLİR", /hbSatiri\(u, harita\.get\(u\.kanalKodu\.toUpperCase\(\)\) \?\? null, k\.magazaAdi \?\? "", ilanlar\.get\(u\.kanalKodu\.toUpperCase\(\)\) \?\? null\)/.test(vr));
+  kontrol("veri: ilan yalnız piyasa sorgusunda (fiyatlarimiz: false) atlanır", /secenek\.fiyatlarimiz === false \? Promise\.resolve\(new Map<string, HbIlan>\(\)\) : hbIlanlari\(kimlik, b, sebepler\)/.test(vr));
+  kontrol("veri: ilanı bulunamayan ürün sebeplerde SAYILIR", /sebepler\.add\(`HB_ILAN_EKSIK:\$\{ilansiz\}`\)/.test(vr));
+  const pn = yorumsuz(kaynakOku("src/app/rapor/buybox/fiyat-penceresi.tsx"));
+  kontrol("pencere: öneriye kampanya ve artış kilidi GİDER", /kanalIndirimi: indirim, kampanya, artisKapali \}/.test(pn));
+  kontrol("pencere: kampanyada müşteri fiyatı TAHMİNİ ve hızlı aday yok", /const hizli = kampanya \? \[\] : hizliFiyatlar\(/.test(pn) && /const indirimli = indirim > 0 && !kampanya;/.test(pn));
+}
+kosanBolumler.push("kampanya");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {

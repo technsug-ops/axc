@@ -74,17 +74,86 @@ export type BuyboxSatiri = BuyboxUrunu & {
    * YÜZDE. Ödeme ve komisyon LİSTE fiyatından (kullanıcı beyanı). `bizimFiyat`
    * müşteri fiyatıdır; `bizimListeFiyati` ilandaki fiyat — kâr ve gönderim onunla.
    * TY: `null` (girilen fiyat = müşteri fiyatı sayılır; indirim 0).
+   * ⚠ 27.10.2026: `originalPrice` KAMPANYALI ilanda ilan fiyatını DEĞİL kampanya
+   * fiyatını gösteriyor (Tefal 5.622,32 ↔ ilan 6.389) — liste artık İLAN
+   * kaydından (`hbIlan`); sıralama yalnız ilan okunamadığında yedek.
    */
   bizimListeFiyati: number | null;
   /** 0 ≤ oran < 1 — müşteri = liste × (1 − oran). Bilinmiyorsa/yoksa 0. */
   kanalIndirimi: number;
   /** HB: o üründeki bütün satıcılar (sırasıyla). TY: boş. */
   rakipler: HbRakip[];
+  /**
+   * HB İLAN KAYDI (K366, kullanıcı bulgusu 27.10.2026 — Tefal: ilan 6.389,
+   * müşteri 5.622,32). `null` = TY ya da ilan OKUNAMADI (otomatik gönderim
+   * HB'de ilan bilinmeden yapılmaz).
+   */
+  hbIlan: HbIlan | null;
+  /**
+   * HB KAMPANYASI: müşteri fiyatı ilandaki fiyatımızdan Hepsiburada'nın
+   * kampanya/özel fiyatıyla ayrılmış ve liste fiyatı değişince ne olacağı
+   * BİLİNMİYOR → öneri yok, otomatik fiyat GÖNDERİLMEZ. TY: her zaman false.
+   */
+  kampanya: boolean;
 };
+
+/**
+ * HB ilanı (ilan ucu `listings` — buybox sıralaması DEĞİL). Ölçüm 27.10.2026
+ * (235 stoklu ilan, `hb-capraz` ölçümü): sıralamadaki `originalPrice` 155
+ * ilanda ilan fiyatımızı gösteriyor, ama **kampanyalı 78 ilanda** (`pricings`
+ * dolu, indirimi «Hepsiburada %100» ödüyor) kampanya fiyatını gösteriyor —
+ * liste fiyatımız yalnız ilan kaydında doğru. 1 ilanda kampanya kaydı yokken
+ * de sıralama ilandan ayrı (2.999 ↔ 1.999; kaynağı bilinmiyor).
+ */
+export type HbIlan = {
+  /** İlandaki fiyatımız — ödeme ve komisyon tabanı (komisyon tutarı 6.389 × %12 = 766,68 ile ölçüldü). */
+  liste: number;
+  /** `pricings[0].finalPrice` — kampanya yoksa `null`. */
+  kampanyaFiyati: number | null;
+  kampanyaBitis: string | null;
+  /** Kampanya indirimini Hepsiburada mı tam ödüyor (`debtors`: Hepsiburada %100). Kampanya yoksa `false`. */
+  hbOduyor: boolean;
+  /** HB fiyat ARTIŞINI kilitlemiş (`priceIncreaseDisabled`) — yükseltme denenmez. */
+  artisKapali: boolean;
+};
+
+const ayri = (a: number, b: number) => Math.abs(a - b) >= 0.005;
+
+/**
+ * İlan ucunun bir kaydını `HbIlan`a çevirir. Fiyatı okunamayan kayıt `null`
+ * (uydurulmaz). Birden çok `pricings` varsa `simdi` anında GEÇERLİ olan alınır;
+ * tarihsizse ilki. Hepsiburada ödüyor = tek borçlu «Hepsiburada» %100.
+ */
+export function hbIlanOku(x: unknown, simdi: Date): { sku: string; ilan: HbIlan } | null {
+  const k = x as Record<string, unknown> | null;
+  const sku = typeof k?.hepsiburadaSku === "string" ? k.hepsiburadaSku.trim().toUpperCase() : "";
+  const liste = typeof k?.price === "number" && Number.isFinite(k.price) && k.price > 0 ? k.price : null;
+  if (k === null || sku === "" || liste === null) return null;
+  const fiyatli = (Array.isArray(k.pricings) ? (k.pricings as Record<string, unknown>[]) : []).filter(
+    (q) => typeof q?.finalPrice === "number" && Number.isFinite(q.finalPrice) && q.finalPrice > 0,
+  );
+  const gecerli = (q: Record<string, unknown>) => {
+    const bas = typeof q.startDate === "string" ? Date.parse(q.startDate) : Number.NaN;
+    const son = typeof q.endDate === "string" ? Date.parse(q.endDate) : Number.NaN;
+    return (Number.isNaN(bas) || bas <= simdi.getTime()) && (Number.isNaN(son) || simdi.getTime() <= son);
+  };
+  const f = fiyatli.find(gecerli) ?? null;
+  const borclular = f !== null && Array.isArray(f.debtors) ? (f.debtors as Record<string, unknown>[]) : [];
+  return {
+    sku,
+    ilan: {
+      liste,
+      kampanyaFiyati: f === null ? null : (f.finalPrice as number),
+      kampanyaBitis: f !== null && typeof f.endDate === "string" ? f.endDate : null,
+      hbOduyor: borclular.length === 1 && borclular[0]?.debtor === "Hepsiburada" && borclular[0]?.amount === 100,
+      artisKapali: k.priceIncreaseDisabled === true,
+    },
+  };
+}
 
 const bos = (u: BuyboxUrunu, kanal: BuyboxKanali, durum: BuyboxDurumu): BuyboxSatiri => ({
   ...u, kanal, durum, bizimFiyat: null, buyboxFiyati: null, buyboxSaticisi: null, siramiz: null, saticiSayisi: null, ikinciFiyat: null, rakipler: [],
-  bizimListeFiyati: null, kanalIndirimi: 0,
+  bizimListeFiyati: null, kanalIndirimi: 0, hbIlan: null, kampanya: false,
 });
 
 /** HB müşteri fiyatı ile liste fiyatından indirim oranı; tutarsız değerde 0 (uydurulmaz). */
@@ -133,8 +202,8 @@ export function saticiAnahtari(ad: string): string {
  * (`ChannelAccount.magazaAdi`; HB kimlik vermiyor). Ad eşleşmezse
  * GÖRÜNMÜYOR — tahminle «sanırım biziz» denmez.
  */
-export function hbSatiri(u: BuyboxUrunu, rakipler: readonly HbRakip[] | null, magazaAdi: string): BuyboxSatiri {
-  if (rakipler === null) return bos(u, "HB", "GORUNMUYOR");
+export function hbSatiri(u: BuyboxUrunu, rakipler: readonly HbRakip[] | null, magazaAdi: string, ilan: HbIlan | null = null): BuyboxSatiri {
+  if (rakipler === null) return { ...bos(u, "HB", "GORUNMUYOR"), hbIlan: ilan };
   const sirali = [...rakipler].sort((a, b) => a.sira - b.sira);
   const ad = saticiAnahtari(magazaAdi);
   /* Mağaza adı boşsa kimse «biz» sayılmaz — adı boş bir satıcıyla eşleşmek tahmin olurdu. */
@@ -146,15 +215,37 @@ export function hbSatiri(u: BuyboxUrunu, rakipler: readonly HbRakip[] | null, ma
     saticiSayisi: sirali.length,
     rakipler: sirali,
   };
-  if (biz === null) return { ...bos(u, "HB", "GORUNMUYOR"), ...ortak };
+  if (biz === null) return { ...bos(u, "HB", "GORUNMUYOR"), ...ortak, hbIlan: ilan };
+  /**
+   * KAMPANYA: ilanda Hepsiburada'nın kampanya fiyatı var ya da sıralamanın
+   * «liste» dediği fiyat ilandakinden ayrı (kaynağı bilinmeyen özel fiyat).
+   * İkisinde de liste fiyatı değişince müşteri fiyatına ne olacağı bilinmiyor.
+   */
+  const kampanyaFiyatli = ilan !== null && ilan.kampanyaFiyati !== null && ayri(ilan.kampanyaFiyati, ilan.liste);
+  const siralamaAyri = ilan !== null && biz.listeFiyati !== null && ayri(biz.listeFiyati, ilan.liste);
+  /**
+   * LİSTE (kâr ve ödeme tabanı): ilan okunduysa İLANDAN. Kampanya indirimini
+   * Hepsiburada tam ödemiyorsa eline geçen ilan fiyatı değildir — taban
+   * kampanya fiyatı (fazla kâr göstermektense eksik). İlan okunamadıysa
+   * sıralamanın `originalPrice`ı (26.10 yolu; kampanyalı üründe YANLIŞ — ekran
+   * ilanın okunamadığını sebeplerde yazar, otomatik gönderim yapılmaz).
+   */
+  const liste =
+    ilan === null
+      ? (biz.listeFiyati ?? biz.fiyat)
+      : kampanyaFiyatli && !ilan.hbOduyor && ilan.kampanyaFiyati !== null
+        ? ilan.kampanyaFiyati
+        : ilan.liste;
   return {
     ...bos(u, "HB", biz.sira === 1 ? "BIRINCI" : "KAYBEDILDI"),
     ...ortak,
     bizimFiyat: biz.fiyat,
     siramiz: biz.sira,
     ikinciFiyat: sirali[1]?.fiyat ?? null,
-    bizimListeFiyati: biz.listeFiyati ?? biz.fiyat,
-    kanalIndirimi: indirimOrani(biz.fiyat, biz.listeFiyati),
+    bizimListeFiyati: liste,
+    kanalIndirimi: indirimOrani(biz.fiyat, liste),
+    hbIlan: ilan,
+    kampanya: kampanyaFiyatli || siralamaAyri,
   };
 }
 

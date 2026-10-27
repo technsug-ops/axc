@@ -138,7 +138,7 @@ console.log("\n④ veri — satış hesabı · kod · parti · hata");
   kontrol("HB: düşen parti «sorgulanamadı» + sebep", /sebepler\.add\(`HB Buybox: /.test(hbHata) && /satirlar\.push\(\.\.\.parti\.map\(\(u\) => sorgulanamadi\(u, "HB"\)\)\);/.test(hbHata));
   kontrol("kimlik yoksa her ürün sorgulanamadı (TY + HB)", (v.match(/sebepler: \["KIMLIK_YOK"\], kimlikVar: false/g) ?? []).length === 2);
   kontrol("TY bizim fiyat: müşterinin gördüğü fiyat önce", /typeof p\?\.priceSeenByCustomer === "number" \? p\.priceSeenByCustomer : typeof p\?\.salePrice === "number" \? p\.salePrice : null/.test(v));
-  kontrol("HB: biz mağaza adıyla, adı yoksa sebep yazılır", /if \(!k\.magazaAdi\) sebepler\.add\("HB_MAGAZA_ADI_YOK"\);/.test(v) && /hbSatiri\(u, harita\.get\(u\.kanalKodu\.toUpperCase\(\)\) \?\? null, k\.magazaAdi \?\? ""\)/.test(v));
+  kontrol("HB: biz mağaza adıyla, adı yoksa sebep yazılır", /if \(!k\.magazaAdi\) sebepler\.add\("HB_MAGAZA_ADI_YOK"\);/.test(v) && /hbSatiri\(u, harita\.get\(u\.kanalKodu\.toUpperCase\(\)\) \?\? null, k\.magazaAdi \?\? "", /.test(v));
 }
 kosanBolumler.push("veri");
 

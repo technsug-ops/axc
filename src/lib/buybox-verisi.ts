@@ -5,7 +5,7 @@ import * as hb from "../../scripts/hb/istemci";
 import { tyBuyboxSorgula, TY_BUYBOX_PARTI } from "../../scripts/ty/buybox";
 import * as ty from "../../scripts/ty/istemci";
 
-import { hbSatiri, partilere, sorgulanamadi, tySatiri, type BuyboxKanali, type BuyboxSatiri, type BuyboxUrunu, type HbRakip, type PiyasaFiyati } from "./buybox";
+import { hbIlanOku, hbSatiri, partilere, sorgulanamadi, tySatiri, type BuyboxKanali, type BuyboxSatiri, type BuyboxUrunu, type HbIlan, type HbRakip, type PiyasaFiyati } from "./buybox";
 
 /**
  * ============================================================================
@@ -133,6 +133,30 @@ async function tyFiyatlarimiz(k: NonNullable<ReturnType<typeof ty.kimlikOku>>, s
 }
 
 /**
+ * HB: ilan kayıtlarımız (liste fiyatı · kampanya · artış kilidi). Kullanıcı
+ * bulgusu 27.10.2026: kampanyalı ilanda sıralama liste fiyatını göstermiyor —
+ * liste YALNIZ ilan kaydında doğru (`buybox.ts` → `HbIlan`). Ölçüldü: 2.240
+ * ilan, 1.000'lik sayfayla 3 istek. Okunamayan/kesik tarama sebebiyle yazılır;
+ * ilanı bulunmayan ürünün `hbIlan`ı `null` kalır (otomatik gönderim yapılmaz).
+ */
+async function hbIlanlari(kimlik: NonNullable<ReturnType<typeof hb.kimlikOku>>, b: Record<string, string>, sebepler: Set<string>): Promise<Map<string, HbIlan>> {
+  const ilan = new Map<string, HbIlan>();
+  const r = await hb.tumKayitlar((ofset, limit) => hb.UCLAR.listingler(kimlik, ofset, limit), b, 1000, 20);
+  if (r.tur !== "TAMAM") {
+    console.error("[buybox] HB ilan okunamadı", r.tur === "HATA" ? JSON.stringify(r.sonuc) : r.alanlar);
+    sebepler.add("HB_ILAN_OKUNAMADI");
+    return ilan;
+  }
+  if (r.kesildiMi) sebepler.add("HB_ILAN_KESIK");
+  const simdi = new Date();
+  for (const x of r.kayitlar) {
+    const o = hbIlanOku(x, simdi);
+    if (o) ilan.set(o.sku, o.ilan);
+  }
+  return ilan;
+}
+
+/**
  * `fiyatlarimiz: false` — TY'de kendi fiyatımızı okumak için onaylı listenin 17
  * sayfası taranmaz (alım rehberinin piyasa sütunu yalnız Buybox fiyatını ister).
  */
@@ -168,10 +192,13 @@ export async function buyboxDurumlari(kanal: BuyboxKanali, k: KanalUrunleri, sec
   if (!kimlik) return { satirlar: k.urunler.map((u) => sorgulanamadi(u, "HB")), sebepler: ["KIMLIK_YOK"], kimlikVar: false };
   if (!k.magazaAdi) sebepler.add("HB_MAGAZA_ADI_YOK");
   const b = hb.baslikKur(kimlik);
-  const partiler = await paralel(partilere(k.urunler, hb.HB_BUYBOX_PARTI), async (parti) => ({
-    parti,
-    sonuc: await hb.apiGet(hb.UCLAR.buyboxSiralama(kimlik, parti.map((u) => u.kanalKodu)), b),
-  }));
+  const [partiler, ilanlar] = await Promise.all([
+    paralel(partilere(k.urunler, hb.HB_BUYBOX_PARTI), async (parti) => ({
+      parti,
+      sonuc: await hb.apiGet(hb.UCLAR.buyboxSiralama(kimlik, parti.map((u) => u.kanalKodu)), b),
+    })),
+    secenek.fiyatlarimiz === false ? Promise.resolve(new Map<string, HbIlan>()) : hbIlanlari(kimlik, b, sebepler),
+  ]);
   const satirlar: BuyboxSatiri[] = [];
   for (const { parti, sonuc } of partiler) {
     const dizi = sonuc.tur === "VERI" ? (sonuc.govde as { variants?: unknown }).variants : undefined;
@@ -190,7 +217,12 @@ export async function buyboxDurumlari(kanal: BuyboxKanali, k: KanalUrunleri, sec
           .map((r) => ({ sira: r.rank as number, satici: String(r.merchantName ?? ""), fiyat: r.price as number, listeFiyati: typeof r.originalPrice === "number" ? r.originalPrice : null })),
       );
     }
-    for (const u of parti) satirlar.push(hbSatiri(u, harita.get(u.kanalKodu.toUpperCase()) ?? null, k.magazaAdi ?? ""));
+    for (const u of parti) satirlar.push(hbSatiri(u, harita.get(u.kanalKodu.toUpperCase()) ?? null, k.magazaAdi ?? "", ilanlar.get(u.kanalKodu.toUpperCase()) ?? null));
+  }
+  /** Sıralamada görünüp ilanı okunamayan ürün sessiz kalmaz: liste fiyatı yedekten (sıralamadan) geldi. */
+  if (secenek.fiyatlarimiz !== false && ilanlar.size > 0) {
+    const ilansiz = satirlar.filter((s) => s.bizimFiyat !== null && s.hbIlan === null).length;
+    if (ilansiz > 0) sebepler.add(`HB_ILAN_EKSIK:${ilansiz}`);
   }
   return { satirlar, sebepler: [...sebepler], kimlikVar: true };
 }

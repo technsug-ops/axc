@@ -72,6 +72,13 @@ export type OneriGirdisi = {
   ikinciFiyat: number | null;
   /** 0 ≤ oran < 1 — HB kendi indirimi; TY 0. */
   kanalIndirimi: number;
+  /**
+   * HB kampanyası (27.10.2026): liste fiyatı değişince müşteri fiyatına ne
+   * olacağı bilinmiyor → öneri YOK (`DOKUNMA` · `KAMPANYA`). TY: false.
+   */
+  kampanya: boolean;
+  /** HB fiyat artışını kilitlemiş — yükseltme önerilmez (`ARTIS_KAPALI`). TY: false. */
+  artisKapali: boolean;
 };
 
 export type OneriSebebi =
@@ -103,9 +110,11 @@ export type Oneri =
        * RAKIP_YOK: tek satıcıyız · YAKIN: öndeyiz ve 2. ile fark zaten adım kadar
        * ya da daha az · TABAN: Buybox'ı alacak fiyatta marj minimumun altında ·
        * FIYAT_DISI: fiyatımız Buybox'tan pahalı değil, kaybı fiyat açıklamıyor ·
-       * KAZANC_YOK: yükseltme NET-2'yi artırmıyor (komisyon dilimi atlaması).
+       * KAZANC_YOK: yükseltme NET-2'yi artırmıyor (komisyon dilimi atlaması) ·
+       * KAMPANYA: HB kampanyasında, liste fiyatı değişince ne olacağı bilinmiyor ·
+       * ARTIS_KAPALI: HB fiyat artışını kilitlemiş (yükseltme kanala gidemez).
        */
-      neden: "RAKIP_YOK" | "YAKIN" | "TABAN" | "FIYAT_DISI" | "KAZANC_YOK";
+      neden: "RAKIP_YOK" | "YAKIN" | "TABAN" | "FIYAT_DISI" | "KAZANC_YOK" | "KAMPANYA" | "ARTIS_KAPALI";
       hedef: number | null;
       sonuc: FiyatSonucu | null;
     }
@@ -120,12 +129,19 @@ const kurus = (x: number) => Math.round(x * 100) / 100;
 export function fiyatOnerisi(g: OneriGirdisi, zemin: FiyatZemini, kural: Pick<GenelKural, "minMarj" | "adim">, bugun: Date): Oneri {
   if (g.durum !== "BIRINCI" && g.durum !== "KAYBEDILDI") return { tur: "HESAPLANAMAZ", sebep: "DURUM_YOK" };
   if (g.bizimFiyat === null) return { tur: "HESAPLANAMAZ", sebep: "FIYAT_YOK" };
+  /**
+   * HB KAMPANYASI (kullanıcı kararı 27.10.2026): liste fiyatını değiştirmenin
+   * Hepsiburada'nın kampanya fiyatına etkisi ölçülmedi — tahminle öneri yok.
+   */
+  if (g.kampanya) return { tur: "DOKUNMA", neden: "KAMPANYA", hedef: null, sonuc: null };
 
   if (g.durum === "BIRINCI") {
     /** Rakip yoksa fiyata dokunulmaz — maliyet/kargo bilinmese bile hüküm bu. */
     if (g.ikinciFiyat === null) return { tur: "DOKUNMA", neden: "RAKIP_YOK", hedef: null, sonuc: null };
     const hedef = kurus(g.ikinciFiyat - kural.adim);
     if (hedef <= g.bizimFiyat + 0.005) return { tur: "DOKUNMA", neden: "YAKIN", hedef, sonuc: null };
+    /** Yükseltme: HB artışı kilitlediyse kanal reddeder — önerilmez. */
+    if (g.artisKapali) return { tur: "DOKUNMA", neden: "ARTIS_KAPALI", hedef, sonuc: null };
     const eksik = eksikZemin(zemin);
     if (eksik) return { tur: "HESAPLANAMAZ", sebep: eksik };
     const listeFiyati = listeFiyatiIcin(hedef, g.kanalIndirimi);
@@ -198,13 +214,26 @@ export type OtomatikKarar =
       /**
        * ONERI_YOK: öneri «dokunma» ya da hesaplanamadı · ZARAR: NET-2 sıfır,
        * eksi ya da bilinmiyor · TABAN: Buybox'ı alma fiyatında marj minimumun
-       * altında · FIYAT_GECERSIZ: gönderilecek fiyat 0 ya da sayı değil.
+       * altında · FIYAT_GECERSIZ: gönderilecek fiyat 0 ya da sayı değil ·
+       * ILAN_YOK: HB ilan kaydı okunamadı (liste fiyatı bilinmiyor) ·
+       * KAMPANYA: HB kampanyasında · ARTIS_KAPALI: HB artışı kilitli ve fiyat
+       * ilandakinden yüksek.
        */
-      sebep: "ONERI_YOK" | "ZARAR" | "TABAN" | "FIYAT_GECERSIZ";
+      sebep: "ONERI_YOK" | "ZARAR" | "TABAN" | "FIYAT_GECERSIZ" | "ILAN_YOK" | "KAMPANYA" | "ARTIS_KAPALI";
     };
 
-export function otomatikKarar(o: Oneri, kural: Pick<GenelKural, "minMarj">): OtomatikKarar {
+/**
+ * Satırın kanal durumu — kapının İKİNCİ savunması (öneri de bakar). HB'de
+ * ilan kaydı okunmadan (`ilanOkundu: false`) liste fiyatı yalnız sıralamadan
+ * gelir ve kampanyalı üründe yanlıştır (Tefal vakası) → gönderim yok.
+ */
+export type OtomatikSatir = { kanal: "TY" | "HB"; ilanOkundu: boolean; kampanya: boolean; artisKapali: boolean; listeFiyati: number | null };
+
+export function otomatikKarar(o: Oneri, kural: Pick<GenelKural, "minMarj">, s: OtomatikSatir): OtomatikKarar {
   if (o.tur !== "GONDER") return { gonder: false, sebep: "ONERI_YOK" };
+  if (s.kanal === "HB" && !s.ilanOkundu) return { gonder: false, sebep: "ILAN_YOK" };
+  if (s.kampanya) return { gonder: false, sebep: "KAMPANYA" };
+  if (s.artisKapali && (s.listeFiyati === null || o.listeFiyati > s.listeFiyati + 0.005)) return { gonder: false, sebep: "ARTIS_KAPALI" };
   if (!(Number.isFinite(o.listeFiyati) && o.listeFiyati > 0)) return { gonder: false, sebep: "FIYAT_GECERSIZ" };
   if (o.sonuc.net2 === null || o.sonuc.net2 <= 0) return { gonder: false, sebep: "ZARAR" };
   if (o.neden === "BUYBOX_AL" && (o.sonuc.marj === null || o.sonuc.marj < kural.minMarj)) return { gonder: false, sebep: "TABAN" };

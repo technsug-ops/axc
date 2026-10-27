@@ -100,6 +100,21 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
   /** Faz 3-c fiyat penceresi: kâr görme izni (kartla aynı kapı) · Kaydet yalnız kanala yazma izniyle. */
   const [karGorunur, gonderebilir, resimEkleyebilir, ayarYazabilir] = await Promise.all([izinVarMi("satis.kar.gor"), izinVarMi("kanal.yaz"), izinVarMi("urun.yaz"), izinVarMi("ayar.yaz")]);
   /**
+   * HB KAMPANYASI (kullanıcı bulgusu 27.10.2026): müşteri fiyatı ile ilandaki
+   * liste fiyatımız Hepsiburada'nın kampanyasıyla ayrılmış. Satırda tam cümle
+   * (telefonda da görünür — ipucuna saklanmaz) ve fiyat penceresinde aynı cümle
+   * (İlke #10); kampanyalı ürüne öneri ve otomatik fiyat yok. İndirimi kimin
+   * ödediği ilandan okunur, varsayılmaz.
+   */
+  const kampanyaMetni = (s: BuyboxSatiri): string | null => {
+    if (!s.kampanya) return null;
+    const i = s.hbIlan;
+    const tl = (n: number | null) => (n === null ? t("bilinmiyor") : bicim.para(n, "TRY"));
+    const bitis = i?.kampanyaBitis ? t("kampanyaBitis", { tarih: bicim.tarih(new Date(i.kampanyaBitis)) }) : "";
+    const ortak = { musteri: tl(s.bizimFiyat), liste: tl(i?.liste ?? null), bitis };
+    return i?.kampanyaFiyati == null ? t("kampanyaOzel", ortak) : i.hbOduyor ? t("kampanyaHb", ortak) : t("kampanyaSen", ortak);
+  };
+  /**
    * SATIR EYLEMLERİ — Satışlar'la aynı düzen (kullanıcı 26.10.2026: «çok
    * düzensiz, Satışlar sayfasını referans al»): masaüstünde ikon, telefonda
    * ikon + ad. Aynı fonksiyon iki görünümde (İlke #10). ⚠ Pencere KANAL +
@@ -122,6 +137,9 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
           buyboxFiyati={s.buyboxFiyati}
           ikinciFiyat={s.ikinciFiyat}
           esitNotu={esitAmaKayip(s) ? t("esitAmaKayip") : null}
+          kampanya={s.kampanya}
+          kampanyaNotu={kampanyaMetni(s)}
+          artisKapali={s.hbIlan?.artisKapali === true}
           gonderebilir={gonderebilir}
         />
       ) : null}
@@ -175,6 +193,11 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
   /** HB kendi indirimi varsa müşteri fiyatının yanında ilandaki fiyatımız (kâr ve ödeme tabanı). */
   const bizimYaz = (s: BuyboxSatiri) =>
     s.kanalIndirimi > 0 && s.bizimListeFiyati !== null ? t("bizimListeli", { fiyat: para(s.bizimFiyat), liste: para(s.bizimListeFiyati) }) : para(s.bizimFiyat);
+  const kampanyaNotu = (s: BuyboxSatiri) => {
+    const metin = kampanyaMetni(s);
+    return metin === null ? null : <span className={`block max-w-[16rem] text-xs leading-snug whitespace-normal ${DURUM_YAZISI.uyari}`}>{metin}</span>;
+  };
+  const artisKilidi = (s: BuyboxSatiri) => (s.hbIlan?.artisKapali ? <DurumRozeti durum="uyari">{t("artisKilitli")}</DurumRozeti> : null);
   const siraYaz = (s: BuyboxSatiri) =>
     s.siramiz === null ? t(`durum_${s.durum}`) : s.saticiSayisi === null ? t("sira", { sira: s.siramiz }) : t("siraSatici", { sira: s.siramiz, satici: s.saticiSayisi });
 
@@ -211,7 +234,20 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
         <div className={`space-y-0.5 text-sm ${DURUM_YAZISI.uyari}`}>
           <p>{t("sorunlar")}</p>
           {sonuc.sebepler.map((s) => (
-            <p key={s} className="text-xs">· {s === "KIMLIK_YOK" ? t("kimlikYok") : s === "HB_MAGAZA_ADI_YOK" ? t("magazaAdiYok") : s}</p>
+            <p key={s} className="text-xs">
+              ·{" "}
+              {s === "KIMLIK_YOK"
+                ? t("kimlikYok")
+                : s === "HB_MAGAZA_ADI_YOK"
+                  ? t("magazaAdiYok")
+                  : s === "HB_ILAN_OKUNAMADI"
+                    ? t("ilanOkunamadi")
+                    : s === "HB_ILAN_KESIK"
+                      ? t("ilanKesik")
+                      : s.startsWith("HB_ILAN_EKSIK:")
+                        ? t("ilanEksik", { sayi: Number(s.slice("HB_ILAN_EKSIK:".length)) })
+                        : s}
+            </p>
           ))}
         </div>
       ) : null}
@@ -320,6 +356,8 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                         {esitAmaKayip(s) ? <span className={`max-w-[11rem] text-xs leading-snug whitespace-normal ${DURUM_YAZISI.uyari}`}>{t("esitKisa")}</span> : null}
                         {desiUyarisi(s)}
                         {otomatikRozeti(s)}
+                        {artisKilidi(s)}
+                        {kampanyaNotu(s)}
                       </div>
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap tabular-nums">{s.ikinciFiyat === null ? "—" : para(s.ikinciFiyat)}</TableCell>
@@ -350,11 +388,13 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
                   { etiket: t("sutunStok"), deger: String(s.stok) },
                 ]}
                 not={
-                  esitAmaKayip(s) || desiBekleyen.has(s.variantId) || modlar.get(s.variantId) === "OTOMATIK" ? (
+                  esitAmaKayip(s) || desiBekleyen.has(s.variantId) || modlar.get(s.variantId) === "OTOMATIK" || s.kampanya || s.hbIlan?.artisKapali ? (
                     <div className="space-y-1">
                       {esitAmaKayip(s) ? <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("esitKisa")}</p> : null}
                       {desiUyarisi(s)}
                       {otomatikRozeti(s)}
+                      {artisKilidi(s)}
+                      {kampanyaNotu(s)}
                     </div>
                   ) : undefined
                 }
