@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import {
   ArrowRight,
   ChartLine,
+  Filter,
   ScanBarcode,
   Store,
   TriangleAlert,
@@ -3018,17 +3019,17 @@ export default async function AnaSayfa({
                       üç kutulu düzende görevler kendi kutusunda. */}
                   <div className="grid min-w-0 gap-3 lg:grid-cols-3 lg:items-stretch">
                   <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs max-sm:grid max-sm:grid-cols-4 max-sm:items-stretch max-sm:gap-2 lg:bg-card lg:grid lg:grid-cols-2 lg:content-start lg:gap-2 lg:rounded-xl lg:border lg:p-3">
-                    <span className="font-medium max-sm:hidden lg:text-foreground lg:col-span-2 lg:text-sm lg:font-semibold">{t("huniEtiketi")}</span>
+                    <span className="font-medium max-sm:hidden lg:text-foreground lg:col-span-2 lg:flex lg:items-center lg:gap-1.5 lg:text-sm lg:font-semibold"><Filter className="hidden size-4 lg:block" aria-hidden />{t("huniEtiketi")}</span>
                     <Baglanti
                       href={suzgecAdresi(
                             "/alimlar",
                             {},
                             { ...donemParametreleri(), eksen: "siparis" },
                           )}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:justify-between"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:min-h-[60px] lg:flex-col lg:items-start lg:justify-between lg:rounded-lg lg:p-2.5 lg:leading-tight lg:transition-colors lg:hover:bg-muted/50"
                     >
                       {t("siparisAdedi")}
-                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
+                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base lg:text-lg lg:font-bold">
                         {alim.siparisGunluk.length}
                       </span>
                     </Baglanti>
@@ -3044,10 +3045,10 @@ export default async function AnaSayfa({
                             {},
                             donemParametreleri(),
                           )}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:justify-between"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:min-h-[60px] lg:flex-col lg:items-start lg:justify-between lg:rounded-lg lg:p-2.5 lg:leading-tight lg:transition-colors lg:hover:bg-muted/50"
                     >
                       {t("malKabulAdedi")}
-                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
+                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base lg:text-lg lg:font-bold">
                         {/* K277: GELEN ADET — açılan listenin «gelen adet»iyle birebir
                             (aynı gövde). KAYIT sayısı (`alim.adet`) burada YAZILMAZ. */}
                         {alim.gelenAdet}
@@ -3059,27 +3060,28 @@ export default async function AnaSayfa({
                     <Baglanti
                       href={kargoAdresi("verildi")}
                       /* Geniş ekranda TAM SATIR: «Kargo bekleyen» tam satır olunca yanında boş hücre kalıyordu (önizlemede görüldü). */
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:col-span-2 lg:justify-between"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:min-h-[60px] lg:flex-col lg:items-start lg:justify-between lg:rounded-lg lg:p-2.5 lg:leading-tight lg:transition-colors lg:hover:bg-muted/50"
                     >
                       {/* SÜZGEÇ AÇIKKEN KANAL ADI ETİKETTE: çip hangi soruya cevap
                           verdiğini kendisi söyler (K253'te düşmüştü, bekçi yakaladı). */}
                       {seciliKanal
                         ? t("kargoDurumuKanal", { kanal: seciliKanalAdi })
                         : t("kargoDurumu")}
-                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
+                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base lg:text-lg lg:font-bold">
                         {blok.kargoyaVerilenAdet}
                       </span>
                     </Baglanti>
                     <Baglanti
                       href={kargoAdresi("bekleyen")}
                       /* Geniş ekranda TAM SATIR: «6 sipariş bekliyor» yarım hücreye sığmıyor. */
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:col-span-2 lg:justify-between"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:min-h-[60px] lg:flex-col lg:items-start lg:justify-between lg:rounded-lg lg:p-2.5 lg:leading-tight lg:transition-colors lg:hover:bg-muted/50"
                     >
                       {t("kargoBekleyenKisa")}
-                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
+                      <span className="text-foreground font-semibold tabular-nums max-sm:text-base lg:text-lg lg:font-bold">
                         {/* K270: telefonda yalnız SAYI — etiket «Kargo bekleyen» zaten söylüyor. */}
-                        <span className="sm:hidden">{blok.kargoBekleyenAdet}</span>
-                        <span className="max-sm:hidden">
+                        {/* Panelde üç kutudan biriyken (lg) de yalnız sayı — kutucuk dar. */}
+                        <span className="sm:max-lg:hidden">{blok.kargoBekleyenAdet}</span>
+                        <span className="max-sm:hidden lg:hidden">
                         {t("kargoBekleyen", {
                                 sayi: blok.kargoBekleyenAdet,
                               })}
@@ -3090,25 +3092,25 @@ export default async function AnaSayfa({
                       <>
                         <Baglanti
                           href={teslimAdresi("yolda")}
-                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:justify-between"
+                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:min-h-[60px] lg:flex-col lg:items-start lg:justify-between lg:rounded-lg lg:p-2.5 lg:leading-tight lg:transition-colors lg:hover:bg-muted/50"
                         >
                           {t("teslimYolda")}
-                          <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
+                          <span className="text-foreground font-semibold tabular-nums max-sm:text-base lg:text-lg lg:font-bold">
                             {yoldaSayisi}
                           </span>
                         </Baglanti>
                         <Baglanti
                           href={teslimAdresi("teslim")}
-                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:justify-between"
+                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:min-h-[60px] lg:flex-col lg:items-start lg:justify-between lg:rounded-lg lg:p-2.5 lg:leading-tight lg:transition-colors lg:hover:bg-muted/50"
                         >
                           {t("teslimEdildi")}
-                          <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
+                          <span className="text-foreground font-semibold tabular-nums max-sm:text-base lg:text-lg lg:font-bold">
                             {teslimEdilenSayisi}
                           </span>
                         </Baglanti>
                       </>
                     ) : null}
-                    <span className="text-muted-foreground max-sm:col-span-4 md:basis-full lg:col-span-2">
+                    <span className="text-muted-foreground max-sm:col-span-4 md:basis-full lg:col-span-2 lg:border-t lg:pt-2 lg:text-[11px] lg:leading-snug">
 
                       {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
                       <span className="block">{t("kargoEkseniNotu")}</span>

@@ -35,8 +35,13 @@ import { DURUM_YAZISI } from "@/lib/renkler";
  */
 
 const SAYI = "tabular-nums font-semibold text-foreground";
-/** Telefonda 44 px dokunma alanı (İlke #8), masaüstünde ince. */
-const SAYI_BAGI = `${SAYI} inline-flex min-h-11 items-center justify-end underline decoration-current/40 underline-offset-2 hover:no-underline md:min-h-0`;
+/**
+ * Telefonda 44 px dokunma alanı (İlke #8), masaüstünde ince.
+ * 28.10.2026 (kullanıcı: «daha kaliteli bir buton sistemi»): altı çizili yazı yerine
+ * küçük DÜĞME — çerçeveli, üstüne gelince zemin değişir; panelin öteki iki kutusundaki
+ * tıklanır kutucuklarla aynı dil (İlke #10). Sıfır düğme olmaz (İlke #2).
+ */
+const SAYI_BAGI = `${SAYI} inline-flex min-h-11 items-center justify-end rounded-md border bg-background px-1.5 no-underline transition-colors hover:bg-muted md:min-h-7`;
 
 export async function BuyboxSavaslari() {
   const t = await getTranslations("Panel");
@@ -57,18 +62,18 @@ export async function BuyboxSavaslari() {
     );
   };
   /** Telefonda dar dolgu; 360 px'e sığmazsa tablo kutunun İÇİNDE kayar, sayfa kaymaz. */
-  const hucre = "whitespace-nowrap px-1 py-1 text-right align-middle sm:px-2";
+  const hucre = "whitespace-nowrap px-1 py-1.5 text-right align-middle sm:px-2 lg:max-2xl:px-1";
 
   return (
-    <section aria-labelledby="buybox-savaslari-baslik" className="bg-card min-w-0 rounded-xl border p-3 text-xs">
-      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3">
+    <section aria-labelledby="buybox-savaslari-baslik" className="bg-card flex min-w-0 flex-col rounded-xl border p-3 text-xs">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3">
         <h3 id="buybox-savaslari-baslik" className="flex items-center gap-1.5 text-sm font-semibold">
           <Swords className="size-4" aria-hidden />
           <Baglanti href={BUYBOX_YOLU}>{t("buyboxBaslik")}</Baglanti>
         </h3>
         {sonOlcum ? <span className="text-muted-foreground">{t("buyboxSonOlcum", { an: bicim.tarihSaat(sonOlcum) })}</span> : null}
       </div>
-      <div className="overflow-x-auto">
+      <div className="mb-2 overflow-x-auto">
       <table className="w-full border-collapse">
         <thead className="text-muted-foreground">
           <tr className="border-b">
@@ -110,7 +115,8 @@ export async function BuyboxSavaslari() {
       </table>
       </div>
       {/* `w-0 min-w-full`: not kutunun genişliğini BELİRLEMEZ, tablonun genişliğinde kırılır. */}
-      <p className="text-muted-foreground mt-1.5 w-0 min-w-full">{t("buyboxDonemNotu")}</p>
+      {/* Not kutunun DİBİNDE (`mt-auto`): üç kutu eşit boy, notlar aynı hizada. */}
+      <p className="text-muted-foreground mt-auto w-0 min-w-full border-t pt-2 text-[11px] leading-snug">{t("buyboxDonemNotu")}</p>
     </section>
   );
 }

@@ -5096,8 +5096,9 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
   /** * KISA ETIKET cipte, uzun ad title'da (hover) — demo «Onay bekleyen 3». */
   kontrol(
     "cip etiketi KISA sozlukten (kisa.*), uzun ad title'da",
-    /* K270: telefon kutucugu + masaustu cip = IKI kullanim, ikisi de kisa. */
-    (kutu.match(/etiket=\{t\(`kisa\.\$\{g\.anahtar\}`\)\}/g) ?? []).length === 2 &&
+    /* K270: telefon kutucugu + masaustu cip = IKI kullanim, ikisi de kisa.
+       28.10.2026: panelde uc kutu — genis ekran kutucuk izgarasi UCUNCU kullanim, o da kisa. */
+    (kutu.match(/etiket=\{t\(`kisa\.\$\{g\.anahtar\}`\)\}/g) ?? []).length === 3 &&
       /uzunEtiket=\{t\(g\.anahtar\)\}/.test(kutu) &&
       /<span className="inline-flex max-w-full flex-wrap items-center gap-1" title=\{uzunEtiket\}>/.test(kutu),
   );

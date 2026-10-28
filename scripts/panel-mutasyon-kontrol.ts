@@ -461,8 +461,9 @@ const MUTASYONLAR: Mutasyon[] = [
     dosya: SAYFA,
     bul:
       /* K270: etiket telefonda gizli sinifi aldi - capa tasindi.
-         28.10.2026: uc kutulu duzende basligin lg siniflari eklendi - capa tasindi, niyet ayni. */
-      "                    <span className=\"font-medium max-sm:hidden lg:text-foreground lg:col-span-2 lg:text-sm lg:font-semibold\">{t(\"huniEtiketi\")}</span>\n",
+         28.10.2026: uc kutulu duzende basligin lg siniflari eklendi - capa tasindi, niyet ayni.
+         28.10.2026 (ikinci): baslik ikon aldi (uc kutu ayni baslik dili) - capa tasindi, niyet ayni. */
+      "                    <span className=\"font-medium max-sm:hidden lg:text-foreground lg:col-span-2 lg:flex lg:items-center lg:gap-1.5 lg:text-sm lg:font-semibold\"><Filter className=\"hidden size-4 lg:block\" aria-hidden />{t(\"huniEtiketi\")}</span>\n",
     koy:
       "",
     bozdugu:
