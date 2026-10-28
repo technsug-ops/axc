@@ -21,7 +21,10 @@ import type { KuralModu } from "./buybox-kural";
  * ============================================================================
  */
 
-export const KONTROL_ARALIGI_DK = 15;
+/** Zamanlayıcı aralığı — cron-job.org 2 dakikada bir (kullanıcı kararı 28.10.2026;
+ *  önce 15 dakikaydı). Aralık değişirse bu sabit AYNI teslimde değişir: ekrandaki
+ *  «N dakikada bir» ve kaçırma eşiği buradan okunur. */
+export const KONTROL_ARALIGI_DK = 2;
 export const KACIRMA_ESIGI_DK = 3 * KONTROL_ARALIGI_DK;
 const FIYAT_IZI = "BUYBOX_OTOMATIK_FIYAT";
 const KOSUM_IZI = "BUYBOX_OTOMATIK_KOSUM";

@@ -11,7 +11,7 @@ import { hbStokFiyatYaz, tyStokFiyatYaz } from "./kanal-fiyat-yaz";
 /**
  * ============================================================================
  *  BUYBOX OTOMATİK FİYAT — ZAMANLANMIŞ İŞ (K366 adım 3, kullanıcı onayı
- *  27.10.2026 «tamamla»). Uç: `/api/cron/buybox-otomatik` (15 dakikada bir).
+ *  27.10.2026 «tamamla»). Uç: `/api/cron/buybox-otomatik` (cron-job.org 2 dakikada bir — `KONTROL_ARALIGI_DK`).
  * ----------------------------------------------------------------------------
  *  Yalnız modu OTOMATİK olan ürünler (ürünün ayrı modu, yoksa genel ayar).
  *  Her ürün için ekrandaki «Fiyatla» penceresinin AYNI zemini ve AYNI öneri

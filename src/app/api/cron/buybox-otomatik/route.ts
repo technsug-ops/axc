@@ -6,7 +6,7 @@ import { buyboxOtomatikTur } from "@/lib/buybox-otomatik";
 
 /**
  * ============================================================================
- *  K366 adım 3 — BUYBOX OTOMATİK FİYAT UCU (15 dakikada bir, 27.10.2026)
+ *  K366 adım 3 — BUYBOX OTOMATİK FİYAT UCU (27.10.2026; aralık `KONTROL_ARALIGI_DK`, 28.10.2026 itibarıyla 2 dk)
  * ----------------------------------------------------------------------------
  *  Tetikleyici: birincil cron-job.org (:00 :15 :30 :45), yedek
  *  `.github/workflows/buybox-otomatik.yml` (:07 :22 :37 :52). Yalnız modu

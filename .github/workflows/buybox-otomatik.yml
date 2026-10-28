@@ -1,11 +1,13 @@
 # ============================================================================
 #  K366 adim 3 — BUYBOX OTOMATIK FIYAT — YEDEK TETIKLEYICI (27.10.2026)
 # ----------------------------------------------------------------------------
-#  BIRINCIL: cron-job.org (15 dakikada bir, :00 :15 :30 :45 — K205 karari:
+#  BIRINCIL: cron-job.org (28.10.2026 itibariyla 2 dakikada bir, CIFT dakikalar;
+#  once 15 dk idi — K205 karari:
 #  GitHub schedule'i kisa araliklarda SAATLERCE sarkiyor). Bu akis YEDEK.
 #  Uc yalniz modu OTOMATIK olan urunlere bakar ve fiyati kanala YAZAR.
 #
-#  ⚠ DAKIKA :07 :22 :37 :52 — birincilden 7 dk kaydirildi: ayni dakikaya
+#  ⚠ DAKIKA :07 :22 :37 :52 — TEK dakika, birincil CIFT dakikalarda; tur ~15 sn
+#  surdugu icin (olculdu 28.10.2026) ikisi ayni ana dusmez. Ilk gerekce: ayni dakikaya
 #  konsaydi iki tur ayni fiyati iki kez yollayabilirdi (tekrar kapisi iz
 #  okur, eszamanli iki turu ayiramaz).
 #
