@@ -104,6 +104,64 @@ export function savasSayilari(kayitlar: readonly { onceki: KayitDurumu | null; y
   return { alinan, kaybedilen };
 }
 
+/**
+ * FİYAT YARIŞI — bir ürüne bir günde kanalın KABUL ettiği otomatik fiyat
+ * sayısı bu eşiğe ulaşırsa ekranda rozet yanar (rakip de otomatik fiyatlıyor,
+ * birbirimizi aşağı çekiyoruz demektir). ⚠ SEÇİM, ölçülmüş bir eşik değil
+ * (28.10.2026): bir gün iki değişiklik olağan (al + koru), üçüncüsü yarıştır.
+ * Gerçek dağılım birikince ölçümle yeniden konur.
+ */
+export const FIYAT_YARISI_ESIGI = 3;
+
+/** Gruplamanın gördüğü en küçük kayıt (ekran kaydının alt kümesi). */
+export type GruplanacakKayit = { variantId: string; an: Date; gonderildi: boolean; eski: number | null; yeni: number };
+
+export type OtomatikGrup<K extends GruplanacakKayit> = {
+  variantId: string;
+  /** Eskiden yeniye. */
+  kayitlar: K[];
+  /** Kanalın kabul ettiği gönderim sayısı (reddedilen sayılmaz). */
+  gonderilen: number;
+  reddedilen: number;
+  /** Günün ilk kaydındaki ESKİ fiyat. */
+  ilkFiyat: number | null;
+  /** Kabul edilen SON gönderimin yeni fiyatı; hiç kabul yoksa `null`. */
+  sonFiyat: number | null;
+  sonAn: Date;
+  yaris: boolean;
+};
+
+/**
+ * «SON OTOMATİK DEĞİŞİKLİKLER» ÜRÜN BAŞINA TEK SATIR (kullanıcı 28.10.2026:
+ * «her üründeki değişikliği defalarca görüyoruz»). Sıra: en çok kabul edilen
+ * değişiklik üstte (yarışan ürün ilk bakışta görünür), eşitlikte en yeni.
+ */
+export function otomatikGrupla<K extends GruplanacakKayit>(kayitlar: readonly K[]): OtomatikGrup<K>[] {
+  const harita = new Map<string, K[]>();
+  for (const k of kayitlar) {
+    const liste = harita.get(k.variantId) ?? [];
+    liste.push(k);
+    harita.set(k.variantId, liste);
+  }
+  const gruplar: OtomatikGrup<K>[] = [];
+  for (const [variantId, liste] of harita) {
+    const sirali = [...liste].sort((a, b) => a.an.getTime() - b.an.getTime());
+    const kabul = sirali.filter((k) => k.gonderildi);
+    const sonKabul = kabul.at(-1);
+    gruplar.push({
+      variantId,
+      kayitlar: sirali,
+      gonderilen: kabul.length,
+      reddedilen: sirali.length - kabul.length,
+      ilkFiyat: sirali[0].eski,
+      sonFiyat: sonKabul === undefined ? null : sonKabul.yeni,
+      sonAn: sirali[sirali.length - 1].an,
+      yaris: kabul.length >= FIYAT_YARISI_ESIGI,
+    });
+  }
+  return gruplar.sort((a, b) => b.gonderilen - a.gonderilen || b.sonAn.getTime() - a.sonAn.getTime());
+}
+
 export type OlcumNoktasi = { olculduAt: Date; birinci: number; incelenen: number; rakipli: number; rakipliBirinci: number };
 
 export type SeriNoktasi = {

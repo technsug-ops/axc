@@ -18,6 +18,8 @@ import {
   kazanmaOrani,
   olcumAlinsinMi,
   olculmeyenler,
+  FIYAT_YARISI_ESIGI,
+  otomatikGrupla,
   rakipliOzet,
   savasSayilari,
   saatlikSeri,
@@ -27,7 +29,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 8;
+const BOLUM_SAYISI = 9;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -228,6 +230,48 @@ console.log("\n⑧ panel — Buybox savaşları kutusu");
   kontrol("Buybox ekranının yolu AYNI sabitten", /const YOL = BUYBOX_YOLU;/.test(sayfa));
 }
 kosanBolumler.push("panel");
+
+// ── ⑨ OTOMATİK DEĞİŞİKLİKLER ÜRÜN BAŞINA (28.10.2026) ──────────────────────
+console.log("\n⑨ otomatik değişiklikler — ürün başına tek satır");
+{
+  const k = (variantId: string, saat: string, eski: number | null, yeni: number, gonderildi = true) => ({ variantId, an: an(`2026-10-28T${saat}:00Z`), eski, yeni, gonderildi });
+  const g = otomatikGrupla([
+    k("ANKER", "10:00", 2174, 2147), // SIRASIZ verildi — gruplama sıralar
+    k("YUI", "05:00", 2130, 2110),
+    k("ANKER", "06:18", 2195, 2198),
+    k("ANKER", "08:41", 2198, 2174),
+    k("ANKER", "11:00", 2147, 2140, false), // reddedildi — son fiyat SAYILMAZ
+    k("RED", "09:00", 500, 490, false),
+    k("XIA", "12:00", 21300, 21239),
+    k("XIA", "12:30", 21239, 21212),
+    k("BIR", "13:00", 100, 99), // YUI ile EŞİT (1 kabul), daha yeni
+  ]);
+  const a = g.find((x) => x.variantId === "ANKER");
+  kontrol("ürün başına TEK grup (5 ürün)", g.length === 5, g.map((x) => x.variantId));
+  kontrol("en çok kabul edilen üstte (ANKER 3)", g[0]?.variantId === "ANKER", g.map((x) => x.variantId));
+  kontrol("2 kabullü XIA, 1 kabullülerden önce", g[1]?.variantId === "XIA");
+  kontrol("eşit kabulde EN YENİ önce (BIR 13:00 > YUI 05:00)", g[2]?.variantId === "BIR" && g[3]?.variantId === "YUI", g.map((x) => x.variantId));
+  kontrol("ilk fiyat günün EN ERKEN kaydının eskisi (2195)", a?.ilkFiyat === 2195, a?.ilkFiyat);
+  kontrol("son fiyat KABUL edilen son gönderim (2147; reddedilen 2140 değil)", a?.sonFiyat === 2147, a?.sonFiyat);
+  kontrol("kabul 3, red 1", a?.gonderilen === 3 && a?.reddedilen === 1);
+  kontrol("kayıtlar eskiden yeniye", a?.kayitlar.map((x) => x.yeni).join(",") === "2198,2174,2147,2140");
+  kontrol(`fiyat yarışı ${FIYAT_YARISI_ESIGI} kabulde yanar, 2'de yanmaz`, a?.yaris === true && g.find((x) => x.variantId === "XIA")?.yaris === false);
+  const r = g.find((x) => x.variantId === "RED");
+  kontrol("hiç kabul yoksa son fiyat null (uydurulmaz), red sayılır", r?.sonFiyat === null && r?.reddedilen === 1 && r?.gonderilen === 0);
+  kontrol("boş liste boş grup", otomatikGrupla([]).length === 0);
+
+  const v = yorumsuz(kaynakOku("src/lib/buybox-otomatik-verisi.ts"));
+  const og = blok(v, "export async function otomatikGecmisi(", 2600);
+  kontrol("okuma penceresi BUGÜN (İstanbul günü)", /const gunBasi = gunBasiAni\(isTakvimGunu\(simdi\)\);/.test(og) && /where: \{ \.\.\.kanalIzi, createdAt: \{ gte: gunBasi \} \}/.test(og));
+  kontrol("tavan aşılırsa «kesik» işaretlenir, sessiz kırpılmaz", /take: GUN_TAVANI \+ 1,/.test(og) && /const kesik = izler\.length > GUN_TAVANI;/.test(og));
+  const e = yorumsuz(kaynakOku("src/app/rapor/buybox/otomatik-gecmisi.tsx"));
+  kontrol("ekran saf gruplamayı kullanır", /const gruplar = otomatikGrupla\(gecmis\.kayitlar\);/.test(e) && /\{gruplar\.map\(\(g\) => \{/.test(e));
+  kontrol("ayrıntı varsayılan KAPALI", /<details className="group">/.test(e) && !/<details[^>]*\bopen\b/.test(e));
+  kontrol("günün toplamı yazılır (İlke #15)", /t\("otomatikBugunOzet", \{ urun: gruplar\.length, degisiklik: kabulToplam \}\)/.test(e));
+  kontrol("kesik liste ekranda söylenir", /\{gecmis\.kesik \? <p[^>]*>\{t\("otomatikKesik"\)\}/.test(e));
+  kontrol("yarış rozeti gruptan", /\{g\.yaris \? <DurumRozeti durum="uyari">\{t\("otomatikYaris"\)\}/.test(e));
+}
+kosanBolumler.push("otomatik-grup");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {

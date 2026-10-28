@@ -271,7 +271,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
         </Link>
       </div>
 
-      <OtomatikGecmisi gecmis={otomatik} karGorunur={karGorunur} />
+      <OtomatikGecmisi gecmis={otomatik} karGorunur={karGorunur} durumlar={new Map(sonuc.satirlar.map((s) => [s.variantId, s.durum]))} />
 
       {/* ── GEÇMİŞ (K363 Faz 3-b) — istenince: saatlik ölçümlerden grafik + kazanma oranı ── */}
       {grafikAcik ? (

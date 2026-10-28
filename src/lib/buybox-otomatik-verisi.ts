@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 import type { BuyboxKanali } from "./buybox";
 import type { KuralModu } from "./buybox-kural";
+import { gunBasiAni, isTakvimGunu } from "./donem";
 
 /**
  * ============================================================================
@@ -9,7 +10,9 @@ import type { KuralModu } from "./buybox-kural";
  * ----------------------------------------------------------------------------
  *  ① Satırların geçerli modu (rozet: «Otomatik»).
  *  ② «Son otomatik değişiklikler»: zamanlanmış işin `BUYBOX_OTOMATIK_FIYAT`
- *    izleri (en yeni 20, bu kanal) — sayı sabit, liste veriyle büyümez.
+ *    izleri — BUGÜNÜN (İstanbul) hepsi, bu kanal. Ekran ÜRÜN BAŞINA tek
+ *    satır gruplar (kullanıcı 28.10.2026: «her üründeki değişikliği defalarca
+ *    görüyoruz»); satır sayısı ürün sayısıyla sınırlı, ayrıntı açılır kapanır.
  *  ③ «Son kontrol»: `BUYBOX_OTOMATIK_KOSUM` izi. Otomatik ürün varken iş
  *    KONTROL_ARALIGI'nın üç katı boyunca koşmadıysa ekran kırmızı yazar —
  *    kaçan zamanlayıcı birinin fark etmesine kalmasın (anayasa: «kaçışın
@@ -28,7 +31,9 @@ export const KONTROL_ARALIGI_DK = 2;
 export const KACIRMA_ESIGI_DK = 3 * KONTROL_ARALIGI_DK;
 const FIYAT_IZI = "BUYBOX_OTOMATIK_FIYAT";
 const KOSUM_IZI = "BUYBOX_OTOMATIK_KOSUM";
-const LISTE_ADEDI = 20;
+/** Bir günde okunacak iz tavanı — 2 dk'da bir tur bile buna yaklaşmaz; aşılırsa
+ *  ekran «kesik» der, sessizce kırpmaz. */
+const GUN_TAVANI = 2000;
 
 /** Verilen ürünlerin geçerli modu (ayrı mod, yoksa genel). */
 export async function satirModlari(variantIds: readonly string[], genelMod: KuralModu): Promise<Map<string, KuralModu>> {
@@ -60,7 +65,12 @@ export type OtomatikGecmis = {
   otomatikVar: boolean;
   sonKontrol: Date | null;
   kacti: boolean;
+  /** BUGÜNÜN (İstanbul) kayıtları — ekran ürün başına gruplar. */
   kayitlar: OtomatikKayit[];
+  /** Gün tavanı aşıldı; liste eksik (ekranda yazar). */
+  kesik: boolean;
+  /** Bugün kayıt yoksa en son kaydın anı; hiç yoksa `null`. */
+  sonKayitAni: Date | null;
 };
 
 /**
@@ -85,13 +95,15 @@ export async function otomatikGonderimSayilari(bas: Date): Promise<Record<Buybox
 const sayi = (x: unknown): number | null => (typeof x === "number" && Number.isFinite(x) ? x : null);
 
 export async function otomatikGecmisi(kanal: BuyboxKanali, genelMod: KuralModu, simdi: Date): Promise<OtomatikGecmis> {
+  const gunBasi = gunBasiAni(isTakvimGunu(simdi));
+  const kanalIzi = { action: FIYAT_IZI, targetType: "ProductVariant", detail: { contains: `"kanal":"${kanal}"` } };
   const [ayriOtomatik, kosum, izler] = await Promise.all([
     prisma.buyboxKurali.count({ where: { mod: "OTOMATIK" } }),
     prisma.auditLog.findFirst({ where: { action: KOSUM_IZI }, orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
     prisma.auditLog.findMany({
-      where: { action: FIYAT_IZI, targetType: "ProductVariant", detail: { contains: `"kanal":"${kanal}"` } },
+      where: { ...kanalIzi, createdAt: { gte: gunBasi } },
       orderBy: { createdAt: "desc" },
-      take: LISTE_ADEDI,
+      take: GUN_TAVANI + 1,
       select: { id: true, targetId: true, detail: true, createdAt: true },
     }),
   ]);
@@ -99,6 +111,10 @@ export async function otomatikGecmisi(kanal: BuyboxKanali, genelMod: KuralModu, 
   const sonKontrol = kosum?.createdAt ?? null;
   const kacti = otomatikVar && (sonKontrol === null || simdi.getTime() - sonKontrol.getTime() > KACIRMA_ESIGI_DK * 60_000);
 
+  const kesik = izler.length > GUN_TAVANI;
+  if (kesik) izler.length = GUN_TAVANI;
+  const sonKayitAni =
+    izler.length > 0 ? null : ((await prisma.auditLog.findFirst({ where: kanalIzi, orderBy: { createdAt: "desc" }, select: { createdAt: true } }))?.createdAt ?? null);
   const ids = [...new Set(izler.flatMap((i) => (i.targetId ? [i.targetId] : [])))];
   const varyantlar = ids.length === 0 ? [] : await prisma.productVariant.findMany({ where: { id: { in: ids } }, select: { id: true, sku: true, product: { select: { id: true, name: true } } } });
   const vHarita = new Map(varyantlar.map((v) => [v.id, v]));
@@ -130,5 +146,5 @@ export async function otomatikGecmisi(kanal: BuyboxKanali, genelMod: KuralModu, 
       marj: sayi(d.marj),
     });
   }
-  return { otomatikVar, sonKontrol, kacti, kayitlar };
+  return { otomatikVar, sonKontrol, kacti, kayitlar, kesik, sonKayitAni };
 }
