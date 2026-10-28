@@ -45,9 +45,11 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "FIYAT DENEMESI ESKI SORGUYA DONDU (yalniz bagli)", yon: "KALDIRAN", dosya: KART,
     bul: "        kalemler: { some: { OR: [{ variantId }, { variantId: null }] } },", koy: "        kalemler: { some: { variantId } },",
     bozdugu: "bagsiz pencere aday bile olmaz, dilim bulunmaz" },
+  /* CAPA TASINDI 28.10.2026 (urun basina tarihli teklif): kapsayan kayitlar artik tek tek
+     deneniyor, cagri aday basina. Niyet ayni — satis orani ortak kuraldan, ciplak bag sorgusu degil. */
   { ad: "SATIS KAYDI ESKI SORGUYA DONDU (yalniz bagli)", yon: "KALDIRAN", dosya: KART,
-    bul: "    varyantinTarifeKalemleri(tarife.id, channelAccountId, variantId),",
-    koy: "    prisma.komisyonTarifeKalemi.findMany({ where: { tarifeId: tarife.id, variantId }, orderBy: { dilimSirasi: \"asc\" }, select: { dilimSirasi: true, altLimit: true, ustLimit: true, oran: true } }),",
+    bul: "    const hepsi = await varyantinTarifeKalemleri(aday.id, channelAccountId, variantId);",
+    koy: "    const hepsi = await prisma.komisyonTarifeKalemi.findMany({ where: { tarifeId: aday.id, variantId }, orderBy: { dilimSirasi: \"asc\" } });",
     bozdugu: "satisa dilim yerine tek oran yazilir" },
 ];
 

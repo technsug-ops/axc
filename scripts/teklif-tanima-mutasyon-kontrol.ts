@@ -260,14 +260,21 @@ const MUTASYONLAR: Mutasyon[] = [
     bozdugu:
       "HB ve N11 kartlarinda dilimli tarife kutusu yeniden kapanir; calisan yol ekrandan kaybolur",
   },
+  /*
+   * ⚠ CAPA TASINDI 28.10.2026, SILINMEDI. Eski hal "PENCERE SANIYEYE GORE GRUPLANIYOR":
+   * gun bazli gruplamayi bozuyordu ("ayni haftanin tekliflerini 27 ayri pencere sayar;
+   * secilen pencere panelinkiyle tutmaz"). Gruplama artik YOK — her satir kendi araligini
+   * tasiyor. Niyet ayni: okunan teklif araligi HB PANELIYLE TUTMALI. Yeni sekli: hucredeki
+   * duvar saatinin Istanbul'a cevrilmesi kalkarsa araliklar 3 saat kayar.
+   */
   {
-    ad: "PENCERE SANIYEYE GORE GRUPLANIYOR",
+    ad: "TEKLIF ARALIGI PANELLE TUTMUYOR (duvar saati cevrilmiyor)",
     yon: "KALDIRAN",
     dosya: "src/lib/komisyon/teklif-tarifesi.ts",
-    bul: "      const anahtar = `${gunDegeri(isTakvimGunu(b)).toISOString()}|${gunDegeri(",
-    koy: "      const anahtar = `${b.toISOString()}|${(",
+    bul: "? duvarSaatindenAn(ham) : null;",
+    koy: "? ham : null;",
     bozdugu:
-      "ayni haftanin tekliflerini 27 ayri pencere sayar; 44 satirin 41'i 'pencere disi' cikar ve secilen pencere panelinkiyle tutmaz",
+      "VTech teklifi 26 Ekim 15:00 - 14 Kasim 02:58 okunur (panel 12:00 - 23:58); teklif sistemde 3 saat uzun yasar",
   },
   /*
    * ⚠ CAPA K230-③'TE TASINDI, SILINMEDI. Mutasyonun NIYETI ayni: ikinci bir
