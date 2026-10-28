@@ -3151,7 +3151,7 @@ export default async function AnaSayfa({
                   {/* «Bugün ne yapmalıyım» — ORTA kutu. Yalnız ilk para bloğunda: görevler
                       para biriminden bağımsız (08.10 kuralı aynen). */}
                   {blokSirasi === 0 ? (
-                    <div className="min-w-0 lg:bg-card lg:rounded-xl lg:border lg:p-3">
+                    <div className="min-w-0 lg:bg-card lg:flex lg:flex-col lg:rounded-xl lg:border lg:p-3">
                       {gorevSeridi(true)}
                     </div>
                   ) : null}

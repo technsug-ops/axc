@@ -222,7 +222,8 @@ console.log("\n⑧ panel — Buybox savaşları kutusu");
   const kutu = yorumsuz(kaynakOku("src/app/buybox-savaslari.tsx"));
   kontrol("rakamın adresi sahibinden (buyboxAdresi)", /href=\{buyboxAdresi\(kanal, liste\)\}/.test(kutu));
   kontrol("sıfır rakam bağlantı olmaz", /return sayi > 0 \? \(\s*<Link href=\{buyboxAdresi\(kanal, liste\)\}/.test(kutu));
-  kontrol("hiç ölçülmemiş kanal rakam uydurmaz, söyler", /\{k\.son === null \? \(\s*<td[^>]*>\{t\("buyboxOlculmedi"\)\}/.test(kutu));
+  kontrol("hiç ölçülmemiş kanal rakam uydurmaz, söyler", /\{k\.son === null \? \(\s*<p[^>]*>\{t\("buyboxOlculmedi"\)\}/.test(kutu));
+  /* 28.10.2026: tablo kanal kartina dondu (<td> -> <p>) — olcut tasindi, niyet ayni. */
   kontrol("son ölçüm anı ve tarih süzgecinden bağımsızlık yazılır", /t\("buyboxSonOlcum", \{ an: bicim\.tarihSaat\(sonOlcum\) \}\)/.test(kutu) && /t\("buyboxDonemNotu"\)/.test(kutu));
   const p = yorumsuz(kaynakOku("src/app/page.tsx"));
   kontrol("panelde kutu, açtığı ekranın izniyle", /const buyboxGorunur = await izinVarMi\("rapor\.gor"\);/.test(p) && /\{blokSirasi === 0 && buyboxGorunur \? \(\s*<Suspense fallback=\{<Skeleton[^}]*\}>\s*<BuyboxSavaslari \/>/.test(p));

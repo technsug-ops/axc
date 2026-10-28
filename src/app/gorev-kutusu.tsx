@@ -189,7 +189,7 @@ function GorevKutucugu({
   /* İKİ HEDEFLİ KUTU (28.10.2026, panelde üç kutu): ana iş solda, ilerleme sağda. */
   if (ilerlemeAdresi && !gorev.temizMi && gorev.ilerleme !== null && gorev.ilerleme > 0) {
     return (
-      <span className={`bg-card flex h-[74px] rounded-xl border ${genis ? "col-span-2" : ""}`}>
+      <span className={`bg-card flex h-[74px] rounded-xl border lg:h-auto lg:min-h-[74px] ${genis ? "col-span-2" : ""}`}>
         <Link
           href={gorev.adres}
           className="text-foreground flex min-w-0 flex-1 flex-col justify-between rounded-l-xl p-2.5 no-underline transition-colors hover:bg-muted/50"
@@ -228,7 +228,7 @@ function GorevKutucugu({
       )}
     </>
   );
-  const sinif = `flex h-[74px] flex-col justify-between rounded-xl border p-2.5 ${genis ? "col-span-2" : ""} ${
+  const sinif = `flex h-[74px] flex-col justify-between rounded-xl border p-2.5 lg:h-auto lg:min-h-[74px] ${genis ? "col-span-2" : ""} ${
     gorev.temizMi ? "bg-muted/60" : "bg-card"
   }`;
   return gorev.temizMi ? (
@@ -299,13 +299,13 @@ export async function GorevKutusu({
    * genişlikte, orada şerit kalır.
    */
   const masaustuIzgara = gomulu ? (
-    <section aria-label={t("baslik")} className="space-y-2 max-lg:hidden">
+    <section aria-label={t("baslik")} className="flex flex-1 flex-col gap-2 max-lg:hidden">
       <div className="flex items-center gap-1.5">
         <ListChecks className="size-4" aria-hidden />
         <span className="text-sm font-semibold">{t("baslik")}</span>
         {toplam === 0 ? <DurumRozeti durum="olumlu">{t("hepsiTemiz")}</DurumRozeti> : null}
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid flex-1 auto-rows-fr grid-cols-2 gap-2">
         {mobilSira.map((g, i) => (
           <GorevKutucugu
             key={`d-${g.anahtar}`}

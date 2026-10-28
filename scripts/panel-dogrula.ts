@@ -7064,7 +7064,8 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
     kontrol("  ...uc kutu: huni · gorev · buybox AYNI kapta, bu sirayla (lg 3 sutun, esit boy)",
       kapBas >= 0 && iHuni > kapBas && iGorev > iHuni && iBuybox > iGorev, { kapBas, iHuni, iGorev, iBuybox });
     kontrol("  ...gorev kutusu yalniz ilk blokta",
-      /\{blokSirasi === 0 \? \(\s*<div className="min-w-0 lg:bg-card lg:rounded-xl lg:border lg:p-3">\s*\{gorevSeridi\(true\)\}/.test(sayfaT));
+      /* 28.10.2026: kutucuklar kutunun boyunu doldursun diye kap esnek (lg:flex) — capa tasindi. */
+      /\{blokSirasi === 0 \? \(\s*<div className="min-w-0 lg:bg-card lg:flex lg:flex-col lg:rounded-xl lg:border lg:p-3">\s*\{gorevSeridi\(true\)\}/.test(sayfaT));
   }
   kontrol("KPI izgarasi telefonda 6 sutun", /grid grid-cols-6 gap-2 sm:grid-cols-2 md:grid-cols-3/.test(sayfaT));
   /* Satir toplamlari 6: [ciro 6] [NET-1 3 · NET-2 3] [marj 2 · satis 2 · iade 2] — ESIT kutular. */
