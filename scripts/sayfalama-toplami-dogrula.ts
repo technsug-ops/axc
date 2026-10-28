@@ -168,6 +168,53 @@ for (const e of EKRANLAR) {
   );
 }
 
+// ── ⑥ /satislar · İADE SONRASI NET-2 = PANEL (kullanıcı bulgusu 28.10.2026) ──
+//  Panel NET-2'si iadeyi düşüyor, bu ekranın satır toplamı düşmüyordu; Ekim'de
+//  fark ₺5.573,98 = 12 iadenin etkisi. İade sonrası kutu panelle AYNI kümeyi
+//  kullanmalı (geçerli iade · satışı süzgeçte · kârı hesaplanmış) ve satır
+//  toplamı kutusu iadeden ETKİLENMEMELİ (iki yön ayrı ölçülür).
+{
+  const govde = oku("src/lib/satis-toplami.ts");
+  const i = govde.indexOf("prisma.return.groupBy({");
+  /* ⚠ PENCERE BLOĞUN SONUNDA BİTER (`_sum:`): sabit uzunluk ardındaki
+     `return.count` sorgusuna taşıyor, orada geçen IADE_GECERLI'yi bulup
+     süzgeci silen mutasyonu kaçırıyordu (mutasyonla görüldü 28.10.2026). */
+  const son = i === -1 ? -1 : govde.indexOf("_sum:", i);
+  const grup = i === -1 || son === -1 ? "" : govde.slice(i, son);
+  kontrol("/satislar · iade NET-2 sorgusu bulundu", grup !== "");
+  kontrol(
+    "/satislar · iade kümesi: süzgeçteki İPTALSİZ satış + geçerli iade + hesaplanmış kâr",
+    /\{\s*sale:\s*giren\s*\}/.test(grup) &&
+      /\bIADE_GECERLI\b/.test(grup) &&
+      /profitStatus:\s*"CALCULATED"/.test(grup) &&
+      /net2Amount:\s*\{\s*not:\s*null\s*\}/.test(grup),
+    "panel kümesinden ayrışırsa iki ekran yine farklı NET-2 yazar",
+  );
+  const sayimlar = govde.match(/prisma\.return\.count\(\{[\s\S]*?\}\),/g) ?? [];
+  kontrol(
+    "/satislar · iade sayımları da aynı kümeden (2 sayım)",
+    sayimlar.length === 2 &&
+      sayimlar.every((x) => /\{\s*sale:\s*giren\s*\}/.test(x) && /\bIADE_GECERLI\b/.test(x)),
+    "not satırındaki iade adedi toplamın kümesini saymalı",
+  );
+  const sayfa = oku("src/app/satislar/page.tsx");
+  kontrol(
+    "/satislar · iade sonrası NET-2 = satış NET-2 + iade NET-2",
+    /const iadeSonrasiNet = toplamlariBirlestir\(\[net\.toplam, iade\.net2\]\);/.test(sayfa),
+  );
+  const ekBas = sayfa.indexOf("ekler={[");
+  const ek = ekBas === -1 ? "" : sayfa.slice(ekBas, ekBas + 1200);
+  kontrol(
+    "/satislar · iade sonrası kutusu çiziliyor (yalnız iade varken, kâr izniyle)",
+    /etiket:\s*t\("iadeSonrasiNet"\),\s*toplamlar:\s*iadeSonrasiNet,\s*gorunur:\s*karGorunur && iade\.sayi > 0,/.test(ek),
+  );
+  kontrol(
+    "/satislar · NET-2 toplamı kutusu SATIR toplamı olarak kalıyor (iade karışmıyor)",
+    /etiket:\s*t\("netToplami"\),\s*toplamlar:\s*net\.toplam,/.test(ek),
+    "satır satır toplam İlke #15'tir; iade düşülmüş rakam ayrı kutuda yazar",
+  );
+}
+
 if (dusen.length === 0) {
   console.log("  ✓  " + gecen + "/" + gecen + " ölçüt geçti\n");
 } else {

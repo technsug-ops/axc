@@ -1,3 +1,4 @@
+import { IADE_GECERLI } from "@/lib/iade-geri-alma";
 import { KALEM_GECERLI } from "@/lib/kalem-gecerli";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -80,6 +81,19 @@ export type SatisToplamlari = {
   ciro: SuzgecToplamSonucu;
   adet: { toplam: number; haric: number; sayi: number; haricSayi: number };
   net: { toplam: ParaToplami[]; eksikSayi: number };
+  /**
+   * İADELERİN NET-2 ETKİSİ — süzgece giren satışlara bağlı iadeler.
+   *
+   * ⛔ NİYE VAR (kullanıcı bulgusu 28.10.2026): panel NET-2'si iadeyi düşüyor
+   * (iade SATIŞIN gününe yazılır, K185-③), bu ekran düşmüyordu. Ekim'de
+   * cirolar aynı, NET-2'ler ₺5.573,98 ayrıydı = 12 iadenin etkisi, kuruşuna.
+   * `net.toplam` SATIŞLARIN kârı olarak kalır (satır satır toplamı, İlke #15);
+   * iade sonrası rakam ayrı kutuda yazar — ikisi aynı kutuya karışmaz.
+   *
+   * Küme panelinkiyle AYNI ölçüt: geçerli iade (`IADE_GECERLI`), satışı
+   * süzgeçte; yalnız kârı hesaplanmış iade toplama girer, kalanı sayılır.
+   */
+  iade: { sayi: number; net2: ParaToplami[]; eksikSayi: number };
   /** Süzgece giren TOPLAM kayıt sayısı — sayfalamanın paydası. */
   kayitSayisi: number;
 };
@@ -107,6 +121,9 @@ export async function satisToplamlari(
     haricAdet,
     netler,
     eksikSayi,
+    iadeNetleri,
+    iadeSayi,
+    iadeEksikSayi,
   ] = await Promise.all([
     prisma.sale.count({ where: kosul }),
     prisma.sale.count({ where: giren }),
@@ -139,6 +156,28 @@ export async function satisToplamlari(
         ],
       },
     }),
+    prisma.return.groupBy({
+      by: ["profitCurrency"],
+      where: {
+        AND: [
+          { sale: giren },
+          IADE_GECERLI,
+          { profitStatus: "CALCULATED" },
+          { net2Amount: { not: null } },
+        ],
+      },
+      _sum: { net2Amount: true },
+    }),
+    prisma.return.count({ where: { AND: [{ sale: giren }, IADE_GECERLI] } }),
+    prisma.return.count({
+      where: {
+        AND: [
+          { sale: giren },
+          IADE_GECERLI,
+          { OR: [{ profitStatus: { not: "CALCULATED" } }, { net2Amount: null }] },
+        ],
+      },
+    }),
   ]);
 
   return {
@@ -164,6 +203,18 @@ export async function satisToplamlari(
           })),
       ]),
       eksikSayi,
+    },
+    iade: {
+      sayi: iadeSayi,
+      net2: toplamlariBirlestir([
+        iadeNetleri
+          .filter((n) => n.profitCurrency !== null && n._sum.net2Amount !== null)
+          .map((n) => ({
+            paraBirimi: n.profitCurrency as string,
+            tutar: Number(n._sum.net2Amount!.toString()),
+          })),
+      ]),
+      eksikSayi: iadeEksikSayi,
     },
     kayitSayisi,
   };

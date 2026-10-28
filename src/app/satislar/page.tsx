@@ -67,7 +67,7 @@ import { prisma } from "@/lib/prisma";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { aktarilanSiparisMi, ilkCekimAnlari } from "@/lib/stok";
 
-import { satisKalemToplamlari } from "@/lib/tutar";
+import { satisKalemToplamlari, toplamlariBirlestir } from "@/lib/tutar";
 import { Suspense } from "react";
 
 import { MarjTercihi } from "./marj-tercihi";
@@ -424,6 +424,25 @@ export default async function SatislarSayfasi({
    * sanmak, yanlış rakamdan tehlikelidir.
    */
   const net = toplamlar.net; // veritabanından — bkz. ciro notu
+  /**
+   * İADE SONRASI NET-2 — panelle AYNI rakam (kullanıcı bulgusu 28.10.2026).
+   * Panel iadeyi satışın ayına yazıp NET-2'den düşüyor; burada satır satır
+   * NET-2 toplamı ayrı kutuda kalır, iade düşülmüş hâli yanında yazar ve
+   * neyin düşüldüğü notta söylenir — iki ekran sessizce ayrışmaz.
+   */
+  const iade = toplamlar.iade;
+  const iadeSonrasiNet = toplamlariBirlestir([net.toplam, iade.net2]);
+  const iadeNotu = [
+    iade.net2.length > 0
+      ? t("iadeSonrasiNot", {
+          sayi: iade.sayi - iade.eksikSayi,
+          tutar: iade.net2.map((x) => bicim.para(x.tutar, x.paraBirimi)).join(" · "),
+        })
+      : null,
+    iade.eksikSayi > 0 ? t("iadeHesaplanamayan", { sayi: iade.eksikSayi }) : null,
+  ]
+    .filter((x) => x !== null)
+    .join(" · ");
 
   /** Birim fiyat kolonu: tek kalemde gerçek fiyat, çok kalemde çizgi. */
   function birimFiyatMetni(satis: (typeof satislar)[number]) {
@@ -779,6 +798,13 @@ export default async function SatislarSayfasi({
               net.eksikSayi > 0
                 ? t("netHesaplanamayanHaric", { sayi: net.eksikSayi })
                 : undefined,
+          },
+          {
+            etiket: t("iadeSonrasiNet"),
+            toplamlar: iadeSonrasiNet,
+            /* Süzgeçte iade yoksa iki kutu aynı rakamı yazardı — çizilmez. */
+            gorunur: karGorunur && iade.sayi > 0,
+            not: iadeNotu || undefined,
           },
         ]}
       />
