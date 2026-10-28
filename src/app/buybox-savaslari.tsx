@@ -24,6 +24,9 @@ import { DURUM_YAZISI } from "@/lib/renkler";
  *  ⚠ Kaynak SAATLİK ölçüm, kanala soru sorulmaz (panel yavaşlamasın). Ölçüm
  *  saati başlıkta yazar; açılan liste canlıdır ve en çok bir saat farklı olabilir.
  *  ⚠ Panelin tarih süzgecinden bağımsızdır ve bunu kutu kendisi söyler.
+ *  ⚠ 28.10.2026: panelde ÜÇ EŞİT KUTUDAN biri — lg..2xl aralığında kutu telefon kadar dar
+ *  (ölçüldü: 1200 px ekranda «Bugün» kesiliyor, «Otomatik» kutu dışına taşıyordu). O aralıkta da
+ *  kısa kanal adı (TY/HB) ve «Görünmüyor» gizli; 2xl ve üstünde ve sm–lg arasında (tam genişlik) tam hâl.
  *  ⚠ «Görünmüyor» sütunu TELEFONDA gizli: 360 px'e altı sütun sığmıyor (ölçüldü,
  *  338 px tablo / 302 px kutu); en az karar taşıyan sütun o. Masaüstünde ve
  *  Buybox ekranında durur.
@@ -57,7 +60,7 @@ export async function BuyboxSavaslari() {
   const hucre = "whitespace-nowrap px-1 py-1 text-right align-middle sm:px-2";
 
   return (
-    <section aria-labelledby="buybox-savaslari-baslik" className="bg-card min-w-0 rounded-xl border p-3 text-xs lg:w-max">
+    <section aria-labelledby="buybox-savaslari-baslik" className="bg-card min-w-0 rounded-xl border p-3 text-xs">
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3">
         <h3 id="buybox-savaslari-baslik" className="flex items-center gap-1.5 text-sm font-semibold">
           <Swords className="size-4" aria-hidden />
@@ -74,7 +77,7 @@ export async function BuyboxSavaslari() {
             </th>
             <th scope="col" className={`${hucre} font-normal`}>{t("buyboxBizde")}</th>
             <th scope="col" className={`${hucre} font-normal`}>{t("buyboxKaybedilen")}</th>
-            <th scope="col" className={`${hucre} font-normal max-sm:hidden`}>{t("buyboxGorunmuyor")}</th>
+            <th scope="col" className={`${hucre} font-normal max-sm:hidden lg:max-2xl:hidden`}>{t("buyboxGorunmuyor")}</th>
             <th scope="col" className={`${hucre} font-normal`} title={t("buyboxBugunIpucu")}>{t("buyboxBugun")}</th>
             <th scope="col" className={`${hucre} font-normal`} title={t("buyboxOtomatikIpucu")}>{t("buyboxOtomatik")}</th>
           </tr>
@@ -83,8 +86,8 @@ export async function BuyboxSavaslari() {
           {kanallar.map((k) => (
             <tr key={k.kanal} className="border-b last:border-b-0">
               <th scope="row" className="py-1 pr-2 text-left font-medium">
-                <span className="max-sm:hidden">{t(`buyboxKanal_${k.kanal}`)}</span>
-                <span className="sm:hidden">{t(`buyboxKanalKisa_${k.kanal}`)}</span>
+                <span className="max-sm:hidden lg:max-2xl:hidden">{t(`buyboxKanal_${k.kanal}`)}</span>
+                <span className="hidden max-sm:inline lg:max-2xl:inline">{t(`buyboxKanalKisa_${k.kanal}`)}</span>
               </th>
               {k.son === null ? (
                 <td colSpan={3} className="text-muted-foreground px-2 py-1">{t("buyboxOlculmedi")}</td>
@@ -92,7 +95,7 @@ export async function BuyboxSavaslari() {
                 <>
                   <td className={hucre}>{rakam(k.kanal, t("buyboxBizdeDeger", { birinci: k.son.birinci, incelenen: k.son.incelenen }), k.son.birinci, "birinci")}</td>
                   <td className={hucre}>{rakam(k.kanal, String(k.son.kaybedilen), k.son.kaybedilen, "kaybedilen")}</td>
-                  <td className={`${hucre} max-sm:hidden`}>{rakam(k.kanal, String(k.son.gorunmuyor), k.son.gorunmuyor, "gorunmuyor")}</td>
+                  <td className={`${hucre} max-sm:hidden lg:max-2xl:hidden`}>{rakam(k.kanal, String(k.son.gorunmuyor), k.son.gorunmuyor, "gorunmuyor")}</td>
                 </>
               )}
               <td className={`${hucre} tabular-nums whitespace-nowrap`}>

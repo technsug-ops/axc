@@ -460,8 +460,9 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     dosya: SAYFA,
     bul:
-      /* K270: etiket telefonda gizli sinifi aldi - capa tasindi. */
-      "                    <span className=\"font-medium max-sm:hidden\">{t(\"huniEtiketi\")}</span>\n",
+      /* K270: etiket telefonda gizli sinifi aldi - capa tasindi.
+         28.10.2026: uc kutulu duzende basligin lg siniflari eklendi - capa tasindi, niyet ayni. */
+      "                    <span className=\"font-medium max-sm:hidden lg:text-foreground lg:col-span-2 lg:text-sm lg:font-semibold\">{t(\"huniEtiketi\")}</span>\n",
     koy:
       "",
     bozdugu:

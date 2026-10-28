@@ -3009,18 +3009,23 @@ export default async function AnaSayfa({
                     taşıyor; ızgarada o, kutuları içeriği kadar bıraktı ve tek satırlık
                     «Mal kabul» iki satırlık komşularından KISA kaldı (kullanıcı 25.09).
                   */}
-                  {/* Huni + «Buybox savaşları» (28.10.2026): geniş ekranda yan yana,
-                      kutu huninin sağındaki boşlukta; telefonda alt alta. */}
-                  <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs max-sm:grid max-sm:grid-cols-4 max-sm:items-stretch max-sm:gap-2">
-                    <span className="font-medium max-sm:hidden">{t("huniEtiketi")}</span>
+                  {/* ÜÇ EŞİT KUTU (kullanıcı 28.10.2026: «Huni, Bugün ne yapmalıyım ve
+                      Buybox savaşlarını, Buybox savaşları büyüklüğünde kare şeklinde 3
+                      yan yana»). Geniş ekranda (lg) üç sütun, AYNI BOY (`items-stretch`);
+                      dar ekranda alt alta. ⛔ 08.10 «tek şerit» kararı (görev şeridi
+                      Huni satırının İÇİNDE, ince ayraçla) ÇEVRİLDİ — gerekçesi silinmedi:
+                      o gün huni ince bir satırdı ve iki grup aynı satırda yer kazandırıyordu;
+                      üç kutulu düzende görevler kendi kutusunda. */}
+                  <div className="grid min-w-0 gap-3 lg:grid-cols-3 lg:items-stretch">
+                  <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs max-sm:grid max-sm:grid-cols-4 max-sm:items-stretch max-sm:gap-2 lg:bg-card lg:grid lg:grid-cols-2 lg:content-start lg:gap-2 lg:rounded-xl lg:border lg:p-3">
+                    <span className="font-medium max-sm:hidden lg:text-foreground lg:col-span-2 lg:text-sm lg:font-semibold">{t("huniEtiketi")}</span>
                     <Baglanti
                       href={suzgecAdresi(
                             "/alimlar",
                             {},
                             { ...donemParametreleri(), eksen: "siparis" },
                           )}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:justify-between"
                     >
                       {t("siparisAdedi")}
                       <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
@@ -3039,7 +3044,7 @@ export default async function AnaSayfa({
                             {},
                             donemParametreleri(),
                           )}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:justify-between"
                     >
                       {t("malKabulAdedi")}
                       <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
@@ -3053,7 +3058,8 @@ export default async function AnaSayfa({
                     </Baglanti>
                     <Baglanti
                       href={kargoAdresi("verildi")}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
+                      /* Geniş ekranda TAM SATIR: «Kargo bekleyen» tam satır olunca yanında boş hücre kalıyordu (önizlemede görüldü). */
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:col-span-2 lg:justify-between"
                     >
                       {/* SÜZGEÇ AÇIKKEN KANAL ADI ETİKETTE: çip hangi soruya cevap
                           verdiğini kendisi söyler (K253'te düşmüştü, bekçi yakaladı). */}
@@ -3066,7 +3072,8 @@ export default async function AnaSayfa({
                     </Baglanti>
                     <Baglanti
                       href={kargoAdresi("bekleyen")}
-                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
+                      /* Geniş ekranda TAM SATIR: «6 sipariş bekliyor» yarım hücreye sığmıyor. */
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:col-span-2 lg:justify-between"
                     >
                       {t("kargoBekleyenKisa")}
                       <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
@@ -3083,7 +3090,7 @@ export default async function AnaSayfa({
                       <>
                         <Baglanti
                           href={teslimAdresi("yolda")}
-                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
+                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:justify-between"
                         >
                           {t("teslimYolda")}
                           <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
@@ -3092,7 +3099,7 @@ export default async function AnaSayfa({
                         </Baglanti>
                         <Baglanti
                           href={teslimAdresi("teslim")}
-                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight"
+                          className="inline-flex min-h-11 items-center gap-1 rounded-md border px-2 no-underline md:min-h-7 max-sm:bg-card max-sm:min-h-[58px] max-sm:flex-col max-sm:items-start max-sm:justify-between max-sm:rounded-xl max-sm:p-2 max-sm:leading-tight lg:justify-between"
                         >
                           {t("teslimEdildi")}
                           <span className="text-foreground font-semibold tabular-nums max-sm:text-base">
@@ -3101,15 +3108,8 @@ export default async function AnaSayfa({
                         </Baglanti>
                       </>
                     ) : null}
-                    {/* TEK ŞERİT (kullanıcı kararı 08.10.2026): Huni (dönem bilgisi) ve
-                        «Bugün ne yapmalıyım» (bekleyen iş) aynı satırda, ince ayraçla.
-                        Yalnız ilk para bloğunda — görevler para biriminden bağımsız. */}
-                    {blokSirasi === 0 ? (
-                      <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 max-sm:col-span-4 md:border-l md:pl-2">
-                        {gorevSeridi(true)}
-                      </span>
-                    ) : null}
-                    <span className="text-muted-foreground max-sm:col-span-4 md:basis-full">
+                    <span className="text-muted-foreground max-sm:col-span-4 md:basis-full lg:col-span-2">
+
                       {/* Rakamın hangi tarihe göre sayıldığı YAZIYOR. */}
                       <span className="block">{t("kargoEkseniNotu")}</span>
                       <span className="block">
@@ -3146,8 +3146,15 @@ export default async function AnaSayfa({
                       ) : null}
                     </span>
                   </div>
+                  {/* «Bugün ne yapmalıyım» — ORTA kutu. Yalnız ilk para bloğunda: görevler
+                      para biriminden bağımsız (08.10 kuralı aynen). */}
+                  {blokSirasi === 0 ? (
+                    <div className="min-w-0 lg:bg-card lg:rounded-xl lg:border lg:p-3">
+                      {gorevSeridi(true)}
+                    </div>
+                  ) : null}
                   {blokSirasi === 0 && buyboxGorunur ? (
-                    <Suspense fallback={<Skeleton className="h-32 w-full lg:w-96" />}>
+                    <Suspense fallback={<Skeleton className="h-32 w-full" />}>
                       <BuyboxSavaslari />
                     </Suspense>
                   ) : null}

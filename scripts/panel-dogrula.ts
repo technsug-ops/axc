@@ -5066,7 +5066,9 @@ console.log("K53) TARİHLİ ENVANTER — DEFTER FOTOĞRAFI");
     .replace(/\/\*[\s\S]*?\*\//g, " ");
   kontrol(
     "serit basligi CIZILIYOR («Bugun ne yapmaliyim»)",
-    /text-muted-foreground text-xs font-medium\">\s*\{t\("baslik"\)\}/.test(kutu),
+    /* 28.10.2026: baslik panelde uc kutudan biriyken (gomulu) lg siniflari aliyor — sinif
+       ifadesi kosullu oldu; olcut ayni: baslik span'i cizilip «baslik» anahtarini tasiyor. */
+    /<span className=\{`text-muted-foreground text-xs font-medium \$\{gomulu \? "[^"]*" : ""\}`\}>\s*\{t\("baslik"\)\}/.test(kutu),
   );
   /**
    * *** OLCUT IKINCI KEZ ESKIDI, SUSTURULMADI (K259-②, 24.09.2026).
@@ -7049,8 +7051,20 @@ kontrol("panel rozeti saf gövdeden ve iz okuyucudan besleniyor",
      satışsız dönemde. Niyet aynı: hızlı işlemler şeridin hemen ardından gelir. */
   kontrol("hizli islemler gorev seridinin HEMEN ALTINDA",
     /\{bloklar\.length === 0 \? gorevSeridi\(false\) : null\}\s*<HizliIslemler \/>/.test(sayfaT));
-  kontrol("  ...gorev seridi HUNI satirinin ICINDE (tek serit, yalniz ilk blokta)",
-    /\{blokSirasi === 0 \? \(\s*<span className="[^"]*md:border-l md:pl-2">\s*\{gorevSeridi\(true\)\}/.test(sayfaT));
+  /* 28.10.2026 — KULLANICI KARARIYLA CEVRILDI: «Huni, Bugun ne yapmaliyim ve Buybox savaslari
+     ... kare seklinde 3 yan yana». Eski olcut seridin Huni satirinin ICINDE oldugunu sinıyordu
+     (08.10 tek serit). Yeni olcut: uc kutu ayni kapta, lg'de 3 sutun ESIT BOY, gorev kutusu
+     ORTADA (huniden sonra, Buybox'tan once), yalniz ilk blokta. */
+  {
+    const kapBas = sayfaT.indexOf('<div className="grid min-w-0 gap-3 lg:grid-cols-3 lg:items-stretch">');
+    const iHuni = sayfaT.indexOf('{t("huniEtiketi")}', kapBas);
+    const iGorev = sayfaT.indexOf("{gorevSeridi(true)}", kapBas);
+    const iBuybox = sayfaT.indexOf("<BuyboxSavaslari />", kapBas);
+    kontrol("  ...uc kutu: huni · gorev · buybox AYNI kapta, bu sirayla (lg 3 sutun, esit boy)",
+      kapBas >= 0 && iHuni > kapBas && iGorev > iHuni && iBuybox > iGorev, { kapBas, iHuni, iGorev, iBuybox });
+    kontrol("  ...gorev kutusu yalniz ilk blokta",
+      /\{blokSirasi === 0 \? \(\s*<div className="min-w-0 lg:bg-card lg:rounded-xl lg:border lg:p-3">\s*\{gorevSeridi\(true\)\}/.test(sayfaT));
+  }
   kontrol("KPI izgarasi telefonda 6 sutun", /grid grid-cols-6 gap-2 sm:grid-cols-2 md:grid-cols-3/.test(sayfaT));
   /* Satir toplamlari 6: [ciro 6] [NET-1 3 · NET-2 3] [marj 2 · satis 2 · iade 2] — ESIT kutular. */
   const span = (desen: RegExp) => Number((desen.exec(sayfaT) ?? ["", "0"])[1]);

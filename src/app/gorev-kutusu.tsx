@@ -291,7 +291,8 @@ export async function GorevKutusu({
           : "bg-card flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg border px-3 py-2 max-md:hidden"
       }
     >
-      <span className="text-muted-foreground text-xs font-medium">
+      {/* Panelde üç kutudan biriyken (28.10.2026) başlık komşularıyla aynı ve kendi satırında. */}
+      <span className={`text-muted-foreground text-xs font-medium ${gomulu ? "lg:text-foreground lg:basis-full lg:text-sm lg:font-semibold" : ""}`}>
         {t("baslik")}
       </span>
       {toplam === 0 ? (
