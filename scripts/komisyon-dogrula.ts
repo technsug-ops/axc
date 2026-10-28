@@ -1037,7 +1037,8 @@ console.log("\nORAN UYARISI (satış formu)");
   /** ⚠ KAPSAYAN PENCERE YOKSA HÜKÜM YOK — "en yakına" düşülmez. */
   kontrol(
     "  ...pencere yoksa null döner (hüküm yok)",
-    /if \(!tarife\) return \{ dilimler: null, tarifeTabani: null \};/.test(veriKaynak),
+    /* 28.10.2026: kapsayan kayıtlar artık liste (ürün başına tarihli teklif); kural aynı. */
+    /if \(kapsayanlar\.length === 0\) return \{ dilimler: null, tarifeTabani: null \};/.test(veriKaynak),
   );
   kontrol("  ...forma taşınıyor", /tarifeTabani: kalem\.tarifeTabani/.test(form));
   kontrol("şüpheli düşükte ONAY kutusu çıkıyor", /oranIstisnaOnayi/.test(form));

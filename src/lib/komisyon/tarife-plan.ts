@@ -53,6 +53,8 @@ export type YazilacakKalem = {
   altLimit: number | null;
   ustLimit: number | null;
   oran: number;
+  /** Ürünün kendi geçerlilik aralığı; `null` = tarifenin penceresi. */
+  gecerlilik: { baslangic: Date; bitis: Date } | null;
 };
 
 export type TarifePlani = {
@@ -126,6 +128,7 @@ export function tarifePlaniKur(
         altLimit: d.altLimit,
         ustLimit: d.ustLimit,
         oran: d.oran,
+        gecerlilik: satir.gecerlilik ?? null,
       });
     }
   }

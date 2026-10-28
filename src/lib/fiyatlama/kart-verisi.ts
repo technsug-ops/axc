@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { varyantinTarifeKalemleri } from "@/lib/komisyon/tarife-eslesme-veri";
-import type { TarifeDizinleri } from "@/lib/komisyon/tarife-eslesme";
+import { tarifeAdayi, type TarifeDizinleri } from "@/lib/komisyon/tarife-eslesme";
 import { VARSAYILAN_KDV_ORANI } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { komisyonKdvOrani, siparisKesintiKurallari, type SiparisKesintiKurali } from "@/lib/siparis-kesintileri";
@@ -80,16 +80,30 @@ export async function simulasyonZeminleri(
         kalemler: { some: { OR: [{ variantId }, { variantId: null }] } },
       },
       orderBy: { pencereBaslangic: "desc" },
-      select: { id: true, pencereBitis: true },
+      select: { id: true, pencereBaslangic: true, pencereBitis: true },
     });
-    let tarife: { pencereBitis: Date; kalemler: Awaited<ReturnType<typeof varyantinTarifeKalemleri>> } | null = null;
+    /*
+     * ⛔ 28.10.2026 — BUGÜNÜ KAPSAYAN ÖNCE. Eski hâl «ürünün kalemi olan EN YENİ
+     * pencere»ydi (başlangıcı en geç). Hepsiburada teklifleri ürün başına
+     * tarihli olunca bu yanlış oldu: Ekim'in tamamını kapsayan teklif kaydı
+     * (başlangıç 1 Ekim) 21–25 Ekim'in BİTMİŞ haftalık kaydından «eski» sayılıp
+     * atlanıyordu. Artık o an geçerli olan ilk aday seçilir; hiçbiri kapsamıyorsa
+     * eski davranış: en yeni aday + motorun «pencere bitti» beyanı.
+     */
+    type Secilen = { pencereBitis: Date; kalemler: Awaited<ReturnType<typeof varyantinTarifeKalemleri>> };
+    let tarife: Secilen | null = null;
+    let yedek: Secilen | null = null;
     for (const p of pencereler) {
       const kalemler = await varyantinTarifeKalemleri(p.id, e.channelAccountId, variantId, dizinOnbellegi);
-      if (kalemler.length > 0) {
-        tarife = { pencereBitis: p.pencereBitis, kalemler };
+      if (kalemler.length === 0) continue;
+      const aday = tarifeAdayi(p, kalemler, an);
+      if (aday.kapsiyor) {
+        tarife = { pencereBitis: aday.bitis, kalemler: aday.kalemler };
         break;
       }
+      yedek ??= { pencereBitis: aday.bitis, kalemler: aday.kalemler };
     }
+    tarife ??= yedek;
 
     const dilimler: TarifeDilimi[] | null =
       tarife === null || tarife.kalemler.length === 0
@@ -224,32 +238,49 @@ export async function satisTarihiTarifesi(
   channelAccountId: string,
   satisTarihi: Date,
 ): Promise<{ dilimler: TarifeDilimi[] | null; tarifeTabani: number | null }> {
-  const tarife = await prisma.komisyonTarifesi.findFirst({
+  /*
+   * ⛔ 28.10.2026 — KAPSAYAN BİRDEN ÇOK KAYIT OLABİLİR. Ürün başına tarihli
+   * teklif kaydı (Hepsiburada) geniş bir pencere taşır ve haftalık kayıtlarla
+   * üst üste biner. Eski hâl yalnız İLK kapsayan kaydı açıyordu; ürün orada
+   * yoksa dilim bulunmuyordu. Artık kapsayan kayıtlar en yeniden eskiye denenir
+   * ve ürünün o GÜN geçerli kalemi olan ilki seçilir (`tarifeAdayi`: kalemin
+   * kendi aralığı varsa ona bakılır). Hiçbirinde yoksa taban yine İLK kapsayan
+   * kayıttan okunur — eski davranışın aynısı.
+   */
+  const kapsayanlar = await prisma.komisyonTarifesi.findMany({
     where: {
       channelAccountId,
       pencereBaslangic: { lte: satisTarihi },
       pencereBitis: { gte: satisTarihi },
     },
     orderBy: { pencereBaslangic: "desc" },
-    select: { id: true },
+    select: { id: true, pencereBaslangic: true, pencereBitis: true },
   });
-  if (!tarife) return { dilimler: null, tarifeTabani: null };
+  if (kapsayanlar.length === 0) return { dilimler: null, tarifeTabani: null };
 
-  const [kalemler, taban] = await Promise.all([
-    /*
-     * ⛔ K298-②: satış kaydının oranı da ORTAK kuraldan — bağsız satır bugünkü
-     * katalogla çözülür (satış anında «bugün» = satış günü). Eski hâl yalnız
-     * kayıtlı bağa bakıyordu; bağ yoksa dilim bulunmuyor, tek oran yazılıyordu.
-     * Ölçüldü 28.09: geçmişte etkilenen 1 kalem (HB 4711041918, ₺2.848 en üst
-     * dilim → %15 zaten doğru) — düzeltilecek geçmiş yok, mekanizma kuruldu.
-     */
-    varyantinTarifeKalemleri(tarife.id, channelAccountId, variantId),
-    /** ⚠ TABAN O PENCEREDEN — bütün tarifelerin en düşüğünden DEĞİL. */
-    prisma.komisyonTarifeKalemi.aggregate({
-      where: { tarifeId: tarife.id },
-      _min: { oran: true },
-    }),
-  ]);
+  /*
+   * ⛔ K298-②: satış kaydının oranı da ORTAK kuraldan — bağsız satır bugünkü
+   * katalogla çözülür (satış anında «bugün» = satış günü). Eski hâl yalnız
+   * kayıtlı bağa bakıyordu; bağ yoksa dilim bulunmuyor, tek oran yazılıyordu.
+   * Ölçüldü 28.09: geçmişte etkilenen 1 kalem (HB 4711041918, ₺2.848 en üst
+   * dilim → %15 zaten doğru) — düzeltilecek geçmiş yok, mekanizma kuruldu.
+   */
+  let tarife = kapsayanlar[0]!;
+  let kalemler: Awaited<ReturnType<typeof varyantinTarifeKalemleri>> = [];
+  for (const aday of kapsayanlar) {
+    const hepsi = await varyantinTarifeKalemleri(aday.id, channelAccountId, variantId);
+    const secim = tarifeAdayi(aday, hepsi, satisTarihi);
+    if (secim.kapsiyor && secim.kalemler.length > 0) {
+      tarife = aday;
+      kalemler = secim.kalemler;
+      break;
+    }
+  }
+  /** ⚠ TABAN O PENCEREDEN — bütün tarifelerin en düşüğünden DEĞİL. */
+  const taban = await prisma.komisyonTarifeKalemi.aggregate({
+    where: { tarifeId: tarife.id },
+    _min: { oran: true },
+  });
 
   return {
     dilimler:

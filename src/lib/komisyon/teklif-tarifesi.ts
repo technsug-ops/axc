@@ -1,9 +1,9 @@
-import { gunDegeri, isTakvimGunu } from "@/lib/donem";
 import { basligiNormalle } from "@/lib/tablo/hucre";
 import type { SayfaGirdisi } from "@/lib/tablo/tablo-oku";
 
 import type { KomisyonPlatformu } from "./model";
 import { yuzdeCoz } from "./okuyucu";
+import { duvarSaatindenAn } from "./tarife-okuyucu";
 import type {
   TarifeDilimi,
   TarifeOkumasi,
@@ -275,19 +275,30 @@ export function dilimleriKur(
   return dilimler;
 }
 
-/** Tarih hücresi → `Date`; değilse `null`. */
+/**
+ * Tarih hücresi → GERÇEK AN; değilse `null`. Hücre dosyanın duvar saatidir
+ * (İstanbul) — `duvarSaatindenAn` olmadan 3 saat kayar (VTech vakası, 28.10.2026).
+ */
 function tarihCoz(ham: unknown): Date | null {
-  return ham instanceof Date && !Number.isNaN(ham.getTime()) ? ham : null;
+  return ham instanceof Date && !Number.isNaN(ham.getTime()) ? duvarSaatindenAn(ham) : null;
 }
 
 /**
  * Tanınan teklif dosyasını dilimli tarifeye çevirir.
  *
- * ⚠ PENCERE: teklifler ÜRÜN BAŞINA ayrı tarih taşıyor (ölçüldü: HB 44
- * üründe 27 farklı pencere). Kayıt yükleme başına TEK pencere tutuyor;
- * bu yüzden dosyadaki **en yaygın** aralık seçilir — HB'de bu, panelin
- * sekmesinde yazan haftalık aralığın aynısı. Dışarıda kalan satırlar
- * `pencereDisi` diye SAYILIR; sessizce yutulmaz.
+ * ⚠ PENCERE — KARAR ÇEVRİLDİ 28.10.2026, ESKİ GEREKÇE SİLİNMEDİ:
+ * _Eski hâl:_ «Kayıt yükleme başına TEK pencere tutuyor; bu yüzden dosyadaki
+ * **en yaygın** aralık seçilir — HB'de bu, panelin sekmesinde yazan haftalık
+ * aralığın aynısı. Dışarıda kalan satırlar `pencereDisi` diye SAYILIR.»
+ * O gün HB teklifleri haftalıktı ve en yaygın aralık gerçekten «bu hafta»ydı.
+ * ⛔ 28.10.2026 dosyası (Hepsiburada «Tekliflerim» 14): haftalık ortak aralık
+ * YOK, her ürünün kendi tarihi var (VTech 26 Ekim–13 Kasım · Fissler 26 Ekim–
+ * 1 Kasım · Soundcore 2–31 Ekim). En yaygını seçmek 14 satırın 11'ini «pencere
+ * dışı» bırakıyor ve 13 Kasım'a kadar süren teklifi 31 Ekim'de kesiyordu.
+ * _Yeni hâl:_ her satır KENDİ aralığını taşır (`gecerlilik`, kaleme yazılır,
+ * okuyucular ona bakar); kaydın penceresi bütün satırları KAPSAYAN aralıktır
+ * (en erken başlangıç → en geç bitiş). `pencereDisi` artık TARİHİ OKUNAMAYAN
+ * satır sayısıdır — onlar kaydın penceresiyle geçerli sayılır.
  */
 export function teklifTarifesiOku(tanima: TeklifTanimasi): TarifeOkumasi & {
   pencereDisi: number;
@@ -339,8 +350,10 @@ export function teklifTarifesiOku(tanima: TeklifTanimasi): TarifeOkumasi & {
   const atlananlar: { satirNo: number; sebep: string }[] = [];
   const gorulenKod = new Set<string>();
   let mukerrerElenen = 0;
-  /** Pencere adayları — en yaygını seçilecek. */
-  const pencereSayaci = new Map<string, { adet: number; bas: Date; bit: Date }>();
+  /** Bütün satırları kapsayan aralık + tarihi okunamayan satır sayısı. */
+  let enErken: Date | null = null;
+  let enGec: Date | null = null;
+  let tarihsiz = 0;
 
   for (let r = veriBasi; r < tanima.veri.length; r++) {
     const ham = tanima.veri[r] ?? [];
@@ -370,6 +383,22 @@ export function teklifTarifesiOku(tanima: TeklifTanimasi): TarifeOkumasi & {
       continue;
     }
 
+    const b = iBas >= 0 ? tarihCoz(ham[iBas]) : null;
+    const e = iBit >= 0 ? tarihCoz(ham[iBit]) : null;
+    /**
+     * ⚠ SATIRIN KENDİ ARALIĞI, DAKİKASIYLA. Eski «güne göre gruplama» dersi
+     * (HB teklifleri aynı gün farklı dakikada başlıyor: 00:07 · 00:19…) artık
+     * gruplamayı değil, hiçbir şeyi bozmuyor: her satır kendi anıyla yazılır.
+     * Bitişi başlangıcından önce olan aralık bozuktur — tarihsiz sayılır,
+     * uydurulmaz.
+     */
+    const gecerlilik = b && e && e.getTime() >= b.getTime() ? { baslangic: b, bitis: e } : null;
+    if (gecerlilik === null) tarihsiz++;
+    else {
+      if (enErken === null || gecerlilik.baslangic < enErken) enErken = gecerlilik.baslangic;
+      if (enGec === null || gecerlilik.bitis > enGec) enGec = gecerlilik.bitis;
+    }
+
     gorulenKod.add(kod);
     satirlar.push({
       barkod: kod,
@@ -378,48 +407,24 @@ export function teklifTarifesiOku(tanima: TeklifTanimasi): TarifeOkumasi & {
       dilimler,
       guncelKomisyon: guncel,
       satirNo: r + 1,
+      gecerlilik,
     });
-
-    const b = iBas >= 0 ? tarihCoz(ham[iBas]) : null;
-    const e = iBit >= 0 ? tarihCoz(ham[iBit]) : null;
-    if (b && e) {
-      /**
-       * ⛔ GRUPLAMA GÜNE GÖRE, SANİYEYE GÖRE DEĞİL — ÖLÇÜMLE BULUNDU.
-       * İlk yazımda anahtar tam zaman damgasıydı ve 44 satırın **41'i**
-       * "pencere dışı" çıktı: HB teklifleri aynı haftanın aynı gününde ama
-       * ÜRÜN BAŞINA farklı dakikada başlıyor (`00:07` · `00:10` · `00:16`
-       * · `00:18` · `00:19`…). Saniyeye bakan bir sayaç 27 ayrı pencere
-       * görüyordu; oysa operatörün ve panelin gördüğü TEK hafta.
-       *
-       * İş günü İstanbul takviminden okunur (anayasa: iş saat dilimi sabit).
-       */
-      const anahtar = `${gunDegeri(isTakvimGunu(b)).toISOString()}|${gunDegeri(
-        isTakvimGunu(e),
-      ).toISOString()}`;
-      const kayit = pencereSayaci.get(anahtar) ?? { adet: 0, bas: b, bit: e };
-      kayit.adet++;
-      /** Pencerenin UÇLARI en geniş hâliyle tutulur; gün aynı, saat değil. */
-      if (b < kayit.bas) kayit.bas = b;
-      if (e > kayit.bit) kayit.bit = e;
-      pencereSayaci.set(anahtar, kayit);
-    }
     void iFiyat;
   }
 
-  /** EN YAYGIN pencere; eşitlikte en erken başlayan. */
-  const adaylar = [...pencereSayaci.values()].sort(
-    (a, b) => b.adet - a.adet || a.bas.getTime() - b.bas.getTime(),
-  );
-  const secilen = adaylar[0] ?? null;
-  const toplamPencereli = adaylar.reduce((t, a) => t + a.adet, 0);
+  /**
+   * KAPSAYAN ARALIK: en erken başlangıç → en geç bitiş. Hiçbir satırın tarihi
+   * okunamadıysa pencere YOK (yazma kapısı `PENCERE_YOK` der, uydurulmaz).
+   */
+  const pencere = enErken !== null && enGec !== null ? { baslangic: enErken, bitis: enGec } : null;
 
   return {
-    pencere: secilen ? { baslangic: secilen.bas, bitis: secilen.bit } : null,
+    pencere,
     tarifeGrubu: null,
     satirlar,
     mukerrerElenen,
     atlananlar,
     eksikSutunlar: [],
-    pencereDisi: secilen ? toplamPencereli - secilen.adet : 0,
+    pencereDisi: pencere === null ? 0 : tarihsiz,
   };
 }

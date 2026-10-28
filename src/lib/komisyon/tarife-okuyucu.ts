@@ -51,6 +51,12 @@ export type TarifeSatiri = {
    */
   guncelKomisyon: number | null;
   satirNo: number;
+  /**
+   * Satırın KENDİ geçerlilik aralığı — yalnız teklif dosyaları (HB · N11)
+   * ürün başına tarih taşır (28.10.2026). Yoksa `undefined`/`null` = kalem
+   * tarifenin penceresiyle geçerli (Trendyol).
+   */
+  gecerlilik?: TarifePenceresi | null;
 };
 
 export type TarifePenceresi = { baslangic: Date; bitis: Date };
@@ -120,6 +126,19 @@ function istanbulOfsetiMs(an: Date): number {
     al("second"),
   );
   return yerel - an.getTime();
+}
+
+/**
+ * TABLO HÜCRESİNDEKİ DUVAR SAATİ → GERÇEK AN (28.10.2026).
+ * `tabloOku` sözleşmesi: tarih hücresi dosyadaki duvar saatini UTC bileşenleriyle
+ * taşır («15:59» → `…T15:59:00Z`). Hepsiburada/N11 dosyasındaki saat İŞ saat
+ * dilimindedir; çevrilmeden kullanılırsa 3 saat kayar. ⛔ VAKA: kullanıcının HB
+ * paneli VTech teklifini «26 Ekim 12:00 – 13 Kasım 23:58» gösteriyordu, okuyucu
+ * «26 Ekim 15:00 – 14 Kasım 02:58» üretiyordu — teklif sistemde 3 saat UZUN
+ * yaşıyordu. Saniye korunur (HB bitişleri «23:58:59»).
+ */
+export function duvarSaatindenAn(duvar: Date): Date {
+  return new Date(duvar.getTime() - istanbulOfsetiMs(duvar));
 }
 
 /** İŞ saat dilimindeki duvar saatini gerçek ana çevirir. */

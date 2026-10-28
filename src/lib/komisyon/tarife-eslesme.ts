@@ -103,6 +103,39 @@ export function varyantKalemleriniSec<T extends { barkod: string; variantId: str
   return adaylar.filter((k) => k.variantId === null && coz(k.barkod) === variantId);
 }
 
+/** Kalemin kendi geçerlilik aralığı (28.10.2026) — ikisi de boşsa tarifenin penceresi geçerli. */
+export type GecerlilikliKalem = { gecerlilikBaslangic: Date | null; gecerlilikBitis: Date | null };
+
+/**
+ * BİR TARİFE ADAYI, VERİLEN ANDA (28.10.2026 — ürün başına tarihli teklifler).
+ * Fiyat denemesi ve satış tarihi oranı AYNI kuralı kullanır.
+ * · Kalemlerin kendi aralığı YOKSA (Trendyol, eski yüklemeler): kapsama
+ *   tarifenin penceresinden, bitiş tarifenin bitişi — eski davranışın aynısı.
+ * · Kendi aralığı VARSA: o anda geçerli olan kalemler; bitiş onların en geç
+ *   bitişi. Hiçbiri geçerli değilse kapsamaz; bitiş kalemlerin en geç bitişi
+ *   (ekran «pencere bitti» der — tarifenin geniş penceresi sanılmaz).
+ */
+export function tarifeAdayi<K extends GecerlilikliKalem>(
+  pencere: { pencereBaslangic: Date; pencereBitis: Date },
+  kalemler: readonly K[],
+  an: Date,
+): { kapsiyor: boolean; kalemler: K[]; bitis: Date } {
+  const t = an.getTime();
+  const kendi = kalemler.filter((k) => k.gecerlilikBaslangic !== null && k.gecerlilikBitis !== null);
+  if (kendi.length === 0) {
+    return {
+      kapsiyor: pencere.pencereBaslangic.getTime() <= t && t <= pencere.pencereBitis.getTime(),
+      kalemler: [...kalemler],
+      bitis: pencere.pencereBitis,
+    };
+  }
+  const enGec = (liste: readonly K[]) => new Date(Math.max(...liste.map((k) => k.gecerlilikBitis!.getTime())));
+  const gecerli = kendi.filter((k) => k.gecerlilikBaslangic!.getTime() <= t && t <= k.gecerlilikBitis!.getTime());
+  return gecerli.length > 0
+    ? { kapsiyor: true, kalemler: gecerli, bitis: enGec(gecerli) }
+    : { kapsiyor: false, kalemler: [...kalemler], bitis: enGec(kendi) };
+}
+
 /** Tek kod: önce kanal, sonra kimlik dizini (`tarifePlaniKur` ile aynı sıra). */
 export function tarifeKodunuCoz(kod: string, d: TarifeDizinleri): string | null {
   const k = kod.trim();

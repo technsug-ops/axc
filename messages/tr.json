@@ -4569,6 +4569,10 @@
     "kapsamBaslik": "Yüklü pencereler",
     "kapsamYok": "Hiç tarife yüklenmemiş.",
     "kapsamSatir": "{kanal} · {baslangic} – {bitis} · {kalem} kalem",
+    "kapsamSatirTeklif": "{kanal} · ürün başına tarihli teklifler · {urun} ürün, şu an geçerli {gecerli}",
+    "teklifEnYakinBiten": "en yakın biten teklif {tarih}",
+    "teklifGecerliYok": "Şu an geçerli teklif yok",
+    "teklifNotu": "Hepsiburada ve N11 teklif dosyalarında her ürünün kendi tarih aralığı var; bu kayıtlar haftalık pencere sayılmaz ve kapsam boşluğu hesabına girmez.",
     "kalanGun": "{gun} gün kaldı",
     "sonGun": "Bugün son gün",
     "bitti": "Pencere bitti — kapsam yok",
@@ -4651,7 +4655,8 @@
     "oneri": "Fiyatı {fiyat} yaparsanız NET-2 {fark} artar.",
     "oneriEnIyi": "Şu anki fiyat en yüksek NET-2'yi veriyor.",
     "guncelYok": "Şu anki fiyat bilinmiyor — bu kanalda satış yok; fiyatı yazın.",
-    "bugunEslesti": "Tarife yüklenirken eşleşmemişti; bugünkü kataloğa göre eşleşti."
+    "bugunEslesti": "Tarife yüklenirken eşleşmemişti; bugünkü kataloğa göre eşleşti.",
+    "ozelTarih": "Özel tarih aralığı: {aralik}"
   },
   "KomisyonKapisi": {
     "baslik": "Komisyon yükleme",

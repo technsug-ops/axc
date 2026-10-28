@@ -109,6 +109,7 @@ export async function TarifeDurumu() {
      */
     prisma.komisyonTarifesi.findMany({
       select: {
+        id: true,
         channelAccountId: true,
         pencereBaslangic: true,
         pencereBitis: true,
@@ -129,8 +130,50 @@ export async function TarifeDurumu() {
     prisma.komisyonTarifesi.aggregate({ _min: { yuklendiAt: true } }),
   ]);
 
+  /**
+   * ⛔ ÜRÜN BAŞINA TARİHLİ KAYITLAR (28.10.2026). Hepsiburada/N11 teklif
+   * dosyasında her ürünün kendi aralığı var; kaydın penceresi yalnız hepsini
+   * KAPSAYAN aralıktır, haftalık bir yayın değildir. Bu kayıtlar boşluk
+   * hesabına GİRMEZ (girselerdi Hepsiburada haftalık dosya vermediği için her
+   * hafta sahte bir «tarifesiz gün» doğardı) ve satırları «şu an geçerli teklif
+   * sayısı + en yakın biten» diye yazılır — pencere tarihi değil.
+   * Ölçüt veriden: kalemlerinin kendi aralığı olan kayıt.
+   */
+  const teklifKayitlari = new Set(
+    (
+      await prisma.komisyonTarifeKalemi.groupBy({
+        by: ["tarifeId"],
+        where: { gecerlilikBitis: { not: null } },
+      })
+    ).map((g) => g.tarifeId),
+  );
+  const simdi = new Date();
+  const listedekiTeklifler = tarifeler.filter((x) => teklifKayitlari.has(x.id)).map((x) => x.id);
+  const teklifKalemleri =
+    listedekiTeklifler.length === 0
+      ? []
+      : await prisma.komisyonTarifeKalemi.findMany({
+          where: { tarifeId: { in: listedekiTeklifler } },
+          select: { tarifeId: true, barkod: true, gecerlilikBaslangic: true, gecerlilikBitis: true },
+        });
+  const teklifOzeti = new Map<string, { urun: number; gecerli: number; enYakinBiten: Date | null }>();
+  for (const id of listedekiTeklifler) {
+    const k = teklifKalemleri.filter((x) => x.tarifeId === id);
+    const gecerliBarkodlar = new Set<string>();
+    let enYakin: Date | null = null;
+    for (const x of k) {
+      const b = x.gecerlilikBaslangic;
+      const e = x.gecerlilikBitis;
+      if (b !== null && e !== null && b <= simdi && simdi <= e) {
+        gecerliBarkodlar.add(x.barkod);
+        if (enYakin === null || e < enYakin) enYakin = e;
+      }
+    }
+    teklifOzeti.set(id, { urun: new Set(k.map((x) => x.barkod)).size, gecerli: gecerliBarkodlar.size, enYakinBiten: enYakin });
+  }
+
   const bosluklar = bosluklariBul(
-    tumPencereler.map((p) => ({
+    tumPencereler.filter((p) => !teklifKayitlari.has(p.id)).map((p) => ({
       hesapId: p.channelAccountId,
       hesapAdi: `${p.channelAccount?.channel.name ?? "—"} — ${p.channelAccount?.name ?? "—"}`,
       baslangic: p.pencereBaslangic,
@@ -208,6 +251,9 @@ export async function TarifeDurumu() {
             kesintisiz olduğu yazar — yoksa "kontrol edildi mi, edilmedi mi"
             ayırt edilemezdi.
           */}
+          {teklifKayitlari.size > 0 ? (
+            <p className="text-muted-foreground text-xs">{t("teklifNotu")}</p>
+          ) : null}
           {tarifeler.length === 0 ? null : bosluklar.length === 0 ? (
             <p className="text-muted-foreground text-sm">
               {t("boslukYok")}
@@ -241,7 +287,9 @@ export async function TarifeDurumu() {
             <p className="text-muted-foreground text-sm">{t("kapsamYok")}</p>
           ) : (
             tarifeler.map((x, sira) => {
-              const bitis = gunDegeri(isTakvimGunu(x.pencereBitis));
+              const teklif = teklifOzeti.get(x.id);
+              /** Teklif kaydında «kalan gün» EN YAKIN BİTEN teklife göre — kaydın geniş penceresine göre değil. */
+              const bitis = gunDegeri(isTakvimGunu(teklif?.enYakinBiten ?? x.pencereBitis));
               /** ⚠ BİTİŞ GÜNÜ DAHİL — `21–25.08` ise 25.08 hâlâ kapsanıyor. */
               const kalan = Math.round(
                 (bitis.getTime() - bugun.getTime()) / gun,
@@ -263,14 +311,25 @@ export async function TarifeDurumu() {
                   {/* K330-④ — pencere satırı kutu içinde (düz metin satırları «dağınık» görünüyordu). */}
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-2 text-sm">
                     <span className="tabular-nums">
-                      {t("kapsamSatir", {
-                        kanal: x.channelAccount?.channel.name ?? "—",
-                        baslangic: x.pencereBaslangic
-                          .toISOString()
-                          .slice(0, 10),
-                        bitis: x.pencereBitis.toISOString().slice(0, 10),
-                        kalem: x._count.kalemler,
-                      })}
+                      {teklif
+                        ? t("kapsamSatirTeklif", {
+                            kanal: x.channelAccount?.channel.name ?? "—",
+                            urun: teklif.urun,
+                            gecerli: teklif.gecerli,
+                          })
+                        : t("kapsamSatir", {
+                            kanal: x.channelAccount?.channel.name ?? "—",
+                            baslangic: x.pencereBaslangic
+                              .toISOString()
+                              .slice(0, 10),
+                            bitis: x.pencereBitis.toISOString().slice(0, 10),
+                            kalem: x._count.kalemler,
+                          })}
+                      {teklif?.enYakinBiten ? (
+                        <span className="text-muted-foreground block text-xs">
+                          {t("teklifEnYakinBiten", { tarih: damga(teklif.enYakinBiten) })}
+                        </span>
+                      ) : null}
                     </span>
                     {/*
                       ⚠ RAKAM KAYNAĞINA GÖTÜRÜR (İlke #16). "152 kalem" düz
@@ -292,7 +351,9 @@ export async function TarifeDurumu() {
                       (Sınıf adı burada YAZILMIYOR: taramanın kendi deseni
                       yorumun içinde de eşleşir ve yalancı kırmızı üretir.)
                     */}
-                    {kalan < 0 ? (
+                    {teklif && teklif.gecerli === 0 ? (
+                      <DurumRozeti durum="notr">{t("teklifGecerliYok")}</DurumRozeti>
+                    ) : kalan < 0 ? (
                       <DurumRozeti durum="notr">{t("bitti")}</DurumRozeti>
                     ) : kalan === 0 ? (
                       <DurumRozeti durum="uyari">{t("sonGun")}</DurumRozeti>

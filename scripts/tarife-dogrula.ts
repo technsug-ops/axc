@@ -1,5 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
-import { tarifeDizinleriKur, tarifeKodunuCoz, varyantKalemleriniSec } from "../src/lib/komisyon/tarife-eslesme";
+import { tarifeAdayi, tarifeDizinleriKur, tarifeKodunuCoz, varyantKalemleriniSec } from "../src/lib/komisyon/tarife-eslesme";
 
 import {
   DILIMLI_TARIFE_OKUYUCUSU_OLAN,
@@ -1439,6 +1439,99 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
     kontrol("  ...ve pencere kuruldu", iki.pencere !== null);
   }
 
+  /*
+   * URUN BASINA TARIHLI TEKLIF (28.10.2026). Hepsiburada "Tekliflerim" 14 urun, her
+   * birinin kendi araligi (VTech 26 Ekim-13 Kasim, Fissler 26 Ekim-1 Kasim, Soundcore
+   * 2-31 Ekim). Eski "en yaygin aralik" 14'un 11'ini pencere disi birakip 13 Kasim'a
+   * kadar suren teklifi 31 Ekim'de kesiyordu.
+   */
+  {
+    const t = (iso: string) => new Date(iso);
+    const vtB = t("2026-10-26T09:00:00Z"), vtE = t("2026-11-13T20:58:00Z");
+    const fsB = t("2026-10-26T07:00:00Z"), fsE = t("2026-11-01T20:59:00Z");
+    const skB = t("2026-10-02T10:58:00Z"), skE = t("2026-10-31T20:59:00Z");
+    const o = teklifTarifesiOku(
+      teklifTarifesiTani([
+        {
+          sheet: "Teklifler",
+          data: [
+            ["Ürün Adı", "SKU", "Başlangıç", "Bitiş", "Mevcut Fiyat", "Mevcut Komisyon", "Teklif 1", null, "Teklif Kodu"],
+            [null, null, null, null, null, null, "Üst Fiyat", "Komisyon", null],
+            /* SIRA BILEREK: en gec biten (VTech) ILK satir degil, en erken baslayan
+               (Soundcore) da degil — "ilk satiri al" bozulmasi gorunsun. */
+            ["Fissler", "F1", fsB, fsE, 12000, "18 %", 11799, "5 %", 2],
+            ["VTech", "V1", vtB, vtE, 1400, "18 %", 1353, "10 %", 1],
+            ["Soundcore", "S1", skB, skE, 1100, "18 %", 1077, "4 %", 3],
+            ["Tarihsiz", "T1", null, null, 500, "18 %", 450, "9 %", 4],
+            /* Bitisi baslangicindan ONCE: bozuk aralik, tarihsiz sayilir. */
+            ["Bozuk", "B1", vtE, vtB, 500, "18 %", 450, "9 %", 5],
+          ] as unknown[][],
+        },
+      ]),
+    );
+    const g = (kod: string) => o.satirlar.find((s) => s.barkod === kod)?.gecerlilik ?? null;
+    /* Hucre = dosyanin DUVAR SAATI (Istanbul, UTC+3, yaz saati yok) -> gercek an 3 saat ONCE. */
+    const an = (duvar: Date) => duvar.getTime() - 3 * 3_600_000;
+    kontrol("teklif: her satir KENDI araligini tasir (VTech 13 Kasim'a kadar)",
+      g("V1")?.baslangic.getTime() === an(vtB) && g("V1")?.bitis.getTime() === an(vtE), g("V1"));
+    kontrol("  ...Fissler ve Soundcore da kendi araliginda",
+      g("F1")?.bitis.getTime() === an(fsE) && g("S1")?.baslangic.getTime() === an(skB));
+    kontrol("  ...kaydin penceresi hepsini KAPSAR (en erken bas. -> en gec bitis)",
+      o.pencere?.baslangic.getTime() === an(skB) && o.pencere?.bitis.getTime() === an(vtE), o.pencere);
+    /* Kullanici ekrani (HB paneli): VTech "26 Ekim 12:00 - 13 Kasim 23:58". Hucre bu duvar
+       saatini tasir; okuyucu Istanbul saatine cevirmeden 15:00 / 02:58 (3 saat kayik) uretiyordu. */
+    const hb = teklifTarifesiOku(
+      teklifTarifesiTani([
+        {
+          sheet: "Teklifler",
+          data: [
+            ["Ürün Adı", "SKU", "Başlangıç", "Bitiş", "Mevcut Fiyat", "Mevcut Komisyon", "Teklif 1", null, "Teklif Kodu"],
+            [null, null, null, null, null, null, "Üst Fiyat", "Komisyon", null],
+            ["VTech", "V1", t("2026-10-26T12:00:00Z"), t("2026-11-13T23:58:00Z"), 1400, "18 %", 1353, "10 %", 1],
+          ] as unknown[][],
+        },
+      ]),
+    ).satirlar[0]?.gecerlilik;
+    kontrol("  ...HB panelinin duvar saati Istanbul saatine cevrilir (26 Ekim 12:00 = 09:00Z, 13 Kasim 23:58 = 20:58Z)",
+      hb?.baslangic.toISOString() === "2026-10-26T09:00:00.000Z" && hb?.bitis.toISOString() === "2026-11-13T20:58:00.000Z", hb);
+    kontrol("  ...tarihi okunamayan ve BOZUK aralikli satir UYDURULMADAN gelir, sayilir (pencereDisi 2)",
+      g("T1") === null && g("B1") === null && o.pencereDisi === 2 && o.satirlar.length === 5, o.pencereDisi);
+    const plan = tarifePlaniKur(o, [], []);
+    kontrol("  ...plan araligi KALEME tasir (yazima ulasir)",
+      plan.kalemler.filter((k) => k.barkod === "V1").every((k) => k.gecerlilik?.bitis.getTime() === an(vtE)) &&
+        plan.kalemler.filter((k) => k.barkod === "T1").every((k) => k.gecerlilik === null));
+
+    const pen = { pencereBaslangic: skB, pencereBitis: vtE };
+    const k = (b: Date | null, e: Date | null, oran: number) => ({ gecerlilikBaslangic: b, gecerlilikBitis: e, oran });
+    const kasim5 = t("2026-11-05T12:00:00Z");
+    const a1 = tarifeAdayi(pen, [k(vtB, vtE, 10)], kasim5);
+    kontrol("aday: 5 Kasim'da VTech teklifi GECERLI (eski hal 31 Ekim'de kesiyordu)", a1.kapsiyor && a1.kalemler.length === 1 && a1.bitis.getTime() === vtE.getTime());
+    const a2 = tarifeAdayi(pen, [k(skB, skE, 4)], kasim5);
+    kontrol("  ...5 Kasim'da Soundcore teklifi BITMIS: kapsamaz, bitis kendi bitisi (kaydin 13 Kasim'i DEGIL)",
+      !a2.kapsiyor && a2.bitis.getTime() === skE.getTime());
+    const haftalik = { pencereBaslangic: t("2026-10-21T05:00:00Z"), pencereBitis: t("2026-10-25T20:59:00Z") };
+    kontrol("  ...kendi araligi olmayan kalem (Trendyol/eski) kaydin penceresine bakar — eski davranis",
+      tarifeAdayi(haftalik, [k(null, null, 9)], t("2026-10-23T12:00:00Z")).kapsiyor &&
+        !tarifeAdayi(haftalik, [k(null, null, 9)], kasim5).kapsiyor &&
+        tarifeAdayi(haftalik, [k(null, null, 9)], kasim5).bitis.getTime() === haftalik.pencereBitis.getTime());
+    kontrol("  ...aralik ucu DAHIL (bitis aninda hala gecerli)", tarifeAdayi(pen, [k(vtB, vtE, 10)], vtE).kapsiyor);
+
+    const kv = yorumsuzOku("src/lib/fiyatlama/kart-verisi.ts");
+    const zemin = kv.slice(kv.indexOf("export async function simulasyonZeminleri("), kv.indexOf("export async function varyantKdvOrani("));
+    kontrol("fiyat denemesi: BUGUNU kapsayan aday once, yoksa en yeni + beyan",
+      /const aday = tarifeAdayi\(p, kalemler, an\);\s*if \(aday\.kapsiyor\) \{\s*tarife = \{ pencereBitis: aday\.bitis, kalemler: aday\.kalemler \};\s*break;/.test(zemin) &&
+        /yedek \?\?= \{ pencereBitis: aday\.bitis, kalemler: aday\.kalemler \};/.test(zemin) && /tarife \?\?= yedek;/.test(zemin));
+    const st = kv.slice(kv.indexOf("export async function satisTarihiTarifesi("));
+    kontrol("satis tarihi orani: kalemin kendi araligi SATIS GUNUNE gore",
+      /const secim = tarifeAdayi\(aday, hepsi, satisTarihi\);\s*if \(secim\.kapsiyor && secim\.kalemler\.length > 0\) \{/.test(st));
+    const yaz = yorumsuzOku("src/lib/komisyon/tarife-yaz.ts");
+    kontrol("yazim araligi kaleme YAZAR",
+      yaz.includes("gecerlilikBaslangic: k.gecerlilik?.baslangic ?? null,") && yaz.includes("gecerlilikBitis: k.gecerlilik?.bitis ?? null,"));
+    const durum = yorumsuzOku("src/app/ayarlar/tarife/durum.tsx");
+    kontrol("kapsam boslugu: urun basina tarihli kayit hesaba GIRMEZ (sahte tarifesiz gun yok)",
+      /tumPencereler\.filter\(\(p\) => !teklifKayitlari\.has\(p\.id\)\)\.map\(/.test(durum));
+  }
+
   kontrol("guncel komisyon yoksa tepe dilim KURULMAZ (uydurulmaz)",
     dilimleriKur([{ ust: 100, alt: null, oran: 5 }], null).length === 1);
   kontrol("  ...varsa tepe dilim eklenir",
@@ -1680,8 +1773,10 @@ console.log("");
     kart.includes("kalemler: { some: { OR: [{ variantId }, { variantId: null }] } },") &&
       kart.includes("await varyantinTarifeKalemleri(p.id, e.channelAccountId, variantId, dizinOnbellegi)") &&
       !kart.includes("kalemler: { some: { variantId } },"));
+  /* 28.10.2026: kapsayan kayitlar tek tek deneniyor (urun basina tarihli teklif) — cagri
+     aday basina; olcut ayni: oran ORTAK kuraldan, ciplak variantId suzgeci YOK. */
   kontrol("  ...satis kaydinin orani da ortak kuraldan",
-    kart.includes("varyantinTarifeKalemleri(tarife.id, channelAccountId, variantId),") &&
+    kart.includes("const hepsi = await varyantinTarifeKalemleri(aday.id, channelAccountId, variantId);") &&
       !kart.includes("where: { tarifeId: tarife.id, variantId },"));
 
   const aynaK = yorumsuzOku("src/app/ayarlar/tarife/[id]/ayna.tsx");

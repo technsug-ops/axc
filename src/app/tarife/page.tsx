@@ -93,6 +93,8 @@ export default async function TarifeHesaplamaSayfasi({
       ustLimit: true,
       oran: true,
       variantId: true,
+      gecerlilikBaslangic: true,
+      gecerlilikBitis: true,
     },
     orderBy: [{ barkod: "asc" }, { dilimSirasi: "asc" }],
   });
@@ -114,6 +116,10 @@ export default async function TarifeHesaplamaSayfasi({
         urunAdi: k.urunAdi,
         katalogda: k.variantId !== null,
         bugunEslesti: false,
+        ozelTarih:
+          k.gecerlilikBaslangic && k.gecerlilikBitis
+            ? `${bicim.tarihSaat(k.gecerlilikBaslangic)} – ${bicim.tarihSaat(k.gecerlilikBitis)}`
+            : null,
         dilimler: [dilim],
       });
     }

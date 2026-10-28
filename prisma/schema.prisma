@@ -3708,6 +3708,16 @@ model KomisyonTarifeKalemi {
   /// aynı birim.
   oran Decimal @db.Decimal(5, 2)
 
+  /// ÜRÜNÜN KENDİ GEÇERLİLİK ARALIĞI (28.10.2026). Hepsiburada teklifleri
+  /// artık haftalık değil, ÜRÜN BAŞINA tarihli (kullanıcının panel ekranı:
+  /// VTech 26 Ekim–13 Kasım · Fissler 26 Ekim–1 Kasım · Soundcore 2–31 Ekim).
+  /// Tek pencere bunları taşıyamıyordu: «en yaygın aralık» seçilip 13 Kasım'a
+  /// kadar süren teklif 31 Ekim'de kesiliyordu.
+  /// NULL = kalem tarifenin penceresiyle geçerli (Trendyol ve eski yüklemeler).
+  /// Dolu = okuyucular (fiyat denemesi · satış tarihi oranı) BU aralığa bakar.
+  gecerlilikBaslangic DateTime?
+  gecerlilikBitis     DateTime?
+
   createdAt DateTime @default(now())
 
   /// Mükerrer satır tekilleşir — ölçüldü: dosyada 1 barkod iki kez, iki

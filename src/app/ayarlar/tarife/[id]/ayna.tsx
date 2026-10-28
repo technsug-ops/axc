@@ -45,6 +45,11 @@ export type AynaSatiri = {
    * hiçbir şey yazılmadan). Ekran bunu söyler — eşleşmenin kaynağı görünür kalsın.
    */
   bugunEslesti: boolean;
+  /**
+   * Ürünün kendi geçerlilik aralığı, sunucuda biçimlenmiş (28.10.2026 —
+   * Hepsiburada teklifleri ürün başına tarihli). `null` = kaydın penceresi.
+   */
+  ozelTarih: string | null;
   dilimler: AynaDilimi[];
 };
 
@@ -121,6 +126,9 @@ export function Ayna({
                 {satir.urunAdi ?? satir.kod}
               </CardTitle>
               <p className="text-muted-foreground text-sm">{satir.kod}</p>
+              {satir.ozelTarih ? (
+                <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("ozelTarih", { aralik: satir.ozelTarih })}</p>
+              ) : null}
               {satir.bugunEslesti ? (
                 <p className={`text-xs ${DURUM_YAZISI.bilgi}`}>{t("bugunEslesti")}</p>
               ) : null}

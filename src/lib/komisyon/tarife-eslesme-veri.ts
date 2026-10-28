@@ -37,7 +37,7 @@ export async function varyantinTarifeKalemleri(
   const adaylar = await prisma.komisyonTarifeKalemi.findMany({
     where: { tarifeId, OR: [{ variantId }, { variantId: null }] },
     orderBy: { dilimSirasi: "asc" },
-    select: { barkod: true, variantId: true, dilimSirasi: true, altLimit: true, ustLimit: true, oran: true },
+    select: { barkod: true, variantId: true, dilimSirasi: true, altLimit: true, ustLimit: true, oran: true, gecerlilikBaslangic: true, gecerlilikBitis: true },
   });
   const bagsizVar = adaylar.some((k) => k.variantId === null) && !adaylar.some((k) => k.variantId === variantId);
   let dizin: TarifeDizinleri | null = null;

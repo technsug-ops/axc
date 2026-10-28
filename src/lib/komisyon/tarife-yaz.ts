@@ -344,6 +344,8 @@ export async function tarifeYaz(girdi: {
         altLimit: k.altLimit === null ? null : String(k.altLimit),
         ustLimit: k.ustLimit === null ? null : String(k.ustLimit),
         oran: String(k.oran),
+        gecerlilikBaslangic: k.gecerlilik?.baslangic ?? null,
+        gecerlilikBitis: k.gecerlilik?.bitis ?? null,
       })),
     });
 

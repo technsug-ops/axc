@@ -4569,6 +4569,10 @@
     "kapsamBaslik": "",
     "kapsamYok": "",
     "kapsamSatir": "",
+    "kapsamSatirTeklif": "",
+    "teklifEnYakinBiten": "",
+    "teklifGecerliYok": "",
+    "teklifNotu": "",
     "kalanGun": "",
     "sonGun": "",
     "bitti": "",
@@ -4651,7 +4655,8 @@
     "oneri": "",
     "oneriEnIyi": "",
     "guncelYok": "",
-    "bugunEslesti": ""
+    "bugunEslesti": "",
+    "ozelTarih": ""
   },
   "KomisyonKapisi": {
     "baslik": "",
