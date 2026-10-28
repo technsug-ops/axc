@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 import { BUYBOX_KANALLARI, buyboxOzeti, type BuyboxKanali } from "./buybox";
-import { olcumAlinsinMi, degisimler, rakipliOzet, type KayitDurumu, type OlcumNoktasi } from "./buybox-istatistik";
+import { olcumAlinsinMi, degisimler, rakipliOzet, savasSayilari, type KayitDurumu, type OlcumNoktasi } from "./buybox-istatistik";
 import { buyboxDurumlari, buyboxUrunleri } from "./buybox-verisi";
 
 /**
@@ -113,6 +113,42 @@ export async function ilkOlcumAni(kanal: BuyboxKanali): Promise<Date | null> {
     select: { olculduAt: true },
   });
   return ilk?.olculduAt ?? null;
+}
+
+export type PanelKanalOzeti = {
+  kanal: BuyboxKanali;
+  /** Son saatlik ölçüm; hiç ölçülmediyse `null` (rakam UYDURULMAZ). */
+  son: { olculduAt: Date; incelenen: number; birinci: number; kaybedilen: number; gorunmuyor: number } | null;
+  /** `[bas, simdi)` aralığındaki el değiştirmeler (`savasSayilari`). */
+  alinan: number;
+  kaybedilen: number;
+};
+
+/**
+ * PANEL «BUYBOX SAVAŞLARI» (28.10.2026) — kanala SORU SORMAZ, saatlik
+ * ölçümden okur: panel her açılışta TY/HB'ye gitseydi yavaşlardı. Açılan
+ * Buybox ekranı CANLI sorgudur; kutu son ölçüm saatini yazar ki iki rakam
+ * arasındaki fark (en çok bir saat) okunabilsin.
+ */
+export async function panelBuyboxOzeti(bas: Date): Promise<PanelKanalOzeti[]> {
+  return Promise.all(
+    BUYBOX_KANALLARI.map(async (kanal) => {
+      const hesap = { channel: { name: KANAL_ADI[kanal] }, satisIcin: true, isActive: true };
+      const [son, kayitlar] = await Promise.all([
+        prisma.buyboxOlcumu.findFirst({
+          where: { channelAccount: hesap },
+          orderBy: { olculduAt: "desc" },
+          select: { olculduAt: true, incelenen: true, birinci: true, kaybedilen: true, gorunmuyor: true },
+        }),
+        prisma.buyboxDegisimi.findMany({
+          where: { channelAccount: hesap, olculduAt: { gte: bas }, oncekiDurum: { not: null } },
+          select: { oncekiDurum: true, yeniDurum: true },
+        }),
+      ]);
+      const savas = savasSayilari(kayitlar.map((k) => ({ onceki: k.oncekiDurum, yeni: k.yeniDurum })));
+      return { kanal, son, alinan: savas.alinan, kaybedilen: savas.kaybedilen };
+    }),
+  );
 }
 
 /** Zamanlayıcının bütün kanalları — biri düşerse öteki yine koşar. */

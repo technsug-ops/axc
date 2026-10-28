@@ -16,6 +16,7 @@ import { bicimlendirici } from "@/lib/bicim";
 import {
   BUYBOX_KANALLARI,
   BUYBOX_LISTELERI,
+  BUYBOX_YOLU,
   buyboxAra,
   buyboxFarki,
   buyboxListesi,
@@ -64,7 +65,7 @@ export const dynamic = "force-dynamic";
 /** İki kanal × ~21 parti + TY fiyat listesi; ölçüldü 25.10: TY ~4 sn, HB ~1 sn. Pay bırakılır. */
 export const maxDuration = 60;
 
-const YOL = "/rapor/buybox";
+const YOL = BUYBOX_YOLU;
 
 export async function generateMetadata() {
   const t = await getTranslations("Buybox");

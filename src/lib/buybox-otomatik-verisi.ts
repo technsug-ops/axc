@@ -63,6 +63,25 @@ export type OtomatikGecmis = {
   kayitlar: OtomatikKayit[];
 };
 
+/**
+ * PANEL — `[bas, …)` aralığında kanala GERÇEKTEN giden otomatik fiyat sayısı
+ * (kanal başına). Reddedilen gönderim sayılmaz: «değişiklik» denen şey kanalın
+ * kabul ettiğidir. Çözülemeyen iz hiçbir kanala yazılmaz (uydurulmaz).
+ */
+export async function otomatikGonderimSayilari(bas: Date): Promise<Record<BuyboxKanali, number>> {
+  const izler = await prisma.auditLog.findMany({ where: { action: FIYAT_IZI, createdAt: { gte: bas } }, select: { detail: true } });
+  const sayac: Record<BuyboxKanali, number> = { TY: 0, HB: 0 };
+  for (const iz of izler) {
+    try {
+      const d = JSON.parse(iz.detail ?? "{}") as { kanal?: unknown; sonuc?: unknown };
+      if ((d.kanal === "TY" || d.kanal === "HB") && d.sonuc === "GONDERILDI") sayac[d.kanal] += 1;
+    } catch {
+      /* Bozuk iz sayıya girmez; «Son otomatik değişiklikler» listesinde satır olarak görünür. */
+    }
+  }
+  return sayac;
+}
+
 const sayi = (x: unknown): number | null => (typeof x === "number" && Number.isFinite(x) ? x : null);
 
 export async function otomatikGecmisi(kanal: BuyboxKanali, genelMod: KuralModu, simdi: Date): Promise<OtomatikGecmis> {

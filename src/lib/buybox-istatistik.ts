@@ -85,6 +85,25 @@ export function kazanmaOrani(rakipliBirinci: number, rakipli: number): number | 
   return rakipli > 0 ? (rakipliBirinci / rakipli) * 100 : null;
 }
 
+/**
+ * PANEL «BUYBOX SAVAŞLARI» — bir aralıktaki değişim KAYITLARINDAN alınan ve
+ * kaybedilen Buybox sayısı (kullanıcı isteği 28.10.2026). Olay sayılır, ürün
+ * değil: gün içinde iki kez el değiştiren ürün iki kez sayılır.
+ * · Başlangıç kaydı (`onceki: null`) savaş DEĞİLDİR — ürün ilk kez görüldü.
+ * · Alındı: önceki Buybox bizde değildi, yenisi bizde.
+ * · Kaybedildi: önceki bizdeydi, yenisi değil (görünmez olması da kayıptır).
+ */
+export function savasSayilari(kayitlar: readonly { onceki: KayitDurumu | null; yeni: KayitDurumu }[]): { alinan: number; kaybedilen: number } {
+  let alinan = 0;
+  let kaybedilen = 0;
+  for (const k of kayitlar) {
+    if (k.onceki === null) continue;
+    if (k.onceki !== "BIRINCI" && k.yeni === "BIRINCI") alinan += 1;
+    else if (k.onceki === "BIRINCI" && k.yeni !== "BIRINCI") kaybedilen += 1;
+  }
+  return { alinan, kaybedilen };
+}
+
 export type OlcumNoktasi = { olculduAt: Date; birinci: number; incelenen: number; rakipli: number; rakipliBirinci: number };
 
 export type SeriNoktasi = {

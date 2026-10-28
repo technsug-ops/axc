@@ -114,6 +114,7 @@ import {
 import { acikPartilerIstekte } from "@/lib/panel/acik-partiler-istekte";
 import { GorevKutusu } from "./gorev-kutusu";
 import { HizliIslemler } from "./hizli-islemler";
+import { BuyboxSavaslari } from "./buybox-savaslari";
 import { OzetKutusu } from "./ozet-kutusu";
 import { VitrinSerhi } from "./vitrin-serhi";
 import {
@@ -347,6 +348,9 @@ export default async function AnaSayfa({
   // `satis.kar.gor` NET KAVRAMINI yönetir — nerede görünürse orada.
   // Bu yeni bir alan-izni değil, aynı iznin aynı kavrama uygulanması.
   const karGorunur = await izinVarMi("satis.kar.gor");
+  // «Buybox savaşları» kutusu — açtığı ekranın kapısıyla AYNI izin (`/rapor/buybox`:
+  // `rapor.gor`); kapısı kapalı ekrana götüren rakam gösterilmez.
+  const buyboxGorunur = await izinVarMi("rapor.gor");
 
   const parametreler = await searchParams;
   const t = await getTranslations("Panel");
@@ -3005,6 +3009,9 @@ export default async function AnaSayfa({
                     taşıyor; ızgarada o, kutuları içeriği kadar bıraktı ve tek satırlık
                     «Mal kabul» iki satırlık komşularından KISA kaldı (kullanıcı 25.09).
                   */}
+                  {/* Huni + «Buybox savaşları» (28.10.2026): geniş ekranda yan yana,
+                      kutu huninin sağındaki boşlukta; telefonda alt alta. */}
+                  <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
                   <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 text-xs max-sm:grid max-sm:grid-cols-4 max-sm:items-stretch max-sm:gap-2">
                     <span className="font-medium max-sm:hidden">{t("huniEtiketi")}</span>
                     <Baglanti
@@ -3138,6 +3145,12 @@ export default async function AnaSayfa({
                         </span>
                       ) : null}
                     </span>
+                  </div>
+                  {blokSirasi === 0 && buyboxGorunur ? (
+                    <Suspense fallback={<Skeleton className="h-32 w-full lg:w-96" />}>
+                      <BuyboxSavaslari />
+                    </Suspense>
+                  ) : null}
                   </div>
 
                   {/* --- kârı hesaplanamayanlar: SIFIR SAYILMAZ, söylenir ---

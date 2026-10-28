@@ -280,6 +280,12 @@ export function esitAmaKayip(s: Pick<BuyboxSatiri, "durum" | "bizimFiyat" | "buy
 export const BUYBOX_LISTELERI = ["kaybedilen", "birinci", "gorunmuyor", "hepsi"] as const;
 export type BuyboxListesi = (typeof BUYBOX_LISTELERI)[number];
 
+/** Buybox ekranının adresi — dışarıdan (panel) bağlanan her rakam buradan (İlke #16). */
+export const BUYBOX_YOLU = "/rapor/buybox";
+export function buyboxAdresi(kanal: BuyboxKanali, liste: BuyboxListesi): string {
+  return `${BUYBOX_YOLU}?kanal=${kanal}&liste=${liste}`;
+}
+
 /**
  * Liste süzgeci. «Kaybedilen» sırası: Buybox'a EN YAKIN olan önce (küçük fark
  * yüzdesi — en az fiyat hareketiyle geri alınabilecek); farkı bilinmeyen sona.

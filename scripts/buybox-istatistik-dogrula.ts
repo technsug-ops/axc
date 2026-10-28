@@ -19,6 +19,7 @@ import {
   olcumAlinsinMi,
   olculmeyenler,
   rakipliOzet,
+  savasSayilari,
   saatlikSeri,
   type KayitDurumu,
   type OlcumNoktasi,
@@ -26,7 +27,7 @@ import {
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -191,6 +192,42 @@ console.log("\n⑦ ekran — grafik · aralık · ölçülmedi");
   kontrol("ekran notu artık «hiçbir şey kaydedilmez» DEMİYOR", !/hiçbir şey kaydedilmez/.test(tr.Buybox?.notu ?? ""));
 }
 kosanBolumler.push("ekran");
+
+// ── ⑧ PANEL «BUYBOX SAVAŞLARI» (28.10.2026) ─────────────────────────────
+console.log("\n⑧ panel — Buybox savaşları kutusu");
+{
+  const k = (onceki: KayitDurumu | null, yeni: KayitDurumu) => ({ onceki, yeni });
+  const sv = savasSayilari([
+    k(null, "BIRINCI"), // başlangıç kaydı — savaş DEĞİL
+    k("KAYBEDILDI", "BIRINCI"), // alındı
+    k("GORUNMUYOR", "BIRINCI"), // alındı
+    k("BIRINCI", "KAYBEDILDI"), // kaybedildi
+    k("BIRINCI", "GORUNMUYOR"), // görünmez olmak da kayıp
+    k("KAYBEDILDI", "GORUNMUYOR"), // bizde değildi, hâlâ değil — hiçbiri
+  ]);
+  kontrol("alınan 2 (başlangıç kaydı sayılmaz)", sv.alinan === 2, sv);
+  kontrol("kaybedilen 2 (görünmez olmak dahil; bizde olmayanın değişimi sayılmaz)", sv.kaybedilen === 2, sv);
+  kontrol("boş liste 0 / 0", JSON.stringify(savasSayilari([])) === JSON.stringify({ alinan: 0, kaybedilen: 0 }));
+
+  const v = yorumsuz(kaynakOku("src/lib/buybox-istatistik-verisi.ts"));
+  const oz = blok(v, "export async function panelBuyboxOzeti(", 1500);
+  kontrol("panel özeti kanala soru sormaz (canlı sorgu yok)", oz.length > 0 && !/buyboxDurumlari\(|buyboxUrunleri\(/.test(oz));
+  kontrol("bugün sayıları saf gövdeden (savasSayilari)", /const savas = savasSayilari\(kayitlar\.map\(/.test(oz));
+  kontrol("son ölçüm EN YENİ satır", /orderBy: \{ olculduAt: "desc" \}/.test(oz));
+  const o = yorumsuz(kaynakOku("src/lib/buybox-otomatik-verisi.ts"));
+  const og = blok(o, "export async function otomatikGonderimSayilari(", 900);
+  kontrol("otomatik sayı yalnız kanalın KABUL ettiği gönderim", /d\.sonuc === "GONDERILDI"\) sayac\[d\.kanal\] \+= 1;/.test(og));
+  const kutu = yorumsuz(kaynakOku("src/app/buybox-savaslari.tsx"));
+  kontrol("rakamın adresi sahibinden (buyboxAdresi)", /href=\{buyboxAdresi\(kanal, liste\)\}/.test(kutu));
+  kontrol("sıfır rakam bağlantı olmaz", /return liste !== null && sayi > 0 \? \(/.test(kutu));
+  kontrol("hiç ölçülmemiş kanal rakam uydurmaz, söyler", /\{k\.son === null \? \(\s*<span[^>]*>\{t\("buyboxOlculmedi"\)\}/.test(kutu));
+  kontrol("son ölçüm anı ve tarih süzgecinden bağımsızlık yazılır", /t\("buyboxSonOlcum", \{ an: bicim\.tarihSaat\(sonOlcum\) \}\)/.test(kutu) && /t\("buyboxDonemNotu"\)/.test(kutu));
+  const p = yorumsuz(kaynakOku("src/app/page.tsx"));
+  kontrol("panelde kutu, açtığı ekranın izniyle", /const buyboxGorunur = await izinVarMi\("rapor\.gor"\);/.test(p) && /\{blokSirasi === 0 && buyboxGorunur \? \(\s*<Suspense fallback=\{<Skeleton[^}]*\}>\s*<BuyboxSavaslari \/>/.test(p));
+  const sayfa = yorumsuz(kaynakOku("src/app/rapor/buybox/page.tsx"));
+  kontrol("Buybox ekranının yolu AYNI sabitten", /const YOL = BUYBOX_YOLU;/.test(sayfa));
+}
+kosanBolumler.push("panel");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {
