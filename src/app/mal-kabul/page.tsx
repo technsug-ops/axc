@@ -268,7 +268,9 @@ export default async function MalKabulSayfasi({
         SÜZGECİN tamamının toplamıdır: bu ekran sayfalamıyor, yani görünen
         neyse toplam odur.
       */}
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Telefonda üçlü ızgara — içerik genişliğinde dizilince alt satıra
+          düşen kutu yanında boş şerit bırakıyordu (29.10.2026, İlke #12). */}
+      <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
         <IstatistikKutusu etiket={t("urunSayisi")} cocuk={satirlar.length} />
         <IstatistikKutusu etiket={t("gelenAdet")} cocuk={toplamAdet} bas />
         {/*
@@ -284,6 +286,7 @@ export default async function MalKabulSayfasi({
           <IstatistikKutusu
             etiket={yalnizEksik ? t("kodEksigiAcik") : t("kodEksigi")}
             cocuk={eksikliOlan}
+            className="h-full"
           />
         </Baglanti>
       </div>

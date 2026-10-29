@@ -96,12 +96,21 @@ export async function ListeToplami({
    */
   if (toplamlar.length === 0 && !haric) return null;
 
+  /**
+   * TELEFONDA İKİLİ IZGARA (kullanıcı isteği 29.10.2026, İlke #12).
+   *
+   * ⚠ NEDEN: kutular içeriği kadar genişliyordu; altında uzun not yazan
+   * kutu (iade sonrası NET-2) yanına komşu almıyor, sağında boş şerit
+   * kalıyordu. Telefonda her kutu yarım genişlikte, not alt satıra sarar;
+   * tek kalan son kutu satırın tamamını alır, boş yarım bırakmaz. Geniş
+   * ekranda kutular yine içerik genişliğinde yan yana dizilir.
+   */
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap [&>:last-child:nth-child(odd)]:col-span-2">
       {/* ÖNCE gelen kutular — ana kutunun SOLUNDA. */}
       {ekKutulari(oncekiler, bicim)}
 
-      <div className="bg-muted/40 rounded-lg border px-3 py-2">
+      <div className="bg-muted/40 min-w-0 rounded-lg border px-3 py-2">
         <div className="text-muted-foreground text-xs">{baslik}</div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           {toplamlar.length === 0 ? (
@@ -129,7 +138,7 @@ export async function ListeToplami({
 
       {/* Hariç tutulan küme — sessiz düşme yok. */}
       {haric && haric.sayi > 0 ? (
-        <div className="text-muted-foreground rounded-lg border border-dashed px-3 py-2">
+        <div className="text-muted-foreground min-w-0 rounded-lg border border-dashed px-3 py-2">
           <div className="text-xs">{haric.etiket}</div>
           <div className="flex flex-wrap items-baseline gap-x-3">
             {haric.toplamlar.map((t) => (
@@ -162,7 +171,7 @@ function ekKutulari(kutular: EkKutu[] | undefined, bicim: Bicimlendirici) {
         (e.deger !== undefined || (e.toplamlar ?? []).length > 0),
     )
     .map((e) => (
-      <div key={e.etiket} className="bg-muted/40 rounded-lg border px-3 py-2">
+      <div key={e.etiket} className="bg-muted/40 min-w-0 rounded-lg border px-3 py-2">
         <div className="text-muted-foreground text-xs">{e.etiket}</div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           {e.deger !== undefined ? (
