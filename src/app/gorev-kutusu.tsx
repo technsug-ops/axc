@@ -162,54 +162,24 @@ function GorevCipi({
 /**
  * TELEFON KUTUSU (K270, kullanıcı 25.09.2026): etiket üstte, sayı büyük altta —
  * Trendyol «Aksiyonlar» kalıbı, onaylanan demo. Temizde ✓ ve soluk zemin;
- * sıfır kutu BAĞLANTI değil (İlke #2). İlerleme yalnız > 0 iken (K259-②).
+ * sıfır kutu BAĞLANTI değil (İlke #2).
  * ⚠ Masaüstü çipiyle AYNI veri, farklı şekil — `Gorev` tek gövde.
+ *
+ * ⛔ GENİŞ PAKETLENECEK KUTUSU KALKTI (29.10.2026, kullanıcı: «paketlendiği diğer
+ * kartlar gibi yap, o kadar büyük çıkmasına gerek yok»). Eski hâl: Paketlenecek
+ * iki sütun kaplıyor, ilerleme («N paketlendi») kutunun içinde/sağında ikinci
+ * hedef olarak duruyordu. Şimdi ilerleme KENDİ KUTUCUĞU (`PaketlendiKutucugu`),
+ * Paketlenecek ötekilerle aynı boy; altı kutu telefonda 3×2, masaüstünde 2×3.
  */
 function GorevKutucugu({
   gorev,
   etiket,
   temizMetni,
-  ilerlemeMetni,
-  genis,
-  ilerlemeAdresi,
 }: {
   gorev: Gorev;
   etiket: string;
   temizMetni: string;
-  ilerlemeMetni: string;
-  /** İlk kutu iki sütun: ilerleme metni sığsın, 3×2 ızgara tam dolsun. */
-  genis: boolean;
-  /**
-   * İlerleme rakamının kendi listesi (kullanıcı 24.08.2026: «15 paketlenen
-   * tıklayınca liste çıksa»). Verilirse ilerleme AYRI bağlantı olur — ana
-   * bağlantının KARDEŞİ, içinde değil (iç içe <a> yok).
-   */
-  ilerlemeAdresi?: string;
 }) {
-  /* İKİ HEDEFLİ KUTU (28.10.2026, panelde üç kutu): ana iş solda, ilerleme sağda. */
-  if (ilerlemeAdresi && !gorev.temizMi && gorev.ilerleme !== null && gorev.ilerleme > 0) {
-    return (
-      <span className={`bg-card flex h-[74px] rounded-xl border lg:h-auto lg:min-h-[74px] ${genis ? "col-span-2" : ""}`}>
-        <Link
-          href={gorev.adres}
-          className="text-foreground flex min-w-0 flex-1 flex-col justify-between rounded-l-xl p-2.5 no-underline transition-colors hover:bg-muted/50"
-        >
-          <span className="text-muted-foreground text-[11px] leading-tight">{etiket}</span>
-          <span className={genis ? "flex flex-1 items-center justify-center" : ""}>
-            <span className={`text-[22px] leading-none font-bold tabular-nums ${genis ? "lg:text-[34px]" : ""} ${DURUM_YAZISI.uyari}`}>{gorev.sayi}</span>
-          </span>
-        </Link>
-        <Link
-          href={ilerlemeAdresi}
-          className={`flex items-center rounded-r-xl border-l px-3 text-xs font-medium tabular-nums underline underline-offset-2 transition-colors hover:bg-muted/50 ${
-            gorev.ilerleme >= gorev.sayi ? DURUM_YAZISI.olumlu : "text-muted-foreground"
-          }`}
-        >
-          {ilerlemeMetni}
-        </Link>
-      </span>
-    );
-  }
   const icerik = (
     <>
       <span className="text-muted-foreground text-[11px] leading-tight">{etiket}</span>
@@ -219,26 +189,58 @@ function GorevKutucugu({
           {temizMetni}
         </span>
       ) : (
-        /* GENİŞ KUTUDA SAYI ORTADA (29.10.2026, kullanıcı: «paketlenecek butonundaki
-           sayı ortalı olsun») — kutu satır boyuna yayılınca sayı köşede kalıyordu. */
-        <span className={`flex gap-1.5 ${genis ? "flex-1 items-center justify-center" : "items-baseline"}`}>
-          <span className={`text-[22px] leading-none font-bold tabular-nums ${genis ? "lg:text-[34px]" : ""} ${DURUM_YAZISI.uyari}`}>
-            {gorev.sayi}
-          </span>
-          {gorev.ilerleme !== null && gorev.ilerleme > 0 ? (
-            <span className="text-muted-foreground text-[10px]">{ilerlemeMetni}</span>
-          ) : null}
+        <span className={`text-[22px] leading-none font-bold tabular-nums ${DURUM_YAZISI.uyari}`}>
+          {gorev.sayi}
         </span>
       )}
     </>
   );
-  const sinif = `flex h-[74px] flex-col justify-between rounded-xl border p-2.5 lg:h-auto lg:min-h-[74px] ${genis ? "col-span-2" : ""} ${
+  const sinif = `flex h-[74px] flex-col justify-between rounded-xl border p-2.5 lg:h-auto lg:min-h-[74px] ${
     gorev.temizMi ? "bg-muted/60" : "bg-card"
   }`;
   return gorev.temizMi ? (
     <span className={sinif}>{icerik}</span>
   ) : (
     <Link href={gorev.adres} className={`${sinif} text-foreground no-underline transition-colors hover:bg-muted/50`}>
+      {icerik}
+    </Link>
+  );
+}
+
+/**
+ * PAKETLENDİ KUTUCUĞU (29.10.2026, kullanıcı: «paketlenme yoksa 0 yazısı durur,
+ * paketlendikçe sayı gelir»). Bugün paketlenen sipariş sayısı.
+ * ⚠ «YALNIZ BEKLEYEN İŞ GİRER» kuralının bilinçli istisnası: bu yapılmış işin
+ * adedi, ama Paketlenecek'in İLERLEMESİDİR — onun yanında okunur (kullanıcı
+ * 24.08.2026: «15 paketlenen tıklayınca liste çıksa»).
+ * ⚠ SIFIR GİZLENMEZ, «0» yazar (açık sıfır) ama BAĞLANTI değil (İlke #2:
+ * açılacak liste yok). Paketlenecek kalmadıysa yeşil — iş bitti.
+ */
+function PaketlendiKutucugu({
+  sayi,
+  bekleyen,
+  etiket,
+  adres,
+}: {
+  sayi: number;
+  bekleyen: number;
+  etiket: string;
+  adres?: string;
+}) {
+  const renk = sayi === 0 ? "text-muted-foreground" : bekleyen === 0 ? DURUM_YAZISI.olumlu : "text-foreground";
+  const icerik = (
+    <>
+      <span className="text-muted-foreground text-[11px] leading-tight">{etiket}</span>
+      <span className={`text-[22px] leading-none font-bold tabular-nums ${renk}`}>{sayi}</span>
+    </>
+  );
+  const sinif = `flex h-[74px] flex-col justify-between rounded-xl border p-2.5 lg:h-auto lg:min-h-[74px] ${
+    sayi === 0 ? "bg-muted/60" : "bg-card"
+  }`;
+  return sayi === 0 || !adres ? (
+    <span className={sinif}>{icerik}</span>
+  ) : (
+    <Link href={adres} className={`${sinif} text-foreground no-underline transition-colors hover:bg-muted/50`}>
       {icerik}
     </Link>
   );
@@ -267,10 +269,10 @@ export async function GorevKutusu({
   const toplam = bekleyenToplam(gorevler);
 
   /**
-   * TELEFON — 3×2 EŞİT KUTU (K270). Paketlenecek İLK ve GENİŞ (iki sütun):
-   * ilerleme metni sığar ve beş görev 3×2 ızgarayı tam doldurur — boş hücre
-   * kalmaz (İlke #14: adsız satır yazılmaz). Toplam rozeti YOK (K259-②
-   * kararı, elma+armut); hepsi sıfırsa «Hepsi temiz».
+   * TELEFON — 3×2 EŞİT KUTU (K270). Paketlenecek İLK, hemen ardından Paketlendi
+   * (29.10.2026): altı kutu 3×2 ızgarayı tam doldurur — boş hücre kalmaz
+   * (İlke #14). Toplam rozeti YOK (K259-② kararı, elma+armut); hepsi sıfırsa
+   * «Hepsi temiz».
    */
   const oncelikli = gorevler.find((g) => g.anahtar === "kargoBekleyen");
   const mobilSira = oncelikli ? [oncelikli, ...gorevler.filter((g) => g !== oncelikli)] : gorevler;
@@ -281,15 +283,22 @@ export async function GorevKutusu({
         {toplam === 0 ? <DurumRozeti durum="olumlu">{t("hepsiTemiz")}</DurumRozeti> : null}
       </div>
       <div className="grid grid-cols-3 gap-2">
-        {mobilSira.map((g, i) => (
-          <GorevKutucugu
-            key={`m-${g.anahtar}`}
-            gorev={g}
-            etiket={t(`kisa.${g.anahtar}`)}
-            temizMetni={t("temiz")}
-            ilerlemeMetni={t("ilerleme", { sayi: g.ilerleme ?? 0 })}
-            genis={i === 0 && g.anahtar === "kargoBekleyen"}
-          />
+        {mobilSira.map((g) => (
+          <Fragment key={`m-${g.anahtar}`}>
+            <GorevKutucugu
+              gorev={g}
+              etiket={t(`kisa.${g.anahtar}`)}
+              temizMetni={t("temiz")}
+            />
+            {g.anahtar === "kargoBekleyen" && g.ilerleme !== null ? (
+              <PaketlendiKutucugu
+                sayi={g.ilerleme}
+                bekleyen={g.sayi}
+                etiket={t("paketlendiKutusu")}
+                adres={ilerlemeAdresleri?.[g.anahtar]}
+              />
+            ) : null}
+          </Fragment>
         ))}
       </div>
     </section>
@@ -298,8 +307,8 @@ export async function GorevKutusu({
   /**
    * PANELDE ÜÇ KUTUDAN BİRİ (28.10.2026, kullanıcı: «kendi içinde daha kaliteli bir
    * dizilim ve buton sistemi»). Geniş ekranda (lg) çip şeridi yerine telefonun
-   * kutucuk düzeni, iki sütun: Paketlenecek ilk ve geniş, kalan dört 2×2 — boş
-   * hücre yok. Aynı `GorevKutucugu`, aynı veri (İlke #10). md–lg arasında kutu tam
+   * kutucuk düzeni, iki sütun: Paketlenecek + Paketlendi ilk satır, kalan dört 2×2
+   * — altı kutu, boş hücre yok. Aynı `GorevKutucugu`, aynı veri (İlke #10). md–lg arasında kutu tam
    * genişlikte, orada şerit kalır.
    */
   const masaustuIzgara = gomulu ? (
@@ -310,16 +319,22 @@ export async function GorevKutusu({
         {toplam === 0 ? <DurumRozeti durum="olumlu">{t("hepsiTemiz")}</DurumRozeti> : null}
       </div>
       <div className="grid flex-1 auto-rows-fr grid-cols-2 gap-2">
-        {mobilSira.map((g, i) => (
-          <GorevKutucugu
-            key={`d-${g.anahtar}`}
-            gorev={g}
-            etiket={t(`kisa.${g.anahtar}`)}
-            temizMetni={t("temiz")}
-            ilerlemeMetni={t("ilerleme", { sayi: g.ilerleme ?? 0 })}
-            genis={i === 0 && g.anahtar === "kargoBekleyen"}
-            ilerlemeAdresi={ilerlemeAdresleri?.[g.anahtar]}
-          />
+        {mobilSira.map((g) => (
+          <Fragment key={`d-${g.anahtar}`}>
+            <GorevKutucugu
+              gorev={g}
+              etiket={t(`kisa.${g.anahtar}`)}
+              temizMetni={t("temiz")}
+            />
+            {g.anahtar === "kargoBekleyen" && g.ilerleme !== null ? (
+              <PaketlendiKutucugu
+                sayi={g.ilerleme}
+                bekleyen={g.sayi}
+                etiket={t("paketlendiKutusu")}
+                adres={ilerlemeAdresleri?.[g.anahtar]}
+              />
+            ) : null}
+          </Fragment>
         ))}
       </div>
     </section>

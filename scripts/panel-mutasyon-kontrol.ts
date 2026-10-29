@@ -820,9 +820,9 @@ const MUTASYONLAR: Mutasyon[] = [
     yon: "KALDIRAN",
     dosya: KUTU,
     bul:
-      "              etiket={t(`kisa.${g.anahtar}`)}",
+      "              etiket={t(`kisa.${g.anahtar}`)}\n              uzunEtiket={t(g.anahtar)}",
     koy:
-      "              etiket={t(g.anahtar)}",
+      "              etiket={t(g.anahtar)}\n              uzunEtiket={t(g.anahtar)}",
     bozdugu:
       "'Onay bekleyen siparis (API)' geri gelir — seridin karisikliginin ana sebebi",
   },

@@ -3662,6 +3662,7 @@
     "temiz": "temiz",
     "temizNotu": "Bekleyen iş yok. Satırlara yine de tıklayıp listeleri görebilirsiniz.",
     "ilerleme": "{sayi} paketlendi",
+    "paketlendiKutusu": "Paketlendi",
     "kargoBekleyen": "Kargoya verilmemiş sipariş",
     "onayBekleyen": "Onay bekleyen sipariş (API)",
     "iadeBildirimi": "Bekleyen iade bildirimi",
