@@ -195,7 +195,9 @@ function GorevKutucugu({
           className="text-foreground flex min-w-0 flex-1 flex-col justify-between rounded-l-xl p-2.5 no-underline transition-colors hover:bg-muted/50"
         >
           <span className="text-muted-foreground text-[11px] leading-tight">{etiket}</span>
-          <span className={`text-[22px] leading-none font-bold tabular-nums ${DURUM_YAZISI.uyari}`}>{gorev.sayi}</span>
+          <span className={genis ? "flex flex-1 items-center justify-center" : ""}>
+            <span className={`text-[22px] leading-none font-bold tabular-nums ${genis ? "lg:text-[34px]" : ""} ${DURUM_YAZISI.uyari}`}>{gorev.sayi}</span>
+          </span>
         </Link>
         <Link
           href={ilerlemeAdresi}
@@ -217,8 +219,10 @@ function GorevKutucugu({
           {temizMetni}
         </span>
       ) : (
-        <span className="flex items-baseline gap-1.5">
-          <span className={`text-[22px] leading-none font-bold tabular-nums ${DURUM_YAZISI.uyari}`}>
+        /* GENİŞ KUTUDA SAYI ORTADA (29.10.2026, kullanıcı: «paketlenecek butonundaki
+           sayı ortalı olsun») — kutu satır boyuna yayılınca sayı köşede kalıyordu. */
+        <span className={`flex gap-1.5 ${genis ? "flex-1 items-center justify-center" : "items-baseline"}`}>
+          <span className={`text-[22px] leading-none font-bold tabular-nums ${genis ? "lg:text-[34px]" : ""} ${DURUM_YAZISI.uyari}`}>
             {gorev.sayi}
           </span>
           {gorev.ilerleme !== null && gorev.ilerleme > 0 ? (
