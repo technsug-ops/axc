@@ -4,6 +4,7 @@ import { sayfaIzni } from "@/lib/yetki";
 import { PackageX, TriangleAlert } from "lucide-react";
 
 import { Baglanti } from "@/components/baglanti";
+import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,7 +52,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
             variant: {
               select: { sku: true, product: { select: { name: true } } },
             },
-            purchase: { select: { id: true, code: true } },
+            purchase: { select: { id: true, code: true, supplierOrderNo: true } },
           },
         },
         returnItem: {
@@ -78,7 +79,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
           select: { sku: true, product: { select: { name: true } } },
         },
         purchase: {
-          select: { code: true, supplierId: true, supplier: { select: { name: true } } },
+          select: { code: true, supplierOrderNo: true, supplierId: true, supplier: { select: { name: true } } },
         },
         compensations: { select: { quantity: true } },
       },
@@ -164,6 +165,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
         kaynak: "alim" as const,
         kalemId: k.id,
         baglam: k.purchase.code,
+        siparisNo: k.purchase.supplierOrderNo,
         tedarikci: k.purchase.supplier?.name ?? "—",
         onerilenKarsiTaraf: karsiTarafDegeri({ supplierId: k.purchase.supplierId }),
         urun: k.variant.product.name,
@@ -191,6 +193,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
         kaynak: "iade" as const,
         kalemId: i.id,
         baglam: i.return.sale.code ?? "—",
+        siparisNo: null,
         tedarikci: sonAlim?.purchase.supplier?.name ?? "—",
         onerilenKarsiTaraf: karsiTarafDegeri({ supplierId: sonAlim?.purchase.supplierId ?? null }),
         urun: i.variant.product.name,
@@ -236,7 +239,9 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
 
   /*
    * K289 · İlke #17: iki listede de ürün · SKU · alım/sipariş no · tedarikçide
-   * arar. «Açık alacak» özeti TÜM taleplerden — bir listenin toplamı değil,
+   * arar. «Sipariş no» = pazaryerinden aldığımız sipariş numarası
+   * (`supplierOrderNo`) — kullanıcı 30.10.2026: «pazaryerinden aldığımız sipariş
+   * numarası ile ürünü bulamıyoruz»; arama yalnız sistemin ALM kodunu tanıyordu. «Açık alacak» özeti TÜM taleplerden — bir listenin toplamı değil,
    * alacağın kendisi (aramayla değişseydi alacak küçülmüş gibi okunurdu).
    */
   const { q } = await searchParams;
@@ -244,12 +249,13 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
   const kucuk = (x: string) => x.toLocaleLowerCase("tr");
   const eslesir = (alanlar: (string | null | undefined)[]) =>
     !arama || alanlar.some((a) => kucuk(a ?? "").includes(kucuk(arama)));
-  const gorunenBekleyen = tumBekleyenler.filter((h) => eslesir([h.urun, h.sku, h.baglam, h.tedarikci]));
+  const gorunenBekleyen = tumBekleyenler.filter((h) => eslesir([h.urun, h.sku, h.baglam, h.siparisNo, h.tedarikci]));
   const gorunenTalep = talepler.filter((k) =>
     eslesir([
       talepUrunu(k),
       k.purchaseItem?.variant.sku ?? k.returnItem?.variant.sku,
       k.purchaseItem?.purchase.code ?? k.returnItem?.return.sale.code,
+      k.purchaseItem?.purchase.supplierOrderNo,
       k.supplier?.name,
     ]),
   );
@@ -320,6 +326,7 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
                   baglam={[
                     h.tedarikci,
                     h.baglam,
+                    h.siparisNo ? <KopyalanabilirKod key="siparis" deger={h.siparisNo} etiket={ortak("siparisNo")} /> : null,
                     h.kaynak === "iade" ? (
                       <Badge variant="outline">{t("kaynakIade")}</Badge>
                     ) : null,
@@ -394,6 +401,9 @@ export default async function TazminatSayfasi({ searchParams }: { searchParams: 
                           {k.returnItem.return.sale.code ?? "—"}
                         </Baglanti>
                       </span>
+                    ) : null,
+                    k.purchaseItem?.purchase.supplierOrderNo ? (
+                      <KopyalanabilirKod key="siparis" deger={k.purchaseItem.purchase.supplierOrderNo} etiket={ortak("siparisNo")} />
                     ) : null,
                     `${ortak("adet")}: ${k.quantity}`,
                     k.status === "SETTLED" ? (

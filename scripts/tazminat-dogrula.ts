@@ -604,6 +604,11 @@ console.log("\n7) KARŞI TARAF — formda seçilir, satırda düzeltilir");
   const sayfa = yorumsuzla(kaynakOku("src/app/tazminat/page.tsx"));
   kontrol("satırda karşı taraf düzeltilebilir", /<KarsiTarafAlani[\s\S]{0,200}deger=\{karsiTarafDegeri\(k\)\}/.test(sayfa));
   kontrol("iadenin önerisi son alımın tedarikçisi", sayfa.includes("onerilenKarsiTaraf: karsiTarafDegeri({ supplierId: sonAlim?.purchase.supplierId ?? null }),"));
+  /* 30.10.2026 kullanıcı: «pazaryerinden aldığımız sipariş numarası ile ürünü bulamıyoruz» — arama yalnız ALM
+     kodunu tanıyordu. İki listenin araması da `supplierOrderNo`yu kapsar ve numara satırda görünür (İlke #3). */
+  kontrol("bekleyen hasar araması sipariş no'yu kapsar", sayfa.includes("eslesir([h.urun, h.sku, h.baglam, h.siparisNo, h.tedarikci])") && sayfa.includes("siparisNo: k.purchase.supplierOrderNo,"));
+  kontrol("talep araması sipariş no'yu kapsar", /eslesir\(\[[^\]]*k\.purchaseItem\?\.purchase\.supplierOrderNo,[^\]]*\]\)/.test(sayfa));
+  kontrol("talep satırında sipariş no kopyalanır", /<KopyalanabilirKod key="siparis" deger=\{k\.purchaseItem\.purchase\.supplierOrderNo\}/.test(sayfa));
   kosanBolumler.push("karsi-taraf");
 }
 

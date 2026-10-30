@@ -34,6 +34,8 @@ export type HasarKalemi = {
   kalemId: string;
   /** Alım kodu ya da satış/sipariş no — hangi kayıttan geldiği. */
   baglam: string;
+  /** Pazaryerinden/tedarikçiden aldığımız sipariş no (`Purchase.supplierOrderNo`) — alım kaynağında; iadede yok. */
+  siparisNo: string | null;
   tedarikci: string;
   /** Önerilen karşı taraf (`S:<id>`) — iadede son alımın tedarikçisi; değiştirilebilir. */
   onerilenKarsiTaraf: string | null;
@@ -99,6 +101,7 @@ export function TalepFormu({
           <DialogTitle>{t("yeniTalep")}</DialogTitle>
           <DialogDescription>
             {hasar.urun} — {hasar.tedarikci} · {hasar.baglam}
+            {hasar.siparisNo ? ` · ${hasar.siparisNo}` : ""}
           </DialogDescription>
         </DialogHeader>
 
