@@ -20,6 +20,7 @@ import {
 } from "@/lib/buybox-istatistik";
 import { buyboxOlcumleri, ilkOlcumAni } from "@/lib/buybox-istatistik-verisi";
 import { gunBasiAni, gunDegeri, gunEkle, isTakvimGunu } from "@/lib/donem";
+import { SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -85,7 +86,7 @@ export async function BuyboxGecmisi({
               aria-current={a === aralik ? "true" : undefined}
               className={
                 "inline-flex h-11 shrink-0 items-center rounded-md border px-4 text-sm font-medium transition-colors " +
-                (a === aralik ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted")
+                (a === aralik ? SECIM_AKTIF : SECIM_PASIF)
               }
             >
               {t(`aralik_${a}`)}

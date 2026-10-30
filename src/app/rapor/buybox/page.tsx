@@ -32,7 +32,7 @@ import { ISTATISTIK_ARALIKLARI, rakipliOzet, type IstatistikAraligi } from "@/li
 import { buyboxDurumlari, buyboxUrunleri } from "@/lib/buybox-verisi";
 import { desiBekleyenler, genelKuralOku } from "@/lib/buybox-kural-verisi";
 import { otomatikGecmisi, satirModlari } from "@/lib/buybox-otomatik-verisi";
-import { SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi } from "@/lib/kutu-bicimi";
+import { SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi, SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
@@ -221,7 +221,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
             aria-current={k === kanal ? "true" : undefined}
             className={
               "inline-flex h-11 shrink-0 items-center rounded-md border px-4 text-sm font-medium transition-colors " +
-              (k === kanal ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted")
+              (k === kanal ? SECIM_AKTIF : SECIM_PASIF)
             }
           >
             {t(`kanal_${k}`)}

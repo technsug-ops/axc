@@ -12,6 +12,7 @@ import { DURUM_YAZISI } from "@/lib/renkler";
 import { alimAra, alimToplami, kalanGun, OZEL_GUN_YOLU, TABAN_GUN, YAKLASAN_GUN, type AlimSatiri } from "@/lib/ozel-gun/ozel-gun";
 import type { OzelGunDetayi, Yaklasan } from "@/lib/ozel-gun/ozel-gun-verisi";
 import { eksikAdet, rehberAra, rehberToplami, type RehberSatiri } from "@/lib/rapor/alim-rehberi";
+import { SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -108,7 +109,7 @@ export async function OzelGunSekmesi({
               aria-current={aktif ? "true" : undefined}
               className={
                 "inline-flex min-h-11 shrink-0 flex-col justify-center rounded-md border px-3 py-1 text-left text-sm transition-colors " +
-                (aktif ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted")
+                (aktif ? SECIM_AKTIF : SECIM_PASIF)
               }
             >
               <span className="font-medium">{y.gun.ad}</span>

@@ -6,6 +6,7 @@ import {
   KANAL_SIRA_KIPLERI,
   type KanalSiraKipi,
 } from "@/lib/kanal-sirasi";
+import { SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -74,8 +75,8 @@ export async function KanalSiraCubugu({
           className={cn(
             "inline-flex h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors max-sm:justify-center max-sm:px-2 max-sm:text-xs",
             secenek === kip
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-background hover:bg-muted",
+              ? SECIM_AKTIF
+              : SECIM_PASIF,
           )}
           /** ⚠ Renk tek başına konuşmaz: seçim ekran okuyucuya da söylenir. */
           aria-current={secenek === kip ? "true" : undefined}

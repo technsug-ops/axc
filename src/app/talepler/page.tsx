@@ -21,6 +21,7 @@ import {
 import { izinVarMi, sayfaGirisi } from "@/lib/yetki";
 
 import { DurumKontrolu } from "./durum-kontrolu";
+import { SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -165,7 +166,7 @@ export default async function TaleplerSayfasi({
         <Baglanti
           href={adres(null, turSuzgeci)}
           className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm no-underline md:min-h-9 ${
-            durumSuzgeci === null ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"
+            durumSuzgeci === null ? SECIM_AKTIF : SECIM_PASIF
           }`}
         >
           {t("suzgecHepsi")}
@@ -175,7 +176,7 @@ export default async function TaleplerSayfasi({
             key={d}
             href={adres(d, turSuzgeci)}
             className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm no-underline md:min-h-9 ${
-              durumSuzgeci === d ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"
+              durumSuzgeci === d ? SECIM_AKTIF : SECIM_PASIF
             }`}
           >
             {t(`durum${d}`)}
@@ -186,7 +187,7 @@ export default async function TaleplerSayfasi({
         <Baglanti
           href={adres(durumSuzgeci, null)}
           className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm no-underline md:min-h-9 ${
-            turSuzgeci === null ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"
+            turSuzgeci === null ? SECIM_AKTIF : SECIM_PASIF
           }`}
         >
           {t("suzgecTumTurler")}
@@ -196,7 +197,7 @@ export default async function TaleplerSayfasi({
             key={r}
             href={adres(durumSuzgeci, r)}
             className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm no-underline md:min-h-9 ${
-              turSuzgeci === r ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"
+              turSuzgeci === r ? SECIM_AKTIF : SECIM_PASIF
             }`}
           >
             {t(`tur${r}`)}

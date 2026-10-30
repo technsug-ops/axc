@@ -24,6 +24,7 @@ import { acikSuzgecSayisi, analizOzetParcalari, type OzetParcasi } from "@/lib/r
 import { AnalizAramaKutusu } from "./analiz-arama-kutusu";
 import { OtomatikGonderSecim } from "./otomatik-gonder-secim";
 import { TelefonSuzgecKabi } from "./telefon-suzgec-kabi";
+import { SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 
 /** K293: telefonda çip satırı TEK SATIR, yatay kayar; masaüstünde eskisi gibi sarar. */
 const KAYAN_SATIR =
@@ -123,8 +124,8 @@ export async function AnalizSuzgeci({
   const chipSinifi = (aktif: boolean) =>
     "inline-flex h-11 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
     (aktif
-      ? "bg-primary text-primary-foreground border-primary"
-      : "bg-background hover:bg-muted");
+      ? SECIM_AKTIF
+      : SECIM_PASIF);
 
   /**
    * DEĞİŞMEYEN TABAN — dönem/kanal/para çipleri bunun üstüne TEK alan

@@ -1,5 +1,7 @@
 import { kaynakOku } from "./kaynak-oku";
-import { KUTU_ETIKETI, KUTU_RAKAMI, SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi } from "../src/lib/kutu-bicimi";
+import { readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { KUTU_ETIKETI, KUTU_RAKAMI, SECIM_AKTIF, SECIM_PASIF, SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi } from "../src/lib/kutu-bicimi";
 import { DURUM_KUTUSU, DURUM_SERIDI } from "../src/lib/renkler";
 
 /**
@@ -114,6 +116,24 @@ console.log("=".repeat(70));
     kontrol("  ...telefonda 44 px, masaüstünde 36 px", sekmeSinifi(true).includes("h-11") && sekmeSinifi(true).includes("md:h-9"));
     kontrol("sekme sayısı rozette; aktif rozet vurgu tonunda", sekmeSayaciSinifi(true).includes("rounded-full") && sekmeSayaciSinifi(true).includes("text-[var(--se-vurgu)]") && !sekmeSayaciSinifi(false).includes("se-vurgu"));
     kontrol("sekme şeridi gri ray", SEKME_SERIDI.includes("bg-muted") && SEKME_SERIDI.includes("rounded-xl"));
+    /* 30.10.2026 kullanıcı kararı: seçim çipleri (dönem · kanal · süzgeç) sekmelerle aynı dilde — aktif koyu DOLGU yok,
+       vurgu tonunda açık zemin; pasif beyaz + çerçeve + gölge. DESEN YASAĞI: eski koyu dolgu kalıbı hiçbir ekranda kalamaz
+       (dosya listesi tutulmaz — yarın eklenen ekran da taranır). Taban doluluğu ayrıca ölçülür. */
+    kontrol("seçim çipi aktif: vurgu zemin + vurgu yazı, koyu dolgu yok", SECIM_AKTIF.includes("bg-[var(--se-vurgu-bg)]") && SECIM_AKTIF.includes("text-[var(--se-vurgu)]") && !SECIM_AKTIF.includes("bg-primary"));
+    kontrol("  ...pasif çip beyaz + çerçeve + gölge", SECIM_PASIF.includes("bg-background") && SECIM_PASIF.includes("border-border") && SECIM_PASIF.includes("shadow-xs"));
+    const tsxler: string[] = [];
+    const gez = (k: string) => {
+      for (const ad of readdirSync(k)) {
+        const y = join(k, ad);
+        if (statSync(y).isDirectory()) gez(y);
+        else if (y.endsWith(".tsx")) tsxler.push(y.split("\\").join("/"));
+      }
+    };
+    gez("src");
+    const eskiCip = tsxler.filter((y) => yorumsuz(kaynakOku(y)).includes("bg-primary text-primary-foreground border-primary"));
+    kontrol("eski koyu dolgulu seçim çipi hiçbir ekranda yok", eskiCip.length === 0, eskiCip);
+    const cipKullanan = tsxler.filter((y) => /\?\s*SECIM_AKTIF\s*:\s*SECIM_PASIF/.test(yorumsuz(kaynakOku(y))));
+    kontrol("  ...ortak çip biçimini kullanan ekran ≥ 11 (taban dolu)", tsxler.length > 100 && cipKullanan.length >= 11, cipKullanan.length);
     kontrol("sekme şeridi tek satır kayar", SEKME_SERIDI.includes("overflow-x-auto") && !SEKME_SERIDI.includes("flex-wrap"));
     for (const [ad, yol] of [["ortak sekme bileşeni", "src/components/sekmeli-bolum.tsx"], ["ürün analizi", "src/app/rapor/urunler/page.tsx"], ["kârlılık kartı", "src/app/kart/[variantId]/kart-panosu.tsx"]] as const) {
       kontrol(`${ad} ortak sekme biçimini kullanır`, /className=\{sekmeSinifi\(/.test(yorumsuz(kaynakOku(yol))));

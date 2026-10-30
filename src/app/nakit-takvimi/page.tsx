@@ -22,7 +22,7 @@ import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
 import { nakitEtkisi } from "@/lib/nakit-isaret";
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { SatirKarti, SatirListesi } from "@/components/satir-karti";
-import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
+import { KUTU_ETIKETI, KUTU_RAKAMI, SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -144,8 +144,8 @@ export default async function NakitTakvimiSayfasi({
             href={`/nakit-takvimi?takvim=${gun}`}
             className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm md:min-h-9 ${
               gun === pencere
-                ? "bg-primary text-primary-foreground border-primary"
-                : "hover:bg-muted"
+                ? SECIM_AKTIF
+                : SECIM_PASIF
             }`}
           >
             {t("pencereDugmesi", { gun })}

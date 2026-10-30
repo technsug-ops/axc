@@ -34,6 +34,15 @@ export function sekmeSinifi(aktif: boolean): string {
       : "text-muted-foreground font-medium hover:bg-background/70 hover:text-foreground"
   }`;
 }
+/**
+ * SEÇİM ÇİPİ — dönem / kanal / süzgeç düğmeleri (Son 30 gün · Son 3 ay …). Kullanıcı
+ * 30.10.2026: sekmelerle aynı modern dile. Eski: aktif koyu DOLGU (bg-primary),
+ * pasif çıplak çerçeve. Yeni: aktif vurgu tonunda açık zemin + vurgu çerçeve +
+ * kalın yazı; pasif beyaz + çerçeve + hafif gölge (tıklanabilir görünür, İlke #2).
+ * Ekranlar yalnız RENK kısmını buradan alır; yükseklik/yerleşim kendi yerinde.
+ */
+export const SECIM_AKTIF = "border-[var(--se-vurgu)] bg-[var(--se-vurgu-bg)] font-semibold text-[var(--se-vurgu)] shadow-xs";
+export const SECIM_PASIF = "border-border bg-background text-foreground/80 shadow-xs hover:border-foreground/25 hover:bg-muted hover:text-foreground";
 /** Sekmedeki sayı rozeti — aktifte vurgu tonunda, pasifte nötr. */
 export function sekmeSayaciSinifi(aktif: boolean): string {
   return `inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] leading-none font-semibold tabular-nums ${

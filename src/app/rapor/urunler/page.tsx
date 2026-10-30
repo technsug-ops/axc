@@ -67,7 +67,7 @@ import { AnalizSuzgeci as SuzgecCubugu } from "./analiz-suzgeci";
 import { UrunEtiketleri } from "./urun-etiketleri";
 
 import type { Currency } from "@/generated/prisma/enums";
-import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
+import { SEKME_SERIDI, sekmeSinifi, SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -391,8 +391,8 @@ export default async function UrunAnaliziSayfasi({
                 className={
                   "inline-flex h-11 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
                   (aktif
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background hover:bg-muted")
+                    ? SECIM_AKTIF
+                    : SECIM_PASIF)
                 }
               >
                 {t(`ceyrek${c}`)}

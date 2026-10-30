@@ -9,6 +9,7 @@ import {
   type SiralamaAlani,
 } from "@/lib/stok-siralama";
 import { YAS_KOVALARI, type YasKovasi } from "@/lib/yaslanma";
+import { SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -55,8 +56,8 @@ function Cip({
       className={cn(
         "inline-flex h-11 shrink-0 items-center gap-1.5 rounded-md border px-3 text-sm font-medium whitespace-nowrap transition-colors",
         aktif
-          ? "bg-primary text-primary-foreground border-primary"
-          : "bg-background hover:bg-muted",
+          ? SECIM_AKTIF
+          : SECIM_PASIF,
       )}
       /** ⚠ Renk tek başına konuşmaz: aktiflik ekran okuyucuya da söylenir. */
       aria-current={aktif ? "true" : undefined}

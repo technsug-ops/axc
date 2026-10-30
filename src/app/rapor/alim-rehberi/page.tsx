@@ -10,7 +10,7 @@ import { ListeToplami } from "@/components/liste-toplami";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
-import { SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi } from "@/lib/kutu-bicimi";
+import { SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi, SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 import {
   azStokCoz,
   donemCoz,
@@ -226,7 +226,7 @@ export default async function AlimRehberiSayfasi({
             aria-current={c.aktif ? "true" : undefined}
             className={
               "inline-flex h-11 shrink-0 items-center rounded-md border px-3 text-sm font-medium transition-colors " +
-              (c.aktif ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted")
+              (c.aktif ? SECIM_AKTIF : SECIM_PASIF)
             }
           >
             {c.etiket}

@@ -16,6 +16,7 @@ import { sayfaIzni } from "@/lib/yetki";
 
 import { FiyatFormu } from "./fiyat-formu";
 import { YeniKaynakFormu } from "./yeni-kaynak-formu";
+import { SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
 
 /**
  * ============================================================================
@@ -82,7 +83,7 @@ export default async function FinansmanSayfasi({
             key={x ?? "hepsi"}
             href={adres(x)}
             className={`inline-flex min-h-11 items-center rounded-md border px-3 text-sm md:min-h-9 ${
-              x === tur ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"
+              x === tur ? SECIM_AKTIF : SECIM_PASIF
             }`}
           >
             {x ? t(`tur.${x}`) : t("tumTurler")}
