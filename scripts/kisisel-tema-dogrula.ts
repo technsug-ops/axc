@@ -178,6 +178,16 @@ console.log("\n2) zincir — betik · düğme · CSS");
   kontrol("kart halkası çizgi değişkenine bağlı", /\[data-slot="card"\] \{[^}]*--tw-ring-color: var\(--se-kart-cizgi, transparent\);/.test(kopru));
   kontrol("elle yazılmış kutu çizgisi de aynı değişkene bağlı",
     /\.rounded-lg\.border:not\(\.border-dashed\) \{\s*border-color: var\(--se-kart-cizgi, transparent\);/.test(kopru));
+  // Kullanıcı 30.10.2026: «kart belirginliği sadece dışarıda oluyor, içerideki kartlarda değişiklik olmuyor».
+  // Kart İÇİNDEKİ kutu da ayarla koyulaşır; «çizgi yok»ta ince çizgi kalır (iç kutular kaybolmasın).
+  {
+    const ic = (c: number) => kisiselTema({ renk: "#12356B", kose: 12, cizgi: c }).degiskenler["--se-ic-kart-cizgi"];
+    kontrol("iç kutu çizgisi ayarla koyulaşıyor", ic(4) === "rgba(35, 43, 53, 0.38)" && ic(2) === "rgba(35, 43, 53, 0.16)");
+    kontrol("  ...«çizgi yok»ta iç kutu çizgisi kaybolmuyor", ic(0) === "rgba(35, 43, 53, 0.08)");
+    const icKurallar = kopru.match(/:is\(\[data-slot="card"\][^{]*\{[^}]*\}/g) ?? [];
+    const bagli = icKurallar.filter((k) => /border-color: var\(--se-ic-kart-cizgi, var\(--se-cizgi\)\);/.test(k));
+    kontrol("kart içindeki her kutu kuralı iç çizgi değişkenine bağlı", icKurallar.length >= 4 && bagli.length === icKurallar.filter((k) => k.includes("border-color")).length, { icKurallar: icKurallar.length, bagli: bagli.length });
+  }
   kontrol("düğme ve girdi köşesi kart köşesine bağlı (sabit 8px değil)",
     (kopru.match(/border-radius: calc\(var\(--radius\) \* 2 \/ 3\);/g) ?? []).length === 2 && !/\[data-slot="button"\] \{\s*border-radius: 8px/.test(kopru));
   kontrol("kaldırılan tema dosyaları yok", !existsSync("src/styles/tema-gece.css") && !existsSync("src/styles/tema-pembe.css"));

@@ -108,6 +108,7 @@ export const KISISEL_DEGISKENLERI = [
   "--se-odak",
   "--se-odak-golge",
   "--se-kart-cizgi",
+  "--se-ic-kart-cizgi",
   "--se-zemin",
   "--se-kart",
   "--se-ink",
@@ -282,6 +283,8 @@ export function kisiselTema(girdi: { renk: unknown; kose: unknown; cizgi?: unkno
       "--se-odak": uygulanan,
       "--se-odak-golge": `0 0 0 3px ${hexYaz(karistir(v, BEYAZ, 0.83))}`,
       "--se-kart-cizgi": cizgiDegeri(cizgi),
+      /** Kart İÇİNDEKİ kutu: aynı ayarla koyulaşır; «çizgi yok» seçilse de ince çizgi kalır (iç kutular ayrışsın). */
+      "--se-ic-kart-cizgi": cizgiDegeri(Math.max(cizgi, 1)),
       "--se-zemin": zeminRengi,
       "--se-kart": kartRengi,
       "--se-ink": YAZI_SECENEKLERI[yazi].ink,

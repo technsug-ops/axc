@@ -321,9 +321,12 @@ h1, h2, h3, [data-slot="card-title"] {
         background-color: var(--card);
     }
     /* KART İÇİNDEKİ KUTU gölge almaz, ince çizgiyle ayrılır (analiz §4.2:
-       «kart içinde kart olduğundan gölge yok», 1px #EEF0F3). */
+       «kart içinde kart olduğundan gölge yok», 1px #EEF0F3).
+       Kişisel temada «Kart çizgisi» bu çizgiyi de koyulaştırır (kullanıcı
+       30.10.2026: «kart belirginliği sadece dışarıda oluyor, içerideki
+       kartlarda değişiklik olmuyor»); tanımsızsa ince çizgi. */
     :is([data-slot="card"], .rounded-lg.border) :where(div, section, article, aside, details, li).rounded-lg.border:not(.border-dashed) {
-        border-color: var(--se-cizgi);
+        border-color: var(--se-ic-kart-cizgi, var(--se-cizgi));
         box-shadow: none;
     }
 }
@@ -352,7 +355,7 @@ h1, h2, h3, [data-slot="card-title"] {
         background-color: var(--card);
     }
     :is([data-slot="card"], .rounded-lg.border, .rounded-md.border) :where(div, section, article, aside, details, li, dl).rounded-md.border:is(.p-3, .p-4, .p-5, .p-6):not(.border-dashed) {
-        border-color: var(--se-cizgi);
+        border-color: var(--se-ic-kart-cizgi, var(--se-cizgi));
         box-shadow: none;
     }
 }
@@ -371,7 +374,7 @@ h1, h2, h3, [data-slot="card-title"] {
         background-color: var(--card);
     }
     :is([data-slot="card"], .rounded-lg.border) a.rounded-lg.border:not(.border-dashed) {
-        border-color: var(--se-cizgi);
+        border-color: var(--se-ic-kart-cizgi, var(--se-cizgi));
         box-shadow: none;
     }
 }
@@ -389,7 +392,7 @@ h1, h2, h3, [data-slot="card-title"] {
         background-color: var(--card);
     }
     :is([data-slot="card"], .rounded-lg.border) :where(div, section).border-dashed.text-center:is(.p-6, .p-8, .p-10) {
-        border-color: var(--se-cizgi);
+        border-color: var(--se-ic-kart-cizgi, var(--se-cizgi));
         box-shadow: none;
     }
     [data-slot="table-container"] {
