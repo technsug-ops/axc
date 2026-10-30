@@ -26,11 +26,14 @@ import {
   type HedefSatiri,
 } from "../src/lib/alim-hedefi";
 import type { BuyboxSatiri } from "../src/lib/buybox";
+import { hedefGirdiMetni, oneriDurumu, oneriKaynagiCoz, oneriKumesi, onerilenHedef } from "../src/lib/alim-hedefi-oneri";
+import type { FiyatHafizasi, IyiAlimSatiri } from "../src/lib/alim-fiyat-hafizasi";
+import type { RehberSatiri } from "../src/lib/rapor/alim-rehberi";
 import { UYARI_ADRESLERI, UYARI_IZINLERI, UYARI_SEVIYESI } from "../src/lib/uyari/turler";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -151,15 +154,76 @@ console.log("\n⑤ bağlar");
 
   const eylem = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/fiyat-takibi-eylemleri.ts"));
   const izinler = eylem.match(/if \(!\(await izinVarMi\("alim\.yaz"\)\)\) return YETKISIZ;/g) ?? [];
-  kontrol("eylemler: üçü de `alim.yaz` sorar", izinler.length === 3, izinler.length);
+  /* Faz 3-e (30.10): toplu ekleme dördüncü yazan eylem oldu; ürün bilgisi OKUR ve izinsizde `null` döner (ayrı ölçüt). */
+  kontrol("eylemler: yazan dördü de `alim.yaz` sorar", izinler.length === 4, izinler.length);
+  kontrol("eylemler: ürün bilgisi de `alim.yaz` sorar (izinsizde null)", /if \(!\(await izinVarMi\("alim\.yaz"\)\)\) return null;/.test(blok(eylem, "export async function urunTakipBilgisiEylemi(", 300)));
 
   const sayfa = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/page.tsx"));
-  kontrol("sayfa: sekme bileşeni çizilir", /ft \? \(\s*<FiyatTakibiSekmesi liste=\{hedefler\} suzgec=\{ftSuzgec\} arama=\{arama\} yazabilir=\{alimYazabilir\} \/>/.test(sayfa));
+  /* Faz 3-e (30.10): çağrı çok satırlı oldu (öneri bölümü `oneri` ile geçiyor). */
+  kontrol("sayfa: sekme bileşeni çizilir", /ft \? \(\s*<FiyatTakibiSekmesi\s+liste=\{hedefler\}\s+suzgec=\{ftSuzgec\}\s+arama=\{arama\}\s+yazabilir=\{alimYazabilir\}\s+oneri=\{/.test(sayfa));
   const sekme = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/fiyat-takibi-sekmesi.tsx"));
   kontrol("sekme: süzgeç sayıları aramadan bağımsız (tam liste + çan kümesi)", /const sayilar: Record<FiyatTakibiSuzgeci, number> = \{ hepsi: liste\.length, altinda: altindakiler\(liste\)\.length \};/.test(sekme));
   kontrol("sekme: arama kutusu ortak bileşen (kamera dahil) sayfada", /<KodAramaKutusu[\s\S]{0,80}temelAdres=\{REHBER_YOLU\}/.test(sayfa));
 }
 kosanBolumler.push("baglar");
+
+// ── ⑥ ÖNERİLER — kaynak kümeleri, önerilen hedef, toplu yazım ───────────
+console.log("\n⑥ takibe ekle önerileri");
+{
+  const rs = (id: string, o: Partial<RehberSatiri>): RehberSatiri => ({
+    variantId: id, urunId: null, urunAdi: id, sku: id, barkod: null, firmaSku: null, marka: null, kategori: null,
+    adet: 0, ciro: 0, net2: 0, marj: null, gunlukSatis: 0, gunlukNet2: 0, raf: 0, stokGunu: null, bagliSermaye: null, ...o,
+  });
+  // a: çok satan ama zararda, rafta 0 · b: az satan çok kâr, rafta 5 · c: orta, rafta 0 · d: hiç satmamış
+  const satirlar = [rs("a", { adet: 30, net2: -100 }), rs("b", { adet: 2, net2: 900, raf: 5 }), rs("c", { adet: 10, net2: 300 }), rs("d", {})];
+  const k = { tukenen: [satirlar[2]], iyiAlim: [{ satir: satirlar[1] } as IyiAlimSatiri], satirlar };
+  const ids = (x: RehberSatiri[]) => x.map((s) => s.variantId).join("");
+  kontrol("çok satan: adede göre, satmayan girmez", ids(oneriKumesi("cokSatan", k, false)) === "acb", ids(oneriKumesi("cokSatan", k, false)));
+  kontrol("çok kâr: NET-2'ye göre, zarardaki GİRMEZ", ids(oneriKumesi("cokKar", k, false)) === "bc", ids(oneriKumesi("cokKar", k, false)));
+  kontrol("tükenen: rehberin kendi listesi (yeni hesap yok)", ids(oneriKumesi("tukenen", k, false)) === "c");
+  kontrol("iyi alım: rehberin kendi listesi", ids(oneriKumesi("iyiAlim", k, false)) === "b");
+  kontrol("raf süzgeci açık: raftaki düşer (çok kâr)", ids(oneriKumesi("cokKar", k, true)) === "c");
+  kontrol("raf süzgeci açık: raftaki düşer (iyi alım)", ids(oneriKumesi("iyiAlim", k, true)) === "");
+  kontrol("raf süzgeci kapalı: raftaki kalır", ids(oneriKumesi("iyiAlim", k, false)) === "b");
+  kontrol("bilinmeyen kaynak «tükenen»e döner", oneriKaynagiCoz("xx") === "tukenen" && oneriKaynagiCoz("cokKar") === "cokKar");
+
+  const hf = (fiyat: number): FiyatHafizasi => ({ alisSayisi: 2, gunSayisi: 2, enUcuz: { fiyat, tarih: new Date(0) }, normal: fiyat + 100, son: { fiyat: fiyat + 50, tarih: new Date(0) }, kiyasDisi: 0, cariKullanilan: 0 });
+  kontrol("önerilen hedef = EN DÜŞÜK alış (normal ya da son değil)", onerilenHedef(hf(1069.49)) === 1069.49);
+  kontrol("alış yoksa hedef UYDURULMAZ", onerilenHedef(undefined) === null && onerilenHedef(null) === null);
+  kontrol("bedava (0) en düşük → hedef önerilmez", onerilenHedef(hf(0)) === null);
+  for (const n of [1069.49, 1250, 0.5, 1234567.8]) kontrol(`kutu metni geri çözülür: ${n}`, hedefCoz(hedefGirdiMetni(n)) === n, hedefGirdiMetni(n));
+
+  const il = (TY: boolean, HB: boolean) => ({ TY, HB });
+  kontrol("takipte olan → TAKIPTE (hedefi ezilmez)", oneriDurumu({ takipte: true, ilan: il(true, true), hedef: 100 }) === "TAKIPTE");
+  kontrol("ilanı yok → ILAN_YOK", oneriDurumu({ takipte: false, ilan: il(false, false), hedef: 100 }) === "ILAN_YOK");
+  kontrol("alışı yok → ALIS_YOK", oneriDurumu({ takipte: false, ilan: il(true, false), hedef: null }) === "ALIS_YOK");
+  kontrol("tek kanal ilanı yeter → UYGUN", oneriDurumu({ takipte: false, ilan: il(false, true), hedef: 100 }) === "UYGUN");
+
+  const veri = yorumsuz(kaynakOku("src/lib/alim-hedefi-verisi.ts"));
+  const toplu = blok(veri, "export async function alimHedefleriTopluYaz(", 3600);
+  kontrol("toplu: hedef SUNUCUDA en düşük alıştan (istemciden fiyat alınmaz)", /const hedef = onerilenHedef\(fiyatHafizasi\(kayit\.get\(v\.id\) \?\? \[\], "TRY"\)\);/.test(toplu) && /alimHedefleriTopluYaz\(variantIds: readonly string\[\]\)/.test(toplu));
+  kontrol("toplu: durum `oneriDurumu`ndan (ekranla aynı gövde)", /const d = oneriDurumu\(\{ takipte: v\.alimHedefi !== null,/.test(toplu));
+  kontrol("toplu: yalnız UYGUN yazılır, takipte olan EZİLMEZ (upsert yok, skipDuplicates)", /else yazilacak\.push\(/.test(toplu) && /skipDuplicates: true/.test(toplu) && !/upsert/.test(toplu));
+  kontrol("toplu: tavan", /if \(ids\.length > TOPLU_TAVAN\) return \{ tamam: false, hata: "COK_FAZLA" \};/.test(toplu));
+  kontrol("toplu: iz bırakır", /action: "ALIM_HEDEFI_TOPLU_EKLE"/.test(toplu));
+  kontrol("toplu: bulunamayan ürün de sayılır", /bulunamadi: ids\.length - varyantlar\.length/.test(toplu));
+  const ilanKosulu = veri.match(/where: TAKIP_ILANI/g) ?? [];
+  const ilanYayilimi = veri.match(/\.\.\.TAKIP_ILANI/g) ?? [];
+  kontrol("ilan koşulu TEK sabit: yazım + toplu (where) ve kanal bilgisi (yayılım)", ilanKosulu.length === 2 && ilanYayilimi.length === 1, { where: ilanKosulu.length, yayilim: ilanYayilimi.length });
+  const kanal = blok(veri, "export async function takipKanallari(", 1600);
+  kontrol("link ÜRÜN SAYFASI: satıcı kimliği ve mağaza adı VERİLMEZ", /ilanAdresi\(k\.channelAccount\.channel\.code, \{ channelSku: k\.channelSku, externalListingId: k\.externalListingId, saticiId: null, magazaAdi: null \}\)/.test(kanal));
+
+  const oneri = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/fiyat-takibi-oneri.tsx"));
+  kontrol("öneri: liste = ilanlılar; kaynak sayısı aynı süzgeçten", /const tam = kumeler\[kaynak\]\.filter\(ilanli\);/.test(oneri) && /kumeler\[k\]\.filter\(ilanli\)\.length/.test(oneri));
+  kontrol("öneri: ilanı olmayan SAYILIR ve yazar", /const ilanYok = kumeler\[kaynak\]\.length - tam\.length;/.test(oneri) && /\{ilanYok > 0 \? <p[^>]*>\{t\("oneriIlanYok", \{ sayi: ilanYok \}\)\}/.test(oneri));
+  kontrol("öneri: toplam çizilen ilk N'nin değil, süzgecin tamamının", /const toplam = gorunen\.reduce\(/.test(oneri) && /const cizilen = gorunen\.slice\(0, ONERI_TAVANI\);/.test(oneri));
+  const sayfa = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/page.tsx"));
+  kontrol("sayfa: öneri kümeleri rehberin KENDİ listelerinden", /oneriKumesi\(k, \{ tukenen: listeler\.tukenen, iyiAlim, satirlar: veri\.satirlar \}, !fr\)/.test(sayfa));
+  const liste = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/fiyat-takibi-oneri-listesi.tsx"));
+  kontrol("liste: toplu seçim yalnız UYGUN satırlardan", /const secilebilir = satirlar\.filter\(\(s\) => s\.durum === "UYGUN"\)/.test(liste) && /disabled=\{!uygun \|\| kilitli\}/.test(liste));
+  kontrol("liste: toplu ekleme ONAY penceresinden geçer", /<AlertDialogAction onClick=\{topluAl\}>/.test(liste) && !/onClick=\{topluAl\}/.test(liste.replace("<AlertDialogAction onClick={topluAl}>", "")));
+}
+kosanBolumler.push("oneri");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {

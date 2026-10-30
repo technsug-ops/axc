@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import Link from "@/components/niyetli-baglanti";
 
@@ -39,12 +40,15 @@ export async function FiyatTakibiSekmesi({
   suzgec,
   arama,
   yazabilir,
+  oneri,
 }: {
   liste: HedefListeSatiri[];
   suzgec: FiyatTakibiSuzgeci;
   arama: string | null;
   /** `alim.yaz` — yoksa form ve satır eylemleri çizilmez, nedeni yazar. */
   yazabilir: boolean;
+  /** Faz 3-e: «Takibe ekle» önerileri (sayfa kurar) — formun altında, takip listesinin üstünde. */
+  oneri: ReactNode;
 }) {
   const t = await getTranslations("FiyatTakibi");
   const ortak = await getTranslations("Ortak");
@@ -108,6 +112,10 @@ export async function FiyatTakibiSekmesi({
         </CardHeader>
         <CardContent>{yazabilir ? <YeniHedefFormu /> : <p className="text-muted-foreground text-sm">{t("yazmaIzniYok")}</p>}</CardContent>
       </Card>
+
+      {oneri}
+
+      <h2 className="pt-2 text-lg font-semibold">{t("takiptekiler", { sayi: liste.length })}</h2>
 
       {/* ── SÜZGEÇ — «Hedefin altında» çandaki kümedir; sayılar aramadan bağımsız ── */}
       <div className={SEKME_SERIDI}>

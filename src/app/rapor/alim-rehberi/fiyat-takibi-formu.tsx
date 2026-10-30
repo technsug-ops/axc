@@ -19,10 +19,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useBicim } from "@/lib/bicim-istemci";
+import type { UrunTakipBilgisi } from "@/lib/alim-hedefi-verisi";
 import { DURUM_YAZISI } from "@/lib/renkler";
 
 import { varyantAra, varyantKodlaBul } from "../../varyant-arama";
-import { hedefAktifEylemi, hedefSilEylemi, hedefYazEylemi, type HedefEylemSonucu } from "./fiyat-takibi-eylemleri";
+import { hedefAktifEylemi, hedefSilEylemi, hedefYazEylemi, urunTakipBilgisiEylemi, type HedefEylemSonucu } from "./fiyat-takibi-eylemleri";
 
 /**
  * Fiyat takibi — istemci parçaları (K363 Faz 3-d). Her sonuç olduğu yerde
@@ -73,6 +75,22 @@ export function YeniHedefFormu() {
   const [secili, setSecili] = useState<Aday | null>(null);
   const [fiyat, setFiyat] = useState("");
   const [araniyor, aramaBasla] = useTransition();
+  /** Seçilen ürünün en düşük alışı + hangi kanaldan okunacağı (`undefined` = yükleniyor, `null` = okunamadı). */
+  const [bilgi, setBilgi] = useState<UrunTakipBilgisi | null | undefined>(undefined);
+  const [bilgiYukleniyor, bilgiBasla] = useTransition();
+
+  /** Ürün seçimi TEK yerden: bilgi istenir, önerilen hedef (en düşük alış) kutuya yazılır — değiştirilebilir. */
+  const sec = (a: Aday) => {
+    setSecili(a);
+    setAdaylar(null);
+    setBilgi(undefined);
+    setFiyat("");
+    bilgiBasla(async () => {
+      const b = await urunTakipBilgisiEylemi(a.id);
+      setBilgi(b);
+      if (b?.hedefGirdi) setFiyat(b.hedefGirdi);
+    });
+  };
 
   /** Okutulan kod TAM eşleşme ister (`varyantKodlaBul`); kod okunan değer PARAMETRE olarak gelir (anayasa: okuma değeri doğrudan taşır). */
   const kodOkundu = (kod: string) => {
@@ -80,8 +98,7 @@ export function YeniHedefFormu() {
     aramaBasla(async () => {
       const s = await varyantKodlaBul(kod);
       if (s.durum === "TEK") {
-        setSecili({ id: s.varyant.id, ad: s.varyant.urunAdi, sku: s.varyant.sku, barkod: s.varyant.barcode });
-        setAdaylar(null);
+        sec({ id: s.varyant.id, ad: s.varyant.urunAdi, sku: s.varyant.sku, barkod: s.varyant.barcode });
       } else if (s.durum === "COK") {
         setAdaylar(s.adaylar.map((a) => ({ id: a.id, ad: a.ad, sku: a.sku, barkod: a.barcode })));
       } else {
@@ -147,10 +164,7 @@ export function YeniHedefFormu() {
                   <li key={a.id}>
                     <button
                       type="button"
-                      onClick={() => {
-                        setSecili(a);
-                        setAdaylar(null);
-                      }}
+                      onClick={() => sec(a)}
                       className="hover:bg-muted flex min-h-11 w-full flex-col items-start px-3 py-2 text-left text-sm"
                     >
                       <span className="font-medium underline underline-offset-2">{a.ad}</span>
@@ -179,6 +193,7 @@ export function YeniHedefFormu() {
               {t("urunDegistir")}
             </Button>
           </div>
+          <UrunBilgisi bilgi={bilgiYukleniyor ? undefined : bilgi} />
           <div className="flex flex-wrap items-end gap-2">
             <label className="space-y-1 text-sm">
               <span className="block font-medium">{t("hedefEtiketi")}</span>
@@ -205,6 +220,34 @@ export function YeniHedefFormu() {
         </div>
       )}
       <MesajSatiri mesaj={mesaj} />
+    </div>
+  );
+}
+
+/** Seçilen ürünün yanında: en düşük alış · normal · hangi kanaldan okunacağı · zaten takipte mi. */
+function UrunBilgisi({ bilgi }: { bilgi: UrunTakipBilgisi | null | undefined }) {
+  const t = useTranslations("FiyatTakibi");
+  const bicim = useBicim();
+  if (bilgi === undefined) return <p className="text-muted-foreground text-sm">{t("bilgiYukleniyor")}</p>;
+  if (bilgi === null) return <p className={`text-sm ${DURUM_YAZISI.uyari}`}>{t("bilgiOkunamadi")}</p>;
+  const kanallar = bilgi.ilan.TY && bilgi.ilan.HB ? t("okunacak_ikisi") : bilgi.ilan.TY ? t("okunacak_TY") : bilgi.ilan.HB ? t("okunacak_HB") : null;
+  return (
+    <div className="space-y-1 text-sm">
+      {bilgi.hafiza ? (
+        <p>
+          {t("enDusukAlis", {
+            fiyat: bicim.para(bilgi.hafiza.enUcuz.fiyat, "TRY"),
+            tarih: bicim.tarih(bilgi.hafiza.enUcuz.tarih),
+            normal: bicim.para(bilgi.hafiza.normal, "TRY"),
+            sayi: bilgi.hafiza.alisSayisi,
+          })}
+        </p>
+      ) : (
+        <p className="text-muted-foreground">{t("alisKaydiYok")}</p>
+      )}
+      {kanallar ? <p className="text-muted-foreground">{kanallar}</p> : <p className={DURUM_YAZISI.uyari}>{t("hata.ILAN_YOK")}</p>}
+      {bilgi.takipte ? <p className={DURUM_YAZISI.uyari}>{t("zatenTakipte")}</p> : null}
+      {bilgi.hedefGirdi ? <p className="text-muted-foreground text-xs">{t("hedefOnerisiNotu")}</p> : null}
     </div>
   );
 }

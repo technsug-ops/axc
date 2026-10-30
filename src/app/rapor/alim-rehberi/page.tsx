@@ -40,7 +40,9 @@ import { OzelGunSekmesi } from "./ozel-gun-sekmesi";
 import { IyiAlimSekmesi } from "./iyi-alim-sekmesi";
 import { FiyatTakibiSekmesi } from "./fiyat-takibi-sekmesi";
 import { fiyatTakibiSuzgeciCoz } from "@/lib/alim-hedefi";
-import { alimHedefleri } from "@/lib/alim-hedefi-verisi";
+import { alimHedefleri, takipKanallari } from "@/lib/alim-hedefi-verisi";
+import { ONERI_KAYNAKLARI, oneriKaynagiCoz, oneriKumesi, type OneriKaynagi } from "@/lib/alim-hedefi-oneri";
+import { FiyatTakibiOnerileri } from "./fiyat-takibi-oneri";
 import { iyiAlimAra, iyiAlimListesi } from "@/lib/alim-fiyat-hafizasi";
 import { PIYASA_TAVAN } from "@/lib/buybox";
 import { piyasaFiyatlari } from "@/lib/buybox-verisi";
@@ -83,7 +85,7 @@ export async function generateMetadata() {
 export default async function AlimRehberiSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ donem?: string; liste?: string; az?: string; ileri?: string; q?: string; gun?: string; piyasa?: string; ft?: string }>;
+  searchParams: Promise<{ donem?: string; liste?: string; az?: string; ileri?: string; q?: string; gun?: string; piyasa?: string; ft?: string; fk?: string; fr?: string }>;
 }) {
   await sayfaIzni("rapor.gor");
   const p = await searchParams;
@@ -103,6 +105,9 @@ export default async function AlimRehberiSayfasi({
   /** Faz 3-d: «Fiyat takibi» — kendi bileşeni çizer; dönem, eşik, az stok, Excel ve piyasa düğmesi bu sekmede yok. */
   const ft = liste === "fiyatTakibi";
   const ftSuzgec = fiyatTakibiSuzgeciCoz(p.ft);
+  /** Faz 3-e: «Takibe ekle» önerilerinin kaynağı ve raf süzgeci (varsayılan: yalnız rafta olmayanlar). */
+  const fk = oneriKaynagiCoz(p.fk);
+  const fr = p.fr === "hepsi";
   const arama = p.q?.trim() || null;
 
   const karGorunur = await izinVarMi("satis.kar.gor");
@@ -144,6 +149,13 @@ export default async function AlimRehberiSayfasi({
   const seciliGun = oz ? (yaklasan.find((y) => y.tarih.id === p.gun) ?? yaklasan[0] ?? null) : null;
   const ozelDetay = seciliGun ? await ozelGunDetayi(seciliGun, an, veri.stok, veri.satirlar) : null;
   const tamListe = listeler[liste];
+  /** Faz 3-e: öneri kümeleri — rehberin KENDİ listelerinden (tükenen · iyi alım) ve dönem satırlarından. */
+  const oneriKumeleri = ft
+    ? (Object.fromEntries(
+        ONERI_KAYNAKLARI.map((k) => [k, oneriKumesi(k, { tukenen: listeler.tukenen, iyiAlim, satirlar: veri.satirlar }, !fr)]),
+      ) as Record<OneriKaynagi, RehberSatiri[]>)
+    : null;
+  const oneriKanallari = oneriKumeleri ? await takipKanallari([...new Set(Object.values(oneriKumeleri).flat().map((s) => s.variantId))]) : new Map();
   const gorunen = rehberAra(tamListe, arama);
   const toplam = rehberToplami(gorunen);
 
@@ -167,7 +179,7 @@ export default async function AlimRehberiSayfasi({
   const piyasaYaz = (variantId: string) => piyasaMetni?.[variantId] ?? t("piyasaSorulmadi");
 
   /** Adres TEK yerden — sekme, dönem, form ve Excel aynı parametreleri taşır. */
-  const tasinan = { donem, liste, az: String(azStok), ileri: String(ileri), q: arama ?? undefined, gun: oz ? seciliGun?.tarih.id : undefined, ft: ft && ftSuzgec !== "hepsi" ? ftSuzgec : undefined };
+  const tasinan = { donem, liste, az: String(azStok), ileri: String(ileri), q: arama ?? undefined, gun: oz ? seciliGun?.tarih.id : undefined, ft: ft && ftSuzgec !== "hepsi" ? ftSuzgec : undefined, fk: ft && fk !== "tukenen" ? fk : undefined, fr: ft && fr ? "hepsi" : undefined };
   const adres = (ek: Record<string, string | undefined>) => suzgecAdresi(REHBER_YOLU, tasinan, ek);
   const excelAdresi = suzgecAdresi(`${REHBER_YOLU}/excel`, tasinan, {});
 
@@ -201,8 +213,8 @@ export default async function AlimRehberiSayfasi({
         <p className="text-muted-foreground text-sm">{t("notu")}</p>
       </div>
 
-      {/* ── DÖNEM (dört liste) ya da ÖNÜMÜZDEKİ N GÜN (geçen yıl) — adreste yaşar ── */}
-      {oz || ft ? null : (
+      {/* ── DÖNEM (dört liste) ya da ÖNÜMÜZDEKİ N GÜN (geçen yıl) — adreste yaşar; fiyat takibinde ÖNERİLERİN dönemi (Faz 3-e) ── */}
+      {oz ? null : (
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
         {(gy
           ? ILERI_GUNLER.map((g) => ({ anahtar: String(g), aktif: g === ileri, href: adres({ ileri: String(g) }), etiket: t("ileriGun", { gun: g }) }))
@@ -290,7 +302,7 @@ export default async function AlimRehberiSayfasi({
           <KodAramaKutusu
             temelAdres={REHBER_YOLU}
             baslangic={arama ?? ""}
-            tasinanlar={{ donem, liste, az: String(azStok), ileri: String(ileri), gun: oz ? seciliGun?.tarih.id : undefined, ft: ft && ftSuzgec !== "hepsi" ? ftSuzgec : undefined }}
+            tasinanlar={{ donem, liste, az: String(azStok), ileri: String(ileri), gun: oz ? seciliGun?.tarih.id : undefined, ft: ft && ftSuzgec !== "hepsi" ? ftSuzgec : undefined, fk: ft && fk !== "tukenen" ? fk : undefined, fr: ft && fr ? "hepsi" : undefined }}
             ipucu={t("aramaIpucu")}
           />
         </div>
@@ -345,7 +357,29 @@ export default async function AlimRehberiSayfasi({
       ) : ia ? (
         <IyiAlimSekmesi liste={iyiAlim} arama={arama} piyasa={piyasaMetni} />
       ) : ft ? (
-        <FiyatTakibiSekmesi liste={hedefler} suzgec={ftSuzgec} arama={arama} yazabilir={alimYazabilir} />
+        <FiyatTakibiSekmesi
+          liste={hedefler}
+          suzgec={ftSuzgec}
+          arama={arama}
+          yazabilir={alimYazabilir}
+          oneri={
+            oneriKumeleri ? (
+              <FiyatTakibiOnerileri
+                kumeler={oneriKumeleri}
+                kaynak={fk}
+                tumRaf={fr}
+                arama={arama}
+                kanallar={oneriKanallari}
+                hafizalar={hafizalar}
+                takipte={new Set(hedefler.map((h) => h.variantId))}
+                yazabilir={alimYazabilir}
+                kaynakAdresi={Object.fromEntries(ONERI_KAYNAKLARI.map((k) => [k, adres({ fk: k === "tukenen" ? undefined : k })])) as Record<OneriKaynagi, string>}
+                rafAdresi={adres({ fr: fr ? undefined : "hepsi" })}
+                donemEtiketi={t(`donem_${donem}`)}
+              />
+            ) : null
+          }
+        />
       ) : (
       <>
       {/* ── TOPLAM — EKRANDA NE VARSA ONUN (İlke #15) ── */}

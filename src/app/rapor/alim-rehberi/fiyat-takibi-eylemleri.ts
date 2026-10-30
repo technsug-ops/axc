@@ -2,7 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 
-import { alimHedefiAktif, alimHedefiSil, alimHedefiYaz, type HedefYazHatasi } from "@/lib/alim-hedefi-verisi";
+import {
+  alimHedefiAktif,
+  alimHedefiSil,
+  alimHedefiYaz,
+  alimHedefleriTopluYaz,
+  urunTakipBilgisi,
+  type HedefYazHatasi,
+  type TopluYazSonucu,
+  type UrunTakipBilgisi,
+} from "@/lib/alim-hedefi-verisi";
 import { izinVarMi } from "@/lib/yetki";
 
 /**
@@ -45,4 +54,28 @@ export async function hedefAktifEylemi(id: string, aktif: boolean): Promise<Hede
 export async function hedefSilEylemi(id: string): Promise<HedefEylemSonucu> {
   if (!(await izinVarMi("alim.yaz"))) return YETKISIZ;
   return sar("alimHedefiSil", () => alimHedefiSil(id));
+}
+
+/** Toplu takibe al — hedef sunucuda en düşük alıştan hesaplanır (istemcinin yazdığı fiyat kullanılmaz). */
+export async function hedefTopluEylemi(variantIds: string[]): Promise<TopluYazSonucu | { tamam: false; hata: "YETKISIZ" | "HATA" }> {
+  if (!(await izinVarMi("alim.yaz"))) return YETKISIZ;
+  try {
+    const s = await alimHedefleriTopluYaz(variantIds);
+    if (s.tamam) revalidatePath("/rapor/alim-rehberi");
+    return s;
+  } catch (e) {
+    console.error("[alimHedefleriTopluYaz] beklenmeyen hata:", e);
+    return { tamam: false, hata: "HATA" };
+  }
+}
+
+/** Formda ürün seçilince — yalnız OKUR; alım geçmişi kâr iznine değil alım yazma iznine bağlı formda gösterilir. */
+export async function urunTakipBilgisiEylemi(variantId: string): Promise<UrunTakipBilgisi | null> {
+  if (!(await izinVarMi("alim.yaz"))) return null;
+  try {
+    return await urunTakipBilgisi(variantId);
+  } catch (e) {
+    console.error("[urunTakipBilgisi] beklenmeyen hata:", e);
+    return null;
+  }
 }

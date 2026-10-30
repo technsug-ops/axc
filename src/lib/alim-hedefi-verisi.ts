@@ -6,6 +6,10 @@ import type { GorselKaynagi } from "@/lib/urun-gorseli";
 import { BUYBOX_KANALLARI, type BuyboxKanali } from "./buybox";
 import { buyboxDurumlari, buyboxUrunleri } from "./buybox-verisi";
 import { altindakiler, enUcuz, firsatFiyati, hedefCoz, hedefinAltinda, type HedefSatiri } from "./alim-hedefi";
+import { hedefGirdiMetni, onerilenHedef, oneriDurumu, TOPLU_TAVAN } from "./alim-hedefi-oneri";
+import { alisKayitlari } from "./alim-fiyat-hafizasi-verisi";
+import { fiyatHafizasi, type FiyatHafizasi } from "./alim-fiyat-hafizasi";
+import { ilanAdresi } from "./kanal-ilan-adresi";
 
 /**
  * ============================================================================
@@ -44,6 +48,13 @@ export type HedefListeSatiri = HedefSatiri & {
 const sayi = (d: { toString(): string } | null) => (d === null ? null : Number(d.toString()));
 const kanalMi = (k: string | null): k is BuyboxKanali => k === "TY" || k === "HB";
 const KANAL_ADI: Record<BuyboxKanali, string> = { TY: "Trendyol", HB: "Hepsiburada" };
+
+/**
+ * «Bu ürün takip edilebilir mi» — TY ya da HB'de SATIŞ hesabında aktif ilan.
+ * Yazım kapısı, öneri listesi ve ürün bilgisi AYNI koşulu okur (iki yerde iki
+ * ölçüt olsaydı listede «takip edilebilir» görünen ürün yazımda reddedilirdi).
+ */
+const TAKIP_ILANI = { isActive: true, channelAccount: { satisIcin: true, isActive: true, channel: { name: { in: Object.values(KANAL_ADI) } } } } as const;
 
 /** Bütün hedefler (aktif + pasif), ekranın ihtiyacıyla. Sıralama ekranda (`hedefSirala`). */
 export async function alimHedefleri(): Promise<HedefListeSatiri[]> {
@@ -166,7 +177,7 @@ export async function alimHedefiYaz(variantId: string, hamFiyat: string): Promis
     where: { id: variantId },
     select: {
       id: true,
-      channelSkus: { where: { isActive: true, channelAccount: { satisIcin: true, isActive: true, channel: { name: { in: Object.values(KANAL_ADI) } } } }, select: { id: true } },
+      channelSkus: { where: TAKIP_ILANI, select: { id: true } },
       alimHedefi: { select: { id: true, hedefAmount: true, aktif: true } },
     },
   });
@@ -214,4 +225,116 @@ export async function alimHedefiSil(id: string): Promise<HedefYazSonucu> {
     await izYaz({ action: "ALIM_HEDEFI_SIL", targetType: "AlimHedefi", targetId: id, detail: JSON.stringify({ variantId: eski.variantId, hedef: eski.hedefAmount.toString() }) }, tx);
   });
   return { tamam: true };
+}
+
+export type TakipKanali = { ilan: boolean; adres: string | null };
+
+/**
+ * Varyant başına TY/HB: aktif ilan var mı + ÜRÜN SAYFASI linki. ⚠ Link bizim
+ * mağazamızı DEĞİL ürün sayfasını açar (satıcı kimliği / mağaza adı verilmez):
+ * alım için bakılan şey en ucuz satıcıdır, pazaryeri onu öne çıkarır.
+ */
+export async function takipKanallari(variantIds: readonly string[]): Promise<Map<string, Record<BuyboxKanali, TakipKanali>>> {
+  const kayitlar =
+    variantIds.length === 0
+      ? []
+      : await prisma.channelSku.findMany({
+          where: { variantId: { in: [...variantIds] }, ...TAKIP_ILANI },
+          select: { variantId: true, channelSku: true, externalListingId: true, channelAccount: { select: { channel: { select: { code: true, name: true } } } } },
+        });
+  const harita = new Map<string, Record<BuyboxKanali, TakipKanali>>();
+  for (const id of variantIds) harita.set(id, { TY: { ilan: false, adres: null }, HB: { ilan: false, adres: null } });
+  for (const k of kayitlar) {
+    const kanal = (Object.keys(KANAL_ADI) as BuyboxKanali[]).find((x) => KANAL_ADI[x] === k.channelAccount.channel.name);
+    const yer = harita.get(k.variantId);
+    if (!kanal || !yer) continue;
+    yer[kanal].ilan = true;
+    yer[kanal].adres ??= ilanAdresi(k.channelAccount.channel.code, { channelSku: k.channelSku, externalListingId: k.externalListingId, saticiId: null, magazaAdi: null });
+  }
+  return harita;
+}
+
+export type UrunTakipBilgisi = {
+  hafiza: Pick<FiyatHafizasi, "enUcuz" | "normal" | "alisSayisi"> | null;
+  /** Hedef kutusuna önerilen metin (en düşük alış); alış yoksa `null`. */
+  hedefGirdi: string | null;
+  ilan: Record<BuyboxKanali, boolean>;
+  takipte: boolean;
+};
+
+/** Formda ürün seçilince: en düşük alış · normal · hangi kanaldan okunacağı · zaten takipte mi. */
+export async function urunTakipBilgisi(variantId: string): Promise<UrunTakipBilgisi> {
+  const [kayit, kanallar, hedef] = await Promise.all([
+    alisKayitlari({ variantIds: [variantId] }),
+    takipKanallari([variantId]),
+    prisma.alimHedefi.findUnique({ where: { variantId }, select: { id: true } }),
+  ]);
+  const h = fiyatHafizasi(kayit.get(variantId) ?? [], "TRY");
+  const oneri = onerilenHedef(h);
+  const k = kanallar.get(variantId);
+  return {
+    hafiza: h ? { enUcuz: h.enUcuz, normal: h.normal, alisSayisi: h.alisSayisi } : null,
+    hedefGirdi: oneri === null ? null : hedefGirdiMetni(oneri),
+    ilan: { TY: k?.TY.ilan ?? false, HB: k?.HB.ilan ?? false },
+    takipte: hedef !== null,
+  };
+}
+
+export type TopluYazSonucu =
+  | { tamam: true; alindi: number; takipte: number; ilanYok: number; alisYok: number; bulunamadi: number }
+  | { tamam: false; hata: "BOS" | "COK_FAZLA" };
+
+/**
+ * TOPLU TAKİBE AL. Hedef İSTEMCİDEN ALINMAZ — sunucuda en düşük alıştan yeniden
+ * hesaplanır (ekrandaki öneriyle aynı gövde: `onerilenHedef`). Takipte olanın
+ * hedefi EZİLMEZ (atlanır), ilanı ya da alışı olmayan atlanır; hepsi SAYILIR ve
+ * döner. Tek işlem: ya hepsi yazılır ya hiçbiri; tek iz, eklenen her ürünün
+ * hedefiyle (geri alma yolu listeye bağlı değil — her takip tek tek silinebilir).
+ */
+export async function alimHedefleriTopluYaz(variantIds: readonly string[]): Promise<TopluYazSonucu> {
+  const ids = [...new Set(variantIds)];
+  if (ids.length === 0) return { tamam: false, hata: "BOS" };
+  if (ids.length > TOPLU_TAVAN) return { tamam: false, hata: "COK_FAZLA" };
+  const [varyantlar, kayit] = await Promise.all([
+    prisma.productVariant.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, alimHedefi: { select: { id: true } }, channelSkus: { where: TAKIP_ILANI, select: { channelAccount: { select: { channel: { select: { name: true } } } } } } },
+    }),
+    alisKayitlari({ variantIds: ids }),
+  ]);
+  /** Silinmiş/bulunamayan ürün de SAYILIR — seçilen her satır bir kovaya düşer. */
+  const sonuc = { alindi: 0, takipte: 0, ilanYok: 0, alisYok: 0, bulunamadi: ids.length - varyantlar.length };
+  const yazilacak: { variantId: string; hedef: number }[] = [];
+  for (const v of varyantlar) {
+    const adlar = new Set(v.channelSkus.map((c) => c.channelAccount.channel.name));
+    const hedef = onerilenHedef(fiyatHafizasi(kayit.get(v.id) ?? [], "TRY"));
+    const d = oneriDurumu({ takipte: v.alimHedefi !== null, ilan: { TY: adlar.has(KANAL_ADI.TY), HB: adlar.has(KANAL_ADI.HB) }, hedef });
+    if (d === "TAKIPTE") sonuc.takipte++;
+    else if (d === "ILAN_YOK") sonuc.ilanYok++;
+    else if (d === "ALIS_YOK") sonuc.alisYok++;
+    else yazilacak.push({ variantId: v.id, hedef: hedef as number });
+  }
+  if (yazilacak.length > 0) {
+    await prisma.$transaction(
+      async (tx) => {
+        const r = await tx.alimHedefi.createMany({
+          data: yazilacak.map((y) => ({ variantId: y.variantId, hedefAmount: y.hedef.toFixed(4), currency: "TRY" as const })),
+          skipDuplicates: true,
+        });
+        sonuc.alindi = r.count;
+        /** Yarışta başka biri aynı ürünü eklediyse createMany atlar — atlanan «takipte» sayılır (sessiz kayıp yok). */
+        sonuc.takipte += yazilacak.length - r.count;
+        await izYaz(
+          {
+            action: "ALIM_HEDEFI_TOPLU_EKLE",
+            targetType: "AlimHedefi",
+            detail: JSON.stringify({ kaynak: "en dusuk alis", eklenen: yazilacak.map((y) => ({ variantId: y.variantId, hedef: y.hedef.toFixed(2) })), atlanan: { takipte: sonuc.takipte, ilanYok: sonuc.ilanYok, alisYok: sonuc.alisYok, bulunamadi: sonuc.bulunamadi } }),
+          },
+          tx,
+        );
+      },
+      { timeout: 60_000 },
+    );
+  }
+  return { tamam: true, ...sonuc };
 }
