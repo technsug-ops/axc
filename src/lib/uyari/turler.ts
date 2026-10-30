@@ -26,6 +26,7 @@
 import type { Izin } from "@/lib/yetki/izinler";
 import { KDV_UYUSMAZLIGI_ADRESI } from "@/lib/kdv-uyusmazligi-kurali";
 import { ozelGunRehberAdresi } from "@/lib/ozel-gun/ozel-gun";
+import { fiyatTakibiAdresi } from "@/lib/alim-hedefi";
 
 export const UYARI_SEVIYELERI = ["kirmizi", "amber", "notr"] as const;
 export type UyariSeviyesi = (typeof UYARI_SEVIYELERI)[number];
@@ -162,6 +163,10 @@ export const UYARI_ANAHTARLARI = [
   //    bugün rafta eksik olan (satış günü) ya da geçen kampanyada alınan (alım
   //    kampanyası) ürünler. Sayı ve liste `ozel-gun-verisi.ts`teki AYNI gövdeden. ──
   "ozelGunYaklasiyor",
+  // ── K363 Faz 3-d (30.10.2026): takibe alınan ürünün TY/HB fiyatı kullanıcının
+  //    yazdığı hedef alış fiyatına indi. Sayı ve liste `alim-hedefi.ts`teki AYNI
+  //    gövdeden (`altindakiler`). ──
+  "alimHedefiAltinda",
 ] as const;
 
 export type UyariAnahtari = (typeof UYARI_ANAHTARLARI)[number];
@@ -230,6 +235,8 @@ export const UYARI_ADRESLERI: Record<UyariAnahtari, string> = {
    * Adres sahibinden (İlke #16).
    */
   ozelGunYaklasiyor: ozelGunRehberAdresi(null),
+  /** Adres sahibinden (İlke #16): sekmenin «Hedefin altında» süzgeci = çan kümesi. */
+  alimHedefiAltinda: fiyatTakibiAdresi("altinda"),
 };
 
 /**
@@ -279,6 +286,8 @@ export const UYARI_SEVIYESI: Record<UyariAnahtari, UyariSeviyesi> = {
   yayinBoslugu: "kirmizi",
   /* Kaçırılan fırsat — para kaybı değil, eylem var (alım) — nötr; rozeti şişirmez. */
   ozelGunYaklasiyor: "notr",
+  /* Fırsat — para kaybı değil, eylem var (alım) — nötr; rozeti şişirmez (özel gün haberiyle aynı sınıf). */
+  alimHedefiAltinda: "notr",
 };
 
 /**
@@ -320,6 +329,8 @@ export const UYARI_IZINLERI: Record<UyariAnahtari, Izin | null> = {
   yayinBoslugu: "ayar.yaz",
   /* Liste kârı pozitif ürünleri süzer; rehber `satis.kar.gor` olmadan listeyi göstermez. */
   ozelGunYaklasiyor: "satis.kar.gor",
+  /* Sekme alım rehberinde; rehber `satis.kar.gor` olmadan listeyi göstermez. */
+  alimHedefiAltinda: "satis.kar.gor",
 };
 
 export type Uyari = {

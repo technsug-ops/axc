@@ -178,7 +178,8 @@ kosanBolumler.push("ekran");
 console.log("\n⑥ alım rehberi — piyasa fiyatı istek üzerine");
 {
   const s = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/page.tsx"));
-  kontrol("yalnız istenince ve özel gün sekmesi dışında sorulur", /const piyasaIstendi = p\.piyasa === "1" && !oz;/.test(s) && /const piyasa = piyasaIstendi \? await piyasaFiyatlari\(piyasaKumesi\.slice\(0, PIYASA_TAVAN\)\) : null;/.test(s));
+  /* Faz 3-d (30.10): fiyat takibi sekmesinde de piyasa sorulmaz (kendi saatlik ölçümü var) — `&& !ft`. */
+  kontrol("yalnız istenince, özel gün ve fiyat takibi sekmeleri dışında sorulur", /const piyasaIstendi = p\.piyasa === "1" && !oz && !ft;/.test(s) && /const piyasa = piyasaIstendi \? await piyasaFiyatlari\(piyasaKumesi\.slice\(0, PIYASA_TAVAN\)\) : null;/.test(s));
   kontrol("sorulan küme EKRANDAKİ liste (arama dahil; iyi alımda kendi listesi)", /const piyasaKumesi = ia \? iyiAlimAra\(iyiAlim, arama\)\.map\(\(x\) => x\.satir\.variantId\) : gorunen\.map\(\(s\) => s\.variantId\);/.test(s));
   const tasinan = blok(s, "const tasinan = {", 200);
   kontrol("piyasa TAŞINAN parametrelere girmez (sekme/dönem/arama değişince kapanır)", tasinan.length > 0 && !/piyasa/.test(tasinan.split("\n")[0]));

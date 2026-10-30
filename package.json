@@ -256,6 +256,7 @@
     "alim-rehberi:dogrula": "tsx scripts/alim-rehberi-dogrula.ts",
     "ozel-gun:dogrula": "tsx scripts/ozel-gun-dogrula.ts",
     "alim-fiyat-hafizasi:dogrula": "tsx scripts/alim-fiyat-hafizasi-dogrula.ts",
+    "alim-hedefi:dogrula": "tsx scripts/alim-hedefi-dogrula.ts",
     "buybox:dogrula": "tsx scripts/buybox-dogrula.ts",
     "buybox-istatistik:dogrula": "tsx scripts/buybox-istatistik-dogrula.ts",
     "buybox-fiyat:dogrula": "tsx scripts/buybox-fiyat-dogrula.ts",

@@ -29,7 +29,7 @@ import {
  * doluluğu bekçide AYRICA ölçülür — boş küme her koşulu sağlar.
  */
 /** K283: Trendyol kategori eşleşmesi ölçümü de İSTEĞE BAĞLI — aynı gerekçe. */
-type IstegeBagliOlcum = CanaTasinanGorev | "tyKategoriKarsiliksiz" | "geceTuruSorunlu" | "kdvOraniUyusmuyor" | "yayinBoslugu" | "ozelGunYaklasiyor";
+type IstegeBagliOlcum = CanaTasinanGorev | "tyKategoriKarsiliksiz" | "geceTuruSorunlu" | "kdvOraniUyusmuyor" | "yayinBoslugu" | "ozelGunYaklasiyor" | "alimHedefiAltinda";
 /**
  * `adres` — ölçüm SEÇİLİ kaydı açan adresi taşıyabilir (K363 Faz 2-c: özel gün
  * sekmesinde o gün seçili). Verilmezse haritadaki taban adres; `degiskenler`

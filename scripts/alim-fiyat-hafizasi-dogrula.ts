@@ -191,7 +191,8 @@ console.log("\n⑥ bağlar — veri · eylem · form · rehber · Excel · sözl
   kontrol("rehber: liste dönemin satırlarından ve TRY hafızalarından", /const iyiAlim = iyiAlimListesi\(veri\.satirlar, hafizalar\);/.test(sayfa) && /tryHafizalari\(\),/.test(sayfa));
   /* K363 Faz 3-a (25.10): sekmeye istek üzerine piyasa metni de geçer — liste yine TAM, arama yine bileşende. */
   kontrol("rehber: sekme bileşeni TAM listeyi alır, aramayı kendisi uygular", /ia \? \(\s*<IyiAlimSekmesi liste=\{iyiAlim\} arama=\{arama\} piyasa=\{piyasaMetni\} \/>/.test(sayfa));
-  const excelDali = blok(sayfa, "{oz || ia ? null : (\n        <a", 200) || blok(sayfa, "{oz || ia ? null : (\r\n        <a", 200);
+  /* Faz 3-d (30.10): koşul `oz || ia || ft ? null : (` — fiyat takibi sekmesinde de Excel yok. */
+  const excelDali = blok(sayfa, "{oz || ia || ft ? null : (\n        <a", 200) || blok(sayfa, "{oz || ia || ft ? null : (\r\n        <a", 200);
   kontrol("rehber: bu sekmede Excel düğmesi ÇİZİLMEZ", /href=\{excelAdresi\}/.test(excelDali));
   const excel = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/excel/route.ts"));
   kontrol("Excel: adres elle yazılırsa başka liste inmez, nedeni söylenir (400)", /if \(liste === "iyiAlim"\) return new Response\(t\("excelIyiAlimYok"\), \{ status: 400/.test(excel));

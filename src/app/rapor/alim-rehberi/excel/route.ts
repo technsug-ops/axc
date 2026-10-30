@@ -46,6 +46,8 @@ export async function GET(istek: Request) {
   if (liste === "ozelGun") return new Response(t("excelOzelGunYok"), { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   /* «Kampanyada iyi aldıkların» sekmesinin de Excel'i yok (Faz 2-d) — aynı ilke. */
   if (liste === "iyiAlim") return new Response(t("excelIyiAlimYok"), { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  /* «Fiyat takibi» sekmesinin de Excel'i yok (Faz 3-d) — aynı ilke. */
+  if (liste === "fiyatTakibi") return new Response(t("excelFiyatTakibiYok"), { status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   const gy = liste === "gecenYil";
 
   const veri = await rehberVerisi(donem, ileri, new Date());

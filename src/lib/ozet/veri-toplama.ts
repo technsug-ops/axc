@@ -83,6 +83,7 @@ const UYARI_BAGLAMI: Record<UyariAnahtari, string> = {
   yayinBoslugu: "Canlı site ana daldaki son sürümün gerisinde (yayımlanmamış düzeltme)",
   ozelGunYaklasiyor:
     "30 gün içinde başlayan özel gün için listedeki ürün sayısı (satış günü: geçen yıl o gün satılıp bugün rafta eksik olan; alım kampanyası: geçen kampanyada alınan)",
+  alimHedefiAltinda: "Takibe alınan ve Trendyol/Hepsiburada fiyatı kullanıcının hedef alış fiyatına inen ürün sayısı (alım fırsatı)",
 };
 
 /**

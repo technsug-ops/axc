@@ -165,7 +165,8 @@ console.log("\n⑥ bağlar");
   kontrol(
     "sayfa: sekme sayısı ARAMADAN BAĞIMSIZ (tam liste uzunluğu; özel günlerde gün sayısı; iyi alımda kendi tam listesi)",
     /\{t\(`liste_\$\{l\}`\)\} \(\{sekmeSayisi\(l\)\}\)/.test(sayfa) &&
-      /const sekmeSayisi = \(l: RehberSekmesi\) => \(l === "ozelGun" \? yaklasan\.length : l === "iyiAlim" \? iyiAlim\.length : listeler\[l\]\.length\);/.test(sayfa) &&
+      /* Faz 3-d (30.10): fiyat takibi sekmesi BÜTÜN hedefleri sayar (sekme süzgeçsiz «Hepsi» açılır) — ölçüt o dalı da kapsar. */
+      /const sekmeSayisi = \(l: RehberSekmesi\) =>\s*l === "ozelGun" \? yaklasan\.length : l === "iyiAlim" \? iyiAlim\.length : l === "fiyatTakibi" \? hedefler\.length : listeler\[l\]\.length;/.test(sayfa) &&
       /const iyiAlim = iyiAlimListesi\(veri\.satirlar, hafizalar\);/.test(sayfa),
   );
   kontrol("sayfa: toplam EKRANDAKİ listeden (aramadan sonra)", /const gorunen = rehberAra\(tamListe, arama\);\s*const toplam = rehberToplami\(gorunen\);/.test(sayfa));
@@ -179,7 +180,8 @@ console.log("\n⑥ bağlar");
   kontrol("sayfa: beş sekme de çizilir (REHBER_SEKMELERI)", /\{REHBER_SEKMELERI\.map\(\(l\) =>/.test(sayfa));
   /* Faz 2-b (24.10): koşul `oz ? null : gy ? (` oldu — özel gün sekmesi kendi uyarısını kendi bileşeninde çizer. */
   /* Faz 2-d (24.10): koşul `oz || ia ? null : gy ? (` — iyi alım sekmesi de kendi notunu kendi bileşeninde çizer. */
-  kontrol("sayfa: geçen yıl sekmesinde uyarı (tahmin değil hatırlatma) çizilir", /\{oz \|\| ia \? null : gy \? \(\s*<div[^>]*>[\s\S]{0,260}t\("gecenYilUyari"\)/.test(sayfa));
+  /* Faz 3-d (30.10): koşula `ft` eklendi — fiyat takibi sekmesi de kendi notunu kendi bileşeninde çizer. */
+  kontrol("sayfa: geçen yıl sekmesinde uyarı (tahmin değil hatırlatma) çizilir", /\{oz \|\| ia \|\| ft \? null : gy \? \(\s*<div[^>]*>[\s\S]{0,260}t\("gecenYilUyari"\)/.test(sayfa));
   kontrol("sayfa: veri yoksa boş liste «temiz» değil «bakılamadı» der", /gy && veri\.gecenYil\.kapsam === "YOK" \? t\("gecenYilVeriYok"/.test(sayfa));
   const verisi = yorumsuz(kaynakOku("src/lib/rapor/alim-rehberi-verisi.ts"));
   kontrol("veri: geçen yıl satışı BUGÜNÜN stoğuyla birleşir (aynı stok, pencere uzunluğu gün)", /rehberKur\(gecenYilSatis, stok, ileri\)/.test(verisi));

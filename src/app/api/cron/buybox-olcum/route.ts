@@ -3,6 +3,7 @@ import "@/lib/arka-plan-havuzu";
 import { NextRequest, NextResponse } from "next/server";
 
 import { buyboxOlcumleriniYaz } from "@/lib/buybox-istatistik-verisi";
+import { alimHedefleriniOlc } from "@/lib/alim-hedefi-verisi";
 
 /**
  * ============================================================================
@@ -17,6 +18,9 @@ import { buyboxOlcumleriniYaz } from "@/lib/buybox-istatistik-verisi";
  *  ⛔ PAZARYERİNE HİÇBİR ŞEY YAZILMAZ — yalnız okuma uçları.
  *  ⛔ DÜŞEN KANAL DURUM KODUNA YANSIR (500): yarısı koşmayan ölçüm «başarılı»
  *  görünmesin. «Atlandı» düşmek değildir (çift tetik, hesap yok).
+ *  K363 Faz 3-d (30.10.2026): Buybox ölçümünden SONRA alım hedeflerinin
+ *  fiyatı okunur (`alim-hedefi-verisi.ts`; stok şartı yok). Buybox ölçümü
+ *  düşse de koşar; kendisi düşerse durum koduna yansır, Buybox sonucunu silmez.
  * ============================================================================
  */
 
@@ -32,6 +36,11 @@ export async function GET(istek: NextRequest) {
   }
   const basladi = Date.now();
   const kanallar = await buyboxOlcumleriniYaz(new Date());
-  const dusen = kanallar.filter((k) => k.durum === "COKTU" || (k.durum === "ATLANDI" && k.sebep === "HEPSI_SORGULANAMADI")).length;
-  return NextResponse.json({ kanallar, dusen, sureMs: Date.now() - basladi }, { status: dusen > 0 ? 500 : 200 });
+  const hedefler = await alimHedefleriniOlc().catch((e: unknown) => ({
+    durum: "COKTU" as const,
+    mesaj: (e instanceof Error ? (e.stack ?? e.message) : String(e)).replace(/\r?\n/g, " "),
+  }));
+  const hedefDustu = hedefler.durum === "COKTU" || (hedefler.durum === "YAZILDI" && hedefler.kanallar.some((k) => k.dustu));
+  const dusen = kanallar.filter((k) => k.durum === "COKTU" || (k.durum === "ATLANDI" && k.sebep === "HEPSI_SORGULANAMADI")).length + (hedefDustu ? 1 : 0);
+  return NextResponse.json({ kanallar, hedefler, dusen, sureMs: Date.now() - basladi }, { status: dusen > 0 ? 500 : 200 });
 }

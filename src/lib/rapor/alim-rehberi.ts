@@ -60,7 +60,8 @@ export type RehberListesi = (typeof REHBER_LISTELERI)[number];
  * Yedinci sekme «Kampanyada iyi aldıkların» (Faz 2-d, 24.10.2026): dönemde
  * satılan ve son alışı en ucuz alışından pahalı ürünler (`lib/alim-fiyat-hafizasi`).
  */
-export const REHBER_SEKMELERI = [...REHBER_LISTELERI, "gecenYil", "ozelGun", "iyiAlim"] as const;
+/** K363 Faz 3-d (30.10.2026): «Fiyat takibi» — kullanıcının yazdığı hedef alış fiyatları (`lib/alim-hedefi.ts`); kendi bileşeni çizer. */
+export const REHBER_SEKMELERI = [...REHBER_LISTELERI, "gecenYil", "ozelGun", "iyiAlim", "fiyatTakibi"] as const;
 export type RehberSekmesi = (typeof REHBER_SEKMELERI)[number];
 
 /** «Önümüzdeki N gün» — geçen yılın aynı tarihlerine bakılır. */

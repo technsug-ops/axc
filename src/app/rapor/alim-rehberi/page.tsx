@@ -38,6 +38,9 @@ import { YAKLASAN_GUN, yaklasanlar } from "@/lib/ozel-gun/ozel-gun";
 import { ozelGunDetayi, ozelGunKayitlari } from "@/lib/ozel-gun/ozel-gun-verisi";
 import { OzelGunSekmesi } from "./ozel-gun-sekmesi";
 import { IyiAlimSekmesi } from "./iyi-alim-sekmesi";
+import { FiyatTakibiSekmesi } from "./fiyat-takibi-sekmesi";
+import { fiyatTakibiSuzgeciCoz } from "@/lib/alim-hedefi";
+import { alimHedefleri } from "@/lib/alim-hedefi-verisi";
 import { iyiAlimAra, iyiAlimListesi } from "@/lib/alim-fiyat-hafizasi";
 import { PIYASA_TAVAN } from "@/lib/buybox";
 import { piyasaFiyatlari } from "@/lib/buybox-verisi";
@@ -80,7 +83,7 @@ export async function generateMetadata() {
 export default async function AlimRehberiSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ donem?: string; liste?: string; az?: string; ileri?: string; q?: string; gun?: string; piyasa?: string }>;
+  searchParams: Promise<{ donem?: string; liste?: string; az?: string; ileri?: string; q?: string; gun?: string; piyasa?: string; ft?: string }>;
 }) {
   await sayfaIzni("rapor.gor");
   const p = await searchParams;
@@ -97,6 +100,9 @@ export default async function AlimRehberiSayfasi({
   const oz = liste === "ozelGun";
   /** Faz 2-d: «Kampanyada iyi aldıkların» — dönem seçimi kalır (satılan dönemde ölçülür); eşik, az stok ve Excel bu sekmede yok. */
   const ia = liste === "iyiAlim";
+  /** Faz 3-d: «Fiyat takibi» — kendi bileşeni çizer; dönem, eşik, az stok, Excel ve piyasa düğmesi bu sekmede yok. */
+  const ft = liste === "fiyatTakibi";
+  const ftSuzgec = fiyatTakibiSuzgeciCoz(p.ft);
   const arama = p.q?.trim() || null;
 
   const karGorunur = await izinVarMi("satis.kar.gor");
@@ -111,11 +117,13 @@ export default async function AlimRehberiSayfasi({
 
   const an = new Date();
   const bugun = gunDegeri(isTakvimGunu(an));
-  const [veri, ozelKayitlar, ayarlariGorebilir, hafizalar] = await Promise.all([
+  const [veri, ozelKayitlar, ayarlariGorebilir, hafizalar, hedefler, alimYazabilir] = await Promise.all([
     rehberVerisi(donem, ileri, an),
     ozelGunKayitlari(),
     izinVarMi("ayar.yaz"),
     tryHafizalari(),
+    alimHedefleri(),
+    izinVarMi("alim.yaz"),
   ]);
   const esik = esikleriKur(veri.satirlar);
   const yaklasan = yaklasanlar(ozelKayitlar, bugun);
@@ -125,9 +133,14 @@ export default async function AlimRehberiSayfasi({
     gecenYil: gecenYilListesi(veri.gecenYil.satirlar),
     ozelGun: [] as RehberSatiri[],
     iyiAlim: [] as RehberSatiri[],
+    fiyatTakibi: [] as RehberSatiri[],
   } as Record<RehberSekmesi, RehberSatiri[]>;
-  /** Sekme sayısı: özel gün sekmesinde yaklaşan GÜN sayısı, iyi alımda kendi listesi, ötekilerde ürün sayısı (sayı = açılan liste). */
-  const sekmeSayisi = (l: RehberSekmesi) => (l === "ozelGun" ? yaklasan.length : l === "iyiAlim" ? iyiAlim.length : listeler[l].length);
+  /**
+   * Sekme sayısı: özel gün sekmesinde yaklaşan GÜN sayısı, iyi alımda kendi listesi, fiyat takibinde BÜTÜN hedefler
+   * (sekme süzgeçsiz «Hepsi» açılır; «hedefin altında» sayısı sekmenin içinde yazar), ötekilerde ürün sayısı (sayı = açılan liste).
+   */
+  const sekmeSayisi = (l: RehberSekmesi) =>
+    l === "ozelGun" ? yaklasan.length : l === "iyiAlim" ? iyiAlim.length : l === "fiyatTakibi" ? hedefler.length : listeler[l].length;
   const seciliGun = oz ? (yaklasan.find((y) => y.tarih.id === p.gun) ?? yaklasan[0] ?? null) : null;
   const ozelDetay = seciliGun ? await ozelGunDetayi(seciliGun, an, veri.stok, veri.satirlar) : null;
   const tamListe = listeler[liste];
@@ -140,7 +153,7 @@ export default async function AlimRehberiSayfasi({
    * Taşınan parametrelere GİRMEZ: sekme/dönem/arama değişince kendiliğinden
    * kapanır — her tıklamada onlarca canlı sorgu gitmesin. Özel gün sekmesinde yok.
    */
-  const piyasaIstendi = p.piyasa === "1" && !oz;
+  const piyasaIstendi = p.piyasa === "1" && !oz && !ft;
   const piyasaKumesi = ia ? iyiAlimAra(iyiAlim, arama).map((x) => x.satir.variantId) : gorunen.map((s) => s.variantId);
   const piyasa = piyasaIstendi ? await piyasaFiyatlari(piyasaKumesi.slice(0, PIYASA_TAVAN)) : null;
   const piyasaMetni: Record<string, string> | null = piyasa
@@ -154,7 +167,7 @@ export default async function AlimRehberiSayfasi({
   const piyasaYaz = (variantId: string) => piyasaMetni?.[variantId] ?? t("piyasaSorulmadi");
 
   /** Adres TEK yerden — sekme, dönem, form ve Excel aynı parametreleri taşır. */
-  const tasinan = { donem, liste, az: String(azStok), ileri: String(ileri), q: arama ?? undefined, gun: oz ? seciliGun?.tarih.id : undefined };
+  const tasinan = { donem, liste, az: String(azStok), ileri: String(ileri), q: arama ?? undefined, gun: oz ? seciliGun?.tarih.id : undefined, ft: ft && ftSuzgec !== "hepsi" ? ftSuzgec : undefined };
   const adres = (ek: Record<string, string | undefined>) => suzgecAdresi(REHBER_YOLU, tasinan, ek);
   const excelAdresi = suzgecAdresi(`${REHBER_YOLU}/excel`, tasinan, {});
 
@@ -171,7 +184,9 @@ export default async function AlimRehberiSayfasi({
             ? t("aciklama_ozelGun", { gun: YAKLASAN_GUN })
             : liste === "iyiAlim"
               ? t("aciklama_iyiAlim", { donem: t(`donem_${donem}`) })
-              : t(`aciklama_${liste}`);
+              : liste === "fiyatTakibi"
+                ? t("aciklama_fiyatTakibi")
+                : t(`aciklama_${liste}`);
   const gyPencere = { bas: bicim.tarih(veri.gecenYil.ilkGun), bit: bicim.tarih(veri.gecenYil.sonGun) };
   const gyIlk = veri.gecenYil.ilkSatis === null ? "—" : bicim.tarih(veri.gecenYil.ilkSatis);
 
@@ -187,7 +202,7 @@ export default async function AlimRehberiSayfasi({
       </div>
 
       {/* ── DÖNEM (dört liste) ya da ÖNÜMÜZDEKİ N GÜN (geçen yıl) — adreste yaşar ── */}
-      {oz ? null : (
+      {oz || ft ? null : (
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:flex-wrap md:px-0">
         {(gy
           ? ILERI_GUNLER.map((g) => ({ anahtar: String(g), aktif: g === ileri, href: adres({ ileri: String(g) }), etiket: t("ileriGun", { gun: g }) }))
@@ -209,7 +224,7 @@ export default async function AlimRehberiSayfasi({
       )}
 
       {/* ── EŞİKLER VERİDEN — hangi sayıya göre süzüldüğü yazar; geçen yıl sekmesinde PENCERE + uyarı + kapsam ── */}
-      {oz || ia ? null : gy ? (
+      {oz || ia || ft ? null : gy ? (
         <div className="space-y-1 text-sm">
           <p className="text-muted-foreground">{t("gecenYilPencere", { bas: gyPencere.bas, bit: gyPencere.bit })}</p>
           <p className={DURUM_YAZISI.uyari}>{t("gecenYilUyari")}</p>
@@ -246,7 +261,7 @@ export default async function AlimRehberiSayfasi({
 
       {/* ── AZ STOK AYARI · ARAMA · EXCEL ── */}
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
-        {gy || oz || ia ? null : (
+        {gy || oz || ia || ft ? null : (
         <form action={REHBER_YOLU} method="get" className="flex items-end gap-2">
           <input type="hidden" name="donem" value={donem} />
           <input type="hidden" name="liste" value={liste} />
@@ -275,11 +290,11 @@ export default async function AlimRehberiSayfasi({
           <KodAramaKutusu
             temelAdres={REHBER_YOLU}
             baslangic={arama ?? ""}
-            tasinanlar={{ donem, liste, az: String(azStok), ileri: String(ileri), gun: oz ? seciliGun?.tarih.id : undefined }}
+            tasinanlar={{ donem, liste, az: String(azStok), ileri: String(ileri), gun: oz ? seciliGun?.tarih.id : undefined, ft: ft && ftSuzgec !== "hepsi" ? ftSuzgec : undefined }}
             ipucu={t("aramaIpucu")}
           />
         </div>
-        {oz || ia ? null : (
+        {oz || ia || ft ? null : (
         <a
           href={excelAdresi}
           className="border-input hover:bg-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium underline-offset-4"
@@ -289,10 +304,10 @@ export default async function AlimRehberiSayfasi({
         </a>
         )}
       </div>
-      {gy || oz || ia ? null : <p className="text-muted-foreground text-xs">{t("azStokNotu", { gun: VARSAYILAN_AZ_STOK_GUN })}</p>}
+      {gy || oz || ia || ft ? null : <p className="text-muted-foreground text-xs">{t("azStokNotu", { gun: VARSAYILAN_AZ_STOK_GUN })}</p>}
 
       {/* ── PİYASA FİYATI — istek üzerine canlı Buybox (K363 Faz 3-a) ── */}
-      {oz ? null : (
+      {oz || ft ? null : (
         <div className="flex flex-wrap items-center gap-3 text-sm">
           {piyasa === null ? (
             <Link
@@ -329,6 +344,8 @@ export default async function AlimRehberiSayfasi({
         />
       ) : ia ? (
         <IyiAlimSekmesi liste={iyiAlim} arama={arama} piyasa={piyasaMetni} />
+      ) : ft ? (
+        <FiyatTakibiSekmesi liste={hedefler} suzgec={ftSuzgec} arama={arama} yazabilir={alimYazabilir} />
       ) : (
       <>
       {/* ── TOPLAM — EKRANDA NE VARSA ONUN (İlke #15) ── */}

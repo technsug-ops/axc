@@ -30,10 +30,10 @@ enum Currency {
 /// Hiçbiri GELİR değildir: ciro · NET-1 · NET-2 · KDV · stopaj hesabına GİRMEZ.
 /// Yalnız banka kredisi taksitindeki FAİZ ve VERGİ gidere düşer (kart faizi deseni).
 enum FinansmanTuru {
-  SERMAYE            // sermaye artırımı — geri ödenmez
-  ORTAK_BORCU        // ortaktan borç — geri ödenir ya da sermayeye mahsup edilir
-  UCUNCU_KISI_BORCU  // dışarıdan kişi/kurumdan borç
-  BANKA_KREDISI      // taksitli, faizli; plan bankanın ödeme planından girilir
+  SERMAYE // sermaye artırımı — geri ödenmez
+  ORTAK_BORCU // ortaktan borç — geri ödenir ya da sermayeye mahsup edilir
+  UCUNCU_KISI_BORCU // dışarıdan kişi/kurumdan borç
+  BANKA_KREDISI // taksitli, faizli; plan bankanın ödeme planından girilir
 }
 
 /// K304-② — BORÇ BİRİMİ (kullanıcı kararı 28.09.2026). Borç KENDİ biriminde
@@ -472,11 +472,12 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  products Product[]
+  products      Product[]
   tyEslesmeleri TyKategoriEslesme[]
 
   @@index([isActive])
 }
+
 /// K283 — KANAL KATEGORİSİ ↔ BİZİM KATEGORİ (kullanıcı kararı 26.09.2026).
 /// «Ürün adından karar vermek saçma, pazaryerleri ürünleri zaten kategorize
 /// etmiş.» Trendyol kategorisi ÖLÇÜLÜR; bizdeki karşılığı BİR KEZ seçilir ve
@@ -529,7 +530,6 @@ enum KategoriKaynagi {
   ELLE
   TRENDYOL
 }
-
 
 /// Stok, SKU ve barkodun tutulduğu seviye. Ürün seviyesinde stok YOKTUR.
 model ProductVariant {
@@ -602,6 +602,8 @@ model ProductVariant {
   buyboxDegisimleri  BuyboxDegisimi[]
   /// K366 — ürüne ayrı Buybox fiyat kuralı (yoksa firma geneli izlenir).
   buyboxKurali       BuyboxKurali?
+  /// K363 Faz 3-d — alım fırsatı: kullanıcının yazdığı hedef alış fiyatı.
+  alimHedefi         AlimHedefi?
 
   /// SAYIM GECERSIZLESTI — fiziksel sayimdan SONRA, sayim tarihinden ONCEYE
   /// bir hareket yazildiginda damgalanir. O varyantin sayimi artik gecerli
@@ -966,6 +968,7 @@ model ChannelAccount {
    * /**
    * /**
    * /**
+   * /**
    * HESABIN ROLÜ — ALIŞ mı SATIŞ mı?
    * 12.08.2026'da ortaya çıktı: kullanıcı arbitraj yaptığı için AYNI
    * pazaryerinde iki tür hesabı var.
@@ -998,11 +1001,11 @@ model ChannelAccount {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  channelSkus     ChannelSku[]
-  purchases       Purchase[]
-  sales           Sale[]
-  settlements     Settlement[]
-  settlementItems SettlementItem[]
+  channelSkus       ChannelSku[]
+  purchases         Purchase[]
+  sales             Sale[]
+  settlements       Settlement[]
+  settlementItems   SettlementItem[]
   buyboxOlcumleri   BuyboxOlcumu[]
   buyboxDegisimleri BuyboxDegisimi[]
 
@@ -1229,30 +1232,30 @@ model KartOdeme {
 /// K347 — iş ortağı kartı. Firma alanı YOK (kullanıcı kararı 17.10.2026): tek
 /// firmalı canlıda firma alanı açılmaz; çok-firma K303 deneme dalında taşınır.
 model IsOrtagi {
-  id String @id @default(cuid())
-  ad String @db.VarChar(191)
+  id         String             @id @default(cuid())
+  ad         String             @db.VarChar(191)
   /// K347 · 5 — ortağın GİRİŞ hesabı. Bir kullanıcı en çok bir ortak kartına bağlanır. Ortak
   /// kipindeki kullanıcı yalnız `/ortaklik/hesabim`i görür; kimlik OTURUMDAN okunur, adresten değil.
-  userId String? @unique
-  user User? @relation("OrtakGirisi", fields: [userId], references: [id], onDelete: Restrict)
-  notlar String? @db.Text
-  createdAt DateTime @default(now())
+  userId     String?            @unique
+  user       User?              @relation("OrtakGirisi", fields: [userId], references: [id], onDelete: Restrict)
+  notlar     String?            @db.Text
+  createdAt  DateTime           @default(now())
   katilimlar OrtaklikKatilimi[]
 }
 
 model OrtaklikProjesi {
-  id String @id @default(cuid())
-  ad String @db.VarChar(191)
-  currency Currency @default(TRY)
-  baslangic DateTime @db.Date
+  id              String                 @id @default(cuid())
+  ad              String                 @db.VarChar(191)
+  currency        Currency               @default(TRY)
+  baslangic       DateTime               @db.Date
   /// Bu çekirdekte projeler yalnız taslaktır; ekonomik hareket doğurmaz.
-  createdAt DateTime @default(now())
-  katilimlar OrtaklikKatilimi[]
-  alimKalemleri PurchaseItem[]
+  createdAt       DateTime               @default(now())
+  katilimlar      OrtaklikKatilimi[]
+  alimKalemleri   PurchaseItem[]
   kapsamKurallari OrtaklikKapsamKurali[]
   giderTahsisleri OrtaklikGiderTahsisi[]
-  anlasmalar OrtaklikAnlasmasi[]
-  donemler OrtaklikDonemi[]
+  anlasmalar      OrtaklikAnlasmasi[]
+  donemler        OrtaklikDonemi[]
   cariHareketleri OrtakCariHareketi[]
 }
 
@@ -1288,34 +1291,36 @@ enum OrtaklikKarKullanimi {
 /// sürümle hesaplanır. Böylece oranlar, ücretler ve kâr kullanımı ileri bir aydan itibaren
 /// değiştirilebilir, geçmiş aylar eski sürümle kalır (kullanıcı: «zamandan önce ve sonra»).
 model OrtaklikAnlasmasi {
-  id String @id @default(cuid())
-  projeId String
-  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  id                  String                @id @default(cuid())
+  projeId             String
+  proje               OrtaklikProjesi       @relation(fields: [projeId], references: [id], onDelete: Restrict)
   /// Ayın 1'i (UTC gece yarısı çapası, `@db.Date`).
-  gecerlilikAyi DateTime @db.Date
-  kalanYontemi OrtaklikKalanYontemi
+  gecerlilikAyi       DateTime              @db.Date
+  kalanYontemi        OrtaklikKalanYontemi
   /// Yalnız KARMA: kalanın yüzde kaçı sermayeye göre bölünür (0 < x < 100).
-  karmaSermayeYuzdesi Decimal? @db.Decimal(5, 2)
-  zararYontemi OrtaklikZararYontemi
-  karKullanimi OrtaklikKarKullanimi
-  aciklama String? @db.Text
-  createdAt DateTime @default(now())
-  paylar OrtaklikAnlasmaPayi[]
-  donemler OrtaklikDonemi[]
+  karmaSermayeYuzdesi Decimal?              @db.Decimal(5, 2)
+  zararYontemi        OrtaklikZararYontemi
+  karKullanimi        OrtaklikKarKullanimi
+  aciklama            String?               @db.Text
+  createdAt           DateTime              @default(now())
+  paylar              OrtaklikAnlasmaPayi[]
+  donemler            OrtaklikDonemi[]
+
   @@unique([projeId, gecerlilikAyi])
 }
 
 /// Sürümdeki her katılımcının şartı: sabit oran %, aylık emek ücreti (sorumluluk karşılığı,
 /// her ay TAM yazılır — kullanıcı kararı 19.10.2026) ve zararda kullanılan sorumluluk payı %.
 model OrtaklikAnlasmaPayi {
-  id String @id @default(cuid())
-  anlasmaId String
-  anlasma OrtaklikAnlasmasi @relation(fields: [anlasmaId], references: [id], onDelete: Cascade)
-  katilimId String
-  katilim OrtaklikKatilimi @relation(fields: [katilimId], references: [id], onDelete: Restrict)
-  sabitOran Decimal @default(0) @db.Decimal(5, 2)
-  emekUcreti Decimal @default(0) @db.Decimal(18, 4)
-  sorumlulukPayi Decimal @default(0) @db.Decimal(5, 2)
+  id             String            @id @default(cuid())
+  anlasmaId      String
+  anlasma        OrtaklikAnlasmasi @relation(fields: [anlasmaId], references: [id], onDelete: Cascade)
+  katilimId      String
+  katilim        OrtaklikKatilimi  @relation(fields: [katilimId], references: [id], onDelete: Restrict)
+  sabitOran      Decimal           @default(0) @db.Decimal(5, 2)
+  emekUcreti     Decimal           @default(0) @db.Decimal(18, 4)
+  sorumlulukPayi Decimal           @default(0) @db.Decimal(5, 2)
+
   @@unique([anlasmaId, katilimId])
   @@index([katilimId])
 }
@@ -1325,26 +1330,27 @@ model OrtaklikAnlasmaPayi {
 /// yazılır (kullanıcı kararı 19.10.2026). Geri alma SİLMEZ: `geriAlindiAt` + gerekçe yazılır, haklar
 /// ters kayıtla düşer; yalnız SON kesin ay geri alınır. Aynı ay için en çok bir ETKİN satır (uygulama).
 model OrtaklikDonemi {
-  id String @id @default(cuid())
-  projeId String
-  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  id                String               @id @default(cuid())
+  projeId           String
+  proje             OrtaklikProjesi      @relation(fields: [projeId], references: [id], onDelete: Restrict)
   /// Ayın 1'i (UTC gece yarısı çapası).
-  ay DateTime @db.Date
-  anlasmaId String
-  anlasma OrtaklikAnlasmasi @relation(fields: [anlasmaId], references: [id], onDelete: Restrict)
-  sonuc Decimal @db.Decimal(18, 4)
-  ucretToplami Decimal @db.Decimal(18, 4)
-  mahsup Decimal @db.Decimal(18, 4)
-  bolunen Decimal @db.Decimal(18, 4)
-  devredenOnce Decimal @db.Decimal(18, 4)
-  devredenSonra Decimal @db.Decimal(18, 4)
-  karKullanimi OrtaklikKarKullanimi
-  kesinlestirenId String?
-  kesinlestiren User? @relation("OrtaklikDonemKesinlestiren", fields: [kesinlestirenId], references: [id], onDelete: Restrict)
-  kesinlestiAt DateTime @default(now())
-  geriAlindiAt DateTime?
-  geriAlmaGerekcesi String? @db.Text
-  cariHareketleri OrtakCariHareketi[]
+  ay                DateTime             @db.Date
+  anlasmaId         String
+  anlasma           OrtaklikAnlasmasi    @relation(fields: [anlasmaId], references: [id], onDelete: Restrict)
+  sonuc             Decimal              @db.Decimal(18, 4)
+  ucretToplami      Decimal              @db.Decimal(18, 4)
+  mahsup            Decimal              @db.Decimal(18, 4)
+  bolunen           Decimal              @db.Decimal(18, 4)
+  devredenOnce      Decimal              @db.Decimal(18, 4)
+  devredenSonra     Decimal              @db.Decimal(18, 4)
+  karKullanimi      OrtaklikKarKullanimi
+  kesinlestirenId   String?
+  kesinlestiren     User?                @relation("OrtaklikDonemKesinlestiren", fields: [kesinlestirenId], references: [id], onDelete: Restrict)
+  kesinlestiAt      DateTime             @default(now())
+  geriAlindiAt      DateTime?
+  geriAlmaGerekcesi String?              @db.Text
+  cariHareketleri   OrtakCariHareketi[]
+
   @@index([projeId, ay])
 }
 
@@ -1359,76 +1365,80 @@ enum OrtakCariTuru {
 /// düzeltme `reversesId` ile ters kayıt. Ödeme istenirse gider de açar (`expenseId`; kullanıcı kararı:
 /// her ödemede seçilebilir).
 model OrtakCariHareketi {
-  id String @id @default(cuid())
-  projeId String
-  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
-  katilimId String
-  katilim OrtaklikKatilimi @relation(fields: [katilimId], references: [id], onDelete: Restrict)
-  tur OrtakCariTuru
+  id          String             @id @default(cuid())
+  projeId     String
+  proje       OrtaklikProjesi    @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  katilimId   String
+  katilim     OrtaklikKatilimi   @relation(fields: [katilimId], references: [id], onDelete: Restrict)
+  tur         OrtakCariTuru
   /// İşaretli: HAK +, ODEME −, ters kayıt aslının eksisi.
-  tutar Decimal @db.Decimal(18, 4)
+  tutar       Decimal            @db.Decimal(18, 4)
   /// HAK satırında dökümü: emek ücreti ve kâr/zarar payı (toplamı = tutar).
-  ucretTutari Decimal? @db.Decimal(18, 4)
-  payTutari Decimal? @db.Decimal(18, 4)
+  ucretTutari Decimal?           @db.Decimal(18, 4)
+  payTutari   Decimal?           @db.Decimal(18, 4)
   /// İş günü (UTC gece yarısı çapası).
-  tarih DateTime @db.Date
-  donemId String?
-  donem OrtaklikDonemi? @relation(fields: [donemId], references: [id], onDelete: Restrict)
-  expenseId String? @unique
-  expense Expense? @relation("OrtakOdemeGideri", fields: [expenseId], references: [id], onDelete: Restrict)
-  reversesId String? @unique
-  reverses OrtakCariHareketi? @relation("OrtakCariTers", fields: [reversesId], references: [id], onDelete: Restrict)
-  reversedBy OrtakCariHareketi? @relation("OrtakCariTers")
-  aciklama String? @db.Text
-  userId String?
-  user User? @relation("OrtakCariKaydeden", fields: [userId], references: [id], onDelete: Restrict)
-  createdAt DateTime @default(now())
+  tarih       DateTime           @db.Date
+  donemId     String?
+  donem       OrtaklikDonemi?    @relation(fields: [donemId], references: [id], onDelete: Restrict)
+  expenseId   String?            @unique
+  expense     Expense?           @relation("OrtakOdemeGideri", fields: [expenseId], references: [id], onDelete: Restrict)
+  reversesId  String?            @unique
+  reverses    OrtakCariHareketi? @relation("OrtakCariTers", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy  OrtakCariHareketi? @relation("OrtakCariTers")
+  aciklama    String?            @db.Text
+  userId      String?
+  user        User?              @relation("OrtakCariKaydeden", fields: [userId], references: [id], onDelete: Restrict)
+  createdAt   DateTime           @default(now())
+
   @@index([projeId])
   @@index([katilimId])
   @@index([donemId])
 }
 
 model OrtaklikGiderTahsisi {
-  id String @id @default(cuid())
-  expenseId String
-  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  projeId String
-  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  id         String          @id @default(cuid())
+  expenseId  String
+  expense    Expense         @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  projeId    String
+  proje      OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
   /// 0 < pay ≤ 100, yüzde.
-  payYuzdesi Decimal @db.Decimal(5, 2)
-  createdAt DateTime @default(now())
+  payYuzdesi Decimal         @db.Decimal(5, 2)
+  createdAt  DateTime        @default(now())
+
   @@unique([expenseId, projeId])
   @@index([projeId])
 }
 
 /// Bir varyant için tek kural: aynı ürün iki projeye birden otomatik damgalanamaz.
 model OrtaklikKapsamKurali {
-  id String @id @default(cuid())
-  projeId String
-  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  id        String          @id @default(cuid())
+  projeId   String
+  proje     OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
   variantId String
-  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  createdAt DateTime @default(now())
+  variant   ProductVariant  @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  createdAt DateTime        @default(now())
+
   @@unique([variantId])
   @@index([projeId])
 }
 
 model OrtaklikKatilimi {
-  id String @id @default(cuid())
-  projeId String
-  proje OrtaklikProjesi @relation(fields: [projeId], references: [id], onDelete: Restrict)
-  ortakId String
-  ortak IsOrtagi @relation(fields: [ortakId], references: [id], onDelete: Restrict)
-  sorumluluk String @db.VarChar(1000)
+  id                  String                @id @default(cuid())
+  projeId             String
+  proje               OrtaklikProjesi       @relation(fields: [projeId], references: [id], onDelete: Restrict)
+  ortakId             String
+  ortak               IsOrtagi              @relation(fields: [ortakId], references: [id], onDelete: Restrict)
+  sorumluluk          String                @db.VarChar(1000)
   /// Seçilen katkılar; parasal haklar anlaşma aşamasında ayrıca tanımlanır.
-  sermaye Boolean @default(false)
-  emek Boolean @default(false)
-  komisyon Boolean @default(false)
-  finansman Boolean @default(false)
+  sermaye             Boolean               @default(false)
+  emek                Boolean               @default(false)
+  komisyon            Boolean               @default(false)
+  finansman           Boolean               @default(false)
   finansmanKaynaklari Finansman[]
-  anlasmaPaylari OrtaklikAnlasmaPayi[]
-  cariHareketleri OrtakCariHareketi[]
-  createdAt DateTime @default(now())
+  anlasmaPaylari      OrtaklikAnlasmaPayi[]
+  cariHareketleri     OrtakCariHareketi[]
+  createdAt           DateTime              @default(now())
+
   @@unique([projeId, ortakId])
   @@index([ortakId])
 }
@@ -1438,14 +1448,14 @@ model Finansman {
 
   /// K347 — tek bağ hem projeyi hem kişiyi tanımlar; hareketler kopyalanmaz.
   ortaklikKatilimiId String?
-  ortaklikKatilimi OrtaklikKatilimi? @relation(fields: [ortaklikKatilimiId], references: [id], onDelete: Restrict)
+  ortaklikKatilimi   OrtaklikKatilimi? @relation(fields: [ortaklikKatilimiId], references: [id], onDelete: Restrict)
 
-  tur FinansmanTuru
+  tur       FinansmanTuru
   /// Kimden — kişi, ortak, kurum ya da banka adı. VERİDİR (yapıya gömülmez).
-  kaynakAdi String   @db.VarChar(191)
+  kaynakAdi String          @db.VarChar(191)
   /// Borcun BİRİMİ; hareketler bunu devralır. Kur çevirisi yapılmaz.
-  birim FinansmanBirimi @default(TRY)
-  /*
+  birim     FinansmanBirimi @default(TRY)
+  /**
    * ⚠ ESKİ `currency` ALANI ŞEMADAN ÇIKARILDI (K304-③, 29.09.2026) — SÜTUN
    * VERİTABANINDA HÂLÂ DURUYOR (NOT NULL DEFAULT 'TRY', yeni kayıt onsuz
    * yazılabilir). Sıra: ① alan şemadan çıkar, kod yayına girer (Prisma artık
@@ -1514,7 +1524,7 @@ model FinansmanBirimFiyati {
 
   birim      FinansmanBirimi
   /// 1 birimin TL fiyatı.
-  fiyat      Decimal  @db.Decimal(18, 4)
+  fiyat      Decimal         @db.Decimal(18, 4)
   /// Fiyatın ait olduğu gün.
   gecerliGun DateTime
 
@@ -1644,12 +1654,12 @@ model Purchase {
 model PurchaseItem {
   /// K347 — FIFO girişinin bağlı olduğu alım kaleminde kapsam damgası.
   ortaklikProjesiId String?
-  ortaklikProjesi OrtaklikProjesi? @relation(fields: [ortaklikProjesiId], references: [id], onDelete: Restrict)
-  id         String         @id @default(cuid())
-  purchaseId String
-  purchase   Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  variantId  String
-  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  ortaklikProjesi   OrtaklikProjesi? @relation(fields: [ortaklikProjesiId], references: [id], onDelete: Restrict)
+  id                String           @id @default(cuid())
+  purchaseId        String
+  purchase          Purchase         @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  variantId         String
+  variant           ProductVariant   @relation(fields: [variantId], references: [id], onDelete: Restrict)
 
   /// Beklenen (sipariş edilen) adet.
   quantity Int
@@ -1899,8 +1909,8 @@ model Sale {
    * (epoch ms) veriyor. Kanalın verdiği saati gün sınırına yuvarlamak,
    * elimizdeki kesinliği ATMAK olurdu.
    * ⭐ İKİ HASSASİYET AYNI ALANDA YAŞAR VE AYIRT EDİLEBİLİR:
-   *     elle / HB  → gün sınırı (saat İDDİA EDİLMİYOR)
-   *     TY / N11    → gerçek an
+   * elle / HB  → gün sınırı (saat İDDİA EDİLMİYOR)
+   * TY / N11    → gerçek an
    * Okuyan `gunHassasiyetliMi(tarih)` ile sorar — K163'te `soldAt` için
    * alınmış kararın aynısı; ikinci bir mekanizma açılmadı.
    * TEK PAKET VARSAYIMI: bir satış = bir sevkiyat. Kısmi sevkiyat (bir
@@ -1914,28 +1924,24 @@ model Sale {
   /**
    * TESLİM EDİLDİ — KANALIN bildirdiği teslim anı (K195-2, 09.09.2026).
    * `shippedAt`in kardeşi: aynı kalıp, aynı kurallar, aynı hassasiyet ayrımı.
-   *
    * ⛔ NİYE SÜTUN — MERDİVEN İNDİRİLDİ (anayasa: "şema değişikliği en pahalı
    * çözümdür", ve her basamak DENENDİ, "olmaz" denmedi):
-   *   ① mevcut alan taşıyor mu → HAYIR. `shippedAt` kargo anı; teslim anını
-   *      tutan hiçbir alan yok. `updatedAt` vekil YAPILAMAZ (kolon başlığı
-   *      bir iddiadır: o "en son dokunulan an"dır, "teslim edildiği an" değil).
-   *   ② serbest metin (AuditLog) yeter mi → HAYIR. Bu veriyle SORGU
-   *      kurulacak: "kaç paket yolda" = shippedAt DOLU + deliveredAt BOŞ.
-   *      Ayırt edici soru geriye bakmak değil, gruplamak.
-   *   ③ türetilebilir mi → HAYIR. Kanal söylemezse teslim anı bilinmiyor;
-   *      "kargodan N gün sonra" bir TAHMİN olurdu.
-   *   ④ sütun. ✓  (Yeni tabloya gerek yok: bir satış = bir sevkiyat
-   *      varsayımı `shippedAt` ile aynı; kısmi sevkiyat gerekirse İKİSİ
-   *      BİRLİKTE kalkar ve yerine Shipment tablosu gelir.)
-   *
+   * ① mevcut alan taşıyor mu → HAYIR. `shippedAt` kargo anı; teslim anını
+   * tutan hiçbir alan yok. `updatedAt` vekil YAPILAMAZ (kolon başlığı
+   * bir iddiadır: o "en son dokunulan an"dır, "teslim edildiği an" değil).
+   * ② serbest metin (AuditLog) yeter mi → HAYIR. Bu veriyle SORGU
+   * kurulacak: "kaç paket yolda" = shippedAt DOLU + deliveredAt BOŞ.
+   * Ayırt edici soru geriye bakmak değil, gruplamak.
+   * ③ türetilebilir mi → HAYIR. Kanal söylemezse teslim anı bilinmiyor;
+   * "kargodan N gün sonra" bir TAHMİN olurdu.
+   * ④ sütun. ✓  (Yeni tabloya gerek yok: bir satış = bir sevkiyat
+   * varsayımı `shippedAt` ile aynı; kısmi sevkiyat gerekirse İKİSİ
+   * BİRLİKTE kalkar ve yerine Shipment tablosu gelir.)
    * BOŞ = kanal henüz "teslim edildi" demedi. ⛔ UYDURULMAZ: bilinmeyen için
    * `null` bir eksiklik değil BEYANDIR — K60'ta `shippedAt`e "bugünün
    * tarihi" basan toplu bir düğme 5601 siparişe sistemin BİLMEDİĞİ bir değer
    * yazdı ve geri alınmak zorunda kalındı.
-   *
    * LEDGER DEĞİL, DURUM: kâr hesabına girmez, yanlışsa temizlenebilir.
-   *
    * ⚠ İKİ TARİH İLKESİ (K185-③): bu alan OLAYIN anını taşır. Onu okuyan her
    * ekran "sebebin günü mü, olayın günü mü" sorusunu KENDİ cevaplar ve
    * gerekçesini koduna yazar — alan cevabı vermez.
@@ -1944,11 +1950,9 @@ model Sale {
 
   /**
    * KANALIN KENDİ KARGO TAKİP BAĞLANTISI (TY/N11 `cargoTrackingLink`).
-   *
    * ⭐ "Paketim nerede" sorusunun cevabı BURADAN geliyor — 10+ kargo
    * firmasıyla ayrı ayrı sözleşme/API (Halil'in (b) seçeneği) bu yüzden
    * ERTELENDİ, gereksiz olduğu için değil: bugün gerekmiyor.
-   *
    * ⚠ DIŞ ADRESTİR — ekranda gösterilirken doğrulanır. Kanaldan gelen bir
    * dizeyi doğrudan tıklanabilir yapmak, kanalın yazdığı her şeye güvenmektir.
    */
@@ -1956,20 +1960,17 @@ model Sale {
 
   /**
    * KANALIN FİİLEN KULLANDIĞI KARGO FİRMASI (TY/N11 `cargoProviderName`).
-   *
    * ⛔ `cargoCarrierId` İLE AYNI ŞEY DEĞİL — VE AYNI ALANA YAZILMAZ:
-   *     cargoCarrierId    BİZİM satışta seçtiğimiz firma → tarife, desi,
-   *                       maliyet ve kâr ONDAN hesaplanıyor
-   *     kanalKargoFirmasi KANALIN fiilen gönderdiği firma
+   * cargoCarrierId    BİZİM satışta seçtiğimiz firma → tarife, desi,
+   * maliyet ve kâr ONDAN hesaplanıyor
+   * kanalKargoFirmasi KANALIN fiilen gönderdiği firma
    * İkisi ayrıştığında fark tam da tarife/maliyet hatasının çıktığı yerdir.
    * Tek alana yazmak o farkı GÖRÜNMEZ yapardı — ve görünmeyen bir fark
    * hakkında kimse soru soramaz.
-   *
    * ⚠ METİN, KİMLİK DEĞİL: kanalın yazdığı ad bizim `CargoCarrier`
    * kaydımızla birebir tutmayabilir. Eşleştirme BİLEREK yapılmıyor —
    * ad kanalın yazdığı gibi saklanır (dize eşleştirme sessizce yanlış
    * firmaya bağlardı).
-   *
    * ⚠ DİZİN AÇILMADI — BİLİNÇLİ: bugün bu alan üstünde sorgu yok. Dizin,
    * onu okuyan ilk sorgu ölçüldüğünde açılır ("ölçülmemiş maliyet" değil,
    * ölçülmemiş fayda da bedava değildir).
@@ -1979,69 +1980,61 @@ model Sale {
   /**
    * KANALIN BİLDİRDİĞİ GERÇEKLEŞEN DESİ (K197-4, 09.09.2026).
    * TY/N11 `cargoDeci` · HB `Deci` — taşıyıcının FİİLEN ölçtüğü desi.
-   *
    * ⛔ `cargoDesi` İLE AYNI ŞEY DEĞİL VE ONUN ÜSTÜNE YAZILMAZ:
-   *     cargoDesi        BİZİM TAHMİNİMİZ — Σ(ürün.desi × adet), kargo
-   *                      tutarının GİRDİSİ, satış anında biliniyor
-   *     kanalKargoDesi   GERÇEKLEŞEN — paket tartıldıktan SONRA belli olur
+   * cargoDesi        BİZİM TAHMİNİMİZ — Σ(ürün.desi × adet), kargo
+   * tutarının GİRDİSİ, satış anında biliniyor
+   * kanalKargoDesi   GERÇEKLEŞEN — paket tartıldıktan SONRA belli olur
    * Aynı alana yazmak farkı görünmez yapardı; oysa aranan şey tam o fark.
    * _(`cargoCarrierId` ↔ `kanalKargoFirmasi` ayrımının birebir aynısı.)_
-   *
    * ⛔ ESKİ HÂL (K197-4, 09.09.2026 — ESKİ GEREKÇE SİLİNMEDİ, ÇEVRİLDİ):
-   *   burada "bu sütun cargoAmount'ı, NET'i, hakedişi ve kâr hesabını
-   *   HİÇBİR ŞEKİLDE etkilemez" yazıyordu. _Kullanıcı kararı 09.09.2026:
-   *   "geçmişte gösterilecek ufak tefek gelir veya kâr farklılıkları
-   *   problem değil; asıl sistemin doğru kurulması önemli."_
-   *
+   * burada "bu sütun cargoAmount'ı, NET'i, hakedişi ve kâr hesabını
+   * HİÇBİR ŞEKİLDE etkilemez" yazıyordu. _Kullanıcı kararı 09.09.2026:
+   * "geçmişte gösterilecek ufak tefek gelir veya kâr farklılıkları
+   * problem değil; asıl sistemin doğru kurulması önemli."_
    * ⭐ ÇEVRİLEN KISIM (mimar kararı 15.09.2026, bkz. `kargo-tartim-tazele.ts`):
-   *   `cargoAmount` (GERÇEKLEŞEN) DOLU bir siparişe bu sütun HÂLÂ hiç
-   *   dokunmaz — o kısım aynen geçerli. Ama `cargoAmount` BOŞSA, sipariş
-   *   zaten TAHMİNLE NET veriyordu; bu durumda gerçek desi (TARTIM) yeni
-   *   geldiğinde `tahminiKargo` bu desiyle YENİDEN hesaplanır ve kâr
-   *   tazelenir (`kargoTartimGeldiTazele`). Niye: hâlâ tahmin aşamasındaki
-   *   bir siparişte ESKİ (ürün bazlı TAHMİN ya da KÜRESEL) bir desiyle
-   *   hesaplanmış kalmak, elimize geçen daha iyi bilgiyi (kaynak önceliği:
-   *   içerden gelen bilgi üsttedir) kullanmamak olurdu. Geçmişe dönük
-   *   toplu bir düzeltme YAPILMADI — yalnız BUNDAN SONRA, gerçek desi
-   *   geldiği an tetiklenen bir mekanizma kuruldu (ölçüldü 15.09.2026:
-   *   canlıda bu şartı sağlayan 20 sipariş vardı — 17 TY + 3 HB).
-   *
+   * `cargoAmount` (GERÇEKLEŞEN) DOLU bir siparişe bu sütun HÂLÂ hiç
+   * dokunmaz — o kısım aynen geçerli. Ama `cargoAmount` BOŞSA, sipariş
+   * zaten TAHMİNLE NET veriyordu; bu durumda gerçek desi (TARTIM) yeni
+   * geldiğinde `tahminiKargo` bu desiyle YENİDEN hesaplanır ve kâr
+   * tazelenir (`kargoTartimGeldiTazele`). Niye: hâlâ tahmin aşamasındaki
+   * bir siparişte ESKİ (ürün bazlı TAHMİN ya da KÜRESEL) bir desiyle
+   * hesaplanmış kalmak, elimize geçen daha iyi bilgiyi (kaynak önceliği:
+   * içerden gelen bilgi üsttedir) kullanmamak olurdu. Geçmişe dönük
+   * toplu bir düzeltme YAPILMADI — yalnız BUNDAN SONRA, gerçek desi
+   * geldiği an tetiklenen bir mekanizma kuruldu (ölçüldü 15.09.2026:
+   * canlıda bu şartı sağlayan 20 sipariş vardı — 17 TY + 3 HB).
    * ⚠ TÜKETİCİSİ VARDI AMA DAR — VE BU BİLEREK (K52'nin bilinen tuzağı).
-   *   Normalde tüketicisi doğmayan alan açılmaz. İstisnanın gerekçesi:
-   *   **VERİ GEÇİCİ.** Kanal bu değeri yalnız dar bir pencerede veriyor
-   *   (TY birkaç ay, HB yalnız ŞU AN kargoda olan paketler — ölçüldü
-   *   09.09.2026: 2025-08 · 2025-11 · 2026-03 pencerelerinin üçünde de
-   *   API `0` kayıt döndürdü, oysa defterde o aylarda 385 · 551 · 494
-   *   satış VAR). Bugün toplanmazsa yarın HİÇ toplanamaz.
-   *   ⛔ AÇILIŞ ŞARTI (ürün kataloğu tüketicisi) HÂLÂ AÇIK: örneklem
-   *   varyant başına anlamlı hâle geldiğinde ürün desi kataloğu (`cargoDesi`
-   *   kaynağı) bundan düzeltilir — bu, 15.09.2026'da açılan "hâlâ tahmin
-   *   aşamasındaki TEK siparişi tazele" tüketicisinden AYRI ve daha geniş
-   *   bir iştir, henüz yapılmadı.
-   *
+   * Normalde tüketicisi doğmayan alan açılmaz. İstisnanın gerekçesi:
+   * **VERİ GEÇİCİ.** Kanal bu değeri yalnız dar bir pencerede veriyor
+   * (TY birkaç ay, HB yalnız ŞU AN kargoda olan paketler — ölçüldü
+   * 09.09.2026: 2025-08 · 2025-11 · 2026-03 pencerelerinin üçünde de
+   * API `0` kayıt döndürdü, oysa defterde o aylarda 385 · 551 · 494
+   * satış VAR). Bugün toplanmazsa yarın HİÇ toplanamaz.
+   * ⛔ AÇILIŞ ŞARTI (ürün kataloğu tüketicisi) HÂLÂ AÇIK: örneklem
+   * varyant başına anlamlı hâle geldiğinde ürün desi kataloğu (`cargoDesi`
+   * kaynağı) bundan düzeltilir — bu, 15.09.2026'da açılan "hâlâ tahmin
+   * aşamasındaki TEK siparişi tazele" tüketicisinden AYRI ve daha geniş
+   * bir iştir, henüz yapılmadı.
    * ⚠ DOĞUM TARİHİ 09.09.2026 — VE BOŞLUK "FARK YOK" DEMEK DEĞİLDİR.
-   *   Bu sütun yalnız İLERİYE dolar; eski satışlarda kalıcı olarak BOŞ
-   *   kalacak. Onu okuyan her ekran/analiz bunu yazmak zorundadır, yoksa
-   *   boşluk "tahmin tuttu" diye okunur.
-   *   _(Anayasa: "yeni izin doğum tarihi beyan edilir".)_
-   *
+   * Bu sütun yalnız İLERİYE dolar; eski satışlarda kalıcı olarak BOŞ
+   * kalacak. Onu okuyan her ekran/analiz bunu yazmak zorundadır, yoksa
+   * boşluk "tahmin tuttu" diye okunur.
+   * _(Anayasa: "yeni izin doğum tarihi beyan edilir".)_
    * ⚠ YALNIZ BOŞ OLANA YAZILIR: desi, taşıyıcının paketi TARTTIĞI fiziksel
-   *   bir olayın ölçüsüdür — bir kez olur, sonra değişmez. `deliveredAt`
-   *   ile aynı sınıf; `kanalKargoFirmasi` ile DEĞİL (o kanalın o anki
-   *   beyanıdır ve tazelenir).
+   * bir olayın ölçüsüdür — bir kez olur, sonra değişmez. `deliveredAt`
+   * ile aynı sınıf; `kanalKargoFirmasi` ile DEĞİL (o kanalın o anki
+   * beyanıdır ve tazelenir).
    */
   kanalKargoDesi Decimal? @db.Decimal(9, 3)
 
   /**
    * TAHMİNİ KARGO — KANALIN KESTİĞİ DEĞİL, BİZİM HESABIMIZ (K201, 09.09.2026).
-   *
    * ⛔ `cargoAmount` İLE AYNI ŞEY DEĞİL VE ONUN ÜSTÜNE ASLA YAZILMAZ:
-   *     cargoAmount    GERÇEKLEŞEN — kanalın/taşıyıcının FİİLEN kestiği
-   *     tahminiKargo   TAHMİN — tarife × desi ile hesapladığımız
+   * cargoAmount    GERÇEKLEŞEN — kanalın/taşıyıcının FİİLEN kestiği
+   * tahminiKargo   TAHMİN — tarife × desi ile hesapladığımız
    * _Mimar kararı 09.09.2026:_ "cargoAmount = kanalın gerçekleşen kesintisi;
    * N11 tahminini oraya yazmak alanın anlamını KİRLETİR ve bekçiyi deler."
    * `cargoDesi` ↔ `kanalKargoDesi` ayrımının birebir kardeşi.
-   *
    * ⭐ KAYNAK SIRASI — NET HESABINDA: `cargoAmount` DOLUYSA o kullanılır,
    * BOŞSA bu. Yani N11 satışı hakediş gelmeden tahminle NET verir; hakediş
    * gelince gerçekleşen DEVRALIR. ⚠ Ve geçiş GÖRÜNÜR: tahmin SİLİNMEZ, iki
@@ -2049,22 +2042,18 @@ model Sale {
    * bir daha sorulamazdı.
    * ⛔ Sıra TEK GÖVDEDE (`src/lib/kargo-kaynagi.ts`); iki okuyucu iki farklı
    * sıra kursaydı biri tahmini, öteki gerçekleşeni tercih ederdi.
-   *
    * ⚠ TABAN KDV HARİÇ — `cargoAmount` ile aynı. Motor KDV dahil beklediği
    * için `kdvDahilKargo` ile çevrilir; iki sütun aynı kapıdan geçer.
-   *
    * ═══ FORMÜL ÖLÇÜLDÜ, BEYAN DEĞİL (09.09.2026) ════════════════════════
-   *     tahminiKargo = firmaTarifesi(desi) × 1,0235
-   *     (1,0235 = Posta Hizmet Bedeli %2,35 · 1,20 × 1,0235 = 1,2282)
+   * tahminiKargo = firmaTarifesi(desi) × 1,0235
+   * (1,0235 = Posta Hizmet Bedeli %2,35 · 1,20 × 1,0235 = 1,2282)
    * n11 satıcı panelindeki 10 gerçek kesintiden 5'i (desi 1·2·3·9·11) bu
    * zinciri KURUŞUNA doğruladı. Firma: kanalın `cargoProviderName`i; yoksa
    * altı firmanın ortalaması (ölçüldü: sabit ortalama NET'i %7,5 karamsar
    * gösteriyordu — gönderilerin onunun da firması Aras).
-   *
    * ⚠ DOĞUM TARİHİ 09.09.2026 ve YALNIZ İLERİYE dolar. Eski satışlarda
    * kalıcı BOŞ kalacak — ve boşluk "kargo yok" demek DEĞİLDİR; o satışların
    * kargosu zaten `cargoAmount`ta duruyor.
-   *
    * ⚠ BAŞLANGIÇTA YALNIZ N11 YAZIYORDU (tek tarifesi olan kanal oydu —
    * TY/HB'de zaten gerçekleşen hızlı geliyor). Alan kanal-agnostiktir;
    * 15.09.2026'dan itibaren TY/HB de DAR bir durumda yazıyor:
@@ -2688,11 +2677,11 @@ model Expense {
 
   /// K304 — bu gider bir FİNANSMAN TAKSİTİNİN faizi + vergisiyse, doğduğu hareket.
   /// Tekil: bir taksitin faizi tek bir gidere yazılır (kart faizi deseni).
-  finansmanHareketi FinansmanHareketi?
+  finansmanHareketi  FinansmanHareketi?
   ortaklikTahsisleri OrtaklikGiderTahsisi[]
   /// K347 · 4b — bu gider bir ortak ödemesinden doğduysa. Böyle gider projeye tahsis edilemez
   /// (çift sayım) ve tutarı gider ekranından değiştirilemez (düzeltme ortak hesabında ters kayıtla).
-  ortakOdemesi OrtakCariHareketi? @relation("OrtakOdemeGideri")
+  ortakOdemesi       OrtakCariHareketi?     @relation("OrtakOdemeGideri")
 
   /**
    * GİDER HANGİ KARTLA ÖDENDİ (25.08.2026).
@@ -2785,37 +2774,37 @@ model User {
 
   lastLoginAt DateTime?
 
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  stockMovements      StockMovement[]
-  stokSayimlari       StokSayimi[]
+  createdAt                        DateTime            @default(now())
+  updatedAt                        DateTime            @updatedAt
+  stockMovements                   StockMovement[]
+  stokSayimlari                    StokSayimi[]
   /// K108 — kapattigi muhasebe donemleri. ⚠ TERS ILISKI: DB'de sutun
   /// acmaz, yabanci anahtar `MuhasebeDonemi` tarafinda. `User` tablosu
   /// DEGISMEZ — migration yalnizca yeni tabloyu yaratmali.
-  kapattigiDonemler   MuhasebeDonemi[]  @relation("DonemKapatan")
-  iadeler             Return[]          @relation("IadeGiren")
+  kapattigiDonemler                MuhasebeDonemi[]    @relation("DonemKapatan")
+  iadeler                          Return[]            @relation("IadeGiren")
   /// K44 ② — geri aldığı iadeler. TERS İLİŞKİ: `User` tablosu DEĞİŞMEZ.
-  iadeGeriAlmalari    Return[]          @relation("IadeGeriAlan")
-  iadeBildirimleri    ReturnNotice[]
-  ekler               Attachment[]
-  userCompanyRoles    UserCompanyRole[]
-  auditLogs           AuditLog[]
-  kullanimOlaylari    KullanimOlayi[]
+  iadeGeriAlmalari                 Return[]            @relation("IadeGeriAlan")
+  iadeBildirimleri                 ReturnNotice[]
+  ekler                            Attachment[]
+  userCompanyRoles                 UserCompanyRole[]
+  auditLogs                        AuditLog[]
+  kullanimOlaylari                 KullanimOlayi[]
   /// Bu kullanıcının açtığı destek talepleri.
-  talepler            Talep[]           @relation("TalepBildiren")
+  talepler                         Talep[]             @relation("TalepBildiren")
   /// Bu kullanıcının yazdığı çözüm notları (Faz 2'de mesajlara evrilecek).
-  talepCozumleri      Talep[]           @relation("TalepCozumYazani")
+  talepCozumleri                   Talep[]             @relation("TalepCozumYazani")
   /// Bu kullanıcının iptal ettiği satışlar.
-  iptalEttigiSatislar Sale[]            @relation("SatisIptalEden")
+  iptalEttigiSatislar              Sale[]              @relation("SatisIptalEden")
   /// K347 · 4b
-  kesinlestirdigiOrtaklikDonemleri OrtaklikDonemi[] @relation("OrtaklikDonemKesinlestiren")
-  kaydettigiOrtakCariHareketleri OrtakCariHareketi[] @relation("OrtakCariKaydeden")
+  kesinlestirdigiOrtaklikDonemleri OrtaklikDonemi[]    @relation("OrtaklikDonemKesinlestiren")
+  kaydettigiOrtakCariHareketleri   OrtakCariHareketi[] @relation("OrtakCariKaydeden")
   /// K347 · 5 — bu kullanıcı bir ortağın giriş hesabıysa.
-  ortakKarti IsOrtagi? @relation("OrtakGirisi")
+  ortakKarti                       IsOrtagi?           @relation("OrtakGirisi")
   /// Anlık bildirim (Web Push) — bu kullanıcının bildirim açtığı cihazlar.
-  pushAbonelikleri PushAboneligi[]
+  pushAbonelikleri                 PushAboneligi[]
   /// K349 — girdiği satış hedefleri.
-  girdigiHedefler Hedef[] @relation("HedefGiren")
+  girdigiHedefler                  Hedef[]             @relation("HedefGiren")
 
   @@index([isActive])
 }
@@ -3276,10 +3265,10 @@ model Company {
   buyboxMaliyet      BuyboxMaliyetTercihi @default(EN_DUSUK)
   buyboxMod          BuyboxKuralModu      @default(ONAYLI)
 
-  uyelikler UserCompanyRole[]
-  auditLogs AuditLog[]
+  uyelikler        UserCompanyRole[]
+  auditLogs        AuditLog[]
   kullanimOlaylari KullanimOlayi[]
-  talepler  Talep[]
+  talepler         Talep[]
 
   @@index([isActive])
 }
@@ -3954,32 +3943,36 @@ model MuhasebeDonemi {
 
 /**
  * ============================================================================
- *  GÜNLÜK ÖZET — LLM ANLATISININ ÖNBELLEĞİ (K-OZET)
+ * GÜNLÜK ÖZET — LLM ANLATISININ ÖNBELLEĞİ (K-OZET)
  * ----------------------------------------------------------------------------
- *  "Şema değişikliği en pahalı çözümdür" merdiveni izlendi: bu içerik
- *  `AuditLog.detail`e sığmaz — bir OLAYIN izi değil, sayfanın OKUYACAĞI
- *  GÜNCEL içeriktir (`Talep`e daha yakın bir yapı: geriye bakış değil,
- *  ileri servis edilen veri). Üretimi (LLM çağrısı) pahalı olduğu için
- *  önbelleklenmesi gerekiyor — SORGU ihtiyacı var, tablo bu yüzden haklı.
- *
- *  ⚠ `companyId` YOK — BİLİNÇLİ. Bu tablonun üzerine kurulduğu iki sistem
- *  (Uyarı Merkezi, Görev Kutusu) tamamen firma-bağımsız GLOBAL sayaçlar;
- *  40 modelin yalnız 3'ünde `companyId` var (bkz. `lib/yetki/izinler.ts`
- *  başlığı). Yeni bir alanı çoğunluk deseninin dışında firma-kapsamlı
- *  açmak, "tek firma varsayımını derinleştirmemek" ilkesini YANLIŞ yönde
- *  uygulardı — kopyalandığı sistemlerle aynı şekilde kalır.
- *
- *  ⚠ `@@unique` YOK — KASITLI. Yeniden deneme (aynı gün ikinci cron tetiği)
- *  çakışmaz; "en yeni kazanır" (`findFirst(orderBy: createdAt desc)`),
- *  tazminat tahsilat izi / paketleme iziyle AYNI desen.
+ * "Şema değişikliği en pahalı çözümdür" merdiveni izlendi: bu içerik
+ * `AuditLog.detail`e sığmaz — bir OLAYIN izi değil, sayfanın OKUYACAĞI
+ * GÜNCEL içeriktir (`Talep`e daha yakın bir yapı: geriye bakış değil,
+ * ileri servis edilen veri). Üretimi (LLM çağrısı) pahalı olduğu için
+ * önbelleklenmesi gerekiyor — SORGU ihtiyacı var, tablo bu yüzden haklı.
+ * ⚠ `companyId` YOK — BİLİNÇLİ. Bu tablonun üzerine kurulduğu iki sistem
+ * (Uyarı Merkezi, Görev Kutusu) tamamen firma-bağımsız GLOBAL sayaçlar;
+ * 40 modelin yalnız 3'ünde `companyId` var (bkz. `lib/yetki/izinler.ts`
+ * başlığı). Yeni bir alanı çoğunluk deseninin dışında firma-kapsamlı
+ * açmak, "tek firma varsayımını derinleştirmemek" ilkesini YANLIŞ yönde
+ * uygulardı — kopyalandığı sistemlerle aynı şekilde kalır.
+ * ⚠ `@@unique` YOK — KASITLI. Yeniden deneme (aynı gün ikinci cron tetiği)
+ * çakışmaz; "en yeni kazanır" (`findFirst(orderBy: createdAt desc)`),
+ * tazminat tahsilat izi / paketleme iziyle AYNI desen.
  * ============================================================================
  */
 enum AiOzetDurumu {
-  /** Doğrulamadan geçti — anlatiMetni dolu, ekranda gösterilir. */
+  /**
+   * Doğrulamadan geçti — anlatiMetni dolu, ekranda gösterilir.
+   */
   YAYINDA
-  /** LLM ürettiği metin doğrulamadan geçemedi (çözülemeyen anahtar/serbest sayı) — deterministik yedeğe düşülür. */
+  /**
+   * LLM ürettiği metin doğrulamadan geçemedi (çözülemeyen anahtar/serbest sayı) — deterministik yedeğe düşülür.
+   */
   REDDEDILDI
-  /** API çağrısı başarısız oldu (anahtar yok, ağ hatası vb.) — deterministik yedeğe düşülür. */
+  /**
+   * API çağrısı başarısız oldu (anahtar yok, ağ hatası vb.) — deterministik yedeğe düşülür.
+   */
   HATA
 }
 
@@ -3990,12 +3983,12 @@ model AiOzet {
   isGunu DateTime @db.Date
 
   /// `OzetVeriPaketi` — anti-halüsinasyon denetim izi (rakam kaynağına götürür).
-  girdiJson String @db.Text
+  girdiJson     String       @db.Text
   /// Yalnız `durum` YAYINDA ise dolu.
-  anlatiMetni String? @db.Text
-  durum       AiOzetDurumu
+  anlatiMetni   String?      @db.Text
+  durum         AiOzetDurumu
   /// Hangi anahtarlar/sayılar doğrulamadan geçti/geçmedi — teşhis için.
-  dogrulamaJson String @db.Text
+  dogrulamaJson String       @db.Text
 
   modelAdi         String
   girdiTokenSayisi Int?
@@ -4089,16 +4082,16 @@ enum HedefDonemi {
 /// hedefle değerlendirilir. `tutar` boşsa hedef o dönemden itibaren KALDIRILMIŞTIR.
 /// Satır silinmez/değiştirilmez.
 model Hedef {
-  id         String      @id @default(cuid())
+  id         String         @id @default(cuid())
   olcut      HedefOlcutu
   donem      HedefDonemi
   /// TRY tutarı ya da sipariş adedi; null = hedef kaldırıldı.
-  tutar      Decimal?    @db.Decimal(18, 4)
+  tutar      Decimal?       @db.Decimal(18, 4)
   /// Geçerli olduğu ilk dönemin başlangıç günü (UTC gece yarısı etiketi).
-  gecerlilik DateTime    @db.Date
+  gecerlilik DateTime       @db.Date
   userId     String?
-  user       User?       @relation("HedefGiren", fields: [userId], references: [id], onDelete: SetNull)
-  createdAt  DateTime    @default(now())
+  user       User?          @relation("HedefGiren", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime       @default(now())
   tebrikler  HedefTebrigi[]
 
   @@index([olcut, donem, gecerlilik])
@@ -4193,9 +4186,9 @@ enum BuyboxKayitDurumu {
 
 /// Bir kanal hesabının bir ölçümdeki toplam sayıları.
 model BuyboxOlcumu {
-  id               String         @id @default(cuid())
+  id               String           @id @default(cuid())
   channelAccountId String
-  channelAccount   ChannelAccount @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
+  channelAccount   ChannelAccount   @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
   /// Sorgunun GERÇEKTEN yapıldığı an (zamanlayıcının planladığı saat değil).
   olculduAt        DateTime
   incelenen        Int
@@ -4207,7 +4200,7 @@ model BuyboxOlcumu {
   /// bizde olanlar (tanım `rakipliOzet`, lib/buybox-istatistik.ts).
   rakipli          Int
   rakipliBirinci   Int
-  createdAt        DateTime       @default(now())
+  createdAt        DateTime         @default(now())
   degisimler       BuyboxDegisimi[]
 
   @@index([channelAccountId, olculduAt])
@@ -4217,24 +4210,24 @@ model BuyboxOlcumu {
 /// de yazılır (`oncekiDurum` boş = başlangıç kaydı, değişim değil).
 /// Ürünün güncel durumu = o hesap+varyant için EN YENİ satır.
 model BuyboxDegisimi {
-  id               String             @id @default(cuid())
-  olcumId          String
-  olcum            BuyboxOlcumu       @relation(fields: [olcumId], references: [id], onDelete: Restrict)
-  channelAccountId String
-  channelAccount   ChannelAccount     @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
-  variantId        String
-  variant          ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  olculduAt        DateTime
-  oncekiDurum      BuyboxKayitDurumu?
-  yeniDurum        BuyboxKayitDurumu
-  siramiz          Int?
+  id                String             @id @default(cuid())
+  olcumId           String
+  olcum             BuyboxOlcumu       @relation(fields: [olcumId], references: [id], onDelete: Restrict)
+  channelAccountId  String
+  channelAccount    ChannelAccount     @relation(fields: [channelAccountId], references: [id], onDelete: Restrict)
+  variantId         String
+  variant           ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  olculduAt         DateTime
+  oncekiDurum       BuyboxKayitDurumu?
+  yeniDurum         BuyboxKayitDurumu
+  siramiz           Int?
   /// Fiyatlar o anın fotoğrafı; boş = kanal vermedi / bilinmiyor.
-  bizimFiyatAmount  Decimal?          @db.Decimal(18, 4)
-  buyboxFiyatAmount Decimal?          @db.Decimal(18, 4)
+  bizimFiyatAmount  Decimal?           @db.Decimal(18, 4)
+  buyboxFiyatAmount Decimal?           @db.Decimal(18, 4)
   currency          Currency
   /// Buybox'taki satıcı — yalnız HB verir.
-  buyboxSaticisi   String?
-  createdAt        DateTime           @default(now())
+  buyboxSaticisi    String?
+  createdAt         DateTime           @default(now())
 
   @@index([channelAccountId, variantId, olculduAt])
   @@index([olculduAt])
@@ -4271,4 +4264,33 @@ model BuyboxKurali {
   mod          BuyboxKuralModu?
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
+}
+
+/// K363 Faz 3-d — ALIM FIRSATI TAKİBİ (kullanıcı kararları 30.10.2026: kaynak
+/// «önce TY + HB» resmî Buybox uçları · hedefi kullanıcı yazar). Varyant başına
+/// en çok bir satır. Fiyat GEÇMİŞİ TUTULMAZ (tüketicisi yok): yalnız saatlik
+/// ölçümün SON okuduğu fiyatlar ve hedefin altına en son inildiği an.
+/// «Hedefin altında mı» saklanmaz — son fiyat ile hedeften o an hesaplanır
+/// (`lib/alim-hedefi.ts`), çan sayısı ile liste aynı gövdeden.
+/// Fiyat = başka bir satıcının en ucuz satış fiyatı (Buybox bizdeyse bizden
+/// sonraki); boş = ilan yok / kanal vermedi / sorgulanamadı.
+/// Kim/ne zaman hedef yazdı `AuditLog`ta (`ALIM_HEDEFI_*`).
+/// Firma alanı YOK: varyant zaten firmaya bağlı yapının parçası (K347 kararı).
+model AlimHedefi {
+  id               String         @id @default(cuid())
+  variantId        String         @unique
+  variant          ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  hedefAmount      Decimal        @db.Decimal(18, 4)
+  currency         Currency       @default(TRY)
+  aktif            Boolean        @default(true)
+  /// Saatlik ölçümün bu ürünü en son sorguladığı an; hiç sorgulanmadıysa boş.
+  sonKontrolAt     DateTime?
+  tyFiyatAmount    Decimal?       @db.Decimal(18, 4)
+  hbFiyatAmount    Decimal?       @db.Decimal(18, 4)
+  /// Fiyatın hedefe eşit ya da altında EN SON görüldüğü an, fiyat ve kanal ("TY" | "HB").
+  sonAltindaAt     DateTime?
+  sonAltindaAmount Decimal?       @db.Decimal(18, 4)
+  sonAltindaKanal  String?        @db.VarChar(2)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }

@@ -19,6 +19,7 @@ import { geceTuruSorunSayisi } from "@/lib/gece-turu-veri";
 import { yayinBosluguSayisiOlc } from "@/lib/yayin-boslugu";
 import { kdvUyusmayanKanalSkulari } from "@/lib/kdv-uyusmazligi";
 import { ozelGunCanOlcumu } from "@/lib/ozel-gun/ozel-gun-verisi";
+import { alimHedefiCanSayisi } from "@/lib/alim-hedefi-verisi";
 
 /**
  * ============================================================================
@@ -323,6 +324,8 @@ export async function uyarilariTopla(
     yayinBoslugu: { sayi: await yayinBosluguSayisiOlc() },
     /** K363 Faz 2-c — rehberin özel gün sekmesiyle AYNI gövde (`ozelGunDetayi`); sayı = o günün listesi. */
     ozelGunYaklasiyor: ozelGunOlcumu,
+    /** K363 Faz 3-d — fiyat takibi sekmesinin «Hedefin altında» süzgeciyle AYNI gövde (`altindakiler`); sayı = liste. */
+    alimHedefiAltinda: { sayi: await alimHedefiCanSayisi() },
     hakedisGecikti: {
       sayi: gecikenHakedis._count._all,
       tutar:

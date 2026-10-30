@@ -194,7 +194,8 @@ console.log("\n⑦ bağlar — sayfa · yazma · Excel · yedek · menü");
   kontrol("rehber: yaklaşanlar İSTANBUL günüyle (çalışma ortamı saati değil)", /const bugun = gunDegeri\(isTakvimGunu\(an\)\);/.test(sayfa) && /yaklasanlar\(ozelKayitlar, bugun\)/.test(sayfa));
   kontrol("rehber: özel gün sekmesinde bileşen çizilir", /\{oz \? \(\s*<OzelGunSekmesi/.test(sayfa));
   /* Faz 2-d (24.10): koşul `oz || ia ? null : (` — iyi alım sekmesinde de Excel yok; özel gün kapısı aynen ölçülür. */
-  const excelDali = blok(sayfa, "{oz || ia ? null : (\n        <a", 200) || blok(sayfa, "{oz || ia ? null : (\r\n        <a", 200);
+  /* Faz 3-d (30.10): koşul `oz || ia || ft ? null : (` — fiyat takibi sekmesinde de Excel yok. */
+  const excelDali = blok(sayfa, "{oz || ia || ft ? null : (\n        <a", 200) || blok(sayfa, "{oz || ia || ft ? null : (\r\n        <a", 200);
   kontrol("rehber: özel gün sekmesinde Excel düğmesi ÇİZİLMEZ", /href=\{excelAdresi\}/.test(excelDali), excelDali.slice(0, 60));
 
   const excel = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/excel/route.ts"));
