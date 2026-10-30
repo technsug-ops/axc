@@ -47,7 +47,8 @@ console.log("=".repeat(70));
     /:where\(div, section, article, aside, details, li, dl\)\.rounded-md\.border:is\(\.p-3, \.p-4, \.p-5, \.p-6\):not\(\.border-dashed\) \{\s*border-radius: var\(--radius\);\s*border-color: var\(--se-kart-cizgi, transparent\);\s*box-shadow: var\(--se-golge-1\);\s*background-color: var\(--card\);/.test(css),
   );
   kontrol("  ...çip/etiket boyu (px-2) kapsam DIŞINDA", !/\.rounded-md\.border:is\([^)]*\.px-2/.test(css));
-  kontrol("  ...kart içindeki kutu gölge almaz", /\.rounded-md\.border:is\(\.p-3, \.p-4, \.p-5, \.p-6\):not\(\.border-dashed\) \{\s*border-color: var\(--se-cizgi\);\s*box-shadow: none;/.test(css));
+  // 30.10.2026: iç kutu çizgisi kişisel temanın «Kart çizgisi» ayarına bağlandı (`--se-ic-kart-cizgi`, tanımsızsa `--se-cizgi`).
+  kontrol("  ...kart içindeki kutu gölge almaz", /\.rounded-md\.border:is\(\.p-3, \.p-4, \.p-5, \.p-6\):not\(\.border-dashed\) \{\s*border-color: var\(--se-ic-kart-cizgi, var\(--se-cizgi\)\);\s*box-shadow: none;/.test(css));
   kontrol("  ...kural components katmanında", katmanBasi >= 0);
   const griBas = css.indexOf(".bg-muted\\/40 {");
   kontrol("gri dolgulu kutu beyaz zemin alır", griBas >= 0 && /\.border:is\(\.rounded-lg, \.rounded-md\)\.bg-muted\\\/40 \{\s*background-color: var\(--card\);/.test(css));
@@ -59,7 +60,7 @@ console.log("=".repeat(70));
   const derinlik = (once.match(/\{/g) ?? []).length - (once.match(/\}/g) ?? []).length;
   kontrol("  ...gri dolgu kuralı KATMANSIZ (bg-* aracını ezer)", griBas >= 0 && seciciBas >= 0 && derinlik === 0, { derinlik });
   kontrol("bağlantı biçimindeki kutu da kart olur", /a\.rounded-lg\.border:not\(\.border-dashed\) \{\s*border-color: var\(--se-kart-cizgi, transparent\);\s*box-shadow: var\(--se-golge-1\);\s*background-color: var\(--card\);/.test(css));
-  kontrol("  ...kart içindeki bağlantı kutusu gölge almaz", /a\.rounded-lg\.border:not\(\.border-dashed\) \{\s*border-color: var\(--se-cizgi\);\s*box-shadow: none;/.test(css));
+  kontrol("  ...kart içindeki bağlantı kutusu gölge almaz", /a\.rounded-lg\.border:not\(\.border-dashed\) \{\s*border-color: var\(--se-ic-kart-cizgi, var\(--se-cizgi\)\);\s*box-shadow: none;/.test(css));
   {
     /* Kart başlığı kuralı KATMANDA olmalı: ekranın verdiği boyut (rakam kutusu etiketi) kazansın.
        Katmansız yazıldığında küçük etiketleri 16 px'e çıkarıyordu (Paket C'de görüldü, 10.10.2026). */
