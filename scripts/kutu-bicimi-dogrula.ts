@@ -1,5 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
-import { KUTU_ETIKETI, KUTU_RAKAMI, SEKME_SERIDI, sekmeSinifi } from "../src/lib/kutu-bicimi";
+import { KUTU_ETIKETI, KUTU_RAKAMI, SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi } from "../src/lib/kutu-bicimi";
 import { DURUM_KUTUSU, DURUM_SERIDI } from "../src/lib/renkler";
 
 /**
@@ -107,8 +107,13 @@ console.log("=".repeat(70));
     kontrol(`  ...(${d}) beyaz zemin, pastel dolgu YOK`, DURUM_KUTUSU[d].includes("bg-card") && !/(^| )bg-\[#/.test(DURUM_KUTUSU[d]));
   }
   {
-    kontrol("sekme alt çizgili, aktif vurgu renginde", sekmeSinifi(true).includes("border-b-2") && sekmeSinifi(true).includes("border-[var(--se-vurgu)]") && !sekmeSinifi(true).includes("bg-primary"));
-    kontrol("  ...pasif sekmede çizgi görünmez", sekmeSinifi(false).includes("border-transparent"));
+    /* 30.10.2026 kullanıcı kararı: alt çizgili sekme «ilkel» bulundu → ray içinde hap sekme. Eski ölçüt
+       (border-b-2 + vurgu çizgisi) bu kararla eskidi; korunan öz: aktif VURGU renginde yazı, siyah/aksan DOLGU yok. */
+    kontrol("sekme hap biçiminde, aktif beyaz + gölge + vurgu yazı", sekmeSinifi(true).includes("rounded-lg") && sekmeSinifi(true).includes("bg-background") && sekmeSinifi(true).includes("shadow-sm") && sekmeSinifi(true).includes("text-[var(--se-vurgu)]") && !sekmeSinifi(true).includes("bg-primary"));
+    kontrol("  ...pasif sekme gölgesiz ve dolgusuz", !sekmeSinifi(false).includes("shadow-sm") && !/(^| )bg-background( |$)/.test(sekmeSinifi(false)));
+    kontrol("  ...telefonda 44 px, masaüstünde 36 px", sekmeSinifi(true).includes("h-11") && sekmeSinifi(true).includes("md:h-9"));
+    kontrol("sekme sayısı rozette; aktif rozet vurgu tonunda", sekmeSayaciSinifi(true).includes("rounded-full") && sekmeSayaciSinifi(true).includes("text-[var(--se-vurgu)]") && !sekmeSayaciSinifi(false).includes("se-vurgu"));
+    kontrol("sekme şeridi gri ray", SEKME_SERIDI.includes("bg-muted") && SEKME_SERIDI.includes("rounded-xl"));
     kontrol("sekme şeridi tek satır kayar", SEKME_SERIDI.includes("overflow-x-auto") && !SEKME_SERIDI.includes("flex-wrap"));
     for (const [ad, yol] of [["ortak sekme bileşeni", "src/components/sekmeli-bolum.tsx"], ["ürün analizi", "src/app/rapor/urunler/page.tsx"], ["kârlılık kartı", "src/app/kart/[variantId]/kart-panosu.tsx"]] as const) {
       kontrol(`${ad} ortak sekme biçimini kullanır`, /className=\{sekmeSinifi\(/.test(yorumsuz(kaynakOku(yol))));

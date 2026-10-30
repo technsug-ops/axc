@@ -164,7 +164,8 @@ console.log("\n⑥ bağlar");
   /* Faz 2-d (24.10): yedinci sekme kendi listesini sayar (`iyiAlim.length` — aramasız tam liste). */
   kontrol(
     "sayfa: sekme sayısı ARAMADAN BAĞIMSIZ (tam liste uzunluğu; özel günlerde gün sayısı; iyi alımda kendi tam listesi)",
-    /\{t\(`liste_\$\{l\}`\)\} \(\{sekmeSayisi\(l\)\}\)/.test(sayfa) &&
+    /* 30.10.2026: sayı parantez yerine rozette (`sekmeSayaciSinifi`) — ölçüt çizimin aynı gövdeyi çağırdığını arar. */
+    /\{t\(`liste_\$\{l\}`\)\} <span className=\{sekmeSayaciSinifi\(aktif\)\}>\{sekmeSayisi\(l\)\}<\/span>/.test(sayfa) &&
       /* Faz 3-d (30.10): fiyat takibi sekmesi BÜTÜN hedefleri sayar (sekme süzgeçsiz «Hepsi» açılır) — ölçüt o dalı da kapsar. */
       /const sekmeSayisi = \(l: RehberSekmesi\) =>\s*l === "ozelGun" \? yaklasan\.length : l === "iyiAlim" \? iyiAlim\.length : l === "fiyatTakibi" \? hedefler\.length : listeler\[l\]\.length;/.test(sayfa) &&
       /const iyiAlim = iyiAlimListesi\(veri\.satirlar, hafizalar\);/.test(sayfa),

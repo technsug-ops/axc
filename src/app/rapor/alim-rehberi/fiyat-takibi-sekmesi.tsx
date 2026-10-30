@@ -18,7 +18,7 @@ import {
 } from "@/lib/alim-hedefi";
 import type { HedefListeSatiri } from "@/lib/alim-hedefi-verisi";
 import { bicimlendirici } from "@/lib/bicim";
-import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
+import { SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi } from "@/lib/kutu-bicimi";
 import type { DurumRengi } from "@/lib/renkler";
 
 import { HedefEylemleri, YeniHedefFormu } from "./fiyat-takibi-formu";
@@ -123,7 +123,7 @@ export async function FiyatTakibiSekmesi({
           const aktif = x === suzgec;
           return (
             <Link key={x} href={fiyatTakibiAdresi(x)} aria-current={aktif ? "page" : undefined} className={sekmeSinifi(aktif)}>
-              {t(`suzgec_${x}`)} ({sayilar[x]})
+              {t(`suzgec_${x}`)} <span className={sekmeSayaciSinifi(aktif)}>{sayilar[x]}</span>
             </Link>
           );
         })}

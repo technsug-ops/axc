@@ -32,7 +32,7 @@ import { ISTATISTIK_ARALIKLARI, rakipliOzet, type IstatistikAraligi } from "@/li
 import { buyboxDurumlari, buyboxUrunleri } from "@/lib/buybox-verisi";
 import { desiBekleyenler, genelKuralOku } from "@/lib/buybox-kural-verisi";
 import { otomatikGecmisi, satirModlari } from "@/lib/buybox-otomatik-verisi";
-import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
+import { SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi } from "@/lib/kutu-bicimi";
 import { DURUM_YAZISI } from "@/lib/renkler";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
@@ -287,7 +287,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
       <div className={SEKME_SERIDI}>
         {BUYBOX_LISTELERI.map((l) => (
           <Link key={l} href={adres({ liste: l })} aria-current={l === liste ? "page" : undefined} className={sekmeSinifi(l === liste)}>
-            {t(`liste_${l}`)} ({sekmeSayisi(l)})
+            {t(`liste_${l}`)} <span className={sekmeSayaciSinifi(l === liste)}>{sekmeSayisi(l)}</span>
           </Link>
         ))}
       </div>

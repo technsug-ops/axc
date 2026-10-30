@@ -13,13 +13,30 @@ export const KUTU_ETIKETI = "text-muted-foreground text-[13px] font-medium";
 export const KUTU_RAKAMI = "font-bold tabular-nums";
 
 /**
- * ALT ÇİZGİLİ SEKME (Algoritmo) — K330-④ (kullanıcı 10.10.2026: «bunlar da yeni
- * stile çevir»). Ortak sekme bileşeni, ürün analizi ve kârlılık kartı BURADAN
- * okur. Aktif sekme vurgu renginde alt çizgi + yazı (eski: dolu aksan hapı).
+ * SEKME — bütün sekme şeritleri BURADAN okur (ortak sekme bileşeni, ürün analizi,
+ * kârlılık kartı, alım rehberi, buybox).
+ *
+ * K330-④ (10.10.2026, «bunlar da yeni stile çevir»): Algoritmo'nun ALT ÇİZGİLİ
+ * sekmesi — aktif sekme vurgu renginde alt çizgi + yazı (eski: dolu aksan hapı).
+ * ⏩ ÇEVRİLDİ — kullanıcı 30.10.2026 (alım rehberi ekran görüntüsü): «buradaki
+ * butonlar çok ilkel; daha kaliteli, görünür ve modern olsun». Alt çizgi düz metin
+ * gibi okunuyordu (İlke #2: tıklanabilir görünür). Yeni biçim: hafif gri RAY
+ * içinde hap sekmeler; aktif sekme beyaz + gölge + vurgu renginde yazı. 16.08
+ * kararı korunur: aktif hâlde siyah/aksan DOLGU yok. Sayı ayrı rozette
+ * (`sekmeSayaciSinifi`) — «(42)» parantezi metne karışıyordu.
  */
-export const SEKME_SERIDI = "flex gap-1 overflow-x-auto overflow-y-hidden border-b [scrollbar-width:none]";
+export const SEKME_SERIDI =
+  "flex w-full max-w-full gap-1 overflow-x-auto overflow-y-hidden rounded-xl border bg-muted/60 p-1 [scrollbar-width:none] md:w-fit";
 export function sekmeSinifi(aktif: boolean): string {
-  return `inline-flex h-11 shrink-0 items-center border-b-2 px-3 text-[13px] font-medium ${
-    aktif ? "border-[var(--se-vurgu)] text-[var(--se-vurgu)]" : "text-muted-foreground border-transparent hover:text-foreground"
+  return `inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-3 text-[13px] whitespace-nowrap transition-all md:h-9 ${
+    aktif
+      ? "bg-background font-semibold text-[var(--se-vurgu)] shadow-sm ring-1 ring-black/5 dark:ring-white/10"
+      : "text-muted-foreground font-medium hover:bg-background/70 hover:text-foreground"
+  }`;
+}
+/** Sekmedeki sayı rozeti — aktifte vurgu tonunda, pasifte nötr. */
+export function sekmeSayaciSinifi(aktif: boolean): string {
+  return `inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] leading-none font-semibold tabular-nums ${
+    aktif ? "bg-[var(--se-vurgu-bg)] text-[var(--se-vurgu)]" : "bg-background/80 text-muted-foreground"
   }`;
 }

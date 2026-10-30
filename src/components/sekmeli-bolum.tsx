@@ -98,8 +98,8 @@ export function SekmeliBolum({
                  */
                 scroll={false}
                 aria-current={s.anahtar === aktif.anahtar ? "page" : undefined}
-                /* K330-④ — alt çizgili sekme (ortak biçim `sekmeSinifi`). Aktif hâl yine
-                   AKSAN renginde (16.08.2026 kararı korunuyor: siyah dolgu yok). */
+                /* Ortak sekme biçimi `sekmeSinifi` (K330-④; 30.10.2026 hap sekme). Aktif hâl yine
+                   AKSAN renginde yazı (16.08.2026 kararı korunuyor: siyah dolgu yok). */
                 className={sekmeSinifi(s.anahtar === aktif.anahtar)}
               >
                 {s.etiket}

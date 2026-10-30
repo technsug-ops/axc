@@ -8,7 +8,7 @@ import { hedefGirdiMetni, ONERI_KAYNAKLARI, ONERI_TAVANI, onerilenHedef, oneriDu
 import type { TakipKanali } from "@/lib/alim-hedefi-verisi";
 import { bicimlendirici } from "@/lib/bicim";
 import type { BuyboxKanali } from "@/lib/buybox";
-import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
+import { SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi } from "@/lib/kutu-bicimi";
 import { rehberAra, type RehberSatiri } from "@/lib/rapor/alim-rehberi";
 
 import { OneriListesi, type OneriSatiri } from "./fiyat-takibi-oneri-listesi";
@@ -97,7 +97,7 @@ export async function FiyatTakibiOnerileri({
         <div className={SEKME_SERIDI}>
           {ONERI_KAYNAKLARI.map((k) => (
             <Link key={k} href={kaynakAdresi[k]} aria-current={k === kaynak ? "page" : undefined} className={sekmeSinifi(k === kaynak)}>
-              {t(`kaynak_${k}`)} ({sayilar[k]})
+              {t(`kaynak_${k}`)} <span className={sekmeSayaciSinifi(k === kaynak)}>{sayilar[k]}</span>
             </Link>
           ))}
         </div>

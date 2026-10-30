@@ -352,7 +352,7 @@ export default async function UrunAnaliziSayfasi({
                 satir: satirSayisi,
               })}
               aria-current={aktif ? "page" : undefined}
-              /* K330-④ — alt çizgili sekme (ortak biçim). */
+              /* Ortak sekme biçimi (K330-④; 30.10.2026 hap sekme). */
               className={sekmeSinifi(aktif)}
             >
               {eksenEtiketi[e]}

@@ -10,7 +10,7 @@ import { ListeToplami } from "@/components/liste-toplami";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { bicimlendirici } from "@/lib/bicim";
-import { SEKME_SERIDI, sekmeSinifi } from "@/lib/kutu-bicimi";
+import { SEKME_SERIDI, sekmeSayaciSinifi, sekmeSinifi } from "@/lib/kutu-bicimi";
 import {
   azStokCoz,
   donemCoz,
@@ -264,7 +264,7 @@ export default async function AlimRehberiSayfasi({
           const aktif = l === liste;
           return (
             <Link key={l} href={adres({ liste: l })} aria-current={aktif ? "page" : undefined} className={sekmeSinifi(aktif)}>
-              {t(`liste_${l}`)} ({sekmeSayisi(l)})
+              {t(`liste_${l}`)} <span className={sekmeSayaciSinifi(aktif)}>{sekmeSayisi(l)}</span>
             </Link>
           );
         })}
