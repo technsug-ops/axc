@@ -109,18 +109,20 @@ console.log("=".repeat(70));
     kontrol(`  ...(${d}) beyaz zemin, pastel dolgu YOK`, DURUM_KUTUSU[d].includes("bg-card") && !/(^| )bg-\[#/.test(DURUM_KUTUSU[d]));
   }
   {
-    /* 30.10.2026 kullanıcı kararı: alt çizgili sekme «ilkel» bulundu → ray içinde hap sekme. Eski ölçüt
-       (border-b-2 + vurgu çizgisi) bu kararla eskidi; korunan öz: aktif VURGU renginde yazı, siyah/aksan DOLGU yok. */
-    kontrol("sekme hap biçiminde, aktif beyaz + gölge + vurgu yazı", sekmeSinifi(true).includes("rounded-lg") && sekmeSinifi(true).includes("bg-background") && sekmeSinifi(true).includes("shadow-sm") && sekmeSinifi(true).includes("text-[var(--se-vurgu)]") && !sekmeSinifi(true).includes("bg-primary"));
-    kontrol("  ...pasif sekme gölgesiz ve dolgusuz", !sekmeSinifi(false).includes("shadow-sm") && !/(^| )bg-background( |$)/.test(sekmeSinifi(false)));
-    kontrol("  ...telefonda 44 px, masaüstünde 36 px", sekmeSinifi(true).includes("h-11") && sekmeSinifi(true).includes("md:h-9"));
-    kontrol("sekme sayısı rozette; aktif rozet vurgu tonunda", sekmeSayaciSinifi(true).includes("rounded-full") && sekmeSayaciSinifi(true).includes("text-[var(--se-vurgu)]") && !sekmeSayaciSinifi(false).includes("se-vurgu"));
-    kontrol("sekme şeridi gri ray", SEKME_SERIDI.includes("bg-muted") && SEKME_SERIDI.includes("rounded-xl"));
-    /* 30.10.2026 kullanıcı kararı: seçim çipleri (dönem · kanal · süzgeç) sekmelerle aynı dilde — aktif koyu DOLGU yok,
-       vurgu tonunda açık zemin; pasif beyaz + çerçeve + gölge. DESEN YASAĞI: eski koyu dolgu kalıbı hiçbir ekranda kalamaz
-       (dosya listesi tutulmaz — yarın eklenen ekran da taranır). Taban doluluğu ayrıca ölçülür. */
-    kontrol("seçim çipi aktif: vurgu zemin + vurgu yazı, koyu dolgu yok", SECIM_AKTIF.includes("bg-[var(--se-vurgu-bg)]") && SECIM_AKTIF.includes("text-[var(--se-vurgu)]") && !SECIM_AKTIF.includes("bg-primary"));
-    kontrol("  ...pasif çip beyaz + çerçeve + gölge", SECIM_PASIF.includes("bg-background") && SECIM_PASIF.includes("border-border") && SECIM_PASIF.includes("shadow-xs"));
+    /* 30.10.2026 kullanıcı kararı (ikinci tur): «satışlar sayfasındaki butonları referans al». Sekme ve seçim çipi
+       Satışlar'ın dönem düğmesiyle (Button default/outline) AYNI. ESKİYEN ölçütler: alt çizgi (K330-④) → gri ray içinde
+       hap + vurgu yazı (aynı günün ilk turu, «koyu dolgu yok» diyordu) → bu kararla düştü. Korunan öz: seçili ile seçili
+       olmayan AYIRT EDİLİR ve renk TEK kaynaktan gelir. */
+    kontrol("sekme seçili: Satışlar'daki gibi koyu dolgu", sekmeSinifi(true).includes("bg-primary") && sekmeSinifi(true).includes("text-primary-foreground"));
+    kontrol("  ...pasif sekme beyaz + çerçeve + gölge, dolgusuz", sekmeSinifi(false).includes("bg-background") && sekmeSinifi(false).includes("border-border") && sekmeSinifi(false).includes("shadow-xs") && !sekmeSinifi(false).includes("bg-primary"));
+    kontrol("  ...sekme rengi seçim çipiyle aynı kaynaktan", sekmeSinifi(true).includes(SECIM_AKTIF) && sekmeSinifi(false).includes(SECIM_PASIF));
+    kontrol("  ...telefonda 44 px, masaüstünde 32 px (Satışlar ölçüsü)", sekmeSinifi(true).includes("h-11") && sekmeSinifi(true).includes("md:h-8"));
+    kontrol("sekme sayısı rozette; aktif rozet koyu zeminde okunur", sekmeSayaciSinifi(true).includes("rounded-full") && sekmeSayaciSinifi(true).includes("text-primary-foreground") && !sekmeSayaciSinifi(false).includes("primary-foreground"));
+    kontrol("sekme şeridi düğme sırası (gri ray yok)", !SEKME_SERIDI.includes("bg-muted") && SEKME_SERIDI.includes("gap-2"));
+    /* Seçim çipi: renk SECIM_AKTIF/SECIM_PASIF'ten okunur. DESEN YASAĞI: ekrana gömülü koyu dolgu kalıbı hiçbir ekranda
+       kalamaz — renk tek kaynaktan gelsin (dosya listesi tutulmaz, yarın eklenen ekran da taranır). Taban doluluğu ayrıca ölçülür. */
+    kontrol("seçim çipi aktif: Satışlar'daki gibi koyu dolgu", SECIM_AKTIF.includes("bg-primary") && SECIM_AKTIF.includes("text-primary-foreground"));
+    kontrol("  ...pasif çip beyaz + çerçeve + gölge", SECIM_PASIF.includes("bg-background") && SECIM_PASIF.includes("border-border") && SECIM_PASIF.includes("shadow-xs") && !SECIM_PASIF.includes("bg-primary"));
     const tsxler: string[] = [];
     const gez = (k: string) => {
       for (const ad of readdirSync(k)) {
@@ -131,7 +133,7 @@ console.log("=".repeat(70));
     };
     gez("src");
     const eskiCip = tsxler.filter((y) => yorumsuz(kaynakOku(y)).includes("bg-primary text-primary-foreground border-primary"));
-    kontrol("eski koyu dolgulu seçim çipi hiçbir ekranda yok", eskiCip.length === 0, eskiCip);
+    kontrol("ekrana gömülü çip rengi yok (ortak kaynaktan okunur)", eskiCip.length === 0, eskiCip);
     const cipKullanan = tsxler.filter((y) => /\?\s*SECIM_AKTIF\s*:\s*SECIM_PASIF/.test(yorumsuz(kaynakOku(y))));
     kontrol("  ...ortak çip biçimini kullanan ekran ≥ 11 (taban dolu)", tsxler.length > 100 && cipKullanan.length >= 11, cipKullanan.length);
     kontrol("sekme şeridi tek satır kayar", SEKME_SERIDI.includes("overflow-x-auto") && !SEKME_SERIDI.includes("flex-wrap"));

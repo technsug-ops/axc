@@ -13,39 +13,43 @@ export const KUTU_ETIKETI = "text-muted-foreground text-[13px] font-medium";
 export const KUTU_RAKAMI = "font-bold tabular-nums";
 
 /**
+ * SEÇİM ÇİPİ — dönem / kanal / süzgeç düğmeleri (Son 30 gün · Son 3 ay …).
+ * ⏩ 30.10.2026 (ikinci tur) kullanıcı: «satışlar sayfasındaki butonları referans
+ * al». Satışlar'ın dönem düğmeleri standart `Button`: seçili `default` (koyu
+ * dolgu), diğerleri `outline` (beyaz + çerçeve + gölge). Renkler o iki varyantın
+ * BİREBİR karşılığı — iki ekran aynı görünür (İlke #10).
+ * (Aynı günün ilk turunda aktif = vurgu tonunda açık zemin denenmişti; kullanıcı
+ * Satışlar'ın koyu dolgulu düğmesini referans gösterdi, o biçim düştü.)
+ * Ekranlar yalnız RENK kısmını buradan alır; yükseklik/yerleşim kendi yerinde.
+ */
+export const SECIM_AKTIF = "border-primary bg-primary text-primary-foreground hover:bg-primary/80";
+export const SECIM_PASIF =
+  "border-border bg-background text-foreground shadow-xs hover:bg-muted hover:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50";
+
+/**
  * SEKME — bütün sekme şeritleri BURADAN okur (ortak sekme bileşeni, ürün analizi,
  * kârlılık kartı, alım rehberi, buybox).
  *
- * K330-④ (10.10.2026, «bunlar da yeni stile çevir»): Algoritmo'nun ALT ÇİZGİLİ
- * sekmesi — aktif sekme vurgu renginde alt çizgi + yazı (eski: dolu aksan hapı).
- * ⏩ ÇEVRİLDİ — kullanıcı 30.10.2026 (alım rehberi ekran görüntüsü): «buradaki
- * butonlar çok ilkel; daha kaliteli, görünür ve modern olsun». Alt çizgi düz metin
- * gibi okunuyordu (İlke #2: tıklanabilir görünür). Yeni biçim: hafif gri RAY
- * içinde hap sekmeler; aktif sekme beyaz + gölge + vurgu renginde yazı. 16.08
- * kararı korunur: aktif hâlde siyah/aksan DOLGU yok. Sayı ayrı rozette
- * (`sekmeSayaciSinifi`) — «(42)» parantezi metne karışıyordu.
+ * K330-④ (10.10.2026): Algoritmo'nun ALT ÇİZGİLİ sekmesi (eski: dolu aksan hapı).
+ * ⏩ 30.10.2026 kullanıcı (alım rehberi ekran görüntüsü): «buradaki butonlar çok
+ * ilkel; daha kaliteli, görünür ve modern olsun» — alt çizgi düz metin gibi
+ * okunuyordu (İlke #2). İlk tur: gri ray içinde hap sekme.
+ * ⏩ Aynı gün ikinci tur: «satışlar sayfasındaki butonları referans al». Sekme
+ * artık Satışlar'ın dönem düğmesiyle AYNI: seçili koyu dolgu, diğerleri beyaz
+ * çerçeveli; telefonda 44 px (İlke #8), masaüstünde 32 px (`Button size="sm"`
+ * + `md:h-8`, Satışlar'daki ölçü). 16.08'deki «aktif hâlde koyu dolgu yok»
+ * kararı bu kullanıcı kararıyla ÇEVRİLDİ. Sayı ayrı rozette (`sekmeSayaciSinifi`).
  */
 export const SEKME_SERIDI =
-  "flex w-full max-w-full gap-1 overflow-x-auto overflow-y-hidden rounded-xl border bg-muted/60 p-1 [scrollbar-width:none] md:w-fit";
+  "flex w-full max-w-full gap-2 overflow-x-auto overflow-y-hidden pb-0.5 [scrollbar-width:none]";
 export function sekmeSinifi(aktif: boolean): string {
-  return `inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg px-3 text-[13px] whitespace-nowrap transition-all md:h-9 ${
-    aktif
-      ? "bg-background font-semibold text-[var(--se-vurgu)] shadow-sm ring-1 ring-black/5 dark:ring-white/10"
-      : "text-muted-foreground font-medium hover:bg-background/70 hover:text-foreground"
+  return `inline-flex h-11 shrink-0 items-center gap-1.5 rounded-[min(var(--radius-md),12px)] border px-2.5 text-[0.8rem] font-medium whitespace-nowrap transition-all md:h-8 ${
+    aktif ? SECIM_AKTIF : SECIM_PASIF
   }`;
 }
-/**
- * SEÇİM ÇİPİ — dönem / kanal / süzgeç düğmeleri (Son 30 gün · Son 3 ay …). Kullanıcı
- * 30.10.2026: sekmelerle aynı modern dile. Eski: aktif koyu DOLGU (bg-primary),
- * pasif çıplak çerçeve. Yeni: aktif vurgu tonunda açık zemin + vurgu çerçeve +
- * kalın yazı; pasif beyaz + çerçeve + hafif gölge (tıklanabilir görünür, İlke #2).
- * Ekranlar yalnız RENK kısmını buradan alır; yükseklik/yerleşim kendi yerinde.
- */
-export const SECIM_AKTIF = "border-[var(--se-vurgu)] bg-[var(--se-vurgu-bg)] font-semibold text-[var(--se-vurgu)] shadow-xs";
-export const SECIM_PASIF = "border-border bg-background text-foreground/80 shadow-xs hover:border-foreground/25 hover:bg-muted hover:text-foreground";
-/** Sekmedeki sayı rozeti — aktifte vurgu tonunda, pasifte nötr. */
+/** Sekmedeki sayı rozeti — koyu dolgulu aktif sekmede açık yazı, pasifte nötr. */
 export function sekmeSayaciSinifi(aktif: boolean): string {
   return `inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] leading-none font-semibold tabular-nums ${
-    aktif ? "bg-[var(--se-vurgu-bg)] text-[var(--se-vurgu)]" : "bg-background/80 text-muted-foreground"
+    aktif ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
   }`;
 }
