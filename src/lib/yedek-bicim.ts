@@ -106,6 +106,8 @@ export const YEDEK_TABLOLARI = [
   "BuyboxDegisimi",
   /** K366 — ürüne ayrı Buybox fiyat kuralı; varyanta bağlı (Cascade) → varyanttan SONRA. */
   "BuyboxKurali",
+  /** K363 Faz 3-d — alım hedefi; varyanta bağlı (Cascade) → varyanttan SONRA. */
+  "AlimHedefi",
   // --- gider ---
   "ExpenseTemplate",
   "Expense",
