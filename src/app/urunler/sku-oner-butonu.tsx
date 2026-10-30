@@ -81,7 +81,7 @@ export function SkuOnerButonu({
           {hata.hata === "MARKA_TABLODA_YOK" ? (
             <>
               {hata.ad ? t("skuOneriMarkaTablodaYok", { ad: hata.ad }) : t("skuOneriMarkaYok")}{" "}
-              <Link href="/ayarlar/markalar" target="_blank" rel="noopener" className="underline underline-offset-4">
+              <Link href="/ayarlar/markalar" target="_blank" rel="noopener" className="text-primary hover:text-primary/80">
                 {t("skuOneriMarkaDuzelt")}
               </Link>
             </>
@@ -93,7 +93,7 @@ export function SkuOnerButonu({
                 href="/ayarlar/kategoriler"
                 target="_blank"
                 rel="noopener"
-                className="underline underline-offset-4"
+                className="text-primary hover:text-primary/80"
               >
                 {t("skuOneriKategoriDuzelt")}
               </Link>

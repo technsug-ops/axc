@@ -64,7 +64,7 @@ export function TahsilGunuAlani({
         }}
         aria-label={t("tahsilGunuEtiketi")}
         /* ⚠ MOBİLDE 44px — İlke #8. */
-        className={`inline-flex min-h-11 items-center gap-1 text-xs underline-offset-4 hover:underline sm:min-h-0 ${
+        className={`inline-flex min-h-11 items-center gap-1 text-xs sm:min-h-0 ${
           gun === null ? `font-medium ${DURUM_YAZISI.uyari}` : "text-muted-foreground"
         }`}
       >

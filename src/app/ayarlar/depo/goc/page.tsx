@@ -66,7 +66,7 @@ export default async function GocSayfasi() {
       <p className="text-muted-foreground text-sm">{t("aciklama")}</p>
 
       <p className="text-muted-foreground text-sm">
-        <Link href="/ayarlar/depo" className="underline underline-offset-4">
+        <Link href="/ayarlar/depo" className="text-primary hover:text-primary/80">
           {t("depoyaGit")}
         </Link>
       </p>

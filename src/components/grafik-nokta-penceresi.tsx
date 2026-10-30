@@ -182,7 +182,7 @@ export function GrafikNoktaPenceresi({
             {p.baglanti ? (
               <Link
                 href={p.baglanti.adres}
-                className="text-primary mt-1 inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline md:min-h-0"
+                className="text-primary mt-1 inline-flex min-h-11 items-center font-medium md:min-h-0"
               >
                 {p.baglanti.metin} →
               </Link>

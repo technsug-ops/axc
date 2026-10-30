@@ -100,7 +100,7 @@ export default async function RafEtiketleriSayfasi() {
               baglanti: (parca) => (
                 <Link
                   href="/ayarlar/konumlar"
-                  className="underline underline-offset-4"
+                  className="text-primary hover:text-primary/80"
                 >
                   {parca}
                 </Link>

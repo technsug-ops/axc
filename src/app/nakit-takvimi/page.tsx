@@ -423,7 +423,7 @@ function Dokum({
             href={s.adres}
             className="bg-muted/60 hover:bg-muted inline-flex max-w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
           >
-            <span className="truncate underline underline-offset-2">
+            <span className="text-primary hover:text-primary/80 truncate">
               {s.kanal ? `${s.kanal} · ${s.baslik}` : s.baslik}
             </span>
             {/* TUTARI BİLİNMEYEN LİSTEDE SÜTUN HİÇ ÇİZİLMEZ — "?" hiçbir şey
@@ -440,7 +440,7 @@ function Dokum({
             href={o.adres}
             className="bg-muted/60 hover:bg-muted inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
           >
-            <span className="underline underline-offset-2">
+            <span className="text-primary hover:text-primary/80">
               {obekAdi(o.kaynak, o.adet, o.kanal)}
             </span>
             {tutarGizle ? null : (

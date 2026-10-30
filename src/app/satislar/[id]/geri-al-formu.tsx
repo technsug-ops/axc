@@ -197,7 +197,7 @@ export function GeriAlFormu({ saleId }: { saleId: string }) {
                       {" · "}
                       <Link
                         href={`/satislar/${e.satisId}`}
-                        className="underline underline-offset-2"
+                        className="text-primary hover:text-primary/80"
                       >
                         {e.satisKodu ?? t("satisiAc")}
                       </Link>

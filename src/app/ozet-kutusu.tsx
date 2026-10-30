@@ -71,7 +71,7 @@ export async function OzetKutusu() {
         </p>
         <Link
           href="/ozet"
-          className="text-primary inline-block text-xs font-medium hover:underline"
+          className="text-primary inline-block text-xs font-medium"
         >
           {t("tamOzetiGor")}
         </Link>

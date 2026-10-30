@@ -601,7 +601,7 @@ export function SatisFormu({
                     baglanti: (parca) => (
                       <Link
                         href="/ayarlar/kanallar"
-                        className="underline underline-offset-4"
+                        className="text-primary hover:text-primary/80"
                       >
                         {parca}
                       </Link>

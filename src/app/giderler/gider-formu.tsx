@@ -356,7 +356,7 @@ export function GiderFormu({
           <button
             type="button"
             onClick={() => yontemSec("")}
-            className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
+            className="text-primary hover:text-primary/80 text-xs"
           >
             {t("odemeYontemiTemizle")}
           </button>

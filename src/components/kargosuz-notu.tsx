@@ -21,7 +21,7 @@ export function KargosuzNotu({ adres, metin, goster }: { adres: string; metin: s
       <span className="min-w-0 flex-1">{metin}</span>
       <Link
         href={adres}
-        className="hover:bg-accent inline-flex min-h-11 shrink-0 items-center gap-0.5 rounded-md px-2 font-medium underline underline-offset-4 sm:min-h-9"
+        className="text-primary hover:text-primary/80 hover:bg-accent inline-flex min-h-11 shrink-0 items-center gap-0.5 rounded-md px-2 font-medium sm:min-h-9"
       >
         {goster}
         <ChevronRight className="size-4" aria-hidden />

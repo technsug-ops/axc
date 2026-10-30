@@ -403,7 +403,7 @@ export async function PanelAylikGrafik({
                             {nokta.hesaplanamayanAdet > 0 ? (
                               <Link
                                 href={karEksikAyAdresi(nokta.yil, nokta.ay)}
-                                className="text-muted-foreground hover:text-foreground block text-xs underline underline-offset-2"
+                                className="text-primary hover:text-primary/80 block text-xs"
                               >
                                 {t("kanalEksik", {
                                   sayi: nokta.hesaplanamayanAdet,

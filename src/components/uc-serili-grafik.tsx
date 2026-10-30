@@ -584,7 +584,7 @@ export function UcSeriliGrafik({
                         {adres ? (
                           <Link
                             href={adres}
-                            className="hover:text-foreground underline-offset-2 hover:underline"
+                            className="hover:text-foreground"
                           >
                             {deger}
                           </Link>

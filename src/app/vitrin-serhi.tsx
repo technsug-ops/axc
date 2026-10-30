@@ -76,7 +76,7 @@ export async function VitrinSerhi({ veri }: { veri: Veri[] }) {
       {temiz && !s.dikkatGerek ? null : (
         <Link
           href="/kanal-listeleme"
-          className="text-primary ml-auto shrink-0 underline-offset-4 hover:underline"
+          className="text-primary ml-auto shrink-0"
         >
           {t("serhAc")}
         </Link>

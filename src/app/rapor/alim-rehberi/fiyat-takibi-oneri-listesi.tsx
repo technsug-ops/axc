@@ -187,7 +187,7 @@ function OneriSatirGorunumu({ s, yazabilir, secili, degistir, kilitli }: { s: On
         {s.urunId === null ? (
           <p className="line-clamp-2 font-medium">{s.urunAdi}</p>
         ) : (
-          <Link href={`/urunler/${s.urunId}`} className="line-clamp-2 font-medium underline underline-offset-2 hover:no-underline">
+          <Link href={`/urunler/${s.urunId}`} className="text-primary hover:text-primary/80 line-clamp-2 font-medium">
             {s.urunAdi}
           </Link>
         )}
@@ -208,7 +208,7 @@ function OneriSatirGorunumu({ s, yazabilir, secili, degistir, kilitli }: { s: On
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={t("pazaryerindeAc", { kanal: t(`kanal_${k}`) })}
-                className="text-primary inline-flex min-h-11 items-center gap-1 underline-offset-4 hover:underline md:min-h-6"
+                className="text-primary inline-flex min-h-11 items-center gap-1 md:min-h-6"
               >
                 {t(`kanal_${k}`)}
                 <ExternalLink className="size-3.5" aria-hidden />

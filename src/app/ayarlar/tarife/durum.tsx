@@ -339,7 +339,7 @@ export async function TarifeDurumu() {
                     */}
                     <Link
                       href={`/tarife?pencere=${x.id}`}
-                      className="text-primary ml-auto text-sm underline underline-offset-4"
+                      className="text-primary ml-auto text-sm"
                     >
                       {tAyna("aynayiAc")}
                     </Link>

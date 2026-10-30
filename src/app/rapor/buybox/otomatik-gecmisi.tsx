@@ -74,7 +74,7 @@ export async function OtomatikGecmisi({
                     {ilk.urunId === null ? (
                       <span className="font-medium">{ilk.urunAdi}</span>
                     ) : (
-                      <Link href={`/urunler/${ilk.urunId}`} className="font-medium underline underline-offset-2 hover:no-underline">
+                      <Link href={`/urunler/${ilk.urunId}`} className="text-primary hover:text-primary/80 font-medium">
                         {ilk.urunAdi}
                       </Link>
                     )}
@@ -94,7 +94,7 @@ export async function OtomatikGecmisi({
                     <p className="text-muted-foreground text-xs">{t("otomatikSonKar", { net2: para(son.net2), marj: bicim.yuzde(son.marj) })}</p>
                   ) : null}
                   <details className="group">
-                    <summary className="text-muted-foreground hover:text-foreground inline-flex min-h-11 cursor-pointer list-none items-center gap-1 text-xs underline underline-offset-2 md:min-h-7">
+                    <summary className="text-primary hover:text-primary/80 inline-flex min-h-11 cursor-pointer list-none items-center gap-1 text-xs md:min-h-7">
                       <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" aria-hidden />
                       {t("otomatikAyrinti", { sayi: g.kayitlar.length })}
                     </summary>

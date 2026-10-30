@@ -44,6 +44,7 @@
     "canli:belge-eksik": "tsx scripts/canli-belge-eksik-liste.ts",
     "kart-odeme:dogrula": "tsx scripts/kart-odeme-dogrula.ts",
     "kutu-bicimi:dogrula": "tsx scripts/kutu-bicimi-dogrula.ts",
+    "alt-cizgi:dogrula": "tsx scripts/alt-cizgi-dogrula.ts",
     "kutu-bicimi-mutasyon:kontrol": "tsx scripts/kutu-bicimi-mutasyon-kontrol.ts",
     "kart-analizi:dogrula": "tsx scripts/kart-analizi-dogrula.ts",
     "kart-analizi-mutasyon:kontrol": "tsx scripts/kart-analizi-mutasyon-kontrol.ts",

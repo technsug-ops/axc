@@ -91,7 +91,7 @@ export async function FiyatTakibiSekmesi({
     s.urunId === null ? (
       <span className="line-clamp-2 font-medium">{s.urunAdi}</span>
     ) : (
-      <Link href={`/urunler/${s.urunId}`} className="line-clamp-2 font-medium underline underline-offset-2 hover:no-underline">
+      <Link href={`/urunler/${s.urunId}`} className="text-primary hover:text-primary/80 line-clamp-2 font-medium">
         {s.urunAdi}
       </Link>
     );

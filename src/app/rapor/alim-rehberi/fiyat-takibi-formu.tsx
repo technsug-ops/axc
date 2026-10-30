@@ -167,7 +167,7 @@ export function YeniHedefFormu() {
                       onClick={() => sec(a)}
                       className="hover:bg-muted flex min-h-11 w-full flex-col items-start px-3 py-2 text-left text-sm"
                     >
-                      <span className="font-medium underline underline-offset-2">{a.ad}</span>
+                      <span className="text-primary hover:text-primary/80 font-medium">{a.ad}</span>
                       <span className="text-muted-foreground text-xs">
                         {a.sku}
                         {a.barkod ? ` · ${a.barkod}` : ""}

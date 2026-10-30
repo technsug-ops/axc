@@ -44,7 +44,7 @@ function UrunAdi({ s }: { s: { urunId: string | null; urunAdi: string } }) {
   return s.urunId === null ? (
     <span className="line-clamp-2 font-medium">{s.urunAdi}</span>
   ) : (
-    <Link href={`/urunler/${s.urunId}`} className="line-clamp-2 font-medium underline underline-offset-2 hover:no-underline">
+    <Link href={`/urunler/${s.urunId}`} className="text-primary hover:text-primary/80 line-clamp-2 font-medium">
       {s.urunAdi}
     </Link>
   );
@@ -78,7 +78,7 @@ export async function OzelGunSekmesi({
   const aralik = (bas: Date, bit: Date) =>
     bas.getTime() === bit.getTime() ? bicim.tarih(bas) : t("ozelAralik", { bas: bicim.tarih(bas), bit: bicim.tarih(bit) });
   const ayarBaglantisi = ayarlariGorebilir ? (
-    <Link href={OZEL_GUN_YOLU} className="text-sm font-medium underline underline-offset-4 hover:no-underline">
+    <Link href={OZEL_GUN_YOLU} className="text-primary hover:text-primary/80 text-sm font-medium">
       {t("ozelAyarlarBaglantisi")}
     </Link>
   ) : null;

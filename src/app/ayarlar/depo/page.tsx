@@ -190,7 +190,7 @@ export default async function DepoSayfasi() {
         ) : null}
 
         <p className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          <Link href="/ayarlar/konumlar" className="underline underline-offset-4">
+          <Link href="/ayarlar/konumlar" className="text-primary hover:text-primary/80">
             {t("konumlaraGit")}
           </Link>
           {/*
@@ -199,7 +199,7 @@ export default async function DepoSayfasi() {
             şablona uymayan raf VARSA anlamlı, o yüzden koşullu.
           */}
           {uymayan.length > 0 ? (
-            <Link href="/ayarlar/depo/goc" className="underline underline-offset-4">
+            <Link href="/ayarlar/depo/goc" className="text-primary hover:text-primary/80">
               {t("goceGit", { adet: uymayan.length })}
             </Link>
           ) : null}

@@ -136,7 +136,7 @@ export default async function OrtaklikSayfasi({ searchParams }: { searchParams: 
               </SatirEylemleri></div>
             </div>
             {k.finansmanKaynaklari.map(f => <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 rounded border p-2 text-sm">
-              <span>{t("bagliKaynak", { ad: f.kaynakAdi, tur: tf(`tur.${f.tur}`), birim: f.birim })}{finansmanYetkisi && <> · <Link href={`/finansman/${f.id}`} className="text-primary underline underline-offset-4">{t("finansmaniAc")}</Link></>}</span>
+              <span>{t("bagliKaynak", { ad: f.kaynakAdi, tur: tf(`tur.${f.tur}`), birim: f.birim })}{finansmanYetkisi && <> · <Link href={`/finansman/${f.id}`} className="text-primary">{t("finansmaniAc")}</Link></>}</span>
               {finansmanYetkisi && <div className="w-full md:w-auto"><SatirEylemleri><FinansmanBagiCoz finansmanId={f.id} kaynak={f.kaynakAdi} /></SatirEylemleri></div>}
             </div>)}
           </li>)}</ul>

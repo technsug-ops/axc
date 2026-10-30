@@ -23,7 +23,7 @@ export async function HedefIlerlemesi({ karGorunur, hedefYonetir }: { karGorunur
   const bicim = await bicimlendirici();
   const durumlar = (await hedefDurumuGetir()).filter((d) => d.olcut !== "NET2" || karGorunur);
   if (!durumlar.length) {
-    return <p className="text-sm text-muted-foreground">{t("hedefYok")}{hedefYonetir ? <> <Link href="/ayarlar/hedefler" className="underline underline-offset-4">{t("hedefKoy")}</Link></> : null}</p>;
+    return <p className="text-sm text-muted-foreground">{t("hedefYok")}{hedefYonetir ? <> <Link href="/ayarlar/hedefler" className="text-primary hover:text-primary/80 font-medium">{t("hedefKoy")}</Link></> : null}</p>;
   }
   const deger = (olcut: string, n: number) => (olcut === "SIPARIS" ? bicim.sayi(n) : bicim.para(n, "TRY"));
   const gecilen = durumlar.filter((d) => d.gecildi);

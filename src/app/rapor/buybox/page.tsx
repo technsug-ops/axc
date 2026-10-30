@@ -264,7 +264,7 @@ export default async function BuyboxSayfasi({ searchParams }: { searchParams: Pr
         <Link
           href={adres({ grafik: grafikAcik ? undefined : "1" })}
           aria-expanded={grafikAcik}
-          className="bg-card hover:bg-muted flex min-h-11 items-center justify-center gap-2 rounded-lg border p-3 text-sm font-medium underline-offset-2 transition-colors hover:underline"
+          className="bg-card hover:bg-muted flex min-h-11 items-center justify-center gap-2 rounded-lg border p-3 text-sm font-medium transition-colors"
         >
           <ChartLine className="size-5 shrink-0" aria-hidden />
           {grafikAcik ? t("grafikGizle") : t("grafikGoster")}
@@ -413,7 +413,7 @@ function UrunAdi({ s }: { s: BuyboxSatiri }) {
   return s.urunId === null ? (
     <span>{s.urunAdi}</span>
   ) : (
-    <Link href={`/urunler/${s.urunId}`} className="underline underline-offset-2 hover:no-underline">
+    <Link href={`/urunler/${s.urunId}`} className="text-primary hover:text-primary/80">
       {s.urunAdi}
     </Link>
   );
@@ -452,7 +452,7 @@ function Rakipler({ s, baslik, listeFiyati, para }: { s: BuyboxSatiri; baslik: s
   if (s.rakipler.length === 0) return null;
   return (
     <details className="text-xs">
-      <summary className="cursor-pointer underline underline-offset-2">{baslik}</summary>
+      <summary className="text-primary hover:text-primary/80 cursor-pointer">{baslik}</summary>
       <ol className="mt-1 space-y-0.5">
         {s.rakipler.map((r) => (
           <li key={`${r.sira}-${r.satici}`} className={r.sira === s.siramiz ? "font-medium" : undefined}>

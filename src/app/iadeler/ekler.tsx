@@ -165,7 +165,7 @@ export function Ekler({
                 href={`/api/ekler/${e.id}`}
                 target="_blank"
                 rel="noreferrer"
-                className="truncate underline underline-offset-2"
+                className="text-primary hover:text-primary/80 truncate"
               >
                 {e.fileName}
               </a>

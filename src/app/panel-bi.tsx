@@ -177,7 +177,7 @@ export async function PanelBi({
      (KDV dahil)» toplamıyla AYNI, ölçüldü 09.10: ₺2.502.671,99). */
   const satisListesi = (ek: Record<string, string | undefined> = {}) => suzgecAdresi("/satislar", listeParametreleri, ek);
   const hesaplananlar = satisListesi({ kar: "tam" });
-  const kaynak = "text-primary underline-offset-4 hover:underline";
+  const kaynak = "text-primary";
   const kesintiAdi = (kod: string) => (tk.has(kod) ? tk(kod) : kod);
   const yok = t("hesaplanamaz");
 
@@ -239,7 +239,7 @@ export async function PanelBi({
       <Card className="min-w-0">
         <CardHeader>
           <CardTitle>
-            <Link href="/rapor/urunler" className="underline-offset-4 hover:underline">{t("abcBaslik")}</Link>
+            <Link href="/rapor/urunler" className="hover:text-primary">{t("abcBaslik")}</Link>
           </CardTitle>
           <p className="text-muted-foreground text-xs">
             {t("abcNotu", { a: bicim.yuzde(ABC_SINIRLARI.A * 100, 0), b: bicim.yuzde(ABC_SINIRLARI.B * 100, 0) })}
@@ -267,7 +267,7 @@ export async function PanelBi({
                         <Link
                           href={abcAdresi(k, abcKapsami)}
                           aria-label={t("abcListeyiAc", { sinif: k === "SATISSIZ" ? t("abcSatissiz") : k, sayi: abc[k].urunSayisi })}
-                          className="text-primary inline-flex min-h-11 items-center underline-offset-4 hover:underline md:min-h-7"
+                          className="text-primary inline-flex min-h-11 items-center md:min-h-7"
                         >
                           <AbcRozeti k={k} />
                           {k === "SATISSIZ" ? <span className="ml-2 text-xs">{t("abcSatissiz")}</span> : null}
@@ -281,7 +281,7 @@ export async function PanelBi({
                     </td>
                     <td className="py-2 pr-2 text-right tabular-nums">
                       {abc[k].urunSayisi > 0 ? (
-                        <Link href={abcAdresi(k, abcKapsami)} className="text-primary underline-offset-4 hover:underline">
+                        <Link href={abcAdresi(k, abcKapsami)} className="text-primary">
                           {abc[k].urunSayisi}
                         </Link>
                       ) : (
@@ -341,7 +341,7 @@ export async function PanelBi({
                     href={satisListesi({ kanal: kod })}
                     className="hover:bg-accent/50 flex min-h-11 items-center justify-between gap-3 rounded-lg border px-3 py-2"
                   >
-                    <span className="text-primary truncate underline-offset-4">{k.ad}</span>
+                    <span className="text-primary truncate">{k.ad}</span>
                     <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
                       {t("kanalAov", { tutar: tl(k.ciro / k.siparis), siparis: k.siparis })}
                     </span>

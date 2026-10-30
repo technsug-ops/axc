@@ -327,7 +327,7 @@ export function Deneme({ bugun }: { bugun: string }) {
               <button
                 type="button"
                 onClick={urunuBirak}
-                className="inline-flex min-h-11 items-center gap-1 text-xs underline underline-offset-2"
+                className="text-primary hover:text-primary/80 inline-flex min-h-11 items-center gap-1 text-xs"
               >
                 <X className="size-3.5" />
                 {t("urunTemizle")}

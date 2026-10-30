@@ -46,7 +46,7 @@ export default async function YerlestirSayfasi() {
         değiştiğinde yapılır ve seyrek bir iş günlük listeyi şişirmemeli.
       */}
       <p className="text-muted-foreground text-sm">
-        <Link href="/yerlestir/tasi" className="underline underline-offset-4">
+        <Link href="/yerlestir/tasi" className="text-primary hover:text-primary/80">
           {t("topluTasimayaGit")}
         </Link>
       </p>

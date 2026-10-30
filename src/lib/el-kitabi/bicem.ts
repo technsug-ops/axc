@@ -123,7 +123,7 @@ export const EL_KITABI_BICEMI = `
 .ek em{font-style:normal;background:var(--vurgu-yumusak);padding:0 .25em;border-radius:3px}
 .ek code{font-family:var(--mono);font-size:.855em;background:var(--yuzey-2);
   border:1px solid var(--cizgi-2);padding:.08em .38em;border-radius:4px;white-space:nowrap}
-.ek a{color:var(--vurgu);text-underline-offset:3px}
+.ek a{color:var(--vurgu);text-decoration:none}
 .ek-kart{background:var(--yuzey);border:1px solid var(--cizgi);border-radius:10px;
   padding:20px 22px;display:flex;flex-direction:column;gap:11px;box-shadow:var(--golge)}
 .ek-not{border-left:3px solid var(--murekkep-3);background:var(--yuzey-2);padding:14px 18px;

@@ -67,7 +67,7 @@ export function KarsiTarafAlani({
         }}
         aria-label={`${ortak("duzenle")} — ${t("karsiTarafEtiketi")}`}
         /* ⚠ MOBİLDE 44px — İlke #8. */
-        className="inline-flex min-h-11 items-center gap-1 underline-offset-4 hover:underline sm:min-h-0"
+        className="inline-flex min-h-11 items-center gap-1 sm:min-h-0"
       >
         {ad}
         <Pencil className="text-muted-foreground size-3 shrink-0" aria-hidden />

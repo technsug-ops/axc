@@ -859,7 +859,7 @@ export default async function SatislarSayfasi({
           <Badge variant="outline">{toplamlar.kayitSayisi}</Badge>
           <Link
             href={suzgecAdresi("/satislar", { ...formTasinanlar, q: arama }, { varyant: undefined })}
-            className="text-primary inline-flex min-h-11 items-center font-medium underline-offset-4 hover:underline md:min-h-0"
+            className="text-primary inline-flex min-h-11 items-center font-medium md:min-h-0"
           >
             {t("urunSuzgeciKaldir")}
           </Link>

@@ -2245,7 +2245,7 @@ export default async function AnaSayfa({
                 {kanal.hesaplanamayanAdet > 0 ? (
                   <Link
                     href={karEksikKanalAdresi(kanal.kanalKodu)}
-                    className="text-muted-foreground hover:text-foreground block text-xs underline underline-offset-2"
+                    className="text-primary hover:text-primary/80 block text-xs"
                   >
                     {t("kanalEksik", {
                       sayi: kanal.hesaplanamayanAdet,
@@ -2409,7 +2409,7 @@ export default async function AnaSayfa({
               href={tumKanallarAdresi(
                 parametreler as Record<string, string | undefined>,
               )}
-              className="hover:text-foreground ml-auto inline-flex min-h-11 items-center font-medium underline underline-offset-2 md:min-h-7"
+              className="text-primary hover:text-primary/80 ml-auto inline-flex min-h-11 items-center font-medium md:min-h-7"
             >
               {t("kanalTumu", { sayi: gizlenen })}
             </Link>

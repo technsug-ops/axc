@@ -64,7 +64,7 @@ export default async function BildirimlerSayfasi() {
       <h2 className="text-lg font-semibold">{t("sesBaslik")}</h2>
       <p><strong>{t("sesVarsayilanBaslik")}</strong> — {t("sesVarsayilan")}</p>
       <p><strong>{t("sesKasaBaslik")}</strong> — {t("sesKasa")}</p>
-      <a href="/bildirimler/kasa-sesi" download className="inline-flex min-h-11 items-center gap-2 rounded-md border px-4 font-medium underline-offset-4 hover:bg-accent hover:underline"><Download className="size-4" />{t("sesIndir")}</a>
+      <a href="/bildirimler/kasa-sesi" download className="inline-flex min-h-11 items-center gap-2 rounded-md border px-4 font-medium hover:bg-accent"><Download className="size-4" />{t("sesIndir")}</a>
       <ol className="list-decimal space-y-1 pl-5">
         <li>{t("sesAdim1")}</li>
         <li>{t("sesAdim2")}</li>

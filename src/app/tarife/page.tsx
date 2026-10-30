@@ -194,7 +194,7 @@ export default async function TarifeHesaplamaSayfasi({
           <p className="font-medium">{t("urunYok")}</p>
           {sorgu ? (
             <p className="mt-2 text-sm">
-              <Link href={`/tarife?pencere=${encodeURIComponent(tarife.id)}`} className="underline underline-offset-4">
+              <Link href={`/tarife?pencere=${encodeURIComponent(tarife.id)}`} className="text-primary hover:text-primary/80">
                 {ortak("temizle")}
               </Link>
             </p>

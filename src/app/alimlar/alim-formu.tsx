@@ -455,7 +455,7 @@ export function AlimFormu({
                     baglanti: (parca) => (
                       <Link
                         href="/ayarlar/kanallar"
-                        className="underline underline-offset-4"
+                        className="text-primary hover:text-primary/80"
                       >
                         {parca}
                       </Link>
@@ -491,7 +491,7 @@ export function AlimFormu({
                     baglanti: (parca) => (
                       <Link
                         href="/kartlar/yeni"
-                        className="underline underline-offset-4"
+                        className="text-primary hover:text-primary/80"
                       >
                         {parca}
                       </Link>

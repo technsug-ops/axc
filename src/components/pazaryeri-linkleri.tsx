@@ -35,7 +35,7 @@ export function PazaryeriLinkleri({
               target="_blank"
               rel="noopener noreferrer"
               aria-label={metin.ac(s.ad)}
-              className="text-primary inline-flex min-h-11 items-center gap-1 underline-offset-4 hover:underline md:min-h-6"
+              className="text-primary inline-flex min-h-11 items-center gap-1 md:min-h-6"
             >
               {s.ad}
               <ExternalLink className="size-3.5" aria-hidden />

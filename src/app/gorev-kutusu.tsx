@@ -145,7 +145,7 @@ function GorevCipi({
         gorev.temizMi || gorev.ilerleme === 0 ? null : (
         <Link
           href={ilerlemeAdresi ?? gorev.adres}
-          className={`inline-flex min-h-11 items-center rounded-md px-1.5 text-xs font-medium tabular-nums underline-offset-2 hover:underline md:min-h-8 ${
+          className={`inline-flex min-h-11 items-center rounded-md px-1.5 text-xs font-medium tabular-nums md:min-h-8 ${
             gorev.ilerleme >= gorev.sayi
               ? DURUM_YAZISI.olumlu
               : "text-muted-foreground"

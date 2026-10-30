@@ -594,7 +594,7 @@ export default async function UrunAnaliziSayfasi({
                               ) : (
                                 <Link
                                   href={`/urunler/${s.urunId}`}
-                                  className="line-clamp-2 font-medium underline underline-offset-2 hover:no-underline"
+                                  className="text-primary hover:text-primary/80 line-clamp-2 font-medium"
                                 >
                                   {s.urunAdi}
                                 </Link>
@@ -703,7 +703,7 @@ export default async function UrunAnaliziSayfasi({
                         ) : (
                           <Link
                             href={`/urunler/${s.urunId}`}
-                            className="underline underline-offset-2"
+                            className="text-primary hover:text-primary/80"
                           >
                             {s.urunAdi}
                           </Link>

@@ -90,7 +90,7 @@ export function OneriKutusu({
         </Button>
       ) : null}
       {oneri.tur === "HESAPLANAMAZ" && oneri.sebep === "KARGO_YOK" && desiYok && urunId !== null ? (
-        <Link href={`/urunler/${urunId}/duzenle`} className="inline-flex min-h-11 items-center text-xs underline underline-offset-2 hover:no-underline md:min-h-0">
+        <Link href={`/urunler/${urunId}/duzenle`} className="text-primary hover:text-primary/80 inline-flex min-h-11 items-center text-xs md:min-h-0">
           {t("desiGir")}
         </Link>
       ) : null}
@@ -162,7 +162,7 @@ export function UrunKuraliFormu({
 
   return (
     <details className="rounded-lg border p-2.5 text-sm">
-      <summary className="cursor-pointer text-xs font-medium underline underline-offset-2">{t("urunKuraliBaslik")}</summary>
+      <summary className="text-primary hover:text-primary/80 cursor-pointer text-xs font-medium">{t("urunKuraliBaslik")}</summary>
       <div className="mt-2 space-y-2">
         <p className="text-muted-foreground text-xs">{t("urunKuraliNotu")}</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

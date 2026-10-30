@@ -309,7 +309,7 @@ export default async function AlimRehberiSayfasi({
         {oz || ia || ft ? null : (
         <a
           href={excelAdresi}
-          className="border-input hover:bg-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium underline-offset-4"
+          className="border-input hover:bg-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium"
         >
           <Download className="size-4" />
           {t("excelIndir")}
@@ -324,7 +324,7 @@ export default async function AlimRehberiSayfasi({
           {piyasa === null ? (
             <Link
               href={adres({ piyasa: "1" })}
-              className="border-input hover:bg-muted inline-flex h-11 items-center rounded-md border px-4 font-medium underline-offset-4"
+              className="border-input hover:bg-muted inline-flex h-11 items-center rounded-md border px-4 font-medium"
             >
               {t("piyasaGetir")}
             </Link>
@@ -334,7 +334,7 @@ export default async function AlimRehberiSayfasi({
               {piyasaKumesi.length > PIYASA_TAVAN ? (
                 <span className={DURUM_YAZISI.uyari}>{t("piyasaTavan", { tavan: PIYASA_TAVAN, toplam: piyasaKumesi.length })}</span>
               ) : null}
-              <Link href={adres({})} className="inline-flex min-h-11 items-center underline underline-offset-2 hover:no-underline">
+              <Link href={adres({})} className="text-primary hover:text-primary/80 inline-flex min-h-11 items-center">
                 {t("piyasaKapat")}
               </Link>
             </>
@@ -439,7 +439,7 @@ export default async function AlimRehberiSayfasi({
                             {s.urunId === null ? (
                               <span className="line-clamp-2 font-medium">{s.urunAdi}</span>
                             ) : (
-                              <Link href={`/urunler/${s.urunId}`} className="line-clamp-2 font-medium underline underline-offset-2 hover:no-underline">
+                              <Link href={`/urunler/${s.urunId}`} className="text-primary hover:text-primary/80 line-clamp-2 font-medium">
                                 {s.urunAdi}
                               </Link>
                             )}
@@ -473,7 +473,7 @@ export default async function AlimRehberiSayfasi({
                       s.urunId === null ? (
                         s.urunAdi
                       ) : (
-                        <Link href={`/urunler/${s.urunId}`} className="underline underline-offset-2">
+                        <Link href={`/urunler/${s.urunId}`} className="text-primary hover:text-primary/80">
                           {s.urunAdi}
                         </Link>
                       )

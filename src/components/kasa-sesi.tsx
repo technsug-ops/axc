@@ -122,7 +122,7 @@ export function KasaSesi() {
           role="status"
           className="bg-card fixed right-4 bottom-24 z-50 flex items-center gap-3 rounded-lg border p-3 shadow-lg md:bottom-6"
         >
-          <Link href="/satislar" className="text-primary font-semibold underline-offset-4 hover:underline" onClick={() => setBildirim(null)}>
+          <Link href="/satislar" className="text-primary font-semibold" onClick={() => setBildirim(null)}>
             {t("yeniSiparis", { sayi: bildirim })}
           </Link>
           <Button type="button" variant="ghost" size="icon" className="size-11 md:size-8" aria-label={t("bildirimiKapat")} onClick={() => setBildirim(null)}>

@@ -104,7 +104,7 @@ export async function FiyatTakibiOnerileri({
         <p className="text-sm">{t(`kaynakAciklama_${kaynak}`)}</p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <span className="text-muted-foreground">{tumRaf ? t("rafHepsi") : t("rafYalnizYok")}</span>
-          <Link href={rafAdresi} className="inline-flex min-h-11 items-center underline underline-offset-2 hover:no-underline md:min-h-6">
+          <Link href={rafAdresi} className="text-primary hover:text-primary/80 inline-flex min-h-11 items-center md:min-h-6">
             {tumRaf ? t("rafYalnizYokGoster") : t("rafHepsiGoster")}
           </Link>
         </div>

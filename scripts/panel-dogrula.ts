@@ -5999,10 +5999,13 @@ console.log("=".repeat(70));
     "kanal bloğundaki sayı LİNK (href=kanal adresi)",
     /href=\{karEksikKanalAdresi\(kanal\.kanalKodu\)\}/.test(panelHam),
   );
-  /** ⚠ TIKLANABİLİR GÖRÜNÜR (İlke #2): link stili olmadan link sayılmaz. */
+  /** ⚠ TIKLANABİLİR GÖRÜNÜR (İlke #2): link stili olmadan link sayılmaz.
+   *  Ölçüt 30.10.2026'da `underline`dan VURGU RENGİNE çevrildi: kullanıcı
+   *  kararıyla alt çizgi programın her yerinden kaldırıldı, işareti artık
+   *  `text-primary` taşıyor (bkz. `alt-cizgi:dogrula`). */
   kontrol(
-    "  ...ve tıklanabilir GÖRÜNÜYOR (underline)",
-    (panelHam.match(/href=\{karEksik[A-Za-zÇĞİÖŞÜçğıöşü]+\([^)]*\)\}[\s\S]{0,220}?underline/g) ?? [])
+    "  ...ve tıklanabilir GÖRÜNÜYOR (vurgu rengi)",
+    (panelHam.match(/href=\{karEksik[A-Za-zÇĞİÖŞÜçğıöşü]+\([^)]*\)\}[\s\S]{0,220}?text-primary/g) ?? [])
       .length === 2,
   );
 }

@@ -80,7 +80,7 @@ export function KanalDesiGuncelle({
           disabled={bekliyor}
           onClick={guncelle}
           /* ⚠ MOBİLDE 44px — İlke #8. Metin küçük ama dokunma alanı geniş. */
-          className="text-primary hover:underline underline-offset-2 disabled:opacity-50 min-h-11 px-1 text-xs font-medium sm:min-h-0 sm:py-0"
+          className="text-primary disabled:opacity-50 min-h-11 px-1 text-xs font-medium sm:min-h-0 sm:py-0"
         >
           {bekliyor ? t("kanalDesiGuncelleniyor") : t("kanalDesiyleGuncelle")}
         </button>

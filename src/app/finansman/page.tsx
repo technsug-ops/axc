@@ -125,7 +125,7 @@ export default async function FinansmanSayfasi({
             <IstatistikKutusu
               etiket={t("kutu.plan")}
               cocuk={<span className="text-base">{`+${miktar(top.planliGiris, birim)} · −${miktar(top.planliCikis, birim)}`}</span>}
-              altNot={<Link href="/nakit-takvimi" className="text-primary underline">{t("kutu.planNot")}</Link>}
+              altNot={<Link href="/nakit-takvimi" className="text-primary">{t("kutu.planNot")}</Link>}
             />
           </div>
         </section>
@@ -163,7 +163,7 @@ export default async function FinansmanSayfasi({
               key={s.id}
               baslik={
                 <span className="flex flex-wrap items-center gap-2">
-                  <Link href={`/finansman/${s.id}`} className="text-primary underline-offset-2 hover:underline">
+                  <Link href={`/finansman/${s.id}`} className="text-primary">
                     {s.kaynakAdi}
                   </Link>
                   <Badge variant="outline">{t(`tur.${s.tur}`)}</Badge>

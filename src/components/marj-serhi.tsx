@@ -55,7 +55,7 @@ export async function MarjSerhi({
   const bicim = await bicimlendirici();
   /** İlke #2: tıklanabilir, tıklanabilir GÖRÜNÜR. */
   const satirSinifi =
-    "block tabular-nums underline decoration-dotted underline-offset-2 hover:opacity-75";
+    "block font-semibold tabular-nums hover:opacity-75";
   const adres = (sebep: MarjSebebi) => marjSebepAdresi(sebep, parametreler);
   return (
     <div

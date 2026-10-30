@@ -62,7 +62,7 @@ export default async function OzelGunlerSayfasi({ searchParams }: { searchParams
       <div className="max-w-3xl space-y-2">
         <h1 className="text-2xl font-semibold">{t("baslik")}</h1>
         <p className="text-muted-foreground text-sm">{t("aciklama")}</p>
-        <Link href={`${REHBER_YOLU}?liste=ozelGun`} className="text-sm font-medium underline underline-offset-4 hover:no-underline">
+        <Link href={`${REHBER_YOLU}?liste=ozelGun`} className="text-primary hover:text-primary/80 text-sm font-medium">
           {t("rehbereGit")}
         </Link>
       </div>

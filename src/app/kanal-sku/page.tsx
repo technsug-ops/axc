@@ -346,7 +346,7 @@ export default async function KanalSkuSayfasi({
             {t("kdvSuzgeciBaslik", { sayi: kdvUyusmazligi.kimlikler.length, olculen: kdvUyusmazligi.olculen })}
           </p>
           <p className={`text-xs ${DURUM_YAZISI.uyari}`}>{t("kdvSuzgeciNotu")}</p>
-          <Link href="/kanal-sku" className="text-sm underline underline-offset-4">
+          <Link href="/kanal-sku" className="text-primary hover:text-primary/80 text-sm">
             {t("kdvSuzgeciKaldir")}
           </Link>
         </div>
@@ -418,7 +418,7 @@ export default async function KanalSkuSayfasi({
                       return a ? (
                         <Link
                           href={`/urunler/${kayit.variant.product.id}/duzenle`}
-                          className={`inline-flex min-h-11 items-center text-xs underline underline-offset-4 sm:min-h-0 ${DURUM_YAZISI.uyari}`}
+                          className={`inline-flex min-h-11 items-center text-xs sm:min-h-0 ${DURUM_YAZISI.uyari}`}
                         >
                           {t("kdvAyrisimRozeti", { kanal: bicim.sayi(a.kanal, a.kanal % 1 === 0 ? 0 : 2), bizim: bicim.sayi(a.bizim, a.bizim % 1 === 0 ? 0 : 2) })}
                         </Link>

@@ -425,7 +425,7 @@ export default async function KanalListelemeSayfasi({
                     baslik={
                       <Link
                         href={`/kart/${s.variant.id}`}
-                        className="underline-offset-2 hover:underline"
+                        className="hover:text-primary"
                       >
                         {s.variant.name ?? s.variant.sku}
                       </Link>

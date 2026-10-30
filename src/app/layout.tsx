@@ -258,8 +258,8 @@ export default async function RootLayout({
           <NextIntlClientProvider>
             <header data-kabuk="ortak" className="bg-background sticky top-0 z-10 flex min-h-14 flex-wrap items-center gap-3 border-b px-3 py-2 md:px-4 print:hidden">
               <span className="font-semibold">{UYGULAMA.ad}</span>
-              <Link href={ORTAK_ACILIS_SAYFASI} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{to("kabukHesabim")}</Link>
-              <Link href="/parola-degistir" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{to("kabukParola")}</Link>
+              <Link href={ORTAK_ACILIS_SAYFASI} className="text-primary hover:text-primary/80 inline-flex min-h-11 items-center text-sm">{to("kabukHesabim")}</Link>
+              <Link href="/parola-degistir" className="text-primary hover:text-primary/80 inline-flex min-h-11 items-center text-sm">{to("kabukParola")}</Link>
               <span className="ml-auto"><CikisButonu eposta={kullanici.email} /></span>
             </header>
             <main className="min-w-0 p-3 md:p-6">{children}</main>

@@ -23,7 +23,7 @@ export default async function HedeflerSayfasi() {
   return <div className="min-w-0 space-y-4">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h1 className="text-2xl font-semibold">{t("kartBaslik")}</h1>
-      {hedefYonetir ? <Link href="/ayarlar/hedefler" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{t("duzenle")}</Link> : null}
+      {hedefYonetir ? <Link href="/ayarlar/hedefler" className="text-primary hover:text-primary/80 inline-flex min-h-11 items-center text-sm">{t("duzenle")}</Link> : null}
     </div>
     <p className="max-w-3xl text-sm text-muted-foreground">{t("sayfaAciklama")}</p>
     <HedefIlerlemesi karGorunur={baglam.izinler.has("satis.kar.gor")} hedefYonetir={hedefYonetir} />
