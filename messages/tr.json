@@ -5536,7 +5536,11 @@
     "etiketHata": "Kaydedilemedi, tekrar deneyin.",
     "urunBulunamadi": "Ürün bulunamadı.",
     "suzgecler": "Süzgeçler",
-    "ozetEtiketSayi": "{ad}: {sayi}"
+    "ozetEtiketSayi": "{ad}: {sayi}",
+    "dahaFazlaSuzgec": "Daha fazla süzgeç",
+    "acikSuzgecler": "Açık süzgeçler:",
+    "etiketDeger": "{ad}: {deger}",
+    "suzgeciKaldir": "{ad} süzgecini kaldır"
   },
   "KalemKaldirma": {
     "kaldir": "Kalemi kaldır",

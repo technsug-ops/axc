@@ -1,7 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import Link from "@/components/niyetli-baglanti";
-import { CalendarRange, Flag, RotateCcw, Star } from "lucide-react";
+import { CalendarRange, ChevronDown, Flag, RotateCcw, SlidersHorizontal, Star, X } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ import { AnalizAramaKutusu } from "./analiz-arama-kutusu";
 import { OtomatikGonderSecim } from "./otomatik-gonder-secim";
 import { TelefonSuzgecKabi } from "./telefon-suzgec-kabi";
 import { SECIM_AKTIF, SECIM_PASIF } from "@/lib/kutu-bicimi";
+import { bicimlendirici } from "@/lib/bicim";
 
 /** K293: telefonda çip satırı TEK SATIR, yatay kayar; masaüstünde eskisi gibi sarar. */
 const KAYAN_SATIR =
@@ -101,6 +103,7 @@ export async function AnalizSuzgeci({
   const tStok = await getTranslations("Stok");
   /** Dönem etiketleri `Pencere` ad alanında — `/rapor`la AYNI kaynak. */
   const tPencere = await getTranslations("Pencere");
+  const bicim = await bicimlendirici();
 
   /**
    * SIRALAMA ETİKETLERİ — exhaustive `Record`. Yeni bir alan eklendiğinde
@@ -207,11 +210,96 @@ export async function AnalizSuzgeci({
   const ozetMetni = ozetParcalari.map(parcaMetni).join(" · ");
   const acikSayi = acikSuzgecSayisi(ozetParcalari);
 
+  /**
+   * İKİ KATMAN (kullanıcı kararı 31.10.2026: «çok karışık görünüyor» → seçenek
+   * sunuldu, «iki katman» seçildi). Altı grup eşit ağırlıkta alt alta
+   * duruyordu; göz neyin önemli olduğunu ayıramıyordu.
+   *  · ÜSTTE her zaman: Dönem · Kanal (stokta raf yaşı) · Sırala/Yön/Satır/Para.
+   *  · «Daha fazla süzgeç» altında: en az adet/ciro · etiket · mevsim · marka ·
+   *    kategori — seyrek kullanılanlar. Açık olanların SAYISI düğmede yazar.
+   *  · Açık ikincil süzgeçler listenin üstünde ✕'li etiket: kapalı bölmenin
+   *    içinde unutulan bir süzgeç rakamı «yanlış» gösterirdi.
+   */
+  const ikincilSayi =
+    suzgec.markalar.length +
+    suzgec.kategoriler.length +
+    (suzgec.minAdet !== null ? 1 : 0) +
+    (suzgec.minCiro !== null ? 1 : 0) +
+    (suzgec.favoriYalniz ? 1 : 0) +
+    (suzgec.incelenecekYalniz ? 1 : 0) +
+    (suzgec.sezon !== null ? 1 : 0);
+
+  /** Her etiket YALNIZ kendi süzgecini kaldıran adrese gider (İlke #10). */
+  const acikEtiketler: { anahtar: string; metin: string; adres: string }[] = [];
+  if (suzgec.arama) {
+    acikEtiketler.push({
+      anahtar: "arama",
+      metin: t("etiketDeger", { ad: t("aramaBaslik"), deger: suzgec.arama }),
+      adres: analizAdresi({ ...taban, arama: null }),
+    });
+  }
+  for (const m of suzgec.markalar) {
+    acikEtiketler.push({
+      anahtar: `marka-${m}`,
+      metin: t("etiketDeger", { ad: t("marka"), deger: m }),
+      adres: analizAdresi({ ...taban, markalar: suzgec.markalar.filter((x) => x !== m) }),
+    });
+  }
+  for (const k of suzgec.kategoriler) {
+    acikEtiketler.push({
+      anahtar: `kategori-${k}`,
+      metin: t("etiketDeger", { ad: t("kategori"), deger: k }),
+      adres: analizAdresi({ ...taban, kategoriler: suzgec.kategoriler.filter((x) => x !== k) }),
+    });
+  }
+  if (suzgec.minAdet !== null) {
+    acikEtiketler.push({
+      anahtar: "minAdet",
+      metin: t("etiketDeger", { ad: t("minAdet"), deger: bicim.sayi(suzgec.minAdet) }),
+      adres: analizAdresi({ ...taban, minAdet: null }),
+    });
+  }
+  if (suzgec.minCiro !== null) {
+    acikEtiketler.push({
+      anahtar: "minCiro",
+      metin: t("etiketDeger", { ad: t("minCiro"), deger: bicim.para(suzgec.minCiro, guncelPara) }),
+      adres: analizAdresi({ ...taban, minCiro: null }),
+    });
+  }
+  if (suzgec.favoriYalniz) {
+    acikEtiketler.push({
+      anahtar: "favori",
+      metin: t("favoriYalniz"),
+      adres: analizAdresi({ ...taban, favori: undefined }),
+    });
+  }
+  if (suzgec.incelenecekYalniz) {
+    acikEtiketler.push({
+      anahtar: "incelenecek",
+      metin: t("incelenecekYalniz"),
+      adres: analizAdresi({ ...taban, incelenecek: undefined }),
+    });
+  }
+  if (suzgec.sezon !== null) {
+    acikEtiketler.push({
+      anahtar: "sezon",
+      metin: t("etiketDeger", {
+        ad: t("sezonBaslik"),
+        deger: suzgec.sezon === "YAZ" ? t("sezonYaz") : t("sezonKis"),
+      }),
+      adres: analizAdresi({ ...taban, sezon: undefined }),
+    });
+  }
+
+  /** Satır başı etiketi — üst katmanda grupların adı solda, sabit genişlikte. */
+  const SATIR_ETIKETI = "text-muted-foreground w-full text-xs font-medium sm:w-16 sm:shrink-0";
+  const SECIM_KUTUSU = "border-input bg-background h-11 w-full rounded-md border px-3 text-sm";
+
   return (
     <form
       method="get"
       action={ANALIZ_YOLU}
-      className="bg-muted/30 space-y-4 rounded-lg border p-3"
+      className="bg-muted/30 space-y-3 rounded-lg border p-3"
     >
       {/* Süzgece ait OLMAYAN durum gizli alanlarla taşınır: form
           gönderilince dönem ve eksen kaybolmasın. */}
@@ -257,7 +345,7 @@ export async function AnalizSuzgeci({
       <div className="space-y-1.5">
         <label
           htmlFor="analiz-arama"
-          className="text-muted-foreground text-xs font-medium"
+          className="sr-only"
         >
           {t("aramaBaslik")}
         </label>
@@ -272,121 +360,7 @@ export async function AnalizSuzgeci({
           arkasında (varsayılan kapalı); masaüstünde her zaman açık. */}
       <TelefonSuzgecKabi baslik={t("suzgecler")} ozet={ozetMetni} acikSayi={acikSayi}>
 
-      {/* ── GÖRÜNÜM (Sırala/Yön/Satır — DEĞİŞİNCE ANINDA uygulanır) +
-          EŞİKLER (En az adet/ciro — serbest metin, "Uygula" bekler).
-          ⚠ TEK IZGARADA: kullanıcı isteği 11.09.2026 ("daha az tıkla, daha
-          kompakt, net gruplama") — beşi de "listede ne var, nasıl sıralı"
-          sorusuna cevap verdiği için aynı satırda. */}
-      <div className="grid grid-cols-6 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {/* ── SIRALAMA — anında uygulanır ──
-            K293: telefonda Sırala · Yön · Satır TEK SATIRDA (6'lık ızgarada 2'şer). */}
-        <div className="col-span-2 space-y-1.5 sm:col-span-1">
-          <label
-            htmlFor="analiz-sirala"
-            className="text-muted-foreground text-xs font-medium"
-          >
-            {t("sirala")}
-          </label>
-          <OtomatikGonderSecim
-            id="analiz-sirala"
-            name="sirala"
-            defaultValue={sira}
-            className="border-input bg-background h-11 w-full rounded-md border px-3 text-sm"
-          >
-            {SIRALAMA_ALANLARI.map((a) => (
-              <option key={a} value={a}>
-                {siraEtiketi[a]}
-              </option>
-            ))}
-          </OtomatikGonderSecim>
-        </div>
-
-        {/* ── YÖN — anında uygulanır ── */}
-        <div className="col-span-2 space-y-1.5 sm:col-span-1">
-          <label
-            htmlFor="analiz-yon"
-            className="text-muted-foreground text-xs font-medium"
-          >
-            {t("yon")}
-          </label>
-          <OtomatikGonderSecim
-            id="analiz-yon"
-            name="yon"
-            defaultValue={yon}
-            className="border-input bg-background h-11 w-full rounded-md border px-3 text-sm"
-          >
-            <option value="azalan">{t("yonAzalan")}</option>
-            <option value="artan">{t("yonArtan")}</option>
-          </OtomatikGonderSecim>
-        </div>
-
-        {/* ── SATIR SAYISI — anında uygulanır ──
-            Kullanıcı: "50 ürüne kadar listelensin, istekle 100'e çıkabilsin." */}
-        <div className="col-span-2 space-y-1.5 sm:col-span-1">
-          <label
-            htmlFor="analiz-satir"
-            className="text-muted-foreground text-xs font-medium"
-          >
-            {t("satirSayisi")}
-          </label>
-          <OtomatikGonderSecim
-            id="analiz-satir"
-            name="satir"
-            defaultValue={String(satir)}
-            className="border-input bg-background h-11 w-full rounded-md border px-3 text-sm"
-          >
-            {SATIR_SAYILARI.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </OtomatikGonderSecim>
-        </div>
-
-        {/* ── EN AZ ADET — "Uygula"yı bekler (serbest metin)
-            ⚠ Yer tutucu "örn. 2" — girilmiş DEĞER sanılmasın (İlke #11).
-            K293: telefonda En az adet · En az ciro TEK SATIRDA (3'er). */}
-        <div className="col-span-3 space-y-1.5 sm:col-span-1">
-          <label
-            htmlFor="analiz-min-adet"
-            className="text-muted-foreground text-xs font-medium"
-          >
-            {t("minAdet")}
-          </label>
-          <Input
-            id="analiz-min-adet"
-            name="minAdet"
-            type="number"
-            min={1}
-            step={1}
-            inputMode="numeric"
-            defaultValue={suzgec.minAdet ?? ""}
-            placeholder={t("minAdetYer")}
-            className="h-11"
-          />
-        </div>
-
-        {/* ── EN AZ CİRO — "Uygula"yı bekler ── */}
-        <div className="col-span-3 space-y-1.5 sm:col-span-1">
-          <label
-            htmlFor="analiz-min-ciro"
-            className="text-muted-foreground text-xs font-medium"
-          >
-            {t("minCiro")}
-          </label>
-          <Input
-            id="analiz-min-ciro"
-            name="minCiro"
-            type="number"
-            min={1}
-            step={1}
-            inputMode="numeric"
-            defaultValue={suzgec.minCiro ?? ""}
-            placeholder={t("minCiroYer")}
-            className="h-11"
-          />
-        </div>
-      </div>
+      {/* ═══ ÜST KATMAN — sık kullanılanlar, hepsi tek tıkla uygulanır ═══ */}
 
       {/* ── RAF YAŞI KOVALARI — YALNIZ STOK EKSENİNDE (K131) ──
           ⛔ Öteki eksenlerde ÇİZİLMİYOR ve bu bilinçli: satış satırlarının
@@ -398,8 +372,8 @@ export async function AnalizSuzgeci({
           ve form göndermeye gerek yok — kova KÜMEYİ belirler, ötekiler
           küme İÇİNDE daraltır. */}
       {eksen === "stok" ? (
-        <div className="space-y-1.5 border-t pt-3">
-          <span className="text-muted-foreground text-xs font-medium">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={SATIR_ETIKETI}>
             {tStok("yasKovaBaslik")}
           </span>
           <div className={KAYAN_SATIR}>
@@ -431,148 +405,139 @@ export async function AnalizSuzgeci({
         </div>
       ) : null}
 
-      {/* ── DÖNEM, KANAL, PARA BİRİMİ — YALNIZ ÜÇ SATIŞ EKSENİNDE (K210) ──
-          ⛔ STOK VE MEVSİM EKSENİNDE ÇİZİLMİYOR — RAF YAŞI KOVALARININ TERSİ
-          KOŞULU. `stokEkseniVerisi` bu üçünü hiç parametre almıyor;
-          `mevsimselVerisi` de (K212) TÜM geçmişi TRY sabit okuyor, ikisi de
-          bilerek. Tıklanabilir görünüp hiçbir şeyi değiştirmeyen bir kontrol
-          İlke #2 + #5'i çiğnerdi.
+      {/* ── DÖNEM VE KANAL — YALNIZ ÜÇ SATIŞ EKSENİNDE (K210) ──
+          ⛔ STOK VE MEVSİM EKSENİNDE ÇİZİLMİYOR. `stokEkseniVerisi` bunları
+          hiç parametre almıyor; `mevsimselVerisi` de (K212) TÜM geçmişi TRY
+          sabit okuyor, ikisi de bilerek. Tıklanabilir görünüp hiçbir şeyi
+          değiştirmeyen bir kontrol İlke #2 + #5'i çiğnerdi.
 
-          ⚠ BU ÜÇÜ "SÜZGEÇ TEMİZLE"YE GİRMEZ — kova/marka/kategori/minAdet/
-          minCiro gibi geçici bir daraltma değil, EKSEN gibi bir GÖRÜNÜM
-          seçimi (bkz. `temizAdres` zaten pencere/kanal/parayı KORUYOR). */}
+          ⚠ BUNLAR "SÜZGEÇ TEMİZLE"YE GİRMEZ — EKSEN gibi bir GÖRÜNÜM seçimi
+          (bkz. `temizAdres` pencere/kanal/parayı KORUYOR). */}
       {eksen !== "stok" && eksen !== "mevsim" ? (
-        <div className="grid gap-4 border-t pt-3 md:grid-cols-2">
+        <div className="space-y-3">
           {/* ── DÖNEM ── */}
-          <div className="space-y-1.5 md:col-span-2">
-            <span className="text-muted-foreground text-xs font-medium">
-              {t("donemBaslik")}
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              {/* K293: telefonda dönem çipleri tek satır kayar; «Özel aralık»
-                  kaydırılan satırın DIŞINDA (açılan form kırpılmasın).
-                  Masaüstünde `md:contents` → iç kap yok, eski düzen aynen. */}
-              <div className={`${KAYAN_SATIR} max-md:w-full md:contents`}>
-              {RAPOR_PENCERELERI.filter((tur) => tur !== "OZEL").map(
-                (tur) => {
-                  const aktif = guncelPencere === tur;
-                  return (
-                    <Link
-                      key={tur}
-                      href={analizAdresi({
-                        ...taban,
-                        pencere: tur,
-                        baslangic: undefined,
-                        bitis: undefined,
-                      })}
-                      aria-current={aktif ? "true" : undefined}
-                      className={chipSinifi(aktif)}
-                    >
-                      {tPencere(PENCERE_ANAHTARI[tur])}
-                    </Link>
-                  );
-                },
-              )}
-              </div>
-              {/* ⚠ `<details>` — JAVASCRIPT'SİZ AÇILIR/KAPANIR (native HTML).
-                  Kendi KÜÇÜK formu var: ana "Uygula"ya karışırsa `pencere`
-                  alanı İKİ KEZ gönderilir (biri bu, biri üstteki taşıyıcı)
-                  ve hangisinin geçerli olacağı belirsizleşirdi. */}
-              <details className="bg-background rounded-md border">
-                <summary className="flex h-11 cursor-pointer list-none items-center gap-1.5 px-3 text-sm font-medium">
-                  <CalendarRange className="size-4" aria-hidden />
-                  {tPencere("ozel")}
-                  {guncelPencere === "OZEL" ? (
-                    <span className="text-muted-foreground text-xs font-normal">
-                      {tasinan.baslangic} – {tasinan.bitis}
-                    </span>
-                  ) : null}
-                </summary>
-                <form
-                  method="get"
-                  action={ANALIZ_YOLU}
-                  className="flex flex-wrap items-end gap-2 border-t p-2"
-                >
-                  <input type="hidden" name="eksen" value={eksen} />
-                  <input type="hidden" name="pencere" value="OZEL" />
-                  {tasinan.kanal ? (
-                    <input type="hidden" name="kanal" value={tasinan.kanal} />
-                  ) : null}
-                  {tasinan.para ? (
-                    <input type="hidden" name="para" value={tasinan.para} />
-                  ) : null}
-                  {suzgec.markalar.map((m) => (
-                    <input key={m} type="hidden" name="marka" value={m} />
-                  ))}
-                  {suzgec.kategoriler.map((k) => (
-                    <input key={k} type="hidden" name="kategori" value={k} />
-                  ))}
-                  {suzgec.minAdet !== null ? (
-                    <input
-                      type="hidden"
-                      name="minAdet"
-                      value={suzgec.minAdet}
-                    />
-                  ) : null}
-                  {suzgec.minCiro !== null ? (
-                    <input
-                      type="hidden"
-                      name="minCiro"
-                      value={suzgec.minCiro}
-                    />
-                  ) : null}
-                  <input type="hidden" name="sirala" value={sira} />
-                  <input type="hidden" name="yon" value={yon} />
-                  <input type="hidden" name="satir" value={satir} />
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="analiz-baslangic"
-                      className="text-muted-foreground text-xs"
-                    >
-                      {t("baslangic")}
-                    </Label>
-                    <Input
-                      id="analiz-baslangic"
-                      name="baslangic"
-                      type="date"
-                      defaultValue={tasinan.baslangic ?? ""}
-                      className="h-11 w-40"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="analiz-bitis"
-                      className="text-muted-foreground text-xs"
-                    >
-                      {t("bitis")}
-                    </Label>
-                    <Input
-                      id="analiz-bitis"
-                      name="bitis"
-                      type="date"
-                      defaultValue={tasinan.bitis ?? ""}
-                      className="h-11 w-40"
-                    />
-                  </div>
-                  <Button type="submit" size="sm" className="h-11">
-                    {t("uygula")}
-                  </Button>
-                </form>
-              </details>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={SATIR_ETIKETI}>{t("donemBaslik")}</span>
+            {/* K293: telefonda dönem çipleri tek satır kayar; «Özel aralık»
+                kaydırılan satırın DIŞINDA (açılan form kırpılmasın).
+                Masaüstünde `md:contents` → iç kap yok. */}
+            <div className={`${KAYAN_SATIR} max-md:w-full md:contents`}>
+            {RAPOR_PENCERELERI.filter((tur) => tur !== "OZEL").map(
+              (tur) => {
+                const aktif = guncelPencere === tur;
+                return (
+                  <Link
+                    key={tur}
+                    href={analizAdresi({
+                      ...taban,
+                      pencere: tur,
+                      baslangic: undefined,
+                      bitis: undefined,
+                    })}
+                    aria-current={aktif ? "true" : undefined}
+                    className={chipSinifi(aktif)}
+                  >
+                    {tPencere(PENCERE_ANAHTARI[tur])}
+                  </Link>
+                );
+              },
+            )}
             </div>
+            {/* ⚠ `<details>` — JAVASCRIPT'SİZ AÇILIR/KAPANIR (native HTML).
+                Kendi KÜÇÜK formu var: ana "Uygula"ya karışırsa `pencere`
+                alanı İKİ KEZ gönderilir (biri bu, biri üstteki taşıyıcı)
+                ve hangisinin geçerli olacağı belirsizleşirdi. */}
+            <details className="bg-background rounded-md border">
+              <summary className="flex h-11 cursor-pointer list-none items-center gap-1.5 px-3 text-sm font-medium">
+                <CalendarRange className="size-4" aria-hidden />
+                {tPencere("ozel")}
+                {guncelPencere === "OZEL" ? (
+                  <span className="text-muted-foreground text-xs font-normal">
+                    {tasinan.baslangic} – {tasinan.bitis}
+                  </span>
+                ) : null}
+              </summary>
+              <form
+                method="get"
+                action={ANALIZ_YOLU}
+                className="flex flex-wrap items-end gap-2 border-t p-2"
+              >
+                <input type="hidden" name="eksen" value={eksen} />
+                <input type="hidden" name="pencere" value="OZEL" />
+                {tasinan.kanal ? (
+                  <input type="hidden" name="kanal" value={tasinan.kanal} />
+                ) : null}
+                {tasinan.para ? (
+                  <input type="hidden" name="para" value={tasinan.para} />
+                ) : null}
+                {suzgec.markalar.map((m) => (
+                  <input key={m} type="hidden" name="marka" value={m} />
+                ))}
+                {suzgec.kategoriler.map((k) => (
+                  <input key={k} type="hidden" name="kategori" value={k} />
+                ))}
+                {suzgec.minAdet !== null ? (
+                  <input
+                    type="hidden"
+                    name="minAdet"
+                    value={suzgec.minAdet}
+                  />
+                ) : null}
+                {suzgec.minCiro !== null ? (
+                  <input
+                    type="hidden"
+                    name="minCiro"
+                    value={suzgec.minCiro}
+                  />
+                ) : null}
+                <input type="hidden" name="sirala" value={sira} />
+                <input type="hidden" name="yon" value={yon} />
+                <input type="hidden" name="satir" value={satir} />
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="analiz-baslangic"
+                    className="text-muted-foreground text-xs"
+                  >
+                    {t("baslangic")}
+                  </Label>
+                  <Input
+                    id="analiz-baslangic"
+                    name="baslangic"
+                    type="date"
+                    defaultValue={tasinan.baslangic ?? ""}
+                    className="h-11 w-40"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="analiz-bitis"
+                    className="text-muted-foreground text-xs"
+                  >
+                    {t("bitis")}
+                  </Label>
+                  <Input
+                    id="analiz-bitis"
+                    name="bitis"
+                    type="date"
+                    defaultValue={tasinan.bitis ?? ""}
+                    className="h-11 w-40"
+                  />
+                </div>
+                <Button type="submit" size="sm" className="h-11">
+                  {t("uygula")}
+                </Button>
+              </form>
+            </details>
           </div>
 
           {/* ── KANAL ──
               ⛔ K293-② (kullanıcı 28.09.2026: «telefonda Trendyol yok»): kanal
               satırı ilk hâlde YANA KAYIYORDU ve kaydırma çubuğu gizliydi — sıra
-              alfabetik, Trendyol en sonda, ekranın dışında kaldı ve kaydırılabildiği
-              hiçbir yerde görünmüyordu. Kanal seçenekleri satışı olan kanallarla
-              sınırlı (bugün 5) → telefonda da SARAR, hepsi aynı anda görünür.
-              Dönem çipleri kaymaya devam eder (panelle aynı, sabit ve kısa küme). */}
-          <div className="space-y-1.5">
-            <span className="text-muted-foreground text-xs font-medium">
-              {t("kanalBaslik")}
-            </span>
+              alfabetik, Trendyol en sonda, ekranın dışında kaldı. Kanal
+              seçenekleri satışı olan kanallarla sınırlı (bugün 5) → telefonda da
+              SARAR, hepsi aynı anda görünür. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={SATIR_ETIKETI}>{t("kanalBaslik")}</span>
             <div className="flex flex-wrap gap-2" aria-label={t("kanalBaslik")}>
               <Link
                 href={analizAdresi({ ...taban, kanal: undefined })}
@@ -599,14 +564,85 @@ export async function AnalizSuzgeci({
               })}
             </div>
           </div>
+        </div>
+      ) : null}
 
-          {/* ── PARA BİRİMİ ──
-              ⚠ SEÇENEK İKİYLE SINIRLI — anayasa: Currency = TRY | EUR. */}
+      {/* ── SIRALAMA SATIRI — Sırala · Yön · Satır (DEĞİŞİNCE ANINDA
+          uygulanır) + satış eksenlerinde Para birimi. Telefonda üç seçim TEK
+          SATIRDA (K293). */}
+      <div className="flex flex-wrap items-end gap-3 border-t pt-3">
+        {/* ── SIRALAMA — anında uygulanır ── */}
+        <div className="w-[calc(50%-0.375rem)] space-y-1.5 sm:w-44">
+          <label
+            htmlFor="analiz-sirala"
+            className="text-muted-foreground text-xs font-medium"
+          >
+            {t("sirala")}
+          </label>
+          <OtomatikGonderSecim
+            id="analiz-sirala"
+            name="sirala"
+            defaultValue={sira}
+            className={SECIM_KUTUSU}
+          >
+            {SIRALAMA_ALANLARI.map((a) => (
+              <option key={a} value={a}>
+                {siraEtiketi[a]}
+              </option>
+            ))}
+          </OtomatikGonderSecim>
+        </div>
+
+        {/* ── YÖN — anında uygulanır ── */}
+        <div className="w-[calc(30%-0.375rem)] space-y-1.5 sm:w-32">
+          <label
+            htmlFor="analiz-yon"
+            className="text-muted-foreground text-xs font-medium"
+          >
+            {t("yon")}
+          </label>
+          <OtomatikGonderSecim
+            id="analiz-yon"
+            name="yon"
+            defaultValue={yon}
+            className={SECIM_KUTUSU}
+          >
+            <option value="azalan">{t("yonAzalan")}</option>
+            <option value="artan">{t("yonArtan")}</option>
+          </OtomatikGonderSecim>
+        </div>
+
+        {/* ── SATIR SAYISI — anında uygulanır ──
+            Kullanıcı: "50 ürüne kadar listelensin, istekle 100'e çıkabilsin." */}
+        <div className="min-w-0 flex-1 space-y-1.5 sm:w-24 sm:flex-none">
+          <label
+            htmlFor="analiz-satir"
+            className="text-muted-foreground text-xs font-medium"
+          >
+            {t("satirSayisi")}
+          </label>
+          <OtomatikGonderSecim
+            id="analiz-satir"
+            name="satir"
+            defaultValue={String(satir)}
+            className={SECIM_KUTUSU}
+          >
+            {SATIR_SAYILARI.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </OtomatikGonderSecim>
+        </div>
+
+        {/* ── PARA BİRİMİ — YALNIZ SATIŞ EKSENLERİNDE (dönem/kanal ile aynı
+            gerekçe). ⚠ SEÇENEK İKİYLE SINIRLI — anayasa: Currency = TRY | EUR. */}
+        {eksen !== "stok" && eksen !== "mevsim" ? (
           <div className="space-y-1.5">
-            <span className="text-muted-foreground text-xs font-medium">
+            <span className="text-muted-foreground block text-xs font-medium">
               {t("paraBaslik")}
             </span>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2">
               {(["TRY", "EUR"] as const).map((pb) => {
                 const aktif = guncelPara === pb;
                 return (
@@ -625,109 +661,191 @@ export async function AnalizSuzgeci({
               })}
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
-      {/* ── FAVORİ / İNCELENECEK / SEZON — TÜM EKSENLERDE (K212) ──
-          ⛔ Dönem/Kanal/Para'nın TERSİNE her eksende çizilir: etiketler
-          ÜRÜNE ait, hangi eksene bakıldığından bağımsız (stok ekseninde de
-          "favori mi" sorusu anlamlı). */}
-      <div className="flex flex-wrap items-center gap-4 border-t pt-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-xs font-medium">
-            {t("etiketBaslik")}
-          </span>
-          <Link
-            href={analizAdresi({
-              ...taban,
-              favori: !suzgec.favoriYalniz ? true : undefined,
-            })}
-            aria-current={suzgec.favoriYalniz ? "true" : undefined}
-            className={chipSinifi(suzgec.favoriYalniz)}
-          >
-            <Star className="size-4" aria-hidden />
-            {t("favoriYalniz")}
-          </Link>
-          <Link
-            href={analizAdresi({
-              ...taban,
-              incelenecek: !suzgec.incelenecekYalniz ? true : undefined,
-            })}
-            aria-current={suzgec.incelenecekYalniz ? "true" : undefined}
-            className={chipSinifi(suzgec.incelenecekYalniz)}
-          >
-            <Flag className="size-4" aria-hidden />
-            {t("incelenecekYalniz")}
-          </Link>
+      {/* ═══ ALT KATMAN — «Daha fazla süzgeç» ═══
+          ⚠ `<details>` KAPALIYKEN DE içindeki alanlar FORMLA GÖNDERİLİR
+          (yalnız gizlenir) — marka seçip kapatan kullanıcının seçimi düşmez.
+          Açık süzgeç varsa SAYISI başlıkta yazar ve bölme AÇIK gelir. */}
+      <details className="bg-background rounded-md border" open={ikincilSayi > 0}>
+        <summary className="flex h-11 cursor-pointer list-none items-center gap-2 px-3 text-sm font-medium">
+          <SlidersHorizontal className="size-4" aria-hidden />
+          {t("dahaFazlaSuzgec")}
+          {ikincilSayi > 0 ? (
+            <Badge variant="secondary">{ikincilSayi}</Badge>
+          ) : null}
+          <ChevronDown className="text-muted-foreground ml-auto size-4" aria-hidden />
+        </summary>
+        <div className="space-y-3 border-t p-3">
+
+        {/* ── EŞİKLER — "Uygula"yı bekler (serbest metin)
+            ⚠ Yer tutucu "örn. 2" — girilmiş DEĞER sanılmasın (İlke #11).
+            Telefonda En az adet · En az ciro TEK SATIRDA. */}
+        <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+          <div className="space-y-1.5">
+            <label
+              htmlFor="analiz-min-adet"
+              className="text-muted-foreground text-xs font-medium"
+            >
+              {t("minAdet")}
+            </label>
+            <Input
+              id="analiz-min-adet"
+              name="minAdet"
+              type="number"
+              min={1}
+              step={1}
+              inputMode="numeric"
+              defaultValue={suzgec.minAdet ?? ""}
+              placeholder={t("minAdetYer")}
+              className="h-11"
+            />
+          </div>
+
+          {/* ── EN AZ CİRO — "Uygula"yı bekler ── */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="analiz-min-ciro"
+              className="text-muted-foreground text-xs font-medium"
+            >
+              {t("minCiro")}
+            </label>
+            <Input
+              id="analiz-min-ciro"
+              name="minCiro"
+              type="number"
+              min={1}
+              step={1}
+              inputMode="numeric"
+              defaultValue={suzgec.minCiro ?? ""}
+              placeholder={t("minCiroYer")}
+              className="h-11"
+            />
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted-foreground text-xs font-medium">
-            {t("sezonBaslik")}
-          </span>
-          <Link
-            href={analizAdresi({ ...taban, sezon: undefined })}
-            aria-current={suzgec.sezon === null ? "true" : undefined}
-            className={chipSinifi(suzgec.sezon === null)}
-          >
-            {t("sezonHepsi")}
-          </Link>
-          {(["YAZ", "KIS"] as const).map((sz) => (
+        {/* ── FAVORİ / İNCELENECEK / SEZON — TÜM EKSENLERDE (K212) ──
+            ⛔ Dönem/Kanal/Para'nın TERSİNE her eksende çizilir: etiketler
+            ÜRÜNE ait, hangi eksene bakıldığından bağımsız. */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={SATIR_ETIKETI}>
+              {t("etiketBaslik")}
+            </span>
             <Link
-              key={sz}
               href={analizAdresi({
                 ...taban,
-                sezon: suzgec.sezon === sz ? undefined : sz,
+                favori: !suzgec.favoriYalniz ? true : undefined,
               })}
-              aria-current={suzgec.sezon === sz ? "true" : undefined}
-              className={chipSinifi(suzgec.sezon === sz)}
+              aria-current={suzgec.favoriYalniz ? "true" : undefined}
+              className={chipSinifi(suzgec.favoriYalniz)}
             >
-              {sz === "YAZ" ? t("sezonYaz") : t("sezonKis")}
+              <Star className="size-4" aria-hidden />
+              {t("favoriYalniz")}
+            </Link>
+            <Link
+              href={analizAdresi({
+                ...taban,
+                incelenecek: !suzgec.incelenecekYalniz ? true : undefined,
+              })}
+              aria-current={suzgec.incelenecekYalniz ? "true" : undefined}
+              className={chipSinifi(suzgec.incelenecekYalniz)}
+            >
+              <Flag className="size-4" aria-hidden />
+              {t("incelenecekYalniz")}
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground text-xs font-medium">
+              {t("sezonBaslik")}
+            </span>
+            <Link
+              href={analizAdresi({ ...taban, sezon: undefined })}
+              aria-current={suzgec.sezon === null ? "true" : undefined}
+              className={chipSinifi(suzgec.sezon === null)}
+            >
+              {t("sezonHepsi")}
+            </Link>
+            {(["YAZ", "KIS"] as const).map((sz) => (
+              <Link
+                key={sz}
+                href={analizAdresi({
+                  ...taban,
+                  sezon: suzgec.sezon === sz ? undefined : sz,
+                })}
+                aria-current={suzgec.sezon === sz ? "true" : undefined}
+                className={chipSinifi(suzgec.sezon === sz)}
+              >
+                {sz === "YAZ" ? t("sezonYaz") : t("sezonKis")}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* ── MARKA VE KATEGORİ — katlanır, çünkü uzun.
+            `<details>` VARSAYILAN KAPALI: açık gelseydi 100+ marka ekranı
+            yutar ve asıl liste ekranın altına düşerdi (İlke #13). */}
+        <div className="grid gap-3 md:grid-cols-2">
+          <OnayIzgarasi
+            ad="marka"
+            baslik={t("marka")}
+            hepsiMetni={t("markaHepsi")}
+            secenekler={markaSecenekleri}
+            secili={suzgec.markalar}
+          />
+          <OnayIzgarasi
+            ad="kategori"
+            baslik={t("kategori")}
+            hepsiMetni={t("kategoriHepsi")}
+            secenekler={kategoriSecenekleri}
+            secili={suzgec.kategoriler}
+          />
+        </div>
+
+        {/* ── UYGULA — yalnız EŞİKLER ve MARKA/KATEGORİ için gerekli;
+            ötekiler zaten tek tıkla uygulanmıştı. */}
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="submit" className="h-11 max-md:flex-1">
+            {t("uygula")}
+          </Button>
+        </div>
+        </div>
+      </details>
+      </TelefonSuzgecKabi>
+
+      {/* ── AÇIK SÜZGEÇLER — kabın DIŞINDA: telefonda panel kapalıyken de
+          görünür. Her etiket ✕ ile YALNIZ kendini kaldırır; «Tümünü temizle»
+          dönem/kanal/parayı korur (bkz. `temizAdres`).
+          Süzgeç yoksa satır hiç çizilmez: hiçbir şeyi temizlemeyen bir
+          düğme, tıklanabilir görünüp hiçbir şey yapmaz (İlke #2). */}
+      {suzgecVarMi ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {acikEtiketler.length > 0 ? (
+            <span className="text-muted-foreground text-xs font-medium">
+              {t("acikSuzgecler")}
+            </span>
+          ) : null}
+          {acikEtiketler.map((e) => (
+            <Link
+              key={e.anahtar}
+              href={e.adres}
+              aria-label={t("suzgeciKaldir", { ad: e.metin })}
+              className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors"
+            >
+              <span className="max-w-56 truncate">{e.metin}</span>
+              <X className="size-4 shrink-0" aria-hidden />
             </Link>
           ))}
-        </div>
-      </div>
-
-      {/* ── MARKA VE KATEGORİ — katlanır, çünkü uzun.
-          `<details>` VARSAYILAN KAPALI: açık gelseydi 100+ marka ekranı
-          yutar ve asıl liste ekranın altına düşerdi (İlke #13). */}
-      <div className="grid gap-3 border-t pt-3 md:grid-cols-2">
-        <OnayIzgarasi
-          ad="marka"
-          baslik={t("marka")}
-          hepsiMetni={t("markaHepsi")}
-          secenekler={markaSecenekleri}
-          secili={suzgec.markalar}
-        />
-        <OnayIzgarasi
-          ad="kategori"
-          baslik={t("kategori")}
-          hepsiMetni={t("kategoriHepsi")}
-          secenekler={kategoriSecenekleri}
-          secili={suzgec.kategoriler}
-        />
-      </div>
-
-      {/* ── UYGULA / TEMİZLE — yalnız EŞİKLER (en az adet/ciro) ve
-          MARKA/KATEGORİ için gerekli; Sırala/Yön/Satır/Dönem/Kanal/Para/
-          Etiketler zaten tek tıkla uygulanmıştı. */}
-      <div className="flex flex-wrap items-center gap-3 border-t pt-3">
-        <Button type="submit" className="h-11 max-md:flex-1">
-          {t("uygula")}
-        </Button>
-
-        {/* Süzgeç yoksa çizilmez: hiçbir şeyi temizlemeyen bir düğme,
-            tıklanabilir görünüp hiçbir şey yapmaz (İlke #2). */}
-        {suzgecVarMi ? (
-          <Button asChild variant="ghost" className="h-11 max-md:flex-1">
+          <Button asChild variant="ghost" className="h-11">
             <Link href={temizAdres}>
               <RotateCcw />
               {t("temizle")}
             </Link>
           </Button>
-        ) : null}
-      </div>
-      </TelefonSuzgecKabi>
+        </div>
+      ) : null}
     </form>
   );
 }

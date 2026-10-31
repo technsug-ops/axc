@@ -53,7 +53,7 @@ import {
  * ============================================================================
  */
 
-const BOLUM_SAYISI = 14;
+const BOLUM_SAYISI = 15;
 const kosanBolumler: string[] = [];
 
 let gecen = 0;
@@ -980,6 +980,68 @@ function satir(x: Partial<AnalizSatiri> & { variantId: string }): AnalizSatiri {
     sayfa.includes('<div className={SEKME_SERIDI}>\n        {ANALIZ_EKSENLERI.map(') &&
       SEKME_SERIDI.includes("overflow-x-auto") && !SEKME_SERIDI.includes("flex-wrap"));
   kosanBolumler.push("k293-telefon-suzgec");
+}
+
+/**
+ * İKİ KATMANLI SÜZGEÇ (kullanıcı kararı 31.10.2026: «çok karışık görünüyor» →
+ * «iki katman» seçildi). Üstte dönem · kanal · sıralama; seyrek kullanılanlar
+ * «Daha fazla süzgeç» bölmesinde; açık olanlar ✕'li etiketle HER ZAMAN görünür.
+ */
+{
+  const suz = kaynakOku("src/app/rapor/urunler/analiz-suzgeci.tsx")
+    .replace(/\{\/\*[\s\S]*?\*\/\}/g, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ");
+  const iBaslik = suz.indexOf('{t("dahaFazlaSuzgec")}');
+  const iBolme = iBaslik >= 0 ? suz.lastIndexOf("<details", iBaslik) : -1;
+  const iBolmeSon = iBaslik >= 0 ? suz.indexOf("</details>", iBaslik) : -1;
+  const bolme = iBolme >= 0 && iBolmeSon > iBolme ? suz.slice(iBolme, iBolmeSon) : "";
+  dogru("«Daha fazla süzgeç» bölmesi bulundu", bolme.length > 0);
+  for (const [ad, desen] of [
+    ["en az adet", 'id="analiz-min-adet"'],
+    ["en az ciro", 'id="analiz-min-ciro"'],
+    ["etiket (favori)", '{t("favoriYalniz")}'],
+    ["mevsim", '{t("sezonBaslik")}'],
+    ["marka", 'ad="marka"'],
+    ["kategori", 'ad="kategori"'],
+    ["Uygula", '<Button type="submit" className="h-11 max-md:flex-1">'],
+  ] as const) {
+    dogru(`  ...${ad} bölmenin İÇİNDE`, bolme.includes(desen));
+  }
+  const ust = iBolme >= 0 ? suz.slice(0, iBolme) : "";
+  for (const [ad, desen] of [
+    ["dönem", '{t("donemBaslik")}'],
+    ["kanal", '<div className="flex flex-wrap gap-2" aria-label={t("kanalBaslik")}>'],
+    ["sırala", 'id="analiz-sirala"'],
+    ["para birimi", '{t("paraBaslik")}'],
+  ] as const) {
+    dogru(`  ...${ad} ÜST katmanda (bölmeden önce)`, ust.includes(desen));
+  }
+  dogru("bölme açık süzgeç varsa AÇIK gelir", bolme.startsWith("<details") && /^<details[^>]*open=\{ikincilSayi > 0\}/.test(bolme));
+  dogru("  ...başlıkta açık süzgeç SAYISI", /\{ikincilSayi > 0 \? \(\s*<Badge[^>]*>\{ikincilSayi\}<\/Badge>/.test(bolme));
+  const sayac = suz.slice(suz.indexOf("const ikincilSayi ="), suz.indexOf("const acikEtiketler"));
+  for (const terim of ["suzgec.markalar.length", "suzgec.kategoriler.length", "suzgec.minAdet !== null ? 1 : 0", "suzgec.minCiro !== null ? 1 : 0", "suzgec.favoriYalniz ? 1 : 0", "suzgec.incelenecekYalniz ? 1 : 0", "suzgec.sezon !== null ? 1 : 0"]) {
+    dogru(`  ...sayı «${terim}»u sayıyor`, sayac.includes(terim));
+  }
+  /* Açık süzgeç etiketleri kabın DIŞINDA — telefonda panel kapalıyken de görünür. */
+  const iKapSon = suz.indexOf("</TelefonSuzgecKabi>");
+  const iEtiket = suz.indexOf("{acikEtiketler.map((e) => (");
+  dogru("açık süzgeç etiketleri çiziliyor ve kabın DIŞINDA", iKapSon >= 0 && iEtiket > iKapSon);
+  /* Her etiket YALNIZ kendi süzgecini kaldırır. */
+  for (const [anahtar, adres] of [
+    ['anahtar: "arama"', "adres: analizAdresi({ ...taban, arama: null })"],
+    ["anahtar: `marka-${m}`", "markalar: suzgec.markalar.filter((x) => x !== m)"],
+    ["anahtar: `kategori-${k}`", "kategoriler: suzgec.kategoriler.filter((x) => x !== k)"],
+    ['anahtar: "minAdet"', "adres: analizAdresi({ ...taban, minAdet: null })"],
+    ['anahtar: "minCiro"', "adres: analizAdresi({ ...taban, minCiro: null })"],
+    ['anahtar: "favori"', "adres: analizAdresi({ ...taban, favori: undefined })"],
+    ['anahtar: "incelenecek"', "adres: analizAdresi({ ...taban, incelenecek: undefined })"],
+    ['anahtar: "sezon"', "adres: analizAdresi({ ...taban, sezon: undefined })"],
+  ] as const) {
+    const i = suz.indexOf(anahtar);
+    const blok = i >= 0 ? suz.slice(i, suz.indexOf("});", i)) : "";
+    dogru(`  ...${anahtar} etiketi yalnız kendini kaldırıyor`, blok.includes(adres));
+  }
+  kosanBolumler.push("iki-katman-suzgec");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

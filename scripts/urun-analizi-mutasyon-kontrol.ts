@@ -199,6 +199,42 @@ const MUTASYONLAR: Mutasyon[] = [
     yeni: "space-y-4",
     bozdugu: "bilgisayarda süzgeçler kaybolur, düğme de yok",
   },
+  // ── İKİ KATMANLI SÜZGEÇ (31.10.2026) ──────────────────────────────────
+  {
+    ad: "«Daha fazla süzgeç» açık süzgeç varken de KAPALI geliyor",
+    dosya: "src/app/rapor/urunler/analiz-suzgeci.tsx",
+    eski: "open={ikincilSayi > 0}",
+    yeni: "open={false}",
+    bozdugu: "seçili marka kapalı bölmede kalır, kullanıcı süzgeci unutur",
+  },
+  {
+    ad: "açık süzgeç etiketleri çizilmiyor",
+    dosya: "src/app/rapor/urunler/analiz-suzgeci.tsx",
+    eski: "{acikEtiketler.map((e) => (",
+    yeni: "{acikEtiketler.slice(0, 0).map((e) => (",
+    bozdugu: "kapalı bölmedeki süzgeç hiçbir yerde görünmez",
+  },
+  {
+    ad: "[yanlış yanma] «en az adet» etiketi BAŞKA süzgeci kaldırıyor",
+    dosya: "src/app/rapor/urunler/analiz-suzgeci.tsx",
+    eski: "adres: analizAdresi({ ...taban, minAdet: null }),",
+    yeni: "adres: analizAdresi({ ...taban, minAdet: null, minCiro: null }),",
+    bozdugu: "✕'e basınca dokunulmaması gereken süzgeç de düşer",
+  },
+  {
+    ad: "açık süzgeç sayısı mevsimi saymıyor",
+    dosya: "src/app/rapor/urunler/analiz-suzgeci.tsx",
+    eski: "(suzgec.sezon !== null ? 1 : 0);",
+    yeni: "0;",
+    bozdugu: "mevsim seçiliyken bölme kapalı ve sayısız kalır",
+  },
+  {
+    ad: "en az adet ÜST katmana taşındı (bölmeden çıktı)",
+    dosya: "src/app/rapor/urunler/analiz-suzgeci.tsx",
+    eski: '{t("dahaFazlaSuzgec")}',
+    yeni: '{t("suzgecler")}',
+    bozdugu: "bölme bulunamaz — iki katman düzeni kaybolur",
+  },
 ];
 
 let kirmizi = 0;
