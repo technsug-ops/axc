@@ -32,7 +32,7 @@ import type { AnalizSatiri } from "../src/lib/rapor/urun-analizi";
 
 let basarisiz = 0;
 let calisan = 0;
-const BOLUM_SAYISI = 7;
+const BOLUM_SAYISI = 8;
 const kosanBolumler: string[] = [];
 function kontrol(ad: string, kosul: boolean, ayrinti?: unknown) {
   calisan++;
@@ -233,6 +233,20 @@ console.log("\n⑦ geçen yıl bu dönem — pencere · kapsam · liste");
   kontrol("adres: geçen yıl sekmesi ve ileri gün ayrıştırılır, bozuksa 30", listeCoz("gecenYil") === "gecenYil" && ileriCoz("60") === 60 && ileriCoz("45") === 30 && ileriCoz("x") === 30);
 }
 kosanBolumler.push("gecen-yil");
+
+/* ── NET-2 SÜTUNU DÖNEM TOPLAMI (kullanıcı kararı 31.10.2026: «Günlük NET-2
+   hiçbir işime yaramaz, orada toplam NET-2 olması daha sağlıklı»). Günlük
+   ortalama satışsız günleri de bölüyordu; ₺51/gün aslında 3 ayda ₺4.653'tü. */
+{
+  const yorumsuz = (m: string) => m.replace(/\{\/\*[\s\S]*?\*\/\}/g, " ").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+  const sayfa = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/page.tsx"));
+  const excel = yorumsuz(kaynakOku("src/app/rapor/alim-rehberi/excel/route.ts"));
+  kontrol("tablo + telefon kartı NET-2'yi dönem TOPLAMI gösteriyor (2 yer)", (sayfa.match(/bicim\.para\(s\.net2, "TRY"\)/g) ?? []).length === 2);
+  kontrol("  ...sayfada günlük NET-2 hiçbir yerde yok", !sayfa.includes("gunlukNet2"));
+  kontrol("  ...başlık «NET-2 (dönem)»", (sayfa.match(/gy \? t\("sutunGecenYilNet2"\) : t\("toplamNet2"\)/g) ?? []).length === 2);
+  kontrol("Excel'de günlük NET-2 sütunu yok", !excel.includes("gunlukNet2"));
+}
+kosanBolumler.push("donem-net2");
 
 console.log("");
 if (kosanBolumler.length !== BOLUM_SAYISI) {

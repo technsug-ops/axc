@@ -57,7 +57,7 @@ export async function GET(istek: Request) {
     arama,
   );
 
-  const turler: SutunTuru[] = ["tamsayi", "metin", "metin", "metin", "metin", "metin", "metin", "tamsayi", "ondalik", "para", "para", "oran", "para", "tamsayi", "tamsayi", "para"];
+  const turler: SutunTuru[] = ["tamsayi", "metin", "metin", "metin", "metin", "metin", "metin", "tamsayi", "ondalik", "para", "para", "oran", "tamsayi", "tamsayi", "para"];
   const listeAdi = t(`liste_${liste}`);
   const gyPencere = { bas: bicim.tarih(veri.gecenYil.ilkGun), bit: bicim.tarih(veri.gecenYil.sonGun) };
   const icerik = await xlsxUret([
@@ -67,14 +67,14 @@ export async function GET(istek: Request) {
         t("excelSira"), t("sutunUrun"), t("sku"), t("excelFirmaSku"), t("excelBarkod"), t("excelMarka"), t("excelKategori"),
         gy ? t("sutunGecenYilSatilan") : t("excelSatilan"), t("excelGunlukSatis"),
         gy ? t("excelGecenYilCiro") : t("excelCiro"), gy ? t("sutunGecenYilNet2") : t("excelNet2"),
-        t("excelMarj"), t("excelGunlukNet2"),
+        t("excelMarj"),
         t("sutunRaf"), gy ? t("sutunEksik") : t("excelStokGunu"), t("excelSermaye"),
       ],
       turler,
-      genislikler: [6, 50, 18, 16, 16, 16, 20, 10, 12, 14, 12, 10, 12, 8, 10, 14],
+      genislikler: [6, 50, 18, 16, 16, 16, 20, 10, 12, 14, 12, 10, 8, 10, 14],
       satirlar: satirlar.map((s, i) => [
         i + 1, s.urunAdi, s.sku, s.firmaSku ?? "", s.barkod ?? "", s.marka ?? "", s.kategori ?? "",
-        s.adet, s.gunlukSatis, s.ciro, s.net2, s.marj, s.gunlukNet2,
+        s.adet, s.gunlukSatis, s.ciro, s.net2, s.marj,
         s.raf,
         gy ? eksikAdet(s) : s.raf > 0 && s.stokGunu !== null ? Math.round(s.stokGunu) : s.raf > 0 ? t("satmiyor") : 0,
         s.raf > 0 ? s.bagliSermaye : null,

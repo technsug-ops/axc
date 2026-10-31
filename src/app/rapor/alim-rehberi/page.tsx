@@ -424,7 +424,7 @@ export default async function AlimRehberiSayfasi({
                       <TableHead>{t("sutunUrun")}</TableHead>
                       <TableHead className="text-right">{gy ? t("sutunGecenYilSatilan") : t("sutunSatilan")}</TableHead>
                       <TableHead className="text-right">{t("sutunMarj")}</TableHead>
-                      <TableHead className="text-right">{gy ? t("sutunGecenYilNet2") : t("sutunGunlukNet2")}</TableHead>
+                      <TableHead className="text-right">{gy ? t("sutunGecenYilNet2") : t("toplamNet2")}</TableHead>
                       <TableHead className="text-right">{t("sutunRaf")}</TableHead>
                       <TableHead className="text-right">{gy ? t("sutunEksik") : t("sutunStokGunu")}</TableHead>
                       <TableHead className="text-right">{t("sutunSermaye")}</TableHead>
@@ -451,7 +451,7 @@ export default async function AlimRehberiSayfasi({
                           <div className="text-muted-foreground text-xs">{t("sutunGunluk", { sayi: bicim.sayi(s.gunlukSatis, 2) })}</div>
                         </TableCell>
                         <TableCell className="text-right tabular-nums">{s.marj === null ? t("bilinmiyor") : bicim.yuzde(s.marj)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{bicim.para(gy ? s.net2 : s.gunlukNet2, "TRY")}</TableCell>
+                        <TableCell className="text-right tabular-nums">{bicim.para(s.net2, "TRY")}</TableCell>
                         <TableCell className="text-right tabular-nums">{s.raf}</TableCell>
                         <TableCell className="text-right tabular-nums">{gy ? eksikAdet(s) : stokGunuYaz(s)}</TableCell>
                         <TableCell className="text-right tabular-nums">
@@ -485,7 +485,7 @@ export default async function AlimRehberiSayfasi({
                         deger: `${s.adet} · ${t("sutunGunluk", { sayi: bicim.sayi(s.gunlukSatis, 2) })}`,
                       },
                       { etiket: t("sutunMarj"), deger: s.marj === null ? t("bilinmiyor") : bicim.yuzde(s.marj) },
-                      { etiket: gy ? t("sutunGecenYilNet2") : t("sutunGunlukNet2"), deger: bicim.para(gy ? s.net2 : s.gunlukNet2, "TRY") },
+                      { etiket: gy ? t("sutunGecenYilNet2") : t("toplamNet2"), deger: bicim.para(s.net2, "TRY") },
                       { etiket: t("sutunRaf"), deger: String(s.raf) },
                       { etiket: gy ? t("sutunEksik") : t("sutunStokGunu"), deger: gy ? String(eksikAdet(s)) : stokGunuYaz(s) },
                       {
