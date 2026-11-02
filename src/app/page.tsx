@@ -2641,7 +2641,9 @@ export default async function AnaSayfa({
         {/* ======================== DÖNEM VE KANAL ========================
           Ortak süzgeç çubuğu (İlke #10): aynı işlem her ekranda aynı
           görünür. Panelin farkı yalnız VARSAYILANI — dönem hiç seçilmemişse
-          bu ay. */}
+          BUGÜN (`PANEL_VARSAYILAN_PENCERE`; 21.08.2026'da «bu ay»dan
+          çevrildi). ⚠ Bu yorum 02.11.2026'ya kadar hâlâ «bu ay» diyordu —
+          kararın izi de taşınır. */}
         <SuzgecCubugu
           /* YAPIŞKAN — Halil 18.08.2026: "kanalı SIK değiştiriyorum."
            Yalnız telefonda yapışıyor; masaüstünde çubuk zaten görünür. */
@@ -2662,9 +2664,15 @@ export default async function AnaSayfa({
                 ]
               : []
           }
-          /* ⚠ PANELDE DÖNEM BOŞ OLAMAZ — seçilmemişse "Bu ay"a düşüyor.
+          /* ⚠ PANELDE DÖNEM BOŞ OLAMAZ — seçilmemişse varsayılana düşüyor.
            Rozet kaldırılabilir gibi görünmesin diye sabit işaretlendi. */
           zamanSabit
+          /* ⚠ VARSAYILAN ADRESE YAZILMAZ (K367): «Bugün»e basmak adresi
+           `/` yapar. Sabit dönemli ekranda parametreyi kaldıracak başka
+           yol yok (rozet yok, «Temizle» dönemi ellemiyor) — yazılan dönem
+           adreste kalıyor ve telefon uygulamayı kaldığı adresten açınca
+           VARSAYILAN GİBİ görünüyordu. Gerekçesi: `donemDegisikligi`. */
+          varsayilanPencere={PANEL_VARSAYILAN_PENCERE}
           /* Kıyas düğmeleri aynı satırda (K252) — yalnız kâr görünürken. */
           kiyas={kiyasSecici}
           zaman={{

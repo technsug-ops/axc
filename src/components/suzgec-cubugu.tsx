@@ -24,6 +24,7 @@ import {
 } from "@/lib/donem";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
 import {
+  donemDegisikligi,
   donemRozetiCizilirMi,
   suzgecAdresi,
   temizlemeDegisiklikleri,
@@ -80,6 +81,7 @@ export function SuzgecCubugu({
   zamanSabit = false,
   kiyas,
   tumZamanDegeri = "",
+  varsayilanPencere = "",
 }: {
   temelAdres: string;
   /**
@@ -88,6 +90,19 @@ export function SuzgecCubugu({
    * K332) açık «tüm zamanlar» değerini verir; yoksa çarpı varsayılana döner.
    */
   tumZamanDegeri?: string;
+  /**
+   * EKRANIN VARSAYILAN DONEMI — ADRESE YAZILMAZ (K367, 02.11.2026).
+   *
+   * Bu deger verilirse, ayni donem secildiginde `pencere` parametresi adrese
+   * yazilmaz SILINIR. Sabit donemli ekranda (panel) parametreyi kaldiracak
+   * baska bir yol YOKTU: rozet cizilmiyor, «Temizle» donemi ellemiyor — yani
+   * bir kez yazilan donem adreste kaliyor ve telefon uygulamayi kaldigi
+   * adresten acinca VARSAYILAN GIBI gorunuyordu. Gerekcenin tamami:
+   * `donemDegisikligi` (lib/suzgec.ts).
+   *
+   * Vermeyen ekranda davranis AYNI kalir.
+   */
+  varsayilanPencere?: PencereTuru | "";
   /** Sayfanın tüm searchParams'ı — dokunulmayanlar korunur. */
   mevcut: Record<string, string | undefined>;
   suzgecler: SuzgecTanimi[];
@@ -210,7 +225,7 @@ export function SuzgecCubugu({
               variant={zaman.secili === p ? "default" : "outline"}
               onClick={() => {
                 setOzelAcik(false);
-                git({ pencere: p, baslangic: "", bitis: "" });
+                git(donemDegisikligi(p, varsayilanPencere));
               }}
             >
               {tPencere(PENCERE_ANAHTARI[p])}
@@ -278,7 +293,7 @@ export function SuzgecCubugu({
                   variant={zaman.secili === p ? "default" : "outline"}
                   onClick={() => {
                     setOzelAcik(false);
-                    git({ pencere: p, baslangic: "", bitis: "" });
+                    git(donemDegisikligi(p, varsayilanPencere));
                   }}
                 >
                   {tPencere(PENCERE_ANAHTARI[p])}
@@ -380,7 +395,7 @@ export function SuzgecCubugu({
                 variant={zaman.secili === p ? "default" : "outline"}
                 onClick={() => {
                   setOzelAcik(false);
-                  git({ pencere: p, baslangic: "", bitis: "" });
+                  git(donemDegisikligi(p, varsayilanPencere));
                 }}
               >
                 {tPencere(PENCERE_ANAHTARI[p])}

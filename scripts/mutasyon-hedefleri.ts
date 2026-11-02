@@ -213,6 +213,15 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
   "parti-secimi-mutasyon:kontrol",
   "donem-mutasyon:kontrol",
   /**
+   * K367 (02.11.2026) — `donem-varsayilani` PANEL sayfasini
+   * (`src/app/page.tsx`), ortak suzgec cubugunu ve `src/lib/suzgec.ts`i
+   * mutasyona ugratiyor: varsayilan donemin adrese YAZILMADIGINI siniyor.
+   * Ayni dosyalara `panel` · `kargosuz` · `abc-listesi` · `kisa-onbellek` ·
+   * `teslim-durumu` ve baskalari da dokunuyor — paralel kossalardi biri
+   * otekinin MUTANTINI "asil" sanip geri yazardi.
+   */
+  "donem-varsayilani-mutasyon:kontrol",
+  /**
    * K243 (23.09.2026) — `kargo-kaynagi` artık SATIŞ DETAY ekranını da
    * mutasyona uğratıyor (`satislar/[id]/page.tsx`): desi ve kanal kargo
    * firması satırlarının ÇİZİLDİĞİNİ sınıyor. O dosyaya yukarıdaki grubun

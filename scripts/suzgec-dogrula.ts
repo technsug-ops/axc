@@ -48,6 +48,7 @@ import {
   suzgecAdresi,
 } from "../src/lib/suzgec";
 import {
+  donemDegisikligi,
   donemRozetiCizilirMi,
   temizlemeDegisiklikleri,
 } from "../src/lib/suzgec";
@@ -871,6 +872,77 @@ console.log("\n5) SABİT DÖNEM — ROZET VE TEMİZLE");
     sabit.kanal === "" && sabit.hesap === "",
     sabit,
   );
+  /**
+   * ========================================================================
+   *  VARSAYILAN DONEM ADRESE YAZILMAZ (K367, 02.11.2026)
+   * ------------------------------------------------------------------------
+   *  Sabit donemli ekranda `pencere` parametresini kaldiracak baska yol YOK:
+   *  rozet cizilmiyor (ustteki olcutler) ve «Temizle» donemi ellemiyor (hemen
+   *  ustteki olcut). O yuzden adrese bir kez yazilan donem ORADA KALIR; telefon
+   *  uygulamayi kaldigi adresten acinca o donem VARSAYILAN GIBI gorunur.
+   *  Kullanici 02.11.2026'da tam bunu bildirdi: panel «Bu ay» aciliyordu,
+   *  oysa `PANEL_VARSAYILAN_PENCERE` 21.08.2026'dan beri «BUGUN».
+   *
+   *  IKI YON AYRI SINANIYOR: varsayilan SILINIYOR mu (yanlis susma) ve
+   *  varsayilan OLMAYAN donem yaziliyor mu (yanlis yanma). Yalniz biri
+   *  yazilsa «her zaman sil» mutasyonu yesil kalirdi.
+   *
+   *  KAYNAK OLCUTLERI TERS BOLUSUZ — VE BU BIR VAKADAN DOGDU: bu blogun ilk
+   *  yazimi betikle uretildi, cift ters bolu teke indi ve desendeki kelime
+   *  siniri BACKSPACE karakterine dondu. Desen hicbir seyle eslesmezdi, yani
+   *  olcut HER KOSUMDA YESIL yanardi. Duz dize (`includes` / sayma) ayni isi
+   *  yapiyor ve bu tuzaga hic girmiyor. _(Anayasa: "gorunmez karakter,
+   *  bekciyi sessizce islevsiz yapar".)_
+   * ========================================================================
+   */
+  {
+    const esit = donemDegisikligi(
+      PANEL_VARSAYILAN_PENCERE,
+      PANEL_VARSAYILAN_PENCERE,
+    );
+    kontrol(
+      "varsayilan donem secilince `pencere` SILINIR (adres temiz kalir)",
+      esit.pencere === "" && esit.baslangic === "" && esit.bitis === "",
+      esit,
+    );
+    const farkli = donemDegisikligi("BU_AY", PANEL_VARSAYILAN_PENCERE);
+    kontrol(
+      "  ...varsayilan OLMAYAN donem adrese YAZILIR",
+      farkli.pencere === "BU_AY" &&
+        farkli.baslangic === "" &&
+        farkli.bitis === "",
+      farkli,
+    );
+    /* Varsayilani olmayan ekran (listeler) etkilenmez — bugunku davranis. */
+    kontrol(
+      "  ...varsayilansiz ekranda donem HER ZAMAN yazilir",
+      donemDegisikligi(PANEL_VARSAYILAN_PENCERE, "").pencere ===
+        PANEL_VARSAYILAN_PENCERE,
+    );
+
+    /* OLCUT KULLANIMA BAGLI: ad degil CAGRI. Ve sayi TAM: bir yorum bu
+       dizeyi tasimaya kalksa sayi 4 olur ve bekci kirmizi yanar. */
+    const cubukK367 = kaynakOku("src/components/suzgec-cubugu.tsx");
+    const CAGRI_K367 = "git(donemDegisikligi(p, varsayilanPencere))";
+    const kacCagri = cubukK367.split(CAGRI_K367).length - 1;
+    kontrol(
+      "cubugun UC donem dugmesi de varsayilani soruyor",
+      kacCagri === 3,
+      kacCagri,
+    );
+    /* DESEN YASAGI, dosya listesi DEGIL: yarin eklenen DORDUNCU bir donem
+       dugmesi ciplak kosul yazarsa o da yakalanir. */
+    kontrol(
+      "  ...ve ciplak `git({ pencere: p` HICBIR yerde kalmadi (desen yasagi)",
+      !cubukK367.includes("git({ pencere: p"),
+    );
+    const panelK367 = kaynakOku("src/app/page.tsx");
+    kontrol(
+      "panel varsayilanini cubuga GECIRIYOR (yoksa adres temizlenemez)",
+      panelK367.includes("varsayilanPencere={PANEL_VARSAYILAN_PENCERE}"),
+    );
+  }
+
   kosanBolumler.push("sabit dönem");
 }
 

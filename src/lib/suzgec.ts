@@ -120,6 +120,55 @@ export function temizlemeDegisiklikleri(
   return Object.fromEntries(giris);
 }
 
+/**
+ * ============================================================================
+ *  VARSAYILAN DONEM ADRESE YAZILMAZ (kullanici karari 02.11.2026, K367)
+ * ----------------------------------------------------------------------------
+ *  VAKA: kullanici telefonda paneli aciyor ve «Bu ay» secili geliyor — oysa
+ *  panel varsayilani 21.08.2026'dan beri `BUGUN`. Olculdu: kodda `/` adresine
+ *  `pencere=BU_AY` YAZAN hicbir yol yok (yonlendirme · ara katman · cerez ·
+ *  menu/alt cubuk/kenar cubugu baglantisi · servis calisani · liste hafizasi —
+ *  hafiza zaten `sessionStorage`, sekmeyle oluyor). Geriye tek yol kaliyor:
+ *  ADRESIN KENDISI. Bir kez «Bu ay»a basilinca adres `/?pencere=BU_AY` olur ve
+ *  telefon uygulamayi KALDIGI adresten acar.
+ *
+ *  VE ASIL KUSUR BIZDE: SABIT DONEMLI EKRANDA O PARAMETRE BIR DAHA
+ *  SILINEMIYORDU. Rozet cizilmiyor (`donemRozetiCizilirMi`), yani carpi yok;
+ *  «Temizle» de donemi bilerek ellemiyor (`temizlemeDegisiklikleri`). Panelde
+ *  adrese yazilan bir donem orada SONSUZA KADAR kalir ve varsayilan gibi
+ *  davranir — `PANEL_VARSAYILAN_PENCERE` ne derse desin. Kullanicinin gordugu
+ *  sey bir varsayilan degil, UNUTULMUS BIR SECIMDI.
+ *
+ *  CARE: secilen donem ekranin VARSAYILANI ise parametre adrese yazilmaz,
+ *  SILINIR. «Bugun»e basmak adresi `/` yapar; ve varsayilan yarin degisirse
+ *  adrese cakilmis eski bir deger onu sessizce ezmez.
+ *
+ *  VARSAYILANI OLMAYAN EKRAN ETKILENMEZ: `varsayilan` bos gecilince hicbir
+ *  gercek pencere ona esit sayilmaz ve davranis bugunkuyle AYNI kalir —
+ *  bos secimin bos varsayilana esitlenmesi de ayrica eleniyor.
+ * ============================================================================
+ */
+export function donemDegisikligi(
+  secilen: string,
+  varsayilan: string,
+): Record<string, string> {
+  /**
+   * NIYE AYRICA BIR «SECILEN BOS MU» KAPISI YOK — OLCULDU (02.11.2026).
+   * Ilk yazimda `secilen !== "" &&` diye bir kapi vardi. Hicbir girdi onunla
+   * farkli sonuc vermiyor: `secilen` bos olsa `pencere` iki durumda da ""
+   * olurdu. Ulasilamayan kapi koruma DEGIL, koruma IZLENIMIDIR — okuyan
+   * «bos deger ayrica ele aliniyor» sanip asil olcute bakmaz. Silindi;
+   * gerekcesi burada duruyor ki yarin biri geri koymasin.
+   * _(Ayni gerekce: `liste-hafizasi.ts` -> `guvenliAdres`, 30.08.2026.)_
+   */
+  const varsayilanMi = secilen === varsayilan;
+  return {
+    pencere: varsayilanMi ? "" : secilen,
+    baslangic: "",
+    bitis: "",
+  };
+}
+
 /** Geri dönüş sorgusunu taşıyan parametrenin adı. */
 export const DONUS_PARAMETRESI = "donus";
 
