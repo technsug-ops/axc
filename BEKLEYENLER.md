@@ -13,7 +13,7 @@
 
 ---
 
-## 🔶 K367 — PANEL TELEFONDA «BU AY» AÇILIYORDU: VARSAYILAN DÖNEM ARTIK ADRESE YAZILMIYOR · 02.11.2026 · [YAZILDI — YAYIN BEKLİYOR]
+## 🔶 K367 — PANEL TELEFONDA «BU AY» AÇILIYORDU: VARSAYILAN DÖNEM ARTIK ADRESE YAZILMIYOR · 02.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 02.11.2026:** _«telefonda panel açıldığında 1 bu ay default olarak çıkıyor. ona göre veriler geliyor. Orası default bugün olsun.»_ Hangi ekran olduğu soruldu, teyit etti: _«Panel (ana ekran) — gerçekten Bu ay geliyor.»_
 
@@ -27,6 +27,8 @@
 ⛔ **VE BU TURDA İKİ KEZ YALANCI YEŞİLE ÇOK YAKLAŞILDI, İKİSİ DE ÖLÇÜMLE YAKALANDI:** ① ölçütler betikle yazıldı, çift ters bölü teke indi ve desendeki kelime sınırı **BACKSPACE** karakterine döndü — desen hiçbir şeyle eşleşmezdi, ölçüt her koşumda yeşil yanardı (`cat -A` ile görüldü; çare: ölçütler ters bölüsüz düz dize). ② harness'in ilk çapası `String.fromCharCode(10)` ile kuruluydu; `mutasyon-capa:dogrula` onu AST'den çözemedi ve **«ÖLÇÜLEMEDİ» dedi, «temiz» demedi** — çapa tek satıra indirildi (20 boşluklu çağrı tekil; 16 ve 18 boşluklu çapalar alt dize olarak 3 ve 2 kez geçiyor, ölçüldü).
 
 **Bilerek yapılmayan — ve sınırı yazıyoruz:** telefonun adres çubuğunda/oturumunda ŞU AN duran `?pencere=BU_AY`'ı kod silemez; o bir adres, bizim verimiz değil. Kullanıcı bir kez «Bugün»e bastığında adres temizlenir ve bir daha dönem taşımaz. Bu çözüm **ikinci kez** aynı duruma düşmeyi engeller, bugünkü adresi geçmişe dönük düzeltmez. _(Anayasa: «geçmişi düzeltmek ile mekanizmayı kurmak ayrı kararlardır».)_
+
+**Yayın (02.11.2026):** `main` `6d4b00a5 → 340e670b` ileri sarıldı; Vercel üretim dağıtımı `dpl_Aqpy5jjy…` **READY** ve `bezirga.com` + `www.bezirga.com` bu dağıtımın alias listesinde — yani canlı yeni sürümü veriyor. Push kapısında bekçi **253/253** yeşil (çıkış kodu log'dan okundu, boru sonundan değil). ⚠ İlk doğrulama ölçütüm kusurluydu ve düzeltildi: dağıtım adresi inşa SIRASINDA da 302 veriyor, yani «cevap veriyor» ile «HAZIR» aynı şey değil — ölçüt Vercel'in kendi `state` alanına bağlandı.
 
 **Halil testi:** ① telefonda paneli aç → üstteki dönem çiplerinden hangisi **dolu** (koyu) geliyor, not et ② «Bugün» çipine bas → rakamlar bugüne döner ③ uygulamayı **tamamen kapat** (son kullanılanlardan kaydırıp at, sadece arkaya alma) → simgeden yeniden aç → **«Bugün» dolu gelir** ④ şimdi «Bu ay»a bas, kapat-aç → «Bu ay» gelir (bu DOĞRU: seçim adreste yaşıyor) → yeniden «Bugün»e bas, kapat-aç → yine «Bugün» ⑤ tarayıcıda (uygulama değil) `bezirga.com` aç → «Bugün»e bas → adres çubuğunda sorgu kalmaz, düz `bezirga.com/` görünür ⑥ Satışlar ekranı DEĞİŞMEDİ: süzgeçsiz açılışta hâlâ «Bu ay» ve rozeti çarpısıyla duruyor ⑦ panelde kanal süzgeci seçip «Temizle» → kanal kalkar, dönem yerinde kalır (eskisi gibi).
 
