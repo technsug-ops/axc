@@ -35,6 +35,11 @@ import { dilimBul, type TarifeDilimi } from "@/lib/komisyon/tarife-okuyucu";
 /** Simülasyonun dayandığı zeminle ilgili beyanlar — hepsi görünür olmalı. */
 export type Beyan =
   | { tur: "DILIM_YOK" }
+  /**
+   * Tarife/teklif penceresi bitmiş: dilimler KULLANILMADI, oran kanalın
+   * güncel beyanından geldi. (Anlam 02.11.2026'da değişti — K368; eskiden
+   * «dilimler kullanıldı ama bayat olabilir» demekti.)
+   */
   | { tur: "PENCERE_BITTI"; bitis: Date }
   | { tur: "MALIYET_YOK" }
   | { tur: "ORAN_YOK" }
@@ -116,17 +121,51 @@ export function simulasyonKur(girdi: SimulasyonGirdisi): SimulasyonSonucu {
       oran = dilim.oran;
       kaynak = "DILIM";
     }
+  } else {
     /**
-     * ⚠ PENCERE BİTMİŞSE SİMÜLASYON YİNE YAPILIR AMA BEYAN EDİLİR.
-     * Engellemek yanlış olurdu: eski tarife de bir fikir verir. Ama
-     * "bu oranlar artık geçerli olmayabilir" demeden göstermek, kullanıcıya
-     * bayat bir sayıyla fiyat değiştirtir.
+     * ⛔ KARAR ÇEVRİLDİ 02.11.2026 (K368) — ESKİ GEREKÇE SİLİNMEDİ.
+     *
+     * _Eski hâl:_ «PENCERE BİTMİŞSE SİMÜLASYON YİNE YAPILIR AMA BEYAN
+     * EDİLİR. Engellemek yanlış olurdu: eski tarife de bir fikir verir. Ama
+     * 'bu oranlar artık geçerli olmayabilir' demeden göstermek, kullanıcıya
+     * bayat bir sayıyla fiyat değiştirtir.» — yani dilimler KULLANILIYOR,
+     * yanına bir uyarı yazılıyordu.
+     *
+     * ⛔ O GEREKÇE İKİ YERDEN ÇÜRÜDÜ:
+     * ① Beyan hiçbir yere ULAŞMIYORDU. Buybox fiyat penceresi `beyanlar`ı
+     *    taşıyor ama ÇİZMİYORDU, otomatik fiyatlayıcı da okumuyordu. Yani
+     *    «uyarıyla birlikte göster» sözü teslim edilmemişti; ekranda yalnız
+     *    yanlış rakam vardı. (Anayasa: kural doğru mu değil, TESLİM EDİLEBİLİR mi.)
+     * ② «Eski tarife bir fikir verir» ölçülmemiş bir varsayımdı. Kullanıcı
+     *    teyidi 02.11.2026: _«Hepsiburada'da ürün komisyonu hep 18 legolarda;
+     *    çarşambadan çarşambaya teklifler yenileniyor, bu haftaki tekliflerde
+     *    9,1 yok.»_ Bitmiş pencerenin indirimli dilimi bir FİKİR değil, artık
+     *    var olmayan bir vaattir.
+     *
+     * VAKA: LEGO 76334 · HB · 2 Kasım. 21–25 Ekim penceresi (≥2.849,01 → %18 ·
+     * 2.706,01–2.849 → %14,1 · 2.564,01–2.706 → %11,3 · ≤2.564 → %9,1).
+     * Buybox fiyatı 2.184,99 en alt dilime düşüyor ve komisyon %9,1
+     * hesaplanıyordu; kanalın güncel oranı %18. Fark tek başına ~₺233 (KDV
+     * dahil) ve aynı zemin OTOMATİK fiyatlamayı besliyor — «en az marj %14»
+     * kuralı yanlış oranın üstünde çalışıyordu.
+     *
+     * _Yeni hâl:_ kapsamayan pencerenin dilimleri zemin tarafından BOŞ geçilir
+     * (`kart-verisi.ts`) ve oran kanalın kendi güncel beyanına (`tekOran`)
+     * düşer. Yön ÖLÇÜLDÜ (02.11.2026, canlı): tepe dilim zaten «mevcut
+     * komisyon»dur ve `ChannelSku.commissionRate` ile aynı sayıyı verir, yani
+     * fiyatı tepe dilimde olan üründe hiçbir şey değişmez; değişen YALNIZ
+     * indirimli dilime düşmüş fiyatlardır — ve orada eski hâl komisyonu
+     * olduğundan AZ, kârı olduğundan YÜKSEK gösteriyordu.
+     *
+     * ⚠ BEDELİ BEYAN EDİLDİ: penceresi bitmiş üründe «bir dilim aşağı insem
+     * ne olur» denemesi artık yapılamaz. Doğrusu da bu — o dilim bu hafta
+     * teklif edilmiyor; denemek, kanalın vermediği bir oranla fiyat kurmaktır.
      */
     if (girdi.pencereBitis !== null && girdi.pencereBitis < girdi.bugun) {
       beyanlar.push({ tur: "PENCERE_BITTI", bitis: girdi.pencereBitis });
+    } else {
+      beyanlar.push({ tur: "DILIM_YOK" });
     }
-  } else {
-    beyanlar.push({ tur: "DILIM_YOK" });
     if (girdi.tekOran !== null) {
       oran = girdi.tekOran;
       kaynak = "TEK_ORAN";

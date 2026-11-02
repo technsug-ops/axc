@@ -1515,6 +1515,20 @@ console.log("K49c) PANEL — GEÇMİŞ DELİK ROZETİ YAKMAZ, BİTEN PENCERE YAK
         !tarifeAdayi(haftalik, [k(null, null, 9)], kasim5).kapsiyor &&
         tarifeAdayi(haftalik, [k(null, null, 9)], kasim5).bitis.getTime() === haftalik.pencereBitis.getTime());
     kontrol("  ...aralik ucu DAHIL (bitis aninda hala gecerli)", tarifeAdayi(pen, [k(vtB, vtE, 10)], vtE).kapsiyor);
+    /*
+     * K368 (02.11.2026) — KAPSAMAYAN ADAY KALEM VERMEZ. Vaka: LEGO 76334 ·
+     * HB · 21–25 Ekim teklifi bitmisti; fiyat denemesi onun en alt dilimini
+     * (%9,1) hala uyguluyordu, kanalin guncel orani %18. Iki YON de sinanir:
+     * bitmis aday kalem VERMEMELI, kapsayan aday kalem VERMELI — yalniz
+     * birincisi yazilsaydi "hep bos don" mutasyonu yesil kalirdi.
+     */
+    kontrol("K368: KAPSAMAYAN aday KALEM VERMEZ — bitmis dilim oran kaynagi olamaz (kendi tarihli)",
+      a2.kalemler.length === 0, a2.kalemler.length);
+    kontrol("  ...kendi tarihi OLMAYAN kalemde de ayni (Trendyol/eski yuklemeler)",
+      tarifeAdayi(haftalik, [k(null, null, 9)], kasim5).kalemler.length === 0);
+    kontrol("  ...ama KAPSAYAN aday kalemlerini VERIR (kural kapsayani kesmiyor)",
+      a1.kalemler.length === 1 &&
+        tarifeAdayi(haftalik, [k(null, null, 9)], t("2026-10-23T12:00:00Z")).kalemler.length === 1);
 
     const kv = yorumsuzOku("src/lib/fiyatlama/kart-verisi.ts");
     const zemin = kv.slice(kv.indexOf("export async function simulasyonZeminleri("), kv.indexOf("export async function varyantKdvOrani("));

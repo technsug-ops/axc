@@ -15,7 +15,7 @@ import { fiyatMetniCoz, fiyatSonucu, hizliFiyatlar, listeFiyatiIcin, musteriFiya
 import { useBicim } from "@/lib/bicim-istemci";
 import { fiyatOnerisi } from "@/lib/buybox-kural";
 import { HB_HATA_ANAHTARLARI } from "@/lib/kanal-gonderim-hb";
-import { DURUM_SERIDI, DURUM_YAZISI } from "@/lib/renkler";
+import { DURUM_KUTUSU, DURUM_SERIDI, DURUM_YAZISI } from "@/lib/renkler";
 
 import { HATA_ANAHTARI as HB_HATA } from "../../kart/[variantId]/hb-gonderim";
 import { buyboxFiyatGonder, buyboxFiyatZeminiGetir, type BuyboxGonderimSonucu, type ZeminCevabi } from "./fiyat-eylemleri";
@@ -97,6 +97,12 @@ export function FiyatPenceresi({
 }) {
   const t = useTranslations("Buybox");
   const tk = useTranslations("KanalGonderim");
+  /**
+   * ⚠ BEYAN METİNLERİ SİMÜLASYON SÖZLÜĞÜNDEN — ikinci bir kopya yazılmadı.
+   * Aynı motorun aynı beyanı, fiyat denemesi ekranında ne diyorsa burada da
+   * onu demeli (İlke #10). Ayrı anahtar açsaydık biri değişip öteki kalırdı.
+   */
+  const tb = useTranslations("Simulasyon");
   const bicim = useBicim();
   const router = useRouter();
   /** Şu anki fiyatımız LİSTE fiyatıyla (kâr ve onay bununla); Buybox'a eşit müşteri fiyatını veren liste fiyatı. */
@@ -296,6 +302,31 @@ export function FiyatPenceresi({
                   </li>
                   {girilen?.komisyonOrani != null ? <li>{t("komisyonNotu", { oran: bicim.yuzde(girilen.komisyonOrani) })}</li> : null}
                 </ul>
+                {/*
+                  ⛔ BEYANLAR SESSİZ KALMAZ (K368, 02.11.2026). Motor bu
+                  pencereye `beyanlar` taşıyordu ve pencere onları HİÇ
+                  çizmiyordu. Vaka: LEGO 76334'te komisyon bitmiş bir teklifin
+                  en alt diliminden (%9,1) geliyordu, kanalın güncel oranı
+                  %18'di ve ekranda tek bir uyarı yoktu — kullanıcı farkı
+                  kendi hesabıyla buldu.
+
+                  ⚠ ZATEN YAZILMIŞ OLAN İKİ BEYAN ATLANIR: maliyet ve fiyat
+                  eksikliğinin kendi satırı var (üstteki `maliyetYok`); aynı
+                  cümleyi iki kez yazmak listeyi okunmaz yapardı. Atlama
+                  LİSTESİ dar ve YASAK listesidir: yarın doğan yeni bir beyan
+                  türü kendiliğinden GÖRÜNÜR olur, görünmez değil.
+                */}
+                {(girilen?.beyanlar ?? []).filter((b) => b.tur !== "MALIYET_YOK" && b.tur !== "FIYAT_YOK").length > 0 ? (
+                  <ul className="space-y-1">
+                    {(girilen?.beyanlar ?? [])
+                      .filter((b) => b.tur !== "MALIYET_YOK" && b.tur !== "FIYAT_YOK")
+                      .map((b) => (
+                        <li key={b.tur} className={`rounded px-2 py-1 text-xs ${DURUM_KUTUSU.uyari}`}>
+                          {tb(`beyan_${b.tur}`)}
+                        </li>
+                      ))}
+                  </ul>
+                ) : null}
                 <KuralOzeti kural={zemin.kural.etkin} />
                 {gonderebilir ? <UrunKuraliFormu variantId={variantId} genel={zemin.kural.genel} urun={zemin.kural.urun} kaydedildi={yenidenHesapla} /> : null}
               </>

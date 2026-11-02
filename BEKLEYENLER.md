@@ -13,6 +13,53 @@
 
 ---
 
+## 🔴 K368 — BİTMİŞ TEKLİFİN KOMİSYONU HÂLÂ UYGULANIYORDU: %9,1 ↔ GERÇEK %18 · 02.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 02.11.2026:** _«bu eleman buybox da hesaplamada yanlış komisyon çekiyor, bu üründe komisyonu 9,1 hesaplıyor halbuki komisyon 18, komisyon tarifesi de güncel»_ · _«kendi hesaplama yaptım, fark baya var, buyboxa göre baksak zarar eder»_ · teyit: _«Hepsiburada'da normalde ürün komisyonu hep 18 legolarda; çarşambadan çarşambaya teklifler yenileniyor, mevcut bu haftaki tekliflerde 9,1 yok.»_
+
+**ÖLÇÜLDÜ — tahmin değil** (`scripts/canli-hb-komisyon-olcum.ts`, salt okuma, canlı):
+
+    LEGO 76334 · HB · kanal SKU HBCV0000BGX0XP · ChannelSku.commissionRate = 18
+    secilen pencere 2026-10-21 -> 2026-10-25  (BUGUN 2 KASIM — BITMIS)
+      1: >=2849,01   %18     <- "mevcut komisyon", ust uc acik
+      2: 2706,01..2849  %14,1
+      3: 2564,01..2706  %11,3
+      4: <=2564      %9,1    <- Buybox fiyati 2.184,99 BURAYA dusuyordu
+    SONUC (eski) oran %9,1 kaynak DILIM · beyan PENCERE_BITTI
+    SONUC (yeni) oran %18  kaynak TEK_ORAN · beyan PENCERE_BITTI
+
+Bugünü kapsayan bir HB kaydı VAR (14 Ekim–1 Aralık, 2 Kasım'da yüklendi) ama **bu üründe kalemi yok** — yani ürünün bu hafta teklifi yok, komisyonu %18. Kullanıcının beyanıyla birebir.
+
+**İKİ KUSUR, TEK KÖK:**
+① **Vadesi dolmuş pencere oran kaynağı oluyordu.** Komisyon farkı tek başına `2.184,99 × %8,9 × 1,20 ≈ ₺233` (KDV dahil) — penceredeki ₺285,89 kârın neredeyse tamamı. Kullanıcının elle hesabı (₺88,62) doğruydu.
+② **Beyan hiçbir yere ulaşmıyordu.** Motor `PENCERE_BITTI` diyordu, `buybox-fiyat.ts` taşıyordu, **pencere çizmiyordu** ve otomatik fiyatlayıcı okumuyordu. Yani «uyarıyla birlikte göster» sözü teslim edilmemişti. ⚠ Ve aynı zemin OTOMATİK fiyatlamayı besliyor (`buybox-otomatik.ts:162`): «en az marj %14» kuralı yanlış oranın üstünde çalışıyordu.
+
+**ÇEVRİLEN KARAR — eski gerekçe SİLİNMEDİ.** Eski hâl bilerek şöyleydi: _«pencere bitmişse simülasyon yine yapılır ama beyan edilir; engellemek yanlış olurdu, eski tarife de bir fikir verir.»_ İki yerden çürüdü: (a) beyan ekrana hiç ulaşmıyordu, (b) «fikir verir» ölçülmemiş bir varsayımdı — HB teklifleri haftalık yenileniyor ve biten teklif bir fikir değil, **artık var olmayan bir vaat**.
+
+**DÜZELTME:** `tarifeAdayi` (saf gövde) artık **kapsamayan adayda KALEM VERMİYOR**; `bitis` yine dönüyor, böylece beyan kaybolmuyor. Zemin dilimsiz kalınca oran kanalın kendi güncel beyanına (`ChannelSku.commissionRate`) düşüyor. Ayrım tek yerde — her çağıranın kendi kuralını yazması aynı kuralı iki yerde yaşatırdı.
+· Fiyat penceresi artık motorun **beyanlarını çiziyor** (maliyet/fiyat eksikliği zaten kendi satırında; atlama listesi YASAK listesi, yarın doğan beyan kendiliğinden görünür olur).
+
+**YÖN ÖLÇÜLDÜ, VARSAYILMADI** (`scripts/canli-bitmis-tarife-olcum.ts`): yalnız bitmiş pencerede kalemi olan varyant **TY 147/320 · HB 147/155 · N11 50/50**. ⚠ **BU SAYI ZARARIN ÖLÇÜSÜ DEĞİLDİR** ve öyle okunmamalı: `dilimBul` fiyata göre seçer ve tepe dilim zaten «mevcut komisyon»dur, yani fiyatı tepe dilimde olan üründe eski ve yeni davranış **aynı sayıyı** verir. Değişen küme, fiyatı indirimli dilime düşmüş ürünlerdir. Oranı hiç olmayan (`tekOran` boş) varyant ölçümde **3**: onlarda NET artık hesaplanmaz ve ekran bunu söyler — uydurma bir oranla hesaplamaktan iyidir.
+
+**BEDELİ BEYAN EDİLDİ:** penceresi bitmiş üründe «bir dilim aşağı insem ne olur» denemesi artık yapılamaz. Doğrusu da bu: o dilim bu hafta teklif edilmiyor.
+
+**GEÇMİŞE DOKUNULMADI.** Yazılmış satışların komisyonu satış anında snapshot'lanıyor ve `satisTarihiTarifesi` zaten yalnız **o gün kapsayan** kalemleri kullanıyor — ölçüldü, o yol temizdi. Düzeltilen şey bundan sonrası.
+
+**BEKÇİ + MUTASYON:** `tarife:dogrula` (257) · `simulasyon:dogrula` (188) · `buybox-fiyat:dogrula` (81) · yeni harness `npm run bitmis-tarife-mutasyon:kontrol` → **8/8** (zararsız 1 · kaldıran 5 · fazladan 2), üç katman birden. ⚠ Harness bir körlük YAKALADI (7/8): ölü-dal ölçütü `blok()` penceresine bakıyordu ve koşulu `{false ? (` yapan mutasyon çapayı da sildiği için kaçıyordu — ölçüt koşul satırına bağlandı ve dosya genelinde ölü dal yasağı kondu.
+
+**HALİL TEST LİSTESİ** (yayından sonra, gerçek telefonda):
+1. `/rapor/buybox` → Hepsiburada sekmesi → LEGO 76334 satırında **«Fiyatla»**.
+2. Kutuda **2.184,99** yazarken alttaki nota bak: **«Komisyon %18»** yazmalı — %9,1 DEĞİL.
+3. Aynı pencerede sarı uyarı satırı görünmeli: **«Tarife/teklif penceresi bitmiş — dilimli oranlar kullanılmadı; komisyon kanalın güncel oranından hesaplandı»**.
+4. «Buybox fiyatında» kutusundaki kâr, kendi hesabınla (₺88,62 civarı, kargo dahil) **tutmalı** — eski ₺285,89 değil.
+5. Teklifi SÜREN bir üründe (bu haftaki teklif listesinden biri) aynı pencereyi aç: orada uyarı **çıkmamalı** ve indirimli dilim **kullanılmalı** — kural geçerli teklifi kesmiyor.
+6. Ürün kartında (`/kart/<ürün>`) «Fiyat dene» bölümünde aynı ürün için aynı oran görünmeli (iki ekran aynı şeyi söylemeli).
+7. Otomatik mod açık bir üründe kuralı aç: «en az marj» artık doğru oranın üstünden hesaplanıyor; zarar eden bir fiyat önerilmemeli.
+
+**Mobil doğrulama kullanıcıda.** · i18n: ✓ (`beyanPencereBitti` · `beyan_PENCERE_BITTI` metinleri güncellendi, en.json iskeleti yerinde) · kullanıcı kolaylığı: ✓ (#5 sessiz başarısızlık yasağı — rakamın niye öyle olduğu artık ekranda yazıyor)
+
+---
+
 ## 🔶 K367 — PANEL TELEFONDA «BU AY» AÇILIYORDU: VARSAYILAN DÖNEM ARTIK ADRESE YAZILMIYOR · 02.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 02.11.2026:** _«telefonda panel açıldığında 1 bu ay default olarak çıkıyor. ona göre veriler geliyor. Orası default bugün olsun.»_ Hangi ekran olduğu soruldu, teyit etti: _«Panel (ana ekran) — gerçekten Bu ay geliyor.»_

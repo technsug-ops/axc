@@ -114,6 +114,31 @@ export type GecerlilikliKalem = { gecerlilikBaslangic: Date | null; gecerlilikBi
  * · Kendi aralığı VARSA: o anda geçerli olan kalemler; bitiş onların en geç
  *   bitişi. Hiçbiri geçerli değilse kapsamaz; bitiş kalemlerin en geç bitişi
  *   (ekran «pencere bitti» der — tarifenin geniş penceresi sanılmaz).
+ *
+ * ⛔ KAPSAMAYAN ADAY KALEM VERMEZ (K368, 02.11.2026) — VE BU, ÇEVRİLMİŞ BİR
+ * KARARDIR; ESKİ GEREKÇE SİLİNMEDİ.
+ *
+ * _Eski hâl:_ kapsamayan aday da bütün kalemleri döndürüyordu; fiyat denemesi
+ * onları dilim olarak kullanıyor ve motor yanına «pencere bitti» beyanı
+ * yazıyordu. Gerekçe: «eski tarife de bir fikir verir».
+ *
+ * _Çürüten vaka (LEGO 76334 · HB · 2 Kasım):_ 21–25 Ekim penceresi defterde
+ * duruyordu (≥2.849,01 → %18 · 2.706,01–2.849 → %14,1 · 2.564,01–2.706 →
+ * %11,3 · ≤2.564 → %9,1). Buybox fiyatı 2.184,99 en alt dilime düşüyor ve
+ * komisyon %9,1 hesaplanıyordu; kanalın güncel oranı %18. Kullanıcı teyidi:
+ * _«HB'de bu ürünün komisyonu hep 18; teklifler çarşambadan çarşambaya
+ * yenileniyor ve bu haftaki tekliflerde 9,1 yok.»_ Yani bitmiş pencerenin
+ * indirimli dilimi bir FİKİR değil, artık var olmayan bir vaattir — ve
+ * kanalın vermediği bir oranla kâr hesaplanıyordu.
+ *
+ * ⚠ BEYAN KAYBOLMAZ: `bitis` yine döner, yani çağıran pencerenin NE ZAMAN
+ * bittiğini bilir ve ekran bunu yazar. Düşen tek şey, kullanılmaması gereken
+ * oranlar.
+ *
+ * ⚠ VE AYRIM BURADA, ÇAĞIRANDA DEĞİL: kapsama ölçüsünü zaten bu gövde
+ * kuruyor. Her çağıranın «kapsamıyorsa kalemleri atma» kuralını kendi
+ * yazması, aynı kuralı iki yerde yaşatır ve biri unutulduğunda sessizce
+ * eski davranışa döner.
  */
 export function tarifeAdayi<K extends GecerlilikliKalem>(
   pencere: { pencereBaslangic: Date; pencereBitis: Date },
@@ -123,9 +148,10 @@ export function tarifeAdayi<K extends GecerlilikliKalem>(
   const t = an.getTime();
   const kendi = kalemler.filter((k) => k.gecerlilikBaslangic !== null && k.gecerlilikBitis !== null);
   if (kendi.length === 0) {
+    const kapsiyor = pencere.pencereBaslangic.getTime() <= t && t <= pencere.pencereBitis.getTime();
     return {
-      kapsiyor: pencere.pencereBaslangic.getTime() <= t && t <= pencere.pencereBitis.getTime(),
-      kalemler: [...kalemler],
+      kapsiyor,
+      kalemler: kapsiyor ? [...kalemler] : [],
       bitis: pencere.pencereBitis,
     };
   }
@@ -133,7 +159,7 @@ export function tarifeAdayi<K extends GecerlilikliKalem>(
   const gecerli = kendi.filter((k) => k.gecerlilikBaslangic!.getTime() <= t && t <= k.gecerlilikBitis!.getTime());
   return gecerli.length > 0
     ? { kapsiyor: true, kalemler: gecerli, bitis: enGec(gecerli) }
-    : { kapsiyor: false, kalemler: [...kalemler], bitis: enGec(kendi) };
+    : { kapsiyor: false, kalemler: [], bitis: enGec(kendi) };
 }
 
 /** Tek kod: önce kanal, sonra kimlik dizini (`tarifePlaniKur` ile aynı sıra). */

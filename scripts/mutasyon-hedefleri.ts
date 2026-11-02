@@ -175,6 +175,14 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    */
   "kamera-mutasyon:kontrol",
   "kare-tanisi-mutasyon:kontrol",
+  /*
+   * K368 (02.11.2026): bitmis tarife/teklif penceresi — `tarife-eslesme.ts` +
+   * `fiyatlama/simulasyon.ts` + Buybox fiyat penceresini bozar. Fiyat motoru
+   * (`simulasyon.ts`) kupon · kart-analizi · parti-secimi gibi uyelerle,
+   * pencere ise buybox ailesiyle ortak; paralel kossalardi biri otekinin
+   * MUTANTINI "asil" sanip geri yazardi. Bekci push kapisinda yakaladi.
+   */
+  "bitmis-tarife-mutasyon:kontrol",
   "liste-hafizasi-mutasyon:kontrol",
   "mal-kabul-mutasyon:kontrol",
   "panel-mutasyon:kontrol",

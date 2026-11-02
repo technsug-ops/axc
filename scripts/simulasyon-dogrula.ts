@@ -1,5 +1,7 @@
 import { kaynakOku } from "./kaynak-oku";
 
+import { simulasyonKur } from "../src/lib/fiyatlama/simulasyon";
+
 import { SIMULASYON_KANALLARI } from "../src/lib/simulasyon/kanal-kurallari";
 import {
   eksikSebebi,
@@ -1526,6 +1528,53 @@ console.log("K105) KARGO ZORUNLU — unutulan gider NET'i sisiriyordu");
     "bos durum KARGO sebebini AYRI anlatiyor",
     /sebep === "KARGO" \? t\("bosKargoBaslik"\)/.test(k105Ekran),
   );
+}
+
+// ── BİTMİŞ PENCERE: ORAN KANALIN BEYANINDAN (K368) ──────────────────────
+console.log("");
+console.log("⑬ bitmis tarife/teklif penceresi — dilim KULLANILMAZ");
+{
+  /*
+   * Zemin (`kart-verisi` → `tarifeAdayi`) kapsamayan pencerenin dilimlerini
+   * BOS gecer; motora dusen is, bunun SEBEBINI dogru soylemek. Uc hal ayri
+   * sinanir, cunku ayrimin iki yakasi ayri cumle uretir:
+   *   dilim yok + pencere BITMIS -> PENCERE_BITTI (sebep: vade doldu)
+   *   dilim yok + pencere HIC YOK -> DILIM_YOK    (sebep: tarife hic yok)
+   *   dilim VAR + pencere acik    -> beyan YOK    (dilim kullanildi)
+   */
+  const bugun = new Date("2026-11-02T09:00:00Z");
+  const temel = {
+    hedefFiyat: 2184.99,
+    adet: 1,
+    birimMaliyet: 1453,
+    kdvOrani: 20,
+    paraBirimi: "TRY" as const,
+    tekOran: 18,
+    komisyonKdvOrani: 20,
+    siparisKesintileri: [],
+    kargoTarifesi: null,
+    bugun,
+  };
+  /** Gercek vakanin dilimleri — en alt dilim tek orandan BELIRGIN farkli (%9,1 ↔ %18). */
+  const dilimler = [
+    { sira: 1, altLimit: 2849.01, ustLimit: null, oran: 18 },
+    { sira: 4, altLimit: null, ustLimit: 2564, oran: 9.1 },
+  ];
+  const bitmis = simulasyonKur({ ...temel, dilimler: null, pencereBitis: new Date("2026-10-25T20:59:00Z") });
+  kontrol("bitmis pencerede oran KANALIN BEYANINDAN gelir (tek oran), dilimden degil",
+    bitmis.komisyonOrani === 18 && bitmis.oranKaynagi === "TEK_ORAN", { oran: bitmis.komisyonOrani, kaynak: bitmis.oranKaynagi });
+  kontrol("  ...ve PENCERE_BITTI beyan edilir — sessiz dusmez",
+    bitmis.beyanlar.some((b) => b.tur === "PENCERE_BITTI"), bitmis.beyanlar);
+  kontrol("  ...DILIM_YOK DENMEZ: sebep eksiklik degil, vadesi dolmus pencere",
+    !bitmis.beyanlar.some((b) => b.tur === "DILIM_YOK"), bitmis.beyanlar);
+  const tarifesiz = simulasyonKur({ ...temel, dilimler: null, pencereBitis: null });
+  kontrol("tarifesi HIC olmayan urun DILIM_YOK der (PENCERE_BITTI demez)",
+    tarifesiz.beyanlar.some((b) => b.tur === "DILIM_YOK") &&
+      !tarifesiz.beyanlar.some((b) => b.tur === "PENCERE_BITTI"), tarifesiz.beyanlar);
+  const acik = simulasyonKur({ ...temel, dilimler, pencereBitis: new Date("2026-11-05T20:59:00Z") });
+  kontrol("acik pencerede dilim KULLANILIR (2.184,99 → %9,1) ve beyan cikmaz",
+    acik.komisyonOrani === 9.1 && acik.oranKaynagi === "DILIM" && acik.beyanlar.length === 0,
+    { oran: acik.komisyonOrani, beyan: acik.beyanlar });
 }
 
 console.log("=".repeat(70));

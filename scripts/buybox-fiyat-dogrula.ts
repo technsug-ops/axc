@@ -170,6 +170,32 @@ console.log("\n⑥ veri + ekran");
   const eksik = gerekli.filter((x) => !(tr.Buybox?.[x] ?? "").length);
   kontrol("sözlük: kutu metinleri dolu", eksik.length === 0, eksik);
   kontrol("sayfa notu artık «fiyat buradan değişmez» DEMİYOR", !/fiyat buradan değişmez/.test(tr.Buybox?.notu ?? ""));
+  /*
+   * K368 — BEYANLAR SESSIZ KALMAZ. Motor bu pencereye beyanlari tasiyordu ve
+   * pencere onlari HIC cizmiyordu: LEGO 76334'te komisyon bitmis bir teklifin
+   * en alt diliminden geliyordu (%9,1 ↔ kanalin guncel orani %18) ve ekranda
+   * tek bir uyari yoktu — farki kullanici kendi hesabiyla buldu.
+   *
+   * ⚠ OLCUT CAGRIYA BAGLI, ADA DEGIL: "beyanlar" kelimesi dosyada tipte de
+   * geciyor; aranan sey, listenin CIZILDIGI satirlar.
+   */
+  /*
+   * ⚠ KOSUL AYRICA ARANIR, BLOGUN ICINDEN DEGIL: ilk yazimda olu-dal olcutu
+   * "blok(...)" penceresine bakiyordu ve mutasyon KACTI — kosul satirini
+   * "{false ? (" yapan mutasyon capayi da siliyor, pencere BIR SONRAKI
+   * esplesmeden basliyor ve icinde "false" gecmiyor. Capasi mutasyonla
+   * birlikte kayan bir olcut, tam da olcmesi gereken seyi goremez.
+   * _(Harness yakaladi: 7/8, teslimden once.)_
+   */
+  const beyanKosulu = '(girilen?.beyanlar ?? []).filter((b) => b.tur !== "MALIYET_YOK" && b.tur !== "FIYAT_YOK").length > 0 ? (';
+  const beyanBlok = blok(k, "girilen?.beyanlar ?? []", 800);
+  kontrol("pencere motorun BEYANLARINI ciziyor (sessiz yanlis rakam yasagi)",
+    k.includes(beyanKosulu) &&
+      beyanBlok.includes("tb(" + "`" + "beyan_$" + "{b.tur}" + "`" + ")") &&
+      beyanBlok.includes("<li key={b.tur}"), { kosul: k.includes(beyanKosulu), blok: beyanBlok.length });
+  /** OLU DAL YASAGI — dosyanin TAMAMINDA; kosulu olduren mutasyon deseni birakir. */
+  kontrol("  ...pencerede olu dal yok (kosul oldurulmemis)",
+    !k.includes("{false ?") && !k.includes("{ false ?"));
 }
 kosanBolumler.push("ekran");
 
