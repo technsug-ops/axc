@@ -13,7 +13,9 @@
 
 ---
 
-## 🔴 K370 — KÂRLILIK KARTI TELEFONDA SAYFAYA SIĞMIYORDU: KÜNYE EKRANIN DIŞINDA KESİLİYORDU · 04.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K370 — KÂRLILIK KARTI TELEFONDA SAYFAYA SIĞMIYORDU: KÜNYE EKRANIN DIŞINDA KESİLİYORDU · 04.11.2026 · [CANLIDA 04.11.2026 — HALİL TESTİ BEKLİYOR]
+
+**YAYIN ÖLÇÜLDÜ 04.11.2026:** `main` ← `e3ce4013` · Vercel `dpl_AdGLhD8UPmEAU5dkrbcXpYSwvZJf` **READY** (fra1, 39 sn) · `bezirga.com` o dağıtımın alias listesinde ve `/giris` **200** döndü. Push öncesi bekçi turu **170/170 yeşil**. ⛔ Ekran GERÇEK CİHAZDA görülmedi — teslim sayılmaz (bkz. «sınanmamış ekran, ekran değildir»).
 
 **Kullanıcı 04.11.2026:** _«Telefonda kârlılık kartı uyumsuz bir dizaynda.»_ →
 _«Bu ürünlerde sayfaya sığmıyor.»_ Üç ekran görüntüsü: başlık, kod satırı, KDV
