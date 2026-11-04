@@ -37,7 +37,7 @@ import {
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 5;
+const BOLUM_SAYISI = 6;
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -335,6 +335,48 @@ console.log("=".repeat(70));
       !sayfa.includes("pencereOlustur(\"SON_30_GUN\", new Date())"),
   );
   kosanBolumler.push("bos-donem");
+}
+
+/*
+ * ═══ ⑥ TELEFONDA SAYFAYA SIĞMA — IZGARA TABAN SÜTUNU (K370) ═══
+ *
+ * Kusur: taban kırılımda `grid-template-columns` yazılmayınca örtük sütun
+ * `auto` olur; `auto`nun TAVANI `max-content`tir ve içerideki yatay şeridin
+ * (galeri küçük resimleri) ölçüsü parçaya sızar. Ölçüldü (gerçek tarayıcı,
+ * 320·360·390·412 px): parça 568 px, kutu 324 px — bütün künye ekran dışında.
+ *
+ * ÖLÇÜT DOSYA LİSTESİ DEĞİL, DESEN YASAĞI: kart sayfasındaki HER izgara
+ * (tabanda `grid` olan ve bir kırılımda sütun tanımlayan) taban sütununu da
+ * beyan etmek zorunda. Yarın eklenen izgara da yakalanır.
+ * ⚠ Tabanda `grid` OLMAYAN (ör. `xl:grid`) kutu kapsam dışı: orada taban
+ *   zaten blok, sütun sorusu doğmaz.
+ */
+{
+  const sayfa = oku("src/app/kart/[variantId]/page.tsx");
+  const siniflar = [...sayfa.matchAll(/className="([^"]*)"/g)].map((m) => m[1]!);
+  const tabandaIzgara = siniflar.filter((c) => /(^|\s)grid(\s|$)/.test(c));
+  const kirilimli = tabandaIzgara.filter((c) => /\b(sm|md|lg|xl|2xl):grid-cols-/.test(c));
+  /* Taban doluluğu: tarama hiçbir şey bulmazsa döngü dönmez ve ölçüt
+     kendi kendini kandırır (boş küme her koşulu sağlar). */
+  kontrol("kart sayfasında kırılımlı ızgara TARANABILDI (taban dolu)", kirilimli.length >= 2, kirilimli.length);
+  for (const c of kirilimli) {
+    kontrol(
+      `  ...taban sütunu beyanlı: ${c.slice(0, 54)}`,
+      /(^|\s)grid-cols-/.test(c),
+      c,
+    );
+  }
+  /* ÜST KART ÖZEL OLARAK ADIYLA: kusurun yaşandığı yer buraydı. */
+  kontrol(
+    "üst kart ızgarası tabanda tek sütuna kilitli (galeri şeridi künyeyi genişletemez)",
+    sayfa.includes('"grid grid-cols-1 gap-4 lg:grid-cols-[auto_minmax(0,1fr)]'),
+  );
+  /* Şerit KAYBOLMAZ: iç kaydırma durduğu için küçük resimler el altında kalır. */
+  kontrol(
+    "galeri şeridi kendi içinde kaydırılabilir kalıyor (resimler kaybolmadı)",
+    /overflow-auto/.test(oku("src/app/kart/[variantId]/urun-galerisi.tsx")),
+  );
+  kosanBolumler.push("izgara-taban");
 }
 
 console.log("=".repeat(70));

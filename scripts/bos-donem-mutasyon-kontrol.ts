@@ -43,6 +43,7 @@ import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 const SAF = "src/lib/urun-karti.ts";
 const PANO = "src/app/kart/[variantId]/kart-panosu.tsx";
 const SAYFA = "src/app/kart/[variantId]/page.tsx";
+const GALERI = "src/app/kart/[variantId]/urun-galerisi.tsx";
 
 const BEKCI = "scripts/kart-analizi-dogrula.ts";
 
@@ -153,6 +154,52 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: '  const pencere = donemCozumu.pencere ?? pencereOlustur("SON_30_GUN", new Date());',
     bozdugu:
       "gun donumunde pencere ile genisletme araligi ayrisir; link bir gun eksik acar",
+  },
+  /*
+   * ═══ K370 — TELEFONDA SAYFAYA SIĞMA (04.11.2026) ═══
+   * Kullanıcı: «Telefonda kârlılık kartı uyumsuz bir dizaynda» / «Bu ürünlerde
+   * sayfaya sığmıyor.» Ölçüldü (gerçek tarayıcı, 320·360·390·412 px): ızgara
+   * kutusu 324 px, PARÇASI 568 px — galeri şeridinin max-content'i taban
+   * kırılımdaki örtük `auto` sütuna sızıyordu ve bütün künye ekran dışına
+   * taşıyordu. Şeride `min-w-0` yazmak DÖRT genişlikte de ÇÖZMEDİ (ölçüldü).
+   */
+  {
+    ad: "IZGARA — ust kart taban sutunu kalkti (telefonda kunye ekran disina tasar)",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: '"grid grid-cols-1 gap-4 lg:grid-cols-[auto_minmax(0,1fr)]',
+    koy: '"grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)]',
+    bozdugu:
+      "ortuk sutun yine `auto` olur; galeri seridinin 568 px max-content'i parcaya sizar",
+  },
+  {
+    /* ÖLÇÜT DOSYA LİSTESİ DEĞİL: aynı sayfadaki İKİNCİ ızgara da kapsamda. */
+    ad: "IZGARA — ayrinti izgarasinin taban sutunu kalkti",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: '"grid grid-cols-1 gap-6 lg:grid-cols-2"',
+    koy: '"grid gap-6 lg:grid-cols-2"',
+    bozdugu:
+      "desen yasagi yalniz ust karta bakiyor olsaydi bu sessizce gecerdi",
+  },
+  {
+    /* YARIN EKLENEN IZGARA DA YAKALANIR — ölçütün asıl vaadi bu. */
+    ad: "IZGARA — sayfaya YENI bir taban sutunsuz izgara eklendi (yanlis susma)",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: '{t("ayrintiBaslik")}</h2>',
+    koy: '{t("ayrintiBaslik")}</h2><div className="grid gap-2 sm:grid-cols-3" />',
+    bozdugu:
+      "elle tutulan bir liste bu yeni izgarayi hic gormezdi; desen yasagi gormeli",
+  },
+  {
+    ad: "GALERI — seridin kendi kaydirmasi kalkti (kucuk resimler ulasilamaz olur)",
+    yon: "KALDIRAN",
+    dosya: GALERI,
+    bul: "flex max-h-52 gap-2 overflow-auto",
+    koy: "flex max-h-52 gap-2",
+    bozdugu:
+      "parca sinirlandigi icin serit kirpilir; kaydirma da yoksa resimler kaybolur",
   },
 ];
 

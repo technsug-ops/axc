@@ -284,7 +284,30 @@ export default async function KartSayfasi({
       */}
       <div className="mb-6 space-y-6">
       <div className="rounded-lg border p-4">
-      <div className="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)] 2xl:grid-cols-[auto_minmax(0,1fr)_380px]">
+      {/*
+        ⛔ TABAN SÜTUNU AÇIKÇA YAZILIR — `grid-cols-1` (K370, 04.11.2026).
+        Kullanıcı bulgusu: kârlılık kartı telefonda sayfaya sığmıyordu; başlık,
+        kodlar, KDV satırı ve tarihler ekranın dışında kesiliyordu (kabuk
+        `overflow-x-clip` olduğu için kaydırıp görmek de mümkün değildi).
+
+        ÖLÇÜLDÜ (gerçek tarayıcı, 320·360·390·412 px): ızgara KUTUSU doğruydu
+        (390 px ekranda 324) ama PARÇASI 568 px çıkıyordu ve bütün öğeler o parçaya
+        geriliyordu. 568 = 8 küçük resim × 64 + 7 × 8 boşluk — yani galeri
+        şeridinin `max-content`i. Taban kırılımda `grid-template-columns`
+        yazılmadığı için örtük sütun `auto`dur ve `auto`nun tavanı `max-content`tir;
+        şerit `overflow-auto` olsa bile ölçüsü parçaya sızıyor. Masaüstünde şerit
+        `sm:flex-col` ile DİKEY olduğundan max-content 64 px kalıyor — kusurun
+        yalnız telefonda görünmesinin sebebi bu.
+
+        `grid-cols-1` = `minmax(0,1fr)`: parça kutuyu AŞAMAZ. Şerit kendi içinde
+        kaydırılabilir kalır (iç kaydırma 568 ölçüldü), yani küçük resimler
+        kaybolmaz. `lg:`/`2xl:` şablonları zaten `minmax(0,1fr)` kullanıyordu —
+        eksik olan yalnız TABANDI.
+
+        ⚠ ÇARE ŞERİDE `min-w-0` YAZMAK DEĞİL: ölçüldü, DÖRT genişlikte de
+        taşma sürdü (şerit bir esnek öğe; eni çapraz eksenden geliyor).
+      */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[auto_minmax(0,1fr)] 2xl:grid-cols-[auto_minmax(0,1fr)_380px]">
         <UrunGalerisi
           resimler={analiz.resimler}
           kaynak={analiz.resimKaynagi}
@@ -419,7 +442,7 @@ export default async function KartSayfasi({
       <>
       <GenelSekmesi a={analiz} para={para} karGorunur={karGorunur} varyantId={varyant.id} />
       <h2 className="text-base font-semibold">{t("ayrintiBaslik")}</h2>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* ═══════════════════ STOK — HERKESE AÇIK ═══════════════════ */}
       <Bolum baslik={t("stokBaslik")} ikon={Boxes}>
         <div className="grid grid-cols-2 gap-2">

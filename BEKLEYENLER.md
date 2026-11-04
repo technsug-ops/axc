@@ -13,6 +13,101 @@
 
 ---
 
+## 🔴 K370 — KÂRLILIK KARTI TELEFONDA SAYFAYA SIĞMIYORDU: KÜNYE EKRANIN DIŞINDA KESİLİYORDU · 04.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 04.11.2026:** _«Telefonda kârlılık kartı uyumsuz bir dizaynda.»_ →
+_«Bu ürünlerde sayfaya sığmıyor.»_ Üç ekran görüntüsü: başlık, kod satırı, KDV
+satırı ve tarih kutuları **ekranın sağ kenarında harf ortasından kesiliyor** ve
+kaydırarak görmek de mümkün değil.
+
+**ÖLÇÜLDÜ — GERÇEK TARAYICIDA, tahmin değil.** Kartın üst bloğu birebir sınıf
+zinciriyle yeniden kuruldu ve Playwright ile **320 · 360 · 390 · 412 px**
+genişliklerde ölçüldü (390 px, telefon kipi):
+
+```
+izgara KUTUSU  324 px      ← doğru
+izgara PARÇASI 568 px      ← bütün öğeler buna geriliyor
+künye sağ kenarı 601 px    → ekranı 211 px aşıyor
+  568 = 8 küçük resim × 64 px + 7 boşluk × 8 px
+```
+
+**KÖK SEBEP — ÖRTÜK SÜTUN `auto`, TAVANI `max-content`.** Üst ızgara taban
+kırılımda `grid-template-columns` yazmıyordu (`grid gap-4 lg:grid-cols-[…]`);
+yazılmayınca örtük sütun `auto` olur ve `auto`nun tavanı `max-content`tir.
+Galeri küçük-resim şeridi telefonda **yatay** (`sm:flex-col` yalnız sm üstünde),
+yani max-content'i 568 px — `overflow-auto` olmasına rağmen bu ölçü parçaya
+sızıyor ve künyeyi, kodları, KDV satırını, tarihleri birlikte dışarı itiyor.
+Masaüstünde şerit **dikey** olduğundan max-content 64 px kalıyor; kusurun
+**yalnız telefonda** görünmesinin sebebi bu.
+
+⚠ **VE KABUK KUSURU GİZLİYORDU:** içerik sarmalı `overflow-x-clip`
+(`layout.tsx`), yani taşan kısım kırpılıyor — kullanıcı yana kaydırıp bile
+göremiyor. Ekranda bir hata değil, **bozuk bir tasarım** görünüyor.
+
+**ÇARE ÖLÇÜMLE SEÇİLDİ — İLK AKLA GELEN TUTMADI.** Dört aday dört genişlikte
+denendi:
+
+| aday | sonuç |
+|---|---|
+| şeride `min-w-0` | **DÖRT genişlikte de TAŞIMAYA DEVAM ETTİ** (şerit esnek öğe; eni çapraz eksenden geliyor) |
+| galeriye `min-w-0` | temiz — ama `lg:` ızgarasındaki `auto` sütunu da etkiler |
+| ızgaraya `grid-cols-1` | **temiz, ve yalnız taban kırılımı ilgilendiriyor** ✔ |
+
+Seçilen: **`grid-cols-1`** (= `minmax(0,1fr)`) — parça kutuyu **AŞAMAZ**.
+`lg:`/`2xl:` şablonları zaten `minmax(0,1fr)` kullanıyordu; eksik olan yalnız
+TABANDI. Aynı dosyadaki ikinci ızgara (`grid gap-6 lg:grid-cols-2`) da aynı
+kusuru taşıyordu, o da kapatıldı.
+
+⚠ **KÜÇÜK RESİMLER KAYBOLMADI:** şerit kendi içinde kaydırılabilir kalıyor
+(iç kaydırma 568 px ölçüldü) — 8 resmin hepsi parmakla kaydırılarak açılıyor.
+
+**BEKÇİ:** `kart-analizi:dogrula` **106** (+9 ölçüt, yeni ⑥. bölüm).
+⚠ **ÖLÇÜT DOSYA LİSTESİ DEĞİL, DESEN YASAĞI:** kart sayfasındaki **her**
+ızgara — tabanda `grid` olan ve bir kırılımda sütun tanımlayan — taban sütununu
+beyan etmek zorunda; yarın eklenen ızgara da kapsama girer. Tabanda `grid`
+olmayan (`xl:grid`) kutu kapsam dışı, çünkü orada sütun sorusu doğmaz.
+Taban doluluğu ayrıca ölçülüyor (`kirilimli.length >= 2`) — boş küme her koşulu
+sağlar ve ölçüt kendi kendini kandırırdı.
+
+**MUTASYON:** `bos-donem-mutasyon:kontrol` **14/14** (+4 senaryo, hepsi kırmızı
+yandığı GÖRÜLDÜ): üst ızgaranın taban sütunu kalktı · ayrıntı ızgarasının taban
+sütunu kalktı · sayfaya **yeni** bir taban sütunsuz ızgara eklendi (elle tutulan
+liste bunu göremezdi) · galeri şeridinin kendi kaydırması kalktı.
+
+⚠ **ÖLÇÜM BETİĞİ DEPOYA GİRMEDİ — BİLEREK.** Tarayıcı otomasyonu bu depoda
+yalnız el kitabı ekran görüntüleri için açık (08.08.2026 kararı · 21.10.2026
+istisnası). Ölçüm geçici olarak koşuldu; kalıcı koruma **bekçidir**, ve bekçi
+kaynağı ölçer. ⛔ Bu yüzden _ekranın gerçekten sığdığı_ hâlâ **gerçek cihazda**
+görülmeden teslim sayılmaz.
+
+**GEÇMİŞE DOKUNULMADI:** tek satır veri değişmedi; yalnız iki sınıf adı.
+
+### Halil test listesi — tıklama düzeyinde
+
+1. Telefonda **canlı** adreste bir ürünün kârlılık kartını aç (ör. HOT WHEELS
+   Racerverse Marvel Pist Seti — resmi çok olan bir ürün seç).
+2. Ürün **başlığı** satır sonunda kesilmeden alt satıra inmeli; sağ kenarda
+   yarım harf **kalmamalı**.
+3. Kod satırı (`axcali1680 · OYU-HTW-0003 · 194735162055`) tamamen görünmeli —
+   üçüncü kod ekran dışında kalmamalı.
+4. **KDV %20 (kategoriden) · kategori: … · desi …** satırı ekrana sığmalı,
+   gerekiyorsa alt satıra inmeli.
+5. **ÜRÜN KAYDI / İLK SATIŞ / SON SATIŞ / TÜM ZAMANLAR** kutularının dördü de
+   tam görünmeli (sağdaki ikisi kesik olmamalı).
+6. Küçük resim şeridini **parmakla sola kaydır** → kalan resimler gelmeli
+   (şerit kendi içinde kayar, sayfa yana kaymaz).
+7. Dönem kutusunu aç → açılır panel ekranın içinde durmalı, düğmeler
+   okunabilmeli.
+8. Aşağı in: **Satılan adet / Ciro** kutuları ve «Ayrıntı» bölümündeki tüm
+   kutular da ekrana sığmalı.
+9. Masaüstünde aç → kart **eskisi gibi** iki sütun; küçük resimler büyük
+   resmin **yanında dikey** durmalı (bozulma olmamalı).
+
+**mobil doğrulama kullanıcıda.** · i18n: ✓ (yeni metin yok) · kullanıcı
+kolaylığı: ✓ (#8 mobil eşit vatandaş — ekran telefonda okunabilir hâle geldi)
+
+---
+
 ## 🔴 K369 — KÂRLILIK KARTI BOŞ AÇILIYORDU: 4 SATIŞI OLAN ÜRÜN «HİÇ SATMAMIŞ» GİBİ GÖRÜNDÜ · 04.11.2026 · [CANLIDA 04.11.2026 — HALİL TESTİ BEKLİYOR]
 
 **YAYIN ÖLÇÜLDÜ 04.11.2026:** `main` ← `dfa47d7b` · Vercel `dpl_3JxZdSDGh75mnhnzsGUKAwLsKp82` **READY** (fra1, 48 sn) · `bezirga.com` o dağıtımın alias listesinde ve `/giris` **200** döndü. Ekran GERÇEK CİHAZDA görülmedi — teslim sayılmaz.
