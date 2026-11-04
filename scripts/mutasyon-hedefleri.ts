@@ -183,6 +183,13 @@ export const SIRALI_MUTASYON_GRUP: readonly string[] = [
    * MUTANTINI "asil" sanip geri yazardi. Bekci push kapisinda yakaladi.
    */
   "bitmis-tarife-mutasyon:kontrol",
+  /*
+   * K369 (04.11.2026): kart panosu ve kart sayfasi `kart-analizi-mutasyon`,
+   * `urun-analizi-mutasyon` ve `satir-karti-mutasyon` ile ORTAK; saf govde
+   * (`urun-karti.ts`) ise daha genis bir aileyle. Paralel kossalardi biri
+   * otekinin MUTANTINI asil sanip geri yazardi.
+   */
+  "bos-donem-mutasyon:kontrol",
   "liste-hafizasi-mutasyon:kontrol",
   "mal-kabul-mutasyon:kontrol",
   "panel-mutasyon:kontrol",

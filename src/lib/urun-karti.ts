@@ -158,6 +158,37 @@ export type KartOzeti = {
   hicSatilmamisMi: boolean;
 };
 
+/**
+ * ============================================================================
+ *  «TÜM ZAMANLAR» ARALIĞI — ürün kartı penceresi (K369, 04.11.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ YENİ PENCERE TÜRÜ AÇILMADI — merdivenin en ucuz basamağı seçildi.
+ *  Kart zaten ÖZEL aralığı tam destekliyor; «Tüm zamanlar» onun üstüne
+ *  kuruldu. Yeni bir `PencereTuru` eklemek `LISTE_PENCERELERI` doğrulamasını,
+ *  rozet etiketlerini ve dört ekranın düğme sırasını birden ilgilendirirdi.
+ *  _(Anayasa: şema/tip değişikliği en pahalı çözümdür.)_
+ *
+ *  ⚠ BAŞLANGIÇ TAHMİN EDİLMEZ, VERİDEN GELİR: ürünün ilk satışı ile ürün
+ *  kaydının açılış günü hangisi eskiyse o. Sabit bir «2020» yazmak, ekranda
+ *  sistemin hiç görmediği bir dönemi varmış gibi gösterirdi.
+ *
+ *  @param ilkSatis TÜM ZAMANLARIN ilk satış anı; hiç satmamışsa null.
+ *  @param aktifSiden Ürün kaydının açıldığı an.
+ *  @param an "Şimdi" — çağıran verir, böylece sınanabilir kalır.
+ * ============================================================================
+ */
+export function tumZamanAraligi(
+  ilkSatis: Date | null,
+  aktifSiden: Date,
+  an: Date,
+): { baslangic: Date; bitis: Date } {
+  const enEski =
+    ilkSatis !== null && ilkSatis.getTime() < aktifSiden.getTime() ? ilkSatis : aktifSiden;
+  /* Gelecek tarihli bir damga aralığı TERS çevirirdi; başlangıç bugünü aşamaz. */
+  const baslangic = enEski.getTime() <= an.getTime() ? enEski : an;
+  return { baslangic, bitis: an };
+}
+
 /** Adet ağırlıklı ortalama — maliyeti bilinmeyen partiler HESABA GİRMEZ. */
 export function agirlikliOrtalama(
   partiler: { kalanAdet: number; birimMaliyet: number | null }[],

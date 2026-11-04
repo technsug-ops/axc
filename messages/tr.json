@@ -4185,7 +4185,12 @@
     "deneKuponNotu": "Mağazanı takip eden müşterinin tek seferlik indirimi; kuponu sen ödersin. Doldurursan kuponlu satışın NET-2si ayrıca gösterilir.",
     "deneKuponlu": "Kuponlu satışta ({kupon} kupon) NET-2:",
     "deneKuponFarki": "(kuponsuza göre {fark})",
-    "deneKuponDilimDegisti": "Kupon fiyatı başka bir komisyon dilimine indiriyor; hesap kuponlu fiyatın dilimini kullandı. Pazaryerinin dilimi hangi fiyata göre seçtiği ölçülmedi."
+    "deneKuponDilimDegisti": "Kupon fiyatı başka bir komisyon dilimine indiriyor; hesap kuponlu fiyatın dilimini kullandı. Pazaryerinin dilimi hangi fiyata göre seçtiği ölçülmedi.",
+    "donemBosBaslik": "Bu dönemde satış yok — ama bu ürün satmış",
+    "donemBosAciklama": "Seçili dönem {bas} – {bit}. Bu üründen tüm zamanlarda {satis} satış var; sonuncusu {son}. Aşağıdaki kutular yalnız seçili dönemi gösterir.",
+    "donemBosGenislet": "Tüm zamanları göster",
+    "donemHicSatilmamis": "Bu ürün bugüne kadar hiç satılmadı — kutuların boş olması dönem seçiminden değil.",
+    "donemTumZamanlar": "Tüm zamanlar"
   },
   "SatisDuzenleme": {
     "duzenle": "Düzenle",

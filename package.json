@@ -263,6 +263,7 @@
     "buybox-istatistik:dogrula": "tsx scripts/buybox-istatistik-dogrula.ts",
     "buybox-fiyat:dogrula": "tsx scripts/buybox-fiyat-dogrula.ts",
     "bitmis-tarife-mutasyon:kontrol": "tsx scripts/bitmis-tarife-mutasyon-kontrol.ts",
+    "bos-donem-mutasyon:kontrol": "tsx scripts/bos-donem-mutasyon-kontrol.ts",
     "buybox-kural:dogrula": "tsx scripts/buybox-kural-dogrula.ts",
     "canli:k202-2-onar": "tsx scripts/canli-k202-2-onar.ts",
     "canli:kargo-yaz": "tsx scripts/canli-kargo-yaz.ts",

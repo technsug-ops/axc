@@ -24,6 +24,7 @@ import { pencereCoz } from "@/lib/liste-suzgeci";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { kartAnalizi } from "@/lib/urun-karti-analiz";
 import {
+  DonemBosUyarisi,
   DonemSecici,
   GenelSekmesi,
   IadeSekmesi,
@@ -153,7 +154,9 @@ export default async function KartSayfasi({
    */
   const sp = await searchParams;
   const donemCozumu = pencereCoz({ pencere: sp.pencere, baslangic: sp.baslangic, bitis: sp.bitis });
-  const pencere = donemCozumu.pencere ?? pencereOlustur("SON_30_GUN", new Date());
+  /* TEK «an»: seçici ile boş-dönem uyarısı aynı aralığı kursun diye (K369). */
+  const an = new Date();
+  const pencere = donemCozumu.pencere ?? pencereOlustur("SON_30_GUN", an);
   const istenenSekme = kartSekmesiCoz(sp.sekme);
   const sekme = istenenSekme === "kar" && !karGorunur ? "genel" : istenenSekme;
   const analiz = await kartAnalizi(variantId, pencere, karGorunur);
@@ -380,12 +383,20 @@ export default async function KartSayfasi({
       </div>
         <div className="space-y-3 lg:col-span-2 2xl:col-span-1">
           <div className="flex justify-end">
-            <DonemSecici temel={kartTemeli} mevcut={adresParametreleri} pencere={pencere} />
+            <DonemSecici temel={kartTemeli} mevcut={adresParametreleri} pencere={pencere} a={analiz} an={an} />
           </div>
           <UstKpiler a={analiz} para={para} />
         </div>
       </div>
       </div>
+        <DonemBosUyarisi
+          temel={kartTemeli}
+          mevcut={adresParametreleri}
+          a={analiz}
+          an={an}
+          pencere={pencere}
+          tumSatis={ozet.hicSatilmamisMi ? null : ozet.satisSayisi}
+        />
         <OzetKutulari
           a={analiz}
           para={para}

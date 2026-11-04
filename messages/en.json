@@ -3934,6 +3934,11 @@
     "hataYazilamadi": ""
   },
   "UrunKarti": {
+    "donemBosBaslik": "",
+    "donemBosAciklama": "",
+    "donemBosGenislet": "",
+    "donemHicSatilmamis": "",
+    "donemTumZamanlar": "",
     "karTumZaman": "",
     "iadeTumZaman": "",
     "tumZaman": "",

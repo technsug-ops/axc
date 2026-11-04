@@ -10,9 +10,10 @@ import { bicimlendirici } from "@/lib/bicim";
 import { gunMetni, gunMetninden, type Pencere, type PencereTuru } from "@/lib/donem";
 import { miniKovalar } from "@/lib/panel/mini-seri";
 import { PENCERE_ANAHTARI } from "@/lib/pencere-etiket";
-import { DURUM_YAZISI, karDurumu } from "@/lib/renkler";
+import { DURUM_KUTUSU, DURUM_YAZISI, karDurumu } from "@/lib/renkler";
 import { suzgecAdresi } from "@/lib/suzgec";
 import { SIPARIS_SATIR_TAVANI, type KartAnalizi } from "@/lib/urun-karti-analiz";
+import { tumZamanAraligi } from "@/lib/urun-karti";
 import { adetBasinaKazanc } from "@/lib/urun-karti-seri";
 
 import { DurumHalkasi, GunlukGrafik, MiniCizgi, StokFiyatGrafigi } from "./kart-grafikleri";
@@ -50,15 +51,95 @@ export const KART_PENCERELERI: readonly PencereTuru[] = ["SON_15_GUN", "SON_30_G
 const GUN_MS = 86_400_000;
 const gunOnce = (an: Date, simdi: Date) => Math.max(0, Math.floor((simdi.getTime() - an.getTime()) / GUN_MS));
 
+/**
+ * ============================================================================
+ *  BOŞ DÖNEM UYARISI — «veriler gözükmüyor» (K369, kullanıcı bildirimi 04.11.2026)
+ * ----------------------------------------------------------------------------
+ *  ⛔ KULLANICI VAKASI: 4 satışı olan bir üründe kart boş açıldı. Kutular
+ *  «Bu dönemde satış yok» diyordu ve bu cümle İKİ APAYRI ŞEYİ aynı
+ *  gösteriyordu — «bu ürün hiç satmadı» ile «satmış, pencerenin dışında».
+ *  Kullanıcı yeniden alım kararı için baktı ve ekranı bozuk sandı.
+ *  _(Anayasa: boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+ *  değildir — ve İlke #5: bir şey olmadıysa NEDEN olmadığı ekranda yazar.)_
+ *
+ *  ⚠ SAYI ZATEN ELDEYDİ: kartın başlığı «TÜM ZAMANLAR 4 satış» yazıyordu.
+ *  Sistem biliyordu, söylemiyordu; yeni sorgu AÇILMADI.
+ *
+ *  ⚠ HİÇ SATILMAMIŞ ÜRÜNDE BAĞLANTI YOK: açılacak liste olmadığı için
+ *  tıklanabilir yapmak boş ekrana götürürdü (İlke #2 — sıfır satır bağlantı
+ *  olmaz). O hâlde uyarı yalnız BİLGİ verir.
+ * ============================================================================
+ */
+export async function DonemBosUyarisi({
+  temel,
+  mevcut,
+  a,
+  an,
+  pencere,
+  tumSatis,
+}: {
+  temel: string;
+  mevcut: Record<string, string | undefined>;
+  a: KartAnalizi;
+  an: Date;
+  pencere: Pencere;
+  tumSatis: number | null;
+}) {
+  /* Dönemde satış VARSA uyarı hiç çizilmez — boş olmayan ekranı kirletmez. */
+  if (a.adet > 0) return null;
+  const t = await getTranslations("UrunKarti");
+  const bicim = await bicimlendirici();
+  if (tumSatis === null || tumSatis === 0 || a.sonSatis === null) {
+    return (
+      <p className="rounded-lg border bg-[var(--se-kart)] px-3 py-2 text-sm text-muted-foreground">
+        {t("donemHicSatilmamis")}
+      </p>
+    );
+  }
+  const tumAralik = tumZamanAraligi(a.ilkSatis, a.aktifSiden, an);
+  return (
+    <div className={`space-y-1 rounded-lg px-3 py-2 text-sm ${DURUM_KUTUSU.uyari}`}>
+      <p className="font-medium">{t("donemBosBaslik")}</p>
+      <p className="text-xs">
+        {t("donemBosAciklama", {
+          bas: bicim.tarih(pencere.ilkGun),
+          bit: bicim.tarih(pencere.sonGun),
+          satis: tumSatis,
+          son: bicim.tarih(a.sonSatis),
+        })}
+      </p>
+      <Baglanti
+        href={suzgecAdresi(temel, mevcut, {
+          pencere: "OZEL",
+          baslangic: gunMetni(tumAralik.baslangic),
+          bitis: gunMetni(tumAralik.bitis),
+        })}
+      >
+        {t("donemBosGenislet")}
+      </Baglanti>
+    </div>
+  );
+}
+
 export async function DonemSecici({
   temel,
   mevcut,
   pencere,
+  a,
+  an,
 }: {
   temel: string;
   mevcut: Record<string, string | undefined>;
   pencere: Pencere;
+  a: KartAnalizi;
+  an: Date;
 }) {
+  const tumAralik = tumZamanAraligi(a.ilkSatis, a.aktifSiden, an);
+  /* Seçili aralık tam olarak «tüm zamanlar» mı — gün metniyle kıyaslanır. */
+  const tumSecili =
+    pencere.tur === "OZEL" &&
+    gunMetni(pencere.ilkGun) === gunMetni(tumAralik.baslangic) &&
+    gunMetni(pencere.sonGun) === gunMetni(tumAralik.bitis);
   const t = await getTranslations("UrunKarti");
   const tp = await getTranslations("Pencere");
   const bicim = await bicimlendirici();
@@ -73,6 +154,23 @@ export async function DonemSecici({
       </summary>
       <div className="absolute right-0 z-20 mt-2 w-72 space-y-3 rounded-lg border bg-[var(--se-kart)] p-3 shadow-lg">
         <div className="flex flex-wrap gap-2">
+          {/*
+            «TÜM ZAMANLAR» — ÖZEL aralık olarak kurulur (K369, 04.11.2026).
+            Yeni pencere TÜRÜ açmıyoruz; aralık VERİDEN gelir, bu yüzden
+            seçildiğinde özette GERÇEK tarihler yazar — denetlenemeyen bir
+            «tüm zamanlar» etiketi değil.
+          */}
+          <Link
+            href={suzgecAdresi(temel, mevcut, {
+              pencere: "OZEL",
+              baslangic: gunMetni(tumAralik.baslangic),
+              bitis: gunMetni(tumAralik.bitis),
+            })}
+            scroll={false}
+            className={`inline-flex h-11 items-center rounded-lg border px-3 text-sm ${tumSecili ? "border-[var(--se-vurgu)] text-[var(--se-vurgu)]" : ""}`}
+          >
+            {t("donemTumZamanlar")}
+          </Link>
           {KART_PENCERELERI.map((tur) => (
             <Link
               key={tur}

@@ -13,6 +13,104 @@
 
 ---
 
+## 🔴 K369 — KÂRLILIK KARTI BOŞ AÇILIYORDU: 4 SATIŞI OLAN ÜRÜN «HİÇ SATMAMIŞ» GİBİ GÖRÜNDÜ · 04.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 04.11.2026:** _«Karlilik kartinda ürün alma gecmisi calismiyor. bu üründen geçen aylarda 4 tane satış olmuş yeniden alayım mı diye baktım burada veriler gözükmüyor, satış sekmesinden bakınca çıktı.»_
+
+**ÖLÇÜLDÜ — tahmin değil** (`scripts/canli-kart-donemi-olcum.ts`, salt okuma, canlı; varyant `axcali1680` · `OYU-HTW-0003` · barkod `194735162055`):
+
+```
+TÜM ZAMANLAR satış kalemi: 4
+  2026-08-11 · 11497173405      2026-09-10 · 11587476992
+  2026-08-29 · 11550438347      2026-09-12 · 11594105512
+
+SON_30_GUN (varsayılan)  05.10 → 04.11   pencereye düşen: 0
+SON_3_AY                 31.08 → 04.11   pencereye düşen: 2
+SON_6_AY                 31.05 → 04.11   pencereye düşen: 4
+```
+
+**VERİ SAĞLAM, ARİTMETİK DOĞRU — EKSİK OLAN CÜMLEYDİ.** Kart `SON_30_GUN` ile
+açılıyor (`page.tsx`) ve dört satışın dördü de pencerenin dışında. Kutular
+_«Bu dönemde satış yok»_ diyordu; bu cümle **İKİ APAYRI ŞEYİ aynı gösteriyor** —
+_«bu ürün hiç satmadı»_ ile _«satmış, pencerenin dışında»_. Kullanıcı yeniden
+alım kararı için baktı ve ekranı bozuk sandı.
+_(Anayasa: "boş sonuç ile temiz sonucu ayırt edemeyen denetim, denetim
+değildir" + İlke #5: bir şey olmadıysa NEDEN olmadığı ekranda yazar.)_
+
+⚠ **VE SAYI ZATEN EKRANDAYDI:** kartın başlığı **«TÜM ZAMANLAR 4 satış · SON
+SATIŞ 12.09.2026»** yazıyor. Sistem biliyordu, söylemiyordu; iki rakam
+birbirine bağlanmamıştı (İlke #16 — rakam kaynağına götürür).
+
+**İKİNCİ KUSUR — KARTTA «TÜM ZAMANLAR» HİÇ YOKTU.** Seçici 15 gün → 1 yıl
+arası sunuyordu (`KART_PENCERELERI`); adrese elle `pencere=TUM` yazılsa bile
+sessizce 30 güne düşüyordu. Yani kullanıcının sorduğu soruya (_«bu ürün
+toplamda ne yaptı»_) ekranın hiçbir cevabı yoktu.
+
+**KARAR — kullanıcı 04.11.2026:** varsayılan **30 gün KALIYOR**; boş olduğunda
+ekran sebebini yazar ve tek tıkla genişletir. Elenen iki seçenek ve NİYE:
+· _«Son 1 yıl olsun»_ ve _«Tüm zamanlar olsun»_ — ikisi de «önceki döneme göre
+%» kıyasını bozardı (karşılaştırılacak önceki dönem kalmaz ya da anlamsızlaşır)
+ve kartı ağırlaştırırdı. Varsayılanı değiştirmek, bir ekranı düzeltirken
+öteki rakamların anlamını sessizce kaydırmak olurdu.
+
+**YAPILDI:**
+- `tumZamanAraligi(ilkSatis, aktifSiden, an)` — **saf gövde**, `src/lib/urun-karti.ts`.
+  Başlangıç TAHMİN EDİLMEZ, veriden gelir: ilk satış ile ürün kaydının açılışı
+  hangisi eskiyse o. Gelecek tarihli damga aralığı ters çeviremez.
+- **Boş dönem uyarısı** (`DonemBosUyarisi`) — özet kutularının ÜSTÜNDE, TEK
+  yerde. Satmış üründe: seçili aralık + tüm-zaman satış sayısı + son satış
+  tarihi + «Tüm zamanları göster» bağlantısı. Hiç satmamış üründe: yalnız
+  bilgi, **bağlantı YOK** (İlke #2 — sıfır satır bağlantı olmaz).
+- **«Tüm zamanlar» düğmesi** dönem seçicisinde; seçiliyken görünür.
+
+⛔ **YENİ PENCERE TÜRÜ AÇILMADI — merdivenin en ucuz basamağı.** «Tüm zamanlar»
+mevcut **ÖZEL aralığın** üstüne kuruldu. Yeni bir `PencereTuru`, adres
+doğrulamasını (`LISTE_PENCERELERI`), rozet etiketlerini ve dört ekranın düğme
+sırasını birden ilgilendirirdi. Yan faydası: seçildiğinde özette **gerçek
+tarihler** yazar — denetlenemeyen bir «tüm zamanlar» etiketi değil.
+
+⚠ **YENİ SORGU AÇILMADI:** tüm-zaman sayısı kartın zaten elindeki
+`ozet.satisSayisi` ve `analiz.sonSatis`ten geliyor.
+
+⚠ **TEK «an»:** seçici ile uyarı aynı anı paylaşıyor; iki ayrı `new Date()`
+gün dönümünde iki ayrı aralık üretir ve bağlantı bir gün eksik açardı.
+
+⚠ **ESKİYEN ÖLÇÜT GÜNCELLENDİ, SUSTURULMADI:** `kart-analizi:dogrula`nın
+_«varsayılan dönem son 30 gün»_ ölçütü `new Date()` deseni arıyordu ve kırmızı
+yandı. **Kod doğruydu** — varsayılan hâlâ 30 gün; ölçüt eskimişti. Deseni
+güncellendi ve niye eskidiği dosyaya yazıldı.
+
+**BEKÇİ:** `kart-analizi:dogrula` **98/98** — 16 yeni ölçüt (5'i saf gövdede
+**değer testi**, gerisi kullanım bloğuna daraltılmış).
+**MUTASYON:** `bos-donem-mutasyon:kontrol` **10/10** — 1 ZARARSIZ (yeşil
+kalmalı) · 6 KALDIRAN · 3 FAZLADAN; hepsinin kırmızı yandığı GÖRÜLDÜ.
+Sıralı kümeye beyan edildi (`mutasyon-hedefleri.ts`), çakışma bekçisi yeşil.
+
+**GEÇMİŞE DOKUNULMADI:** hiçbir kayıt, hiçbir rakam değişmedi — yalnız ekran
+sustuğu yerde konuşuyor.
+
+### Halil test listesi — tıklama düzeyinde
+
+1. Telefondan **canlı** adrese gir, `/kart/axcali1680` (ya da Ürünler → HOT
+   WHEELS Lisinya193 Racerverse Marvel Pist Seti → kârlılık kartı).
+2. Kart varsayılan hâliyle açılır; sağ üstte dönem **son 30 gün** yazmalı.
+3. Özet kutularının **üstünde** sarı bir uyarı olmalı: _«Bu dönemde satış yok —
+   ama bu ürün satmış»_, altında seçili aralık, **4 satış** ve **son satış
+   12.09.2026**.
+4. Uyarıdaki **«Tüm zamanları göster»**e bas. Dönem `28.07.2026 – 04.11.2026`
+   civarına (ürün kaydının açılışı → bugün) genişlemeli, **Satılan adet 4**
+   görünmeli ve uyarı **kaybolmalı**.
+5. Geri dön; sağ üstteki dönem kutusunu aç — listenin başında **«Tüm zamanlar»**
+   düğmesi olmalı ve seçiliyken **vurgulu** görünmeli.
+6. Satışı olan ve bu ay satan bir ürünün kartını aç — uyarı **hiç çıkmamalı**.
+7. Hiç satılmamış bir ürünün kartını aç — _«bu ürün bugüne kadar hiç satılmadı,
+   kutuların boş olması dönem seçiminden değil»_ yazmalı ve bu satır
+   **tıklanabilir OLMAMALI**.
+
+**mobil doğrulama kullanıcıda.**
+
+---
+
 ## 🔴 K368 — BİTMİŞ TEKLİFİN KOMİSYONU HÂLÂ UYGULANIYORDU: %9,1 ↔ GERÇEK %18 · 02.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 02.11.2026:** _«bu eleman buybox da hesaplamada yanlış komisyon çekiyor, bu üründe komisyonu 9,1 hesaplıyor halbuki komisyon 18, komisyon tarifesi de güncel»_ · _«kendi hesaplama yaptım, fark baya var, buyboxa göre baksak zarar eder»_ · teyit: _«Hepsiburada'da normalde ürün komisyonu hep 18 legolarda; çarşambadan çarşambaya teklifler yenileniyor, mevcut bu haftaki tekliflerde 9,1 yok.»_

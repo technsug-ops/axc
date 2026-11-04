@@ -1,4 +1,5 @@
 import { kaynakOku } from "./kaynak-oku";
+import { tumZamanAraligi } from "../src/lib/urun-karti";
 import { galeriAdresleri, galeriYazilirMi, GALERI_TAVANI, kartResimleri } from "../src/lib/urun-gorseli";
 import {
   adetBasinaKazanc,
@@ -36,7 +37,7 @@ import {
 let gecen = 0;
 let kalan = 0;
 const kosanBolumler: string[] = [];
-const BOLUM_SAYISI = 4;
+const BOLUM_SAYISI = 5;
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -183,7 +184,13 @@ console.log("=".repeat(70));
   kontrol("sayfa analizi kartın izniyle çağırır", /const analiz = await kartAnalizi\(variantId, pencere, karGorunur\);/.test(sayfa));
   kontrol("sayfa galeriyi çizer", /<UrunGalerisi\s+resimler=\{analiz\.resimler\}/.test(sayfa));
   kontrol("kâr sekmesi izinsize açılmaz", /const sekme = istenenSekme === "kar" && !karGorunur \? "genel" : istenenSekme;/.test(sayfa));
-  kontrol("varsayılan dönem son 30 gün", /donemCozumu\.pencere \?\? pencereOlustur\("SON_30_GUN", new Date\(\)\)/.test(sayfa));
+  /*
+   * ⚠ ÖLÇÜT ESKİDİ, KOD DEĞİL (K369, 04.11.2026): varsayılan HÂLÂ son 30 gün
+   * (kullanıcı kararı 04.11 — «30 gün kalsın + uyarı»). Değişen tek şey, anın
+   * artık çağrının içinde üretilmeyip paylaşılan `an`dan gelmesi; seçici ile
+   * boş-dönem uyarısı aynı aralığı kursun diye. Desen `new Date()` arıyordu.
+   */
+  kontrol("varsayılan dönem son 30 gün", /donemCozumu\.pencere \?\? pencereOlustur\("SON_30_GUN", an\)/.test(sayfa));
   const pano = oku("src/app/kart/[variantId]/kart-panosu.tsx");
   kontrol("sekme adrese yazılır (dönem korunur)", /href=\{suzgecAdresi\(temel, mevcut, \{ sekme: s === "genel" \? undefined : s \}\)\}/.test(pano));
   kontrol("kâr sekmesi izinsizde menüde de yok", /KART_SEKMELERI\.filter\(\(s\) => karGorunur \|\| s !== "kar"\)/.test(pano));
@@ -241,6 +248,93 @@ console.log("=".repeat(70));
   kontrol("  ...tek kovalık seride çubuk çizilmez", /const miniVar = mini !== undefined && mini\.length >= 2;/.test(ist));
   kontrol("  ...telefonda çubuklar yazının altına akar", /<MiniCubuklar degerler=\{mini\} telefondaAkista \/>/.test(ist) && /max-sm:static/.test(kutu));
   kosanBolumler.push("cizim");
+}
+
+/* ⑤ BOŞ DÖNEM — «veriler gözükmüyor» (K369, kullanıcı bildirimi 04.11.2026) */
+{
+  /* --- SAF GÖVDE: değerle sınanır, desen taranmaz --- */
+  const g = (y: string) => new Date(y + "T09:00:00Z");
+  const an = g("2026-11-04");
+  kontrol(
+    "tüm zamanlar: ilk satış ürün kaydından ESKİYSE başlangıç odur",
+    tumZamanAraligi(g("2026-01-05"), g("2026-03-10"), an).baslangic.getTime() === g("2026-01-05").getTime(),
+  );
+  kontrol(
+    "  ...ürün kaydı daha eskiyse başlangıç ODUR (alım satıştan önce olabilir)",
+    tumZamanAraligi(g("2026-08-11"), g("2026-07-28"), an).baslangic.getTime() === g("2026-07-28").getTime(),
+  );
+  kontrol(
+    "  ...hiç satmamış üründe ürün kaydına düşer (null sıfıra çevrilmez)",
+    tumZamanAraligi(null, g("2026-07-28"), an).baslangic.getTime() === g("2026-07-28").getTime(),
+  );
+  kontrol(
+    "  ...gelecek tarihli damga aralığı TERS çeviremez (başlangıç bugünü aşmaz)",
+    tumZamanAraligi(null, g("2027-01-01"), an).baslangic.getTime() === an.getTime(),
+  );
+  kontrol("  ...bitiş her zaman «şimdi»", tumZamanAraligi(g("2026-01-05"), g("2026-03-10"), an).bitis.getTime() === an.getTime());
+
+  /* --- EKRAN: ölçüt KULLANIM BLOĞUNA daraltılır --- */
+  const pano = oku("src/app/kart/[variantId]/kart-panosu.tsx");
+  const sayfa = oku("src/app/kart/[variantId]/page.tsx");
+  const kes = (m: string, bas: string, son: string) => {
+    const i = m.indexOf(bas);
+    if (i < 0) return "";
+    const j = m.indexOf(son, i + bas.length);
+    return m.slice(i, j < 0 ? m.length : j);
+  };
+  const uyari = kes(pano, "export async function DonemBosUyarisi(", "export async function DonemSecici(");
+  kontrol("boş dönem uyarısı bileşeni var", uyari.length > 400, uyari.length);
+  kontrol(
+    "  ...dönemde satış VARKEN hiç çizilmez (dolu ekranı kirletmez)",
+    uyari.includes("if (a.adet > 0) return null;"),
+  );
+  /* Hiç satılmamış dalı: BİLGİ verir, bağlantı vermez (İlke #2 — sıfır satır bağlantı olmaz). */
+  const hicDal = kes(uyari, "if (tumSatis === null", "const tumAralik =");
+  kontrol(
+    "  ...hiç satılmamışta «dönem seçiminden değil» denir",
+    hicDal.includes("t(\"donemHicSatilmamis\")"),
+  );
+  kontrol("  ...ve o dalda BAĞLANTI yoktur (açılacak liste yok)", !hicDal.includes("<Baglanti"));
+  /* Satmış ama dönem boş: sebep + tüm-zaman sayısı + son satış + genişletme yolu. */
+  const satmisDal = kes(uyari, "const tumAralik =", "export async function");
+  kontrol(
+    "  ...satmış ürün için SEBEP yazılır (boş kutu sessiz kalmaz — İlke #5)",
+    satmisDal.includes("t(\"donemBosBaslik\")") && satmisDal.includes("t(\"donemBosAciklama\""),
+  );
+  kontrol(
+    "  ...cümle tüm-zaman SAYISINI ve SON SATIŞI taşır (rakam kaynağına götürür — İlke #16)",
+    satmisDal.includes("satis: tumSatis,") && satmisDal.includes("son: bicim.tarih(a.sonSatis),"),
+  );
+  kontrol(
+    "  ...tek tıkla tüm zamanlara GENİŞLETİR (ÖZEL aralık, veriden)",
+    satmisDal.includes("t(\"donemBosGenislet\")") &&
+      satmisDal.includes("pencere: \"OZEL\",") &&
+      satmisDal.includes("baslangic: gunMetni(tumAralik.baslangic),"),
+  );
+  /* Seçicide «Tüm zamanlar» — kullanıcı uyarıyı görmeden de ulaşabilmeli. */
+  const secici = kes(pano, "export async function DonemSecici(", "export async function UstKpiler(");
+  kontrol(
+    "dönem seçicisinde «Tüm zamanlar» düğmesi var",
+    secici.includes("t(\"donemTumZamanlar\")") && secici.includes("baslangic: gunMetni(tumAralik.baslangic),"),
+  );
+  kontrol(
+    "  ...seçili olduğu GÖRÜNÜR (hangi pencerede olduğunu ekran söyler)",
+    secici.includes("const tumSecili =") && secici.includes("${tumSecili ?"),
+  );
+  /* Sayı YENİDEN SORULMAZ: kart zaten tüm-zaman sayısını başlıkta taşıyor. */
+  kontrol(
+    "sayfa uyarıyı özet kutularının ÜSTÜNE çizer ve sayıyı MEVCUT özetten verir",
+    sayfa.includes("<DonemBosUyarisi") &&
+      sayfa.includes("tumSatis={ozet.hicSatilmamisMi ? null : ozet.satisSayisi}") &&
+      sayfa.indexOf("<DonemBosUyarisi") < sayfa.indexOf("<OzetKutulari"),
+  );
+  kontrol(
+    "  ...seçici ile uyarı AYNI «an»ı kullanır (iki new Date() iki ayrı aralık üretirdi)",
+    sayfa.includes("const an = new Date();") &&
+      sayfa.includes("an={an}") &&
+      !sayfa.includes("pencereOlustur(\"SON_30_GUN\", new Date())"),
+  );
+  kosanBolumler.push("bos-donem");
 }
 
 console.log("=".repeat(70));
