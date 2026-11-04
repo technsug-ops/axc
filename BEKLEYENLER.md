@@ -13,7 +13,9 @@
 
 ---
 
-## 🔴 K369 — KÂRLILIK KARTI BOŞ AÇILIYORDU: 4 SATIŞI OLAN ÜRÜN «HİÇ SATMAMIŞ» GİBİ GÖRÜNDÜ · 04.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K369 — KÂRLILIK KARTI BOŞ AÇILIYORDU: 4 SATIŞI OLAN ÜRÜN «HİÇ SATMAMIŞ» GİBİ GÖRÜNDÜ · 04.11.2026 · [CANLIDA 04.11.2026 — HALİL TESTİ BEKLİYOR]
+
+**YAYIN ÖLÇÜLDÜ 04.11.2026:** `main` ← `dfa47d7b` · Vercel `dpl_3JxZdSDGh75mnhnzsGUKAwLsKp82` **READY** (fra1, 48 sn) · `bezirga.com` o dağıtımın alias listesinde ve `/giris` **200** döndü. Ekran GERÇEK CİHAZDA görülmedi — teslim sayılmaz.
 
 **Kullanıcı 04.11.2026:** _«Karlilik kartinda ürün alma gecmisi calismiyor. bu üründen geçen aylarda 4 tane satış olmuş yeniden alayım mı diye baktım burada veriler gözükmüyor, satış sekmesinden bakınca çıktı.»_
 
@@ -111,7 +113,9 @@ sustuğu yerde konuşuyor.
 
 ---
 
-## 🔴 K368 — BİTMİŞ TEKLİFİN KOMİSYONU HÂLÂ UYGULANIYORDU: %9,1 ↔ GERÇEK %18 · 02.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K368 — BİTMİŞ TEKLİFİN KOMİSYONU HÂLÂ UYGULANIYORDU: %9,1 ↔ GERÇEK %18 · 02.11.2026 · [CANLIDA 04.11.2026 — HALİL TESTİ BEKLİYOR]
+
+**YAYIN ÖLÇÜLDÜ 04.11.2026:** `main` ← `dfa47d7b` · Vercel `dpl_3JxZdSDGh75mnhnzsGUKAwLsKp82` **READY** (fra1, 48 sn) · `bezirga.com` o dağıtımın alias listesinde ve `/giris` **200** döndü. Ekran GERÇEK CİHAZDA görülmedi — teslim sayılmaz.
 
 **Kullanıcı 02.11.2026:** _«bu eleman buybox da hesaplamada yanlış komisyon çekiyor, bu üründe komisyonu 9,1 hesaplıyor halbuki komisyon 18, komisyon tarifesi de güncel»_ · _«kendi hesaplama yaptım, fark baya var, buyboxa göre baksak zarar eder»_ · teyit: _«Hepsiburada'da normalde ürün komisyonu hep 18 legolarda; çarşambadan çarşambaya teklifler yenileniyor, mevcut bu haftaki tekliflerde 9,1 yok.»_
 
