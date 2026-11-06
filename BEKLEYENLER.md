@@ -13,7 +13,9 @@
 
 ---
 
-## 🔴 K371 — UZUN DİYALOG TELEFONDA ONAYLANAMIYORDU: ONAYLA DÜĞMESİ EKRANIN DIŞINDAYDI · 06.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K371 — UZUN DİYALOG TELEFONDA ONAYLANAMIYORDU: ONAYLA DÜĞMESİ EKRANIN DIŞINDAYDI · 06.11.2026 · [CANLIDA 06.11.2026 — HALİL TESTİ BEKLİYOR]
+
+**YAYIN ÖLÇÜLDÜ 06.11.2026:** `main` ← `b4e37fbb` · Vercel `dpl_8Dr4MpMFstvAL4AJk2SnF9anuyjz` **READY** (fra1, 55 sn) · `bezirga.com` ve `www.bezirga.com` o dağıtımın alias listesinde (`aliasError: null`) · `/giris` ikisinde de **200**. Push öncesi bekçi turu **171/171 yeşil** (yeni bekçi turun 171.'si). ⛔ Ekran GERÇEK CİHAZDA görülmedi — teslim sayılmaz (bkz. «sınanmamış ekran, ekran değildir»).
 
 **Kullanıcı 06.11.2026:** _«bu siparişi telefonda onaylayamıyorum, satın alım
 çeşiti çok, ekran aşağıya inmiyor.»_ İki ekran görüntüsü: HB `4207119173`
