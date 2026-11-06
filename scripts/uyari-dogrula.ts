@@ -1114,8 +1114,26 @@ console.log("=".repeat(70));
     !/\{notZorunluMu\(sebep\) \? \(\s*<Input/.test(buton),
   );
   kontrol("  ...yalnız ZORUNLU eki koşullu", /notZorunluMu\(sebep\)/.test(notBloku));
-  /** Küçük ekranda kesilmesin — alanın "görünmemesi" bu yüzden olabilirdi. */
-  kontrol("diyalog taşarsa kaydırılabiliyor", /overflow-y-auto/.test(buton));
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ — SUSTURULMADI, GÜNCELLENDİ (K371, 06.11.2026).
+   * Eskiden burada "diyalog taşarsa kaydırılabiliyor" diye `overflow-y-auto`
+   * ARANIYORDU, çünkü bu ekran kendi yükseklik sınırını KENDİ koymuştu
+   * (`max-h-[85svh] overflow-y-auto`). K371 ölçümü şunu gösterdi: aynı kusura
+   * BEŞ ekran ayrı ayrı, DÖRT farklı birimde yama yapmış (85vh · 80vh · 90vh
+   * · 85svh) ve kalan 41 diyalog korumasız kalmış. Çare ortak bileşene
+   * taşındı (`alert-dialog.tsx` · `dialog.tsx` → `max-h-[calc(100%-2rem)]`
+   * + `overflow-y-auto`) ve tüketicinin KENDİ sınırını koyması artık YASAK —
+   * yani eski ölçüt, yeni kuralın tam TERSİNİ isteyecekti.
+   *
+   * Kaydırma garantisini ölçen yer: `diyalog-boyu:dogrula` (20 ölçüt, 7/7
+   * mutasyon). Burada kalan ölçüt BAŞKA bir soruyu sorar ve o soru hâlâ bu
+   * dosyanın işidir: bu ekran garantiyi VEREN ortak bileşeni kullanıyor mu,
+   * yoksa kendi kutusunu mu kuruyor?
+   */
+  kontrol(
+    "diyalog ortak bileşenden geliyor (kaydırma garantisi orada)",
+    /<DialogContent\b/.test(buton) && !/<DialogContent[^>]*overflow-y/.test(buton),
+  );
   /** Yer tutucu sebebe göre — ne yazılacağını gösteriyor. */
   kontrol("yer tutucu sebebe göre", /dogrulaNotIpucu_\$\{sebep\}/.test(buton));
 

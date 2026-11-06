@@ -87,6 +87,21 @@ istisna beyanı gerekçesiz bırakıldı.
 kalmalı — yalnız gerçek bozmalar denenirse hiçbir şey koşturmayan bir harness
 «mükemmel» görünür. _(Anayasa: «her harness iki yönde sağlama ister».)_
 
+⛔ **VE PUSH KAPISI BU PAKETİ BİR KEZ REDDETTİ — ÖLÇÜT ESKİMİŞTİ, KOD DEĞİL.**
+`uyari:dogrula` 270 kontrolün 1'inde kırmızı yandı: `uyari-dogrula.ts:1118`
+tam da kaldırdığım **yerel** `overflow-y-auto`'yu arıyordu
+(_«diyalog taşarsa kaydırılabiliyor»_). Yani eski ölçüt, yeni kuralın
+**tam tersini** istiyordu — tüketicinin kendi sınırını koyması artık yasak.
+Ölçüt **susturulmadı, GÜNCELLENDİ** ve niye eskidiği koda yazıldı; yeni hâli
+başka bir soru soruyor ve o soru hâlâ o dosyanın işi: _bu ekran garantiyi
+VEREN ortak bileşeni kullanıyor mu, yoksa kendi kutusunu mu kuruyor?_
+Üç mutasyonla sınandı (zararsız → yeşil · ortak bileşen bırakıldı → kırmızı ·
+yerel sınır geri kondu → kırmızı).
+_(Anayasa: «bekçinin kırmızısı her zaman kod yanlış demez».)_
+⚠ Ve bildirimin çıkış kodu **0** diyordu — gerçek sonuç `PUSH_CIKIS=1`,
+log okunmasaydı yayımlamaya kalkılacaktı. _(«hiçbir doğrulama boru sonuna
+güvenmez».)_
+
 ⚠ **ÖLÇÜM BETİĞİ DEPOYA GİRMEDİ — BİLEREK.** Tarayıcı otomasyonu bu depoda
 yalnız el kitabı ekran görüntüleri için açık (08.08.2026 kararı · 21.10.2026
 istisnası). Ölçüm geçici koşuldu; kalıcı koruma **bekçidir** ve bekçi kaynağı
