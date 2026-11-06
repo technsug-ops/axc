@@ -13,6 +13,115 @@
 
 ---
 
+## 🔴 K371 — UZUN DİYALOG TELEFONDA ONAYLANAMIYORDU: ONAYLA DÜĞMESİ EKRANIN DIŞINDAYDI · 06.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 06.11.2026:** _«bu siparişi telefonda onaylayamıyorum, satın alım
+çeşiti çok, ekran aşağıya inmiyor.»_ İki ekran görüntüsü: HB `4207119173`
+siparişinin onay diyaloğunda **11 parti seçeneği** var; liste ekranın altına
+taşıyor, `Düşülecek toplam maliyet: ₺627,68` satırı en altta kalıyor ve
+**Onayla düğmesi hiç görünmüyor** — kaydırmak da işe yaramıyor.
+
+**ÖLÇÜLDÜ — GERÇEK TARAYICIDA, tahmin değil.** Diyaloğun ilgili CSS'i
+`alert-dialog.tsx`ten birebir haritalandı (11 seçenek, gerçek görüntüdeki gibi
+**sarmalı** satırlar) ve Playwright ile üç telefon boyunda ölçüldü:
+
+| aday | 360×640 | 390×844 | 412×915 |
+|---|---|---|---|
+| **MEVCUT** | ⛔ Onayla `702..738` · ekran 640 → **ULAŞILAMAZ** | kutu `-56..900` | kutu `-20..936` |
+| **B** diyalog kayar | ✓ (toplam ve düğme ancak kaydırınca) | ✓ | ✓ |
+| **D** liste kendi içinde kayar | ✓ **toplam + Onayla açılıştan görünür** | ✓ | ✓ |
+
+**KÖK SEBEP — ORTALANIYOR AMA SINIRLANMIYOR.** `AlertDialogContent`
+`fixed top-1/2 left-1/2 … -translate-y-1/2` ile ortalanıyordu ve **yükseklik
+sınırı yoktu**. İçerik ekranı aşınca kutu **iki uçtan birden** dışarı taşıyor;
+diyalog sayfa akışında olmadığı ve Radix gövde kaydırmasını kilitlediği için
+**kaydırılacak bir şey de kalmıyor.** Ekranda bir hata görünmüyor — yalnız
+düğme yok. Aynı kusur `DialogContent`te de vardı (14 kullanım).
+
+⚠ **VE ÇARE BEŞ EKRANDA AYRI AYRI UYDURULMUŞTU — KÖKÜNDE DEĞİL.** Bekçi
+yazılınca ortaya çıktı: beş ekran aynı kusura çarpmış ve her biri kendi
+sınırını koymuş — **dört farklı birimde**: `max-h-[85vh]` · `[80vh]` ·
+`[90vh]` (iki yerde) · `[85svh]`. Yani kusur biliniyordu, ama hiçbiri ortak
+bileşene dokunmamıştı ve kalan **41 diyalog korumasız** yaşıyordu.
+_(Anayasa: «düzeltmenin çaresi dosya listesi değil, desen yasağıdır».)_
+
+**ÇARE — İKİ KATMAN:**
+① **Ortak bileşen** (`alert-dialog.tsx` · `dialog.tsx`):
+`max-h-[calc(100%-2rem)] overflow-y-auto`. 46 diyalog birden korundu; beş
+yerel yama kaldırıldı (biri gerekçesiyle beyan edilerek kaldı, aşağıda).
+② **Sipariş onayı**: parti listesi `max-h-64` ile kendi içinde kayar —
+TOPLAM ve ONAYLA **açılıştan** görünür (ölçüm: liste 268 px kendi içinde
+kayıyor, diyalog hiç kaymıyor).
+
+⚠ **SINIR `100%`, `vh` DEĞİL — VE BU ÖLÇÜLEN BİR TERCİH DEĞİL, REFERANS
+TUTARLILIĞI:** yüzde, sabit konumlu öğede `top-1/2` ile **aynı kabı** (ilk
+içeren blok) ölçer; ortalama ile sınır tek referanstan okunur. `vh` ikinci bir
+referans açardı. Bekçi bunu ayrıca sınıyor ve `vh`ye çeviren mutasyon kırmızı
+yanıyor.
+
+⚠ **BEYANLI İSTİSNA — `aranabilir-secim.tsx`:** o diyalogda kaydırma **iç
+listede** (`max-h-[50vh]`), diyaloğun kendisi bilerek kaymıyor (arama kutusu
+üstte sabit kalmalı). Yerel `max-h-[80vh]` kaldırıldı, `overflow-hidden`
+**gerekçesiyle beyan edilerek** kaldı (`DIYALOG SINIRI ISTISNA: …`).
+**Gerekçesiz beyan geçmez** — bekçi onu da kırmızı yakıyor (muafiyet bedava
+olmaz).
+
+**BEKÇİ:** `diyalog-boyu:dogrula` — **20 ölçüt**, 3 bölüm, bölüm sayacı var
+(yarım koşum «geçti» diyemez). ⚠ Ölçüt **dosya listesi değil desen yasağı**:
+`src/` altındaki **her** `.tsx` taranır, hiçbir tüketici ortak bileşenin
+sınırını beyansız ezemez; yarın açılan diyalog kapsama kendiliğinden girer.
+Taban doluluğu ayrıca ölçülüyor (46 kullanım ≥ 40) — boş küme her koşulu
+sağlar ve ölçüt kendi kendini kandırırdı.
+⚠ **YORUMSUZ KODDA ARANIR:** bileşen dosyaları kusuru ANLATAN uzun yorumlar
+taşıyor ve içlerinde `max-h-[85vh]` gibi diziler geçiyor; yorum, sınıfın
+yerinde durduğunu kanıtlamaz. Beyan araması ise **yorumları uzunluğu
+koruyarak boşaltıp** yapılıyor — `yorumsuz` konumları kaydırdığı için beyan
+yanlış yerde aranırdı.
+
+**MUTASYON:** `diyalog-boyu-mutasyon:kontrol` **7/7** (4 kaldıran · 3
+fazladan, hepsi kırmızı yandığı GÖRÜLDÜ): uyarı diyaloğunun sınırı kalktı ·
+iç kaydırması kalktı · sınır `vh`ye çevrildi · `DialogContent`in sınırı kalktı
+· parti listesinin sınırı kalktı · tüketici kendi sınırını koydu (beyansız) ·
+istisna beyanı gerekçesiz bırakıldı.
+⭐ **ZARARSIZ SAĞLAMA DA KOŞUYOR:** yorum ekleyen bir mutasyon **yeşil**
+kalmalı — yalnız gerçek bozmalar denenirse hiçbir şey koşturmayan bir harness
+«mükemmel» görünür. _(Anayasa: «her harness iki yönde sağlama ister».)_
+
+⚠ **ÖLÇÜM BETİĞİ DEPOYA GİRMEDİ — BİLEREK.** Tarayıcı otomasyonu bu depoda
+yalnız el kitabı ekran görüntüleri için açık (08.08.2026 kararı · 21.10.2026
+istisnası). Ölçüm geçici koşuldu; kalıcı koruma **bekçidir** ve bekçi kaynağı
+ölçer. ⛔ Bu yüzden _düğmeye gerçekten ulaşıldığı_ hâlâ **gerçek cihazda**
+görülmeden teslim sayılmaz.
+
+**GEÇMİŞE DOKUNULMADI:** tek satır veri değişmedi; yalnız sınıf adları.
+
+### Halil test listesi — tıklama düzeyinde
+
+1. Telefonda **canlı** adreste `/satislar` → **çok partili** bir siparişin
+   (ör. `4207119173`, axcali2077) **Onayla** düğmesine bas.
+2. Diyalog açılır açılmaz **Onayla ve Vazgeç düğmeleri GÖRÜNÜR olmalı** —
+   kaydırmaya gerek kalmadan.
+3. **Düşülecek toplam maliyet** satırı da açılıştan görünmeli.
+4. Parti listesini **parmakla kaydır** → 11 partinin hepsi gelmeli; **sayfa
+   ya da diyalog yerinden oynamamalı**, yalnız liste kaymalı.
+5. Listenin alt kenarında bir satırın **yarısı görünüyor** olmalı — kaydığı
+   böyle belli oluyor.
+6. Bir parti seç → **Düşülecek toplam maliyet** o partinin birim maliyetine
+   dönmeli (ör. `19.10.2026 · birim ₺627,68` → toplam `₺627,68`).
+7. **Onayla**'ya bas → «onaylandı» mesajı çıkmalı ve satır listeden düşmeli.
+8. Tek partili bir siparişte onayı aç → diyalog eskisi gibi kısa olmalı
+   (sınır devreye girmemeli, boşluk oluşmamalı).
+9. Telefonda **başka bir uzun diyalog** aç (ör. `/satislar` → **Doğrula**,
+   ya da `/rapor/buybox` → fiyat penceresi) → alttaki düğmeler ekranda
+   olmalı, gerekirse diyalog kendi içinde kaymalı.
+10. Masaüstünde aç → diyaloglar **eskisi gibi** ortada, bozulma olmamalı.
+
+**mobil doğrulama kullanıcıda.** · i18n: ✓ (yeni metin yok) · kullanıcı
+kolaylığı: ✓ (#8 mobil eşit vatandaş · #5 sessiz başarısızlık yok — düğme
+artık ulaşılabilir)
+
+---
+
 ## 🔴 K370 — KÂRLILIK KARTI TELEFONDA SAYFAYA SIĞMIYORDU: KÜNYE EKRANIN DIŞINDA KESİLİYORDU · 04.11.2026 · [CANLIDA 04.11.2026 — HALİL TESTİ BEKLİYOR]
 
 **YAYIN ÖLÇÜLDÜ 04.11.2026:** `main` ← `e3ce4013` · Vercel `dpl_AdGLhD8UPmEAU5dkrbcXpYSwvZJf` **READY** (fra1, 39 sn) · `bezirga.com` o dağıtımın alias listesinde ve `/giris` **200** döndü. Push öncesi bekçi turu **170/170 yeşil**. ⛔ Ekran GERÇEK CİHAZDA görülmedi — teslim sayılmaz (bkz. «sınanmamış ekran, ekran değildir»).

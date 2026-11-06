@@ -202,7 +202,7 @@ export function FiyatPenceresi({
         <Calculator />
         <EylemEtiketi>{t("fiyatla")}</EylemEtiketi>
       </Button>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{adim === "fiyat" ? t("pencereBaslik", { kanal: kanalAdi }) : t("onayBaslik")}</DialogTitle>
           <DialogDescription className="line-clamp-2">{urunAdi}</DialogDescription>

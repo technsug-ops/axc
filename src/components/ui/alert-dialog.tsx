@@ -44,6 +44,32 @@ function AlertDialogOverlay({
   )
 }
 
+/**
+ * ⛔ YÜKSEKLİK SINIRI + İÇ KAYDIRMA — UZUN DİYALOG ONAYLANAMAZ OLUYORDU (K371)
+ * ----------------------------------------------------------------------------
+ * Kullanıcı 06.11.2026: _«bu siparişi telefonda onaylayamıyorum, satın alım
+ * çeşiti çok, ekran aşağıya inmiyor.»_ 11 partili bir siparişte onay diyaloğu
+ * ekranı aşıyor ve Onayla düğmesine ULAŞILAMIYORDU.
+ *
+ * SEBEP: kutu `fixed top-1/2 … -translate-y-1/2` ile ortalanıyordu ve
+ * YÜKSEKLİK SINIRI YOKTU. İçerik ekranı aşınca iki uçtan birden dışarı
+ * taşıyor; diyalog sayfa akışında olmadığı ve Radix gövde kaydırmasını
+ * kilitlediği için kaydırılacak bir şey de kalmıyor.
+ *
+ * ÖLÇÜLDÜ (gerçek tarayıcı, 11 seçenek, sarmalı satırlar):
+ *   360×640  sınırsız → Onayla 702..738 px, ekran 640 → ⛔ ULAŞILAMAZ
+ *   390×844  sınırsız → kutu -56..900 (iki uçtan da taşıyor)
+ *   sınırlı  → kutu 16..828, iç kaydırma 144 px, düğme ulaşılır
+ *
+ * ⚠ SINIR `100%`, `vh` DEĞİL: yüzde, sabit konumlu öğede `top-1/2` ile
+ * AYNI kabı (ilk içeren blok) ölçer — ortalama ile sınır tek referanstan
+ * okunur. `vh` ikinci bir referans açardı.
+ *
+ * ⚠ ÇARE TEK EKRANDA DEĞİL ORTAK BİLEŞENDE: aynı kusura bir ekran zaten
+ * çarpmış ve kendi başına `max-h-[85vh]` koymuştu (`yeniden-hesapla.tsx`);
+ * kalan 45 diyalog korumasızdı. O yerel yama kaldırıldı — iki yerde iki
+ * ölçüt olmaz. Bekçi: `diyalog-boyu:dogrula`.
+ */
 function AlertDialogContent({
   className,
   size = "default",
@@ -58,7 +84,7 @@ function AlertDialogContent({
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(
-          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-border duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100%-2rem)] w-full -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-border duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}

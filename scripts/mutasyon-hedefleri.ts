@@ -139,6 +139,11 @@ export function gercekCakismaGruplari(npmAdlari: string[]): string[][] {
  * KIRMIZI yanar.
  */
 export const SIRALI_MUTASYON_GRUP: readonly string[] = [
+  /* 06.11.2026 (K371): ORTAK diyalog bileşenlerini (`alert-dialog.tsx` ·
+     `dialog.tsx`) bozar — bu ikisini neredeyse her ekran dosyası içeri alır,
+     ayrıca satış onayı, buybox penceresi ve aranabilir seçim dosyalarına
+     dokunur; liste/panel/kart denetimleriyle aynı kümeye düşüyor. */
+  "diyalog-boyu-mutasyon:kontrol",
   /* 17.10.2026 (K344): grafik penceresi artık kaynak bağlantısını da bozar —
      liste-suzgeci + satış listesi + kart grafikleri; liste ve kart denetimleriyle aynı dosyalar. */
   "grafik-nokta-mutasyon:kontrol",

@@ -360,6 +360,8 @@
     "hakedis-yazici:dogrula": "tsx scripts/hakedis-yazici-dogrula.ts",
     "canli:fifo-dagit": "tsx scripts/canli-fifo-yeniden-dagit.ts",
     "sunucu-eylemi:dogrula": "tsx scripts/sunucu-eylemi-dogrula.ts",
+    "diyalog-boyu:dogrula": "tsx scripts/diyalog-boyu-dogrula.ts",
+    "diyalog-boyu-mutasyon:kontrol": "tsx scripts/diyalog-boyu-mutasyon-kontrol.ts",
     "derleme:dogrula": "tsx scripts/derleme-dogrula.ts",
     "istemci-siniri:dogrula": "tsx scripts/istemci-siniri-dogrula.ts",
     "parti-secimi:dogrula": "tsx scripts/parti-secimi-dogrula.ts",

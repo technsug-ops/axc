@@ -153,8 +153,18 @@ export function SiparisOnayi({ saleId, kod }: { saleId: string; kod: string }) {
                 {/* ── PARTİ SEÇİMİ (K110) — çok parti varsa tıklanabilir
                      seçenekler; tek parti varsa düz bilgi satırı. ────────── */}
                 {kalem.secenekler.length > 1 ? (
+                  /**
+                   * ⛔ LİSTE KENDİ İÇİNDE KAYAR (K371) — parti sayısı veriyle
+                   * büyür (canlıda 11 görüldü) ve liste bütün diyaloğu
+                   * uzatırsa TOPLAM ile ONAYLA ekrandan çıkar.
+                   * Ölçüldü (11 seçenek): sınırsız → 360×640'ta Onayla
+                   * ULAŞILAMAZ; `max-h-64` → üç ekran boyunda da toplam ve
+                   * düğme AÇILIŞTAN görünür, liste 268 px kendi içinde kayar.
+                   * ⚠ Sınır bir satırı ORTADAN keser — kaydırılabildiği böyle
+                   * belli olur (telefonda kalıcı kaydırma çubuğu yok).
+                   */
                   <div
-                    className="space-y-1"
+                    className="max-h-64 space-y-1 overflow-y-auto"
                     role="radiogroup"
                     aria-label={t("onaySecimBaslik")}
                   >

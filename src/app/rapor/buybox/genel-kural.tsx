@@ -70,7 +70,7 @@ export function GenelKuralPenceresi({ genel }: { genel: GenelKural }) {
         <SlidersHorizontal className="size-4" aria-hidden />
         {t("genelKuralDugme")}
       </Button>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("genelKuralBaslik")}</DialogTitle>
           <DialogDescription>{t("genelKuralNotu")}</DialogDescription>

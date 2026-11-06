@@ -142,7 +142,7 @@ export function YenidenHesapla({
         </Button>
       </AlertDialogTrigger>
 
-      <AlertDialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <AlertDialogContent className="sm:max-w-2xl">
         <AlertDialogHeader>
           <AlertDialogTitle>{t("yenidenHesaplaBaslik")}</AlertDialogTitle>
           <AlertDialogDescription>

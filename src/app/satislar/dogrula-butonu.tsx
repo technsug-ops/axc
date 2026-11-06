@@ -79,7 +79,7 @@ export function DogrulaButonu({ saleItemId }: { saleItemId: string }) {
             çiziliyordu. Geriye tek makul açıklama kalıyor: diyalog
             görüş alanını taşıyor ve alan altta kalıyordu. Tavan
             yükseklik + kaydırma, o ihtimali kapatıyor. */}
-        <DialogContent className="max-h-[85svh] overflow-y-auto">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("dogrulaBaslik")}</DialogTitle>
             <DialogDescription>{t("dogrulaAciklama")}</DialogDescription>

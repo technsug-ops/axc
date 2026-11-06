@@ -111,7 +111,11 @@ export function AranabilirSecim({
           </span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[80vh] overflow-hidden">
+      {/* DIYALOG SINIRI ISTISNA: kaydirma IC LISTEDE (max-h-[50vh]),
+          diyalogun kendisi kaymaz — arama kutusu ustte sabit kalmali.
+          Yukseklik siniri ortak bilesenden gelir; burada yalniz kirpma
+          beyan ediliyor. (K371) */}
+      <DialogContent className="overflow-hidden">
         <DialogHeader>
           <DialogTitle>{etiket}</DialogTitle>
         </DialogHeader>
