@@ -139,6 +139,12 @@ export function gercekCakismaGruplari(npmAdlari: string[]): string[][] {
  * KIRMIZI yanar.
  */
 export const SIRALI_MUTASYON_GRUP: readonly string[] = [
+  /* 08.11.2026 (K373): deneme maliyeti düzeltmesi tarife aynasını da aynı
+     gövdeye bağladı (İlke #10), bu yüzden harness artık
+     `src/app/ayarlar/tarife/[id]/eylemler.ts` dosyasını da mutasyona
+     uğratıyor — `teklif-tanima-mutasyon:kontrol` de AYNI dosyayı hedefliyor.
+     Paralel koşsalardı birbirinin mutasyonunu ezerlerdi (sessiz yarış). */
+  "simulasyon-mutasyon:kontrol",
   /* 06.11.2026 (K371): ORTAK diyalog bileşenlerini (`alert-dialog.tsx` ·
      `dialog.tsx`) bozar — bu ikisini neredeyse her ekran dosyası içeri alır,
      ayrıca satış onayı, buybox penceresi ve aranabilir seçim dosyalarına
