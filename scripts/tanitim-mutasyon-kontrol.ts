@@ -1,162 +1,139 @@
-import { readFileSync, existsSync, unlinkSync, renameSync, copyFileSync, mkdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 import { dayanikliYaz, desenNormalle } from "./mutasyon-deseni";
 
 /**
  * ============================================================================
- *  TANITIM VİTRİNİ — MUTASYON HARNESS'İ (K372, 07.11.2026)
- *      npm run tanitim-mutasyon:kontrol
+ *  TANITIM VİTRİNİ — MUTASYON HARNESS'İ (K374, 08.11.2026)
  * ----------------------------------------------------------------------------
- *  ⛔ NİYE ZORUNLU: `tanitim-dogrula` geri alınamaz bir şeyi koruyor —
- *  gerçek iş verisinin herkese açık bir siteye çıkmasını. Böyle bir bekçinin
- *  KÖR olması, bekçi olmamasından kötüdür: koruma varmış gibi görünür.
+ *      npm run tanitim-mutasyon:kontrol
  *
- *  ⚠ İKİ YÖN AYRI SINANIR (anayasa):
- *    − KALDIRAN : korumanın aradığı şey ortadan kalkar (beyan silinir,
- *                 görsel değişir, ayna boşalır)
- *    + FAZLADAN : olmaması gereken bir şey belirir (eşi olmayan görsel) ya
- *                 da doğru şey YANLIŞ YERE taşınır (beyan gövdeden yoruma)
+ *  ⛔ KAPSAM DEĞİŞTİ 08.11.2026 — ESKİ GEREKÇE `tanitim-dogrula.ts`
+ *  başlığında duruyor. Vitrin ayrı statik siteden (`tanitim/`) uygulamanın
+ *  içine taşındı (`/info`), bu yüzden eski çapaların hepsi düştü ve liste
+ *  yeniden yazıldı. ⚠ Mutasyonlar SİLİNMEDİ — NİYETLERİ korunup yeni koda
+ *  taşındı (anayasa: "refaktör, çapalı harness'i de taşır").
  *
- *  Üç kapı:
- *    1) mutasyon UYGULANDIĞI diskten okunarak doğrulanır
- *    2) hüküm ÇIKIŞ KODUNDAN — bekçi başlığı basılmadıysa "ÇÖKTÜ"
- *    3) ZARARSIZ mutasyon ÖNCE koşar ve YEŞİL kalmalı; yoksa her şeyi
- *       kırmızı yakan bir harness "mükemmel" görünür
+ *  Üç kapı (öteki harness'lerle aynı gövde):
+ *    ① desen kaynakta TAM BİR KEZ geçmeli
+ *    ② mutasyon diskten okunarak UYGULANDIĞI doğrulanır
+ *    ③ hüküm ÇIKIŞ KODUNDAN — bekçinin başlığı yoksa "ÇÖKTÜ"
  *
- *  ── ŞEKİL: `dosya` + `bul` BEYAN EDİLİR ─────────────────────────────────
- *  `mutasyon-capa:dogrula` her çapayı hedef dosyasında ARAR. Bu yüzden
- *  mutasyonlar kapalı bir nesne olarak yazılır, kapanış (closure) içine
- *  gizlenmez — yoksa denetim "ÇÖZÜLEMEDİ" der ve çapam HİÇ sınanmamış
- *  kalır (ve bu "temiz" SAYILMAZ).
- *
- *  ⚠ ÜÇ MUTASYONUN METİN ÇAPASI YOK ve bu MEŞRU: bir görselin baytlarını,
- *  yeni bir dosyanın varlığını ve bir klasörün yokluğunu bozarlar. Bunlar
- *  `bul: null` ile AÇIKÇA beyan edilir — "çapa bulunamadı" ile "zaten
- *  çapasızmış" ayırt edilebilsin diye.
- *
- *  ⚠ İKİLİ DOSYA `copyFileSync` ile yazılır: `dayanikliYaz` metin kapısıdır
- *  ve bir JPEG'i utf8'den geçirmek bozar. Kapının var olma sebebi olan
- *  Windows dosya kilidi burada yok — `tanitim/gorsel/` altındaki görselleri
- *  açık tutan bir süreç yok (dev sunucusu da, izleyici de okumaz) ve geri
- *  alma zaten kaynağın kendisinden kopyalanıyor.
+ *  ⛔ VE ZARARSIZ SAĞLAMA ÖNCE KOŞAR: hiçbir şeyi ölçmeyen bir harness,
+ *  her şeyi kırmızı yakarak "mükemmel" görünebilir (yalancı kırmızı).
  * ============================================================================
  */
 
 const BEKCI = "scripts/tanitim-dogrula.ts";
 const BEKCI_BASLIGI = "TANITIM VİTRİNİ BEKÇİSİ";
 
-const SAYFA = "tanitim/index.html";
-const GORSEL_KLASOR = "tanitim/gorsel";
-const GIZLI_KLASOR = "tanitim/gorsel-mutasyon-gizli";
-const AYNA_KAYNAK = "public/kitap-ekran/satislar.jpg";
+const SAYFA = "src/app/info/page.tsx";
+const KAPI = "src/proxy.ts";
+const SOZLUK = "messages/tr.json";
 
 type Mutasyon = {
   ad: string;
   yon: "KALDIRAN" | "FAZLADAN";
   dosya: string;
-  /** Metin çapası; ikili/varlık mutasyonlarında BEYANEN `null`. */
-  bul: string | null;
-  koy: string | null;
+  bul: string;
+  koy: string;
   bozdugu: string;
-  /** `bul` null olduğunda kullanılır. */
-  ozelUygula?: () => void;
-  ozelGeriAl?: () => void;
-  uygulandiMi: () => boolean;
 };
 
 const MUTASYONLAR: Mutasyon[] = [
   {
-    ad: "VİTRİNE EŞİNDEN FARKLI BİR GÖRÜNTÜ KONDU",
+    ad: "KAPI KAPANDI - /info artik girise yonleniyor",
     yon: "KALDIRAN",
-    dosya: "tanitim/gorsel/satislar.jpg",
-    bul: null,
-    koy: null,
+    dosya: KAPI,
+    bul: '  "/info",',
+    koy: "",
     bozdugu:
-      "ornek veri hattindan gelmeyen bir goruntu vitrine girer; gercek musteri/SKU/kar internete cikar",
-    ozelUygula: () => copyFileSync("tanitim/gorsel/stok.jpg", "tanitim/gorsel/satislar.jpg"),
-    ozelGeriAl: () => copyFileSync(AYNA_KAYNAK, "tanitim/gorsel/satislar.jpg"),
-    uygulandiMi: () =>
-      !readFileSync("tanitim/gorsel/satislar.jpg").equals(readFileSync(AYNA_KAYNAK)),
+      "ziyaretci vitrin yerine giris ekrani gorur; hicbir hata cikmaz, vitrin SESSIZCE yok olur",
   },
   {
-    ad: "AYNADA EŞİ OLMAYAN GÖRSEL BELİRDİ",
+    ad: "GORSEL KAPISI KAPANDI - ekran goruntuleri girise yonleniyor",
+    yon: "KALDIRAN",
+    dosya: KAPI,
+    bul: '  "/kitap-ekran",',
+    koy: "",
+    bozdugu:
+      "sayfa acilir ama butun ekran goruntuleri bos kutu olur; ziyaretci sistemi HIC goremez",
+  },
+  {
+    ad: "KAPI VARSAYILAN ACIK yapildi",
     yon: "FAZLADAN",
-    dosya: "tanitim/gorsel/ekip-fotografi.jpg",
-    bul: null,
-    koy: null,
+    dosya: KAPI,
+    bul: "  if (acikMi(yol)) return NextResponse.next();",
+    koy: "  if (true) return NextResponse.next();",
     bozdugu:
-      "elle konmus bir gorsel aynaya karisir; provenansi kanitlanamayan dosya sessizce yayimlanir",
-    ozelUygula: () =>
-      copyFileSync("tanitim/gorsel/satislar.jpg", "tanitim/gorsel/ekip-fotografi.jpg"),
-    ozelGeriAl: () => {
-      if (existsSync("tanitim/gorsel/ekip-fotografi.jpg"))
-        unlinkSync("tanitim/gorsel/ekip-fotografi.jpg");
-    },
-    uygulandiMi: () => existsSync("tanitim/gorsel/ekip-fotografi.jpg"),
+      "butun ERP herkese acilir - defterin tamami oturumsuz ziyaretciye gider",
   },
   {
-    ad: "AYNA KLASÖRÜ BOŞALDI (tarama hiç dönmüyor)",
+    ad: "KAHRAMANDAKI ornek veri beyani cizilmiyor",
     yon: "KALDIRAN",
-    dosya: "tanitim/gorsel",
-    bul: null,
-    koy: null,
+    dosya: SAYFA,
+    bul: '            <p className={stil["kahraman-not"]}>{t("kahramanNot")}</p>',
+    koy: "",
     bozdugu:
-      "bos kume her kosulu saglar; bekci hicbir sey olcmeden TUM KONTROLLER GECTI der",
-    ozelUygula: () => renameSync(GORSEL_KLASOR, GIZLI_KLASOR),
-    ozelGeriAl: () => {
-      if (existsSync(GIZLI_KLASOR) && !existsSync(GORSEL_KLASOR))
-        renameSync(GIZLI_KLASOR, GORSEL_KLASOR);
-    },
-    uygulandiMi: () => !existsSync(GORSEL_KLASOR),
+      "ziyaretci ekranlardaki rakamlari GERCEK sanir; uydurma veri gercek ciro gibi okunur",
   },
   {
-    ad: "SAYFA OLMAYAN BİR DOSYAYI GÖSTERİYOR",
+    ad: "GALERIDEKI «gercek defteri gostermez» cumlesi dustu",
     yon: "KALDIRAN",
-    dosya: "tanitim/index.html",
-    bul: 'src="gorsel/stok.jpg"',
-    koy: 'src="gorsel/stok-yok.jpg"',
-    bozdugu: "olu gorsel/stil baglantisi fark edilmeden yayimlanir, sayfa kirik cikar",
-    uygulandiMi: () => readFileSync(SAYFA, "utf8").includes("gorsel/stok-yok.jpg"),
-  },
-  {
-    ad: "KAHRAMANDAKİ «ÖRNEK VERİ» BEYANI SİLİNDİ",
-    yon: "KALDIRAN",
-    dosya: "tanitim/index.html",
-    bul: "Bu sayfadaki bütün ekran görüntüleri örnek veriden alınmıştır —",
-    koy: "Sistemden alınmış ekran görüntüleri —",
+    dosya: SAYFA,
+    bul: '              <p>{t("ekranlarMetin")}</p>',
+    koy: '              <p>{t("ekranlarBaslik")}</p>',
     bozdugu:
-      "okuyan, ornek rakamlari gercek defter sanir; sayfa tutamayacagi bir soz vermis olur",
-    uygulandiMi: () => !readFileSync(SAYFA, "utf8").includes("örnek veriden alınmıştır"),
+      "ikinci beyan kaybolur; galeriye dogrudan gelen ziyaretci uyariyi hic gormez",
   },
   {
-    ad: "GALERİDEKİ «GERÇEK DEFTERİ GÖSTERMEZ» CÜMLESİ SİLİNDİ",
+    ad: "SOZLUKTEKI beyan artik ornek veri DEMIYOR",
     yon: "KALDIRAN",
-    dosya: "tanitim/index.html",
-    bul: "ve gerçek defteri göstermez",
-    koy: "ve sistemi gösterir",
-    bozdugu: "galeri bolumunde uyari kalmaz; en cok bakilan yerde rakamlar gercek sanilir",
-    uygulandiMi: () => !readFileSync(SAYFA, "utf8").includes("gerçek defteri göstermez"),
+    dosya: SOZLUK,
+    bul: '"kahramanNot": "Bu sayfadaki bütün ekran görüntüleri örnek veriden alınmıştır',
+    koy: '"kahramanNot": "Bu sayfadaki bütün ekran görüntüleri sistemden alınmıştır',
+    bozdugu:
+      "cizim yerinde ama CUMLE artik beyan degil - desen ayakta, soz dusmus",
   },
   {
-    /**
-     * ⭐ KÖRLÜK SINAMASI: beyan GÖVDEDEN alınıp YORUMA konur. Desen dosyada
-     * hâlâ geçiyor — `yorumsuz` süzgeci olmayan bir ölçüt YEŞİL kalırdı.
-     * (Anayasa: "kaynak tarayan kontrol, deseni dosyada değil kullanım
-     * bloğunda arar".)
-     */
-    ad: "BEYAN GÖVDEDEN YORUMA TAŞINDI (çizilmiyor ama dosyada duruyor)",
+    ad: "OLU BAGLANTI - olmayan bir goruntu gosteriliyor",
+    yon: "KALDIRAN",
+    dosya: SAYFA,
+    bul: '  { dosya: "satislar.jpg", ad: "Satislar" },',
+    koy: '  { dosya: "satislar-yok.jpg", ad: "Satislar" },',
+    bozdugu: "galeride kirik gorsel cikar; vitrin bakimsiz gorunur",
+  },
+  {
+    ad: "BASKA KLASORDEN goruntu gosteriliyor (gercek defter sizar)",
     yon: "FAZLADAN",
-    dosya: "tanitim/index.html",
-    bul: '<p class="kahraman-not">',
-    koy: '<!-- örnek veriden alınmıştır --><p class="kahraman-not" hidden>XX',
+    dosya: SAYFA,
+    bul: '                src="/kitap-ekran/panel.jpg"',
+    koy: '                src="/ozel/gercek-panel.jpg"',
     bozdugu:
-      "beyan kaynakta gorunur ama EKRANDA cizilmez; olcut deseni bulur ve yanlis yere yesil yanar",
-    uygulandiMi: () => readFileSync(SAYFA, "utf8").includes('kahraman-not" hidden'),
+      "gercek defterin fotografi internete cikar - musteri, tedarikci, SKU ve kar rakami; arama motoru onbellegi yuzunden silmek geri getirmez",
+  },
+  {
+    ad: "HERKESE ACIK SAYFA veritabanina gidiyor",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: 'import { UYGULAMA } from "@/lib/uygulama";',
+    koy: 'import { UYGULAMA } from "@/lib/uygulama";\nimport { prisma } from "@/lib/prisma";',
+    bozdugu:
+      "oturumsuz ziyaretci her istekte KAS'in 25 baglantilik kotasini yer; ayrica defterden veri tasima yolu acilir",
+  },
+  {
+    ad: "UYGULAMA ADI koda gomuldu",
+    yon: "FAZLADAN",
+    dosya: SAYFA,
+    bul: "  const ad = UYGULAMA.ad;",
+    koy: '  const ad = "Bezirga";',
+    bozdugu:
+      "ad degisikligi tek satirlik is olmaktan cikar; firma adi YAPIYA gomulur (adlandirma standardi)",
   },
 ];
 
-function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
+function bekciyiKostur() {
   const r = spawnSync("npx tsx " + BEKCI, {
     shell: true,
     encoding: "utf8",
@@ -167,7 +144,7 @@ function bekciyiKostur(): { kod: number; ciktiVar: boolean } {
 }
 
 console.log("");
-console.log("TANITIM VİTRİNİ — K372 MUTASYON TURU");
+console.log("TANITIM VİTRİNİ — K374 MUTASYON TURU");
 console.log("");
 
 let yakalanan = 0;
@@ -179,7 +156,13 @@ const bozuk: string[] = [];
   const asil = readFileSync(SAYFA, "utf8");
   let s: { kod: number; ciktiVar: boolean };
   try {
-    dayanikliYaz(SAYFA, asil.replace("<body>", "<body>" + desenNormalle(asil, "\n    <!-- zararsiz -->")));
+    dayanikliYaz(
+      SAYFA,
+      asil.replace(
+        "export default async function",
+        desenNormalle(asil, "/* zararsiz */\nexport default async function"),
+      ),
+    );
     s = bekciyiKostur();
   } finally {
     dayanikliYaz(SAYFA, asil);
@@ -187,30 +170,28 @@ const bozuk: string[] = [];
   if (s.kod === 0 && s.ciktiVar) {
     console.log("  OK  = ZARARSIZ mutasyon (yorum) YEŞİL kaldı — harness ölçüyor");
   } else {
-    bozuk.push("ZARARSIZ SAĞLAMA DÜŞTÜ — harness her şeyi kırmızı yakıyor, sonuçlar GEÇERSİZ");
+    bozuk.push(
+      "ZARARSIZ SAĞLAMA DÜŞTÜ — harness her şeyi kırmızı yakıyor, sonuçlar GEÇERSİZ",
+    );
   }
 }
 
 /* ── GERÇEK MUTASYONLAR ──────────────────────────────────────────────── */
 for (const m of MUTASYONLAR) {
-  const metinMi = m.bul !== null;
-  const asil = metinMi ? readFileSync(m.dosya, "utf8") : "";
+  const asil = readFileSync(m.dosya, "utf8");
   let sonuc: { kod: number; ciktiVar: boolean } | null = null;
 
   try {
-    if (metinMi) {
-      const bul = desenNormalle(asil, m.bul as string);
-      const adet = asil.split(bul).length - 1;
-      if (adet !== 1) {
-        bozuk.push(m.ad + "\n       çapa " + adet + " kez geçiyor (1 olmalı)");
-        continue;
-      }
-      dayanikliYaz(m.dosya, asil.replace(bul, desenNormalle(asil, m.koy as string)));
-    } else {
-      m.ozelUygula?.();
+    const bul = desenNormalle(asil, m.bul);
+    const adet = asil.split(bul).length - 1;
+    if (adet !== 1) {
+      bozuk.push(m.ad + "\n       çapa " + adet + " kez geçiyor (1 olmalı)");
+      continue;
     }
+    const yeni = asil.replace(bul, desenNormalle(asil, m.koy));
+    dayanikliYaz(m.dosya, yeni);
 
-    if (!m.uygulandiMi()) {
+    if (readFileSync(m.dosya, "utf8") === asil) {
       bozuk.push(m.ad + "\n       mutasyon diske UYGULANMADI — ölçüm geçersiz");
     } else {
       sonuc = bekciyiKostur();
@@ -218,8 +199,7 @@ for (const m of MUTASYONLAR) {
   } catch (e) {
     bozuk.push(m.ad + "\n       mutasyon kurulamadı: " + (e as Error).message);
   } finally {
-    if (metinMi) dayanikliYaz(m.dosya, asil);
-    else m.ozelGeriAl?.();
+    dayanikliYaz(m.dosya, asil);
   }
 
   if (!sonuc) continue;
@@ -237,12 +217,6 @@ for (const m of MUTASYONLAR) {
 
 /* ── GERİ ALMA DOĞRULANIR ────────────────────────────────────────────── */
 {
-  if (!existsSync(GORSEL_KLASOR)) {
-    if (existsSync(GIZLI_KLASOR)) renameSync(GIZLI_KLASOR, GORSEL_KLASOR);
-    else mkdirSync(GORSEL_KLASOR, { recursive: true });
-  }
-  if (existsSync("tanitim/gorsel/ekip-fotografi.jpg"))
-    unlinkSync("tanitim/gorsel/ekip-fotografi.jpg");
   const son = bekciyiKostur();
   if (son.kod !== 0) {
     bozuk.push(
@@ -260,20 +234,20 @@ if (kacan.length) {
   console.log("");
 }
 if (bozuk.length) {
-  console.log("  HARNESS HATASI — mutasyon ölçülemedi:\n");
-  for (const b of bozuk) console.log("  !! " + b);
+  console.log("  ÖLÇÜLEMEYEN MUTASYONLAR — sonuç GEÇERSİZ:\n");
+  for (const b of bozuk) console.log("  ?  " + b);
   console.log("");
 }
 
-const toplam = MUTASYONLAR.length;
 const kaldiran = MUTASYONLAR.filter((m) => m.yon === "KALDIRAN").length;
+const fazladan = MUTASYONLAR.length - kaldiran;
 console.log(
-  "  " + yakalanan + "/" + toplam + " mutasyon yakalandı" +
-    "   (- kaldıran " + kaldiran + " · + fazladan " + (toplam - kaldiran) + ")",
+  `  ${yakalanan}/${MUTASYONLAR.length} mutasyon yakalandı   (- kaldıran ${kaldiran} · + fazladan ${fazladan})`,
 );
+
 if (kacan.length || bozuk.length) {
-  console.log("\n  Kaçan ya da ölçülemeyen mutasyon var — bekçi eksik.\n");
+  console.log("  ⛔ TUR GEÇERSİZ — düzeltilmeden teslim edilmez.");
   process.exitCode = 1;
 } else {
-  console.log("  OK  K372 tanıtım vitrini İKİ YÖNDEN de sınandı ve kırmızı yandığı GÖRÜLDÜ\n");
+  console.log("  OK  K374 vitrini İKİ YÖNDEN de sınandı ve kırmızı yandığı GÖRÜLDÜ");
 }

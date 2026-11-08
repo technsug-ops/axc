@@ -9,8 +9,7 @@
    Tek sayfa + bu stil dosyası. Böylece canlı uygulamanın hiçbir parçası
    bu sitenin yayımlanmasından etkilenmez.
    ========================================================================== */
-
-:root {
+.vitrin {
   --kobalt: #12356b;
   --kobalt-koyu: #0b2449;
   --kobalt-acik: #1e4e96;
@@ -24,21 +23,16 @@
   --olcu: 1120px;
   --yuvarlak: 14px;
 }
-
-*,
-*::before,
-*::after {
+.vitrin *, .vitrin *::before, .vitrin *::after {
   box-sizing: border-box;
 }
-
-html {
+.vitrin {
   scroll-behavior: smooth;
   /* Zincir bağlantı tıklanınca başlık üst çubuğun altında kalmasın. */
   scroll-padding-top: 86px;
   -webkit-text-size-adjust: 100%;
 }
-
-body {
+.vitrin {
   margin: 0;
   background: var(--zemin);
   color: var(--metin);
@@ -49,29 +43,23 @@ body {
   /* Telefonda yatay kayma olmaz. */
   overflow-x: hidden;
 }
-
-img {
+.vitrin img {
   max-width: 100%;
   height: auto;
   display: block;
 }
-
-a {
+.vitrin a {
   color: var(--kobalt-acik);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
-
 .kap {
   width: 100%;
   max-width: var(--olcu);
   margin: 0 auto;
   /* Telefonda 16px yan boşluk — kenara yapışan metin okunmaz. */
   padding: 0 16px;
-}
-
-/* ---- Üst çubuk ---------------------------------------------------------- */
-
+}/* ---- Üst çubuk ---------------------------------------------------------- */
 .ust {
   position: sticky;
   top: 0;
@@ -80,14 +68,12 @@ a {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--kenar);
 }
-
 .ust .kap {
   display: flex;
   align-items: center;
   gap: 16px;
   min-height: 64px;
 }
-
 .marka {
   display: flex;
   align-items: center;
@@ -96,26 +82,22 @@ a {
   color: var(--kobalt);
   flex-shrink: 0;
 }
-
 .marka .ikon {
   width: 34px;
   height: 34px;
   flex-shrink: 0;
 }
-
 .marka .yazi {
   width: 92px;
   height: auto;
   color: var(--kobalt);
 }
-
 .ust nav {
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: 4px;
 }
-
 .ust nav a {
   color: var(--metin-soluk);
   text-decoration: none;
@@ -128,21 +110,15 @@ a {
   padding: 0 12px;
   border-radius: 9px;
 }
-
 .ust nav a:hover {
   color: var(--kobalt);
   background: var(--zemin-alt);
-}
-
-/* Telefonda menü bağlantıları yer kaplar; marka + tek düğme kalır. */
+}/* Telefonda menü bağlantıları yer kaplar; marka + tek düğme kalır. */
 @media (max-width: 760px) {
-  .ust nav a:not(.dugme) {
+.ust nav a:not(.dugme) {
     display: none;
   }
-}
-
-/* ---- Düğmeler ----------------------------------------------------------- */
-
+}/* ---- Düğmeler ----------------------------------------------------------- */
 .dugme {
   display: inline-flex;
   align-items: center;
@@ -157,40 +133,31 @@ a {
   border: 1px solid transparent;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
-
 .dugme:active {
   transform: translateY(1px);
 }
-
 .dugme-asil {
   background: var(--safran);
   color: #2a1a02;
   box-shadow: 0 6px 18px rgba(227, 161, 58, 0.3);
 }
-
 .dugme-asil:hover {
   box-shadow: 0 8px 24px rgba(227, 161, 58, 0.42);
 }
-
 .dugme-cizgi {
   border-color: rgba(255, 255, 255, 0.4);
   color: #ffffff;
 }
-
 .dugme-cizgi:hover {
   background: rgba(255, 255, 255, 0.1);
 }
-
 .ust .dugme {
   min-height: 44px;
   padding: 0 16px;
   font-size: 15px;
   background: var(--kobalt);
   color: #ffffff;
-}
-
-/* ---- Kahraman ----------------------------------------------------------- */
-
+}/* ---- Kahraman ----------------------------------------------------------- */
 .kahraman {
   background: linear-gradient(165deg, #0b2449 0%, #12356b 55%, #1a4582 100%);
   color: #ffffff;
@@ -198,7 +165,6 @@ a {
   position: relative;
   overflow: hidden;
 }
-
 .kahraman::after {
   /* Safran elmasın yankısı — süs, bilgi taşımaz. */
   content: "";
@@ -214,12 +180,10 @@ a {
   );
   pointer-events: none;
 }
-
 .kahraman .kap {
   position: relative;
   z-index: 1;
 }
-
 .rozet {
   display: inline-flex;
   align-items: center;
@@ -233,7 +197,6 @@ a {
   border-radius: 999px;
   margin-bottom: 22px;
 }
-
 .rozet .nokta {
   width: 7px;
   height: 7px;
@@ -241,7 +204,6 @@ a {
   background: var(--safran);
   flex-shrink: 0;
 }
-
 .kahraman h1 {
   font-size: clamp(32px, 6vw, 54px);
   line-height: 1.14;
@@ -250,32 +212,27 @@ a {
   max-width: 17ch;
   font-weight: 700;
 }
-
 .kahraman h1 em {
   font-style: normal;
   color: var(--safran);
 }
-
 .kahraman .giris-metni {
   font-size: clamp(17px, 2.2vw, 20px);
   color: #c7d6ec;
   max-width: 62ch;
   margin: 0 0 32px;
 }
-
 .kahraman-dugmeler {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
 }
-
 .kahraman-not {
   font-size: 14px;
   color: #92a8c8;
   margin: 0 0 56px;
 }
-
 .kahraman-gorsel {
   max-width: 980px;
   margin: 0 auto;
@@ -285,31 +242,24 @@ a {
   border-bottom: 0;
   box-shadow: 0 -8px 60px rgba(0, 0, 0, 0.36);
   background: #ffffff;
-}
-
-/* ---- Bölüm ortak -------------------------------------------------------- */
-
-section {
+}/* ---- Bölüm ortak -------------------------------------------------------- */
+.vitrin section {
   padding: 84px 0;
 }
-
-section.alt-zemin {
+.vitrin section.alt-zemin {
   background: var(--zemin-alt);
   border-top: 1px solid var(--kenar);
   border-bottom: 1px solid var(--kenar);
 }
-
 .bolum-basi {
   max-width: 68ch;
   margin-bottom: 44px;
 }
-
 .bolum-basi.orta {
   margin-left: auto;
   margin-right: auto;
   text-align: center;
 }
-
 .etiket {
   display: block;
   font-size: 13px;
@@ -319,71 +269,57 @@ section.alt-zemin {
   color: var(--kobalt-acik);
   margin-bottom: 12px;
 }
-
-h2 {
+.vitrin h2 {
   font-size: clamp(26px, 4.2vw, 38px);
   line-height: 1.2;
   letter-spacing: -0.015em;
   margin: 0 0 16px;
   font-weight: 700;
 }
-
-h3 {
+.vitrin h3 {
   font-size: 19px;
   line-height: 1.35;
   margin: 0 0 8px;
   font-weight: 650;
 }
-
 .bolum-basi p {
   font-size: 18px;
   color: var(--metin-soluk);
   margin: 0;
-}
-
-/* ---- Izgaralar ---------------------------------------------------------- */
-
+}/* ---- Izgaralar ---------------------------------------------------------- */
 .izgara {
   display: grid;
   gap: 20px;
   /* Taban sütun 1: telefonda kartlar asla yan yana sıkışmaz. */
   grid-template-columns: 1fr;
 }
-
 @media (min-width: 680px) {
-  .izgara-2,
-  .izgara-3,
-  .izgara-4 {
+.izgara-2, .izgara-3, .izgara-4 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-
 @media (min-width: 980px) {
-  .izgara-3 {
+.izgara-3 {
     grid-template-columns: repeat(3, 1fr);
   }
-  .izgara-4 {
+.izgara-4 {
     grid-template-columns: repeat(4, 1fr);
   }
 }
-
 .kart {
   background: var(--zemin);
   border: 1px solid var(--kenar);
   border-radius: var(--yuvarlak);
   padding: 26px;
 }
-
-section.alt-zemin .kart {
+.vitrin section.alt-zemin .kart {
   background: #ffffff;
 }
-
 .kart p {
   margin: 0;
   color: var(--metin-soluk);
   font-size: 16px;
 }
-
 .kart .simge {
   width: 40px;
   height: 40px;
@@ -395,16 +331,12 @@ section.alt-zemin .kart {
   justify-content: center;
   margin-bottom: 16px;
 }
-
 .kart .simge svg {
   width: 21px;
   height: 21px;
-}
-
-/* ---- Rakam kutucukları --------------------------------------------------
+}/* ---- Rakam kutucukları --------------------------------------------------
    İlke #12: tam genişlikte "etiket solda rakam sağda" satır YASAK —
    kompakt kutucuk ızgarası kullanılır.                                      */
-
 .rakamlar {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -414,19 +346,16 @@ section.alt-zemin .kart {
   border-radius: var(--yuvarlak);
   overflow: hidden;
 }
-
 @media (min-width: 860px) {
-  .rakamlar {
+.rakamlar {
     grid-template-columns: repeat(4, 1fr);
   }
 }
-
 .rakam {
   background: #ffffff;
   padding: 24px 18px;
   text-align: center;
 }
-
 .rakam b {
   display: block;
   font-size: clamp(26px, 4vw, 34px);
@@ -435,31 +364,24 @@ section.alt-zemin .kart {
   font-weight: 700;
   letter-spacing: -0.02em;
 }
-
 .rakam span {
   display: block;
   font-size: 14px;
   color: var(--metin-soluk);
   margin-top: 6px;
-}
-
-/* ---- İlke listesi ------------------------------------------------------- */
-
+}/* ---- İlke listesi ------------------------------------------------------- */
 .ilke {
   border-left: 3px solid var(--safran);
   padding: 2px 0 2px 20px;
 }
-
 .ilke h3 {
   color: var(--kobalt);
 }
-
 .ilke p {
   margin: 0;
   color: var(--metin-soluk);
   font-size: 16px;
 }
-
 .formul {
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
   font-size: 14px;
@@ -471,69 +393,54 @@ section.alt-zemin .kart {
   overflow-x: auto;
   line-height: 1.8;
 }
-
 .formul b {
   color: var(--safran);
-}
-
-/* ---- Ekran galerisi ----------------------------------------------------- */
-
+}/* ---- Ekran galerisi ----------------------------------------------------- */
 .ekran {
   border: 1px solid var(--kenar);
   border-radius: var(--yuvarlak);
   overflow: hidden;
   background: #ffffff;
 }
-
 .ekran img {
   width: 100%;
 }
-
 .ekran figcaption {
   padding: 14px 18px;
   font-size: 15px;
   color: var(--metin-soluk);
   border-top: 1px solid var(--kenar);
 }
-
 .ekran figcaption b {
   color: var(--metin);
   display: block;
   font-weight: 600;
 }
-
-figure {
+.vitrin figure {
   margin: 0;
 }
-
 .telefonlar {
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
 }
-
 @media (min-width: 680px) {
-  .telefonlar {
+.telefonlar {
     grid-template-columns: repeat(3, 1fr);
   }
 }
-
 .telefon img {
   margin: 0 auto;
   max-width: 280px;
   border-radius: 12px;
   border: 1px solid var(--kenar);
 }
-
 .telefon p {
   text-align: center;
   font-size: 15px;
   color: var(--metin-soluk);
   margin: 14px 0 0;
-}
-
-/* ---- Kitle blokları ----------------------------------------------------- */
-
+}/* ---- Kitle blokları ----------------------------------------------------- */
 .kitle {
   border: 1px solid var(--kenar);
   border-radius: var(--yuvarlak);
@@ -542,7 +449,6 @@ figure {
   display: flex;
   flex-direction: column;
 }
-
 .kitle .kime {
   font-size: 13px;
   font-weight: 700;
@@ -551,19 +457,16 @@ figure {
   color: var(--safran);
   margin-bottom: 10px;
 }
-
 .kitle p {
   color: var(--metin-soluk);
   font-size: 16px;
   margin: 0 0 18px;
 }
-
 .kitle ul {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-
 .kitle li {
   position: relative;
   padding-left: 26px;
@@ -571,7 +474,6 @@ figure {
   font-size: 16px;
   color: var(--metin);
 }
-
 .kitle li::before {
   content: "";
   position: absolute;
@@ -581,10 +483,7 @@ figure {
   height: 7px;
   border-radius: 2px;
   background: var(--kobalt-acik);
-}
-
-/* ---- Dürüstlük notu ----------------------------------------------------- */
-
+}/* ---- Dürüstlük notu ----------------------------------------------------- */
 .durustluk {
   border: 1px dashed var(--kenar);
   border-radius: var(--yuvarlak);
@@ -592,95 +491,73 @@ figure {
   padding: 26px;
   margin-top: 28px;
 }
-
 .durustluk h3 {
   color: var(--kobalt);
 }
-
 .durustluk p {
   margin: 0;
   color: var(--metin-soluk);
   font-size: 16px;
-}
-
-/* ---- İletişim ----------------------------------------------------------- */
-
+}/* ---- İletişim ----------------------------------------------------------- */
 .iletisim {
   background: linear-gradient(160deg, #0b2449 0%, #12356b 100%);
   color: #ffffff;
   text-align: center;
 }
-
 .iletisim h2 {
   color: #ffffff;
 }
-
 .iletisim p {
   color: #c7d6ec;
   font-size: 18px;
   max-width: 56ch;
   margin: 0 auto 30px;
-}
-
-/* ---- Alt bilgi ---------------------------------------------------------- */
-
-footer {
+}/* ---- Alt bilgi ---------------------------------------------------------- */
+.vitrin footer {
   padding: 36px 0;
   border-top: 1px solid var(--kenar);
   font-size: 15px;
   color: var(--metin-soluk);
 }
-
-footer .kap {
+.vitrin footer .kap {
   display: flex;
   flex-wrap: wrap;
   gap: 12px 24px;
   align-items: center;
   justify-content: space-between;
 }
-
-footer a {
+.vitrin footer a {
   color: var(--metin-soluk);
-}
-
-/* Hareketi azalt tercihine saygı. */
+}/* Hareketi azalt tercihine saygı. */
 @media (prefers-reduced-motion: reduce) {
-  html {
+.vitrin {
     scroll-behavior: auto;
   }
-  .dugme {
+.dugme {
     transition: none;
   }
-}
-
-/* ---- Galeri: tam boy açma -----------------------------------------------
+}/* ---- Galeri: tam boy açma -----------------------------------------------
    İlke #2: tıklanabilir öğe tıklanabilir GÖRÜNÜR. Görselin kendisi de
    bağlantıdır ama ona bel bağlanmaz — başlıkta görünür bir bağlantı durur. */
-
 .ekran .buyut {
   display: block;
   line-height: 0;
 }
-
 .ekran .buyut img {
   transition: opacity 0.14s ease;
 }
-
 .ekran .buyut:hover img {
   opacity: 0.92;
 }
-
 .ekran figcaption {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 14px;
 }
-
 .ekran figcaption b {
   flex-basis: 100%;
 }
-
 .tam-boy {
   margin-left: auto;
   font-size: 14px;
@@ -693,11 +570,24 @@ footer a {
   display: inline-flex;
   align-items: center;
 }
-
 .tam-boy::after {
   content: " ↗";
 }
-
 .tam-boy:hover {
   text-decoration: underline;
+}
+/* ==========================================================================
+   DOKUNMA HEDEFİ — İLKE #8 (K374, 08.11.2026)
+   --------------------------------------------------------------------------
+   Ölçüldü (390×844, gerçek tarayıcı): marka bağlantısı 34 px, alt bilgideki
+   «Uygulamaya giriş» 20 px yükseklikteydi. Anayasa dokunulabilir her öğe
+   için en az 44×44 px istiyor; statik sitede bu kural koşmuyordu, ama bu
+   artık uygulamanın bir ekranı ve kural burada geçerli.
+   ========================================================================== */
+.vitrin footer a,
+.vitrin .marka,
+.vitrin .tam-boy {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }

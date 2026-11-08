@@ -1,200 +1,217 @@
-import { readdirSync, existsSync } from "node:fs";
-import { createHash } from "node:crypto";
+import { existsSync, readdirSync } from "node:fs";
 
-import { kaynakOku, hamOku } from "./kaynak-oku";
+import { kaynakOku } from "./kaynak-oku";
 
 /**
  * ============================================================================
- *  TANITIM VİTRİNİ BEKÇİSİ (K372, 07.11.2026)
- *      npm run tanitim:dogrula
+ *  TANITIM VİTRİNİ BEKÇİSİ — `/info` (K374, 08.11.2026)
  * ----------------------------------------------------------------------------
- *  ⛔ NİYE VAR — KORUDUĞU ŞEY GERİ ALINAMAZ. `tanitim/` herkese açık bir
- *  sitedir. Oraya bir gün GERÇEK bir ekran görüntüsü düşerse müşteri,
- *  tedarikçi, SKU, alış fiyatı ve kâr rakamı internete çıkar — ve arama
- *  motoru önbelleği yüzünden silmek geri getirmez. Bu, deponun bütün
- *  disiplininin var olma sebebi olan sınıftan bir hatadır.
+ *      npm run tanitim:dogrula
  *
- *  ÖLÇÜT PROVENANS: `tanitim/gorsel/` bir AYNADIR. İçindeki her dosya
- *  `public/kitap-ekran/` içindeki eşinin BAYT BAYT aynısı olmak zorunda.
+ *  ⛔ KAPSAM DEĞİŞTİ 08.11.2026 — ESKİ GEREKÇE SİLİNMEDİ, BURADA DURUYOR.
+ *  Vitrin önce AYRI bir statik site + ayrı Vercel projesiydi (K372,
+ *  `tanitim.bezirga.com`) ve bu bekçi `tanitim/gorsel/` ile
+ *  `public/kitap-ekran/` arasındaki BAYT BAYT aynayı ölçüyordu: eşitlik,
+ *  görüntünün örnek veriden geldiğinin kanıtıydı.
+ *
+ *  Kullanıcı 08.11.2026'da tek alan adını seçti (_«bunu neden bezirganın ana
+ *  sayfasında yapmıyoruz? www.bezirga/info»_); sayfa uygulamanın içine
+ *  taşındı ve görüntüleri `public/kitap-ekran/` altından DOĞRUDAN gösteriyor.
+ *  Kopya kalmadığı için ayna ölçütü de GEREKSİZLEŞTİ — ama koruduğu SÖZ
+ *  aynen duruyor ve burada başka türlü ölçülüyor:
+ *
+ *      gösterilen her görüntü örnek veri hattının klasöründen gelmeli.
+ *
  *  O klasörü dolduran tek şey `npm run ekran:cek`tir ve o betik örnek
- *  veritabanına bağlı değilse çekim yapmayı REDDEDER. Yani eşitlik,
- *  görüntünün uydurma veriden geldiğinin kanıtıdır.
+ *  veritabanına bağlı değilse çekim yapmayı REDDEDER.
  *
- *  ⚠ "Gözle baktım, örnek veri görünüyor" bir ölçüm DEĞİLDİR: 1366×820'lik
- *  bir ekran görüntüsünde dört haneli bir SKU'yu gözden kaçırmak kolaydır.
- *  Ölçüt insana değil, dosyanın kendisine bağlandı.
- *
- *  ⚠ VİTRİNE AİT BAŞKA GÖRSEL (ekip fotoğrafı, çizim) `tanitim/gorsel/`e
- *  KONMAZ — ayna bozulur. Öyle bir ihtiyaç doğarsa `tanitim/resim/` açılır
- *  ve bu bekçi o klasöre karışmaz.
- *
- *  NE ÖLÇMEZ: sayfanın güzel olduğunu, metnin doğru olduğunu, sitenin
- *  yayımlandığını. Bunlar gerçek cihazda görülür (Halil testi).
+ *  ⛔ VE EN PAHALI ŞEY KAPIDIR: `/info` herkese açık bir sayfa. Kapı
+ *  (`src/proxy.ts` → `ACIK_YOLLAR`) varsayılan KAPALI olduğu için satır
+ *  silinirse sayfa sessizce giriş ekranına yönlenir — ziyaretçi için vitrin
+ *  YOK olur ve hiçbir hata görünmez.
  * ============================================================================
  */
 
-const VITRIN = "tanitim";
-const AYNA_KAYNAK = "public/kitap-ekran";
-const AYNA_HEDEF = VITRIN + "/gorsel";
-const SAYFA = VITRIN + "/index.html";
+const SAYFA = "src/app/info/page.tsx";
+const KAPI = "src/proxy.ts";
+const GORSEL_KLASORU = "public/kitap-ekran";
+const SOZLUK = "messages/tr.json";
 
-/**
- * ⛔ BÖLÜM SAYACI (anayasa: "ölçüt bloğu, özet ve çıkış kodundan ÖNCE
- * koşar"). Bir blok sıradan düşerse ya da erken dönülürse bekçi "geçti"
- * DEMEZ, GEÇERSİZ der. Sırayı doğru tutmak insan disiplinidir; bu sayaç
- * mekanizmadır.
- */
-const BOLUM_SAYISI = 3;
+/** Her bölüm koştuğunu KAYDEDER; özet beklenen sayıyla karşılaştırır. */
+const BOLUM_SAYISI = 4;
 const kosanBolumler: string[] = [];
 
-let kalan = 0;
+let basarisiz = 0;
+let gecen = 0;
 const kontrol = (ad: string, kosul: boolean, ek = "") => {
   if (kosul) {
-    console.log("  OK  " + ad);
+    gecen++;
+    console.log(`  OK  ${ad}`);
   } else {
-    console.log("  ⛔  " + ad + (ek ? "\n       " + ek : ""));
-    kalan++;
+    basarisiz++;
+    console.log(`  ⛔  ${ad}${ek ? "\n        " + ek : ""}`);
   }
 };
 
-const ozet = (b: Buffer) => createHash("sha256").update(b).digest("hex").slice(0, 16);
+console.log("\nTANITIM VİTRİNİ BEKÇİSİ — /info\n");
 
-console.log("");
-console.log("TANITIM VİTRİNİ BEKÇİSİ");
-console.log("");
+const sayfa = kaynakOku(SAYFA);
+const kapi = kaynakOku(KAPI);
 
-/* ── ① AYNA: her görsel örnek veri hattından mı geldi ─────────────────── */
+/* ── 1) KAPI ────────────────────────────────────────────────────────────── */
+console.log("1) KAPI — sayfa gerçekten herkese açık mı");
 {
-  const hedefler = existsSync(AYNA_HEDEF)
-    ? readdirSync(AYNA_HEDEF).filter((d) => /\.(jpg|jpeg|png|webp)$/i.test(d))
+  /**
+   * ⚠ ÖLÇÜT YORUMSUZ GÖVDEDE ARANIR. Kapıyı ANLATAN bir yorum, kapının
+   * açık OLDUĞUNU göstermez (anayasa: yorumsuz kodda ara).
+   */
+  const yorumsuz = kapi.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  kontrol(
+    "`/info` ACIK_YOLLAR içinde (yoksa ziyaretçi girişe yönlenir)",
+    /"\/info"/.test(yorumsuz),
+  );
+  kontrol(
+    "`/kitap-ekran` ACIK_YOLLAR içinde (yoksa görseller girişe yönlenir)",
+    /"\/kitap-ekran"/.test(yorumsuz),
+  );
+  /**
+   * ⛔ VARSAYILAN KAPALI KALMALI. Liste bir İZİN listesidir; bir gün
+   * "hepsini aç" diye tersine çevrilirse bu bekçi görmeli.
+   */
+  kontrol(
+    "kapı hâlâ varsayılan KAPALI (açık değilse giriş istenir)",
+    /if \(acikMi\(yol\)\) return NextResponse\.next\(\);/.test(yorumsuz),
+  );
+  kosanBolumler.push("kapı");
+}
+
+/* ── 2) GÖRÜNTÜ PROVENANSI ──────────────────────────────────────────────── */
+console.log("\n2) GÖRÜNTÜ PROVENANSI — örnek veri hattı");
+{
+  const varOlan = existsSync(GORSEL_KLASORU)
+    ? readdirSync(GORSEL_KLASORU).filter((d) => d.endsWith(".jpg"))
     : [];
-
   /**
-   * ⛔ TABAN DOLULUĞU AYRICA KANITLANIR (anayasa: `every` kapısı). Klasör
-   * boşalırsa aşağıdaki döngü hiç dönmez ve bekçi "tüm kontroller geçti"
-   * der — boş küme her koşulu sağlar. Sayı beyan edilir ve ölçülür.
+   * ⛔ TABAN DOLULUĞU AYRICA BEYAN EDİLİR: boş klasörde aşağıdaki döngü
+   * hiç dönmez ve bekçi "hepsi geçti" derdi (`every` kapısının tarama hâli).
    */
   kontrol(
-    "ayna dolu (en az 10 görsel taranıyor)",
-    hedefler.length >= 10,
-    "tanitim/gorsel içinde " + hedefler.length + " görsel var; tarama boşsa ölçüt kendi kendini kandırır",
+    `örnek veri klasörü dolu (en az 10 görüntü, bulunan ${varOlan.length})`,
+    varOlan.length >= 10,
   );
 
-  let ayrisan = 0;
-  let yetim = 0;
-  for (const ad of hedefler) {
-    const kaynakYol = AYNA_KAYNAK + "/" + ad;
-    if (!existsSync(kaynakYol)) {
-      yetim++;
-      console.log(
-        "  ⛔  " + ad + " — `" + AYNA_KAYNAK + "` içinde EŞİ YOK",
-      );
-      console.log(
-        "       vitrine elle konmuş bir görsel olabilir; örnek veri hattından geldiği KANITLANAMIYOR",
-      );
-      kalan++;
-      continue;
-    }
-    const a = hamOku(kaynakYol);
-    const b = hamOku(AYNA_HEDEF + "/" + ad);
-    if (!a.equals(b)) {
-      ayrisan++;
-      console.log("  ⛔  " + ad + " — bayt bayt AYNI DEĞİL");
-      console.log(
-        "       kaynak " + ozet(a) + " ≠ vitrin " + ozet(b) +
-          "   (ekran:cek yeniden koştuysa `cp public/kitap-ekran/*.jpg tanitim/gorsel/`)",
-      );
-      kalan++;
-    }
-  }
+  /** Sayfanın gösterdiği HER yol — çıplak dize değil, gerçek kullanım. */
+  const gosterilen = [...sayfa.matchAll(/\/kitap-ekran\/([a-z0-9-]+\.jpg)/g)].map(
+    (m) => m[1],
+  );
+  const sabitler = [...sayfa.matchAll(/dosya: "([a-z0-9-]+\.jpg)"/g)].map(
+    (m) => m[1],
+  );
+  const hepsi = [...new Set([...gosterilen, ...sabitler])];
   kontrol(
-    "her vitrin görseli örnek veri hattının birebir kopyası",
-    ayrisan === 0 && yetim === 0,
+    `sayfa görüntü gösteriyor (en az 8 yol, bulunan ${hepsi.length})`,
+    hepsi.length >= 8,
   );
 
-  kosanBolumler.push("ayna");
-}
-
-/* ── ② ÖLÜ BAĞLANTI: sayfanın gösterdiği her dosya var mı ─────────────── */
-{
-  const sayfa = kaynakOku(SAYFA);
-
-  /**
-   * Ölçüt KULLANIMA bağlanır, ada değil: `src="…"` ve `href="…"` içindeki
-   * YEREL yollar. Dış adres (https://…), çapa (#…) ve posta (mailto:)
-   * dosya değildir.
-   */
-  const yollar = [...sayfa.matchAll(/(?:src|href)="([^"]+)"/g)]
-    .map((m) => m[1])
-    .filter((y) => !/^(https?:|mailto:|#|data:)/.test(y));
-
+  const eksik = hepsi.filter((d) => !varOlan.includes(d));
   kontrol(
-    "sayfa yerel dosya gösteriyor (en az 12 yol)",
-    yollar.length >= 12,
-    "bulunan yol: " + yollar.length,
-  );
-
-  const eksik = yollar.filter((y) => !existsSync(VITRIN + "/" + y.split("?")[0]));
-  kontrol(
-    "gösterilen hiçbir dosya eksik değil",
+    "gösterilen her görüntü örnek veri klasöründe VAR (ölü bağlantı yok)",
     eksik.length === 0,
-    eksik.length ? "bulunamayan: " + eksik.join(" · ") : "",
+    eksik.join(", "),
   );
-
-  kosanBolumler.push("ölü bağlantı");
-}
-
-/* ── ③ BEYAN: "örnek veri" sözü sayfada DURUYOR mu ────────────────────── */
-{
-  const sayfa = kaynakOku(SAYFA);
 
   /**
-   * ⛔ Bu bir SÖZDÜR, süs değil: okuyan kişiye rakamların gerçek defterden
-   * olmadığını söylüyor. Cümle sessizce silinirse sayfa, örnek rakamları
-   * gerçekmiş gibi sunmuş olur — ve kimse bir eksiklik görmez, çünkü
-   * ekranda bir UYARI değil bir ONAY eksilir.
-   *
-   * Ölçüt YORUMSUZ gövdede aranır: dosya başındaki açıklama bloğu da
-   * "örnek veri" diyor ve tek başına bu kontrolü ayakta tutardı.
+   * ⛔ BAŞKA KAYNAKTAN GÖRÜNTÜ GÖSTERİLEMEZ. Gerçek defterin fotoğrafı
+   * buraya konursa müşteri, tedarikçi, SKU ve kâr rakamı internete çıkar —
+   * ve arama motoru önbelleği yüzünden silmek geri getirmez.
    */
-  const yorumsuz = sayfa.replace(/<!--[\s\S]*?-->/g, " ");
-
-  const kahraman = yorumsuz.match(/<p class="kahraman-not">([\s\S]*?)<\/p>/);
+  const yabanci = [...sayfa.matchAll(/src=[{"`]+([^"`}]+\.(?:jpg|jpeg|png|webp))/g)]
+    .map((m) => m[1])
+    .filter((y) => !y.includes("/kitap-ekran/"));
   kontrol(
-    "kahraman bölümünde «örnek veri» beyanı çiziliyor",
-    !!kahraman && /örnek veri/i.test(kahraman[1]),
-    "beyan `<p class=\"kahraman-not\">` içinde bulunamadı",
+    "başka klasörden görüntü gösterilmiyor (gerçek defter sızmaz)",
+    yabanci.length === 0,
+    yabanci.join(", "),
   );
+  kosanBolumler.push("provenans");
+}
 
-  const galeri = yorumsuz.match(
-    /<section id="ekranlar"[\s\S]*?<\/section>/,
+/* ── 3) ÖRNEK VERİ BEYANI ───────────────────────────────────────────────── */
+console.log("\n3) BEYAN — ziyaretçi bunun örnek veri olduğunu OKUYOR");
+{
+  /**
+   * ⛔ BEYAN ÇİZİLİYOR MU — dosyada DURUYOR MU değil. Dalı `{false && …}`
+   * yapan ya da anahtarı yoruma taşıyan bir değişiklik yakalanmalı; bu
+   * yüzden çapa, çizim bloğunun ta kendisidir.
+   */
+  kontrol(
+    "kahraman bölümünde «örnek veri» beyanı ÇİZİLİYOR",
+    /<p className=\{stil\["kahraman-not"\]\}>\{t\("kahramanNot"\)\}<\/p>/.test(
+      sayfa,
+    ),
   );
   kontrol(
-    "ekranlar bölümünde de «gerçek defteri göstermez» deniyor",
-    !!galeri && /gerçek defteri göstermez/i.test(galeri[0]),
+    "galeri de «gerçek defteri göstermez» diyor",
+    /<p>\{t\("ekranlarMetin"\)\}<\/p>/.test(sayfa),
   );
 
+  const sozluk = JSON.parse(kaynakOku(SOZLUK)) as {
+    Tanitim?: Record<string, string>;
+  };
+  const t = sozluk.Tanitim ?? {};
+  kontrol(
+    "sözlükteki beyan metni GERÇEKTEN örnek veri diyor",
+    (t.kahramanNot ?? "").includes("örnek veri") &&
+      (t.ekranlarMetin ?? "").includes("gerçek defteri göstermez"),
+  );
   kosanBolumler.push("beyan");
 }
 
-/* ── ÖZET ─────────────────────────────────────────────────────────────── */
-console.log("");
+/* ── 4) SAYFANIN KENDİSİ ────────────────────────────────────────────────── */
+console.log("\n4) SAYFA — herkese açık bir sayfa ne YAPMAMALI");
+{
+  /**
+   * ⛔ HERKESE AÇIK SAYFA VERİTABANINA GİTMEZ. Vitrin statik metindir;
+   * bir sorgu eklenirse hem kotayı (KAS 25 bağlantı) yer hem de oturumsuz
+   * bir ziyaretçiye defterden veri taşıma yolu açılır.
+   */
+  kontrol(
+    "sayfa veritabanına GİTMİYOR (prisma yok)",
+    !/from "@\/lib\/prisma"/.test(sayfa) && !/prisma\./.test(sayfa),
+  );
+  /**
+   * ⚠ METİN SÖZLÜKTEN. Uygulama adı tek sabitten, marka çizimi tek
+   * kaynaktan gelir — ad değişikliği tek satırlık iş olmalı.
+   */
+  kontrol(
+    "uygulama adı tek sabitten (UYGULAMA.ad)",
+    /UYGULAMA\.ad/.test(sayfa) && !/"Bezirga"/.test(sayfa),
+  );
+  kontrol(
+    "marka çizimi ortak kaynaktan (gömülü SVG yolu yok)",
+    /MarkaIkonu/.test(sayfa) && !/viewBox="0 0 256 256"/.test(sayfa),
+  );
+  kosanBolumler.push("sayfa");
+}
+
+/* ── ÖZET ───────────────────────────────────────────────────────────────── */
 if (kosanBolumler.length !== BOLUM_SAYISI) {
   console.log(
-    "KOŞUM YARIM KALDI — sonuç GEÇERSİZ (" +
+    "\n⛔ KOŞUM YARIM KALDI — sonuç GEÇERSİZ. Koşan bölüm: " +
       kosanBolumler.length +
       "/" +
       BOLUM_SAYISI +
-      " bölüm: " +
+      " (" +
       kosanBolumler.join(" · ") +
       ")",
   );
   process.exit(1);
 }
 
-if (kalan === 0) {
-  console.log("TÜM KONTROLLER GEÇTİ.");
+console.log("");
+if (basarisiz === 0) {
+  console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 } else {
-  console.log(kalan + " kontrol DÜŞTÜ.");
+  console.log(`${basarisiz} KONTROL BAŞARISIZ (${gecen + basarisiz} kontrolden)`);
   process.exitCode = 1;
 }

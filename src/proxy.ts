@@ -113,6 +113,17 @@ const ACIK_YOLLAR = [
   // Ağ yokken gösterilen sayfa. Servis çalışanı bunu ÇEREZSİZ önbelleğe
   // alıyor (bkz. public/sw.js) — kapalı olsaydı yedek hiç oluşmazdı.
   "/cevrimdisi",
+  // K374 (08.11.2026) — TANITIM VİTRİNİ. Dışarıya kendimizi anlatan sayfa;
+  // herkese açık olması işin KENDİSİDİR, bir kaçak değil. Kullanıcı kararı:
+  // ayrı alan adı yerine uygulamanın içinde bir yol («www.bezirga/info»).
+  // ⛔ HİÇBİR VERİ OKUMAZ: sayfa statik metin + sözlük; veritabanına
+  // gitmez, oturum bilgisi göstermez, form taşımaz.
+  "/info",
+  // K374 — vitrinin ekran görüntüleri. İçerikleri ÖRNEK VERİDİR: klasörü
+  // dolduran tek şey `npm run ekran:cek` ve o betik örnek veritabanına
+  // bağlı değilse çekim yapmayı REDDEDER. Gerçek defterin fotoğrafı buraya
+  // konmaz. Kapalı olsaydı vitrin görselleri giriş ekranına yönlenirdi.
+  "/kitap-ekran",
 ];
 
 function acikMi(yol: string): boolean {

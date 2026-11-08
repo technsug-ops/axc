@@ -139,6 +139,12 @@ export function gercekCakismaGruplari(npmAdlari: string[]): string[][] {
  * KIRMIZI yanar.
  */
 export const SIRALI_MUTASYON_GRUP: readonly string[] = [
+  /* 08.11.2026 (K374): vitrin ayri statik siteden uygulamanin icine tasindi
+     (`/info`). Harness artik `src/proxy.ts` (kapi) ve `messages/tr.json`
+     (beyan metni) dosyalarini mutasyona ugratiyor — ikisi de baska
+     harness'lerin hedefinde. Paralel kosarlarsa birbirinin mutasyonunu
+     ezerler ve iki olcum birden sessizce anlamsizlasir. */
+  "tanitim-mutasyon:kontrol",
   /* 08.11.2026 (K373): deneme maliyeti düzeltmesi tarife aynasını da aynı
      gövdeye bağladı (İlke #10), bu yüzden harness artık
      `src/app/ayarlar/tarife/[id]/eylemler.ts` dosyasını da mutasyona
