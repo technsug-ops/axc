@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K373 — HESAPLAMA MOTORU TÜKENMİŞ PARTİNİN MALİYETİYLE HESAPLIYORDU · 08.11.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+## 🔴 K373 — HESAPLAMA MOTORU TÜKENMİŞ PARTİNİN MALİYETİYLE HESAPLIYORDU · 08.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 08.11.2026:** _«hesaplama kısmında ürün barkodu yazınca stokta olmamasına rağmen en düşük alım fiyatını getiriyor bu da yanıltıcı oluyor… bu üründe şu an kalan stok değeri 9899 ama hesaplamaya daha önce alıp sattığım 7600'lük alımı getiriyor, ciddi farklar.»_
 
@@ -71,7 +71,7 @@ kutuya son alım yazmalı ve _«Stok yok — alış kutusuna SON alım yazıldı
 maliyetle hesaplanmalı ⑦ telefonda aynı akış (mobil doğrulama kullanıcıda).
 
 ---
-## 🔴 K374 — VİTRİN UYGULAMANIN İÇİNE TAŞINDI: `/info` · 08.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K374 — VİTRİN UYGULAMANIN İÇİNE TAŞINDI: `/info` · 08.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 08.11.2026:** _«bunu neden bezirganın ana sayfasında yapmıyoruz? www.bezirga/info»_
 
@@ -132,8 +132,21 @@ dosyalarını mutasyona uğratıyor; ikisi de başka harness'lerin hedefinde, pa
 birbirini ezerlerdi (`SIRALI_MUTASYON_GRUP`).
 
 ⛔ **AÇIK:**
-· **① YAYIMLANMADI** — `gelistirme` dalında (`04496554`, push turu **172/172 yeşil**).
-  Kullanıcı «yayınla» deyince `main`'e ileri sarılır.
+· **① YAYIN ÖLÇÜLDÜ (08.11.2026) — CANLIDA.** Kullanıcı «yayınla» dedi; `main`
+  `gelistirme`ye ileri sarıldı (`7280a389..9bff5b45`, K357 akışı) ve push turu
+  **172/172 yeşil** (bekçi süreleri toplamı 878 sn). Dağıtım
+  `dpl_Gk9Koxert5idru9GeGSbwYaMVKzQ` · commit `9bff5b45` · **READY, 99 sn, fra1** ·
+  `bezirga.com` ve `www.bezirga.com` o dağıtımın alias listesinde · `aliasError: null`.
+  **ÜÇ ÖLÇÜM canlı adresten yapıldı (oturumsuz curl):** ① `/info` **200** ve son adres
+  `https://bezirga.com/info` — **girişe YÖNLENMİYOR** (yayından önceki 8 yoklamanın
+  sekizi `/giris?devam=%2Finfo`e gidiyordu; yani kapının varsayılanı KAPALI ve bu
+  dağıtım onu açtı) ② dört ekran görüntüsü `image/jpeg` **200** (75–107 KB) ③ `/panel`
+  **hâlâ** `/giris?devam=%2Fpanel`e yönleniyor — kapı yalnız vitrine açıldı.
+  Gövdede `info@bezirga.com` ×4, «örnek veri» ×6, «gerçek defteri göstermez» ×3,
+  parola alanı **0**; sekme başlığı «Çok kanallı e-ticaret operasyon yönetimi — Bezirga».
+  ⚠ **EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ** — yukarıdaki Halil listesi bu yüzden açık.
+  ⚠ **K373 AYNI YAYINDA GİTTİ** ama hesaplama ekranı oturum arkasında; rakamı
+  oturumsuz ölçmek mümkün değil, K373'ün Halil testi ayrıca bekliyor.
 · **② `bezirga-tanitim` VERCEL PROJESİ DURUYOR** (`prj_mP2TqEkyjAYElQO95G9N13EPg6eg`).
   Artık gereksiz ama **silme geri alınamaz** — kullanıcı onayı bekliyor. Silinene kadar
   `bezirga-tanitim.vercel.app` eski (statik) vitrini sunmaya devam eder; `tanitim.bezirga.com`
@@ -192,7 +205,7 @@ eklendi (`verified: true`) ama **KAS'ta kayıt yok**: alt alan şu an joker kay�
 ⚠ **POSTA KUTUSU SINANMADI:** `info@bezirga.com` KAS'ta açık mı ölçülmedi; açık
 değilse gelen posta sessizce kaybolur. Kullanıcı bir deneme postasıyla doğrular.
 
-─── _(kapanan maddeler, gerekçesiyle duruyor)_ **AÇIK — YAYIMLANMADI. İki şey bekliyordu:**
+─── _(kapanan maddeler, gerekçesiyle duruyor)_ **O GÜN AÇIKTI; İKİSİ DE KAPANDI — ayrı site yayımlandı, sonra K374 ile kaldırıldı:**
 · **① E-POSTA ADRESİ YOK.** `index.html` → İletişim bölümünde **`E_POSTA_BURAYA`** belirteci duruyor (iki yerde). Uydurulmadı: yanlış adres, gelen postanın sessizce kaybolması demektir. Adres gelince tek satır değişir.
 · **② VERCEL PROJESİ KURULMADI.** Yeni proje → aynı depo → **Root Directory `tanitim`** → Framework **Other** → alan adı `tanitim.bezirga.com`. `tanitim/vercel.json` yalnız `main`e izin veriyor (`gelistirme` · `k303-cok-firma` · `tasarim-canli` kapalı) — `axc` ile aynı düzen.
 
