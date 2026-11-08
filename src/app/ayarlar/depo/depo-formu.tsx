@@ -19,6 +19,21 @@ import { KUTU_ETIKETI, KUTU_RAKAMI } from "@/lib/kutu-bicimi";
  *  ⚠ İKİ ADIM: "Önce göster" hiçbir şey yazmaz; "Kur" ancak plan görüldükten
  *  sonra basılır. Tarife yükleme ekranıyla (K47) aynı disiplin.
  *
+ *  ⛔ VE O DİSİPLİN BURADA İKİ YERDEN KIRILMIŞTI (K375, 08.11.2026 — canlı):
+ *  ① form `action={fn}` kullanıyordu; React 19 bunu gönderince formu
+ *  SIFIRLIYOR (`requestFormReset`, react-dom 19.2.8) — dolayısıyla "Önce
+ *  göster"den sonra dört alan da BOŞALIYORDU. ② ikinci düğme formu YENİDEN
+ *  okuyordu (`new FormData`) ve okuduğu şey o boş formdu. Sonuç: önizleme
+ *  doğru çıkıyor, "24 rafı aç"a basılınca _«Bölüm adı boş olamaz»_ yazıyor
+ *  ve HİÇBİR RAF AÇILMIYORDU. Canlıda ölçüldü: `DepoBolumu` 0 satır,
+ *  `DEPO_BOLUMU_KURULDU` izi 0.
+ *
+ *  ⭐ ÇARE İKİ PARÇA: `onSubmit` + `preventDefault` (React sıfırlamaz, alanlar
+ *  DOLU kalır — tarife yükleyicisi zaten böyleydi ve bu yüzden çalışıyordu)
+ *  VE ikinci adım formu değil ÖNİZLEMEDE GÖRÜLEN tarifi gönderir. İkincisi
+ *  tek başına yeterli olurdu ama birincisi olmadan kullanıcı bir sayıyı
+ *  düzeltmek için dördünü birden yeniden yazardı.
+ *
  *  ⚠ EKRAN KARAR VERMEZ. Doğrulama ve kod üretimi `lib/depo/sablon.ts`te ve
  *  orası veritabanısız sınanıyor.
  * ============================================================================
@@ -27,11 +42,20 @@ export function DepoFormu() {
   const t = useTranslations("Depo");
   const [sonuc, setSonuc] = useState<DepoSonucu | null>(null);
   const [bekliyor, basla] = useTransition();
+  const onizleme = sonuc?.durum === "ONIZLEME" ? sonuc : null;
 
   return (
     <form
       className="max-w-3xl space-y-5"
-      action={(form) => basla(async () => setSonuc(await depoOnizle(form)))}
+      /**
+       * ⛔ `action={fn}` KULLANILMAZ — React formu sıfırlar ve iki adımlı
+       * akışın ikinci adımı okuyacak veriyi bulamaz (K375).
+       */
+      onSubmit={(e) => {
+        e.preventDefault();
+        const veri = new FormData(e.currentTarget);
+        basla(async () => setSonuc(await depoOnizle(veri)));
+      }}
     >
       <div className="border-border space-y-4 rounded-lg border p-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -95,20 +119,23 @@ export function DepoFormu() {
             {bekliyor ? t("hesaplaniyor") : t("onizle")}
           </Button>
 
-          {sonuc?.durum === "ONIZLEME" ? (
+          {onizleme ? (
             <Button
               type="button"
               variant="secondary"
               className="min-h-11"
-              disabled={bekliyor || sonuc.ozet.yeni.length === 0}
-              onClick={(e) => {
-                const form = e.currentTarget.closest("form");
-                if (!form) return;
-                const veri = new FormData(form);
-                basla(async () => setSonuc(await depoyuKur(veri)));
+              disabled={bekliyor || onizleme.ozet.yeni.length === 0}
+              onClick={() => {
+                /**
+                 * ⛔ FORM YENİDEN OKUNMAZ (K375). Yazılacak şey, ekranda
+                 * GÖRÜLEN plandır; ikisi aynı tariften gelir. Formu okusaydık
+                 * kullanıcının önizlemeden sonra yaptığı bir değişiklik
+                 * onaylanmamış hâlde yazılabilirdi.
+                 */
+                basla(async () => setSonuc(await depoyuKur(onizleme.tarif)));
               }}
             >
-              {t("kur", { adet: sonuc.ozet.yeni.length })}
+              {t("kur", { adet: onizleme.ozet.yeni.length })}
             </Button>
           ) : null}
         </div>
@@ -124,6 +151,21 @@ export function DepoFormu() {
       {sonuc?.durum === "ONIZLEME" ? (
         <div className="border-border space-y-3 rounded-lg border p-4">
           <p className="text-sm font-medium">{t("onizlemeBaslik")}</p>
+
+          {/*
+            ⛔ NE ONAYLADIĞI EKRANDA YAZAR (K375). Form "Önce göster"den sonra
+            da dolu kalıyor, ama onaylanan şey formun O ANKİ hâli DEĞİL,
+            önizlemenin dayandığı tariftir. İkisi ayrışabilirse (kullanıcı
+            önizlemeden sonra bir sayıyı değiştirdi) bunu görebilmeli.
+          */}
+          <p className="text-muted-foreground text-sm">
+            {t("onizlemeTarif", {
+              ad: sonuc.tarif.ad,
+              kisaltma: sonuc.tarif.kisaltma,
+              unite: sonuc.tarif.uniteSayisi,
+              goz: sonuc.tarif.gozSayisi,
+            })}
+          </p>
 
           {/* ⚠ Kompakt kutucuk ızgarası — tam genişlik "etiket solda, rakam sağda" YASAK (İlke #12). */}
           <div className="grid grid-cols-3 gap-2">

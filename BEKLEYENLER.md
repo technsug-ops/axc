@@ -13,6 +13,129 @@
 
 ---
 
+## 🔴 K375 — DEPO KURULUMU HİÇ ÇALIŞMIYORDU: REACT FORMU SIFIRLIYOR · 08.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 08.11.2026:** _«Bölüm adı yazıyorum, kısaltma tamam, bölümde 3 adet ünite
+var giriyorum, ünite başına 8 göz var diyorum, önce göster yapıyorum, kaydet diyorum —
+hiçbir şey olmuyor.»_
+
+**ÖLÇÜLDÜ — CANLI DEFTER** (`k375-depo-kurulum-olcum.ts`, salt okuma):
+
+    DepoBolumu satırı            0
+    DEPO_BOLUMU_KURULDU izi      0
+    Location                     43 · bölüme bağlı 0 · şablona uyan 0
+
+Yani ekran yalnız göstermiyor değil — **hiçbir raf hiç açılmamış.** Ekran
+30.08.2026'da yazıldığından beri **bir kez bile işe yaramamış** olabilir.
+
+**YETKİ DEĞİL** (ilk şüphe buydu, çürütüldü): sayfa da eylem de aynı izni istiyor
+(`ayar.yaz`); sayfa açıldığına göre izin var. Roller: CEO 35 izin · Sahip 35 izin,
+ikisinde de `ayar.yaz` VAR.
+
+### KÖK SEBEP — REACT 19'UN KURULU KAYNAĞINDAN OKUNDU
+
+`react-dom@19.2.8` → `startHostTransition` (satır 8955): bir `<form action={fn}>`
+gönderildiğinde **`requestFormReset` KOŞULSUZ çağrılıyor** — form sıfırlanıyor.
+Ekran ise ikinci adımda formu **YENİDEN** okuyordu (`closest("form")` +
+`new FormData`). Okuduğu şey o boş formdu.
+
+**GERÇEK TARAYICIDA BİREBİR ÜRETİLDİ** (yerel, Chromium 1248, oturum açık):
+
+    adım 1  alanlar dolu          Salon · SLN · 3 · 8
+    adım 2  "Önce göster"         önizleme DOĞRU (RAF-SLN1-1 … "24 rafı aç")
+            ama alanlar           ad:"" kısaltma:"" ünite:"" göz:""   ← SIFIRLANDI
+    adım 3  "24 rafı aç"          önizleme kayboldu · düğme kayboldu
+                                  uyarı: "Bölüm adı boş olamaz."
+            konsol hatası 0 · düşen istek 0 · yazılan satır 0
+
+⚠ **SESSİZ DEĞİL, AMA ANLAMSIZ.** Ekran bir şey söylüyordu — _«Bölüm adı boş
+olamaz»_ — ve kullanıcı adı AZ ÖNCE yazmıştı. Doğru çalışan bir uyarı, yanlış bir
+soruya cevap verince sessizlikten farksız oluyor. _(İlke #5'in sınırı: "bir şey
+olmadıysa NEDEN olmadığı ekranda yazar" — yazıyordu, ama neden o değildi.)_
+
+### AYNI HATA İKİNCİ EKRANDAYDI — ARANDI VE BULUNDU
+
+`/ayarlar/depo/goc` (raf göçü) de `action={fn}` kullanıyordu. Orada sıfırlanan şey
+`select`lerdi: hepsi varsayılana ("taşıma yok") dönüyor, ikinci adım hiçbir eşleme
+bulamıyor ve **hiçbir raf taşınmıyordu.** _(Anayasa: "kararın kapsamı, uygulandığı
+yerle sınırlı sayılmaz".)_
+
+⭐ **VE ÇALIŞAN EKRANLAR NİYE ÇALIŞIYORDU — ÖLÇÜLDÜ.** Tarife yükleyicisi (K47) ve
+HB kargo yükleyicisi `onSubmit` + `preventDefault` kullanıyor; React onları
+sıfırlamıyor. Kırık olan iki ekranın ortak işareti `action={`ti. Ayrım tek kelimeydi.
+
+### ÇARE İKİ PARÇA — BİRİ TEK BAŞINA YETMEZDİ
+
+· **`onSubmit` + `preventDefault`** → React sıfırlamaz, alanlar DOLU kalır. Bu olmadan
+  kullanıcı bir sayıyı düzeltmek için dördünü birden yeniden yazardı.
+· **İkinci adım formu DEĞİL, önizlemede GÖRÜLENİ gönderir** (`depoyuKur(onizleme.tarif)` ·
+  `gocuUygula(onizleme.eslemeler)`). Bu olmadan, önizlemeden sonra bir sayıyı değiştiren
+  kullanıcı **görmediği bir planı** onaylamış olurdu.
+
+⚠ **GÜVEN DEĞİŞMEDİ:** tarif/eşleme artık nesne olarak geliyor ama sunucu onu yeniden
+**normalleştiriyor, yeniden denetliyor ve planı yeniden kuruyor.** Eski hâlde de
+FormData istemciden geliyordu; kapı aynı yerde duruyor. `kisaltmaNormalle` tek giriş
+kapısında (`tarifiNormalle`) — `OFİS`/`Ofis` ayrışması kapalı kalıyor.
+
+⭐ **VE ONAYLANAN ŞEY EKRANDA YAZIYOR:** önizleme artık _«Salon (SLN) · 3 ünite × 8 göz»_
+satırını da gösteriyor. Form dolu kaldığı için kullanıcı bir sayıyı değiştirebilir;
+o zaman ekrandaki tarif ile formdaki değer ayrışır ve **ayrıştığı görünür.**
+
+### DOĞRULAMA — DÜZELTİLMİŞ HÂL YİNE TARAYICIDA ÖLÇÜLDÜ
+
+    adım 2  alanlar DOLU kaldı    Salon · SLN · 3 · 8
+    adım 3  "24 rafı aç"          kuruldu · uyarı YOK · alanlar hâlâ dolu
+    veritabanı                    DepoBolumu 1 (Salon/SLN)
+                                  RAF-SLN rafı 24 · bölüme bağlı 24
+                                  ilk RAF-SLN1-1 (ünite 1, göz 1)
+                                  son RAF-SLN3-8 (ünite 3, göz 8)
+                                  DEPO_BOLUMU_KURULDU izi 1
+
+⚠ **YEREL VERİTABANINDA** — canlıda değil. Canlı doğrulama Halil testinde.
+
+### BEKÇİ — DOSYA LİSTESİ DEĞİL, DESEN YASAĞI
+
+`depo:dogrula` 12. bölüm (**219 ölçüt**, `k375Kostu` bayrağı özetten ÖNCE sorulur):
+· **DESEN YASAĞI:** hiçbir `.tsx` dosyasında `action={` ile `closest("form")` BİR
+  ARADA bulunamaz. Taban doluluğu ayrıca beyan ediliyor (taranan ≥ 200 dosya) —
+  boş küme her koşulu sağlar.
+· ikinci adımların önizlemeden beslendiği, iki ekranın da `onSubmit` kullandığı,
+  ve sunucu eylemlerinin **FormData almadığı** ayrı ayrı ölçülüyor.
+
+⚠ **YASAK ÖLÇÜLEREK DARALTILDI.** `action={` **44 dosyada** geçiyor ve çoğu MEŞRU:
+tek adımlık bir formda sıfırlama DOĞRU davranıştır. Geniş bir yasak çalışan 40+ ekranı
+suçlardı. _(Anayasa: "ilke, kendi kapsamının dışına uygulanırsa hatayı korur".)_
+
+**MUTASYON `depo-formu-mutasyon:kontrol` 9/9** (− kaldıran 5 · + fazladan 4) + zararsız
+sağlama YEŞİL + geri alma doğrulandı. En pahalı senaryo canlı hatanın kendisi:
+_«form yine `action={}` ile gönderiliyor»_ → kırmızı. Ayrıca **taban boşaltan** mutasyon
+(tarama hiçbir dosya bulamıyor) ve **bayrağı düşüren** mutasyon da kırmızı yanıyor.
+
+⛔ **AÇIK:**
+· **① YAYIMLANMADI** — `gelistirme` dalında. Kullanıcı «yayınla» deyince `main`'e
+  ileri sarılır.
+· **② AYNI AİLEDEN BİR RİSK DURUYOR, BİLEREK:** tarife ve HB kargo yükleyicileri
+  ikinci adımda formu YENİDEN okuyor. Orada **sıfırlama yok** (`onSubmit`), yani bu
+  hata onlarda YAŞAMIYOR; ama kullanıcı önizlemeden sonra dosyayı değiştirirse
+  «A'yı önizleyip B'yi yazma» mümkün. Sunucu her hâlükârda okuduğunu denetliyor,
+  yani yanlış veri yazılmaz — ayrışan şey yalnız ONAY. Halil testinden geçmiş,
+  çalışan bir yola istek olmadan dokunulmadı. **Açılış şartı:** bu yükleyicilerde
+  «önizlediğimden başkası yazıldı» vakası görüldüğü gün.
+· **③ GEÇMİŞE DOKUNULMADI** — düzeltilecek geçmiş YOK: hiç kayıt oluşmamış.
+
+**Halil test listesi (yayından sonra, gerçek cihaz + canlı adres):** ① `/ayarlar/depo`
+② Bölüm adı **Salon** · Kısaltma **SLN** · Ünite **3** · Göz **8** ③ **«Önce göster»** →
+⚠ **dört alan da DOLU kalmalı** (eski hâlde boşalıyordu) ④ önizlemede
+**«Salon (SLN) · 3 ünite × 8 göz»** satırı görünmeli ⑤ kutucuklar **Toplam 24 ·
+Yeni 24 · Zaten var 0** ⑥ örnek kodlar **RAF-SLN1-1 · RAF-SLN1-2 …** ⑦ düğme
+**«24 rafı aç»** ⑧ bas → yeşil rozet, **«24 açıldı, 0 atlandı»** ⑨ «Bugünkü durum»
+kutuları tazelensin: **Tanımlı raf 67 · Şablona uyan 24 · Bölüme bağlı 24 · Bölümsüz 43**
+⑩ **Raf Konumları** ekranında `RAF-SLN3-8` görünmeli ⑪ aynı tarifi İKİNCİ kez kur →
+**«24 zaten var, atlanacak»** demeli ve **hiçbir yeni raf açmamalı** (kapasite artırma =
+EKLEME) ⑫ telefonda aynı akış: alanlar dolu kalıyor mu, düğmeler 44 px mi.
+
+---
+
 ## 🔴 K373 — HESAPLAMA MOTORU TÜKENMİŞ PARTİNİN MALİYETİYLE HESAPLIYORDU · 08.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 08.11.2026:** _«hesaplama kısmında ürün barkodu yazınca stokta olmamasına rağmen en düşük alım fiyatını getiriyor bu da yanıltıcı oluyor… bu üründe şu an kalan stok değeri 9899 ama hesaplamaya daha önce alıp sattığım 7600'lük alımı getiriyor, ciddi farklar.»_

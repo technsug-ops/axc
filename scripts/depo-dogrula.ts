@@ -1,4 +1,6 @@
 import { kaynakOku } from "./kaynak-oku";
+import { readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { MENU_IKONLARI } from "../src/lib/menu/ikonlar";
 
 import {
@@ -44,6 +46,8 @@ import {
 
 let gecen = 0;
 let kalan = 0;
+/** K375 bölümünün KOŞTUĞUNU kanıtlayan bayrak — özet bunu sorar. */
+let k375Kostu = false;
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -1224,6 +1228,108 @@ async function etiketKontrolleri() {
       );
     }
   }
+
+  /* ── 12) FORM SIFIRLAMA KAPISI (K375, 08.11.2026) ──────────────────────
+   *
+   * ⛔ CANLI HATA: depo kurulum ekranı formu `action={fn}` ile gönderiyordu.
+   * React 19 böyle bir formu gönderim anında SIFIRLIYOR
+   * (`startHostTransition` → `requestFormReset`, react-dom 19.2.8 kaynağında
+   * KOŞULSUZ). İkinci düğme ise formu YENİDEN okuyordu — ve okuduğu şey o
+   * boş formdu. Tarayıcıda ölçüldü: önizleme doğru çıkıyor, "24 rafı aç"a
+   * basılınca «Bölüm adı boş olamaz» yazıyor, hiçbir raf açılmıyor.
+   * Canlı defterde `DepoBolumu` 0 satır, `DEPO_BOLUMU_KURULDU` izi 0.
+   *
+   * ⚠ YASAK DAR TUTULDU — ÖLÇÜLEREK. `action={` 44 dosyada geçiyor ve
+   * çoğu MEŞRU: tek adımlık bir formda sıfırlama doğru davranıştır. Tehlike
+   * ikisinin BİR ARADA olmasıdır — sıfırlanan bir formu yeniden okumak.
+   * Geniş bir yasak çalışan 40+ ekranı suçlardı (anayasa: "ilke, kendi
+   * kapsamının dışına uygulanırsa hatayı korur").
+   */
+  {
+    const dosyalar: string[] = [];
+    const gez = (k: string) => {
+      for (const ad of readdirSync(k)) {
+        const yol = join(k, ad);
+        if (statSync(yol).isDirectory()) gez(yol);
+        else if (yol.endsWith(".tsx")) dosyalar.push(yol.split("\\").join("/"));
+      }
+    };
+    gez("src");
+    const yorumsuzTsx = (s: string) =>
+      s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+
+    /**
+     * ⛔ TABAN DOLULUĞU AYRICA BEYAN EDİLİR: boş listede aşağıdaki süzgeç
+     * hiç dönmez ve bekçi "geçti" derdi (`every` kapısının tarama hâli).
+     */
+    kontrol(
+      "taranan .tsx ≥ 200 dosya (taban dolu)",
+      dosyalar.length >= 200,
+      dosyalar.length,
+    );
+
+    const ihlal = dosyalar.filter((yol) => {
+      const s = yorumsuzTsx(kaynakOku(yol));
+      return /action=\{/.test(s) && /closest\("form"\)/.test(s);
+    });
+    kontrol(
+      "hiçbir ekran `action={}` ile `closest(\"form\")` birlikte kullanmıyor",
+      ihlal.length === 0,
+      ihlal,
+    );
+
+    /**
+     * ⛔ VE KORUMANIN İKİNCİ YARISI: ikinci adım FORMU DEĞİL, ÖNİZLEMEDE
+     * GÖRÜLENİ gönderir. Birincisi sıfırlamayı, bu YANLIŞ ONAYI engeller:
+     * önizlemeden sonra bir sayıyı değiştiren kullanıcı, görmediği bir planı
+     * onaylamış olurdu.
+     *
+     * ⚠ ÖLÇÜT KULLANIMA BAĞLI — ada değil. `depoyuKur` adı import satırında
+     * da geçiyor; aranan şey ÇAĞRININ kendisi.
+     */
+    const depoEkran = yorumsuzTsx(kaynakOku("src/app/ayarlar/depo/depo-formu.tsx"));
+    const gocEkran = yorumsuzTsx(kaynakOku("src/app/ayarlar/depo/goc/goc-formu.tsx"));
+    kontrol(
+      "depo kurulumu: ikinci adım önizlemenin tarifini gönderiyor",
+      /depoyuKur\(onizleme\.tarif\)/.test(depoEkran),
+    );
+    kontrol(
+      "raf göçü: ikinci adım önizlemenin eşlemelerini gönderiyor",
+      /gocuUygula\(onizleme\.eslemeler\)/.test(gocEkran),
+    );
+    /** İki ekran da `onSubmit` + `preventDefault` ile gönderilir. */
+    for (const [ad, s] of [
+      ["depo kurulumu", depoEkran],
+      ["raf göçü", gocEkran],
+    ] as const) {
+      kontrol(
+        `${ad}: form onSubmit ile gönderiliyor (preventDefault)`,
+        /onSubmit=\{\(e\) => \{/.test(s) && /e\.preventDefault\(\);/.test(s),
+      );
+    }
+
+    /**
+     * ⛔ SUNUCU TARAFI DA KAPANIR: ikinci adım `FormData` kabul ederse ekran
+     * er ya da geç onu yeniden okumak zorunda kalır ve desen geri gelir.
+     */
+    const depoEylem = kaynakOku("src/app/ayarlar/depo/eylemler.ts");
+    const gocEylem = kaynakOku("src/app/ayarlar/depo/goc/eylemler.ts");
+    kontrol(
+      "depoyuKur FormData DEĞİL, tarif alıyor",
+      /export async function depoyuKur\(ham: BolumTarifi\)/.test(depoEylem),
+    );
+    kontrol(
+      "gocuUygula FormData DEĞİL, eşleme alıyor",
+      /export async function gocuUygula\(eslemeler: Esleme\[\]\)/.test(gocEylem),
+    );
+    k375Kostu = true;
+  }
+
+  /**
+   * ⛔ BLOK KOŞMADIYSA "GEÇTİ" DENMEZ. Ölçüt bloğu özetten ÖNCE koşar; bir
+   * gün sıra bozulur ya da erken dönülürse bekçi GEÇERSİZ der, yeşil değil.
+   */
+  kontrol("K375 form sıfırlama bölümü KOŞTU", k375Kostu);
 
   console.log("");
   console.log("=".repeat(70));

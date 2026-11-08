@@ -33,6 +33,7 @@ export function GocFormu({
   const t = useTranslations("Goc");
   const [sonuc, setSonuc] = useState<GocSonucu | null>(null);
   const [bekliyor, basla] = useTransition();
+  const onizleme = sonuc?.durum === "ONIZLEME" ? sonuc : null;
 
   if (kaynaklar.length === 0) {
     return <p className="text-muted-foreground text-sm">{t("kaynakYok")}</p>;
@@ -44,7 +45,17 @@ export function GocFormu({
   return (
     <form
       className="space-y-5"
-      action={(form) => basla(async () => setSonuc(await gocuOnizle(form)))}
+      /**
+       * ⛔ `action={fn}` KULLANILMAZ (K375, 08.11.2026). React 19 form
+       * eyleminden sonra formu sıfırlıyor; buradaki bütün `select`ler
+       * varsayılana ("taşıma") dönüyor ve ikinci adım hiçbir eşleme
+       * bulamıyordu. `onSubmit` + `preventDefault` sıfırlamaz.
+       */
+      onSubmit={(e) => {
+        e.preventDefault();
+        const veri = new FormData(e.currentTarget);
+        basla(async () => setSonuc(await gocuOnizle(veri)));
+      }}
     >
       <div className="border-border space-y-3 rounded-lg border p-4">
         <p className="text-muted-foreground text-sm">{t("eslemeNotu")}</p>
@@ -101,20 +112,21 @@ export function GocFormu({
             {bekliyor ? t("hesaplaniyor") : t("onizle")}
           </Button>
 
-          {sonuc?.durum === "ONIZLEME" ? (
+          {onizleme ? (
             <Button
               type="button"
               variant="secondary"
               className="min-h-11"
               disabled={bekliyor}
-              onClick={(e) => {
-                const form = e.currentTarget.closest("form");
-                if (!form) return;
-                const veri = new FormData(form);
-                basla(async () => setSonuc(await gocuUygula(veri)));
+              onClick={() => {
+                /**
+                 * ⛔ FORM YENİDEN OKUNMAZ (K375). Taşınacak şey, ekranda
+                 * GÖRÜLEN planın dayandığı eşlemelerdir.
+                 */
+                basla(async () => setSonuc(await gocuUygula(onizleme.eslemeler)));
               }}
             >
-              {t("uygula", { adet: sonuc.plan.varyantToplami })}
+              {t("uygula", { adet: onizleme.plan.varyantToplami })}
             </Button>
           ) : null}
         </div>

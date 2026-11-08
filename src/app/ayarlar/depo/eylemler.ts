@@ -31,9 +31,25 @@ import { yetkiIste } from "@/lib/yetki";
  * ============================================================================
  */
 
-function formdanTarif(form: FormData): BolumTarifi {
+type HamTarif = {
+  ad?: unknown;
+  kisaltma?: unknown;
+  uniteSayisi?: unknown;
+  gozSayisi?: unknown;
+};
+
+/**
+ * ⭐ TEK GİRİŞ KAPISI (K375, 08.11.2026) — formdan gelen de, önizlemeden
+ * DOĞRUDAN gelen de buradan geçer.
+ *
+ * ⛔ NİYE BÖLÜNDÜ: ikinci adım artık formu yeniden OKUYAMIYOR (React 19
+ * form eyleminden sonra alanları sıfırlıyor), bu yüzden `depoyuKur` tarifi
+ * nesne olarak alıyor. Normalleştirme kapısı tek yerde kalmasaydı iki yol
+ * iki kurala tabi olurdu — ve `OFİS`/`Ofis` ayrışması tam oradan doğardı.
+ */
+function tarifiNormalle(ham: HamTarif): BolumTarifi {
   return {
-    ad: String(form.get("ad") ?? "").trim(),
+    ad: String(ham.ad ?? "").trim(),
     /**
      * ⭐ NORMALLEŞTİRME — `toUpperCase()` YETMİYORDU (düzeltildi 30.08.2026).
      *
@@ -47,10 +63,19 @@ function formdanTarif(form: FormData): BolumTarifi {
      * kullanıcı reddedilmiyor hem `OFİS` ile `Ofis` AYNI kısaltmaya iniyor —
      * canlıdaki iki-kimlik ayrışması yapısal olarak kapanıyor.
      */
-    kisaltma: kisaltmaNormalle(String(form.get("kisaltma") ?? "")),
-    uniteSayisi: Number(form.get("unite") ?? 0),
-    gozSayisi: Number(form.get("goz") ?? 0),
+    kisaltma: kisaltmaNormalle(String(ham.kisaltma ?? "")),
+    uniteSayisi: Number(ham.uniteSayisi ?? 0),
+    gozSayisi: Number(ham.gozSayisi ?? 0),
   };
+}
+
+function formdanTarif(form: FormData): BolumTarifi {
+  return tarifiNormalle({
+    ad: form.get("ad"),
+    kisaltma: form.get("kisaltma"),
+    uniteSayisi: form.get("unite"),
+    gozSayisi: form.get("goz"),
+  });
 }
 
 export type DepoSonucu =
@@ -78,14 +103,28 @@ export async function depoOnizle(form: FormData): Promise<DepoSonucu> {
   return { durum: "ONIZLEME", tarif, ozet };
 }
 
-/** Adım 2 — yazma. Kullanıcı planı gördükten SONRA. */
-export async function depoyuKur(form: FormData): Promise<DepoSonucu> {
+/**
+ * Adım 2 — yazma. Kullanıcı planı gördükten SONRA.
+ *
+ * ⛔ FORM DEĞİL, TARİF ALIR (K375, 08.11.2026 — canlı hata).
+ * React 19 `<form action={fn}>` gönderildiğinde formu SIFIRLIYOR
+ * (`startHostTransition` → `requestFormReset`, react-dom 19.2.8). Eski hâlde
+ * bu eylem formu YENİDEN okuyordu ve okuduğu şey BOŞTU: kullanıcı «24 rafı
+ * aç»a basınca _«Bölüm adı boş olamaz»_ görüyor, hiçbir raf açılmıyordu.
+ * Artık önizlemede GÖRÜLEN tarif gönderiliyor — ekrandaki rakam ile
+ * yazılacak şey aynı kaynaktan geliyor.
+ *
+ * ⚠ GÜVEN DEĞİŞMEDİ: tarif istemciden geliyor ama burada yeniden
+ * normalleştirilip yeniden DENETLENİYOR ve plan yeniden kuruluyor. Eski hâlde
+ * de FormData istemciden geliyordu; kapı aynı yerde duruyor.
+ */
+export async function depoyuKur(ham: BolumTarifi): Promise<DepoSonucu> {
   /** ⚠ İZ İÇİN KULLANICI — `yetkiIste` bağlamı zaten döndürüyor, ikinci
    *  bir oturum sorgusu açılmıyor. */
   const { kullaniciId } = await yetkiIste("ayar.yaz");
   const t = await getTranslations("Depo");
 
-  const tarif = formdanTarif(form);
+  const tarif = tarifiNormalle(ham);
   const hatalar = tarifiDenetle(tarif);
   if (hatalar.length > 0) {
     return { durum: "HATA", engel: t(`hata${hatalar[0]}` as "hataAD_BOS") };
@@ -120,9 +159,9 @@ export async function depoyuKur(form: FormData): Promise<DepoSonucu> {
      * eklendi). Bölüm varsa yeniden kullanılır, adı GÜNCELLENMEZ: ad
      * değişikliği ayrı bir karardır ve buradan sessizce yapılmamalı.
      */
-    /** ⚠ `tarif.kisaltma` ZATEN normalleştirilmiş (`formdanTarif`) — ikinci
-     *  kez çağırmak aynı sonucu verir ama iki yerde iki kural izlenimi
-     *  yaratırdı. Tek kaynak: giriş kapısı. */
+    /** ⚠ `tarif.kisaltma` ZATEN normalleştirilmiş (`tarifiNormalle`) —
+     *  ikinci kez çağırmak aynı sonucu verir ama iki yerde iki kural
+     *  izlenimi yaratırdı. Tek kaynak: giriş kapısı. */
     const kisaltma = tarif.kisaltma;
     const enBuyuk = await prisma.depoBolumu.aggregate({ _max: { sira: true } });
     const bolum = await prisma.depoBolumu.upsert({

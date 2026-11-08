@@ -4741,6 +4741,7 @@
     "hesaplaniyor": "Hesaplanıyor…",
     "kur": "{adet} rafı aç",
     "onizlemeBaslik": "Ne açılacak",
+    "onizlemeTarif": "{ad} ({kisaltma}) · {unite} ünite × {goz} göz",
     "toplamKod": "Toplam kod",
     "yeniAcilacak": "Yeni açılacak",
     "zatenVar": "Zaten var",

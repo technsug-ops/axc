@@ -32,7 +32,12 @@ import { yetkiIste } from "@/lib/yetki";
 
 export type GocSonucu =
   | { durum: "HATA"; engel: string }
-  | { durum: "ONIZLEME"; plan: GocPlani }
+  /**
+   * ⛔ EŞLEMELER DE TAŞINIR (K375, 08.11.2026). İkinci adım formu YENİDEN
+   * okuyamaz: React 19 form eyleminden sonra `select`leri varsayılana
+   * (= "taşıma") döndürüyor. Onaylanan şey ekranda GÖRÜLEN plan olmalı.
+   */
+  | { durum: "ONIZLEME"; plan: GocPlani; eslemeler: Esleme[] }
   | {
       durum: "TASINDI";
       tasinanRaf: number;
@@ -79,7 +84,8 @@ export async function gocuOnizle(form: FormData): Promise<GocSonucu> {
   const t = await getTranslations("Goc");
 
   const { eski, yeni } = await raflariOku();
-  const plan = gocPlani(eski, yeni, formdanEslemeler(form));
+  const eslemeler = formdanEslemeler(form);
+  const plan = gocPlani(eski, yeni, eslemeler);
 
   if (plan.hatalar.length > 0) {
     const h = plan.hatalar[0];
@@ -88,16 +94,28 @@ export async function gocuOnizle(form: FormData): Promise<GocSonucu> {
   if (plan.tasinacak.length === 0) {
     return { durum: "HATA", engel: t("hataEslemeYok") };
   }
-  return { durum: "ONIZLEME", plan };
+  return { durum: "ONIZLEME", plan, eslemeler };
 }
 
-/** Adım 2 — taşıma. Kullanıcı planı GÖRDÜKTEN sonra. */
-export async function gocuUygula(form: FormData): Promise<GocSonucu> {
+/**
+ * Adım 2 — taşıma. Kullanıcı planı GÖRDÜKTEN sonra.
+ *
+ * ⛔ FORM DEĞİL, EŞLEME ALIR (K375, 08.11.2026). Depo kurulum ekranıyla
+ * AYNI hata buradaydı: form `action={fn}` ile gönderiliyor, React 19 onu
+ * sıfırlıyor (`requestFormReset`) ve bütün `select`ler "taşıma"ya dönüyordu.
+ * Formu yeniden okuyan ikinci adım hiçbir eşleme bulamaz, _«Eşleme yok»_ der
+ * ve hiçbir raf taşınmazdı.
+ *
+ * ⚠ GÜVEN DEĞİŞMEDİ: eşlemeler istemciden geliyor ama plan burada YENİDEN
+ * kuruluyor ve yeniden denetleniyor; eski hâlde de FormData istemciden
+ * geliyordu.
+ */
+export async function gocuUygula(eslemeler: Esleme[]): Promise<GocSonucu> {
   await yetkiIste("ayar.yaz");
   const t = await getTranslations("Goc");
 
   const { eski, yeni } = await raflariOku();
-  const plan = gocPlani(eski, yeni, formdanEslemeler(form));
+  const plan = gocPlani(eski, yeni, eslemeler);
 
   if (plan.hatalar.length > 0) {
     const h = plan.hatalar[0];
