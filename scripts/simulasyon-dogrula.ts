@@ -3,6 +3,7 @@ import { kaynakOku } from "./kaynak-oku";
 import { simulasyonKur } from "../src/lib/fiyatlama/simulasyon";
 
 import { SIMULASYON_KANALLARI } from "../src/lib/simulasyon/kanal-kurallari";
+import { denemeMaliyetiSec } from "../src/lib/simulasyon/urun-zemini";
 import {
   eksikSebebi,
   girdiEksikMi,
@@ -551,10 +552,28 @@ console.log("\n6) ÜRÜN ZEMİNİ — barkodla dolan alanlar");
    * cevaplanabilir olmalı. (Aynı gün kartın "son alım"ı bu yüzden 26
    * varyantta "alım yok" diyordu.)
    */
+  /**
+   * ⚠ ÖLÇÜT DARALTILDI 08.11.2026 (K373) — SUSTURULMADI. Eskiden dosyanın
+   * TAMAMINDA `acikPartiler` dizesi yasaktı. K373 eldeki malın maliyetini
+   * ayrı bir alan olarak eklediğinde o yasak DOĞRU kodu suçladı: korunan
+   * kural "ortalama alış açık partiden okunmaz" idi, "bu dosya açık parti
+   * göremez" değil. Yasak artık ALANA bağlı, dosyaya değil.
+   * (Anayasa: ilke, kendi kapsamının dışına uygulanırsa hatayı korur.)
+   */
   kontrol(
     "ortalama alış LEDGER'dan (açık parti değil)",
     zemin.includes("purchaseItemId: { not: null }") &&
-      !zemin.includes("acikPartiler"),
+      zemin.includes("ortalamaAlis: alimAdet > 0 ? alimTutar / alimAdet : null"),
+  );
+  kontrol(
+    "  ...açık parti maliyeti ORTALAMA ALIŞA karışmıyor",
+    !zemin.includes("ortalamaAlis: eldekiMaliyet") &&
+      !zemin.includes("ortalamaAlis: acikMaliyet"),
+  );
+  kontrol(
+    "  ...SON ALIŞ da açık partiden okunmuyor (stoksuz üründe cevap versin)",
+    !zemin.includes("sonAlisFiyati: eldekiMaliyet") &&
+      zemin.includes("girisler[girisler.length - 1].unitCostAmount"),
   );
   kontrol("maliyet hareketin damgasından", zemin.includes("unitCostAmount"));
   kontrol(
@@ -1077,9 +1096,21 @@ console.log("10) EKRAN — son satış fiyatı, yanıltıcı satır, durum rengi
    * (`axcali2045`: ortalama ₺6.553 ↔ son ₺11.890). Ortalamayla yapılan bir
    * deneme o üründe kârlı görünüp gerçekte zarar ettirirdi.
    */
+  /**
+   * ⚠ ÖLÇÜT ESKİDİ VE GÜNCELLENDİ (08.11.2026) — SUSTURULMADI.
+   * Eskiden `setAlis(z.sonAlisFiyati…)` aranıyordu; o ölçüt bugün KODUN
+   * O ANKİ DAVRANIŞINI sabitliyor olurdu. Kural değişti: stok VARKEN
+   * eldeki malın maliyeti yazılır (kullanıcı kararı 08.11.2026, ölçülen
+   * vaka `urun-zemini.ts` → `denemeMaliyetiSec` başlığında). 28.08'in
+   * gerekçesi SİLİNMEDİ; stoğu tükenmiş üründe aynen geçerli.
+   */
   kontrol(
-    "alış alanı SON alış fiyatından doluyor",
-    ekran.includes("setAlis(z.sonAlisFiyati.toFixed(2))"),
+    "alış alanı DENEME MALİYETİNDEN doluyor (eldeki ↔ son alım seçimi)",
+    ekran.includes("setAlis(z.denemeMaliyeti.toFixed(2))"),
+  );
+  kontrol(
+    "  ...çıplak `son alış` ARTIK ALANI DOLDURMUYOR",
+    !ekran.includes("setAlis(z.sonAlisFiyati"),
   );
   kontrol(
     "  ...ortalama alış artık ALANI DOLDURMUYOR",
@@ -1578,6 +1609,137 @@ console.log("⑬ bitmis tarife/teklif penceresi — dilim KULLANILMAZ");
 }
 
 console.log("=".repeat(70));
+/**
+ * ============================================================================
+ *  DENEME MALİYETİ SEÇİMİ — DEĞER TESTİ (K373, 08.11.2026)
+ * ----------------------------------------------------------------------------
+ *  ⚠ KAYNAK TARAMASI YOK: seçim saf bir gövdede (`denemeMaliyetiSec`), o
+ *  yüzden ölçüt gövdeyi ÇAĞIRIR ve DEĞERİNİ sınar. (Anayasa: saf hesap
+ *  katmanı, desen tarayan bekçiye muhtaç olmaz.)
+ *
+ *  ⚠ ÖRNEK VERİ AYRIMIN İKİ YAKASINI GÖSTERİR: her senaryoda eldeki
+ *  maliyet ile son alım FARKLI sayılar; eşit olsalardı seçimi bozan
+ *  mutasyon yakalanmazdı.
+ * ============================================================================
+ */
+console.log("");
+console.log("K373) DENEME MALİYETİ — eldeki mal mı, son alım mı");
+{
+  /* Ölçülen gerçek vaka: axcali2950 (08.11.2026). */
+  const gercekVaka = denemeMaliyetiSec({
+    eldekiAdet: 2,
+    eldekiMaliyet: 9899,
+    sonAlisFiyati: 7607.99,
+  });
+  kontrol(
+    "stok VARSA eldeki malın maliyeti seçilir (9899 ile 7607,99 arasından)",
+    gercekVaka.tutar === 9899 && gercekVaka.kaynak === "ELDEKI",
+    gercekVaka,
+  );
+
+  const stokYok = denemeMaliyetiSec({
+    eldekiAdet: 0,
+    eldekiMaliyet: null,
+    sonAlisFiyati: 7607.99,
+  });
+  kontrol(
+    "stok YOKSA son alıma düşer — soru yine cevaplanır (28.08 kararı yaşıyor)",
+    stokYok.tutar === 7607.99 && stokYok.kaynak === "SON_ALIS",
+    stokYok,
+  );
+
+  const maliyetsizParti = denemeMaliyetiSec({
+    eldekiAdet: 5,
+    eldekiMaliyet: null,
+    sonAlisFiyati: 1234.5,
+  });
+  kontrol(
+    "stok var ama maliyeti BİLİNMİYORSA son alıma düşer (uydurulmaz)",
+    maliyetsizParti.tutar === 1234.5 && maliyetsizParti.kaynak === "SON_ALIS",
+    maliyetsizParti,
+  );
+
+  const hicbiri = denemeMaliyetiSec({
+    eldekiAdet: 0,
+    eldekiMaliyet: null,
+    sonAlisFiyati: null,
+  });
+  kontrol(
+    "hiçbiri yoksa null — SIFIR yazılmaz (sıfır bedava mal demektir)",
+    hicbiri.tutar === null && hicbiri.kaynak === null,
+    hicbiri,
+  );
+
+  /* ⚠ Defter eksiye düşmüşse elde mal YOKTUR. */
+  const negatifStok = denemeMaliyetiSec({
+    eldekiAdet: -3,
+    eldekiMaliyet: 9899,
+    sonAlisFiyati: 7607.99,
+  });
+  kontrol(
+    "negatif stokta eldeki maliyet KULLANILMAZ",
+    negatifStok.kaynak === "SON_ALIS",
+    negatifStok,
+  );
+}
+
+/**
+ * ⚠ KAPSAM: AYNI SORUYU SORAN İKİNCİ EKRAN DA AYNI GÖVDEDEN OKUR.
+ * Tarife aynası da "bu ürünü satarsam ne kalır" diyor; ayrı okusaydı aynı
+ * ürün iki ekranda farklı NET gösterirdi (İlke #10 · kararın kapsamı).
+ */
+{
+  const ayna = kaynakOku("src/app/ayarlar/tarife/[id]/eylemler.ts");
+  kontrol(
+    "tarife aynası da deneme maliyetini okuyor",
+    ayna.includes("const maliyet = zemin.denemeMaliyeti;"),
+  );
+  kontrol(
+    "  ...çıplak son alış tarife aynasında KALMADI",
+    !ayna.includes("zemin.sonAlisFiyati"),
+  );
+}
+
+/**
+ * ⚠ SEÇİM EKRANDA YAZIYOR — sessiz seçim yok (İlke #5).
+ *
+ * ⛔ ÖLÇÜT ÇİZİM KOŞULUNA BAĞLI: koşul ile sözlük anahtarı arasındaki
+ * MESAFE ölçülüyor. Dalı `{false ? (` yapan mutasyon koşulu düşürür ve
+ * ölçüt kırmızı yanar; iki deseni AYRI AYRI aramak bunu göremezdi.
+ *
+ * ⛔ VE `indexOf` VARLIK KAPISI AYRI: bulunamayınca -1 döner ve her sıra
+ * karşılaştırmasını geçerdi (anayasa: sessiz varsayılan üreten ifadeler).
+ */
+{
+  const ekran2 = kaynakOku("src/app/simulasyon/deneme.tsx");
+  const zincir = (kosul: string, anahtar: string) => {
+    const i = ekran2.indexOf(kosul);
+    const j = ekran2.indexOf(anahtar);
+    return i >= 0 && j >= 0 && j > i && j - i < 260;
+  };
+  /**
+   * ⛔ ÇAPA AÇILIŞ SÜSLÜ PARANTEZİNİ DE İÇERİR. Yalnız koşul metnini
+   * arasaydık `{false && urun.denemeMaliyetKaynagi === "ELDEKI"` yapan bir
+   * mutasyon ölçütü GEÇERDİ: desen yerinde durur, dal hiç çizilmez.
+   * (Anayasa: koşul öldürülür, desen kalır.)
+   */
+  kontrol(
+    "ekran ELDEKİ maliyeti seçtiğini YAZIYOR (koşul ile anahtar tek zincirde)",
+    zincir('{urun.denemeMaliyetKaynagi === "ELDEKI" &&', 't("zeminEldeki"'),
+  );
+  kontrol(
+    "ekran SON ALIM'a düştüğünü de YAZIYOR",
+    zincir(
+      ') : urun.denemeMaliyetKaynagi === "SON_ALIS" &&',
+      't("zeminSonAlisKullanildi"',
+    ),
+  );
+  kontrol(
+    "  ...ortalama alış ÖZET SATIRINDA hâlâ duruyor (bilgi kaybı yok)",
+    ekran2.includes("alis: para(urun.ortalamaAlis)"),
+  );
+}
+
 if (kalan === 0) console.log(`TÜM KONTROLLER GEÇTİ (${gecen})`);
 else {
   console.log(`${kalan} KONTROL BAŞARISIZ (${gecen + kalan} kontrolden)`);

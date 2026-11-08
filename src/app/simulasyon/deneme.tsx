@@ -133,14 +133,16 @@ export function Deneme({ bugun }: { bugun: string }) {
       /** ⚠ ORTALAMALAR KDV DAHİL — girdi dili de dahile çevriliyor. */
       setKdvDahil(true);
       /**
-       * ⚠ SON ALIŞ FİYATI, ORTALAMA DEĞİL (kullanıcı kararı 28.08.2026).
-       * Satış tarafındaki kararın alış tarafındaki kardeşi ve gerekçesi
-       * aynı: ortalama, aylar önceki bir maliyeti bugünkü denemeye
-       * karıştırır ve **maliyet kaymasını gizler.** Ölçüldü: 708 alımlı
-       * varyantın 247'sinde (%34,9) ikisi ayrışıyor, max sapma %81,4.
-       * ⛔ Ortalama SİLİNMEDİ — özet satırında ikisi de yazıyor.
+       * ⚠ STOK VARSA ELDEKİ MALIN MALİYETİ, YOKSA SON ALIM — seçim saf
+       * gövdede (`denemeMaliyetiSec`), gerekçesi ve ölçülen vakası orada.
+       *
+       * ⛔ 28.08.2026'nın "ortalama değil son alım" kararı SİLİNMEDİ,
+       * KAPSAMI daraldı: stoğu tükenmiş üründe aynen geçerli. Değişen,
+       * elde mal VARKEN satılacak olanın maliyetinin yazılması.
+       * ⛔ Hiçbir rakam kaybolmadı — özet satırında ortalama, son alım VE
+       * eldeki maliyet birlikte yazıyor; hangisinin kutuya girdiği de.
        */
-      if (z.sonAlisFiyati !== null) setAlis(z.sonAlisFiyati.toFixed(2));
+      if (z.denemeMaliyeti !== null) setAlis(z.denemeMaliyeti.toFixed(2));
       /**
        * ⚠ SON SATIŞ FİYATI, ORTALAMA DEĞİL (kullanıcı kararı 21.08.2026).
        * Ortalama, aylar önceki bir fiyatı bugünkü denemeye karıştırır ve
@@ -363,6 +365,31 @@ export function Deneme({ bugun }: { bugun: string }) {
                           : bicim.tarih(urun.sonSatisTarihi),
                     })}
             </p>
+            {/* ⚠ HANGİ RAKAM KUTUYA GİRDİ — SESSİZ SEÇİM YOK. İki kaynak
+                (eldeki maliyet ↔ son alım) aynı ürüne farklı rakam verir;
+                hangisinin seçildiği yazmazsa kullanıcı kutudaki sayının
+                nereden geldiğini bilemez (İlke #5, ve "tek seç istisnası
+                da görünür olur"). */}
+            {urun.denemeMaliyetKaynagi === "ELDEKI" &&
+            urun.eldekiMaliyet !== null ? (
+              <p className="mt-1 text-xs font-medium">
+                {t("zeminEldeki", {
+                  adet: urun.eldekiAdet,
+                  maliyet: para(urun.eldekiMaliyet),
+                })}
+              </p>
+            ) : urun.denemeMaliyetKaynagi === "SON_ALIS" &&
+              urun.sonAlisFiyati !== null ? (
+              <p className="mt-1 text-xs font-medium">
+                {t("zeminSonAlisKullanildi", {
+                  sonAlis: para(urun.sonAlisFiyati),
+                  alisTarihi:
+                    urun.sonAlisTarihi === null
+                      ? "—"
+                      : bicim.tarih(urun.sonAlisTarihi),
+                })}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>

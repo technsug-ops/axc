@@ -6,6 +6,9 @@ import {
 import { VARSAYILAN_KDV_ORANI } from "@/lib/kar";
 import { kdvOraniniCoz } from "@/lib/kdv";
 import { prisma } from "@/lib/prisma";
+import { acikMaliyet } from "@/lib/buybox-fiyat";
+import { etkinKuralOku } from "@/lib/buybox-kural-verisi";
+import { acikPartiler } from "@/lib/stok";
 import { kodKosulu } from "@/lib/varyant-arama-kurali";
 import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 
@@ -39,6 +42,52 @@ import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
  *  Salt okuma. Bu modül bir denemeyi besler, kayıt üretmez.
  * ============================================================================
  */
+
+/**
+ * Alış maliyetinin hangi kaynaktan geldiği — ekran bunu YAZAR.
+ * Sessiz seçim, iki ekranın aynı ürüne farklı rakam göstermesi demektir.
+ */
+export type MaliyetKaynagi = "ELDEKI" | "SON_ALIS";
+
+/**
+ * ============================================================================
+ *  DENEME MALİYETİ SEÇİMİ — SAF GÖVDE
+ * ----------------------------------------------------------------------------
+ *  ⛔ VAKA 08.11.2026 (kullanıcı bildirdi, ÖLÇÜLDÜ · varyant `axcali2950`):
+ *  ekran alış kutusuna ₺7.607,99 yazıyordu; elde kalan 2 adedin maliyeti
+ *  ₺9.899,00 idi. İkisi de kendi tanımına göre DOĞRUYDU:
+ *
+ *      2026-08-29  COUNT_CORRECTION  5 adet  9.899,00   ← fiziksel sayım
+ *      2026-09-07  PURCHASE_IN       1 adet  7.607,99   ← EN SON ALIM
+ *      2026-09-13/15  SALE_OUT  @7.607,99    ← o parti TÜKENDİ
+ *      2026-10-08 · 10-30 · 11-03  SALE_OUT  @9.899,00  ← elde kalan BU
+ *
+ *  Yani "en son neye aldım" ile "elimdekinin maliyeti ne" ayrı sorular ve
+ *  FİYAT KARARI ikincisini ister: satılacak olan eldeki maldır.
+ *
+ *  ⚠ VE KOLAY ÇARE ÖLÇÜMLE ELENDİ: `purchaseItemId` süzgecini gevşetip
+ *  sayım düzeltmesini "alım" saymak bu vakayı ÇÖZMEZDİ — sayım 29.08,
+ *  alım 07.09, yani alım daha YENİ. Sorun süzgeç değil, sorunun kendisi.
+ *
+ *  ⛔ 28.08.2026 KARARI SİLİNMEDİ — KAPSAMI DARALDI. "Ortalama değil son
+ *  alım" kararı stoğu TÜKENMİŞ üründe aynen geçerli: orada açık parti
+ *  yoktur ve "şunu yeniden alsam ne olur" sorusu yine cevaplanmalıdır.
+ *  (Anayasa: ilke, kendi kapsamının dışına uygulanırsa hatayı korur.)
+ * ============================================================================
+ */
+export function denemeMaliyetiSec(girdi: {
+  eldekiAdet: number;
+  eldekiMaliyet: number | null;
+  sonAlisFiyati: number | null;
+}): { tutar: number | null; kaynak: MaliyetKaynagi | null } {
+  if (girdi.eldekiAdet > 0 && girdi.eldekiMaliyet !== null) {
+    return { tutar: girdi.eldekiMaliyet, kaynak: "ELDEKI" };
+  }
+  if (girdi.sonAlisFiyati !== null) {
+    return { tutar: girdi.sonAlisFiyati, kaynak: "SON_ALIS" };
+  }
+  return { tutar: null, kaynak: null };
+}
 
 export type UrunZemini = {
   variantId: string;
@@ -96,6 +145,22 @@ export type UrunZemini = {
 
   /** Elde kalan adet — "stok yok" ile "hiç alınmamış" ayrı şeyler. */
   eldekiAdet: number;
+
+  /**
+   * ELDEKİ MALIN ADETLE AĞIRLIKLI BİRİM MALİYETİ (KDV DAHİL) — açık parti
+   * yoksa null. Kârlılık kartıyla AYNI gövdeden (`agirlikliOrtalama`).
+   */
+  eldekiMaliyet: number | null;
+
+  /**
+   * FİYAT DENEMESİNDE KULLANILACAK ALIŞ MALİYETİ — ve hangisinden geldiği.
+   *
+   * ⚠ KULLANICI KARARI 08.11.2026: stok VARKEN eldeki malın maliyeti,
+   * stok bittiyse son alım. 28.08.2026'nın "son alım" kararı SİLİNMEDİ,
+   * KAPSAMI daraldı — gerekçesi `denemeMaliyetiSec` gövdesinde.
+   */
+  denemeMaliyeti: number | null;
+  denemeMaliyetKaynagi: MaliyetKaynagi | null;
 
   /** Kanal zeminleri: gerçek dilim tarifesi ve kesinti kuralları. */
   zeminler: SimulasyonZemini[];
@@ -235,6 +300,24 @@ export async function urunZemini(kod: string, an: Date): Promise<ZeminSonucu> {
   });
 
   /**
+   * ⚠ ELDEKİ MALIN MALİYETİ KENDİ SORGUSUNU YAZMIYOR — buy box ekranıyla
+   * AYNI gövdeden (`acikPartiler` + `acikMaliyet`). Ayrı bir kopya, iki
+   * ekranın bir gün aynı ürüne farklı maliyet göstermesi demekti (İlke #10).
+   *
+   * ⚠ TERCİH ÜRÜNDEN OKUNUR (K366: en düşük · ortalama · en yüksek).
+   * Buradan sabit "ortalama" demek, kullanıcının o ürün için seçtiği
+   * tercihi sessizce yok saymak olurdu.
+   *
+   * ⚠ PARA BİRİMİ TRY — `acikMaliyet` tutmayan partiyi ELER ve o hâlde
+   * `null` döner; seçim de son alıma düşer. Kur ÇEVRİLMEZ (anayasa).
+   */
+  const [partiler, kural] = await Promise.all([
+    acikPartiler(prisma, varyant.id),
+    etkinKuralOku(varyant.id),
+  ]);
+  const eldekiMaliyet = acikMaliyet(partiler, "TRY", kural.etkin.maliyet).maliyet;
+
+  /**
    * KDV: ÜRÜN İSTİSNASI > KATEGORİ ORANI > VARSAYILAN %20 (anayasa sırası).
    * `kdvOraniniCoz` senkron ve saf; kaynağı da söylüyor ama burada yalnız
    * oran taşınıyor — ekran onu değiştirebiliyor.
@@ -271,6 +354,21 @@ export async function urunZemini(kod: string, an: Date): Promise<ZeminSonucu> {
       sonSatisTarihi: sonSatis?.sale.soldAt ?? null,
       kdvOrani: kdv.oran ?? VARSAYILAN_KDV_ORANI,
       eldekiAdet: stok._sum.quantityDelta ?? 0,
+      eldekiMaliyet,
+      ...(() => {
+        const secim = denemeMaliyetiSec({
+          eldekiAdet: stok._sum.quantityDelta ?? 0,
+          eldekiMaliyet,
+          sonAlisFiyati:
+            girisler.length === 0
+              ? null
+              : Number(girisler[girisler.length - 1].unitCostAmount),
+        });
+        return {
+          denemeMaliyeti: secim.tutar,
+          denemeMaliyetKaynagi: secim.kaynak,
+        };
+      })(),
       zeminler: await simulasyonZeminleri(varyant.id, an),
     },
   };

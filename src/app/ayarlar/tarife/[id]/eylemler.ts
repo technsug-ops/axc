@@ -106,11 +106,18 @@ export async function dilimNetleri(girdi: {
    */
   if (zeminSonucu.durum !== "BULUNDU") return { durum: "URUN_YOK" };
   const zemin = zeminSonucu.zemin;
-  if (zemin.sonAlisFiyati === null) {
+  /**
+   * ⚠ AYNI SORU, AYNI CEVAP (İlke #10 · "kararın kapsamı"). Bu ekran da
+   * "bu ürünü satarsam ne kalır" diye soruyor; o hâlde maliyet, fiyat
+   * denemesiyle AYNI gövdeden gelir: stok varsa eldeki malın maliyeti,
+   * stok bittiyse son alım. İkisi ayrı okusaydı aynı ürün iki ekranda
+   * farklı NET gösterirdi.
+   */
+  if (zemin.denemeMaliyeti === null) {
     return { durum: "MALIYET_YOK", urunAdi: zemin.ad };
   }
 
-  const maliyet = zemin.sonAlisFiyati;
+  const maliyet = zemin.denemeMaliyeti;
 
   /** TEK MOTOR ÇAĞRISI — dilim satırı da "şu anki fiyat" satırı da buradan. */
   const netHesapla = (

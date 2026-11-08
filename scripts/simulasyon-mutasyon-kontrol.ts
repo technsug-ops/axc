@@ -43,6 +43,7 @@ const BEKCI_BASLIGI = "1) DIŞ KAYNAK KIYASI";
 const KURAL = "src/lib/simulasyon/karsilastir.ts";
 const EKRAN = "src/app/simulasyon/deneme.tsx";
 const ZEMIN = "src/lib/simulasyon/urun-zemini.ts";
+const AYNA = "src/app/ayarlar/tarife/[id]/eylemler.ts";
 
 type Mutasyon = {
   ad: string;
@@ -54,6 +55,64 @@ type Mutasyon = {
 };
 
 const MUTASYONLAR: Mutasyon[] = [
+  /*
+   * K373 (08.11.2026) — DENEME MALIYETI: stok varsa eldeki malin maliyeti.
+   * Kacis PARAYLA olculur: elde 2 adet x 9899 varken ekran 7607,99 ile
+   * hesaplayip KARLI gosteriyordu (olculen vaka axcali2950).
+   */
+  {
+    ad: "K373 form yine SON ALIMdan doluyor (tukenmis parti)",
+    yon: "KALDIRAN",
+    dosya: EKRAN,
+    bul: "      if (z.denemeMaliyeti !== null) setAlis(z.denemeMaliyeti.toFixed(2));",
+    koy: "      if (z.sonAlisFiyati !== null) setAlis(z.sonAlisFiyati.toFixed(2));",
+    bozdugu:
+      "elde 9899luk mal varken kutuya 7607,99 yazilir; deneme karli gorunur ve zarar ettirir",
+  },
+  {
+    ad: "K373 stok kapisi kalkti - eldeki maliyet HER ZAMAN secilir",
+    yon: "FAZLADAN",
+    dosya: ZEMIN,
+    bul: "  if (girdi.eldekiAdet > 0 && girdi.eldekiMaliyet !== null) {",
+    koy: "  if (girdi.eldekiMaliyet !== null) {",
+    bozdugu:
+      "stok bitmis (hatta eksi) urunde bayat bir parti maliyeti secilir; son alim hic kullanilmaz",
+  },
+  {
+    ad: "K373 secim kapisi olduruldu - hep son alim",
+    yon: "KALDIRAN",
+    dosya: ZEMIN,
+    bul: "  if (girdi.eldekiAdet > 0 && girdi.eldekiMaliyet !== null) {",
+    koy: "  if (false && girdi.eldekiMaliyet !== null) {",
+    bozdugu: "duzeltme tamamen geri alinir; 08.11 vakasi aynen geri doner",
+  },
+  {
+    ad: "K373 ekran dali cizilmiyor ama desen duruyor",
+    yon: "KALDIRAN",
+    dosya: EKRAN,
+    bul: '            {urun.denemeMaliyetKaynagi === "ELDEKI" &&',
+    koy: '            {false && urun.denemeMaliyetKaynagi === "ELDEKI" &&',
+    bozdugu:
+      "hangi rakamin kutuya girdigi EKRANDA yazmaz; sessiz secim doger (Ilke #5)",
+  },
+  {
+    ad: "K373 tarife aynasi ayri okuyor",
+    yon: "KALDIRAN",
+    dosya: AYNA,
+    bul: "  const maliyet = zemin.denemeMaliyeti;",
+    koy: "  const maliyet = zemin.sonAlisFiyati;",
+    bozdugu:
+      "ayni urun iki ekranda FARKLI NET gosterir (Ilke #10 - kararin kapsami)",
+  },
+  {
+    ad: "K373 acik parti ORTALAMA ALISA karisiyor",
+    yon: "FAZLADAN",
+    dosya: ZEMIN,
+    bul: "      ortalamaAlis: alimAdet > 0 ? alimTutar / alimAdet : null,",
+    koy: "      ortalamaAlis: eldekiMaliyet,",
+    bozdugu:
+      "stogu tukenmis urunde ortalama alis NULL doner - bu urunu genelde kaca aliyorum sorusu cevapsiz kalir",
+  },
   /*
    * ZEMIN SESSIZ SECIM (21.09.2026) - yanlis urunun maliyetiyle kurulan bir
    * fiyat denemesi KARLI gorunup zarar ettirirdi. Iki yon de sinaniyor:
