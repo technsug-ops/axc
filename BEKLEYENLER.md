@@ -13,7 +13,65 @@
 
 ---
 
-## 🟡 K372 — DIŞARIYA ANLATAN TANITIM VİTRİNİ · 07.11.2026 · [YAZILDI — E-POSTA + YAYIN BEKLİYOR]
+## 🔴 K373 — HESAPLAMA MOTORU TÜKENMİŞ PARTİNİN MALİYETİYLE HESAPLIYORDU · 08.11.2026 · [YAZILDI — HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 08.11.2026:** _«hesaplama kısmında ürün barkodu yazınca stokta olmamasına rağmen en düşük alım fiyatını getiriyor bu da yanıltıcı oluyor… bu üründe şu an kalan stok değeri 9899 ama hesaplamaya daha önce alıp sattığım 7600'lük alımı getiriyor, ciddi farklar.»_
+
+**ÖLÇÜLDÜ** (`axcali2950` · barkod `011120272536` · canlı defter, salt okuma, tek bağlantı):
+
+    2026-08-29  COUNT_CORRECTION   5 adet  9.899,00   ← fiziksel sayım (alım DEĞİL)
+    2026-09-07  PURCHASE_IN        1 adet  7.607,99   ← EN SON ALIM
+    2026-09-13/15  SALE_OUT  @7.607,99                ← o parti TÜKENDİ
+    2026-10-08 · 10-30 · 11-03  SALE_OUT  @9.899,00   ← elde kalan 2 adet BU partiden
+
+⭐ **İKİSİ DE DOĞRUYDU, O YÜZDEN GÖRÜNMÜYORDU.** Motor «en düşüğü» seçmiyor,
+gerçekten **en son alımı** alıyordu; stok ekranı da açık partiden okuyordu. Ayrışan
+şey rakam değil **SORU**: «en son neye aldım» ile «elimdekinin maliyeti ne» ayrı
+sorular ve fiyat kararı ikincisini ister — satılacak olan eldeki maldır.
+
+⚠ **KOLAY ÇARE ÖLÇÜMLE ELENDİ:** `purchaseItemId` süzgecini gevşetip sayım
+düzeltmesini «alım» saymak bu vakayı **ÇÖZMEZDİ** — sayım 29.08, alım 07.09, yani
+alım daha YENİ. Sorun süzgeç değil, sorunun kendisi. _(Ölçmeden «süzgeci kaldır»
+denseydi hata yerinde kalır, üstüne bir de kapsam bozulurdu.)_
+
+**KULLANICI KARARI 08.11.2026:** stok VARSA eldeki malın maliyeti, stok bittiyse
+son alım. ⛔ **28.08.2026'nın «ortalama değil son alım» kararı SİLİNMEDİ, KAPSAMI
+DARALDI** — stoğu tükenmiş üründe aynen geçerli (orada açık parti yoktur ve «şunu
+yeniden alsam ne olur» sorusu yine cevaplanmalı).
+
+**TESLİM:** `denemeMaliyetiSec` **saf gövdesi** (`urun-zemini.ts`) + `eldekiMaliyet`
+alanı. Maliyet kendi sorgusunu YAZMIYOR: buy box ile aynı gövdeden (`acikPartiler`
++ `acikMaliyet`) ve **ürün bazlı maliyet tercihini** (K366: en düşük · ortalama ·
+en yüksek) okuyor. Para birimi tutmayan parti elenir → `null` → son alıma düşer;
+kur ÇEVRİLMEZ. **Kapsam:** tarife aynası (`/ayarlar/tarife/[id]`) da aynı soruyu
+sorduğu için aynı gövdeden okuyor (İlke #10). **Ekran hangi rakamı kullandığını
+YAZIYOR** (`zeminEldeki` · `zeminSonAlisKullanildi`, tr+en) — sessiz seçim yok.
+
+**BEKÇİ `simulasyon:dogrula` 201/201** — K373 bölümü **DEĞER TESTİ**, kaynak
+taraması yok (saf gövde). ⚠ **ESKİYEN BİR ÖLÇÜT DARALTILDI, SUSTURULMADI:**
+_«ortalama alış LEDGER'dan»_ ölçütü dosyanın TAMAMINDA `acikPartiler` dizesini
+yasaklıyordu ve K373'ün DOĞRU kodunu suçladı; korunan kural «ortalama alış açık
+partiden okunmaz» idi, «bu dosya açık parti göremez» değil → yasak ALANA bağlandı.
+
+**MUTASYON 14/14** (6 yeni · − kaldıran 9 · + fazladan 5). ⚠ Yazarken bir **körlük
+yakalandı:** ekran ölçütü yalnız koşul metnini arıyordu ve `{false && …}` yapan
+mutasyonu GEÇİRİYORDU (desen yerinde durur, dal çizilmez) — çapa açılış süslü
+parantezini de içerecek şekilde daraltıldı ve mutasyon kırmızı yandı.
+
+⚠ **GEÇMİŞE DOKUNULMADI:** eski satışların kâr damgaları olduğu gibi kaldı
+(mekanizma bugünden doğru kurulur). Bu bir fiyat DENEMESİ ekranıdır, kayıt üretmez.
+
+**Halil test listesi:** ① `/simulasyon` → barkod `011120272536` → **Bul** ②
+«Alış fiyatı» kutusunda **9.899,00** yazmalı (7.607,99 DEĞİL) ③ hemen altında
+_«Elde 2 adet · birim maliyet ₺9.899,00 — alış kutusuna BU yazıldı»_ satırı
+görünmeli ④ özet satırında **SON alış ₺7.607,99 (07.09.2026)** ve **ortalama alış
+₺9.602,38** hâlâ yazmalı (bilgi kaybı yok) ⑤ stoğu BİTMİŞ bir ürün okutun →
+kutuya son alım yazmalı ve _«Stok yok — alış kutusuna SON alım yazıldı»_ satırı
+çıkmalı ⑥ `/ayarlar/tarife/<bir tarife>` → aynı ürünün NET satırları da **9.899**
+maliyetle hesaplanmalı ⑦ telefonda aynı akış (mobil doğrulama kullanıcıda).
+
+---
+## 🟡 K372 — DIŞARIYA ANLATAN TANITIM VİTRİNİ · 07.11.2026 · [CANLIDA 08.11.2026 — DNS KAYDI KULLANICIDA]
 
 **Kullanıcı 07.11.2026:** _«bezirgaya bir tanıtım web sitesi kurduk mu? kurduysak güncelle»_ → ölçüldü: **kurulmamış.** Vercel'de 14 projenin hiçbiri tanıtım değil · `bezirga.com` + `www` + `axc-seven` üçü de ERP'ye bağlı · depoda halka açık rota yok · panoda/arşivde `tanıtım site` araması **0** sonuç · ziyaretçi olarak `bezirga.com/` → **307 → /giris**. Ardından: _«DIŞARIYA KENDİMİZİ GÜZEL ANLATMAMIZ LAZIM, ONUN İÇİN BİR VİTRİNE İHTİYACIMIZ VAR»_ → yeni iş AÇILDI (K347 gibi kullanıcı istisnası; «yeni büyük faz açılmaz» dönemi).
 
@@ -35,7 +93,25 @@
 
 **GALERİ TAM BOY AÇILIR:** telefonda 358 px'e inen masaüstü görüntüleri okunmuyordu; 6 figür tıklanabilir + başlıkta görünür «Tam boy aç ↗» bağlantısı (44 px, İlke #2 + #8).
 
-⛔ **AÇIK — YAYIMLANMADI. İki şey bekliyor:**
+✅ **YAYIMLANDI 08.11.2026 — ÖLÇÜLDÜ.** E-posta **`info@bezirga.com`** (kullanıcı
+kararı 08.11; `E_POSTA_BURAYA` belirteci kalmadı, ölçüldü: **0**). Vercel projesi
+**`bezirga-tanitim`** kuruldu (`prj_mP2TqEkyjAYElQO95G9N13EPg6eg`, Root Directory
+`tanitim`, üretim dalı `main`); dağıtım `dpl_46GV…` **READY**, commit `7280a389`.
+Sayfa `https://bezirga-tanitim.vercel.app` → **HTTP 200**, gövdede
+`mailto:info@bezirga.com` doğrulandı. Push turu **172/172 yeşil** (hem `gelistirme`
+hem `main`). ⚠ **`bezirga.com` DEĞİŞMEDİ** — ayrı proje, ayrı dağıtım.
+
+⛔ **KALAN TEK İŞ — DNS, KULLANICIDA.** `tanitim.bezirga.com` Vercel projesine
+eklendi (`verified: true`) ama **KAS'ta kayıt yok**: alt alan şu an joker kayıtla
+`85.13.128.135`'e (KAS sunucusu) düşüyor. Kullanıcı KAS panelinden ekler —
+**CNAME `tanitim` → `cname.vercel-dns.com.`** (ya da A kaydı `216.150.1.1` +
+`216.150.16.1`, apex'in bugün kullandığı çift). DNS yayılana kadar sayfa yalnız
+`bezirga-tanitim.vercel.app` adresinden açılır.
+
+⚠ **POSTA KUTUSU SINANMADI:** `info@bezirga.com` KAS'ta açık mı ölçülmedi; açık
+değilse gelen posta sessizce kaybolur. Kullanıcı bir deneme postasıyla doğrular.
+
+─── _(kapanan maddeler, gerekçesiyle duruyor)_ **AÇIK — YAYIMLANMADI. İki şey bekliyordu:**
 · **① E-POSTA ADRESİ YOK.** `index.html` → İletişim bölümünde **`E_POSTA_BURAYA`** belirteci duruyor (iki yerde). Uydurulmadı: yanlış adres, gelen postanın sessizce kaybolması demektir. Adres gelince tek satır değişir.
 · **② VERCEL PROJESİ KURULMADI.** Yeni proje → aynı depo → **Root Directory `tanitim`** → Framework **Other** → alan adı `tanitim.bezirga.com`. `tanitim/vercel.json` yalnız `main`e izin veriyor (`gelistirme` · `k303-cok-firma` · `tasarim-canli` kapalı) — `axc` ile aynı düzen.
 
