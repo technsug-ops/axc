@@ -71,7 +71,88 @@ kutuya son alım yazmalı ve _«Stok yok — alış kutusuna SON alım yazıldı
 maliyetle hesaplanmalı ⑦ telefonda aynı akış (mobil doğrulama kullanıcıda).
 
 ---
-## 🟡 K372 — DIŞARIYA ANLATAN TANITIM VİTRİNİ · 07.11.2026 · [CANLIDA 08.11.2026 — DNS KAYDI KULLANICIDA]
+## 🔴 K374 — VİTRİN UYGULAMANIN İÇİNE TAŞINDI: `/info` · 08.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 08.11.2026:** _«bunu neden bezirganın ana sayfasında yapmıyoruz? www.bezirga/info»_
+
+⚠ **BU SEÇENEK HİÇ DEĞERLENDİRİLMEMİŞTİ.** 07.11'de reddedilen şey **apex devriydi**
+(`bezirga.com`'u vitrin projesine vermek — açık oturumları düşürür, kurulu uygulamayı
+bozar); kullanıcının önerdiği ise mevcut uygulamanın içinde bir **YOL**. İkisi aynı şey
+değil ve ikincisi tartışılmamıştı. _(Anayasa: mimar/karar gerekçeleri de süzgeçten geçer.)_
+
+**ÖLÇÜLEN BEDEL — seçim bedeliyle birlikte sunuldu:**
+
+    ayrı statik site          │  bezirga.com/info
+    DNS işi KULLANICIDA       │  DNS işi YOK
+    vitrin metni → tek site   │  vitrin metni → ERP'nin TAMAMI yeniden yayımlanır
+    kota etkisi YOK           │  her yayın yeni sunucu kopyası (K355: 25 bağlantı)
+    güvenlik yüzeyi: JS yok   │  ERP içinde herkese açık bir yol
+    iş: BİTMİŞTİ              │  sayfa Next'e taşınır + i18n + bekçi
+
+Kullanıcı tek alan adını seçti. ⛔ **K372'NİN GEREKÇESİ SİLİNMEDİ** — `tanitim-dogrula.ts`
+başlığında duruyor; bedel de yukarıda yazılı.
+
+**TESLİM:** `src/app/info/page.tsx` + `vitrin.module.css`.
+· Metinlerin **TAMAMI sözlükten** (`Tanitim`, **131 anahtar**, tr+en) · uygulama adı
+`UYGULAMA.ad` · marka çizimi `lib/marka/cizim` (gömülü SVG yok).
+· **Stil taşınırken ölçüldü: 101 kural → 101, 347 özellik satırı → 347** (kayıp yok).
+Çıplak eleman seçicileri (`body` · `section` · `a` · `img` · `h2`…) `.vitrin` altına
+alındı; sınıf seçicilerini CSS Module zaten izole ediyor.
+· **Görseller `public/kitap-ekran/` altından DOĞRUDAN** — kopya yok. Eski ayna ölçütü
+(bayt bayt eşitlik) gereksizleşti ama **koruduğu SÖZ aynı bekçide başka türlü ölçülüyor**:
+gösterilen her görüntü örnek veri hattının klasöründen gelmeli.
+· Kapı: `proxy.ts` → `ACIK_YOLLAR` + `/info` + `/kitap-ekran`, gerekçeleriyle.
+· Eski `tanitim/` klasörü (20 dosya) kaldırıldı.
+
+⭐ **GERÇEK TARAYICIDA ÖLÇÜLDÜ — VE EKRANA BAKINCA İKİ KUSUR ÇIKTI.** 1366×900 + 390×844:
+HTTP 200 · konsol hatası **0** · düşen istek **0** · **10/10** görsel yüklendi · yatay
+kayma **YOK** (390/390). Bekçi yeşilken görülen iki kusur: ① sekme başlığı _«Biz kimiz —
+Bezirga»_ yazıyordu (menü anahtarı başlık yapılmıştı; ayrı anahtar açıldı) ② iki dokunma
+hedefi 44 px altındaydı (marka **34**, alt bilgi **20** → İlke #8). _(Anayasa: sınanmamış
+ekran, ekran değildir — bekçi kaynağı ölçer, çizildiğini ölçmez.)_
+
+**BEKÇİ `tanitim:dogrula` 13/13** — 4 bölüm, `BOLUM_SAYISI` sayacı: kapı · provenans ·
+beyan · sayfa. **MUTASYON 10/10** (− kaldıran 6 · + fazladan 4) + zararsız sağlama yeşil
++ geri alma doğrulandı. En pahalı iki senaryo: _«kapı kapandı → vitrin SESSİZCE yok olur»_
+ve _«kapı varsayılan AÇIK → bütün ERP herkese açılır»_.
+
+⛔ **VE ÜÇ BEKÇİ DAHA KIRMIZI YANDI — ÜÇÜ DE HAKLIYDI** (yeni kod eski kuralları çiğniyordu):
+· `alt-cizgi:dogrula` → taşınan stilde `text-decoration: underline` kalmıştı (kullanıcı
+  kararı 30.10: «programın hiçbir yerinde istemiyorum»). İşaret **kaldırılmadı, DEĞİŞTİ**:
+  renk + kalınlık (İlke #2).
+· `uygulama-adi:dogrula` → `info@bezirga.com` **sözlüğe** yazılmıştı; marka alan adını
+  taşıyor ve ad değişirse o satır geride kalırdı. `UYGULAMA.eposta`ya taşındı — e-posta
+  çevrilecek bir METİN değil, bir **KİMLİK**.
+· `yetki:dogrula` → `/info` ne yetki kapısı ne zorunlu parola kapısı istiyordu (ikisi aynı
+  listeden okuyor). İstisna **BEYAN edildi, susturulmadı**; güvenli çünkü sayfa veritabanına
+  HİÇ gitmiyor ve bunu `tanitim:dogrula` ayrıca ölçüyor (prisma eklemek kırmızı yakıyor).
+
+⚠ **HARNESS ÇAKIŞMASI BEYAN EDİLDİ:** harness artık `proxy.ts` ve `messages/tr.json`
+dosyalarını mutasyona uğratıyor; ikisi de başka harness'lerin hedefinde, paralel koşsalar
+birbirini ezerlerdi (`SIRALI_MUTASYON_GRUP`).
+
+⛔ **AÇIK:**
+· **① YAYIMLANMADI** — `gelistirme` dalında (`04496554`, push turu **172/172 yeşil**).
+  Kullanıcı «yayınla» deyince `main`'e ileri sarılır.
+· **② `bezirga-tanitim` VERCEL PROJESİ DURUYOR** (`prj_mP2TqEkyjAYElQO95G9N13EPg6eg`).
+  Artık gereksiz ama **silme geri alınamaz** — kullanıcı onayı bekliyor. Silinene kadar
+  `bezirga-tanitim.vercel.app` eski (statik) vitrini sunmaya devam eder; `tanitim.bezirga.com`
+  DNS kaydı hiç eklenmediği için o adres zaten hiç açılmadı.
+· **③ POSTA KUTUSU SINANMADI** — `info@bezirga.com` KAS'ta açık mı ölçülmedi.
+
+**Halil test listesi (yayından sonra, gerçek cihaz + canlı adres):** ① **oturumu kapat**
+(ya da gizli sekme) → `bezirga.com/info` → sayfa açılmalı, **giriş ekranına
+ATMAMALI** ② başlık «Çok kanallı e-ticareti **tek defterden** yönetiyoruz», «tek defterden»
+**safran sarısı** ③ sekme başlığı «Çok kanallı e-ticaret operasyon yönetimi — Bezirga»
+④ «Sistemi görün» → Ekranlar bölümüne iner ⑤ Ekranlar'da bir görüntüye dokun → **tam boy**
+açılır (panel rakamları örnek veridir, gerçek cironuz DEĞİL) ⑥ Rakam kutucukları
+**11 · 101 · 57 · 172** ⑦ «Kimlere» bölümünde **dört** blok ⑧ en altta e-posta düğmesi
+**info@bezirga.com** gösterir, dokununca posta uygulaması açılır ⑨ alt bilgideki
+«Uygulamaya giriş» → giriş ekranı ⑩ telefonda sayfa **yana kaymamalı** ⑪ **`bezirga.com`
+giriş akışı değişmedi**: oturumun düşmedi, telefondaki kurulu uygulama eskisi gibi.
+
+---
+## 🟢 K372 — DIŞARIYA ANLATAN TANITIM VİTRİNİ · 07.11.2026 · [AŞILDI — yerine K374; ayrı site kaldırıldı 08.11.2026]
 
 **Kullanıcı 07.11.2026:** _«bezirgaya bir tanıtım web sitesi kurduk mu? kurduysak güncelle»_ → ölçüldü: **kurulmamış.** Vercel'de 14 projenin hiçbiri tanıtım değil · `bezirga.com` + `www` + `axc-seven` üçü de ERP'ye bağlı · depoda halka açık rota yok · panoda/arşivde `tanıtım site` araması **0** sonuç · ziyaretçi olarak `bezirga.com/` → **307 → /giris**. Ardından: _«DIŞARIYA KENDİMİZİ GÜZEL ANLATMAMIZ LAZIM, ONUN İÇİN BİR VİTRİNE İHTİYACIMIZ VAR»_ → yeni iş AÇILDI (K347 gibi kullanıcı istisnası; «yeni büyük faz açılmaz» dönemi).
 
