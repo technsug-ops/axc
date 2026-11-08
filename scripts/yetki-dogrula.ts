@@ -193,6 +193,25 @@ const SAYFA_ISTISNALARI = new Map<string, string>([
    * taşımadığı ve JavaScript istemediği orada ayrıca sınanıyor.)
    */
   ["src/app/cevrimdisi/page.tsx", "çevrimdışı yedeği — veri taşımaz, çerezsiz önbelleğe alınır"],
+  /**
+   * ⚠ TANITIM VİTRİNİ BİLEREK KORUMASIZ — VE HİÇBİR VERİ TAŞIMAZ (K374).
+   *
+   * Dışarıya kendimizi anlatan sayfa; herkese açık olması işin KENDİSİDİR.
+   * Kullanıcı kararı 08.11.2026: ayrı alan adı yerine uygulamanın içinde
+   * bir yol («www.bezirga/info»). Kapı `src/proxy.ts` → ACIK_YOLLAR.
+   *
+   * İstisna güvenli çünkü sayfa veritabanına HİÇ gitmiyor: içinde sözlükten
+   * gelen metin, `public/kitap-ekran/` altındaki ÖRNEK VERİ görüntüleri ve
+   * bir `mailto:` bağlantısı var. Yetki sorulacak bir şey yok.
+   * (`tanitim:dogrula` «sayfa veritabanına GİTMİYOR» ölçütünü ayrıca
+   * koşuyor ve mutasyonla sınandı: prisma eklemek bekçiyi kırmızı yakar.)
+   *
+   * ⛔ ZORUNLU PAROLA DEĞİŞİMİ KAPISI DA ATLANIYOR ve bu DOĞRU: sayfayı
+   * açan kişinin oturumu hiç olmayabilir. Panelin 05.10.2026'da bu
+   * listeden ÇIKARILMA gerekçesi burada geçerli değil — panel DEFTERİ
+   * gösteriyordu, bu sayfa tanıtım metni gösteriyor.
+   */
+  ["src/app/info/page.tsx", "tanıtım vitrini — herkese açık, veri taşımaz"],
 ]);
 /**
  * ============================================================================

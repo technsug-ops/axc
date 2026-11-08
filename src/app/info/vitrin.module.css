@@ -50,8 +50,6 @@
 }
 .vitrin a {
   color: var(--kobalt-acik);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
 }
 .kap {
   width: 100%;
@@ -573,8 +571,13 @@
 .tam-boy::after {
   content: " ↗";
 }
+/* ⛔ ALT ÇİZGİ YOK (kullanıcı kararı 30.10.2026: «altı çizgili yazı kötü
+   duruyor, programın hiçbir yerinde istemiyorum»). Statik siteden taşınırken
+   geldi, bekçi yakaladı. İlke #2 korunuyor: tıklanabilirlik renk + kalınlıkla
+   söylenir — işaret kaldırılmadı, DEĞİŞTİ. */
 .tam-boy:hover {
-  text-decoration: underline;
+  color: var(--kobalt);
+  font-weight: 700;
 }
 /* ==========================================================================
    DOKUNMA HEDEFİ — İLKE #8 (K374, 08.11.2026)

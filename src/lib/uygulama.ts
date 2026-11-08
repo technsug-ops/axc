@@ -40,6 +40,21 @@ export const UYGULAMA = {
    * yalnız `teknikAd`ı. Ad yeniden değişirse bugünkü ad bu listeye eklenir.
    */
   eskiTeknikAdlar: ["selliora"],
+  /**
+   * DIŞARIYA VERİLEN İLETİŞİM ADRESİ — tanıtım vitrini (`/info`) bunu
+   * gösterir ve `mailto:` hedefi yapar.
+   *
+   * ⛔ NİYE SÖZLÜKTE DEĞİL (K374, 08.11.2026): adres markanın alan adını
+   * taşıyor (`@bezirga.com`). Sözlüğe yazılınca `uygulama-adi:dogrula`
+   * haklı olarak kırmızı yandı — ad bir daha değişirse o satır geride
+   * kalır ve «ad değişikliği tek satırlık iş olmalı» sözü tutmaz. Bir
+   * e-posta adresi çevrilecek bir METİN değil, bir KİMLİKTİR; kimlikler
+   * bu dosyada yaşar.
+   *
+   * ⚠ POSTA KUTUSU GERÇEKTEN AÇIK OLMALI: açık değilse gelen posta
+   * sessizce kaybolur ve kimse kaybolduğunu göremez.
+   */
+  eposta: "info@bezirga.com",
 } as const;
 
 /** Okumada tanınan bütün teknik adlar — güncel ad başta. */

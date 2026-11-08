@@ -349,11 +349,14 @@ export default async function TanitimSayfasi() {
               <h2>{t("iletisimBaslik")}</h2>
               <p>{t("iletisimMetin")}</p>
             </div>
+            {/* ⚠ ADRES SÖZLÜKTEN DEĞİL KİMLİKTEN (`UYGULAMA.eposta`):
+                markanın alan adını taşıyor, yani çevrilecek bir metin
+                değil. Gerekçesi `lib/uygulama.ts`te. */}
             <a
               className={`${stil.dugme} ${stil["dugme-asil"]}`}
-              href={`mailto:${t("eposta")}`}
+              href={`mailto:${UYGULAMA.eposta}`}
             >
-              {t("eposta")}
+              {UYGULAMA.eposta}
             </a>
           </div>
         </section>
