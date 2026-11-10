@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K376 — SATIŞIN PARTİSİ DEĞİŞTİRİLEMİYORDU + PAKETLEMEDE ÜRÜN GÖRSELİ · 10.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K376 — SATIŞIN PARTİSİ DEĞİŞTİRİLEMİYORDU + PAKETLEMEDE ÜRÜN GÖRSELİ · 10.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 İki istek, aynı teslim. İkisi de kullanıcının o gün ekranda gördüğü eksiklik.
 
@@ -144,8 +144,16 @@ telefon 54 karakter → 900. Sayı dosyada yazılı; gövde büyürse pencere ye
 ölçülecek, körü körüne büyütülmeyecek.
 
 ⛔ **AÇIK:**
-· **① YAYIMLANMADI** — `gelistirme` dalında. Kullanıcı «yayınla» deyince `main`'e
-  ileri sarılır.
+· **① YAYIMLANDI 10.11.2026** — kullanıcı «yayınla» dedi; `main` `gelistirme`ye
+  ileri sarıldı (`9bff5b45..0ea44779`, dört commit: K373/K374 panosu · K375 · K376).
+  **Yayın ölçümü:** `dpl_CN7AwPGZrfi44XYc6iygD2B6SnM3` **READY** (fra1, 47 sn) ·
+  `bezirga.com` ve `www.bezirga.com` **o dağıtımın alias listesinde** · `/giris` 200,
+  `/paketle` · `/satislar` · `/okut` 307 (girişe yönlendirme — korumalı, beklenen) ·
+  push kapısı turu **173/173 yeşil** (iki kez: `gelistirme` ve `main`) ·
+  `canli:yetki` ✓ «tam yetkili rollerin hiçbirinde eksik izin yok».
+  ⚠ İlk `canli:yetki` koşumu KAS veritabanı hatası `45028` ile düştü, ikincisi geçti —
+  geçici bağlantı hatası (K355'in bağlantı kotası ailesi); kalıcı bir arıza değil.
+  ⛔ **EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ** — yayın, Halil testinin yerine GEÇMEZ.
 · **② EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ** ve yerelde de görülemedi: `.env`
   **canlı veritabanını** gösteriyor, yani yerel dev sunucusunda «Partiyi
   değiştir»e basmak canlı deftere yazardı. Yazım yolu yerelde **hiç
@@ -187,7 +195,7 @@ düğme görünüyor mu, liste okunabiliyor mu, düğmeler 44 px mi.
 
 ---
 
-## 🔴 K375 — DEPO KURULUMU HİÇ ÇALIŞMIYORDU: REACT FORMU SIFIRLIYOR · 08.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K375 — DEPO KURULUMU HİÇ ÇALIŞMIYORDU: REACT FORMU SIFIRLIYOR · 08.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 08.11.2026:** _«Bölüm adı yazıyorum, kısaltma tamam, bölümde 3 adet ünite
 var giriyorum, ünite başına 8 göz var diyorum, önce göster yapıyorum, kaydet diyorum —
@@ -286,8 +294,16 @@ _«form yine `action={}` ile gönderiliyor»_ → kırmızı. Ayrıca **taban bo
 (tarama hiçbir dosya bulamıyor) ve **bayrağı düşüren** mutasyon da kırmızı yanıyor.
 
 ⛔ **AÇIK:**
-· **① YAYIMLANMADI** — `gelistirme` dalında. Kullanıcı «yayınla» deyince `main`'e
-  ileri sarılır.
+· **① YAYIMLANDI 10.11.2026** — kullanıcı «yayınla» dedi; `main` `gelistirme`ye
+  ileri sarıldı (`9bff5b45..0ea44779`, dört commit: K373/K374 panosu · K375 · K376).
+  **Yayın ölçümü:** `dpl_CN7AwPGZrfi44XYc6iygD2B6SnM3` **READY** (fra1, 47 sn) ·
+  `bezirga.com` ve `www.bezirga.com` **o dağıtımın alias listesinde** · `/giris` 200,
+  `/paketle` · `/satislar` · `/okut` 307 (girişe yönlendirme — korumalı, beklenen) ·
+  push kapısı turu **173/173 yeşil** (iki kez: `gelistirme` ve `main`) ·
+  `canli:yetki` ✓ «tam yetkili rollerin hiçbirinde eksik izin yok».
+  ⚠ İlk `canli:yetki` koşumu KAS veritabanı hatası `45028` ile düştü, ikincisi geçti —
+  geçici bağlantı hatası (K355'in bağlantı kotası ailesi); kalıcı bir arıza değil.
+  ⛔ **EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ** — yayın, Halil testinin yerine GEÇMEZ.
 · **② AYNI AİLEDEN BİR RİSK DURUYOR, BİLEREK:** tarife ve HB kargo yükleyicileri
   ikinci adımda formu YENİDEN okuyor. Orada **sıfırlama yok** (`onSubmit`), yani bu
   hata onlarda YAŞAMIYOR; ama kullanıcı önizlemeden sonra dosyayı değiştirirse
