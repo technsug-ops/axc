@@ -139,6 +139,13 @@ export function gercekCakismaGruplari(npmAdlari: string[]): string[][] {
  * KIRMIZI yanar.
  */
 export const SIRALI_MUTASYON_GRUP: readonly string[] = [
+  /* 10.11.2026 (K376): satisin parti bagini degistirme ekrani `satis
+     detayina` eklendi, bu yuzden harness `src/app/satislar/[id]/page.tsx`i
+     mutasyona ugratiyor — AYNI dosyayi `kargo-kaynagi-mutasyon:kontrol` ve
+     `liste-hafizasi-mutasyon:kontrol` da hedefliyor; ikincisi
+     `src/app/satislar/page.tsx` uzerinden buyuk bagli kumeye kopru oluyor.
+     Paralel kosarlarsa birbirinin mutasyonunu ezerler (sessiz yaris). */
+  "parti-bagi-degisimi-mutasyon:kontrol",
   /* 08.11.2026 (K374): vitrin ayri statik siteden uygulamanin icine tasindi
      (`/info`). Harness artik `src/proxy.ts` (kapi) ve `messages/tr.json`
      (beyan metni) dosyalarini mutasyona ugratiyor — ikisi de baska

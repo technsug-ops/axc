@@ -3,6 +3,7 @@ import { kaynakOku } from "./kaynak-oku";
 import {
   degistirilebilirHedefler,
   partiDegisimPlani,
+  type DegistirilecekCikis,
   type HedefParti,
 } from "../src/lib/parti-bagi-degistirme";
 
@@ -50,7 +51,7 @@ const dogru = (ad: string, k: boolean) => yakin(ad, k, true);
 /** Satış 10.11.2026 → FIFO sınırı 11.11.2026 00:00 (gün SONU, 29.08 kararı). */
 const SINIR = new Date("2026-11-11T00:00:00.000Z");
 
-const CIKIS = {
+const CIKIS: DegistirilecekCikis = {
   hareketId: "c1",
   adet: 1,
   variantId: "v1",
