@@ -79,6 +79,34 @@ const MUTASYONLAR: Mutasyon[] = [
       "/okut ile /paketle ayni kodu farkli gorur; dort kod rolunden yalnizca biri aranir (Ilke #10)",
   },
   {
+    /* ⛔ K376 — ORTA HALKA: sorgu alani seciyor, esleme DUSUYOR. */
+    ad: "GORSEL KALEME TASINMIYOR - sorgu seciyor, esleme dusuyor",
+    yon: "KALDIRAN",
+    dosya: EYLEM,
+    bul: "        gorselUrl: k.variant.gorselUrl,",
+    koy: "",
+    bozdugu:
+      "kart gorseli hep bos gorur ve ilk harfi cizer; hicbir hata cikmaz (zincir, halkalarinin varligiyla degil BAGLANTISIYLA sinanir)",
+  },
+  {
+    ad: "KART GORSELI CIZMIYOR - govde dogru, ekranda karsiligi yok",
+    yon: "KALDIRAN",
+    dosya: EKRAN,
+    bul: "            url={kalem.gorselUrl}",
+    koy: "            url={null}",
+    bozdugu:
+      "veri kaleme kadar gelir, kutu yine bos cizer — K121 dersinin gorsel hali",
+  },
+  {
+    ad: "IZINSIZE DE '+' GOSTERILIYOR",
+    yon: "FAZLADAN",
+    dosya: EKRAN,
+    bul: "            ekleyebilir={resimEkleyebilir}",
+    koy: "            ekleyebilir={true}",
+    bozdugu:
+      "urun yazma izni olmayan depocuya gorsel ekleme dugmesi cikar; izin sunucuda hesaplanmis olsa bile ekran onu YOK SAYAR",
+  },
+  {
     ad: "TAVAN SESSIZCE KESIYOR - 'daha var' hic soylenmez",
     yon: "KALDIRAN",
     dosya: EYLEM,

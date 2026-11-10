@@ -13,6 +13,180 @@
 
 ---
 
+## 🔴 K376 — SATIŞIN PARTİSİ DEĞİŞTİRİLEMİYORDU + PAKETLEMEDE ÜRÜN GÖRSELİ · 10.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+İki istek, aynı teslim. İkisi de kullanıcının o gün ekranda gördüğü eksiklik.
+
+### ① PAKETLEME KARTINDA ÜRÜN GÖRSELİ
+
+**Kullanıcı 10.11.2026** (`/paketle` ekran görüntüsü, ürün kartı kırmızı daire
+içinde): _«Paketleme de buraya ürün görseli gelse»_.
+
+**ÖLÇÜLDÜ — ALTYAPI ZATEN VARDI:** `ProductVariant.gorselUrl` + `gorselKaynak`
+(K273/K330 · Trendyol ve N11'den otomatik, izinli sunucu listesiyle) ve
+`UrunGorseli` bileşeni **beş ekranda** kullanılıyor (`/urunler` · `/stok` ·
+`/satislar` · `/alimlar` · buybox). `/paketle`de **hiç yoktu** — yani eksik olan
+veri değil, o ekrana bağlanmamış olmasıydı.
+
+Zincir üç halka ve ortası en kolay düşen: **sorar → TAŞIR → çizer.**
+· `actions.ts` varyant seçimine `gorselUrl` + `gorselKaynak` eklendi
+· kaleme eşlendi (`PaketKalemi` iki yeni alan taşıyor)
+· kart adın SOLUNA 48 px kutu koyuyor; kendi satırını açmıyor, adet ve raf
+  kutucukları yerinde kalıyor (İlke #12)
+· «+» ile görsel ekleme `urun.yaz` iznine bağlı ve izin **sunucuda** hesaplanıyor
+
+⚠ **GÖRSEL OKUTMANIN YERİNE GEÇMEZ:** barkod yine okutulur. Görsel yalnız doğru
+rafa doğru gözle gitmeyi hızlandırır — teyit sayacı (K203) değişmedi.
+⚠ **GÖRSELİ OLMAYAN VARYANT BOŞ KUTU DEĞİL:** bileşen ilk harfi gösteriyor; vekil
+bir resim uydurulmuyor. _(«Kolon başlığı bir iddiadır — vekil alan gösterilmez».)_
+
+**BEKÇİ:** `paketleme:dogrula` 6. bölüm (8 ölçüt, **120** ölçüte çıktı) — üç halka
+AYRI AYRI ölçülüyor. `paketleme-mutasyon:kontrol` **9/9**: eşlemeyi düşüren ·
+kartı `url={null}` yapan · izni yok sayıp «+»ı herkese gösteren.
+
+### ② SATIŞIN DÜŞTÜĞÜ PARTİ DEĞİŞTİRİLEMİYORDU
+
+**Kullanıcı 10.11.2026** (satış `4677180498` · LEGO 77239 · parti
+`ALM-HB-260201-02` · birim maliyet ₺1.115,28 kırmızı kutu içinde):
+_«Bunun maliyeti yanlış seçtim değiştiremiyorum, değiştirme imkanımız verse iyi
+olur»_ → sorulunca: **«Yanlış PARTİ seçildi.»**
+
+⚠ **VE BU AYRIM İŞİN TAMAMINI DEĞİŞTİRDİ.** İlk okuma «partinin maliyeti yanlış»
+olsaydı çare K127'nin «Maliyeti düzelt» düğmesiydi — **ve o düğme yanlış işi
+yapardı:** partinin KENDİ maliyetini değiştirir, yani o partiden çeken BÜTÜN
+satışları etkiler. Yanlış partiye bağlanmış tek bir satışı onunla «düzeltmek»,
+doğru olan öteki satışları bozmak olurdu. _(Anayasa: «ilke, kendi kapsamının
+dışına uygulanırsa koruduğu şey doğruluk değil hatanın kendisi olur».)_
+⛔ **Bu yüzden kullanıcıya SORULDU, tahmin edilmedi.**
+
+**ÖLÇÜLDÜ — ÜÇ KAPI DA KAPALIYDI:**
+
+    satış GİRİŞİ        parti seçimi VAR   (K110 · `secilenPartiId`)
+    satış DÜZENLEME     parti YOK          (`duzenle-formu` + `duzenle-actions`
+                                            içinde tek bir parti atfı yok)
+    «Maliyeti düzelt»   partiyi DEĞİŞTİRMEZ, maliyetini düzeltir
+
+Yani bir kez kaydedilen satışın hangi partiden düştüğü **arayüzden hiç
+değiştirilemiyordu.**
+
+**ÇARE:** satış detayındaki «Düşülen partiler» satırında, «Maliyeti düzelt»in
+YANINDA ikinci bir eylem — **«Partiyi değiştir»**. İki adım (önce göster → onay
+kutusu → uygula), K127'nin aynı disiplini. Hedef **listeden seçilir**, elle
+yazılmaz.
+
+**DÖRT KAPI — hepsi saf gövdede (`lib/parti-bagi-degistirme.ts`), hepsi ölçülü:**
+
+| kapı | gerekçe |
+|---|---|
+| aynı varyant | başka ürünün partisine bağlanmaz |
+| **kalan adet ≥ çıkışın adedi** | K91: satır bazında geçerli görünen hedef, küme bazında aşılır (o vakada 32 parti, 64 adet aşım) |
+| `occurredAt < satışın FIFO sınırı` | 29.08.2026: geçmiş satış geleceğin partisini yiyordu (809 bağ, stok kilitlendi). Sınır gün SONU, operatör `lt` — ikisi de yerinde |
+| aynı parti değil | değişecek bir şey olmadan «değiştirildi» demez |
+
+⛔ **KAPASİTE ÖMÜR BOYU OKUNUYOR, SINIR PENCERESİNDEN DEĞİL — VE BU EN İNCE
+NOKTA.** `tuketilecekPartiler(db, varyant, SINIR)` çağrılsaydı tüketim sorgusu da
+`occurredAt < sinir` ile süzülürdü ve **sınırdan SONRAKİ çıkışlar sayılmazdı**:
+geriye dönük bir düzeltmede hedefin kalanı OLDUĞUNDAN FAZLA görünür, parti aşırı
+tüketilirdi. İki soru iki ayrı yerden, ikisi de MEVCUT gövdelerden:
+· kapasite → `tuketilecekPartiler(db, varyant)` (sınırsız)
+· tarih    → `partileriSinirla(partiler, sinir)` (bellekte)
+
+⛔ **VE PLAN İŞLEMİN İÇİNDE KURULUYOR.** Önizleme salt okuma; YAZIM planı `tx`
+içinde YENİDEN kuruyor. `tuketilecekPartiler` varyantı `FOR UPDATE` ile
+kilitliyor — plan işlem dışında kurulsaydı araya giren bir satış hedefi
+tüketebilirdi ve kapasite kapısı **kâğıt üstünde kalırdı.**
+_(Anayasa: güvenlik mekanizmaya bağlanır, disipline değil.)_
+
+**NEYE DOKUNUR / DOKUNMAZ:**
+
+    DOKUNUR   çıkışın `sourceMovementId`si · o çıkışın maliyet DAMGASI
+    DOKUNMAZ  adet · satış tarihi · partilerin kendisi · ledger toplamı
+
+Stok miktarı DEĞİŞMEZ; değişen yalnız malın hangi partiden düştüğü. Adet
+düzeltmesi hâlâ ters işaretli `ADJUSTMENT` işi.
+
+⛔ **MALİYET DAMGASI YENİ PARTİDEN YENİDEN ALINIYOR** — alınmasaydı çıkış yeni
+partiye bağlı görünür ama ESKİ maliyeti taşırdı: ekran doğru, NET yanlış.
+_(19.08.2026 dersi: düzeltme TÜM okuyuculara ulaşmak zorunda.)_
+⚠ Hedefin maliyeti yoksa damga **`null` yazılıyor** ve kâr `NO_COST`a düşüyor —
+engel değil (bedava gelen mal meşru) ama önizleme bunu **açıkça söylüyor**;
+eski damgayı bırakmak bilinmeyen bir maliyeti bilinmiş gibi göstermek olurdu.
+
+⚠ **`null` İLE `0` AYRI CÜMLE:** bir tarafın maliyeti bilinmiyorsa fark
+HESAPLANAMAZ ve ekran öyle yazıyor. `0` döndürülse «fark yok» diye okunurdu.
+
+**GERİ ALMA — SAKLANAN LİSTE YOK.** Çıkış eski partiden ayrılınca o parti
+kapasitesini geri kazanır ve **aynı ölçütle yeniden listelenir**: geri alma yolu
+yeniden hesaplanabilir bir ölçüte dayanıyor, ize değil.
+⛔ **TEK İSTİSNA, BİLEREK:** eski parti FIFO tarih sınırını aşıyorsa (zaten hatalı
+olan bağ buydu) geri dönüş listelenmez. Sınırın arka kapısını açmak, 29.08'de
+kapatılan arızayı elle geri getirmek olurdu.
+
+**İZİN:** `stok.duzelt` — **yeni izin AÇILMADI**, yani canlı izin senkronu işi
+yok. İz: `SATIS_PARTI_BAGI_DEGISTIRILDI` (eski/yeni parti · eski/yeni maliyet ·
+adet · hedefin kalanı · sebep · fark). Sebep ZORUNLU.
+
+**BEKÇİ — `parti-bagi-degisimi:dogrula` (61 ölçüt, 4 bölüm, sayaçlı özet).**
+⚠ Ölçütlerin çoğu **saf gövdeyi ÇAĞIRIP değerini** sınıyor; kaynak taraması yalnız
+zincir için. Liste süzgeci ile yazma kapısının **AYRIŞMADIĞI** tüm küme üstünde
+ölçülüyor (tek örnekle sınanan bir eşitlik tesadüf olabilirdi).
+**`parti-bagi-degisimi-mutasyon:kontrol` 19/19** (− kaldıran 14 · + fazladan 5) +
+zararsız sağlama YEŞİL + geri alma doğrulandı. En pahalı senaryo kırmızı yanıyor:
+_«kapasite SINIR penceresinden okunuyor»_ (K91'in ta kendisi) · `lt → lte` ·
+_«plan işlem DIŞINDA kuruluyor»_ · maliyet damgasının alınmaması.
+
+⚠ **BİR MUTASYON İLK TURDA KAÇTI VE HAKLI KAÇTI:** ekranın telefon dalını
+`{false ? (` yapan senaryo yeşil geçti, çünkü ölçütüm `cikisId={dusum.id}`
+desenini SAYIYORDU — dal çizilmese de desen dosyada kalıyor. Ölçüt koşulu
+SONUCUYLA birlikte ölçecek şekilde yeniden yazıldı (her çağrının önünde
+`maliyetDuzeltebilir ? (` durmalı) ve **pencere ÖLÇÜLDÜ**: masaüstü 573 ·
+telefon 54 karakter → 900. Sayı dosyada yazılı; gövde büyürse pencere yeniden
+ölçülecek, körü körüne büyütülmeyecek.
+
+⛔ **AÇIK:**
+· **① YAYIMLANMADI** — `gelistirme` dalında. Kullanıcı «yayınla» deyince `main`'e
+  ileri sarılır.
+· **② EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ** ve yerelde de görülemedi: `.env`
+  **canlı veritabanını** gösteriyor, yani yerel dev sunucusunda «Partiyi
+  değiştir»e basmak canlı deftere yazardı. Yazım yolu yerelde **hiç
+  denenmedi** — ne önizleme ne uygulama. Ölçülen şey derleme + rota çözümü
+  (`/paketle` · `/satislar` → 307, derleme hatası yok) ve bekçiler.
+  **Bu paket Halil testi geçmeden kapanmaz** (bkz. liste).
+· **③ YERELDE YAZIM DENENMEDİĞİ İÇİN «KAPASİTE AŞIMI OLMADI» ÖLÇÜLMEDİ** —
+  kural ve mutasyon var, GERÇEK VERİDE bir yazım yapılmadı. Halil testinin ⑦
+  ve ⑧ maddeleri tam bunu ölçüyor.
+· **④ GEÇMİŞE DOKUNULMADI:** yanlış partiye bağlanmış eski satışlar taranmadı.
+  Mekanizma bugünden doğru; geçmiş olduğu gibi bırakıldı. _(Anayasa: «geçmişi
+  düzeltmek ile mekanizmayı kurmak ayrı kararlardır».)_ **Açılış şartı:** böyle
+  bir yanlış bağ ikinci kez görüldüğü gün bir ölçüm betiği yazılır.
+
+**Halil test listesi (yayından sonra, gerçek cihaz + CANLI adres):**
+
+**Görsel:** ① `/okut`ta ya da `/paketle`de bir kargo kodu okut → sipariş açılsın
+② kalem kartında ürün adının SOLUNDA kare görsel görünmeli (SKU/Firma SKU/Barkod
+satırı yerinde kalmalı) ③ görseli olmayan bir üründe kare yerine **ilk harf**
+görünmeli, boş kutu DEĞİL ④ görsele dokununca büyük önizleme açılmalı
+⑤ telefonda kart taşmamalı, adet ve raf kutucukları aynı satırda kalmalı.
+
+**Parti değiştirme:** ⑥ `/satislar` → satış `4677180498` → «Düşülen partiler»de
+`ALM-HB-260201-02` satırında artık **İKİ** düğme olmalı: «Maliyeti düzelt» ve
+**«Partiyi değiştir»** ⑦ «Partiyi değiştir»e bas → liste gelsin; her satırda
+**giriş tarihi · alım kodu · kalan N adet · birim maliyet** yazmalı ⑧ listede
+**satıştan sonra girmiş** bir parti GÖRÜNMEMELİ ve **kalanı 0 olan** parti
+GÖRÜNMEMELİ ⑨ sebep yazmadan «Önce göster»e bas → _«Neden değiştirildiği
+yazılmadan kaydedilmez»_ demeli ⑩ parti seçmeden düğme kilitli olmalı ve altında
+_«Devam etmek için bir parti seçin»_ yazmalı ⑪ doğru partiyi seç + sebep yaz →
+«Önce göster» → özette **birim maliyet ₺1.115,28 → ₺(yeni)** ve kârın hangi YÖNE
+ne kadar kayacağı yazmalı ⑫ onay kutusunu işaretlemeden «Partiyi değiştir»e bas →
+_«Onay kutusu işaretlenmeden parti değiştirilmez»_ demeli ⑬ onayla → yeşil mesaj;
+sayfa tazelenince **parti tarihi ve birim maliyet YENİ partinin değerleri** olmalı
+⑭ aynı sayfada **NET-1/NET-2 rakamları değişmiş** olmalı ve önizlemenin söylediği
+farkla **BİREBİR** tutmalı ⑮ **geri al:** aynı düğmeyle eski partiyi seç ve
+değiştir → rakamlar başlangıca **kuruşuna** dönmeli ⑯ telefonda aynı akış:
+düğme görünüyor mu, liste okunabiliyor mu, düğmeler 44 px mi.
+
+---
+
 ## 🔴 K375 — DEPO KURULUMU HİÇ ÇALIŞMIYORDU: REACT FORMU SIFIRLIYOR · 08.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 08.11.2026:** _«Bölüm adı yazıyorum, kısaltma tamam, bölümde 3 adet ünite

@@ -95,6 +95,9 @@ const KALEM_SECIMI = {
       companySku: true,
       barcode: true,
       name: true,
+      /* K376 — paketleme kartındaki ürün görseli. */
+      gorselUrl: true,
+      gorselKaynak: true,
       location: { select: { code: true } },
       product: { select: { name: true } },
     },
@@ -252,6 +255,9 @@ export async function paketlemeIcinAra(kod: string): Promise<PaketAramasi> {
         adet: k.quantity,
         /* Akışın ASIL çıktısı. `null` ise ekran "raf girilmemiş" der. */
         rafKodu: k.variant.location?.code ?? null,
+        /* K376 — görsel yoksa `null` kalır; ekran ilk harfi gösterir. */
+        gorselUrl: k.variant.gorselUrl,
+        gorselKaynak: k.variant.gorselKaynak,
         /* Teyit istemcide okutularak kurulur; sunucudan teyitli gelmez. */
         teyitliAdet: 0,
       })),

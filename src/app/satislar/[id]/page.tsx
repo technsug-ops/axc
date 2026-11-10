@@ -2,6 +2,7 @@ import { kalemGecerliMi } from "@/lib/kalem-gecerli";
 import { KalemKaldir, KalemKaldirmaGeriAl } from "./kalem-kaldir";
 import Link from "@/components/niyetli-baglanti";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
+import { PartiBagiDegistir } from "./parti-bagi-degistir";
 import { PartiMaliyetDuzelt } from "./parti-maliyet-duzelt";
 import { notFound } from "next/navigation";
 import { Undo2 } from "lucide-react";
@@ -902,12 +903,34 @@ export default async function SatisDetaySayfasi({
                           */}
                         {maliyetDuzeltebilir ? (
                           <TableCell className="text-right">
-                            {dusum.sourceMovement ? (
-                              <PartiMaliyetDuzelt
-                                hareketId={dusum.sourceMovement.id}
-                                mevcutMaliyet={String(partiMaliyeti(dusum))}
+                            <span className="flex flex-wrap items-center justify-end gap-1">
+                              {dusum.sourceMovement ? (
+                                <PartiMaliyetDuzelt
+                                  hareketId={dusum.sourceMovement.id}
+                                  mevcutMaliyet={String(partiMaliyeti(dusum))}
+                                />
+                              ) : null}
+                              {/**
+                                * ⭐ K376 — İKİNCİ, AYRI EYLEM: «partiyi
+                                * değiştir». Üstteki düğme PARTİNİN maliyetini
+                                * düzeltir (o partiden çeken BÜTÜN satışları
+                                * etkiler); bu düğme yalnız BU satışın hangi
+                                * partiden düştüğünü değiştirir. Kullanıcı
+                                * 10.11.2026'da ikisini karıştırmak zorunda
+                                * kalmıştı çünkü ikincisi HİÇ YOKTU.
+                                *
+                                * ⚠ VE BU DÜĞME ÇIKIŞIN KİMLİĞİNİ TAŞIR
+                                * (`dusum.id`), partinin değil — taşınan şey
+                                * çıkışın kendisi. Partisi olmayan bir çıkışta
+                                * da çizilir: bağsız bir çıkışa parti ATAMAK
+                                * meşru iştir ve o satır bugün hiçbir yol
+                                * göstermiyordu.
+                                */}
+                              <PartiBagiDegistir
+                                cikisId={dusum.id}
+                                mevcutParti={`${partiTarihi(dusum)} · ${partiMaliyeti(dusum)}`}
                               />
-                            ) : null}
+                            </span>
                           </TableCell>
                         ) : null}
                       </TableRow>
@@ -991,6 +1014,13 @@ export default async function SatisDetaySayfasi({
                               <PartiMaliyetDuzelt
                                 hareketId={dusum.sourceMovement.id}
                                 mevcutMaliyet={String(partiMaliyeti(dusum))}
+                              />
+                            ) : null}
+                            {/* ⛔ TELEFONDA DA VAR — İlke #8 (K376). */}
+                            {maliyetDuzeltebilir ? (
+                              <PartiBagiDegistir
+                                cikisId={dusum.id}
+                                mevcutParti={`${partiTarihi(dusum)} · ${partiMaliyeti(dusum)}`}
                               />
                             ) : null}
                           </span>

@@ -1,3 +1,4 @@
+import type { GorselKaynagi } from "@/lib/urun-gorseli";
 import type { KodRolu } from "@/lib/varyant-arama-kurali";
 
 /**
@@ -48,6 +49,21 @@ export type PaketKalemi = {
   adet: number;
   /** Raf kodu — akışın ASIL çıktısı. `null` ise raf girilmemiş. */
   rafKodu: string | null;
+  /**
+   * ⭐ ÜRÜN GÖRSELİ (K376, 10.11.2026 — kullanıcı: _«Paketlemede buraya ürün
+   * görseli gelse»_). Depoda raftan ürün alan kişi için en hızlı teyit
+   * ADLA değil GÖZLE olur: "LEGO Speed Champions 77239" iki kutuyu birden
+   * tarif edebilir, kutunun resmi etmez. Okutma teyidinin YERİNE GEÇMEZ —
+   * barkod yine okutulur; bu yalnız doğru rafa doğru gözle gitmeyi
+   * hızlandırır (İlke #9: az tıkla).
+   *
+   * ⚠ `null` olabilir ve bu bir eksiklik DEĞİL beyandır: o varyantın
+   * görseli hiç yok. Bileşen o zaman ilk harfi gösterir — vekil bir resim
+   * uydurmaz. _(Anayasa: "kolon başlığı bir iddiadır — vekil alan
+   * gösterilmez".)_
+   */
+  gorselUrl: string | null;
+  gorselKaynak: GorselKaynagi | null;
   /**
    * ⛔ BOOLEAN DEĞİL SAYAÇ (K203, 10.09.2026 — Halil'in fotoğrafla bulduğu
    * kusur). Aynı üründen `adet: 2` olan bir kalemde TEK okutma "eşleşti,

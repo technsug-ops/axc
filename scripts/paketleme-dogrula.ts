@@ -56,6 +56,8 @@ function kalem(ek: Partial<PaketKalemi> & { saleItemId: string }): PaketKalemi {
     adet: 1,
     rafKodu: "A-01",
     teyitliAdet: 0,
+    gorselUrl: null,
+    gorselKaynak: null,
     ...ek,
   };
 }
@@ -658,6 +660,8 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
     adet: 1,
     rafKodu: "RAF-SLN1-1",
     teyitliAdet: 0,
+    gorselUrl: null,
+    gorselKaynak: null,
     ...ek,
   });
 
@@ -799,6 +803,54 @@ function siparis(kalemler: PaketKalemi[]): PaketSiparisi {
   kontrol(
     "metin teyidi ÜRÜN OKUMASINA bağlıyor",
     (sozlukP.Paketle.rafEslesti ?? "").includes("okutunca teyitlenir"),
+  );
+}
+
+// --- ÜRÜN GÖRSELİ ZİNCİRİ (K376, 10.11.2026) ---------------------------
+console.log("\n6) ÜRÜN GÖRSELİ — kart ADLA değil GÖZLE teyit ettirir");
+{
+  /**
+   * ⛔ NİYE ÖLÇÜLÜYOR: kullanıcı 10.11.2026'da _«Paketlemede buraya ürün
+   * görseli gelse»_ dedi. Zincir ÜÇ halkalı ve ortası en kolay düşen:
+   * sorgu alanı seçer · eylem onu kaleme taşır · kart çizer. Ortadaki halka
+   * kopsa görsel sessizce `undefined` gelir ve kutu hep ilk harfi gösterir —
+   * hiçbir hata çıkmaz. _(Anayasa: "zincir, halkalarının varlığıyla değil
+   * BAĞLANTISIYLA sınanır".)_
+   */
+  const gEylem = kaynakOku("src/app/paketle/actions.ts");
+  const gEkran = kaynakOku("src/app/paketle/paketleyici.tsx");
+  const gSayfa = kaynakOku("src/app/paketle/page.tsx");
+
+  /** ① SORAR — varyant seçimi görsel alanlarını içeriyor. */
+  kontrol("sorgu gorselUrl seçiyor", /gorselUrl: true/.test(gEylem));
+  kontrol("sorgu gorselKaynak seçiyor", /gorselKaynak: true/.test(gEylem));
+  /** ② TAŞIR — kaleme eşleniyor; `select` satırı tek başına yetmez. */
+  kontrol(
+    "kaleme gorselUrl taşınıyor",
+    /gorselUrl: k\.variant\.gorselUrl/.test(gEylem),
+  );
+  kontrol(
+    "kaleme gorselKaynak taşınıyor",
+    /gorselKaynak: k\.variant\.gorselKaynak/.test(gEylem),
+  );
+  /** ③ ÇİZER — ve ortak bileşenle (İlke #10: aynı işlem her yerde aynı). */
+  kontrol("kart ortak bileşeni kullanıyor", gEkran.includes("<UrunGorseli"));
+  kontrol(
+    "bileşen kalemin görselinden besleniyor",
+    /url=\{kalem\.gorselUrl\}/.test(gEkran) &&
+      /kaynak=\{kalem\.gorselKaynak\}/.test(gEkran),
+  );
+  /**
+   * ⛔ "+" İLE GÖRSEL EKLEME İZNE BAĞLI — ve izin SUNUCUDA hesaplanır.
+   * İstemcide hesaplanamaz; sayfa prop olarak geçirir.
+   */
+  kontrol(
+    "izin sunucuda hesaplanıyor",
+    gSayfa.includes('izinVarMi("urun.yaz")'),
+  );
+  kontrol(
+    "izin bileşene geçiyor",
+    /ekleyebilir=\{resimEkleyebilir\}/.test(gEkran),
   );
 }
 

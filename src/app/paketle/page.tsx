@@ -3,7 +3,7 @@ import { PackageCheck } from "lucide-react";
 
 import { paketlemeIcinAra } from "@/app/paketle/actions";
 import { Paketleyici } from "@/app/paketle/paketleyici";
-import { sayfaIzni } from "@/lib/yetki";
+import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 /**
  * ============================================================================
@@ -44,6 +44,9 @@ export default async function PaketleSayfasi({
 }) {
   await sayfaIzni("stok.gor");
 
+  /* K376 — "+" ile görsel ekleme yalnız ürün yazma izni olana görünür. */
+  const resimEkleyebilir = await izinVarMi("urun.yaz");
+
   const t = await getTranslations("Paketle");
   const p = await searchParams;
 
@@ -58,7 +61,11 @@ export default async function PaketleSayfasi({
 
       <p className="text-muted-foreground max-w-3xl text-sm">{t("aciklama")}</p>
 
-      <Paketleyici baslangicKodu={p.kod ?? ""} baslangic={baslangic} />
+      <Paketleyici
+        baslangicKodu={p.kod ?? ""}
+        baslangic={baslangic}
+        resimEkleyebilir={resimEkleyebilir}
+      />
     </div>
   );
 }

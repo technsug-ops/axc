@@ -12,6 +12,7 @@ import {
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { DurumRozeti } from "@/components/durum-rozeti";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
+import { UrunGorseli } from "@/components/urun-gorseli";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DURUM_KUTUSU, DURUM_YAZISI } from "@/lib/renkler";
@@ -77,9 +78,12 @@ function tonCal(eslesti: boolean) {
 export function Paketleyici({
   baslangicKodu = "",
   baslangic = null,
+  resimEkleyebilir = false,
 }: {
   baslangicKodu?: string;
   baslangic?: PaketAramasi | null;
+  /** Ürün düzenleme izni (`urun.yaz`) — sayfa SUNUCUDA hesaplar (K376). */
+  resimEkleyebilir?: boolean;
 } = {}) {
   const t = useTranslations("Paketle");
   /* Tarayıcı sesi ancak ilk dokunuş/tuştan sonra çaldırır — USB okuyucu da tuş gönderir. */
@@ -383,7 +387,11 @@ export function Paketleyici({
           {/* ── KALEMLER — RAF EN GÖRÜNÜR ŞEY ─────────────────────────── */}
           <ul className="space-y-2">
             {siparis.kalemler.map((k) => (
-              <KalemSatiri key={k.saleItemId} kalem={k} />
+              <KalemSatiri
+                key={k.saleItemId}
+                kalem={k}
+                resimEkleyebilir={resimEkleyebilir}
+              />
             ))}
           </ul>
 
@@ -505,7 +513,13 @@ export function Paketleyici({
 }
 
 /** Tek kalem — RAF en görünür öğe, çünkü akışın çıktısı o. */
-function KalemSatiri({ kalem }: { kalem: PaketKalemi }) {
+function KalemSatiri({
+  kalem,
+  resimEkleyebilir,
+}: {
+  kalem: PaketKalemi;
+  resimEkleyebilir: boolean;
+}) {
   const t = useTranslations("Paketle");
 
   /**
@@ -530,25 +544,43 @@ function KalemSatiri({ kalem }: { kalem: PaketKalemi }) {
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0 space-y-1">
-          <p className="text-sm font-medium">
-            {kalem.urunAdi}
-            {kalem.varyantAdi ? (
-              <span className="text-muted-foreground"> · {kalem.varyantAdi}</span>
-            ) : null}
-          </p>
-          <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            <span>
-              {t("sku")}: <KopyalanabilirKod deger={kalem.sku} etiket={t("sku")} />
-            </span>
-            <span>
-              {t("firmaSku")}: <KopyalanabilirKod deger={kalem.companySku} etiket={t("firmaSku")} />
-            </span>
-            {kalem.barcode ? (
+        {/*
+          ⚠ GÖRSEL ADIN SOLUNDA, AKIŞI BÖLMEDEN (K376). Raftan ürün alan kişi
+          önce resme bakar, sonra kodu okutur; kutu bu yüzden adın YANINDA
+          duruyor ve kendi satırını açmıyor — adet ve raf kutucukları yerinde
+          kalır (İlke #12). `boyut={48}` telefonda da okunur bir kare.
+        */}
+        <div className="flex min-w-0 items-start gap-3">
+          <UrunGorseli
+            ekleyebilir={resimEkleyebilir}
+            variantId={kalem.variantId}
+            url={kalem.gorselUrl}
+            kaynak={kalem.gorselKaynak}
+            ad={kalem.urunAdi}
+            boyut={48}
+          />
+          <div className="min-w-0 space-y-1">
+            <p className="text-sm font-medium">
+              {kalem.urunAdi}
+              {kalem.varyantAdi ? (
+                <span className="text-muted-foreground"> · {kalem.varyantAdi}</span>
+              ) : null}
+            </p>
+            <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
               <span>
-                {t("barkod")}: <KopyalanabilirKod deger={kalem.barcode} etiket={t("barkod")} />
+                {t("sku")}: <KopyalanabilirKod deger={kalem.sku} etiket={t("sku")} />
               </span>
-            ) : null}
+              <span>
+                {t("firmaSku")}:{" "}
+                <KopyalanabilirKod deger={kalem.companySku} etiket={t("firmaSku")} />
+              </span>
+              {kalem.barcode ? (
+                <span>
+                  {t("barkod")}:{" "}
+                  <KopyalanabilirKod deger={kalem.barcode} etiket={t("barkod")} />
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
 

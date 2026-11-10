@@ -284,6 +284,8 @@
     "canli:sayim-maliyeti": "tsx scripts/canli-sayim-maliyeti.ts",
     "canli:satis-duzeltme": "tsx scripts/canli-satis-duzeltmeleri.ts",
     "parti-bagi:dogrula": "tsx scripts/parti-bagi-dogrula.ts",
+    "parti-bagi-degisimi:dogrula": "tsx scripts/parti-bagi-degisimi-dogrula.ts",
+    "parti-bagi-degisimi-mutasyon:kontrol": "tsx scripts/parti-bagi-degisimi-mutasyon-kontrol.ts",
     "canli:oran-yaz": "tsx scripts/canli-oran-defterden.ts",
     "canli:guncel-stok-kiyas": "tsx scripts/canli-guncel-stok-kiyas.ts",
     "canli:mukerrer-olcum": "tsx scripts/canli-mukerrer-olcum.ts",
