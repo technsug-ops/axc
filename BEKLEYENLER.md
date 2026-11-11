@@ -13,6 +13,94 @@
 
 ---
 
+## 🔴 K377 — RAF ETİKETLERİ SÜZÜLEMİYORDU: YA HEPSİ YA HİÇBİRİ · 11.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 11.11.2026** (iki ekran görüntüsü: 67 etiketlik `/ayarlar/konumlar/etiketler`
+sayfası ve «Depom» yazılmış raf araması): _«Yeni raf atadım fakat şimdi sorun şu,
+yeni atadığım rafların barkodunu çıkarmak istiyorum, hepsini tekrar çıkarmam
+lazım, içlerinden seçemiyorum. Yeni atadığım raf grubunun adı Depom; bunu
+süzdüğümde sadece bunun alt rafları gelip çıktı alsam iyi olur.»_
+
+**ÖLÇÜLDÜ — ARAMA VARDI, AMA YANLIŞ EKRANDA.** `rafAramasi` gövdesi K289-③'ten
+beri duruyor ve `/ayarlar/konumlar` listesi onu kullanıyordu; **etiket ekranı
+aramayı hiç sormuyordu** ve `where: { isActive: true }` ile ne varsa basıyordu.
+Yani eksik olan yetenek değil, o yeteneğin KÂĞIDA ulaşmamasıydı. 24 yeni raf
+için 67 etiket basmak demek: 43 etiket çöpe, ve termal rulo bitiyor.
+
+**YAPILAN — ÜÇ HALKA:**
+· **etiket ekranı süzülüyor** — `KodAramaKutusu` (kamera dahil, İlke #7) +
+  `rafAramasi(konumlar, arama)`; arama adrese yazılıyor (`?q=Depom`), yani
+  süzülmüş etiket sayfası paylaşılabilir ve geri tuşu çalışır
+· **basılan küme = ekrandaki küme** — SVG'ler artık YALNIZ `gorunen` raflar için
+  üretiliyor. Hepsi için üretip ekranda süzmek, yazdırmada süzülmemiş kümenin
+  basılması yolunu açık bırakırdı
+· **listedeki «QR Etiketleri» düğmesi açık aramayı TAŞIYOR**
+  (`suzgecAdresi(..., { q: arama })`) — kullanıcı süzgeci listede kuruyor,
+  etiket ekranında bir daha yazmak zorunda kalmıyor (İlke #9)
+
+⚠ **SÜZGEÇ AÇIKKEN SAYI NEYİ SAYDIĞINI SÖYLÜYOR** (İlke #17): «24 raf» değil
+**«67 aktif rafın 24 tanesi süzüldü — Yazdır dediğinizde YALNIZ bunlar basılır»**.
+Tek sayı yazsaydı süzgeci unutan biri deponun tamamını bastığını sanır ve eksiği
+ancak duvarda fark ederdi.
+⚠ **ARAMA SONUÇSUZKEN «AKTİF RAF YOK» DEMİYOR** — «depoda raf tanımlı değil» ile
+«bu aramaya uyan raf yok» apayrı iki cümle; karıştırılsa kullanıcı var olan
+raflarını kaybolmuş sanırdı.
+⚠ **AYNI GÖVDE, İKİ EKRAN** (İlke #10): kendi `includes` koşulumu yazsaydım
+listede 24, etikette 25 raf çıkabilirdi — ve YANLIŞ olan hangisiyse kullanıcı
+onu duvara yapıştırırdı. Bu yüzden `A1` yazınca etiket ekranı da **yalnız A1**
+veriyor (K289-③ birebir kod kuralı) ve «içinde A1 geçen N raf daha var» cümlesi
+orada da çıkıyor.
+⚠ **ŞEMA DEĞİŞMEDİ, YENİ İZİN YOK** — ekran zaten `ayar.yaz` iznine bağlı; canlı
+izin senkronu işi YOK.
+
+**BEKÇİ:** `liste-aramasi:dogrula` 2. bölüm (**29** ölçüt) — beş yeni ölçüt.
+⚠ Kâğıt ölçütü VARLIKLA değil **SAYILARAK** kuruldu: `!includes("konumlar.map(")`
+demek yetmezdi, çünkü `[...gorunen, ...konumlar].map(` o yasağı DELMEDEN kümeyi
+geri genişletirdi. Ölçüt artık «`.map(async (konum)` çağrısı TEK olmalı ve
+kaynağı `gorunen`» diyor — ve tam bu senaryo mutasyonla kırmızı yandı.
+**`liste-aramasi-mutasyon:kontrol` 19/19** (6'sı bu işe ait, iki yön birden):
+süzgeci kâğıttan düşüren · kümeyi gizlice geri genişleten · özetten toplamı
+düşüren · boş aramada «aktif raf yok» dedirten · QR bağlantısından aramayı silen ·
+sözlük cümlesinden `{toplam}`ı kaldıran. Zararsız sağlama YEŞİL kaldı.
+
+**Tur:** `tsc` ✓ · `lint:dogrula` 0 hata (67 eski uyarı, hiçbiri bu dosyalarda) ·
+`depo:dogrula` 219/219 ✓ · `i18n:kontrol` ✓ (tr/en 6470-6470, 0 fark).
+
+⛔ **AÇIK:**
+· **① YAYIMLANMADI** — `gelistirme` dalında. Kullanıcı «yayınla» deyince `main`'e
+  ileri sarılır.
+· **② EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ.** Ölçülen şey kaynak ve bekçi; kullanıcıya
+  ULAŞAN yol değil. _(«Sınanmamış ekran, ekran değildir».)_
+· **③ YAZICIDAN ÇIKTI ALINMADI.** Ekranda süzülen kümenin KÂĞIDA aynen düştüğü
+  yalnız kodla ölçüldü; gerçek bir baskı yapılmadı. Halil testinin ④ ve ⑤
+  maddeleri tam bunu ölçüyor.
+· **④ «Depom» BİR AD, YAPI DEĞİL.** Süzgeç bölüm adında ya da kod önekinde
+  arıyor; sistemde «raf grubu» diye bir varlık YOK ve bu işte de açılmadı.
+  Gruplama gerçekten gerekirse ayrı bir karardır. **Açılış şartı:** aynı süzme
+  ihtiyacı ada/koda bakarak çözülemeyen bir durumda ikinci kez doğduğu gün.
+
+**Halil test listesi (yayından sonra, gerçek cihaz + CANLI adres):**
+① `/ayarlar/konumlar` → arama kutusuna **Depom** yaz → «Ara» → listede yalnız
+`RAF-DPM…` rafları kalmalı ve altında kaç raf bulunduğu yazmalı
+② aynı sayfada **«QR Etiketleri»** düğmesine bas → açılan etiket sayfasının
+arama kutusunda **«Depom» ZATEN YAZIYOR olmalı** (bir daha yazman gerekmemeli)
+③ üstteki özet satırı **«67 aktif rafın 24 tanesi süzüldü — Yazdır dediğinizde
+YALNIZ bunlar basılır»** demeli; rakamlar ekrandaki etiket sayısıyla tutmalı
+④ **Yazdır** → baskı önizlemesinde **yalnız Depom rafları** olmalı, `A1`·`A10`
+gibi eski raflar GÖRÜNMEMELİ; arama kutusu ve başlık kâğıda basılmamalı
+⑤ bir sayfa **gerçekten bas** → etiketlerin kodu ekrandakiyle birebir aynı olmalı
+⑥ arama kutusunu **Temizle** → 67 etiketin hepsi geri gelmeli
+⑦ arama kutusuna **olmayan bir şey** yaz (`zzz`) → _«zzz aramasına uyan raf yok»_
+demeli, **«Aktif raf yok» DEMEMELİ**
+⑧ bir raf kodunu tam yaz (örn. `RAF-DPM1-1`) → **tek etiket** gelmeli ve altında
+«içinde geçen N raf daha var» cümlesi çıkmalı
+⑨ kutunun yanındaki **kamera** ile bir raf etiketini okut → o rafın etiketi
+tek başına gelmeli
+⑩ telefonda aynı akış: kutu tam genişlikte mi, «Ara»/«Temizle» düğmeleri
+44 px mi, etiket ızgarası taşmıyor mu.
+
+---
+
 ## 🔴 K376 — SATIŞIN PARTİSİ DEĞİŞTİRİLEMİYORDU + PAKETLEMEDE ÜRÜN GÖRSELİ · 10.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 İki istek, aynı teslim. İkisi de kullanıcının o gün ekranda gördüğü eksiklik.

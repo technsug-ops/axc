@@ -54,6 +54,55 @@ console.log("\n2) ekranlar");
   kontrol("  ...tam eşleşmede «N raf daha» cümlesi çiziliyor", raf.includes('tamEslesme ? t("aramaTamEslesme", { q: arama, sayi: benzerSayisi })'));
   kontrol("  ...başlık sayısı TÜM raflar", raf.includes('t("tanimliRaflar", { sayi: konumlar.length })'));
 
+  /**
+   * ═══ RAF ETİKETLERİ (K377, 11.11.2026) ═══════════════════════════════════
+   * Kullanıcı: «yeni raf atadım, yalnız onların barkodunu çıkarmak istiyorum;
+   * içlerinden seçemiyorum, hepsini tekrar çıkarmam lazım.» Etiket ekranı
+   * BÜTÜN aktif rafları basıyordu.
+   *
+   * ⛔ BURADA SÜZGEÇ EKRANDAN KÂĞIDA GEÇER: ekranda 24 raf görünüp 67 raf
+   * basılırsa kullanıcı bunu ancak YAZICININ BAŞINDA — rulo bittiğinde —
+   * fark eder. Bu yüzden ölçüt «arama kutusu var mı» değil, «basılacak küme
+   * görünen kümeyle AYNI gövdeden mi geliyor».
+   */
+  const etiket = oku("src/app/ayarlar/konumlar/etiketler/page.tsx");
+  kontrol(
+    "Raf etiketleri: arama kutusu var ve küme AYNI gövdeden (rafAramasi)",
+    etiket.includes('temelAdres="/ayarlar/konumlar/etiketler"') &&
+      etiket.includes("= rafAramasi(konumlar, arama);"),
+  );
+  /**
+   * ⚠ ÖLÇÜT SAYILARAK KURULUYOR, VARLIKLA DEĞİL. `!includes("konumlar.map(")`
+   * demek yetmezdi: `[...gorunen, ...konumlar].map(` o yasağı DELMEDEN
+   * kümeyi geri genişletirdi. Üretim çağrısı TEK olmalı ve kaynağı `gorunen`.
+   */
+  const uretim = etiket.match(/[\w\]\)]+\.map\(async \(konum\)/g) ?? [];
+  kontrol(
+    "  ...etiket YALNIZ görünen raflar için üretiliyor (kâğıt = ekran)",
+    uretim.length === 1 && uretim[0] === "gorunen.map(async (konum)",
+    uretim,
+  );
+  kontrol(
+    "  ...süzgeç açıkken sayı NEYİ saydığını söylüyor (İlke #17)",
+    etiket.includes('t("etiketlerSuzulmus", {') && etiket.includes("toplam: konumlar.length,"),
+  );
+  kontrol(
+    "  ...arama sonuçsuzken «aktif raf yok» DEMİYOR",
+    etiket.includes("{arama && etiketler.length === 0 ? ("),
+  );
+  kontrol(
+    "Raflar: «QR Etiketleri» açık aramayı TAŞIYOR (İlke #9)",
+    raf.includes('suzgecAdresi("/ayarlar/konumlar/etiketler", {}, { q: arama })'),
+  );
+  /**
+   * ⛔ CÜMLE İKİ SAYIYI DA SÖYLEMEK ZORUNDA. Yalnız «24 raf» yazan bir
+   * özet, süzgeci unutan kullanıcıya deponun tamamını bastığını düşündürür;
+   * sözlük anahtarı doğru yerde dursa bile verdiği söz eksik olur.
+   */
+  const tRaf = createTranslator({ locale: "tr", messages: tr as never, namespace: "Raf" as never }) as unknown as (k: string, v: object) => string;
+  const suzulmus = tRaf("etiketlerSuzulmus", { sayi: 24, toplam: 67 });
+  kontrol("  ...özet cümlesi İKİ sayıyı da söylüyor (24 · 67)", suzulmus.includes("24") && suzulmus.includes("67"), suzulmus);
+
   const gider = oku("src/app/giderler/page.tsx");
   kontrol("Giderler: arama SORGUDA → toplam şeridi aramaya göre (İlke #15)", gider.includes("...giderAramaKosulu(arama),"));
   kontrol("  ...arama kutusu ay/kategoriyi taşıyor", gider.includes('<KodAramaKutusu') && gider.includes("tasinanlar={{ ay: seciliAy || undefined, kategori: seciliKategori || undefined }}"));

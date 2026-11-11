@@ -2,9 +2,11 @@ import { getTranslations } from "next-intl/server";
 import { sayfaIzni } from "@/lib/yetki";
 import Link from "@/components/niyetli-baglanti";
 
+import { KodAramaKutusu } from "@/components/kod-arama-kutusu";
 import { ListeyeDon } from "@/components/liste-hafizasi-bilesenleri";
 import { ETIKET_BOY_MM, ETIKET_EN_MM, rafEtiketiSvg } from "@/lib/depo/etiket";
 import { prisma } from "@/lib/prisma";
+import { rafAramasi } from "@/lib/raf-arama";
 
 import { YazdirButonu } from "./yazdir-butonu";
 
@@ -45,18 +47,38 @@ export async function generateMetadata() {
  *  yapıştırılmış raf demektir ve eksikliği kimse görmez.
  * ============================================================================
  */
-export default async function RafEtiketleriSayfasi() {
+export default async function RafEtiketleriSayfasi({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   await sayfaIzni("ayar.yaz");
+  const { q } = await searchParams;
+  const arama = (q ?? "").trim();
 
   const konumlar = await prisma.location.findMany({
     where: { isActive: true },
     orderBy: { code: "asc" },
   });
 
+  /**
+   * ⭐ SÜZGEÇ LİSTE EKRANIYLA AYNI GÖVDEDEN (İlke #10, K289-③).
+   * Kendi `includes` koşulumu yazsaydım iki ekran aynı aramaya farklı cevap
+   * verirdi: listede 24 raf, etikette 25. Kullanıcı hangisine inanacağını
+   * bilemez — ve YANLIŞ olan hangisiyse onu duvara yapıştırır.
+   */
+  const { gorunen, tamEslesme, benzerSayisi } = rafAramasi(konumlar, arama);
+
   const t = await getTranslations("Raf");
 
+  /**
+   * ⛔ SVG YALNIZ GÖRÜNEN RAFLAR İÇİN ÜRETİLİR — "sayı = liste = KÂĞIT".
+   * Bütün raflar için üretip ekranda süzmek, yazdırmada süzülmemiş kümenin
+   * basılması yolunu açık bırakırdı; burada basılacak küme ile ekrandaki
+   * küme TEK yerden geliyor.
+   */
   const etiketler = await Promise.all(
-    konumlar.map(async (konum) => ({
+    gorunen.map(async (konum) => ({
       id: konum.id,
       code: konum.code,
       name: konum.name,
@@ -77,9 +99,24 @@ export default async function RafEtiketleriSayfasi() {
           <h1 className="mt-1 text-2xl font-semibold">
             {t("etiketlerBasligi")}
           </h1>
+          {/*
+            ⚠ SÜZGEÇ AÇIKKEN SAYI NEYİ SAYDIĞINI SÖYLER (İlke #17): «24 raf»
+            değil, «67 aktif rafın 24 tanesi». Yoksa süzgeci unutan biri
+            deponun tamamını bastığını sanır ve eksiği ancak duvarda fark eder.
+          */}
           <p className="text-muted-foreground text-sm">
-            {t("etiketlerOzeti", { sayi: etiketler.length })}
+            {arama
+              ? t("etiketlerSuzulmus", {
+                  sayi: etiketler.length,
+                  toplam: konumlar.length,
+                })
+              : t("etiketlerOzeti", { sayi: konumlar.length })}
           </p>
+          {arama && tamEslesme ? (
+            <p className="text-muted-foreground text-xs">
+              {t("aramaTamEslesme", { q: arama, sayi: benzerSayisi })}
+            </p>
+          ) : null}
           {/*
             ⚠ ÖLÇÜ EKRANDA YAZAR: 50×30 mm termal etiket. Kullanıcı yazıcıya
             hangi rulonun takılacağını bilmeden basarsa etiketler kayar ve
@@ -92,7 +129,36 @@ export default async function RafEtiketleriSayfasi() {
         <YazdirButonu />
       </div>
 
-      {etiketler.length === 0 ? (
+      {/*
+        ⚠ ARAMA KUTUSU YAZDIRMADA GİZLİ, AMA SONUCU KÂĞIDA GEÇER: basılan
+        küme ekrandaki kümedir. Kullanıcı 11.11.2026: «yeni atadığım rafların
+        barkodunu çıkarmak istiyorum, hepsini tekrar çıkarmam lazım».
+      */}
+      {konumlar.length > 0 ? (
+        <div className="space-y-1 print:hidden">
+          <KodAramaKutusu
+            temelAdres="/ayarlar/konumlar/etiketler"
+            baslangic={arama}
+            tasinanlar={{}}
+            ipucu={t("aramaIpucu")}
+            kameraBasligi={t("kameraBasligi")}
+          />
+          <p className="text-muted-foreground text-xs">
+            {t("etiketlerAramaNotu")}
+          </p>
+        </div>
+      ) : null}
+
+      {arama && etiketler.length === 0 ? (
+        /*
+          ⛔ BOŞ ARAMA SONUCU «AKTİF RAF YOK» DEMEZ. İkisi apayrı şeydir:
+          biri «depoda raf tanımlı değil», öteki «bu aramaya uyan raf yok».
+          Karıştırılırsa kullanıcı var olan raflarını kaybolmuş sanır.
+        */
+        <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm print:hidden">
+          {t("aramaBos", { q: arama })}
+        </p>
+      ) : etiketler.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center print:hidden">
           <p className="font-medium">{t("aktifRafYok")}</p>
           <p className="text-muted-foreground mt-1 text-sm">

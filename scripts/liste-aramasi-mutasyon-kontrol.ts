@@ -23,6 +23,8 @@ const LISTE = "src/lib/disa-aktarma/listeler.ts";
 const TAZ = "src/app/tazminat/page.tsx";
 const HAK = "src/app/hakedis/page.tsx";
 const RAFARA = "src/lib/raf-arama.ts";
+const ETIKET = "src/app/ayarlar/konumlar/etiketler/page.tsx";
+const SOZLUK = "messages/tr.json";
 
 type Mutasyon = { ad: string; yon: "ZARARSIZ" | "KALDIRAN" | "FAZLADAN"; dosya: string; bul: string; koy: string; bozdugu: string };
 
@@ -54,6 +56,19 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "where: { ...kanalKosulu, ...partiAramaKosulu(sp.pq) },", koy: "where: kanalKosulu,", bozdugu: "arama yazilir ama sonuc degismez" },
   { ad: "HAKEDIS PARTI ARAMASI ODEME ARAMASIYLA CAKISIYOR", yon: "FAZLADAN", dosya: HAK,
     bul: 'parametre="pq"', koy: 'parametre="q"', bozdugu: "iki arama ayni parametreyi yazar, biri otekini ezer" },
+  /* K377 (11.11.2026): raf etiketleri - suzgec ekrandan KAGIDA gecer. */
+  { ad: "ETIKET SAYFASI ARAMAYI YOK SAYIYOR (ekran 24, kagit 67)", yon: "KALDIRAN", dosya: ETIKET,
+    bul: "    gorunen.map(async (konum) => ({", koy: "    konumlar.map(async (konum) => ({", bozdugu: "suzulen listeye ragmen butun raflar basilir" },
+  { ad: "ETIKET KUMESI GERI GENISLETILDI (yasagi delmeden)", yon: "FAZLADAN", dosya: ETIKET,
+    bul: "    gorunen.map(async (konum) => ({", koy: "    [...gorunen, ...konumlar].map(async (konum) => ({", bozdugu: "suzulen raflar basilir AMA yanlarina butun depo da basilir" },
+  { ad: "ETIKET OZETI TOPLAMI SOYLEMIYOR", yon: "KALDIRAN", dosya: ETIKET,
+    bul: "                  toplam: konumlar.length,", koy: "                  toplam: etiketler.length,", bozdugu: "«67 rafin 24u» yerine «24un 24u» yazar - suzgeci unutan farki goremez" },
+  { ad: "ETIKET BOS ARAMADA 'AKTIF RAF YOK' DIYOR", yon: "KALDIRAN", dosya: ETIKET,
+    bul: "{arama && etiketler.length === 0 ? (", koy: "{false && etiketler.length === 0 ? (", bozdugu: "arama sonucsuzken kullanici raflarini silinmis sanir" },
+  { ad: "QR ETIKETLERI BAGLANTISI ARAMAYI TASIMIYOR", yon: "KALDIRAN", dosya: RAF,
+    bul: 'href={suzgecAdresi("/ayarlar/konumlar/etiketler", {}, { q: arama })}', koy: 'href="/ayarlar/konumlar/etiketler"', bozdugu: "listede kurulan suzgec etiket ekraninda kayboluyor" },
+  { ad: "OZET CUMLESI TOPLAMI DUSURDU (anahtar yerinde, soz eksik)", yon: "KALDIRAN", dosya: SOZLUK,
+    bul: '"etiketlerSuzulmus": "{toplam} aktif rafın {sayi} tanesi süzüldü', koy: '"etiketlerSuzulmus": "{sayi} raf süzüldü', bozdugu: "suzgeci unutan kullanici deponun tamamini bastigini saniyor" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

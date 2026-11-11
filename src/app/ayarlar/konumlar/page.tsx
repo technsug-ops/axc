@@ -12,6 +12,7 @@ import { SatirKarti, SatirListesi } from "@/components/satir-karti";
 import { Badge } from "@/components/ui/badge";
 import { rafKoduGecerliMi } from "@/lib/kimlik";
 import { rafAramasi } from "@/lib/raf-arama";
+import { suzgecAdresi } from "@/lib/suzgec";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
@@ -87,8 +88,15 @@ export default async function KonumlarSayfasi({ searchParams }: { searchParams: 
               {t("birlestir")}
             </Link>
           </Button>
+          {/*
+            ⚠ AÇIK ARAMA ETİKET EKRANINA TAŞINIR (İlke #9 — az tıkla).
+            Kullanıcı 11.11.2026: listede «Depom» süzgecini kurup etiketlere
+            geçiyor ve orada aramayı BİR DAHA yazmak zorunda kalıyordu.
+            Taşınmazsa etiket ekranı 67 rafın hepsini açar ve süzgeci kurmuş
+            olan kullanıcı yeni raflarını aramak zorunda kalır.
+          */}
           <Button variant="outline" asChild>
-            <Link href="/ayarlar/konumlar/etiketler">
+            <Link href={suzgecAdresi("/ayarlar/konumlar/etiketler", {}, { q: arama })}>
               <QrCode />
               {t("qrEtiketleri")}
             </Link>

@@ -855,6 +855,8 @@
     "kodDegistiUyarisi": "Raf kodunu değiştiriyorsunuz. Bu rafın basılı QR etiketi <kalin>{kod}</kalin> içeriyor; kaydettikten sonra etiketi yeniden basıp yapıştırmanız gerekir.",
     "etiketlerBasligi": "Raf Etiketleri",
     "etiketlerOzeti": "{sayi} aktif raf. Yazdırıp raflara yapıştırın; QR içeriği raf kodudur.",
+    "etiketlerSuzulmus": "{toplam} aktif rafın {sayi} tanesi süzüldü — Yazdır dediğinizde YALNIZ bunlar basılır.",
+    "etiketlerAramaNotu": "Yazdırılan etiketler bu aramaya göre süzülür. Bölüm adı («Depom») ya da kodun başı («RAF-DPM») yazabilirsiniz; boş bırakırsanız tüm aktif raflar basılır.",
     "aktifRafYok": "Aktif raf yok.",
     "aktifRafYokIpucu": "Önce <baglanti>raf konumu ekleyin</baglanti>.",
     "yazdir": "Yazdır",
