@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K377 — RAF ETİKETLERİ SÜZÜLEMİYORDU: YA HEPSİ YA HİÇBİRİ · 11.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K377 — RAF ETİKETLERİ SÜZÜLEMİYORDU: YA HEPSİ YA HİÇBİRİ · 11.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 11.11.2026** (iki ekran görüntüsü: 67 etiketlik `/ayarlar/konumlar/etiketler`
 sayfası ve «Depom» yazılmış raf araması): _«Yeni raf atadım fakat şimdi sorun şu,
@@ -67,8 +67,18 @@ sözlük cümlesinden `{toplam}`ı kaldıran. Zararsız sağlama YEŞİL kaldı.
 `depo:dogrula` 219/219 ✓ · `i18n:kontrol` ✓ (tr/en 6470-6470, 0 fark).
 
 ⛔ **AÇIK:**
-· **① YAYIMLANMADI** — `gelistirme` dalında. Kullanıcı «yayınla» deyince `main`'e
-  ileri sarılır.
+· **① YAYIMLANDI 11.11.2026** — kullanıcı «yayınla» dedi; `main` `gelistirme`ye
+  ileri sarıldı (`0ea44779..ad8e5376`, tek commit).
+  **Yayın ölçümü:** `dpl_E1sbPxnWLhvdFScssxXun5BRaEMo` **READY** (fra1, **51 sn**) ·
+  `bezirga.com` ve `www.bezirga.com` **o dağıtımın alias listesinde** ·
+  `/giris` 200 · `/ayarlar/konumlar`, `/ayarlar/konumlar/etiketler` ve
+  `…/etiketler?q=Depom` **307** (girişe yönlendirme — korumalı, beklenen: yani
+  rota ÇÖZÜLÜYOR, sorgu parametresi 404 üretmiyor) · push kapısı turu
+  **173/173 yeşil İKİ KEZ** (`gelistirme` 2305 sn · `main` 1618 sn) ·
+  `canli:yetki` ✓ «tam yetkili rollerin hiçbirinde eksik izin yok» (CEO 34/34).
+  ⛔ **307, EKRANIN ÇİZİLDİĞİNİ KANITLAMAZ** — yalnız rotanın var olduğunu söyler.
+  Etiket ızgarası ve süzülmüş sayı GERÇEK CİHAZDA görülmedi; yayın, Halil
+  testinin yerine GEÇMEZ.
 · **② EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ.** Ölçülen şey kaynak ve bekçi; kullanıcıya
   ULAŞAN yol değil. _(«Sınanmamış ekran, ekran değildir».)_
 · **③ YAZICIDAN ÇIKTI ALINMADI.** Ekranda süzülen kümenin KÂĞIDA aynen düştüğü
