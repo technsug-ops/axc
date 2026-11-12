@@ -139,6 +139,17 @@ export function gercekCakismaGruplari(npmAdlari: string[]): string[][] {
  * KIRMIZI yanar.
  */
 export const SIRALI_MUTASYON_GRUP: readonly string[] = [
+  /* 12.11.2026 (K378): maliyeti bilinmeyen partiye maliyet girme yolu acildi.
+     Harness DORT dosyayi mutasyona ugratiyor: `messages/tr.json` (uyari eylem
+     metni) · `src/app/kart/[variantId]/page.tsx` (karttaki yeni kapi) ·
+     `src/app/satislar/[id]/parti-maliyet-duzelt.tsx` · `src/app/stok/
+     parti-maliyet-actions.ts`. Sozluk neredeyse her harness'in hedefinde, kart
+     sayfasi da kart/panel denetimleriyle ayni kumede. Paralel kosarlarsa biri
+     otekinin MUTANTINI "asil" sanip geri yazar ve iki olcum birden sessizce
+     anlamsizlasir — hata vermeden.
+     ⚠ Bu beyan da sonradan degil, push kapisinda ZORLANDI: olcum yazilmamis
+     beyani kirmizi yakti. */
+  "parti-maliyeti-mutasyon:kontrol",
   /* 10.11.2026 (K376): satisin parti bagini degistirme ekrani `satis
      detayina` eklendi, bu yuzden harness `src/app/satislar/[id]/page.tsx`i
      mutasyona ugratiyor — AYNI dosyayi `kargo-kaynagi-mutasyon:kontrol` ve
