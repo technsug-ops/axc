@@ -1,5 +1,6 @@
 import { kaynakOku } from "./kaynak-oku";
 
+import sozluk from "../messages/tr.json";
 import { maliyetDuzeltmePlani } from "../src/lib/parti-maliyeti";
 
 /**
@@ -95,6 +96,39 @@ console.log("\n1) kapılar — hangi durumda yazılmaz");
     }).redler,
     ["PARA_BIRIMI_YOK"],
   );
+  /**
+   * ⭐ K378 — PARA BİRİMİ SORULURSA YAZILABİLİR. Üstteki ölçüt "hiçbir yerde
+   * birim yoksa reddet" diyor ve DOĞRU; eksik olan bu ikinciydi. Canlı vaka
+   * 12.11.2026: maliyeti bilinmeyen parti `unitCostCurrency` de taşımaz, bu
+   * yüzden ekran "PARA_BIRIMI_YOK" deyip TAM DA düzeltilmesi gereken partiyi
+   * reddediyordu. Kapı gevşetilmedi — çağıran birimi SORMAYA başladı.
+   */
+  {
+    const maliyetsizParti = {
+      ...PARTI,
+      birimMaliyet: null,
+      birimMaliyetParaBirimi: null,
+    };
+    const kurMaliyetsiz = (para: "TRY" | "EUR" | null) =>
+      maliyetDuzeltmePlani({
+        parti: maliyetsizParti,
+        yeniMaliyetMetni: "4599,10",
+        paraBirimi: para,
+        sebep: "08.11 sayım fazlasının gerçek maliyeti",
+        cikislar: [],
+      });
+    yakin(
+      "maliyetsiz parti + birim SORULMAZSA reddedilir",
+      kurMaliyetsiz(null).redler,
+      ["PARA_BIRIMI_YOK"],
+    );
+    dogru(
+      "maliyetsiz parti + birim SORULURSA yazılabilir",
+      kurMaliyetsiz("TRY").yazilabilir,
+    );
+    /** ⛔ "Aynı maliyet" kapısı boş maliyeti KİLİTLEMEZ: null bir değer değil. */
+    yakin("boş maliyet «aynı» sayılmaz", kurMaliyetsiz("TRY").eskiMaliyet, null);
+  }
   /** ⚠ İKİ HATA BİRDEN SAYILIR — kullanıcı ikisini de görsün, tek tek değil. */
   yakin("iki hata birlikte döner", kur("", "  ").redler, [
     "MALIYET_GECERSIZ",
@@ -207,6 +241,38 @@ console.log("\n3) zincir — gövde yazıma ve ekrana BAĞLI mı");
     !/data: \{[^}]*quantityDelta/.test(eylem),
   );
 
+  /**
+   * ⭐ K378 — PARA BİRİMİ UÇTAN UCA TAŞINIYOR MU.
+   * Saf kapı doğru çalışsa bile çağıran birimi sormazsa hiçbir şey değişmez
+   * (K121 dersi: gövde doğru, ekrana bağlı değil).
+   */
+  dogru(
+    "plana giden birim PARTİDEN, yoksa SEÇİLENDEN",
+    eylem.includes("const para = parti.unitCostCurrency ?? secilenPara;"),
+  );
+  /** ⛔ SIRA TERS ÇEVRİLEMEZ: dolu bir maliyetin birimi bu ekrandan değişmez. */
+  dogru(
+    "seçilen birim partininkini EZEMEZ",
+    !/secilenPara \?\? parti\.unitCostCurrency/.test(eylem),
+  );
+  /** ⛔ KAPALI KÜME: tanınmayan birim sessizce TRY sayılmaz. */
+  dogru(
+    "birim kapalı kümeden okunur",
+    /ham === "TRY" \|\| ham === "EUR" \? ham : null/.test(eylem),
+  );
+  /** ⛔ İKİ YOL DA SORAR — önizleme sorup yazım sormazsa ikinci adım reddeder. */
+  yakin(
+    "önizleme VE yazım birimi forma soruyor",
+    (eylem.match(/paraSec\(String\(formData\.get\("paraBirimi"\)/g) ?? []).length,
+    2,
+  );
+  /** ⛔ YAZIM AYNI GÖVDEDEN OKUR — partiden ikinci kez okusaydı ayrışırdı. */
+  dogru(
+    "yazım birimi plandan alıyor",
+    eylem.includes("const { parti, plan, para } = kurulum;") &&
+      !/const para = parti\.unitCostCurrency;/.test(eylem),
+  );
+
   const ekran = yorumsuz(kaynakOku("src/app/satislar/[id]/page.tsx"));
   dogru("satış detayı diyaloğu ÇİZİYOR", ekran.includes("<PartiMaliyetDuzelt"));
   /**
@@ -241,6 +307,57 @@ console.log("\n3) zincir — gövde yazıma ve ekrana BAĞLI mı");
    * durumu olmadan DOLDURULAMAZ hâle gelir.
    */
   dogru("alanlar yerel durumdan besleniyor", /value=\{yeniMaliyet\}/.test(diyalog));
+  /**
+   * ⭐ K378 — BİRİM ALANI YALNIZ PARTİ TAŞIMIYORKEN ÇİZİLİR.
+   * Her zaman çizilseydi dolu bir maliyetin birimi değiştirilebilir sanılırdı
+   * (oysa sunucu partininkini kullanır) — ekran tutamayacağı bir söz verirdi.
+   */
+  dogru("diyalog birimi SORUYOR", /name="paraBirimi"/.test(diyalog));
+  dogru(
+    "birim alanı partinin birimine bağlı",
+    diyalog.includes("const paraSoruluyor = partiParaBirimi === null;") &&
+      /\{paraSoruluyor \? \(/.test(diyalog),
+  );
+  /** ⛔ İKİNCİ ADIM DA TAŞIR — taşımazsa yazım «PARA_BIRIMI_YOK» ile düşer. */
+  yakin(
+    "birim iki adımda da taşınıyor (alan + gizli)",
+    (diyalog.match(/name="paraBirimi"/g) ?? []).length,
+    2,
+  );
+
+  /**
+   * ⭐ K378 — TÜKETİLMEMİŞ PARTİNİN KAPISI. Düzeltme diyaloğu yalnız satış
+   * detayında çiziliyordu; hiç satılmamış bir partiye ulaşmanın yolu YOKTU
+   * (canlı vaka 12.11.2026: o partiden çekilmiş çıkış sayısı 0).
+   */
+  const kart = yorumsuz(kaynakOku("src/app/kart/[variantId]/page.tsx"));
+  dogru("kart açık parti satırında diyaloğu ÇİZİYOR", kart.includes("<PartiMaliyetDuzelt"));
+  dogru(
+    "kartta düğme YALNIZ maliyetsiz partide ve izne bağlı",
+    kart.includes("maliyetDuzeltebilir && parti.birimMaliyet === null"),
+  );
+  dogru(
+    "karttaki düğme PARTİNİN kimliğini geçiyor",
+    /hareketId=\{parti\.hareketId\}/.test(kart),
+  );
+
+  /**
+   * ⭐ K378 — UYARI, YAPILAMAYACAK BİR ŞEY SÖYLEMEZ.
+   * Eski metin «Alım girilirse kâr hesaplanabilir hâle gelir» diyordu; ölçüt
+   * PARTİ bazında olduğu için yeni alım YENİ parti açar ve maliyetsiz parti
+   * yerinde kalır — yani tarif çıkmaza götürüyordu.
+   * _(Anayasa: "kural doğru mu" değil, "kural teslim edilebilir mi".)_
+   */
+  const eylemMetni = (sozluk as unknown as { Uyari: Record<string, string> })
+    .Uyari.eylem_maliyetsizStok;
+  dogru(
+    "uyarı metni ALIM GİRMEYİ çare diye göstermiyor",
+    !eylemMetni.includes("Alım girilirse"),
+  );
+  dogru(
+    "uyarı metni PARTİNİN maliyetine yönlendiriyor",
+    eylemMetni.includes("parti") && eylemMetni.includes("maliyet"),
+  );
 }
 kosanBolumler.push("zincir");
 

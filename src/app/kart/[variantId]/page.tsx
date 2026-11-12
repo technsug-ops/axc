@@ -19,6 +19,7 @@ import { kartVerisiniTopla } from "@/lib/urun-karti-verisi";
 import { izinVarMi, sayfaIzni } from "@/lib/yetki";
 
 import { KanalDesiGuncelle } from "./kanal-desi-guncelle";
+import { PartiMaliyetDuzelt } from "@/app/satislar/[id]/parti-maliyet-duzelt";
 import { pencereOlustur } from "@/lib/donem";
 import { pencereCoz } from "@/lib/liste-suzgeci";
 import { suzgecAdresi } from "@/lib/suzgec";
@@ -135,6 +136,11 @@ export default async function KartSayfasi({
 }) {
   const baglam = await sayfaIzni("urun.gor");
   const karGorunur = await izinVarMi("satis.kar.gor");
+  /**
+   * ⛔ İZİNSİZ KULLANICIYA DÜĞME ÇİZİLMEZ — kapı sunucuda (`yetkiIste`),
+   * görünürlük burada. İkisi ayrı: biri yetkiyi UYGULAR, öteki vaat etmez.
+   */
+  const maliyetDuzeltebilir = await izinVarMi("stok.duzelt");
 
   const { variantId } = await params;
   const veri = await kartVerisiniTopla(variantId);
@@ -552,6 +558,31 @@ export default async function KartSayfasi({
                       ? t("partiMaliyetiBilinmiyor")
                       : p(parti.birimMaliyet, parti.paraBirimi ?? para)}
                   </span>
+                  {/**
+                    * ════════════════════════════════════════════════════
+                    *  ⛔ MALİYETİ BİLİNMEYEN PARTİNİN KAPISI BURADA (K378)
+                    * ----------------------------------------------------
+                    *  Vaka 12.11.2026, canlı: çan "1 ürünün maliyeti
+                    *  bilinmiyor" diyordu ve kullanıcı düzeltemiyordu.
+                    *  Düzeltme diyaloğu YALNIZ `/satislar/[id]`de çiziliyordu,
+                    *  yani bir partiye ancak onu TÜKETMİŞ bir satış üzerinden
+                    *  ulaşılabiliyordu. Bu parti (08.11 sayım fazlası) hiç
+                    *  satılmamıştı — ölçüldü: ondan çekilmiş çıkış sayısı 0.
+                    *  Yani kapı yoktu, kapalı değildi.
+                    *
+                    *  ⭐ İKİ GİRİŞ BİRBİRİNİN TAMAMLAYICISIDIR, KOPYASI DEĞİL:
+                    *  satış detayı TÜKETİLMİŞ partiyi, bu liste TÜKETİLMEMİŞ
+                    *  partiyi kapsar. Gövde (eylem + saf kapı) tek.
+                    *  _(Anayasa İlke #1: eylem, kaydın satırında GÖRÜNÜR durur.)_
+                    * ════════════════════════════════════════════════════
+                    */}
+                  {maliyetDuzeltebilir && parti.birimMaliyet === null ? (
+                    <PartiMaliyetDuzelt
+                      hareketId={parti.hareketId}
+                      mevcutMaliyet={t("partiMaliyetiBilinmiyor")}
+                      partiParaBirimi={parti.paraBirimi ?? null}
+                    />
+                  ) : null}
                   {/**
                     * İlke #4 — kod niteliğindeki değer tek tıkla kopyalanır.
                     * ⚠ KOD YOKSA "BAĞLANAMADI" YAZILMAZ, TİP YAZILIR. Ölçüldü

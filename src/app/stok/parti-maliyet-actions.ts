@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { izYaz } from "@/lib/iz";
 import { satisKarTazele } from "@/lib/kar-yeniden";
 import { yetkiIste } from "@/lib/yetki";
+import type { Currency } from "@/generated/prisma/enums";
 import {
   MALIYET_DUZELTME_EYLEMI,
   maliyetDuzeltmePlani,
@@ -39,6 +40,15 @@ import {
  */
 
 
+/**
+ * ⛔ PARA BİRİMİ KAPALI KÜMEDEN OKUNUR — formdan gelen ham metne güvenilmez.
+ * Tanınmayan değer `null` döner ve saf kapı `PARA_BIRIMI_YOK` ile reddeder;
+ * yani bilinmeyen bir birim sessizce TRY sayılmaz.
+ */
+function paraSec(ham: string): Currency | null {
+  return ham === "TRY" || ham === "EUR" ? ham : null;
+}
+
 async function redMetinleri(redler: DuzeltmeRedSebebi[]): Promise<string[]> {
   const t = await getTranslations("PartiMaliyet");
   return redler.map((r) => t(("red" + r) as never));
@@ -53,6 +63,8 @@ async function planiKur(
   hareketId: string,
   yeniMaliyetMetni: string,
   sebep: string,
+  /** Parti para birimi TAŞIMIYORSA kullanıcının seçtiği birim. */
+  secilenPara: Currency | null,
 ) {
   const parti = await prisma.stockMovement.findUnique({
     where: { id: hareketId },
@@ -77,6 +89,29 @@ async function planiKur(
     },
   });
 
+  /**
+   * ════════════════════════════════════════════════════════════════════
+   *  ⛔ PARA BİRİMİ PARTİDEN GELİR; PARTİ TAŞIMIYORSA **SORULUR** (K378)
+   * --------------------------------------------------------------------
+   *  Vaka 12.11.2026, canlı: TEFAL NE6828'in tek açık partisi 08.11
+   *  sayım fazlasıydı ve maliyetsiz yazılmıştı. Maliyetsiz parti para
+   *  birimini de taşımaz (`unitCostAmount` da `unitCostCurrency` de NULL),
+   *  bu yüzden burada `parti.unitCostCurrency` geçiliyordu ve kapı
+   *  `PARA_BIRIMI_YOK` diyerek **tam da düzeltilmesi gereken partiyi**
+   *  reddediyordu. Ölçüldü: aynı gövde, tek fark para birimi —
+   *      paraBirimi: null → yazilabilir=false  redler=[PARA_BIRIMI_YOK]
+   *      paraBirimi: TRY  → yazilabilir=true   redler=[]
+   *
+   *  ⚠ KAPI GEVŞETİLMEDİ, ÇAĞIRAN DÜZELTİLDİ. "Para birimi olmadan
+   *  yazılmaz" kuralı doğru; eksik olan birimi SORMAKTI.
+   *  _(Anayasa: ilke, kendi kapsamının dışına uygulanırsa hatayı korur.)_
+   *
+   *  ⛔ VE SIRA TERS ÇEVRİLEMEZ: partininki ÖNCE gelir. Dolu bir maliyetin
+   *  para birimi bu ekrandan değiştirilemez — o başka bir karardır.
+   * ════════════════════════════════════════════════════════════════════
+   */
+  const para = parti.unitCostCurrency ?? secilenPara;
+
   const plan = maliyetDuzeltmePlani({
     parti: {
       hareketId: parti.id,
@@ -85,7 +120,7 @@ async function planiKur(
       girenAdet: parti.quantityDelta,
     },
     yeniMaliyetMetni,
-    paraBirimi: parti.unitCostCurrency,
+    paraBirimi: para,
     sebep,
     cikislar: cikislar.map((c) => ({
       hareketId: c.id,
@@ -95,7 +130,7 @@ async function planiKur(
       saleId: c.saleItem?.saleId ?? null,
     })),
   });
-  return { parti, plan };
+  return { parti, plan, para };
 }
 
 /** ÖNİZLEME — hiçbir şey yazmaz, ne olacağını söyler. */
@@ -110,6 +145,7 @@ export async function partiMaliyetiOnizle(
     String(formData.get("hareketId") ?? ""),
     String(formData.get("yeniMaliyet") ?? ""),
     String(formData.get("sebep") ?? ""),
+    paraSec(String(formData.get("paraBirimi") ?? "")),
   );
   if (kurulum === null) return { hatalar: [t("partiBulunamadi")] };
   if (!kurulum.plan.yazilabilir) {
@@ -149,12 +185,12 @@ export async function partiMaliyetiniDuzelt(
     String(formData.get("hareketId") ?? ""),
     String(formData.get("yeniMaliyet") ?? ""),
     sebep,
+    paraSec(String(formData.get("paraBirimi") ?? "")),
   );
   if (kurulum === null) return { hatalar: [t("partiBulunamadi")] };
-  const { parti, plan } = kurulum;
+  const { parti, plan, para } = kurulum;
   if (!plan.yazilabilir) return { hatalar: await redMetinleri(plan.redler) };
 
-  const para = parti.unitCostCurrency;
 
   try {
     /**

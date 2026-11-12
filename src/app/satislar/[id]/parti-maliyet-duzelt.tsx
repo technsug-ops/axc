@@ -45,11 +45,17 @@ import {
 export function PartiMaliyetDuzelt({
   hareketId,
   mevcutMaliyet,
+  partiParaBirimi,
 }: {
   /** Düzeltilecek PARTİNİN hareket kimliği — çıkışın değil. */
   hareketId: string;
   /** Ekranda gösterilen mevcut maliyet metni. */
   mevcutMaliyet: string;
+  /**
+   * Partinin kendi para birimi. `null` ise parti HİÇ taşımıyor demektir
+   * (maliyeti bilinmeyen parti) ve birim SORULUR — varsayılmaz (K378).
+   */
+  partiParaBirimi: "TRY" | "EUR" | null;
 }) {
   const t = useTranslations("PartiMaliyet");
   const [acik, setAcik] = useState(false);
@@ -70,6 +76,12 @@ export function PartiMaliyetDuzelt({
    */
   const [yeniMaliyet, setYeniMaliyet] = useState("");
   const [sebep, setSebep] = useState("");
+  /**
+   * ⚠ VARSAYILAN TRY AMA ALAN GÖRÜNÜR: kullanıcı ne seçtiğini GÖRÜR.
+   * Gizli bir varsayılan, ekranın söylemediği bir karar olurdu.
+   */
+  const [para, setPara] = useState<"TRY" | "EUR">("TRY");
+  const paraSoruluyor = partiParaBirimi === null;
 
   const hatalar = yazim.hatalar ?? onizleme.hatalar ?? [];
   const ozet = yazim.basari ? null : onizleme.onizleme;
@@ -108,6 +120,30 @@ export function PartiMaliyetDuzelt({
               disabled={yazim.basari !== undefined}
             />
           </div>
+          {/**
+            * ⛔ PARA BİRİMİ YALNIZ PARTİ TAŞIMIYORKEN SORULUR (K378).
+            * Maliyeti bilinmeyen parti `unitCostCurrency` de taşımaz ve
+            * kapı "PARA_BIRIMI_YOK" diyerek tam da düzeltilmesi gereken
+            * partiyi reddediyordu. Dolu bir maliyetin para birimi bu
+            * ekrandan DEĞİŞTİRİLEMEZ — o başka bir karardır.
+            */}
+          {paraSoruluyor ? (
+            <div className="space-y-1">
+              <Label htmlFor="paraBirimi">{t("paraBirimi")}</Label>
+              <select
+                id="paraBirimi"
+                name="paraBirimi"
+                className="h-11 w-full rounded-md border bg-transparent px-3 text-sm"
+                value={para}
+                onChange={(e) => setPara(e.target.value as "TRY" | "EUR")}
+                disabled={yazim.basari !== undefined}
+              >
+                <option value="TRY">{t("paraTRY")}</option>
+                <option value="EUR">{t("paraEUR")}</option>
+              </select>
+              <p className="text-muted-foreground text-xs">{t("paraBirimiNotu")}</p>
+            </div>
+          ) : null}
           <div className="space-y-1">
             <Label htmlFor="sebep">{t("sebep")}</Label>
             <Input
@@ -132,6 +168,11 @@ export function PartiMaliyetDuzelt({
             <input type="hidden" name="hareketId" value={hareketId} />
             <input type="hidden" name="yeniMaliyet" value={yeniMaliyet} />
             <input type="hidden" name="sebep" value={sebep} />
+            {/* ⛔ ÖNİZLEME NE GÖRDÜYSE YAZIM DA ONU YAZAR — birim taşınmazsa
+                kapı ikinci adımda reddeder ve kullanıcı sebebini anlamaz. */}
+            {paraSoruluyor ? (
+              <input type="hidden" name="paraBirimi" value={para} />
+            ) : null}
             <p className="text-sm font-medium">{t("onizlemeBaslik")}</p>
             <p className="text-muted-foreground text-sm">
               {t("onizlemeOzeti", {

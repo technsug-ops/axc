@@ -908,6 +908,7 @@ export default async function SatisDetaySayfasi({
                                 <PartiMaliyetDuzelt
                                   hareketId={dusum.sourceMovement.id}
                                   mevcutMaliyet={String(partiMaliyeti(dusum))}
+                                  partiParaBirimi={dusum.unitCostCurrency ?? null}
                                 />
                               ) : null}
                               {/**
@@ -1014,6 +1015,7 @@ export default async function SatisDetaySayfasi({
                               <PartiMaliyetDuzelt
                                 hareketId={dusum.sourceMovement.id}
                                 mevcutMaliyet={String(partiMaliyeti(dusum))}
+                                partiParaBirimi={dusum.unitCostCurrency ?? null}
                               />
                             ) : null}
                             {/* ⛔ TELEFONDA DA VAR — İlke #8 (K376). */}

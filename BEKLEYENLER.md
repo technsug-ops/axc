@@ -13,6 +13,127 @@
 
 ---
 
+## 🔴 K378 — «MALİYETİ BİLİNMİYOR» UYARISI DÜZELTİLEMİYORDU · 12.11.2026 · [YAZILDI — YAYIN BEKLİYOR]
+
+**Kullanıcı 12.11.2026** (çan ekran görüntüsü, kırmızı daire içinde):
+_«1 ürünün maliyeti bilinmiyor — Alım girilirse kâr hesaplanabilir hâle gelir.
+Bu düzeltilemiyor. Nerde problem var?»_
+
+**ÖLÇÜLDÜ — CANLI** (`.env.canli`, salt okuma; 2009 varyant · 16.674 hareket ·
+529 açık parti). Maliyeti boş olan parti **tam olarak bir tane**:
+
+    TEFAL NE6828 Kıyma Makinesi 4'ü 1 Arada 2000 W
+    SKU axcali2192 · Firma SKU KUC-TFL-0014 · barkod 3045380014077
+    08.11.2026  COUNT_CORRECTION  +1  maliyet=NULL   ← tek açık parti
+    ledger 1 = FIFO 1  → iki defter TUTUYOR, bozulma yok
+    o partiden çekilmiş çıkış: 0
+
+Kaynağı 08.11 sayımı: rafta 1 fazla çıkmış, kapanışta sunulan üç yoldan
+(*belge gir* · *maliyetle yaz* · *maliyetsiz yaz*) üçüncüsü seçilmiş. **Sistem
+orada DOĞRU davrandı** — bilmediği maliyeti uydurmadı. Kusur sonrasındaydı.
+
+**ÜÇ AYRI KUSUR, ÜÇÜ DE SESSİZ:**
+
+① **KAPI YANLIŞ YERDE KAPANIYORDU.** `maliyetDuzeltmePlani` şunu diyordu:
+`const para = g.paraBirimi ?? g.parti.birimMaliyetParaBirimi` — ve çağıran
+(`planiKur`) partininkini geçiyordu. Maliyeti bilinmeyen parti **para birimini
+de taşımaz** (`unitCostAmount` da `unitCostCurrency` de NULL), dolayısıyla kapı
+`PARA_BIRIMI_YOK` deyip **tam da düzeltilmesi gereken partiyi** reddediyordu.
+Canlı partinin gerçek değerleriyle ölçüldü, aynı gövde, tek fark birim:
+
+    paraBirimi: null → yazilabilir=false  redler=[PARA_BIRIMI_YOK]
+    paraBirimi: TRY  → yazilabilir=true   redler=[]
+
+⚠ **KAPI GEVŞETİLMEDİ, ÇAĞIRAN DÜZELTİLDİ.** _«Para birimi olmadan yazılmaz»_
+kuralı doğru; eksik olan birimi **SORMAKTI**. _(Anayasa: ilke, kendi kapsamının
+dışına uygulanırsa koruduğu şey doğruluk değil hatanın kendisi olur.)_
+
+② **KAPI ZATEN YOKTU.** K127'nin düzeltme diyaloğu **yalnız `/satislar/[id]`**
+ekranında çiziliyordu — yani bir partiye ancak onu TÜKETMİŞ bir satış üzerinden
+ulaşılabiliyordu. Bu parti hiç satılmamıştı (çıkış sayısı **0**), hiçbir satış
+detayında görünmüyordu. Kapı kapalı değildi; **hiç yoktu.**
+
+③ **UYARI METNİ ÇIKMAZA GÖTÜRÜYORDU.** _«Alım girilirse kâr hesaplanabilir hâle
+gelir»_ — ama ölçüt PARTİ bazında (`kalanAdet > 0 && birimMaliyet === null`) ve
+yeni bir alım **YENİ parti** açar; maliyetsiz parti yerinde kalır. Yani
+kullanıcıya söylenen şey yapılsaydı bile uyarı sönmezdi.
+_(Anayasa: «kural doğru mu» değil, «kural teslim edilebilir mi».)_
+
+**YAPILAN — ÜÇ HALKA, YENİ YETENEK YOK:**
+· **birim partide yoksa SORULUYOR** — `planiKur(..., secilenPara)` ve
+  `parti.unitCostCurrency ?? secilenPara`; önizleme de yazım da aynı gövdeden
+  okuyor, kapalı küme (`TRY|EUR`), tanınmayan değer sessizce TRY sayılmıyor
+· **kârlılık kartının «Açık partiler» listesine kapı** — maliyeti bilinmeyen
+  satırda «Maliyet gir» düğmesi (İlke #1: eylem kaydın satırında GÖRÜNÜR durur)
+· **uyarı metni** gerçek çareyi söylüyor: _«Stokta duran partinin birim
+  maliyetini girin — yeni alım bu partiyi kapatmaz»_
+
+⚠ **İKİ GİRİŞ BİRBİRİNİN TAMAMLAYICISI, KOPYASI DEĞİL:** satış detayı
+**tüketilmiş** partiyi, kart listesi **tüketilmemiş** partiyi kapsar. Gövde
+(saf kapı + sunucu eylemi) **tek**; iki yerde iki koşul yazılsaydı biri yazarken
+öteki reddederdi.
+⚠ **SIRA TERS ÇEVRİLEMEZ:** partinin kendi birimi ÖNCE gelir. Dolu bir
+maliyetin para birimi bu ekrandan **değiştirilemez** — o başka bir karardır ve
+mutasyonla da kapatıldı.
+⚠ **MEVCUT KORUMALAR YERİNDE:** iki adım (önizleme → onay kutusu), sebep
+zorunlu, `MALIYET_DUZELTME_EYLEMI` izi (eski + yeni + sebep), çıkışların da
+damgalanması ve etkilenen satışların kârının tazelenmesi — hiçbirine
+dokunulmadı.
+⚠ **ŞEMA DEĞİŞMEDİ, YENİ İZİN YOK** — yazma zaten `stok.duzelt`; canlı izin
+senkronu işi YOK.
+
+**BEKÇİ:** `parti-maliyeti:dogrula` **39 → 55** ölçüt (saf kapı değer testiyle,
+zincir kullanım bloğuna daraltılarak). Yeni harness
+`parti-maliyeti-mutasyon:kontrol` — **11/11**, üç yönden:
+zararsız yorum **YEŞİL** · birimi yine partiden okuyan · yazım birimi plandan
+okumayan · yazım yolu birimi hiç sormayan · birim alanını hiç çizmeyen ·
+karttaki kapıyı kaldıran · uyarı metnini eski çıkmaza döndüren **KIRMIZI** ·
+ve ters yön: seçilen birim partininkini ezen · çöp değeri TRY sayan · birim
+alanını her zaman çizen · düğmeyi izinsize de çizen **KIRMIZI**.
+⚠ Harness'in kendi sağlaması yapıldı: zararsız mutasyon yeşil verdi, yani
+«hiçbir şey koşmayan mükemmel harness» değil.
+
+**AÇIK — KAPANMADI:**
+① **Ekran gerçek cihazda GÖRÜLMEDİ.** `tsc` 0 · bekçi 55/55 · mutasyon 11/11
+   hiçbiri ekranın ÇİZİLDİĞİNİ kanıtlamaz. _(Sınanmamış ekran, ekran değildir.)_
+② **TEFAL partisinin maliyeti HENÜZ GİRİLMEDİ** — gerçek rakamı kullanıcı bilir.
+   Aynı varyantın son alımları: **4.559,10 · 4.599,10 · 4.624,10 · 4.630,11**
+   (08.05.2026). ⛔ Bu rakamlar **yer tutucu değil referans**; sistem hiçbirini
+   varsaymaz, kullanıcı faturadan/kasadan okuduğunu girer.
+③ **Sayım kapanışındaki «maliyetsiz yaz» yolu DURUYOR ve DOĞRU.** Maliyeti
+   bilmeden sayım yazmak meşrudur; değişen şey artık o partinin **sonradan
+   kapatılabilir** olması — yani kapanamayan madde sınıfından çıktı.
+④ **GEÇMİŞE DOKUNULMADI ve dokunulacak bir şey de yok:** 529 açık partinin
+   528'inde maliyet dolu (ölçüldü). Geri doldurma kalemi AÇILMADI.
+
+**HALİL TEST LİSTESİ — tıklama düzeyinde:**
+1. Canlı adreste çanı aç → _«1 ürünün maliyeti bilinmiyor»_ satırının altındaki
+   cümle artık **«Stokta duran partinin birim maliyetini girin — yeni alım bu
+   partiyi kapatmaz»** yazmalı (eski «Alım girilirse…» cümlesi GİTMİŞ olmalı).
+2. Satıra tıkla → `/stok?maliyet=yok` açılmalı ve listede **TEFAL NE6828**
+   (`axcali2192`) görünmeli; başka ürün OLMAMALI.
+3. Ürüne gir → `/stok/<varyant>` → «Mevcut stok» kutusunda **1** yazmalı ve
+   altında «Partilerin maliyeti bilinmiyor» benzeri bir satır olmalı.
+4. Kutuya tıkla → kârlılık kartının **«Açık partiler»** bölümüne inmeli.
+   Tek satır olmalı: **08.11.2026 · 1 adet · maliyet bilinmiyor** ve yanında
+   **kalem ikonlu «Düzelt» düğmesi** GÖRÜNMELİ. _(Düğme yoksa test DÜŞER.)_
+5. Düğmeye bas → diyalog açılmalı ve **«Para birimi» alanı GÖRÜNMELİ**
+   (TRY seçili), altında «bu partinin para birimi kayıtlı değil» notu olmalı.
+6. Yeni maliyete gerçek rakamı yaz, sebebe nereden bildiğini yaz
+   (ör. «Amazon faturası 08.11»), **Önizle**'ye bas → özet çıkmalı ve
+   **«0 çıkış · 0 satış»** demeli (bu partiden hiç satış yapılmamış).
+7. Onay kutusunu işaretle → **Uygula** → yeşil başarı satırı çıkmalı.
+8. ⚠ **ASIL ÖLÇÜT:** çanı yeniden aç → _«maliyeti bilinmiyor»_ uyarısı
+   **TAMAMEN SÖNMÜŞ** olmalı. Sönmüyorsa test DÜŞER.
+9. Aynı diyaloğu **bir satışın** parti satırından aç (maliyeti DOLU bir parti) →
+   orada **«Para birimi» alanı ÇIKMAMALI**. Çıkıyorsa test DÜŞER.
+10. Telefonda 4–8 arası adımları tekrarla (İlke #8): diyalog açılmalı, alanlar
+    doldurulabilmeli, düğmeler parmakla basılabilir olmalı.
+
+**mobil doğrulama kullanıcıda.**
+
+---
+
 ## 🔴 K377 — RAF ETİKETLERİ SÜZÜLEMİYORDU: YA HEPSİ YA HİÇBİRİ · 11.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 11.11.2026** (iki ekran görüntüsü: 67 etiketlik `/ayarlar/konumlar/etiketler`
