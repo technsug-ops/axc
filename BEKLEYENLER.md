@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K378 — «MALİYETİ BİLİNMİYOR» UYARISI DÜZELTİLEMİYORDU · 12.11.2026 · [YAZILDI — YAYIN BEKLİYOR]
+## 🔴 K378 — «MALİYETİ BİLİNMİYOR» UYARISI DÜZELTİLEMİYORDU · 12.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 12.11.2026** (çan ekran görüntüsü, kırmızı daire içinde):
 _«1 ürünün maliyeti bilinmiyor — Alım girilirse kâr hesaplanabilir hâle gelir.
@@ -92,6 +92,25 @@ ve ters yön: seçilen birim partininkini ezen · çöp değeri TRY sayan · bir
 alanını her zaman çizen · düğmeyi izinsize de çizen **KIRMIZI**.
 ⚠ Harness'in kendi sağlaması yapıldı: zararsız mutasyon yeşil verdi, yani
 «hiçbir şey koşmayan mükemmel harness» değil.
+
+**YAYIMLANDI 13.11.2026** — kullanıcı «yayınla» dedi; `main` `gelistirme`ye
+ileri sarıldı (`ad8e5376..81e30ef1`, üç commit: K377 pano notu + K378 feat +
+K378 fix).
+**Yayın ölçümü:** `dpl_8VSAPkL5wb9iKB34xMXr7DF7RH5S` **READY** (fra1, **49 sn**) ·
+`bezirga.com` → `deploymentId` **o dağıtım** (Vercel'in kendi alias kaydından
+okundu, `aliasError: null`) · `/giris` **200** · `/stok?maliyet=yok` ve
+`/kart/3a0cb9d4-…` **307** (girişe yönlendirme — korumalı, beklenen: yani rota
+ÇÖZÜLÜYOR ve süzgeç parametresi 404 üretmiyor) · push kapısı turu **173/173
+yeşil İKİ KEZ** (`gelistirme` 599 sn · `main` 858 sn; çıkış kodu **dosyadan**
+okundu, borudan değil) · `canli:yetki` ✓ «tam yetkili rollerin hiçbirinde eksik
+izin yok» (CEO 34/34 · Sahip 34/34; bu pakette yeni izin zaten yoktu).
+⛔ **307, EKRANIN ÇİZİLDİĞİNİ KANITLAMAZ** — yalnız rotanın var olduğunu söyler.
+«Maliyet gir» düğmesi ve para birimi alanı GERÇEK CİHAZDA görülmedi; yayın,
+Halil testinin yerine GEÇMEZ.
+⚠ **BİR ÖLÇÜM YAPILAMADI VE ÖYLE YAZILIYOR:** dağıtımın kendi adresi
+(`axc-5putu6fu2…`) her yolda **302** döndürdüğü için canlı domain ile varlık
+parmak izi kıyası kurulamadı — sonuç «farklı» değil, **ölçülemedi**. Hüküm
+Vercel'in alias kaydına ve READY damgasına dayanıyor.
 
 **AÇIK — KAPANMADI:**
 ① **Ekran gerçek cihazda GÖRÜLMEDİ.** `tsc` 0 · bekçi 55/55 · mutasyon 11/11
