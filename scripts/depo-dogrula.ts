@@ -21,7 +21,7 @@ import { code128B, code128Genisligi, code128Yol } from "../src/lib/depo/code128"
 import { rafEtiketiSvg } from "../src/lib/depo/etiket";
 import { rafKoduGecerliMi } from "../src/lib/kimlik";
 import { IZ_SKU_TAVANI, izListesi, tasimaKarari } from "../src/lib/depo/tasima";
-import { yerlestirmeKarari } from "../src/lib/depo/yerlestirme";
+import { oturumToplamAdedi, yerlestirmeKarari } from "../src/lib/depo/yerlestirme";
 import {
   eskiRaflar,
   gocPlani,
@@ -48,6 +48,8 @@ let gecen = 0;
 let kalan = 0;
 /** K375 bölümünün KOŞTUĞUNU kanıtlayan bayrak — özet bunu sorar. */
 let k375Kostu = false;
+/** K379 (yerleştirmede stok adedi) bölümünün KOŞTUĞUNU kanıtlayan bayrak. */
+let k379Kostu = false;
 
 function kontrol(ad: string, sonuc: boolean, gorulen?: unknown) {
   if (sonuc) {
@@ -1325,11 +1327,198 @@ async function etiketKontrolleri() {
     k375Kostu = true;
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     K379 — YERLEŞTİRMEDE STOK ADEDİ (kullanıcı 15.11.2026)
+     ----------------------------------------------------------------------
+     «Okuttukça isimlerini yazıyor fakat o üründen stok adedi çıkmıyor;
+     doğru sayıda yerleştirdim mi görmek için çıkıp stoklara bakıyorum.»
+     Rakam sistemde VARDI, ekran söylemiyordu.
+
+     ⛔ EKRAN HÂLÂ STOK YAZMIYOR — yalnız OKUYOR. Yukarıdaki "stok hareketi
+     YAZILMIYOR" ölçütü yerinde duruyor; bu bölüm onu gevşetmez.
+     ═══════════════════════════════════════════════════════════════════════ */
+  {
+    /* ── ① SAF GÖVDE — DEĞER TESTİ (kaynak taraması YOK) ─────────────── */
+    kontrol(
+      "oturum toplamı: tek okuma = o ürünün adedi",
+      oturumToplamAdedi([{ sku: "A", stok: 3 }]) === 3,
+    );
+    kontrol(
+      "  ...iki FARKLI ürün toplanır",
+      oturumToplamAdedi([{ sku: "A", stok: 3 }, { sku: "B", stok: 4 }]) === 7,
+    );
+    /**
+     * ⛔ ÖRNEK AYRIMIN İKİ YAKASINI GÖSTERİR: körlemesine toplama 10 derdi,
+     * tekilleştiren gövde 7. Aynı sonucu veren bir örnekle sınansaydı
+     * tekilleştirmeyi kaldıran mutasyon KAÇARDI.
+     */
+    kontrol(
+      "  ...AYNI ürün iki kez okutulunca BİR kez sayılır",
+      oturumToplamAdedi([
+        { sku: "A", stok: 3 },
+        { sku: "B", stok: 4 },
+        { sku: "A", stok: 3 },
+      ]) === 7,
+    );
+    /**
+     * ⚠ HANGİ OKUMANIN KAZANDIĞI DA AYRILIR: liste en yeniden eskiye sıralı,
+     * ilk görülen kazanır. Üç okuma üç ayrı sonuç verir (2 · 9 · 11) — örnek
+     * bu yüzden FARKLI stoklarla kuruldu.
+     */
+    kontrol(
+      "  ...ve EN YENİ okuma geçerli (ilk satır kazanır)",
+      oturumToplamAdedi([{ sku: "A", stok: 2 }, { sku: "A", stok: 9 }]) === 2,
+    );
+    kontrol(
+      "  ...sıfır stok toplamı bozmaz",
+      oturumToplamAdedi([{ sku: "A", stok: 0 }, { sku: "B", stok: 5 }]) === 5,
+    );
+    kontrol("  ...boş oturum sıfır", oturumToplamAdedi([]) === 0);
+
+    /* ── ② STOK GÖVDESİ — DOĞRU RAF ALANI ───────────────────────────── */
+    /**
+     * ⛔ İKİ `locationId` VAR VE BİRBİRİNE BENZİYOR:
+     *   `StockMovement.locationId`  = malın KAYIT ANINDA girdiği raf (geçmiş)
+     *   `ProductVariant.locationId` = ürünün BUGÜN durduğu raf (bu ekran)
+     * Yanlışı seçilseydi TAŞINMIŞ bir ürünün adedi ESKİ rafta görünmeye
+     * devam ederdi: rakam makul çıkar, raf tutmazdı.
+     */
+    const stokGovdesi = yorumsuz(kaynakOku("src/lib/stok.ts"));
+    const rafBas = stokGovdesi.indexOf("export async function raftakiToplamAdet");
+    kontrol("`raftakiToplamAdet` gövdesi var", rafBas >= 0);
+    /** ⚠ PENCERE ÖLÇÜLDÜ: gövde ~230 karakter, pencere 500 — büyürse güncellenir. */
+    const rafGovdesi = rafBas < 0 ? "" : stokGovdesi.slice(rafBas, rafBas + 500);
+    kontrol(
+      "  ...VARYANTIN GÜNCEL rafından sayıyor",
+      /where: \{ variant: \{ locationId: rafId, isActive: true \} \}/.test(rafGovdesi),
+    );
+    kontrol(
+      "  ...hareketin KENDİ raf damgasını KULLANMIYOR",
+      !/where: \{ locationId: rafId/.test(rafGovdesi),
+    );
+    /** ⚠ PASİF VARYANT DIŞARIDA — ürün sayısıyla AYNI küme; yoksa satır kendi içinde çelişir. */
+    kontrol("  ...ve pasif varyantı saymıyor", /isActive: true/.test(rafGovdesi));
+
+    /* ── ③ SUNUCU EYLEMİ ────────────────────────────────────────────── */
+    const kiBlok = eylemBloku("koduIsle");
+    kontrol("`koduIsle` bloğu bulundu (taban dolu)", kiBlok.length > 500, kiBlok.length);
+    /**
+     * ⛔ STOK MATEMATİĞİ ORTAK GÖVDEDEN. Ekran kendi `groupBy`ını yazsaydı
+     * "stok nasıl hesaplanıyor" sorusunun İKİNCİ bir cevabı doğardı.
+     */
+    kontrol(
+      "  ...stok adedi ORTAK gövdeden (`varyantStogu`)",
+      /varyantStogu\(varyant\.id\)/.test(kiBlok),
+    );
+    kontrol(
+      "  ...raf toplamı ORTAK gövdeden (`raftakiToplamAdet`)",
+      /raftakiToplamAdet\(hedef\.id\)/.test(kiBlok),
+    );
+    kontrol(
+      "  ...ve dosya KENDİ stok sorgusunu yazmıyor",
+      !/stockMovement\.(groupBy|aggregate)/.test(yY),
+    );
+    /**
+     * ⛔ ÖLÇÜLEN DEĞER CEVABA KONUR — hesaplanıp atılan bir sayı ekrana
+     * ulaşmaz ve hiçbir şey hata vermez (zincirin ORTA halkası).
+     */
+    kontrol("  ...stok adedi CEVABA konuyor", /\n    stokAdedi,/.test(kiBlok));
+    kontrol("  ...raf toplamı CEVABA konuyor", /\n    rafToplamAdedi,/.test(kiBlok));
+    /** ⚠ SIRA: rakamlar YAZIMDAN SONRA ölçülür, yoksa ekran bir okuma geride kalır. */
+    const yazimBas = kiBlok.indexOf("productVariant.update({");
+    const olcumBas = kiBlok.indexOf("raftakiToplamAdet(hedef.id)");
+    kontrol(
+      "  ...ve ölçüm YAZIMDAN SONRA (sıra)",
+      yazimBas >= 0 && olcumBas > yazimBas,
+    );
+    /**
+     * ⛔ RAF ÖZETİ TEK GÖVDEDEN: üç dal kendi özetini yazsaydı, biri
+     * `isActive` süzgecini unuttuğu gün "2 ürün · 9 adet" gibi kendi içinde
+     * çelişen bir satır doğar ve hiçbir şey hata vermezdi.
+     */
+    kontrol(
+      "raf özeti TEK gövdeden kuruluyor",
+      (yY.match(/await rafOzeti\(raf\)/g) ?? []).length === 2,
+    );
+    kontrol(
+      "  ...çıplak özet BAŞKA yerde YOK (desen yasağı)",
+      (yY.match(/urunSayisi: raf\._count\.variants/g) ?? []).length === 1,
+    );
+    kontrol(
+      "  ...ve özet TOPLAM ADEDİ taşıyor",
+      /toplamAdet: await raftakiToplamAdet\(raf\.id\)/.test(yY),
+    );
+
+    /* ── ④ EKRAN — RAKAM ÇİZİLİYOR MU ───────────────────────────────── */
+    /**
+     * ⛔ KULLANIM BLOĞUNA DARALTILDI. Render dalını `{false ? (` yapan bir
+     * mutasyon, desen dosyada kaldığı için dosya genelinde aranan ölçütten
+     * kaçardı — bu deponun en sık tekrarlayan körlüğü.
+     * ⚠ PENCERE ÖLÇÜLDÜ: liste gövdesi ~1700 karakter, pencere 2600.
+     */
+    const listeBas = yEkran.indexOf("{gecmis.map(");
+    kontrol("geçmiş listesi gövdesi bulundu", listeBas >= 0);
+    const listeBlok = listeBas < 0 ? "" : yEkran.slice(listeBas, listeBas + 2600);
+    kontrol(
+      "  ...satırda STOK ADEDİ çiziliyor",
+      /t\("stokAdedi", \{ adet: g\.stok \}\)/.test(listeBlok),
+    );
+    /**
+     * ⛔ KOŞUL VE SONUÇ AYNI DESENDE: koşulu öldüren mutasyon, renk sabitleri
+     * dosyada durduğu için AYRI AYRI aranan bir ölçütten kaçardı. Sıfır/eksi
+     * stok UYARI rengiyle yazar — gizlenmez (İlke #5).
+     */
+    kontrol(
+      "  ...sıfır/eksi stok UYARI rengiyle",
+      /g\.stok > 0 \? DURUM_YAZISI\.olumlu : DURUM_YAZISI\.uyari/.test(listeBlok),
+    );
+    /** ⚠ TOPLAM SAF GÖVDEDEN — elle `reduce` ikinci bir cevap üretirdi. */
+    kontrol(
+      "oturum toplamı SAF gövdeden geliyor",
+      /toplam: oturumToplamAdedi\(gecmis\)/.test(yEkran),
+    );
+    kontrol("  ...ve ekranda elle toplama YOK", !/gecmis\.reduce\(/.test(yEkran));
+    /** ⚠ RAF KUTUSU İKİ RAKAMI BİRLİKTE YAZAR: kaç KALEM · kaç PARÇA. */
+    kontrol(
+      "raf kutusu TOPLAM ADEDİ de yazıyor",
+      /t\("rafDoluluk", \{ adet: raf\.urunSayisi, toplam: raf\.toplamAdet \}\)/.test(yEkran),
+    );
+    /**
+     * ⛔ EKRAN TAZELENİR: yazımdan sonra gelen sayılar duruma işlenmezse raf
+     * kutusu bir okuma GERİDE kalır ve operatör eski rakamla karşılaştırır.
+     */
+    kontrol(
+      "  ...yazımdan sonra raf toplamı TAZELENİYOR",
+      /toplamAdet: cevap\.rafToplamAdedi/.test(yEkran),
+    );
+    kontrol("  ...ve satıra stok YAZILIYOR", /stok: cevap\.stokAdedi/.test(yEkran));
+
+    /* ── ⑤ SÖZLÜK — METİN KODA GÖMÜLÜ DEĞİL ─────────────────────────── */
+    const sozlukY = (
+      JSON.parse(kaynakOku("messages/tr.json")) as {
+        Yerlestir: Record<string, string>;
+      }
+    ).Yerlestir;
+    kontrol("`stokAdedi` metni sözlükte", (sozlukY.stokAdedi ?? "").includes("{adet}"));
+    kontrol(
+      "`rafDoluluk` iki rakamı da anlatıyor",
+      (sozlukY.rafDoluluk ?? "").includes("{adet}") &&
+        (sozlukY.rafDoluluk ?? "").includes("{toplam}"),
+    );
+    kontrol(
+      "`gecmisBasligi` toplamı anlatıyor",
+      (sozlukY.gecmisBasligi ?? "").includes("{toplam}"),
+    );
+
+    k379Kostu = true;
+  }
+
   /**
    * ⛔ BLOK KOŞMADIYSA "GEÇTİ" DENMEZ. Ölçüt bloğu özetten ÖNCE koşar; bir
    * gün sıra bozulur ya da erken dönülürse bekçi GEÇERSİZ der, yeşil değil.
    */
   kontrol("K375 form sıfırlama bölümü KOŞTU", k375Kostu);
+  kontrol("K379 stok adedi bölümü KOŞTU", k379Kostu);
 
   console.log("");
   console.log("=".repeat(70));

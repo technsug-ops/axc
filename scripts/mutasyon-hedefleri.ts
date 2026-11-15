@@ -139,6 +139,16 @@ export function gercekCakismaGruplari(npmAdlari: string[]): string[][] {
  * KIRMIZI yanar.
  */
 export const SIRALI_MUTASYON_GRUP: readonly string[] = [
+  /* 15.11.2026 (K379): yerlestirme ekrani artik okutulan urunun STOK ADEDINI
+     ve rafin TOPLAM adedini gosteriyor. Harness bu yuzden `src/lib/stok.ts`i
+     (raf toplami gövdesi) ve `src/lib/depo/yerlestirme.ts` · `src/app/
+     yerlestir/actions.ts` · `src/app/yerlestir/yerlestirici.tsx` dosyalarini
+     mutasyona ugratiyor. `stok.ts` neredeyse her liste/panel denetiminin
+     hedefinde, yerlestirme dosyalari da `kod-cozumu` ve `okuyucu-duzeltme`
+     harness'lerinin hedefinde — paralel kosarlarsa biri otekinin MUTANTINI
+     "asil" sanip geri yazar ve iki olcum birden sessizce anlamsizlasir.
+     ⚠ Bedeli olculdu ve kucuk: bekci 3 sn, tur 17 mutasyonla ~1 dk. */
+  "depo-formu-mutasyon:kontrol",
   /* 12.11.2026 (K378): maliyeti bilinmeyen partiye maliyet girme yolu acildi.
      Harness DORT dosyayi mutasyona ugratiyor: `messages/tr.json` (uyari eylem
      metni) · `src/app/kart/[variantId]/page.tsx` (karttaki yeni kapi) ·

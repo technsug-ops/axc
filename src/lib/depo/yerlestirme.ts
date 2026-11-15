@@ -74,3 +74,35 @@ export function yerlestirmeKarari(g: YerlestirmeGirdisi): YerlestirmeKarari {
  * gün derlemeyi sınamıyordu (K48).
  */
 export const YERLESTIRME_EYLEMI = "URUN_YERLESTIRILDI";
+
+
+/**
+ * ============================================================================
+ *  OTURUM TOPLAMI (K379) — SAF
+ * ----------------------------------------------------------------------------
+ *  "Bu oturumda yerleştirilen 2 ürün · toplam 7 adet" satırının rakamı.
+ *
+ *  ⛔ AYNI SKU İKİ KEZ SAYILMAZ. Operatör bir ürünü ikinci kez okutabilir
+ *  (yanlış rafa koyduğunu fark edip düzeltmek, ya da doğrulamak için) ve
+ *  liste İKİ satır gösterir — ama o ürünün defterdeki adedi YİNE AYNI
+ *  adettir. Satırlar körlemesine toplansaydı ekrandaki toplam, elindeki
+ *  fiziksel parça sayısından FAZLA çıkardı ve operatör eksik yerleştirdiğini
+ *  sanırdı: yani rakam, düzeltmek için var olduğu hatayı üretirdi.
+ *
+ *  ⚠ EN YENİ OKUMA GEÇERLİDİR — liste en yeniden eskiye sıralı ve ilk
+ *  görülen SKU kazanır. Arada stok değişmişse (başka ekranda satış girildi)
+ *  doğru olan sonuncu ölçümdür.
+ * ============================================================================
+ */
+export function oturumToplamAdedi(
+  satirlar: readonly { sku: string; stok: number }[],
+): number {
+  const gorulen = new Set<string>();
+  let toplam = 0;
+  for (const satir of satirlar) {
+    if (gorulen.has(satir.sku)) continue;
+    gorulen.add(satir.sku);
+    toplam += satir.stok;
+  }
+  return toplam;
+}

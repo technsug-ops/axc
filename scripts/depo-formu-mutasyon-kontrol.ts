@@ -32,6 +32,11 @@ const EKRAN = "src/app/ayarlar/depo/depo-formu.tsx";
 const GOC_EKRAN = "src/app/ayarlar/depo/goc/goc-formu.tsx";
 const EYLEM = "src/app/ayarlar/depo/eylemler.ts";
 const GOC_EYLEM = "src/app/ayarlar/depo/goc/eylemler.ts";
+/* K379 (15.11.2026) — yerleştirmede stok adedi. */
+const STOK = "src/lib/stok.ts";
+const SAF = "src/lib/depo/yerlestirme.ts";
+const YER_EYLEM = "src/app/yerlestir/actions.ts";
+const YER_EKRAN = "src/app/yerlestir/yerlestirici.tsx";
 
 type Mutasyon = {
   ad: string;
@@ -112,6 +117,82 @@ const MUTASYONLAR: Mutasyon[] = [
     koy: '        else if (yol.endsWith(".YOKTUR")) dosyalar.push(yol.split("\\\\").join("/"));',
     bozdugu:
       "bos kume her kosulu saglar; desen yasagi hicbir sey olcmeden YESIL yanar (every kapisinin tarama hali)",
+  },
+  /* ═══ K379 — YERLEŞTİRMEDE STOK ADEDİ (15.11.2026) ═══════════════════
+     Kullanıcı: «okuttukça isimlerini yazıyor fakat o üründen stok adedi
+     çıkmıyor; doğru sayıda yerleştirdim mi görmek için çıkıp stoklara
+     bakıyorum.» Rakam sistemde vardı, ekran söylemiyordu. */
+  {
+    ad: "RAF TOPLAMI YANLIS ALANDAN - hareketin KENDI raf damgasi",
+    yon: "FAZLADAN",
+    dosya: STOK,
+    bul: "    where: { variant: { locationId: rafId, isActive: true } },",
+    koy: "    where: { locationId: rafId },",
+    bozdugu:
+      "StockMovement.locationId KAYIT ANINDAKI raftir: tasinmis urunun adedi ESKI rafta gorunmeye devam eder - rakam makul cikar, raf tutmaz",
+  },
+  {
+    ad: "STOK ADEDI HIC OLCULMUYOR - sabit sifir doner",
+    yon: "KALDIRAN",
+    dosya: YER_EYLEM,
+    bul: "    varyantStogu(varyant.id),",
+    koy: "    Promise.resolve(0),",
+    bozdugu:
+      "ekran her urune '0 adet' der; operator defteri bos sanip gereksiz sayim acar",
+  },
+  {
+    ad: "OLCULDU AMA CEVABA KONMADI - zincirin ORTA halkasi koptu",
+    yon: "KALDIRAN",
+    dosya: YER_EYLEM,
+    bul: "    stokAdedi,\n    rafToplamAdedi,",
+    koy: "    rafToplamAdedi,",
+    bozdugu:
+      "sayi hesaplanir ve atilir; ekrana ulasmaz ve hicbir sey hata vermez",
+  },
+  {
+    ad: "SATIRDA STOK ROZETI HIC CIZILMIYOR",
+    yon: "KALDIRAN",
+    dosya: YER_EKRAN,
+    bul: '                    {t("stokAdedi", { adet: g.stok })}',
+    koy: "                    {null}",
+    bozdugu:
+      "kullanicinin istedigi rakam ekrandan kalkar; sunucu dogru olcer, kimse gormez",
+  },
+  {
+    ad: "SIFIR STOK YESIL GORUNUYOR - uyari rengi dustu",
+    yon: "FAZLADAN",
+    dosya: YER_EKRAN,
+    bul: "                      g.stok > 0 ? DURUM_YAZISI.olumlu : DURUM_YAZISI.uyari",
+    koy: "                      DURUM_YAZISI.olumlu",
+    bozdugu:
+      "defter 0 derken elinde urun olan satir 'olumlu' gorunur; bulgu sessizce normal gibi okunur (Ilke #5)",
+  },
+  {
+    ad: "OTURUM TOPLAMI ELLE HESAPLANIYOR - saf govde atlandi",
+    yon: "FAZLADAN",
+    dosya: YER_EKRAN,
+    bul: "              toplam: oturumToplamAdedi(gecmis),",
+    koy: "              toplam: gecmis.reduce((a, g) => a + g.stok, 0),",
+    bozdugu:
+      "ayni urun iki kez okutulunca adedi IKI kez sayilir; toplam fiziksel parcadan FAZLA cikar",
+  },
+  {
+    ad: "TEKILLESTIRME KALKTI - ayni SKU iki kez sayiliyor",
+    yon: "KALDIRAN",
+    dosya: SAF,
+    bul: "    if (gorulen.has(satir.sku)) continue;",
+    koy: "",
+    bozdugu:
+      "saf govdenin tek isi buydu; toplam, duzeltmek icin var oldugu hatayi uretir",
+  },
+  {
+    ad: "K379 BOLUMU HIC KOSMADI - bayrak dusuruldu",
+    yon: "KALDIRAN",
+    dosya: BEKCI,
+    bul: "    k379Kostu = true;",
+    koy: "",
+    bozdugu:
+      "olcut blogu kosmadan ozet 'gecti' der; stok adedi olcutlerinin hicbiri okunmaz",
   },
   {
     ad: "BOLUM HIC KOSMADI — bayrak dusuruldu",

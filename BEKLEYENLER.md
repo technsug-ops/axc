@@ -13,6 +13,109 @@
 
 ---
 
+## 🔴 K379 — YERLEŞTİRMEDE STOK ADEDİ GÖRÜNMÜYORDU: DOĞRULAMAK İÇİN `/stok`A ÇIKMAK GEREKİYORDU · 15.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 15.11.2026** (telefon ekran görüntüsü; «Bu oturumda yerleştirilen 2
+ürün» listesi kırmızı daire içinde): _«Bu ekran Yerleştirme ekranı, yeni raflara
+ürünleri yerleştiriyorum. Burada okuttukça isimlerini yazıyor fakat o üründen
+stok adedi çıkmıyor; dolayısıyla doğru sayıda ürünü o rafa yerleştirdim mi
+görmek için çıkıp stoklara bakıyorum.»_
+
+**ÖLÇÜLDÜ — RAKAM SİSTEMDE VARDI, EKRAN SÖYLEMİYORDU.** `/yerlestir` bilerek
+yalnız **konum** yazıyor (`ProductVariant.locationId`); stok defterine hiç
+dokunmuyor ve bu DEĞİŞMEDİ. Eksik olan yetenek değil, **söylemekti**: bir varyant
+TEK rafta durduğu için o varyantın defterdeki adedi = o rafta fiziken bulunması
+gereken parça sayısıdır. Yani operatörün aradığı cevap bir sorgu uzaktaydı ve her
+doğrulama için ekrandan çıkmak gerekiyordu (İlke #9: bir bilgiye ulaşmak için
+başka ekrana gitmek ZORUNLUYSA, o bilgi muhtemelen burada da olmalıdır).
+
+**YAPILAN — ÜÇ RAKAM, HEPSİ OKUMA:**
+· **satır başına stok** — okutulan her ürünün yanında `3 adet`; kaynağı ortak
+  stok gövdesi (`varyantStogu`, `src/lib/stok.ts`), yani `/stok` ekranıyla
+  **birebir aynı** sayı. Ekran kendi `groupBy`ını yazmıyor
+· **rafın toplamı** — raf kutusu artık «Bu rafta **2 ürün** kayıtlı · defterde
+  toplam **7 adet**» diyor: kaç KALEM olduğunu ve kaç PARÇA olması gerektiğini
+  birlikte söylüyor. Önceki oturumlarda yerleştirilenler de dahil olduğu için
+  rafın tamamı fiziksel rafla karşılaştırılabiliyor
+· **oturumun toplamı** — «Bu oturumda yerleştirilen 2 ürün · toplam 7 adet»
+  (İlke #15: tek tek gösterilen yerde toplam da olur)
+
+⚠ **SIFIR VE EKSİ GİZLENMEZ, UYARI RENGİYLE YAZAR.** Elinde ürün varken defter
+`0` diyorsa bu bir **bulgudur**, eksiklik değil — satır turuncu yazar ve
+yerleştirme yine yapılır. Gizlenseydi operatör «rakam yok» ile «rakam sıfır»ı
+ayırt edemezdi (İlke #5 · «sıfır satır gizlenmez»).
+⚠ **RAF TOPLAMI DOĞRU `locationId`DEN SAYILIYOR.** Şemada İKİ tane var ve adları
+birbirine benziyor: `StockMovement.locationId` malın **kayıt anında** girdiği raf
+(geçmiş damgası), `ProductVariant.locationId` ürünün **bugün** durduğu raf.
+Yanlışı seçilseydi taşınmış bir ürünün adedi ESKİ rafta görünmeye devam ederdi —
+rakam makul çıkar, raf tutmazdı. _(«Bir alanın ADI, içeriğinin NE OLDUĞUNU
+söylemez».)_
+⚠ **AYNI ÜRÜN İKİ KEZ OKUTULUNCA TOPLAMA BİR KEZ GİRER.** Operatör bir ürünü
+düzeltmek ya da doğrulamak için ikinci kez okutabilir; liste İKİ satır gösterir
+ama defterdeki adet YİNE aynıdır. Körlemesine toplansaydı ekrandaki toplam
+elindeki parçadan FAZLA çıkar ve operatör **eksik yerleştirdiğini sanırdı** —
+yani rakam, düzeltmek için var olduğu hatayı üretirdi. Tekilleştirme saf gövdede
+(`oturumToplamAdedi`) ve değer testiyle sınanıyor.
+⚠ **RAF ÖZETİ TEK GÖVDEDEN** (`rafOzeti`): üç dal (raf okuma · raf değişimi ·
+yazım sonrası) kendi özetini yazsaydı, biri `isActive` süzgecini unuttuğu gün
+«2 ürün · 9 adet» gibi kendi içinde çelişen bir satır doğar ve hiçbir şey hata
+vermezdi.
+⚠ **ŞEMA DEĞİŞMEDİ, YENİ İZİN YOK, MIGRATION YOK.** Ekran zaten `stok.duzelt`
+iznine bağlı; canlı izin senkronu işi YOK. Yazma yolu da değişmedi — okuma başına
+üç sorgu paralel koşuyor (raf ürün sayısı · raf toplam adedi · varyant stoğu).
+
+**BEKÇİ:** `depo:dogrula` **251 ölçüt** (K379 bölümü: 6 değer testi + 20 ölçüt),
+bölüm bayrağıyla (`k379Kostu`) koştuğu ayrıca kanıtlanıyor — blok özetten ÖNCE
+koşar. **`depo-formu-mutasyon:kontrol` 17/17** (8'i bu işe ait, iki yön birden):
+raf toplamını yanlış `locationId`ye çeviren · stok adedini hiç ölçmeyen · ölçüp
+cevaba koymayan (zincirin ORTA halkası) · rozeti hiç çizmeyen · sıfır stoğu
+yeşil gösteren · toplamı elle hesaplayan · tekilleştirmeyi kaldıran · bölüm
+bayrağını düşüren. **Zararsız sağlama YEŞİL kaldı** (harness gerçekten ölçüyor).
+⚠ **ÇAKIŞMA BEYANI PUSH KAPISINDA ZORLANDI:** harness artık `src/lib/stok.ts`e
+dokunduğu için `mutasyon-cakisma:dogrula` KIRMIZI yandı ve HAKLIYDI —
+`depo-formu-mutasyon:kontrol` sıralı koşum kümesine gerekçesiyle yazıldı.
+
+**Tur:** `npm run bekci` TAM tur 16.11.2026 — **263/263 yeşil**, çıkış kodu **0** (bekçi sürelerinin toplamı 6136 sn; paralel koşum olduğu için duvar saatinden büyüktür). `tsc:dogrula` ✓ · `i18n:kontrol` ✓ (tr/en 6475–6475, 0 fark) · `mutasyon-cakisma:dogrula` ✓ (beyandan sonra).
+
+⛔ **AÇIK:**
+· **① YAYIMLANMADI** — iş `gelistirme` dalında; canlıya çıkış kullanıcı
+  «yayınla» deyince.
+· **② EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ.** Ölçülen şey kaynak, saf gövde ve bekçi;
+  kullanıcıya ULAŞAN yol değil. _(«Sınanmamış ekran, ekran değildir».)_
+· **③ «KAÇ TANESİ BU RAFTA» DİYE AYRI BİR SAYI YOK — OLAMAZ DA.** Sistemde bir
+  varyantın stoğu raflara BÖLÜNMÜYOR: tek bir `locationId` var. Ekrandaki adet
+  «bu üründen toplam kaç tane var»dır ve bu ürün bu rafta durduğu için aynı
+  zamanda «bu rafta kaç tane olmalı»dır. Aynı ürünün iki ayrı rafa bölünmesi
+  gerekirse bu AYRI bir karardır (raf başına adet = yeni veri modeli).
+  **Açılış şartı:** aynı ürünü iki ayrı rafa koyma ihtiyacı gerçek bir vakada
+  doğduğu gün.
+
+**Halil test listesi (yayından sonra, gerçek cihaz + CANLI adres):**
+① `/yerlestir` → raf etiketini okut (örn. `RAF-DPM1-3`) → mavi kutuda
+**«Bu rafta N ürün kayıtlı · defterde toplam M adet»** yazmalı (eskiden yalnız
+«N ürün var» diyordu)
+② `/stok` ekranını ayrı bir sekmede aç, aynı rafın ürünlerinin adetlerini topla
+→ ① deki **M ile birebir tutmalı** (yaklaşık değil, kuruşu gibi: tam sayı)
+③ `/yerlestir`e dön → bir ürün okut → listede **SKU · «3 adet» · ürün adı**
+sırasıyla çıkmalı; «3 adet» o ürünün `/stok`taki adediyle **birebir** aynı olmalı
+④ ikinci bir ürün okut → başlık **«Bu oturumda yerleştirilen 2 ürün · toplam X
+adet»** demeli ve X, iki satırdaki adetlerin toplamı olmalı
+⑤ **aynı ürünü ikinci kez okut** → liste 3 satır gösterir ama başlıktaki toplam
+**DEĞİŞMEMELİ** (aynı ürün iki kez sayılmaz)
+⑥ her okumadan sonra raf kutusundaki **toplam adet büyümeli** (ürün başka raftan
+geldiyse) — raf kutusu bir okuma geride kalmamalı
+⑦ stoğu **0 görünen** bir ürün okut → satırda **turuncu «0 adet»** yazmalı,
+ürün yine rafa yerleşmeli (işlem durmamalı)
+⑧ okuttuğun ürünün adedi elindeki fiziksel adetle **tutmuyorsa**: ekran
+doğruyu söylüyor demektir — sayım farkı var, `/stok` ekranından düzeltilir
+(bu ekran stok YAZMAZ, yalnız söyler)
+⑨ telefonda: rozet satırı taşıyor mu, uzun ürün adı rozeti alt satıra itiyor mu,
+dokunma hedefleri 44 px mi
+⑩ `/stok` ekranında bu rafın ürünlerinin adetleri **DEĞİŞMEMİŞ** olmalı —
+yerleştirme stok yazmaz, yalnız konum yazar
+
+---
+
 ## 🔴 K378 — «MALİYETİ BİLİNMİYOR» UYARISI DÜZELTİLEMİYORDU · 12.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 12.11.2026** (çan ekran görüntüsü, kırmızı daire içinde):

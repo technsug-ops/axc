@@ -86,6 +86,32 @@ export async function varyantStogu(varyantId: string): Promise<number> {
 }
 
 /**
+ * BİR RAFTAKİ TOPLAM ADET — raf doğrulamasının rakamı (K379).
+ *
+ * ⛔ ÖLÇÜT `ProductVariant.locationId` — `StockMovement.locationId` DEĞİL.
+ * İkisi farklı şey söyler ve adları birbirine benziyor:
+ *   · `StockMovement.locationId` = malın KAYIT ANINDA girdiği raf (geçmiş;
+ *     ürün sonradan taşınsa bile değişmez).
+ *   · `ProductVariant.locationId` = ürünün BUGÜN durduğu raf — `/yerlestir`
+ *     ekranının yazdığı alan ve operatörün elindeki rafla karşılaştırdığı şey.
+ * Hareket tarafından sayılsaydı, taşınmış bir ürünün adedi ESKİ rafta
+ * görünmeye devam ederdi: rakam makul çıkar, raf tutmazdı.
+ * _(Anayasa: "kolon başlığı bir iddiadır" — bir alanın ADI, içeriğinin NE
+ * OLDUĞUNU söylemez.)_
+ *
+ * ⚠ PASİF VARYANT SAYILMAZ — raf kutusundaki ürün sayısı da
+ * (`_count.variants`) `isActive: true` süzüyor. İki rakam aynı kümeden
+ * gelmeseydi "2 ürün · 7 adet" satırı kendi içinde çelişirdi.
+ */
+export async function raftakiToplamAdet(rafId: string): Promise<number> {
+  const sonuc = await prisma.stockMovement.aggregate({
+    where: { variant: { locationId: rafId, isActive: true } },
+    _sum: { quantityDelta: true },
+  });
+  return sonuc._sum.quantityDelta ?? 0;
+}
+
+/**
  * Ürün bazında toplam stok (varyantlarının toplamı).
  * Varyant listesi çağıran taraftan gelir; ek sorgu yapılmaz.
  */

@@ -10,6 +10,7 @@ import {
   type OkumaCevabi,
   type SeciliRaf,
 } from "@/app/yerlestir/actions";
+import { oturumToplamAdedi } from "@/lib/depo/yerlestirme";
 import { BarkodGirisi } from "@/components/barkod-okuyucu";
 import { KopyalanabilirKod } from "@/components/kopyalanabilir-kod";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ export function Yerlestirici() {
   const [urunKodu, setUrunKodu] = useState("");
   /** Bu oturumda yapılan yerleştirmeler — en yenisi üstte. */
   const [gecmis, setGecmis] = useState<
-    { sku: string; ad: string; onceki: string | null; ayni: boolean }[]
+    { sku: string; ad: string; onceki: string | null; ayni: boolean; stok: number }[]
   >([]);
   const [urunNotu, setUrunNotu] = useState<string | null>(null);
   const [bekliyor, basla] = useTransition();
@@ -60,10 +61,16 @@ export function Yerlestirici() {
             ad: cevap.urunAdi,
             onceki: cevap.oncekiKod,
             ayni: cevap.ayniRaf,
+            /** K379 — defterdeki adet: "kaç tane koymalıyım"ın cevabı. */
+            stok: cevap.stokAdedi,
           },
           ...o,
         ]);
-        setRaf((r) => (r ? { ...r, urunSayisi: cevap.rafUrunSayisi } : r));
+        setRaf((r) =>
+          r
+            ? { ...r, urunSayisi: cevap.rafUrunSayisi, toplamAdet: cevap.rafToplamAdedi }
+            : r,
+        );
         setUrunNotu(null);
         break;
       case "RAF_DEGISTI":
@@ -173,8 +180,13 @@ export function Yerlestirici() {
                 <span className="text-muted-foreground">{raf.ad}</span>
               ) : null}
             </p>
+            {/*
+              ⭐ İKİ RAKAM BİRLİKTE (K379): "2 ürün" kaç KALEM olduğunu,
+              "7 adet" rafta kaç PARÇA olması gerektiğini söyler. Operatör
+              fiziksel rafı ikincisiyle karşılaştırır.
+            */}
             <p className="text-muted-foreground mt-1 text-xs">
-              {t("rafDoluluk", { adet: raf.urunSayisi })}
+              {t("rafDoluluk", { adet: raf.urunSayisi, toplam: raf.toplamAdet })}
             </p>
           </div>
         ) : null}
@@ -220,15 +232,40 @@ export function Yerlestirici() {
       {/* ═══ BU OTURUMDA YERLEŞTİRİLENLER ═══════════════════════════════ */}
       {gecmis.length > 0 ? (
         <section className="space-y-2">
+          {/*
+            ⚠ TOPLAM SAF GÖVDEDEN (`oturumToplamAdedi`) — aynı ürün iki kez
+            okutulduğunda adedi İKİ KEZ saymaz; bkz. gövdenin başlığı.
+          */}
           <h2 className="flex items-center gap-2 text-sm font-medium">
             <PackagePlus className="size-4" aria-hidden />
-            {t("gecmisBasligi", { adet: gecmis.length })}
+            {t("gecmisBasligi", {
+              adet: gecmis.length,
+              toplam: oturumToplamAdedi(gecmis),
+            })}
           </h2>
           <ul className="divide-y rounded-md border text-sm">
             {gecmis.map((g, i) => (
               <li key={`${g.sku}-${i}`} className="flex flex-col gap-1 p-2">
                 <span className="flex flex-wrap items-center gap-2">
                   <KopyalanabilirKod deger={g.sku} etiket={t("skuEtiketi")} />
+                  {/*
+                    ⭐ STOK ADEDİ SATIRDA (K379, kullanıcı 15.11.2026):
+                    "doğru sayıda yerleştirdim mi" sorusunu cevaplamak için
+                    /stok ekranına çıkmak gerekiyordu — rakam sistemde vardı,
+                    söylenmiyordu.
+
+                    ⛔ SIFIR VE EKSİ GİZLENMEZ, UYARI RENGİYLE YAZAR: elinde
+                    ürün varken defter 0 diyorsa bu bir bulgudur (İlke #5 ·
+                    "sıfır satır gizlenmez"). Yerleştirme yine yapıldı —
+                    bu ekran stok yazmaz, yalnız söyler.
+                  */}
+                  <span
+                    className={`shrink-0 text-xs font-medium ${
+                      g.stok > 0 ? DURUM_YAZISI.olumlu : DURUM_YAZISI.uyari
+                    }`}
+                  >
+                    {t("stokAdedi", { adet: g.stok })}
+                  </span>
                   <span>{g.ad}</span>
                 </span>
                 {/*

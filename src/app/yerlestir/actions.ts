@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { TOPLU_TASIMA_EYLEMI, izListesi, tasimaKarari } from "@/lib/depo/tasima";
 import { YERLESTIRME_EYLEMI, yerlestirmeKarari } from "@/lib/depo/yerlestirme";
 import { prisma } from "@/lib/prisma";
+import { raftakiToplamAdet, varyantStogu } from "@/lib/stok";
 import { kodKosulu, okunanKodlar } from "@/lib/varyant-arama-kurali";
 import { kodlaVaryantCoz } from "@/lib/varyant-kod-cozumu";
 import { yetkiIste } from "@/lib/yetki";
@@ -38,7 +39,37 @@ export type SeciliRaf = {
   ad: string | null;
   /** Bu rafa kayıtlı aktif varyant sayısı — yerleştirdikçe artar. */
   urunSayisi: number;
+  /**
+   * K379 — RAFTAKİ TOPLAM ADET (defterden). Operatörün elindeki fiziksel
+   * rafla karşılaştırdığı rakam budur: "2 ürün" kaç KALEM olduğunu söyler,
+   * "7 adet" kaç PARÇA olması gerektiğini.
+   */
+  toplamAdet: number;
 };
+
+/**
+ * RAFIN EKRANA GİDEN ÖZETİ — TEK GÖVDE (K379).
+ *
+ * ⛔ İKİ RAKAM AYNI YERDEN KURULUR. Üç ayrı dal (raf okuma · raf değişimi ·
+ * yazım sonrası) kendi özetini yazsaydı, biri `isActive` süzgecini unuttuğu
+ * gün "2 ürün · 9 adet" gibi kendi içinde çelişen bir satır doğar ve hiçbir
+ * şey hata vermezdi.
+ * _(Anayasa: "düzeltmenin çaresi dosya listesi değil, tek gövdedir".)_
+ */
+async function rafOzeti(raf: {
+  id: string;
+  code: string;
+  name: string | null;
+  _count: { variants: number };
+}): Promise<SeciliRaf> {
+  return {
+    id: raf.id,
+    kod: raf.code,
+    ad: raf.name,
+    urunSayisi: raf._count.variants,
+    toplamAdet: await raftakiToplamAdet(raf.id),
+  };
+}
 
 export type RafSonucu =
   | { durum: "RAF"; raf: SeciliRaf }
@@ -66,10 +97,7 @@ export async function rafiSec(kod: string): Promise<RafSonucu> {
   });
   if (!raf) return { durum: "YOK", kod: temiz };
   if (!raf.isActive) return { durum: "PASIF", kod: raf.code };
-  return {
-    durum: "RAF",
-    raf: { id: raf.id, kod: raf.code, ad: raf.name, urunSayisi: raf._count.variants },
-  };
+  return { durum: "RAF", raf: await rafOzeti(raf) };
 }
 
 export type OkumaCevabi =
@@ -83,6 +111,21 @@ export type OkumaCevabi =
       ayniRaf: boolean;
       /** Yazımdan SONRAKİ raf sayısı — ekran sayacı tazeler. */
       rafUrunSayisi: number;
+      /**
+       * K379 — BU VARYANTIN DEFTERDEKİ ADEDİ.
+       *
+       * ⚠ BU EKRAN STOK YAZMAZ, SADECE OKUR. Rakam şunun için var: bir
+       * varyant TEK rafta durur, dolayısıyla defterdeki adet = o rafta
+       * fiziken bulunması gereken parça sayısı. Operatör bunu görmeden
+       * "doğru sayıda koydum mu" sorusunu ekrandan cevaplayamıyordu ve
+       * her seferinde /stok ekranına çıkıyordu (kullanıcı, 15.11.2026).
+       *
+       * ⛔ `0` BİR DEĞERDİR, EKSİKLİK DEĞİL: elinde ürün varken defter
+       * sıfır diyorsa bu bir bulgudur ve ekran onu SÖYLER (İlke #5).
+       */
+      stokAdedi: number;
+      /** Yazımdan SONRAKİ rafın toplam adedi — raf kutusu tazelenir. */
+      rafToplamAdedi: number;
     }
   | { durum: "RAF_DEGISTI"; raf: SeciliRaf }
   | { durum: "RAF_SECILMEDI" }
@@ -170,10 +213,7 @@ export async function koduIsle(
     /** ⛔ `raf` burada zorunlu olarak dolu — karar onu görmeden bu dala girmez. */
     if (!raf) return { durum: "BULUNAMADI", kod: temiz };
     if (!raf.isActive) return { durum: "PASIF_RAF", kod: raf.code };
-    return {
-      durum: "RAF_DEGISTI",
-      raf: { id: raf.id, kod: raf.code, ad: raf.name, urunSayisi: raf._count.variants },
-    };
+    return { durum: "RAF_DEGISTI", raf: await rafOzeti(raf) };
   }
 
   /* ═══ YAZMA ═══════════════════════════════════════════════════════════ */
@@ -222,9 +262,16 @@ export async function koduIsle(
     }),
   });
 
-  const sayi = await prisma.productVariant.count({
-    where: { isActive: true, locationId: hedef.id },
-  });
+  /**
+   * ⚠ ÜÇ RAKAM DA YAZIMDAN SONRA ÖLÇÜLÜR — yazımdan önce okunsaydı ekran
+   * bir okuma GERİDE kalırdı (az önce yerleştirilen ürün sayılmazdı).
+   */
+  const [sayi, rafToplamAdedi, stokAdedi] = await Promise.all([
+    prisma.productVariant.count({ where: { isActive: true, locationId: hedef.id } }),
+    raftakiToplamAdet(hedef.id),
+    /** ⭐ STOK MATEMATİĞİ ORTAK GÖVDEDEN — bu dosya kendi groupBy'ını yazmaz. */
+    varyantStogu(varyant.id),
+  ]);
 
   /** ⚠ Raf okuma ekranı ve depo tutanağı bu yazımdan etkilenir. */
   revalidatePath("/okut");
@@ -239,6 +286,8 @@ export async function koduIsle(
     oncekiKod: varyant.location?.code ?? null,
     ayniRaf: karar.ayniRaf,
     rafUrunSayisi: sayi,
+    stokAdedi,
+    rafToplamAdedi,
   };
 }
 
