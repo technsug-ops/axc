@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K379 — YERLEŞTİRMEDE STOK ADEDİ GÖRÜNMÜYORDU: DOĞRULAMAK İÇİN `/stok`A ÇIKMAK GEREKİYORDU · 15.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K379 — YERLEŞTİRMEDE STOK ADEDİ GÖRÜNMÜYORDU: DOĞRULAMAK İÇİN `/stok`A ÇIKMAK GEREKİYORDU · 15.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 15.11.2026** (telefon ekran görüntüsü; «Bu oturumda yerleştirilen 2
 ürün» listesi kırmızı daire içinde): _«Bu ekran Yerleştirme ekranı, yeni raflara
@@ -77,12 +77,27 @@ dokunduğu için `mutasyon-cakisma:dogrula` KIRMIZI yandı ve HAKLIYDI —
 
 **Tur:** `npm run bekci` TAM tur 16.11.2026 — **263/263 yeşil**, çıkış kodu **0** (bekçi sürelerinin toplamı 6136 sn; paralel koşum olduğu için duvar saatinden büyüktür). `tsc:dogrula` ✓ · `i18n:kontrol` ✓ (tr/en 6475–6475, 0 fark) · `mutasyon-cakisma:dogrula` ✓ (beyandan sonra).
 
+**YAYIMLANDI 16.11.2026** — kullanıcı «yayınla» dedi; `main` `gelistirme`ye
+ileri sarıldı (`git merge --ff-only`, `81e30ef1..e3fd0857`, tek commit).
+**Yayın ölçümü:** `dpl_FhgjYYVymtB6JeRtPy1pjHF7ewSS` **READY** (fra1, **46 sn**:
+`buildingAt`→`ready`) · dağıtımın alias listesinde **`bezirga.com` +
+`www.bezirga.com`** ve `aliasError: null` — yani canlı adres BU commit'i
+sunuyor (`githubCommitSha e3fd0857…`) · canlı yoklama: `/giris` **200** ·
+`/info` **200** · `/stok` ve `/yerlestir` **307** (girişe yönlendirme —
+korumalı, beklenen: rota ÇÖZÜLÜYOR) · `/api/yedek` **401** (kapı yerinde) ·
+`Strict-Transport-Security: max-age=63072000` · push kapısı **İKİ KEZ** yeşil
+(`gelistirme` `bd509101..e3fd0857` · `main` `81e30ef1..e3fd0857`; çıkış kodu
+**dosyadan** okundu, borudan değil — ikisi de `PUSH CIKIS KODU=0`) ·
+`canli:yetki` ✓ «tam yetkili rollerin hiçbirinde eksik izin yok»
+(CEO 34/34 · Sahip 34/34; bu pakette yeni izin zaten yoktu).
+⛔ **307, EKRANIN ÇİZİLDİĞİNİ KANITLAMAZ** — yalnız rotanın var olduğunu söyler.
+Raf kutusundaki iki rakam, satırdaki adet ve başlıktaki toplam GERÇEK CİHAZDA
+görülmedi; yayın, Halil testinin yerine GEÇMEZ.
+
 ⛔ **AÇIK:**
-· **① YAYIMLANMADI** — iş `gelistirme` dalında; canlıya çıkış kullanıcı
-  «yayınla» deyince.
-· **② EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ.** Ölçülen şey kaynak, saf gövde ve bekçi;
+· **① EKRAN GERÇEK CİHAZDA GÖRÜLMEDİ.** Ölçülen şey kaynak, saf gövde ve bekçi;
   kullanıcıya ULAŞAN yol değil. _(«Sınanmamış ekran, ekran değildir».)_
-· **③ «KAÇ TANESİ BU RAFTA» DİYE AYRI BİR SAYI YOK — OLAMAZ DA.** Sistemde bir
+· **② «KAÇ TANESİ BU RAFTA» DİYE AYRI BİR SAYI YOK — OLAMAZ DA.** Sistemde bir
   varyantın stoğu raflara BÖLÜNMÜYOR: tek bir `locationId` var. Ekrandaki adet
   «bu üründen toplam kaç tane var»dır ve bu ürün bu rafta durduğu için aynı
   zamanda «bu rafta kaç tane olmalı»dır. Aynı ürünün iki ayrı rafa bölünmesi
@@ -90,7 +105,7 @@ dokunduğu için `mutasyon-cakisma:dogrula` KIRMIZI yandı ve HAKLIYDI —
   **Açılış şartı:** aynı ürünü iki ayrı rafa koyma ihtiyacı gerçek bir vakada
   doğduğu gün.
 
-**Halil test listesi (yayından sonra, gerçek cihaz + CANLI adres):**
+**Halil test listesi (gerçek cihaz + CANLI adres — yayın YAPILDI):**
 ① `/yerlestir` → raf etiketini okut (örn. `RAF-DPM1-3`) → mavi kutuda
 **«Bu rafta N ürün kayıtlı · defterde toplam M adet»** yazmalı (eskiden yalnız
 «N ürün var» diyordu)
