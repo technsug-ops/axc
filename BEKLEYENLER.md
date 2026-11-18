@@ -13,7 +13,7 @@
 
 ---
 
-## 🔴 K380 — «BU EKRAN ÇİZİLEMEDİ» 18.11: KOTA DEĞİL, EL SIKIŞMA TAKILMASI — SÜRÜCÜYE SABIR · 18.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+## 🔴 K380 — «BU EKRAN ÇİZİLEMEDİ» 18.11: KOTA DEĞİL, EL SIKIŞMA TAKILMASI — SÜRÜCÜYE SABIR · 18.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 18.11.2026** (telefon, 10:32 yerel): _«Bu ekran çizilemedi · Hata kodu
 502160823 — problem nedir?»_ · sonra: _«şimdiye kadar çalışıyordu neden durdu»_ · sonra:
@@ -65,25 +65,54 @@ başlık `Authorization: Bearer <CRON_SECRET>` (Vercel env; GitHub Actions'ınki
 koşum 200 + `"durum":"SICAK"`, 404 = sır yanlış. ⚠ Dürüst beklenti: bağlantısı AÇIK kopyayı
 kurtarır (yeniden kurulmaz → takılmaz); SOĞUK kopya yine sıfırdan bağlanır ve takılabilir.
 
+**YAYIMLANDI 19.11.2026 02:10 İstanbul (18.11 23:10 UTC)** — kullanıcı 18.11 10:34 UTC'de
+«yayınla» dedi; oturum kesildiği için yeni oturumda «ne gerekiyorsa yap» ile yeniden
+onayladı. `main` `gelistirme`ye ileri sarıldı (`e3fd0857..fa6bbe1b`, tek commit).
+**Yayın ÜÇ denemede çıktı — ikisi düştü, üçü de yazılır:**
+① 18.11 10:43 UTC: bekçi **172/173**, tek kırmızı `os error 112` = **DİSK DOLU** (1,5 GB
+boş); kapı push'u reddetti (`PUSH CIKIS KODU=1`, dosyadan). ② 4,5 GB açıldıktan sonra
+ikinci deneme başlatıldı; **oturum 13:08 UTC'de kapandı**, çıktı dosyası 0 bayt — kapı hiç
+bitmedi ve `origin/main` ~12 saat eski sürümde kaldı; o oturumun kendi makinesinden kurduğu
+ısıtma köprüsü de oturumla birlikte durdu. ③ yeni oturum, disk 17 GB boş: **173/173 yeşil**
+(1226 sn bekçi toplamı), `main -> main e3fd0857..fa6bbe1b`, `PUSH CIKIS KODU=0` (dosyadan
+okundu, borudan değil).
+**Yayın ölçümü:** `dpl_249hzjU8jRrcNiZjyHnGtwgvbXPt` **READY** (fra1, **65 sn**
+`buildingAt`→`ready`) · alias listesinde **`bezirga.com` + `www.bezirga.com`** (ve
+`axc-seven.vercel.app` — aşağıdaki ③ hâlâ açık), `aliasError: null` → canlı adres BU
+commit'i sunuyor (`githubCommitSha fa6bbe1b…`) · canlı yoklama: `/giris` **200 ×5 — 1,18 ·
+0,29 · 0,33 · 0,29 · 0,26 sn** (ilki yeni kopyanın soğuk açılışı; hepsi Halil ①'in 5 sn
+sınırının altında) · `/info` 200 (0,49 sn) · `/stok` ve `/yerlestir` **307** (girişe
+yönlendirme — korumalı, rota ÇÖZÜLÜYOR) · `/api/yedek` **401** (kapı yerinde) ·
+`/api/cron/sicak` sırsız **404** (tasarım gereği) · `Strict-Transport-Security:
+max-age=63072000` · `canli:yetki` ✓ «tam yetkili rollerin hiçbirinde eksik izin yok»
+(CEO 34/34 · Sahip 34/34; bu pakette yeni izin zaten yoktu).
+⚠ **DÜRÜST OKUMA: HIZLI `/giris`, DÜZELTMENİN KANITI DEĞİL.** Yayından ÖNCE, 18.11 ~21:55
+UTC'de aynı sayfa ESKİ sürümle de **0,51 · 0,23 · 0,23 sn** ölçüldü — sabahki el sıkışma
+takılması kendi kendine geçmişti (09:17 UTC'de başladı, 10:52 UTC'de sürüyordu,
+~21:55 UTC'de yoktu; tam bitiş anı ÖLÇÜLMEDİ). K380'in işi bir SONRAKİ takılmada
+görülür: sayfa hata ekranı yerine geç açılmalı. Ölçütü Halil listesi ② ve ③; 24 saatlik
+günlük sayımı yayından itibaren başlar.
+⛔ **307, EKRANIN ÇİZİLDİĞİNİ KANITLAMAZ** — yalnız rotanın var olduğunu söyler; yayın,
+Halil testinin yerine GEÇMEZ.
+
 ⛔ **AÇIK:**
-· **① YAYIMLANMADI** — `gelistirme`de; kullanıcı «yayınla» deyince.
-· **② EL SIKIŞMANIN NİYE TAKILDIĞI ÖLÇÜLMEDİ.** KAS'ın yoğun kaynak IP'lerini (Vercel'in
+· **① EL SIKIŞMANIN NİYE TAKILDIĞI ÖLÇÜLMEDİ.** KAS'ın yoğun kaynak IP'lerini (Vercel'in
   paylaşımlı çıkışları) frenlemesi en tutarlı açıklama — kanıt değil. Vercel tarafından ham
   TCP/el sıkışma süresi ölçen bir yol YOK (`/api/olcum` havuzu kullanır, taze bağlantı
   ölçmez; günlükte `ETIMEDOUT`/`ECONNREFUSED`/`blocked` izi yok — havuz deneme hatasını
   `[cause]: [Object]` olarak yutuyor). Açılış: tek seferlik ölçüm ucu ya da KAS'a soru.
-· **③ cron-job.org kurulumu kullanıcıda** (yukarıdaki adımlar); kurulunca günlükte dakikada
+· **② cron-job.org kurulumu kullanıcıda** (yukarıdaki adımlar); kurulunca günlükte dakikada
   bir `/api/cron/sicak` görünür — doğrulama oradan.
-· **④ `axc-seven.vercel.app` ikinci adres olarak kullanılıyordu.** Kullanıcı `bezirga.com`da
+· **③ `axc-seven.vercel.app` ikinci adres olarak kullanılıyordu.** Kullanıcı `bezirga.com`da
   devam etmek istiyor. Kalıcı yönlendirme AYRI iş: sayfa yolları yönlendirilir, **`/api/`
   HARİÇ** — ölçüldü: 10 GitHub Actions çağrısının 10'u `axc-seven.vercel.app`e gidiyor,
   körlemesine yönlendirme çekimleri 308'e düşürür (iş akışı `test "$KOD" = "200"`).
-· **⑤ KESİNTİ ANINDA KOTA/BAĞLANTI SAYISINI KAYDEDEN İZ YOK** — bu tur her sayı olaydan
+· **④ KESİNTİ ANINDA KOTA/BAĞLANTI SAYISINI KAYDEDEN İZ YOK** — bu tur her sayı olaydan
   sonra canlı ölçümle alındı; bir dahakine yine tahminle başlanır.
-· **⑥ Belge push'u ilk denemede kırmızıydı** (`urun-etiketi:dogrula`: zxing wasm
+· **⑤ Belge push'u ilk denemede kırmızıydı** (`urun-etiketi:dogrula`: zxing wasm
   indirilemedi — ağ); tekrar koşumda 28/28; geçiciydi, kod değil.
 
-**Halil test listesi (yayından sonra, gerçek cihaz + CANLI adres):**
+**Halil test listesi (gerçek cihaz + CANLI adres — yayın YAPILDI):**
 ① `bezirga.com/giris`i telefonda **3 kez** aç (aralarında 1 dk bekle) → her açılış
 **5 sn'nin altında** olmalı; 10 sn'ye yakın tek bir açılış varsa saat + ekran görüntüsü.
 ② `/yerlestir`de **10 dakika** kesintisiz okut (K379 listesi) → «Bu ekran çizilemedi»
