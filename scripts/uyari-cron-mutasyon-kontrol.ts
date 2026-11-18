@@ -28,6 +28,8 @@ const SERIT = "src/lib/panel/bugun-ne-yapmaliyim.ts";
 const TY_ROTA = "src/app/api/cron/ty-cekim/route.ts";
 const TY_HAKEDIS = "src/app/api/cron/ty-hakedis-cekim/route.ts";
 const N11_ROTA = "src/app/api/cron/n11-cekim/route.ts";
+/* K380 (18.11.2026): sürücü sabrı — bu dosyayı mutasyona uğratan başka harness YOK (ölçüldü). */
+const VERITABANI_ADRESI = "src/lib/veritabani-adresi.ts";
 
 type Mutasyon = {
   ad: string;
@@ -104,6 +106,42 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "  /* K264: «atlandı» 200 DEĞİL 503 — cron-job.org'un yeşili «çekim koştu» demek",
     koy: "  /* K264 notu: atlandi -> 503.",
     bozdugu: "hicbir sey - YESIL kalmali",
+  },
+  {
+    ad: "ZARARSIZ - K380 yorumu degisti (harness saglamasi)",
+    yon: "ZARARSIZ",
+    bekci: "cron-yollari:dogrula",
+    dosya: VERITABANI_ADRESI,
+    bul: " * ⛔ K380 (18.11.2026) — SÜRÜCÜYE SABIR.",
+    koy: " * K380 notu.",
+    bozdugu: "hicbir sey - YESIL kalmali",
+  },
+  {
+    ad: "SAYFA HAVUZU SABIRSIZ KALDI (connectTimeout dustu, surucu 1 sn'ye dondu)",
+    yon: "KALDIRAN",
+    bekci: "cron-yollari:dogrula",
+    dosya: VERITABANI_ADRESI,
+    bul: '  idleTimeout: "15",\n  connectTimeout: "5000",\n',
+    koy: '  idleTimeout: "15",\n',
+    bozdugu: "1 sn'yi asan el sikisma yine kesilir - 18.11 kesintisi aynen geri gelir",
+  },
+  {
+    ad: "HAVUZ YINE 10 SN'DE PES EDIYOR (acquireTimeout varsayilana dondu)",
+    yon: "KALDIRAN",
+    bekci: "cron-yollari:dogrula",
+    dosya: VERITABANI_ADRESI,
+    bul: '  idleTimeout: "15",\n  connectTimeout: "5000",\n  acquireTimeout: "20000",\n',
+    koy: '  idleTimeout: "15",\n  connectTimeout: "5000",\n  acquireTimeout: "10000",\n',
+    bozdugu: "takilan tek el sikisma havuzu dusurur - sayfa 200 yerine hata ekrani",
+  },
+  {
+    ad: "ACIKCA YAZILAN PARAMETRE EZILIYOR (acil mudahale kapisi kapandi)",
+    yon: "FAZLADAN",
+    bekci: "cron-yollari:dogrula",
+    dosya: VERITABANI_ADRESI,
+    bul: "      if (!adres.searchParams.has(ad)) adres.searchParams.set(ad, deger);",
+    koy: "      adres.searchParams.set(ad, deger);",
+    bozdugu: "ortam degiskeninden mudahale imkansizlasir - kesintide tek hizli kapi kapanir",
   },
   {
     ad: "TY ROTASI ATLANDI'DA YINE 200 DONUYOR",

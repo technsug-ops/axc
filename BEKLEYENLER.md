@@ -13,6 +13,88 @@
 
 ---
 
+## 🔴 K380 — «BU EKRAN ÇİZİLEMEDİ» 18.11: KOTA DEĞİL, EL SIKIŞMA TAKILMASI — SÜRÜCÜYE SABIR · 18.11.2026 · [YAZILDI — YAYIN + HALİL TESTİ BEKLİYOR]
+
+**Kullanıcı 18.11.2026** (telefon, 10:32 yerel): _«Bu ekran çizilemedi · Hata kodu
+502160823 — problem nedir?»_ · sonra: _«şimdiye kadar çalışıyordu neden durdu»_ · sonra:
+_«sıcak tutma ucunu zamanlayıcıya bağla, bir an önce sistem ayağa kalksın»_ · «yapalım».
+
+**ÖLÇÜLDÜ — ZİNCİR (hepsi canlı, salt okuma; iddia yok, eleme var):**
+
+| soru | ölçüm | sonuç |
+|---|---|---|
+| hata ne | Vercel günlüğü: digest `502160823` = `prisma.user.findUnique()` → `pool timeout after 10000ms (active=0 idle=0 limit=3)` | havuz **tek bağlantı bile açamıyor** |
+| kota dolu mu | bizim **8/25** · sunucunun tamamı **16/500** · `Connection_errors_max_connections` **0** · tepe 69 | **hayır** — elendi |
+| ters DNS mi | `skip_name_resolve = ON` | **hayır** — elendi |
+| kaynağa bağlı mı | geliştirme makinesinden 6 yeni bağlantı **113–173 ms**; Vercel'den `/giris` **10,2 · 20,2 · 12,9 · 10,2 · 20,4 sn** | **evet** — Vercel→KAS el sıkışması takılıyor |
+| niye tam 10 sn | sürücü varsayılanı `connectTimeout=1000` (deneme başına 1 sn) · `acquireTimeout=10000` (havuz 10 sn'de pes) · kodumuz İKİSİNİ DE ayarlamıyordu (`havuzluAdres` yalnız limit/boşta/idle veriyordu) | 1 sn'yi aşan her deneme kesilip yeniden deneniyor; 10. sn'de ya hata ekranı ya son anda geçen bağlantı (10,2 sn'lik 200) |
+| sunucunun hâli | 8 günde **13,1 M bağlantı denemesinin %31'i iptal** (`Aborted_connects` 4,06 M), ölçüm anında **dakikada ~820** | paylaşımlı sunucu sürekli bir bağlantı seli altında |
+
+**Dün ↔ bugün (aynı sürüm `e3fd0857`, kod değişmedi):** 17.11 06:00–20:00 → **4 olay, hepsi
+arka planda** (`buybox-olcum`); 18.11 **09:17'den 10:00+ UTC'ye 60+ olay**, hepsi kullanıcı
+sayfalarında (`/` · `/satislar` · `/urunler` · `/paketle` · `/giris`), **iki adresten birden**
+(`bezirga.com` + `axc-seven.vercel.app`). Aynı imza 22.10'da (K355/K359, ~25 dk).
+
+**YAPILAN — SÜRÜCÜYE SABIR (`src/lib/veritabani-adresi.ts`):** iki havuza da
+`connectTimeout: 5000` · `acquireTimeout: 20000`. Gerekçe ölçülü: iyi günde bağlantı
+~0,54 sn (12.10 ölçümü) → 5 sn **10× pay** (1 sn yalnız 2× idi); 20 sn **bir takılmayı
+atlatır** (20,2 sn'lik 200 cevaplar Vercel'in izin verdiğini gösterdi). Parametreler adresle
+sürücüye gider — ölçüldü: sürücü adres parametrelerini **genel** okuyor (beyaz liste yok;
+`connectTimeout` sayısal listede, `acquireTimeout` havuz seçeneğinde), bağdaştırıcı adresi
+dizge olarak `createPool`a veriyor (yalnız `prepareCacheLength`e dokunuyor), arka plan
+havuzu aynı nesneden besleniyor → sayfalar + çekim uçları + betik çekirdekleri tek değişiklikle.
+Canlı adreste açık parametre YOK (ölçüldü) → değerler gerçekten geçerli olacak; açıkça
+yazılan değer yine kazanır (acil müdahale kapısı). **Bedeli:** gerçek bir kesintide hata
+ekranı 10 değil 20 sn sonra çıkar. Eski gerekçeler (K332 · K355 · K359) SİLİNMEDİ.
+
+**BEKÇİ:** `cron-yollari:dogrula` **49 → 53** — 4 yeni ölçüt **GERÇEK GÖVDEYLE** (`havuzluAdres`
+çağrılıp ürettiği adres okunuyor; nesneye bakmak yetmez): sayfa havuzu adresi 5000/20000 ·
+arka plan adresi 5000/20000 · açıkça yazılan `?connectTimeout=1000&acquireTimeout=3000`
+korunuyor · tavan ≤ 20 sn ve deneme < havuz. **`uyari-cron-mutasyon:kontrol` 10 → 14/14:**
+zararsız (yorum) **YEŞİL kaldı** · `connectTimeout` düşünce **KIRMIZI** · `acquireTimeout`
+10 sn'ye dönünce **KIRMIZI** · açık parametreyi ezen (`has` kapısı kalkınca) **KIRMIZI**.
+`mutasyon-cakisma:dogrula` ✓ (`veritabani-adresi.ts`'yi başka harness mutasyona uğratmıyor —
+ölçüldü, beyan gerekmedi). `tsc` ✓ · `lint` ✓ (8 eski uyarı, hepsi `scripts/canli-*`, bu
+dosyalarda değil) · i18n: ✓ (kullanıcı metni yok) · şema/izin/migration YOK.
+
+⚠ **SICAK TUTMA (`/api/cron/sicak`) — UÇ ÇALIŞIYOR, ÇAĞIRAN YOK.** Canlıda sınandı: 200,
+`{"durum":"SICAK","baglantiMs":[50]}`, 0,29 sn; sırsız **404**. Tetik tasarım gereği
+**cron-job.org, kullanıcı hesabında** (ucun başlığı; git'te commit olmaması bundan). Bugün
+günlükte **sıfır** çağrı. Kurulum: URL `https://www.bezirga.com/api/cron/sicak` · her 1 dk ·
+başlık `Authorization: Bearer <CRON_SECRET>` (Vercel env; GitHub Actions'ınkiyle aynı) · ilk
+koşum 200 + `"durum":"SICAK"`, 404 = sır yanlış. ⚠ Dürüst beklenti: bağlantısı AÇIK kopyayı
+kurtarır (yeniden kurulmaz → takılmaz); SOĞUK kopya yine sıfırdan bağlanır ve takılabilir.
+
+⛔ **AÇIK:**
+· **① YAYIMLANMADI** — `gelistirme`de; kullanıcı «yayınla» deyince.
+· **② EL SIKIŞMANIN NİYE TAKILDIĞI ÖLÇÜLMEDİ.** KAS'ın yoğun kaynak IP'lerini (Vercel'in
+  paylaşımlı çıkışları) frenlemesi en tutarlı açıklama — kanıt değil. Vercel tarafından ham
+  TCP/el sıkışma süresi ölçen bir yol YOK (`/api/olcum` havuzu kullanır, taze bağlantı
+  ölçmez; günlükte `ETIMEDOUT`/`ECONNREFUSED`/`blocked` izi yok — havuz deneme hatasını
+  `[cause]: [Object]` olarak yutuyor). Açılış: tek seferlik ölçüm ucu ya da KAS'a soru.
+· **③ cron-job.org kurulumu kullanıcıda** (yukarıdaki adımlar); kurulunca günlükte dakikada
+  bir `/api/cron/sicak` görünür — doğrulama oradan.
+· **④ `axc-seven.vercel.app` ikinci adres olarak kullanılıyordu.** Kullanıcı `bezirga.com`da
+  devam etmek istiyor. Kalıcı yönlendirme AYRI iş: sayfa yolları yönlendirilir, **`/api/`
+  HARİÇ** — ölçüldü: 10 GitHub Actions çağrısının 10'u `axc-seven.vercel.app`e gidiyor,
+  körlemesine yönlendirme çekimleri 308'e düşürür (iş akışı `test "$KOD" = "200"`).
+· **⑤ KESİNTİ ANINDA KOTA/BAĞLANTI SAYISINI KAYDEDEN İZ YOK** — bu tur her sayı olaydan
+  sonra canlı ölçümle alındı; bir dahakine yine tahminle başlanır.
+· **⑥ Belge push'u ilk denemede kırmızıydı** (`urun-etiketi:dogrula`: zxing wasm
+  indirilemedi — ağ); tekrar koşumda 28/28; geçiciydi, kod değil.
+
+**Halil test listesi (yayından sonra, gerçek cihaz + CANLI adres):**
+① `bezirga.com/giris`i telefonda **3 kez** aç (aralarında 1 dk bekle) → her açılış
+**5 sn'nin altında** olmalı; 10 sn'ye yakın tek bir açılış varsa saat + ekran görüntüsü.
+② `/yerlestir`de **10 dakika** kesintisiz okut (K379 listesi) → «Bu ekran çizilemedi»
+HİÇ çıkmamalı; çıkarsa **hata kodu + saat** (digest günlükte birebir aranır).
+③ Ben: Vercel günlüğünde `havuz takıldı` sayısı — yayından sonraki 24 saat ↔ 18.11'in
+60+'ı; kullanıcı sayfalarında **0** beklenir (arka planda tek tük olabilir, ayrı sayılır).
+④ cron-job.org kurulunca: günlükte dakikada bir `/api/cron/sicak` **200** — ben doğrularım.
+⑤ Tek sekme, tek adres: `axc-seven.vercel.app` sekmesi kapalı; yalnız `bezirga.com`.
+
+---
+
 ## 🔴 K379 — YERLEŞTİRMEDE STOK ADEDİ GÖRÜNMÜYORDU: DOĞRULAMAK İÇİN `/stok`A ÇIKMAK GEREKİYORDU · 15.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 15.11.2026** (telefon ekran görüntüsü; «Bu oturumda yerleştirilen 2

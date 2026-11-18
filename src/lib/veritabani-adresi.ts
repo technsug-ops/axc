@@ -97,10 +97,34 @@
  * `pool timeout` verdi. Kopya başına tepe 5 → 3, fazla bağlantı 15 sn'de bırakılır.
  * Bedeli: panel ana okuması ~2,1 → ~2,3 sn (13.10 yerel ölçüm, 4 ↔ 3 bağlantı).
  */
+/**
+ * ⛔ K380 (18.11.2026) — SÜRÜCÜYE SABIR.
+ * Kullanıcı «Bu ekran çizilemedi» gördü (digest 502160823). Ölçüldü (18.11, 09:17'den
+ * 10:00+ UTC'ye, ~45 dk): sayfalar 10,2 · 20,2 · 12,9 sn — hep sunucunun `connect_timeout`
+ * (10 sn) katları; hata `pool timeout … active=0 idle=0`. KOTA DOLU DEĞİLDİ: bizim 8/25,
+ * sunucunun tamamı 16/500, tavana çarpma 0; `skip_name_resolve=ON` (ters DNS değil).
+ * Geliştirme makinesinden 6 yeni bağlantı 113–173 ms; Vercel'den ≥10 sn → takılma
+ * KAYNAĞA bağlı: Vercel→KAS el sıkışması. Sunucu 8 gündür bağlantı seli altında
+ * (13,1 M denemenin %31'i iptal, o an dakikada ~820).
+ * SEBEP KODUMUZDA DEĞİL AMA KIRILGANLIK KODUMUZDA: sürücü varsayılanı deneme başına
+ * `connectTimeout=1000` ms, havuz `acquireTimeout=10000` ms ve ikisi de AYARLANMAMIŞTI.
+ * 1 sn'yi aşan her el sıkışma kesilip yeniden deneniyor, 10. sn'de havuz pes ediyor;
+ * son anda geçen deneme = 10,2 sn'lik 200, pes eden = hata ekranı.
+ * KARAR: `connectTimeout` 1 → 5 sn (iyi günde bağlantı ~0,54 sn — 12.10 ölçümü — yani
+ * 10× pay; 1 sn yalnız 2× idi), `acquireTimeout` 10 → 20 sn (bir takılmayı ATLATIR;
+ * 20,2 sn'lik 200 cevaplar Vercel'in buna izin verdiğini gösterdi). Bedeli: gerçek bir
+ * kesintide hata ekranı 10 değil 20 sn sonra çıkar. Adreste açıkça yazılan değer yine
+ * kazanır (acil müdahale kapısı). ⛔ ÖLÇÜLMEYEN: el sıkışmanın NİYE takıldığı — KAS'ın
+ * yoğun kaynak IP'lerini (Vercel'in paylaşımlı çıkışları) frenlemesi en tutarlı açıklama,
+ * kanıtlanmadı. Bekçi: `cron-yollari:dogrula` (gerçek gövdeyle değer testi) ·
+ * mutasyon: `uyari-cron-mutasyon:kontrol`.
+ */
 const UYGULAMA_HAVUZU = {
   connectionLimit: "3",
   minimumIdle: "1",
   idleTimeout: "15",
+  connectTimeout: "5000",
+  acquireTimeout: "20000",
 } as const;
 
 /** Sayfa havuzunun üst sınırı (yoğunlukta açılabilecek bağlantı). */
@@ -125,6 +149,9 @@ export const ARKA_PLAN_HAVUZU = {
   connectionLimit: "3",
   minimumIdle: "1",
   idleTimeout: "60",
+  /* K380: aynı sabır — çekim uçları aynı Vercel→KAS yolundan geçiyor (gerekçe yukarıda). */
+  connectTimeout: "5000",
+  acquireTimeout: "20000",
 } as const;
 
 /** İşaret anahtarı — kuran: `lib/arka-plan-havuzu.ts` (içe alındığı her yerde). */

@@ -1,7 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
-import { ARKA_PLAN_HAVUZU, SAYFA_HAVUZU_BOYUTU, SICAK_TUTULAN_BAGLANTI, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
+import { ARKA_PLAN_HAVUZU, havuzluAdres, SAYFA_HAVUZU_BOYUTU, SICAK_TUTULAN_BAGLANTI, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
 import { BOSLUK_ESIGI_MS, erisimBoslugu, erisimBosluguCoz } from "../src/lib/veritabani-erisim";
 import { havuzTakildiMi, ONARIM_ARALIGI_MS, onarimYapilsinMi } from "../src/lib/havuz-onarimi";
 
@@ -200,8 +200,10 @@ console.log("\n5) ARKA PLAN HAVUZU (K332)");
   /* ⚠ 13.10.2026 «5 yap»: sayfa havuzu 3 → 5 (gerekçe ve bütçe `veritabani-adresi.ts`te). */
   /* ⛔ K355 (22.10.2026): sayfa havuzu boşta 5 → 1 (kota tükenmesi; gerekçe `veritabani-adresi.ts`). */
   /* ⛔ K359 (22.10.2026): sayfa havuzu 5 → 3, boşta fazlası 60 → 15 sn (8 saatlik prob: kota 25'e dayandı). */
-  kontrol("  ...değer: işaret yokken sayfa havuzu (3 · boşta 1 · 15 sn), varken arka plan havuzu (3 · boşta 1)",
-    once.connectionLimit === "3" && once.minimumIdle === "1" && once.idleTimeout === "15" && SAYFA_HAVUZU_BOYUTU === 3 && SICAK_TUTULAN_BAGLANTI === 1 && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1", { once, sonra });
+  /* ⛔ K380 (18.11.2026): iki havuza da sürücü sabrı eklendi (connectTimeout 5 sn · acquireTimeout 20 sn). */
+  kontrol("  ...değer: işaret yokken sayfa havuzu (3 · boşta 1 · 15 sn · sabır 5/20 sn), varken arka plan havuzu (3 · boşta 1 · sabır 5/20 sn)",
+    once.connectionLimit === "3" && once.minimumIdle === "1" && once.idleTimeout === "15" && SAYFA_HAVUZU_BOYUTU === 3 && SICAK_TUTULAN_BAGLANTI === 1 && sonra === ARKA_PLAN_HAVUZU && sonra.connectionLimit === "3" && sonra.minimumIdle === "1"
+      && once.connectTimeout === "5000" && once.acquireTimeout === "20000" && sonra.connectTimeout === "5000" && sonra.acquireTimeout === "20000", { once, sonra });
   /* K359 — TAKILAN HAVUZ KENDİNİ YENİLER: karar DEĞERLE, bağ kaynakla. */
   const takili = new Error("pool timeout: failed to retrieve a connection from pool after 10000ms\n    (pool connections: active=0 idle=0 limit=5)");
   kontrol("  havuz onarımı: 22.10 mesajı «takıldı» sayılır", havuzTakildiMi(takili));
@@ -234,6 +236,23 @@ console.log("\n5) ARKA PLAN HAVUZU (K332)");
   kontrol("  ...çekirdekte istemci YALNIZ arka plan havuzuyla kurulur (çıplak adres yok)",
     kurulumlu.length >= 6 && ciplak.length === 0, { kurulumlu: kurulumlu.length, ciplak });
   kontrol("  ...⛔ minimumIdle=0 yasağı arka plan havuzunda da", Number(ARKA_PLAN_HAVUZU.minimumIdle) >= 1);
+
+  /* ⛔ K380 (18.11.2026) — SÜRÜCÜYE SABIR, GERÇEK GÖVDEYLE ÖLÇÜLÜR (desen değil değer):
+     Vercel→KAS el sıkışması 1 sn'yi aşınca sürücü denemeyi kesiyor, havuz 10 sn'de pes
+     ediyordu (sayfalar 10,2/20,2 sn, «Bu ekran çizilemedi»). Değer adresle sürücüye gider;
+     burada `havuzluAdres` ÇAĞRILIR ve ürettiği adres okunur — nesneye bakmak yetmez, nesne
+     dolu olup adrese düşmeyebilir. */
+  const sabirli = new URL(havuzluAdres("mysql://u:p@h/db")).searchParams;
+  kontrol("  K380 sürücü sabrı: sayfa havuzu adresi connectTimeout=5000 · acquireTimeout=20000 taşıyor",
+    sabirli.get("connectTimeout") === "5000" && sabirli.get("acquireTimeout") === "20000", Object.fromEntries(sabirli));
+  const arkaSabir = new URL(havuzluAdres("mysql://u:p@h/db", ARKA_PLAN_HAVUZU)).searchParams;
+  kontrol("  ...arka plan havuzu adresi de aynı sabrı taşıyor",
+    arkaSabir.get("connectTimeout") === "5000" && arkaSabir.get("acquireTimeout") === "20000", Object.fromEntries(arkaSabir));
+  const acikYazilan = new URL(havuzluAdres("mysql://u:p@h/db?connectTimeout=1000&acquireTimeout=3000")).searchParams;
+  kontrol("  ...adreste AÇIKÇA yazılan değere dokunulmuyor (acil müdahale kapısı açık)",
+    acikYazilan.get("connectTimeout") === "1000" && acikYazilan.get("acquireTimeout") === "3000", Object.fromEntries(acikYazilan));
+  kontrol("  ...sabır tavanı 20 sn'yi AŞMIYOR ve deneme süresi havuz süresinden KISA (hata ekranı makul sürede gelir)",
+    Number(once.acquireTimeout) <= 20000 && Number(once.connectTimeout) < Number(once.acquireTimeout));
 }
 
 console.log("\n" + "=".repeat(70));
