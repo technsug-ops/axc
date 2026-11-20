@@ -638,24 +638,51 @@ async function main() {
       ),
     );
 
-    /* -- ROTA: BASARISIZLIK BASARI DURUMU DONEMEZ --------------------- */
+    /* -- K382 (21.11.2026): GECE BULUT YEDEGI VERCEL'DEN GITHUB ACTIONS'A -------- */
     /**
-     * ⚠ KAPSAM KULLANIM BLOĞUNA DARALTILDI: başarı kodu rotanın başka
-     * yerlerinde geçebilir; ölçüt yalnız `!sonuc.tamam` dalının İÇİNE bakar.
+     * ⛔ ESKİ ÖLÇÜT («rotada başarısızlık dalı 503/500 ayırır») KALDIRILDI — gerekçesiyle:
+     * rota artık yedek ALMIYOR. Ölçüldü: yedek 220 MB'ı aşınca (06.11) Vercel fonksiyonu her
+     * gece bellekten öldü; bilgisayardan 273 MB · 232 sn, 60 sn tavanının çok üstünde. İş
+     * GitHub Actions'a taşındı (aynı `gunlukYedekYaz`), uç 410 TASINDI döner, Vercel cron'u
+     * silindi. Ölçütler KULLANIMA bağlı: rota çağırmıyor · iş akışı sırları ADIYLA bağlıyor ve
+     * betiği çağırıyor · cron listesinde yedek yok · manifest okuması önbelleği aşıyor (20.11'de
+     * önbellekten gelen eski manifest günün kaydını düşürdü — ölçüldü, uydurma değil).
      */
     const rota = kaynakOku("src/app/api/yedek/otomatik/route.ts");
-    const dalBasi = rota.indexOf("if (!sonuc.tamam)");
-    kontrol("rotada başarısızlık dalı var", dalBasi >= 0);
-    if (dalBasi >= 0) {
-      const kapanis = rota.indexOf("  }", dalBasi);
-      const dal = rota.slice(dalBasi, kapanis > 0 ? kapanis : dalBasi + 900);
-      kontrol("başarısızlık dalı HTTP durumu yazar", dal.includes("status:"));
-      kontrol("başarısızlık dalı BAŞARI durumu döndürmez", !dal.includes("200"));
-      kontrol(
-        "DEPO_YOK 503, gerçek arıza 500 olarak ayrılır",
-        dal.includes("503") && dal.includes("500"),
-      );
-    }
+    kontrol("K382 rota artık yedek ALMAZ (gunlukYedekYaz çağrısı yok)", !/gunlukYedekYaz\(/.test(rota));
+    kontrol("  ...yetkili çağrıya 410 TASINDI döner (sessiz 404 değil, iş de yapmaz)",
+      /durum: "TASINDI"[\s\S]{0,300}status: 410/.test(rota));
+    const vercelYapiK382 = JSON.parse(kaynakOku("vercel.json")) as { crons?: { path: string }[] };
+    kontrol("  ...Vercel cron listesinde yedek ucu YOK (ölen zamanlayıcı kaldırıldı; liste dolu)",
+      Array.isArray(vercelYapiK382.crons) && vercelYapiK382.crons.length >= 5
+        && !vercelYapiK382.crons.some((c) => c.path === "/api/yedek/otomatik"));
+    const akis = kaynakOku(".github/workflows/gece-yedek.yml");
+    kontrol("  ...iş akışı zamanlı + elle tetiklenebilir",
+      /schedule:\s*- cron: "0 1 \* \* \*"/.test(akis) && /workflow_dispatch:/.test(akis));
+    kontrol("  ...iki sır ADIYLA bağlı, değer YOK",
+      /CANLI_DATABASE_URL: \$\{\{ secrets\.CANLI_DATABASE_URL \}\}/.test(akis)
+        && /BLOB_READ_WRITE_TOKEN: \$\{\{ secrets\.BLOB_READ_WRITE_TOKEN \}\}/.test(akis)
+        && !/mysql:\/\/[^$\s]+@/.test(akis));
+    kontrol("  ...sır yoksa KIRMIZI biter (sessiz atlama yok)",
+      /if \[ -z "\$CANLI_DATABASE_URL" \]; then[^\n]*exit 1/.test(akis) && /if \[ -z "\$BLOB_READ_WRITE_TOKEN" \]; then[^\n]*exit 1/.test(akis));
+    kontrol("  ...betiği çağırır", /npx tsx scripts\/canli-yedek-bulut\.ts/.test(akis));
+    const bulutBetigi = kaynakOku("scripts/canli-yedek-bulut.ts");
+    kontrol("  ...bulut betiği üretim gövdesini kullanır (gunlukYedekYaz + blobHedefi), kütüphaneyi doğrudan çağırmaz",
+      /gunlukYedekYaz\(new Date\(\), hedef\)/.test(bulutBetigi) && /blobHedefi\(y\.jeton\)/.test(bulutBetigi)
+        && !/from "@vercel\/blob"/.test(bulutBetigi));
+    kontrol("  ...başarısızlıkta çıkış kodu 1 ve «hüküm» cümlesi", /process\.exitCode = 1;/.test(bulutBetigi) && /doğrulanmış bulut yedeği YOK/.test(bulutBetigi));
+    kontrol("  ...başarıda YEDEK_UCU_KOSTU izi (ekran «en son koştu» okumaya devam eder)",
+      /action: YEDEK_UCU_KOSTU,/.test(bulutBetigi) && /export const YEDEK_UCU_KOSTU = "YEDEK_UCU_KOSTU";/.test(kaynakOku("src/lib/yedek-yaz.ts")));
+    const hedefKodK382 = kaynakOku("src/lib/yedek-hedefi.ts");
+    kontrol("  ...manifest okuması CDN önbelleğini AŞAR (useCache: false)",
+      /get\(MANIFEST, \{ access: "private", token, useCache: false \}\)/.test(hedefKodK382));
+    kontrol("  ...manifest yazımı en kısa önbellek ömrüyle (cacheControlMaxAge: 60)",
+      /put\(MANIFEST, JSON\.stringify\(kayitlar\), \{[\s\S]{0,260}cacheControlMaxAge: 60,/.test(hedefKodK382));
+    /* K382-②: aynı gün ikinci yazımda geri okuma önbellekten sabahki içeriği aldı → yalancı OKUNAMADI (ölçüldü 20.11 23:31Z). */
+    kontrol("  ...geri okuma (oku) da önbelleği AŞAR — doğrulama depodaki içeriği ölçer",
+      /const sonuc = await get\(ad, \{ access: "private", token, useCache: false \}\);/.test(hedefKodK382));
+    kontrol("  ...«Şimdi yedek al» düğmesi aynı gövdeyi kullanmaya devam eder",
+      kaynakOku("src/app/ayarlar/disa-aktarma/yedek-al-actions.ts").includes("gunlukYedekYaz("));
   }
 
 

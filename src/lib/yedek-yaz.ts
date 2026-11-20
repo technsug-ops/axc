@@ -49,6 +49,13 @@ export const YEDEK_IZI = "YEDEK_ALINDI";
 
 /** Kaç günlük yedek saklanır. */
 export const SAKLAMA_GUNU = 30;
+
+/**
+ * Gece yedeğini ALAN İŞİN başarı izi (K382, 21.11.2026). Eskiden `/api/yedek/otomatik`
+ * yazıyordu; iş GitHub Actions'a taşındı ve izi artık `scripts/canli-yedek-bulut.ts` yazar.
+ * Ad değişmedi ki `/ayarlar/disa-aktarma` ekranı («uç en son ne zaman koştu») okumaya devam etsin.
+ */
+export const YEDEK_UCU_KOSTU = "YEDEK_UCU_KOSTU";
 export const YEDEK_KLASORU = "yedek";
 
 export type YedekYazmaSonucu =

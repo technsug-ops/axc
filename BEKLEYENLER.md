@@ -13,7 +13,91 @@
 
 ---
 
-## 🔴 K381 — 20.11 KESİNTİSİ (08:47–10:37 ALM.): KAS AYAKTAYDI, YENİ BAĞLANTI AÇILAMADI — GÜNLÜK SEBEBİ AYIRAMIYOR, İKİ ÖLÇÜM EKİ · 20.11.2026 · [YAZILDI — YAYIN BEKLİYOR]
+## 🔴 K382 — BULUT YEDEĞİ 06.11'DEN BERİ ALINAMIYORDU: VERCEL'DEN GITHUB ACTIONS'A, ESKİLER SİLİNDİ, BUGÜNÜNKÜ YÜKLENDİ · 21.11.2026 · [YAZILDI — YAYIN + GITHUB SIRLARI BEKLİYOR]
+
+**Kullanıcı 20.11.2026:** K381 raporundaki «bulut yedeği 05.11'den beri bitmiyor … ayrı kalem olarak açayım mı»
+sorusuna _«eski yedekleri sil yenileri al»_; seçimler (soruyla): **yerel 14 gün · bulut 30 gün (kodun kuralı)** ve
+**gece yedeği GitHub Actions'ta**.
+
+**ÖLÇÜLDÜ:**
+
+| soru | ölçüm | sonuç |
+|---|---|---|
+| bulut neden duruyor | `/api/yedek/otomatik` her gece 00:00 + 02:00 UTC «instance was killed because it ran out of available memory» (ilk 24.10); son başarı manifestte **06.11 00:00 UTC, 220,6 MB**; `YEDEK_UCU_KOSTU` izi 06.11 (sunucu saatiyle 05.11 görünür — iz tarihleri 1 sa kayık) | 220 MB'ı aşınca Vercel belleği bitiyor; 02:01'deki ölüm aynı kopyadaki `hb-cekim`i de götürüyor |
+| yedek ne kadar | bilgisayardan ölçüm 20.11 23:00 UTC: **273,0 MB · 434 837 satır · 232 sn** (geri okuma 13,9 sn) | Vercel'in 60 sn tavanının 4 katı; sorun bellek değil yalnız, SÜRE de |
+| bulutta ne vardı | manifest **32 kayıt · 5 447 MB** (06.10 → 06.11); saklama 30 gün ama iş hiç bitmediği için silme de koşmadı | eskiler birikmiş |
+| yerelde ne vardı | `axcali/veri/yedek-yerel` 29 günlük dosya 5,8 GB (24.10 **0 bayt**) · `axcali-operasyon/veri/yedek-yerel` **68 dosya 11 GB** (10.09'dan beri, `canli:yedek-dosya` saklama uygulamıyor) | iki görev aynı yedeği iki klasöre yazıyor |
+| bilgisayar görevleri | 19→20.11 gecesi uykuda; iki yedek görevi 13:25'te uyanınca koştu, 10 dk sınırında **terminated** (267014) ama dosya 13:31'de yazılmış | yerel yedek bilgisayara bağlı |
+
+**YAPILAN — VERİ (20.11, kullanıcı seçimiyle):**
+① **Bugünün yedeği buluta yüklendi** (bilgisayardan, üretim gövdesiyle `gunlukYedekYaz` + `blobHedefi`):
+  `yedek/bezirga-2026-11-21.json` **286 263 717 B · 273,0 MB · 434 837 satır · geri okundu, özet birebir · 232 sn**.
+  30 gün kuralı **16 eski bulut dosyasını sildi** (06.10 → 21.10; `get` ile doğrulandı: 06.10 ve 21.10 YOK, 22.10 VAR).
+② **Yerel 14 gün:** 06.11 ve öncesi silindi — axcali **16 dosya** (0 baytlık 24.10 dahil), operasyon kopyası **56 dosya**; toplam
+  **72 dosya · 10,0 GB**. İki klasörde de 07.11 → 20.11 (12'şer dosya) kaldı. Ağustos–Eylül onarım anlık görüntüleri
+  (`bag-anlik-*`, `hakedis-bag-oncesi.json`, `sonda__*`) SİLİNMEDİ — günlük yedek değil, vaka kanıtı.
+  ⚠ Disk: silmeden önce ~17 GB, silme anında 15 GB, sonra **11,4 GB**, bulut yüklemesi bitince 13,6 GB boş — yani başka bir
+  şey aynı saatlerde yer yiyor (gece bekçi turu uyanınca gündüz koştu; `axcali-gece` ağacı). Ölçüm yarım, nedeni YAZILMADI.
+③ ⛔ **MANİFEST HATASI YAKALANDI VE ONARILDI:** yükleme sonrası manifest **16 kayıt**, bugünün kaydı YOK, dosya Blob'da VAR.
+  Sebep ölçüldü: `yaz()` manifesti 33'e yazdı; hemen sonra `sil()` manifesti YENİDEN okudu ve **CDN önbelleğinden ESKİ hâlini**
+  (32, günün kaydı yok) aldı, 16 düşüp 16 yazdı → günün kaydı kayboldu. Onarım: manifest `useCache:false` ile okunup kayıt
+  `head()` üstverisinden (286 263 717 B, 23:03:37 UTC) eklendi → **17 kayıt · 3 391 MB**. ⚠ İlk onarım denemesinde `get()`
+  üstverisi `size=0` döndü; sıfır boyut yazıldı, `head()` ile düzeltildi — ölçmeden yazılan rakam yanlış çıktı, düzeltildi.
+
+**YAPILAN — KOD (bu commit, `gelistirme`):**
+① `src/lib/yedek-hedefi.ts`: manifest okuması `useCache: false` (SDK: «bypasses the CDN cache»), yazımı `cacheControlMaxAge: 60`.
+  Aynı adla üzerine yazılan dizin dosyası tam bu sınıf; K192'nin «manifest hızlandırıcıdır, dosya kanıttır» ilkesi aynen.
+  ⭐ **②-geri okuma da aşar (ölçüldü 20.11 23:31 UTC):** yeni betiğin ilk gerçek koşumu, aynı günün yedeğini İKİNCİ kez yazdı
+  ve `oku()` CDN'den sabahki içeriği aldı → özetler tutmadı → **`OKUNAMADI`, çıkış 1** (yalancı kırmızı; dosya depoda doğruydu —
+  manifest `useCache:false` ile 17 kayıt, günün kaydı var). Geri okuma bir doğrulamadır, depodaki içeriği ölçmek zorundadır;
+  `oku()` artık `useCache: false`. Günlük yeni ad bu tuzağa düşmezdi, tekrar koşum (elle tetik, GitHub re-run) düşerdi.
+  **Düzeltmeden sonra ikinci gerçek koşum (20.11 23:38 UTC, aynı gün üçüncü yazım): ✓ yazıldı ve GERİ OKUNDU — 273,1 MB ·
+  434 936 satır · geri okuma 9,5 sn · toplam 195 sn · silinen 0 · çıkış 0.** Betik iki yönde sınandı: önce doğru kırmızı, sonra yeşil.
+② **`scripts/canli-yedek-bulut.ts` (yeni, SUREKLI)** + **`.github/workflows/gece-yedek.yml`** (01:00 UTC + elle tetik): aynı
+  `gunlukYedekYaz` + `blobHedefi`, aynı ad/manifest/30 gün; yapılandırma `.env.canli` ya da ortam değişkenleri
+  (`CANLI_DATABASE_URL` · `BLOB_READ_WRITE_TOKEN`); sır yoksa iş akışı **KIRMIZI** biter. Başarıda `YEDEK_UCU_KOSTU` izi
+  (`userAgent: github-actions`) — `/ayarlar/disa-aktarma` «en son koştu» okumaya devam eder.
+③ `/api/yedek/otomatik`: yetkili çağrıya **410 TASINDI** döner, yedek ALMAZ (`gunlukYedekYaz` çağrısı yok); yetkisiz yine 404 +
+  günde bir red izi. `vercel.json`dan 00:00 cron'u **çıkarıldı**. Eski gerekçe dosya başlığında duruyor.
+④ `src/lib/yedek-yaz.ts`: `YEDEK_UCU_KOSTU` tek kaynak (rota sabiti ondan beslenir).
+⑤ **Bekçi** `yedek:dogrula` eski «503/500 dalı» ölçütü gerekçesiyle kaldırıldı, **13 yeni ölçüt** (rota çağırmıyor · 410 · cron
+  listesi dolu ve yedeksiz · iş akışı zamanlı+elle · iki sır ADIYLA ve değer yok · sır yoksa exit 1 · betik çağrısı · betik
+  üretim gövdesi + kütüphane doğrudan yok · exit 1 + hüküm cümlesi · KOSTU izi · useCache · cacheControlMaxAge · düğme aynı
+  gövde). **Mutasyon elle (harness yok — AÇIK ④):** zararsız yorum YEŞİL · `useCache` kaldırılınca KIRMIZI · rota 200 dönünce
+  KIRMIZI · Blob sırrı bağı kalkınca KIRMIZI · cron'a yedek geri eklenince KIRMIZI. `tsc` ✓ · `lint` ✓ (66 eski uyarı) ·
+  `cron-yollari` 63 ✓ · `erisim` 27 ✓ · `oturum` 62 ✓ · `yetki` 94 ✓ · `yayin-boslugu` 35 ✓ · i18n: ✓ (kullanıcı metni yok) ·
+  şema/izin/migration YOK.
+
+⛔ **KULLANICIDA — ÜÇ ADIM, SIRASIYLA:**
+· **① GitHub sırları:** depo → Settings → Secrets and variables → Actions → New repository secret:
+  `CANLI_DATABASE_URL` (Vercel → Settings → Environment Variables → `DATABASE_URL` değeri) ve `BLOB_READ_WRITE_TOKEN`
+  (Vercel → Storage → Blob → `.env.local` sekmesindeki jeton). Sonra Actions → «Gece bulut yedegi» → **Run workflow** → yeşil
+  olmalı; `/ayarlar/disa-aktarma`da bugünün yedeği «github-actions» ile görünmeli. Sır eklenmeden gece yedeği **hiç koşmaz**
+  (kırmızı kalır) — bu bilinçli: sessiz atlama yok.
+· **② «yayınla»** — vercel.json cron'u ve 410 ancak yayınla canlıya gider; o güne kadar Vercel ucu gece ölmeye devam eder.
+· **③ cron-job.org:** `/api/yedek/otomatik`i çağıran 02:00 UTC işi **silinmeli**; yayından sonra 410 alır ve kırmızı yanar.
+
+⛔ **AÇIK:**
+· **① «Şimdi yedek al» düğmesi Vercel'de koşuyor ve aynı sebepten ölür** (19.11 05:14 ve 05:17'de iki kez «ran out of
+  memory»). Çaresi GitHub iş akışını tetiklemek (jeton gerekir) ya da düğmeyi «yedek GitHub'da alınır» diye kapatmak —
+  kullanıcı kararı; bu turda dokunulmadı, kullanıcıya düğmeye basmaması söylendi.
+· **② Yerel kopya görevi (`Selliora Yerel Yedek`, operasyon klasörü) saklama uygulamıyor** ve `Selliora Gunluk Yedek`le aynı
+  dosyayı ikinci kez yazıyor (günde 2 × 285 MB). Birini kapatma ya da ona 30 gün kuralı — kullanıcı kararı.
+· **③ GitHub schedule sarkması** (depoda ölçülü): günlük yedek için kabul edildi; kaçan gün `yedek-bosluk` ekranında kırmızı.
+· **④ Yedek bekçisinin mutasyon harness'i yok** — bu turun 5 mutasyonu elle koşuldu, kalıcı harness açık.
+· **⑤ Disk tüketimi**: silme 10 GB açtı ama boş alan 17 → 11,4 GB'a indi; `axcali-gece` çalışma ağacı ve gündüz koşan gece
+  turu şüpheli, ÖLÇÜLMEDİ (du zaman aşımına düştü).
+
+**Halil test listesi:**
+① Kullanıcı: sırları ekle → Actions → «Gece bulut yedegi» → Run workflow → **yeşil**; günlükte «✓ yazıldı ve GERİ OKUNDU».
+② Kullanıcı: `/ayarlar/disa-aktarma` → son yedek **21.11 · 273,0 MB**, çağıran «github-actions» (yayından sonra).
+③ Ben: ertesi gece 01:00 UTC koşumundan sonra manifest 18 kayıt ve günün kaydı MANİFESTTE (önbellek hatasının tekrarı yok).
+④ Kullanıcı: cron-job.org'daki yedek işini sil; yayından sonra Vercel günlüğünde `[yedek-ucu] K382` satırı en fazla birkaç kez.
+⑤ Ben: Vercel günlüğünde `/api/yedek/otomatik` «ran out of memory» yayından sonra **0**; `hb-cekim`in 02:01 ölümü kesilmeli.
+
+---
+
+## 🔴 K381 — 20.11 KESİNTİSİ (08:47–10:37 ALM.): KAS AYAKTAYDI, YENİ BAĞLANTI AÇILAMADI — GÜNLÜK SEBEBİ AYIRAMIYOR, İKİ ÖLÇÜM EKİ · 20.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 20.11.2026:** _«Bugün program Almanya saati 08:50 civarında kapandı, 10:52 gibi tekrar
 geldi, herhangi bir şey değiştirmedim. Bu durum tehlikeli bir hal alıyor, sebebini derin araştırma ile
@@ -64,6 +148,15 @@ dakikalık yoklamaları) 1–3 bağlantı tutar, sakin anda 9–15; sabah sayfal
   KIRMIZI · teşhis çağrısı silinince KIRMIZI). `tsc` ✓ · `lint` ✓ (67 eski uyarı, bu dosyalarda değil) · `mutasyon-capa` 1357 ✓ ·
   `mutasyon-cakisma` ✓ · i18n: ✓ (kullanıcı metni yok) · şema/izin/migration YOK.
 
+**YAYIMLANDI 21.11.2026 01:58 İstanbul (20.11 22:58 UTC)** — kullanıcı «yayinla» dedi. `gelistirme` push kapısı **173/173**
+(702 sn), `main` ileri sarıldı (`fa6bbe1b..71b3dfac`), `main` push kapısı **173/173** (957 sn), ikisinde de `PUSH CIKIS KODU=0`
+dosyadan. `dpl_ELEbZt3pkkeSgJHT712BEjwESnYk` **READY** (fra1, 61 sn) · alias `bezirga.com` + `www.bezirga.com` (+ `axc-seven`,
+K380 ③ açık) · `aliasError: null`. Canlı yoklama: `/giris` **200 ×3 — 0,74 · 0,34 · 0,94 sn** · `/info` 200 · `/api/cron/sicak`
+sırsız **404**, sırlı **200** ve cevapta **`baglanti: {n: 9, kaynak: 3.66.226.91, kota: 25}`** (yeni alan canlıda) ·
+`canli:yetki` ✓ (CEO 34/34 · Sahip 34/34). Günlük: yayından sonraki ilk 11 dakikada **her dakika** `[sicak] bağlantı N/25
+kaynak 3.66.226.91`, N = **6–15** (Halil ① beklentisi 9–15 ile uyumlu; 15 tepe). `tek bağlantı teşhisi` satırı henüz YOK —
+doğru: havuz pes etmedi, kapı açılmadı; ilk kesintide görülür (Halil ③).
+
 **ACİL KOL (kesinti tekrar başlarsa, kök sebep çözülmeden):** Vercel → Deployments → son dağıtıma **Redeploy**. Bütün kopyalar
 yenilenir, eski bağlantılar düşer; K359'da aynı hamle hatayı sıfıra indirmişti. Günü kurtarır, sebebi çözmez.
 
@@ -72,7 +165,7 @@ yenilenir, eski bağlantılar düşer; K359'da aynı hamle hatayı sıfıra indi
   başlamaz — [YAYIN BEKLİYOR] bu kez acil. Sınıfa göre yapısal karar: KOTA_DOLU → çekim uçları koşum sonunda bağlantıyı bıraksın /
   cron-job.org sıklığı / 25 kotalı paylaşımlı MySQL'den çıkış (K355 altyapı kararı); ZAMAN_ASIMI · RET → KAS'a kaynak IP'lerle soru
   (teşhis BAGLANDI derken `kaynak` yazıyor); BAGLANDI → bozuk olan havuz/kopya, K359 ailesi yeniden açılır.
-· **② Bulut yedeği 05.11'den beri bitmiyor (AYRI KALEM, açılmadı):** `/api/yedek/otomatik` her gece 00:00 ve 02:00 UTC
+· **② Bulut yedeği 05.11'den beri bitmiyor — → K382 AÇILDI 21.11 (eskiler silindi, bugünkü yüklendi, GitHub Actions yazıldı):** `/api/yedek/otomatik` her gece 00:00 ve 02:00 UTC
   «instance was killed because it ran out of available memory» (ilk 24.10); son `YEDEK_UCU_KOSTU` izi **05.11 00:01 UTC**.
   02:01:06'daki ölüm aynı kopyadaki `hb-cekim` çağrısını da götürüyor. Elde yalnız bilgisayarın yerel yedeği var (`YEDEK_ALINDI`
   günde 1; 13.11 yok; bilgisayar uyurken atlanır). Kullanıcı kararı bekler: K382 olarak açılsın mı.

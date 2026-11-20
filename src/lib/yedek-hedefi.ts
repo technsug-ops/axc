@@ -81,9 +81,18 @@ const MANIFEST = "yedek/index.json";
 export function blobHedefi(jeton?: string): YedekHedefi {
   const token = jeton ?? process.env.BLOB_READ_WRITE_TOKEN;
 
-  /** Manifesti okur; yoksa BOŞ döner (henüz hiç yedek yazılmamış olabilir). */
+  /**
+   * Manifesti okur; yoksa BOŞ döner (henüz hiç yedek yazılmamış olabilir).
+   *
+   * ⛔ K382 (21.11.2026) — ÖNBELLEĞİ AŞAR (`useCache: false`). ÖLÇÜLDÜ 20.11: bilgisayardan
+   * yedek yazıldı (manifest 33 kayıt), hemen ardından saklama süresi 16 eskiyi sildi — `sil()`
+   * manifesti yeniden okudu ve CDN ÖNBELLEĞİNDEN ESKİ hâlini aldı (32, günün kaydı yok); 16'yı
+   * düşüp 16 yazdı. Sonuç: dosya Blob'da VAR, manifestte YOK. Aynı adla üzerine yazılan blob
+   * önbellekten eski içerikle servis edilebiliyor; dizin dosyası tam bu sınıfta. `get` artık
+   * depodan okur (SDK: «bypasses the CDN cache»), yazım da en kısa ömürle (60 sn) etiketlenir.
+   */
   async function manifestOku(): Promise<YedekKaydi[]> {
-    const sonuc = await get(MANIFEST, { access: "private", token });
+    const sonuc = await get(MANIFEST, { access: "private", token, useCache: false });
     if (!sonuc) return [];
     if (sonuc.statusCode !== 200) {
       throw new Error(
@@ -106,6 +115,8 @@ export function blobHedefi(jeton?: string): YedekHedefi {
       contentType: "application/json; charset=utf-8",
       addRandomSuffix: false,
       allowOverwrite: true,
+      /* K382: dizin dosyası sık değişir; SDK'nın izin verdiği en kısa önbellek ömrü. */
+      cacheControlMaxAge: 60,
       token,
     });
   }
@@ -161,7 +172,14 @@ export function blobHedefi(jeton?: string): YedekHedefi {
        * her okuma için bir `list()` harcıyordu — okuma başına bir advanced
        * operation.
        */
-      const sonuc = await get(ad, { access: "private", token });
+      /**
+       * ⛔ K382-② (21.11.2026) — GERİ OKUMA ÖNBELLEĞİ AŞAR (`useCache: false`). ÖLÇÜLDÜ 20.11 23:31 UTC:
+       * aynı günün yedeği ikinci kez yazıldı (aynı ad), hemen ardından `oku()` CDN'den SABAHKİ içeriği
+       * aldı → özetler tutmadı → `OKUNAMADI` (yalancı kırmızı; dosya depoda DOĞRUYDU). Geri okuma bir
+       * DOĞRULAMADIR: depodaki içeriği ölçmek zorundadır, önbellek kopyasını değil. Geri yükleme de
+       * aynı yoldan geçer — en güncel içerik gerekir. Günlük yeni ad bu tuzağa düşmez, tekrar koşum düşer.
+       */
+      const sonuc = await get(ad, { access: "private", token, useCache: false });
       if (!sonuc) return null;
       if (sonuc.statusCode !== 200) {
         /**

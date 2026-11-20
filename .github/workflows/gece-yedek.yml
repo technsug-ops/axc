@@ -1,0 +1,57 @@
+name: Gece bulut yedegi
+
+# ============================================================================
+#  K382 (21.11.2026) — GECE BULUT YEDEGI VERCEL'DEN BURAYA TASINDI
+# ----------------------------------------------------------------------------
+#  Vercel fonksiyonu yedek 220 MB'i asinca her gece bellekten oldu (06.11'den
+#  sonra tek basari yok). Yedek 273 MB · ~4 dk; bu kosucu tasir. Bilgisayarin
+#  acik olmasina bagli degil. Ayni uretim govdesi: scripts/canli-yedek-bulut.ts
+#  -> gunlukYedekYaz + blobHedefi (ayni dosya adi, ayni manifest, 30 gun kurali).
+#
+#  SIRLAR (depo ayarlari -> Secrets and variables -> Actions):
+#    CANLI_DATABASE_URL     canli MySQL adresi (Vercel'deki DATABASE_URL ile ayni)
+#    BLOB_READ_WRITE_TOKEN  Vercel Blob jetonu
+#  Sir yoksa is KIRMIZI biter — sessiz atlama yok.
+#
+#  Saat: 01:00 UTC = 04:00 Istanbul (Vercel'in 04:00Z cekimlerinden once, gece
+#  turundan sonra). GitHub schedule sarkabilir (depoda olculdu, ty-cekim.yml);
+#  gunluk yedek icin sarkma kabul edilebilir, kacan gun /ayarlar/disa-aktarma'da
+#  kirmizi gorunur (yedek-bosluk).
+# ============================================================================
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gece-yedek
+  cancel-in-progress: false
+
+jobs:
+  yedek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TZ: Europe/Istanbul
+      CANLI_DATABASE_URL: ${{ secrets.CANLI_DATABASE_URL }}
+      BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Sirlar tanimli mi
+        run: |
+          if [ -z "$CANLI_DATABASE_URL" ]; then echo "::error::CANLI_DATABASE_URL sirri yok — depo ayarlarina ekleyin (K382)"; exit 1; fi
+          if [ -z "$BLOB_READ_WRITE_TOKEN" ]; then echo "::error::BLOB_READ_WRITE_TOKEN sirri yok — depo ayarlarina ekleyin (K382)"; exit 1; fi
+          echo "sirlar tanimli (degerler yazilmaz)"
+      - name: Bagimliliklar
+        run: npm ci --no-audit --no-fund
+      - name: Bulut yedegi
+        run: npx tsx scripts/canli-yedek-bulut.ts

@@ -1,9 +1,21 @@
-import { gunlukYedekYaz, SAKLAMA_GUNU } from "@/lib/yedek-yaz";
+import { YEDEK_UCU_KOSTU } from "@/lib/yedek-yaz";
 import { izYaz } from "@/lib/iz";
 
 /**
  * ============================================================================
- *  OTOMATİK YEDEK — VERCEL CRON İLE HER GECE
+ *  OTOMATİK YEDEK UCU — ⛔ K382 (21.11.2026): İŞ GITHUB ACTIONS'A TAŞINDI, UÇ 410 DÖNER
+ * ----------------------------------------------------------------------------
+ *  ÖLÇÜLDÜ: yedek 06.11'de 220 MB'a ulaştığında bu fonksiyon her gece «instance was
+ *  killed because it ran out of available memory» ile öldü (ilk 24.10; 06.11'den sonra
+ *  tek başarı YOK); 02:01'deki ölüm aynı kopyadaki `hb-cekim` çağrısını da götürdü.
+ *  Bilgisayardan ölçüm 20.11: 273 MB · 232 sn — Vercel'in 60 sn tavanının çok üstünde.
+ *  Gece yedeği artık `.github/workflows/gece-yedek.yml` → `scripts/canli-yedek-bulut.ts`
+ *  (AYNI `gunlukYedekYaz`, AYNI Blob, AYNI manifest). Vercel cron'u `vercel.json`dan
+ *  çıkarıldı. Bu uç KORUNDU ki cron-job.org'daki eski iş sessiz 404 değil açık bir cevap
+ *  alsın; yetkili çağrıya 410 TASINDI döner, hiçbir iş yapmaz. Yeniden açmak bir KARARDIR.
+ *  Aşağıdaki tarihçe SİLİNMEDİ.
+ * ----------------------------------------------------------------------------
+ *  (ESKİ) OTOMATİK YEDEK — VERCEL CRON İLE HER GECE
  * ----------------------------------------------------------------------------
  *  Canlıya geçişin son ön şartı (BEKLEYENLER). Elle yedek zaten vardı ama
  *  kimse basmazsa yedek alınmıyordu; gerçek satış ve maliyet verisinde bu
@@ -30,8 +42,8 @@ import { izYaz } from "@/lib/iz";
 /** Reddedilen çağrı izinin eylem kodu. */
 export const RED_EYLEMI = "YEDEK_UCU_REDDEDILDI";
 
-/** BAŞARILI çağrı izinin eylem kodu. */
-export const KOSTU_EYLEMI = "YEDEK_UCU_KOSTU";
+/** BAŞARILI çağrı izinin eylem kodu — tek kaynak `lib/yedek-yaz.ts` (K382: izi artık betik yazar). */
+export const KOSTU_EYLEMI = YEDEK_UCU_KOSTU;
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -122,78 +134,18 @@ export async function GET(istek: Request) {
    * al" düğmesi de AYNI fonksiyonu çağırıyor — cron ile elle alınan yedek
    * birebir aynı işi yapsın, ikisi ayrışmasın.
    */
-  const sonuc = await gunlukYedekYaz();
-
-  if (!sonuc.tamam) {
-    /**
-     * ⛔ BAŞARISIZLIK, BAŞARI DURUMU DÖNEMEZ — VE `OKUNAMADI` KENDİ
-     * ADIYLA GEÇER.
-     *
-     * ⚠ BU YORUMDA BİLEREK HTTP KODU YAZMIYOR: bekçi ölçütü tam bu dalın
-     * İÇİNDE başarı kodunu arıyor ve yorumda geçen bir sayı onu yanlış
-     * yere baktırırdı. _(Anayasa: ölçüt yorumsuz kodda arar.)_
-     *
-     * `DEPO_YOK` bir YAPILANDIRMA eksiğidir (503: hizmet kurulmamış),
-     * `OKUNAMADI` ve `HATA` ise gerçek bir arızadır (500). Üçünü tek
-     * duruma indirmek, "yedek hiç kurulmamış" ile "yedek alınıyor ama geri
-     * okunamıyor"u aynı satıra yazardı; ikincisi 31.08 vakasının ta
-     * kendisidir ve ayrı görünmesi gerekir.
-     */
-    return Response.json(
-      { durum: sonuc.kod, mesaj: sonuc.mesaj },
-      { status: sonuc.kod === "DEPO_YOK" ? 503 : 500 },
-    );
-  }
-
-  /**
-   * ⚠ BAŞARIDA DA İZ — 19.08.2026 ölçüm boşluğu.
-   *
-   * Uca artık İKİ zamanlayıcı vuruyor: Vercel cron (00:00) ve
-   * cron-job.org (03:00). İkisi de başarılı olursa **tek dosya** oluşur
-   * ve hangisinin yazdığı ANLAŞILMAZ — dosya çağıranın kimliğini
-   * taşımıyor.
-   *
-   * Açık soru tam da bu: **Vercel cron `Authorization` başlığı gönderiyor
-   * mu?** Yalnız reddi kaydetseydik, Vercel başarılı olduğunda hiçbir şey
-   * öğrenemezdik; "kayıt yok" hem "çağırmadı" hem "çağırdı ve başardı"
-   * demeye gelirdi.
-   *
-   * `user-agent` yazılıyor: `vercel-cron/...` mı, `cron-job.org` mu.
-   * Yarın sabah üç durum birbirinden ayrılabilecek.
-   *
-   * ⚠ SINIRSIZ YAZMA RİSKİ YOK: buraya ancak DOĞRU SIRRI bilen ulaşır.
-   * Red tarafındaki "günde bir kayıt" sınırı burada gereksiz — üstelik
-   * zararlı olurdu, çünkü İKİ çağıranı da aynı gün görmek istiyoruz.
+  /*
+   * ⛔ K382 (21.11.2026) — İŞ BU UÇTAN TAŞINDI. Gerekçe dosya başlığında. Yetkili çağıran
+   * (cron-job.org'daki eski iş) açık cevap alır: 410 TASINDI. Günlüğe de düşer ki «niye yedek
+   * yok» sorusu bu uca gelirse cevabı burada bulunsun.
    */
-  try {
-    const { prisma } = await import("@/lib/prisma");
-    /** ⛔ İZ ORTAK GÖVDEDEN — `userId` kendiliğinden damgalanır (K90). */
-    await izYaz({
-      action: KOSTU_EYLEMI,
-      targetType: "YedekUcu",
-      detail: JSON.stringify({
-        userAgent: istek.headers.get("user-agent")?.slice(0, 200) ?? null,
-        gun: sonuc.gun,
-        satir: sonuc.satir,
-        /** Hangi hedefe yazıldığı İZDE durur — sonradan sorulabilsin. */
-        hedefTuru: sonuc.hedefTuru,
-        /** Geri okuma maliyeti: 60 sn tavanına ne kadar yaklaşıyoruz. */
-        dogrulamaMs: sonuc.dogrulamaMs,
-      }),
-    });
-  } catch {
-    // İz tutulamadıysa yedek yine de alınmıştır; başarı geri alınmaz.
-  }
-
-  return Response.json({
-    durum: "TAMAM",
-    gun: sonuc.gun,
-    url: sonuc.url,
-    satir: sonuc.satir,
-    boyutBayt: sonuc.boyutBayt,
-    silinenEskiYedek: sonuc.silinenEskiYedek,
-    saklananGun: SAKLAMA_GUNU,
-    hedefTuru: sonuc.hedefTuru,
-    dogrulamaMs: sonuc.dogrulamaMs,
-  });
+  console.warn("[yedek-ucu] K382: gece bulut yedeği GitHub Actions'ta — bu uç iş yapmaz (410).");
+  return Response.json(
+    {
+      durum: "TASINDI",
+      mesaj:
+        "Gece bulut yedeği GitHub Actions'a taşındı (K382, 21.11.2026); bu uç artık yedek almaz. cron-job.org'daki eski iş silinmeli.",
+    },
+    { status: 410 },
+  );
 }
