@@ -50,3 +50,26 @@ export function erisimBosluguCoz(detail: string | null): ErisimBoslugu | null {
     return null;
   }
 }
+
+/**
+ * ============================================================================
+ *  KOTA YAKINLIĞI İZİ (K381, 20.11.2026)
+ * ----------------------------------------------------------------------------
+ *  K380 açık ④: kesinti anında bizim kaç bağlantı tuttuğumuzu kaydeden iz yoktu; her sayı
+ *  olaydan sonra ölçülüyordu. Sıcak tutma ucu 20.11 kesintisinde AYAKTA KALDI (boşluk izi
+ *  yazılmadı = yoklaması hiç düşmedi) — yani kesinti anında ölçüm alabilecek tek yer bu uç.
+ *  Her dakika bizim açık bağlantı sayımız günlüğe gider; kotaya yaklaşınca iz yazılır.
+ *
+ *  ⚠ EŞİK UYDURMA DEĞİL, SİSTEMİN KENDİ SAYISINDAN TÜRETİLİR: kota − sayfa havuzu boyutu
+ *  (25 − 3 = 22). Bir sayfa kopyası en çok `SAYFA_HAVUZU_BOYUTU` yeni bağlantı açar; ondan az
+ *  yer kaldıysa yeni bir sayfa kopyası tam açılamaz — iz tam o anı yakalar.
+ *  Ölçülemeyen değer (null) uyarı DEĞİLDİR; «ölçemedim» ile «az» aynı satıra yazılmaz.
+ * ============================================================================
+ */
+export const KOTA_YAKIN_EYLEMI = "VERITABANI_KOTA_YAKIN";
+
+/** Saf: açık bağlantı kotaya bir sayfa havuzu kadar yaklaştı mı. */
+export function kotaYakinMi(acik: number | null, kota: number | null, sayfaHavuzu: number): boolean {
+  if (acik === null || kota === null || !Number.isFinite(acik) || !Number.isFinite(kota) || kota <= 0) return false;
+  return acik >= kota - sayfaHavuzu;
+}

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { SICAK_TUTULAN_BAGLANTI } from "@/lib/veritabani-adresi";
-import { ERISIM_BOSLUGU_EYLEMI, erisimBoslugu, SON_ERISIM_ANAHTARI } from "@/lib/veritabani-erisim";
+import { SAYFA_HAVUZU_BOYUTU, SICAK_TUTULAN_BAGLANTI } from "@/lib/veritabani-adresi";
+import { ERISIM_BOSLUGU_EYLEMI, erisimBoslugu, KOTA_YAKIN_EYLEMI, kotaYakinMi, SON_ERISIM_ANAHTARI } from "@/lib/veritabani-erisim";
+import { BAGLANTI_SAYIM_SORGUSU, kaynakIp } from "@/lib/baglanti-teshisi";
 import { izYaz } from "@/lib/iz";
 
 /**
@@ -35,6 +36,31 @@ export const dynamic = "force-dynamic";
 /** Bu kopyada son başarılı yoklamadan beri düşen yoklama sayısı (K358; bellek — kopya değişirse 0). */
 let basarisizYoklama = 0;
 
+/* K381 (20.11.2026) — BAĞLANTI SAYISI İZİ (gerekçe `lib/veritabani-erisim.ts`). Kota kopya
+   ömrü boyunca bir kez okunur; sayım tek sorgu (`lib/baglanti-teshisi.ts`, teşhisle AYNI).
+   Ölçülemezse null döner — yoklama bundan DÜŞMEZ, «?» yazılır. */
+let kotaOnbellek: number | null = null;
+async function kotaOku(): Promise<number | null> {
+  if (kotaOnbellek !== null) return kotaOnbellek;
+  try {
+    const r = (await prisma.$queryRawUnsafe("SHOW VARIABLES LIKE 'max_user_connections'")) as Array<{ Value?: unknown }>;
+    const v = Number(r[0]?.Value);
+    kotaOnbellek = Number.isFinite(v) && v > 0 ? v : null;
+    return kotaOnbellek;
+  } catch {
+    return null;
+  }
+}
+async function baglantiSay(): Promise<{ n: number; kaynak: string | null } | null> {
+  try {
+    const r = (await prisma.$queryRawUnsafe(BAGLANTI_SAYIM_SORGUSU)) as Array<{ n: bigint | number; kaynak: string | null }>;
+    const n = Number(r[0]?.n);
+    return Number.isFinite(n) ? { n, kaynak: kaynakIp(r[0]?.kaynak) } : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(istek: NextRequest) {
   const sir = process.env.CRON_SECRET?.trim() ?? "";
   const gelen = istek.headers.get("authorization") ?? "";
@@ -54,6 +80,14 @@ export async function GET(istek: NextRequest) {
         return Math.round(performance.now() - b);
       }),
     );
+    /* K381 — bağlantı sayısı: aynı havuz bağlantısı, SIRAYLA (Promise.all DEĞİL — K355 kotayı
+       yoklamayla doldurmuştu). Günlüğe her dakika; kotaya yaklaşınca iz. */
+    const kota = await kotaOku();
+    const olcum = await baglantiSay();
+    console.log(`[sicak] bağlantı ${olcum?.n ?? "?"}/${kota ?? "?"} kaynak ${olcum?.kaynak ?? "?"}`);
+    if (kotaYakinMi(olcum?.n ?? null, kota, SAYFA_HAVUZU_BOYUTU)) {
+      await izYaz({ action: KOTA_YAKIN_EYLEMI, targetType: "VERITABANI", detail: JSON.stringify({ n: olcum?.n ?? null, kota, kaynak: olcum?.kaynak ?? null, an: new Date().toISOString() }), userId: null });
+    }
     /* K358 — ERİŞİM BOŞLUĞU KAYDI (`lib/veritabani-erisim.ts`). Son erişim anı KOŞULLU
        ilerler (okunan eski değer yerindeyse) — aynı dakikada iki kopya yoklarsa boşluğu
        yalnız ilerletmeyi başaran yazar, iz ikilenmez (K348 imleç deseni). */
@@ -69,7 +103,7 @@ export async function GET(istek: NextRequest) {
       await prisma.bildirimImleci.upsert({ where: { anahtar: SON_ERISIM_ANAHTARI }, create: { anahtar: SON_ERISIM_ANAHTARI, an: simdi }, update: { an: simdi } });
     }
     basarisizYoklama = 0;
-    return NextResponse.json({ durum: "SICAK", veritabaniMs: Math.round(performance.now() - bas), baglantiMs: sureler, surecYasiSn: Math.round(process.uptime()), bosluk });
+    return NextResponse.json({ durum: "SICAK", veritabaniMs: Math.round(performance.now() - bas), baglantiMs: sureler, surecYasiSn: Math.round(process.uptime()), bosluk, baglanti: olcum ? { ...olcum, kota } : null });
   } catch (hata) {
     /* Yakalanmamış hata teşhisi siler (anayasa) — TAM loglanır, dışarıya kod döner. */
     basarisizYoklama += 1;

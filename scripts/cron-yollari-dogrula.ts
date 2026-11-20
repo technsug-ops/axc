@@ -2,8 +2,9 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { kaynakOku } from "./kaynak-oku";
 import { ARKA_PLAN_HAVUZU, havuzluAdres, SAYFA_HAVUZU_BOYUTU, SICAK_TUTULAN_BAGLANTI, uygulamaHavuzu } from "../src/lib/veritabani-adresi";
-import { BOSLUK_ESIGI_MS, erisimBoslugu, erisimBosluguCoz } from "../src/lib/veritabani-erisim";
+import { BOSLUK_ESIGI_MS, erisimBoslugu, erisimBosluguCoz, kotaYakinMi } from "../src/lib/veritabani-erisim";
 import { havuzTakildiMi, ONARIM_ARALIGI_MS, onarimYapilsinMi } from "../src/lib/havuz-onarimi";
+import { ASILI_PAYI_MS, BAGLANTI_SAYIM_SORGUSU, kaynakIp, parolasiz, TESHIS_ZAMAN_ASIMI_MS, teshisSinifi } from "../src/lib/baglanti-teshisi";
 
 /**
  * ============================================================================
@@ -161,6 +162,26 @@ console.log("\n4) SICAK TUTMA UCU (K332)");
     yirmi?.dakika === 22 && yirmi.basarisizYoklama === 21 && yirmi.baslangic === "2026-10-22T06:21:00.000Z" && yirmi.bitis === "2026-10-22T06:42:30.000Z", yirmi);
   kontrol("  boşluk: tam eşik (3 dk) kayıt VAR", erisimBoslugu(t0, new Date(t0.getTime() + BOSLUK_ESIGI_MS), 0)?.dakika === 3);
   kontrol("  çözüm: bozuk iz null, sağlam iz geri gelir", erisimBosluguCoz("{x") === null && erisimBosluguCoz(JSON.stringify(yirmi))?.basarisizYoklama === 21);
+
+  /* ⭐ K381 (20.11.2026) — BAĞLANTI SAYISI İZİ. Kesinti anında kota kullanımını kaydeden tek yer
+     bu uç (20.11'de kesintide ayakta kaldığı ölçüldü). Ölçüt KULLANIMA bağlı: sayım + koşullu iz;
+     koşul ve eylem AYNI desende (koşul öldürülürse ya da kalkarsa ikisi de kırmızı). */
+  kontrol("  K381 bağlantı sayısı: ortak sorguyla sayılıyor (PROCESSLIST + kaynak IP, tek kaynak)",
+    /const r = \(await prisma\.\$queryRawUnsafe\(BAGLANTI_SAYIM_SORGUSU\)\)/.test(kod)
+      && /SELECT COUNT\(\*\) AS n, \(SELECT HOST FROM information_schema\.PROCESSLIST WHERE ID = CONNECTION_ID\(\)\) AS kaynak FROM information_schema\.PROCESSLIST/.test(BAGLANTI_SAYIM_SORGUSU));
+  kontrol("  ...iz YALNIZ kota yakınken yazılır (koşul + eylem aynı desende, eşik sayfa havuzundan)",
+    /if \(kotaYakinMi\(olcum\?\.n \?\? null, kota, SAYFA_HAVUZU_BOYUTU\)\) \{\s*await izYaz\(\{ action: KOTA_YAKIN_EYLEMI/.test(kod));
+  {
+    const iAll = kod.indexOf("Promise.all("), iSay = kod.indexOf("const olcum = await baglantiSay();"), iSimdi = kod.indexOf("const simdi = new Date();");
+    kontrol("  ...sayım yoklamadan SONRA ve SIRAYLA (Promise.all dışında; havuzun tamamı yoklanmaz)",
+      iAll >= 0 && iSay >= 0 && iSimdi >= 0 && iAll < iSay && iSay < iSimdi, { iAll, iSay, iSimdi });
+  }
+  kontrol("  ...her dakika günlüğe n/kota + kaynak; cevapta `baglanti` alanı",
+    /console\.log\(`\[sicak\] bağlantı \$\{olcum\?\.n \?\? "\?"\}\/\$\{kota \?\? "\?"\}/.test(kod) && /bosluk, baglanti: olcum \? \{ \.\.\.olcum, kota \} : null \}\);/.test(kod));
+  kontrol("  kota yakınlığı DEĞERLE: 22/25 (havuz 3) YAKIN · 25/25 YAKIN · 21/25 DEĞİL · ölçülemeyen DEĞİL · kota yok DEĞİL · kota 0 DEĞİL",
+    kotaYakinMi(22, 25, 3) && kotaYakinMi(25, 25, 3) && !kotaYakinMi(21, 25, 3) && !kotaYakinMi(null, 25, 3) && !kotaYakinMi(22, null, 3) && !kotaYakinMi(5, 0, 3));
+  kontrol("  kaynak IP DEĞERLE: «1.2.3.4:5678» → «1.2.3.4» · boş/sayı → null",
+    kaynakIp("1.2.3.4:5678") === "1.2.3.4" && kaynakIp("") === null && kaynakIp(null) === null && kaynakIp(42) === null);
 }
 
 /* ═══ 5) ARKA PLAN HAVUZU (K332, 13.10.2026) ═══
@@ -213,10 +234,25 @@ console.log("\n5) ARKA PLAN HAVUZU (K332)");
     onarimYapilsinMi(null, 1000) && !onarimYapilsinMi(1000, 1000 + ONARIM_ARALIGI_MS - 1) && onarimYapilsinMi(1000, 1000 + ONARIM_ARALIGI_MS));
   const pz = yorumsuz("src/lib/prisma.ts");
   kontrol("  ...istemci her sorguyu sarıyor: takılırsa yeniler, hatayı YİNE fırlatır",
-    /async \$allOperations\(\{ args, query \}\) \{\s*try \{\s*return await query\(args\);\s*\} catch \(hata\) \{\s*if \(havuzTakildiMi\(hata\)\) istemciyiYenile\(sarili as unknown as PrismaClient\);\s*throw hata;/.test(pz));
+    /async \$allOperations\(\{ args, query \}\) \{\s*try \{\s*return await query\(args\);\s*\} catch \(hata\) \{\s*if \(havuzTakildiMi\(hata\)\) await istemciyiYenile\(sarili as unknown as PrismaClient\);\s*throw hata;/.test(pz));
   kontrol("  ...yenileme aralık kapısından geçiyor ve eski istemciyi GECİKMELİ kapatıyor",
     /if \(istemci !== bozuk \|\| !onarimYapilsinMi\(sonOnarim, simdi\)\) return;\s*sonOnarim = simdi;\s*istemci = undefined;/.test(pz) &&
       /setTimeout\(\(\) => void bozuk\.\$disconnect\(\)\.catch\(\(\) => \{\}\), ESKI_ISTEMCI_KAPATMA_MS\);/.test(pz));
+  /* ⭐ K381 (20.11.2026) — TEK BAĞLANTI TEŞHİSİ. Havuzun hata metni ret ile kara deliği ayırmıyor
+     (yerel deney; `lib/baglanti-teshisi.ts`). Yenileme anında havuzdan bağımsız tek bağlantı denenir
+     ve ham cevap günlüğe yazılır. Ölçüt KULLANIMA bağlı: günlük satırı + çağrı + ikinci günlük satırı
+     bitişik; sınıflandırma ve maskeleme DEĞERLE. */
+  kontrol("  K381 teşhis: yenileme anında havuzdan bağımsız tek bağlantı denenir, ham cevap günlüğe",
+    /console\.error\("\[prisma\] havuz takıldı \(pool timeout · active=0 idle=0\) — istemci yenileniyor"\);\s*const teshis = await tekBaglantiTeshisi\(process\.env\.DATABASE_URL\);\s*console\.error\("\[prisma\] tek bağlantı teşhisi:", JSON\.stringify\(teshis\)\);/.test(pz));
+  kontrol("  ...sınıf DEĞERLE: 1226 kota · 1040 sunucu dolu · 1129 engel · 1045 kimlik · ECONNREFUSED ret · 45012/ETIMEDOUT zaman aşımı · ENOTFOUND dns · bilinmeyen DİĞER (uydurma yok)",
+    teshisSinifi(null, 1226) === "KOTA_DOLU" && teshisSinifi(null, 1040) === "SUNUCU_DOLU" && teshisSinifi(null, 1129) === "SUNUCU_ENGELI"
+      && teshisSinifi(null, 1045) === "KIMLIK_REDDI" && teshisSinifi("ECONNREFUSED", null) === "RET" && teshisSinifi("ER_CONNECTION_TIMEOUT", 45012) === "ZAMAN_ASIMI"
+      && teshisSinifi("ETIMEDOUT", null) === "ZAMAN_ASIMI" && teshisSinifi("ENOTFOUND", null) === "DNS" && teshisSinifi("XYZ", 9999) === "DIGER" && teshisSinifi(null, null) === "DIGER");
+  kontrol("  ...parola maskeleme DEĞERLE: adres ve parola metinden silinir",
+    parolasiz("baglanti mysql://u:gizli123@h:3306/db kurulamadi: gizli123 yanlis", "gizli123") === "baglanti mysql://***@h:3306/db kurulamadi: *** yanlis"
+      && parolasiz("duz metin", "") === "duz metin");
+  kontrol("  ...teşhis süresi + yarış payı havuz sabrının ALTINDA (düşmüş isteğe eklenen bedel sınırlı)",
+    TESHIS_ZAMAN_ASIMI_MS + ASILI_PAYI_MS < Number(once.acquireTimeout) && TESHIS_ZAMAN_ASIMI_MS <= Number(once.connectTimeout));
   /* KOTA BÜTÇESİ — boştaki her kopya `minimumIdle` kadar bağlantı tutar; 25'lik kotaya kaç
      boş kopya sığar? 20'nin altına düşerse (ör. biri yine 5 yaparsa) kırmızı. */
   const KOTA = 25;

@@ -13,6 +13,82 @@
 
 ---
 
+## 🔴 K381 — 20.11 KESİNTİSİ (08:47–10:37 ALM.): KAS AYAKTAYDI, YENİ BAĞLANTI AÇILAMADI — GÜNLÜK SEBEBİ AYIRAMIYOR, İKİ ÖLÇÜM EKİ · 20.11.2026 · [YAZILDI — YAYIN BEKLİYOR]
+
+**Kullanıcı 20.11.2026:** _«Bugün program Almanya saati 08:50 civarında kapandı, 10:52 gibi tekrar
+geldi, herhangi bir şey değiştirmedim. Bu durum tehlikeli bir hal alıyor, sebebini derin araştırma ile
+bulabilir misin»_ → rapor → _«yani sorunu buldun mu»_ → «kısmen» → _«yaz»_.
+
+**ÖLÇÜLDÜ (hepsi salt okuma; Vercel günlüğü + KAS sayaçları + bilgisayar olay günlüğü + yerel deney):**
+
+| soru | ölçüm | sonuç |
+|---|---|---|
+| ne zaman | ilk `havuz takıldı` **07:47:17 UTC** (`POST /satislar`), son **09:36:50 UTC**; kullanıcı 07:50 / 09:52 dedi | 1 sa 50 dk; gözlemle tutuyor |
+| kim düştü | yalnız sayfalar: `/satislar` 387 · `/` 294 · `/paketle` 76 · `/giris` 5 hata satırı; çekim uçları **1+1** | sayfalar |
+| KAS kapalı mıydı | 08:40:37 UTC `hb-cekim` aynı bölgeden **yazdı** («AuditLog yazıldı», sayım 9128 tuttu); sıcak tutma ucu kesintiden sonra **boşluk izi yazmadı** (= elindeki tek bağlantı hiç düşmedi) | **hayır** — var olan bağlantılar çalıştı, **YENİ bağlantı kurulamadı** |
+| sunucu | `Uptime` 10,58 gün (09.11'den beri yeniden başlamadı) · `Threads_connected` 17/500 · `Connection_errors_max_connections` 0 · `Max_used_connections` 99 · bizim 9–15/25 (5 Vercel çıkış IP'si) · `skip_name_resolve ON` · `max_connect_errors 100` · `host_cache_size 628` · `performance_schema OFF` (host_cache okunamıyor) | sağlıklı; ortamda başkasının **dakikada ~285 yanlış parolalı** deneme seli (`Access_denied_errors` 4,34 M ≈ `Aborted_connects`) |
+| yayın / kod | pencerede dağıtım yok (`dpl_249hz…` 19.11 07:10 UTC'den beri); Vercel ve All-Inkl için 20.11 arıza kaydı bulunamadı (netzwelt · stoerungheute · isdown) | elendi |
+| bilgisayar | 19.11 15:28 UTC → 20.11 12:22 UTC **uykuda** (Power-Troubleshooter); saatlik çekim 19.11 13:02'den 20.11 13:24'e hiç koşmadı | ikinci bakış açısı YOK; gece turu + iki yedek 20.11 13:25'te uyanınca koştu |
+| önceki günler | **18.11** sayfalar 09:17 → ≥ 11:26 UTC · **19.11** çekim uçları 08:26:52 → 10:37 UTC (`channelAccount.find*` pool timeout + 08:27–10:37 sürekli «Task timed out after 60 seconds») · **20.11** sayfalar 07:47 → 09:37 UTC | üç gün aynı sabah penceresi; düşen taraf **o anda yeni bağlantı isteyen** |
+| cron-job.org sıcak tutma | `BildirimImleci.veritabani:son-erisim` dakika dakika ilerliyor (12:48 → 12:50 UTC okundu) | **çalışıyor** — K380 ② kapandı |
+
+⭐ **BELİRLEYİCİ DENEY (20.11, yerel, AYNI sürücü mariadb 3.5.3 + AYNI bağdaştırıcı · `scripts/tmp/havuz-deneyi.ts`):**
+kapalı port `127.0.0.1:1` (anında RET) → 40,8 sn sonra `pool timeout … after 20050ms (active=0 idle=0 limit=3)` ·
+kara delik `203.0.113.1:3306` (cevapsız) → 40,4 sn sonra **birebir aynı metin** · gerçek KAS → 575 ms bağlandı.
+Sebep zinciri ikisinde de `PrismaClientKnownRequestError → DriverAdapterError → 45028`; altında ret ya da zaman aşımı kodu YOK.
+**Sonuç: üç günün günlüğü KOTA REDDİ (1226) ile EL SIKIŞMA TAKILMASINI AYIRAMAZ.** Sürücünün kaynağında sebep ekleyen bir dal var
+(`pool failed to retrieve…`, `#errorCreatingConnection`) ama bağdaştırıcı üstünden bize ulaşmıyor — kaynak okuması deneyle çürütüldü.
+⚠ **K380 DÜZELTMESİ (eski gerekçe SİLİNMEDİ):** «sayfalar 10,2 · 20,2 sn = sunucunun `connect_timeout` katları» okuması yanlıştı;
+o süreler havuzun kendi `acquireTimeout`u (18.11'de 10 sn, K380 sonrası 20 sn) — deney aynı süreyi kapalı portta da üretti.
+K380'in «kota dolu değildi (8/25, PC'den 113–173 ms)» ölçümü GEÇERLİ ve 18.11 için kotayı dışlıyor; 19–20.11 için kota ölçümü YOK.
+
+**HÜKÜM YOK — iki aday, ikisi de açık:** **A) kota (25) dolu** — sıcak kopyalar (dakikalık çekimler + buybox + açık sekmelerin
+dakikalık yoklamaları) 1–3 bağlantı tutar, sakin anda 9–15; sabah sayfalar eklenince dolabilir; var olanlar çalışır, yeni ret yer
+(22.10 probu kota dolan dakikaları Vercel hatasıyla eşleştirmişti). **B) KAS tarafı Vercel çıkışlarına yeni el sıkışmayı durduruyor**
+— 18.11 PC ölçümüne uyuyor, bizden ölçülemez. Ayıracak tek şey SÜRÜCÜNÜN HAM CEVABI; aşağıdaki ① onu yazar.
+
+**YAPILAN (bu commit, `gelistirme`):**
+① **Tek bağlantı teşhisi** — `src/lib/baglanti-teshisi.ts` + `lib/prisma.ts`: K359 kapısı (30 sn'de bir) açılınca havuzdan
+  BAĞIMSIZ `createConnection` (5 sn) + dış yarış (5,5 sn); günlüğe `[prisma] tek bağlantı teşhisi: {"sinif":…}`.
+  Sınıflar: KOTA_DOLU 1226 · SUNUCU_DOLU 1040 · SUNUCU_ENGELI 1129/1130 · KIMLIK_REDDI 1045 · RET · ZAMAN_ASIMI 45012/ETIMEDOUT ·
+  DNS · BAGLANDI (+ o anki bağlantı sayımız + KAS'ın gördüğü kaynak IP) · ASILI · ATLANDI. Parola maskeli. **Bedeli:** zaten
+  düşmüş isteğe ≤ ~5,5 sn. **Gerçek davranış ölçüldü (`scripts/tmp/teshis-deneyi.ts`):** KAS → BAGLANDI 186 ms, 13 bağlantı,
+  kaynak IP doğru · kapalı port → RET `ECONNREFUSED` 11 ms · kara delik → ZAMAN_ASIMI 45012 **5 015 ms** · adres yok → ATLANDI.
+② **Bağlantı sayısı izi** — `/api/cron/sicak` her dakika `[sicak] bağlantı n/kota kaynak IP` yazar (aynı havuz bağlantısı,
+  SIRAYLA — K355 yasağı aynen), cevaba `baglanti` alanı; `n ≥ kota − SAYFA_HAVUZU_BOYUTU` (25 − 3 = 22, türetilmiş eşik: yeni
+  sayfa kopyasının tam açılamayacağı an) olunca `AuditLog` `VERITABANI_KOTA_YAKIN`. Ölçülemeyen → `?`, iz yok (ölçemedim ≠ az).
+  Kesintide bu uç ayakta kaldığı için (20.11 ölçümü) kota eğrisini o anda da yazabilecek tek yer.
+③ **Bekçi** `cron-yollari:dogrula` **53 → 63** (sayım + koşullu iz kullanıma bağlı · sıra · günlük/cevap · `kotaYakinMi` ·
+  `kaynakIp` · teşhis çağrısı bitişik · `teshisSinifi` 10 değer · `parolasiz` · süre bütçesi) · **mutasyon** `uyari-cron-mutasyon:kontrol`
+  **14 → 19** (zararsız yorum YEŞİL · eşik `kota − 3 → kota` KIRMIZI · sıcak koşul `false` KIRMIZI · koşul kalkıp her dakika iz
+  KIRMIZI · teşhis çağrısı silinince KIRMIZI). `tsc` ✓ · `lint` ✓ (67 eski uyarı, bu dosyalarda değil) · `mutasyon-capa` 1357 ✓ ·
+  `mutasyon-cakisma` ✓ · i18n: ✓ (kullanıcı metni yok) · şema/izin/migration YOK.
+
+**ACİL KOL (kesinti tekrar başlarsa, kök sebep çözülmeden):** Vercel → Deployments → son dağıtıma **Redeploy**. Bütün kopyalar
+yenilenir, eski bağlantılar düşer; K359'da aynı hamle hatayı sıfıra indirmişti. Günü kurtarır, sebebi çözmez.
+
+⛔ **AÇIK:**
+· **① Sebep bir SONRAKİ kesintide okunur:** günlükte `[prisma] tek bağlantı teşhisi` satırının `sinif`i. Yayın olmadan ölçüm
+  başlamaz — [YAYIN BEKLİYOR] bu kez acil. Sınıfa göre yapısal karar: KOTA_DOLU → çekim uçları koşum sonunda bağlantıyı bıraksın /
+  cron-job.org sıklığı / 25 kotalı paylaşımlı MySQL'den çıkış (K355 altyapı kararı); ZAMAN_ASIMI · RET → KAS'a kaynak IP'lerle soru
+  (teşhis BAGLANDI derken `kaynak` yazıyor); BAGLANDI → bozuk olan havuz/kopya, K359 ailesi yeniden açılır.
+· **② Bulut yedeği 05.11'den beri bitmiyor (AYRI KALEM, açılmadı):** `/api/yedek/otomatik` her gece 00:00 ve 02:00 UTC
+  «instance was killed because it ran out of available memory» (ilk 24.10); son `YEDEK_UCU_KOSTU` izi **05.11 00:01 UTC**.
+  02:01:06'daki ölüm aynı kopyadaki `hb-cekim` çağrısını da götürüyor. Elde yalnız bilgisayarın yerel yedeği var (`YEDEK_ALINDI`
+  günde 1; 13.11 yok; bilgisayar uyurken atlanır). Kullanıcı kararı bekler: K382 olarak açılsın mı.
+· **③ Bilgisayar uyuduğunda gece turu ve yedekler kaçıyor** (bilgi; 19→20.11 gecesi üçü de 13:25'te uyanınca koştu).
+· **④ `scripts/tmp/*` deney betikleri depoya girmez** (gitignore); K381 ölçümlerinin yeniden koşulabilir hâli: `havuz-deneyi.ts` ·
+  `teshis-deneyi.ts` · `kesinti-sayaclari.ts` (hepsi salt okuma, `.env.canli` ile).
+
+**Halil test listesi (yayından sonra; çoğu benim okuyacağım günlük satırları):**
+① Ben: yayından 10 dk sonra Vercel günlüğünde `[sicak] bağlantı N/25 kaynak IP` satırı dakikada bir var mı; N sakin anda 9–15 beklenir.
+② Ben: `https://www.bezirga.com/api/cron/sicak` cevabında `baglanti: {n, kaynak, kota: 25}` alanı (sırla).
+③ Kullanıcı: kesinti olursa SAAT + ekran görüntüsü; ben günlükten `tek bağlantı teşhisi` satırının `sinif`ini okurum → ①'deki karar.
+④ Ben: ilk 24 saatte `VERITABANI_KOTA_YAKIN` izi sayısı (sakin günde 0 beklenir; > 0 ise saatleri sabah penceresine düşüyor mu).
+⑤ Kullanıcı: `bezirga.com/giris` 3 açılış, hepsi 5 sn altı — eklenen bedel yalnız düşmüş isteğe biner, sağlıklı sayfa yavaşlamaz.
+
+---
+
 ## 🔴 K380 — «BU EKRAN ÇİZİLEMEDİ» 18.11: KOTA DEĞİL, EL SIKIŞMA TAKILMASI — SÜRÜCÜYE SABIR · 18.11.2026 · [CANLIDA — HALİL TESTİ BEKLİYOR]
 
 **Kullanıcı 18.11.2026** (telefon, 10:32 yerel): _«Bu ekran çizilemedi · Hata kodu
@@ -101,14 +177,19 @@ Halil testinin yerine GEÇMEZ.
   TCP/el sıkışma süresi ölçen bir yol YOK (`/api/olcum` havuzu kullanır, taze bağlantı
   ölçmez; günlükte `ETIMEDOUT`/`ECONNREFUSED`/`blocked` izi yok — havuz deneme hatasını
   `[cause]: [Object]` olarak yutuyor). Açılış: tek seferlik ölçüm ucu ya da KAS'a soru.
-· **② cron-job.org kurulumu kullanıcıda** (yukarıdaki adımlar); kurulunca günlükte dakikada
-  bir `/api/cron/sicak` görünür — doğrulama oradan.
+  **→ K381 (20.11):** ölçen yol yazıldı — havuz pes edince havuzdan bağımsız tek bağlantı denenir, ham
+  kod günlüğe (`[prisma] tek bağlantı teşhisi`). Yerel deney: havuz metni ret ile kara deliği AYIRMIYOR; «10,2 sn =
+  connect_timeout» okuması da düzeltildi (ayrıntı K381). Yayın bekliyor.
+· **② cron-job.org kurulumu — KAPANDI 20.11 (ölçüldü):** `BildirimImleci.veritabani:son-erisim` işareti dakika
+  dakika ilerliyor (12:48 → 12:50 UTC okundu), uç çağrılıyor. ⚠ Günlükte GÖRÜNMÜYORDU: uç başarıda hiçbir satır
+  yazmıyordu — «günlükte dakikada bir görünür» beklentisi yanlıştı; K381 ile artık her dakika `[sicak] bağlantı n/kota` yazar.
 · **③ `axc-seven.vercel.app` ikinci adres olarak kullanılıyordu.** Kullanıcı `bezirga.com`da
   devam etmek istiyor. Kalıcı yönlendirme AYRI iş: sayfa yolları yönlendirilir, **`/api/`
   HARİÇ** — ölçüldü: 10 GitHub Actions çağrısının 10'u `axc-seven.vercel.app`e gidiyor,
   körlemesine yönlendirme çekimleri 308'e düşürür (iş akışı `test "$KOD" = "200"`).
 · **④ KESİNTİ ANINDA KOTA/BAĞLANTI SAYISINI KAYDEDEN İZ YOK** — bu tur her sayı olaydan
-  sonra canlı ölçümle alındı; bir dahakine yine tahminle başlanır.
+  sonra canlı ölçümle alındı; bir dahakine yine tahminle başlanır. **→ K381 (20.11):** sıcak uç her dakika
+  bizim bağlantı sayımızı günlüğe, kotaya yaklaşınca `VERITABANI_KOTA_YAKIN` izine yazar (yayın bekliyor).
 · **⑤ Belge push'u ilk denemede kırmızıydı** (`urun-etiketi:dogrula`: zxing wasm
   indirilemedi — ağ); tekrar koşumda 28/28; geçiciydi, kod değil.
 

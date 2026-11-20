@@ -30,6 +30,10 @@ const TY_HAKEDIS = "src/app/api/cron/ty-hakedis-cekim/route.ts";
 const N11_ROTA = "src/app/api/cron/n11-cekim/route.ts";
 /* K380 (18.11.2026): sürücü sabrı — bu dosyayı mutasyona uğratan başka harness YOK (ölçüldü). */
 const VERITABANI_ADRESI = "src/lib/veritabani-adresi.ts";
+/* K381 (20.11.2026): bağlantı sayısı izi + tek bağlantı teşhisi — bu üç dosyayı mutasyona uğratan başka harness YOK (ölçüldü). */
+const SICAK_ROTA = "src/app/api/cron/sicak/route.ts";
+const VERITABANI_ERISIM = "src/lib/veritabani-erisim.ts";
+const PRISMA = "src/lib/prisma.ts";
 
 type Mutasyon = {
   ad: string;
@@ -142,6 +146,51 @@ const MUTASYONLAR: Mutasyon[] = [
     bul: "      if (!adres.searchParams.has(ad)) adres.searchParams.set(ad, deger);",
     koy: "      adres.searchParams.set(ad, deger);",
     bozdugu: "ortam degiskeninden mudahale imkansizlasir - kesintide tek hizli kapi kapanir",
+  },
+  {
+    ad: "ZARARSIZ - K381 erisim yorumu degisti (harness saglamasi)",
+    yon: "ZARARSIZ",
+    bekci: "cron-yollari:dogrula",
+    dosya: VERITABANI_ERISIM,
+    bul: "/** Saf: önceki başarı + şimdi + bu kopyada sayılan başarısız yoklama → boşluk ya da null. */",
+    koy: "/** Saf: boşluk hesabı. */",
+    bozdugu: "hicbir sey - YESIL kalmali",
+  },
+  {
+    ad: "KOTA YAKINLIGI ESIGI KAYDI (sayfa havuzu payi dustu)",
+    yon: "KALDIRAN",
+    bekci: "cron-yollari:dogrula",
+    dosya: VERITABANI_ERISIM,
+    bul: "  return acik >= kota - sayfaHavuzu;",
+    koy: "  return acik >= kota;",
+    bozdugu: "iz ancak kota TAM dolunca yazilir - yeni sayfa kopyasinin acilamadigi an kaydedilmez",
+  },
+  {
+    ad: "SICAK UCU KOTA IZINI YAZMIYOR (kosul olduruldu)",
+    yon: "KALDIRAN",
+    bekci: "cron-yollari:dogrula",
+    dosya: SICAK_ROTA,
+    bul: "    if (kotaYakinMi(olcum?.n ?? null, kota, SAYFA_HAVUZU_BOYUTU)) {",
+    koy: "    if (false) {",
+    bozdugu: "kesinti aninda baglanti sayisi hicbir yere yazilmaz - K380 acik (4) aynen geri gelir",
+  },
+  {
+    ad: "SICAK UCU HER DAKIKA IZ YAZIYOR (kosul kalkti)",
+    yon: "FAZLADAN",
+    bekci: "cron-yollari:dogrula",
+    dosya: SICAK_ROTA,
+    bul: "    if (kotaYakinMi(olcum?.n ?? null, kota, SAYFA_HAVUZU_BOYUTU)) {",
+    koy: "    if (olcum !== null) {",
+    bozdugu: "gunde 1440 iz satiri - AuditLog gurultuye bogulur, gercek yakinlik gorunmez",
+  },
+  {
+    ad: "ISTEMCI YENILENIRKEN TEK BAGLANTI TESHISI KALDIRILDI",
+    yon: "KALDIRAN",
+    bekci: "cron-yollari:dogrula",
+    dosya: PRISMA,
+    bul: '  const teshis = await tekBaglantiTeshisi(process.env.DATABASE_URL);\n  console.error("[prisma] tek bağlantı teşhisi:", JSON.stringify(teshis));\n',
+    koy: "",
+    bozdugu: "havuz takildiginda sebep yine yazilmaz - 18-20.11 korlugu aynen surer",
   },
   {
     ad: "TY ROTASI ATLANDI'DA YINE 200 DONUYOR",

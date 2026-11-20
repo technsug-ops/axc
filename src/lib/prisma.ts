@@ -33,6 +33,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 import { havuzluAdres, uygulamaHavuzu } from "@/lib/veritabani-adresi";
 import { ESKI_ISTEMCI_KAPATMA_MS, havuzTakildiMi, onarimYapilsinMi } from "@/lib/havuz-onarimi";
+import { tekBaglantiTeshisi } from "@/lib/baglanti-teshisi";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -77,7 +78,7 @@ function createPrismaClient(): PrismaClient {
         try {
           return await query(args);
         } catch (hata) {
-          if (havuzTakildiMi(hata)) istemciyiYenile(sarili as unknown as PrismaClient);
+          if (havuzTakildiMi(hata)) await istemciyiYenile(sarili as unknown as PrismaClient);
           throw hata;
         }
       },
@@ -90,13 +91,20 @@ let istemci: PrismaClient | undefined;
 let sonOnarim: number | null = null;
 
 /** K359 — bozuk istemciyi bırakır; sonraki erişim yenisini kurar. En çok 30 sn'de bir. */
-function istemciyiYenile(bozuk: PrismaClient) {
+async function istemciyiYenile(bozuk: PrismaClient): Promise<void> {
   const simdi = Date.now();
   if (istemci !== bozuk || !onarimYapilsinMi(sonOnarim, simdi)) return;
   sonOnarim = simdi;
   istemci = undefined;
   if (globalForPrisma.prisma === bozuk) globalForPrisma.prisma = undefined;
+  /*
+   * K381 (20.11.2026) — SEBEP SÜRÜCÜDEN DEĞİL SUNUCUDAN SORULUR. Havuzun hata metni ret ile
+   * kara deliği AYIRMIYOR (yerel deneyle ölçüldü; gerekçe `lib/baglanti-teshisi.ts`). Bu kapı
+   * 30 sn'de bir açılır; tek bağlantı denenir, ham cevap günlüğe. Bedeli: düşmüş isteğe ≤ ~5,5 sn.
+   */
   console.error("[prisma] havuz takıldı (pool timeout · active=0 idle=0) — istemci yenileniyor");
+  const teshis = await tekBaglantiTeshisi(process.env.DATABASE_URL);
+  console.error("[prisma] tek bağlantı teşhisi:", JSON.stringify(teshis));
   setTimeout(() => void bozuk.$disconnect().catch(() => {}), ESKI_ISTEMCI_KAPATMA_MS);
 }
 
