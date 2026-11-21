@@ -13,6 +13,34 @@
 
 ---
 
+## 🔴 K383 — «0 STOKLU OLANI PASİFE ALAMADIM»: AKTİF KUTUSU SUNUCUYA HİÇ GİTMİYORDU · 21.11.2026 · [YAZILDI — YAYIN BEKLİYOR]
+
+**Kullanıcı 21.11.2026 (ekran görüntüsü):** Weewell WMV865 ikiz kaydı (SKU `8682911650349` · Firma SKU `KAME-WWL-0001` ·
+barkod `133` · stok 0 · son hareket 01.01.2026); _«0 stoklu olanı pasife alamadım bir türlü»_.
+
+**ÖLÇÜLDÜ:** canlı kayıt `isActive = 1`, `updatedAt` **08:12 UTC** — kullanıcının kaydı YAZILDI (ad/marka/kategori gitti), aktiflik
+değişmedi; Vercel günlüğünde hata YOK (sessiz). Kod: `urun-formu.tsx` varyantları tek gizli alanda JSON gönderir
+(`gonderilecek.varyantlar`) ve o eşleme `aktif`i **içermiyordu**; sunucu şeması `aktif: z.boolean().default(true)` → alan gelmeyince
+HER kayıtta aktif yazıldı. K315 (21.09) kutuyu ve sunucu kuralını eklemiş, ORTA HALKAYI (gönderim) atlamıştı; bekçi iki ucu ölçüyor,
+bağı ölçmüyordu. _(Anayasa: «zincir, halkalarının varlığıyla değil bağlantısıyla sınanır» — `formuOku` vakasının ikizi.)_
+⚠ **YAN ETKİ:** pasif bir kaydın formu HERHANGİ bir sebeple kaydedilince kayıt sessizce AKTİF oluyordu. Örnek: öteki Weewell kaydı
+(HBCV…, stok 5, raf A21) 26.09'da betikle pasife alınmıştı, 08:10 UTC'de düzenlenince aktif oldu — bu kayıt için aktif olmak doğru,
+ama mekanizma yanlıştı; K315'in «pasiften aktife eksik bilgiyle geçilmez» kapısı bu yolda hiç sorulmuyor değildi, soruluyordu ama
+kullanıcı «aktif et» demeden geçiliyordu.
+
+**YAPILAN (bu commit, `gelistirme`):** `gonderilecek.varyantlar`a `aktif: v.aktif` (tek satır). Bekçi `urun-aktiflik:dogrula`
+**+3** (gönderim bloğunda alan — `gonderilecek` nesnesine daraltılmış · sunucu varsayılan kapısı · düzenleme sayfası kayıttaki hâli
+veriyor) · mutasyon `urun-aktiflik-mutasyon:kontrol` **+1** (alan silinince KIRMIZI, görüldü). `tsc` ✓ · `lint` ✓ · i18n: ✓ (yeni
+metin yok) · şema/izin/migration YOK.
+
+**Halil test listesi (yayından sonra):**
+① `bezirga.com/urunler` → Weewell (`KAME-WWL-0001`) → Düzenle → «Aktif — aramada ve okutmada çıkar» kutusunu KALDIR → Kaydet →
+listede **«pasif»** rozeti; arama ve okutmada çıkmamalı; `/stok`ta satır solgun/işaretli.
+② Öteki Weewell (`HBCV00000DD5L6`, stok 5) aktif kalmalı — ona dokunulmadı.
+③ Pasifi geri açmak K315 şartına bağlı (geçerli EAN · kategori · marka); `133` geçerli EAN değil — geri açmak istenirse önce barkod.
+
+---
+
 ## 🔴 K382 — BULUT YEDEĞİ 06.11'DEN BERİ ALINAMIYORDU: VERCEL'DEN GITHUB ACTIONS'A, ESKİLER SİLİNDİ, BUGÜNÜNKÜ YÜKLENDİ · 21.11.2026 · [YAZILDI — YAYIN + GITHUB SIRLARI BEKLİYOR]
 
 **Kullanıcı 20.11.2026:** K381 raporundaki «bulut yedeği 05.11'den beri bitmiyor … ayrı kalem olarak açayım mı»

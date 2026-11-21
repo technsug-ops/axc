@@ -63,6 +63,9 @@ const MUTASYONLAR: Mutasyon[] = [
   { ad: "K315 FORM IPUCU CIZILMIYOR", yon: "KALDIRAN", dosya: FORM,
     bul: "{varyant.id && kayittaPasif.has(varyant.id) ? (", koy: "{false && varyant.id && kayittaPasif.has(varyant.id) ? (",
     bozdugu: "sart ancak kaydedince ogrenilir" },
+  { ad: "K383 FORM AKTIF ALANINI GONDERMIYOR (kutu var, JSON'da yok)", yon: "KALDIRAN", dosya: FORM,
+    bul: "      aktif: v.aktif,\n", koy: "",
+    bozdugu: "pasife alma hic islemez; sunucu varsayilani (aktif) yazar - 21.11 vakasi" },
 ];
 
 function bekciyiKostur(): { kod: number; ciktiVar: boolean } {

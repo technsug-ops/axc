@@ -84,6 +84,27 @@ kontrol("güncelleme ürün aktifliğini varyantlardan yazıyor", guncelle.inclu
     "K315 kayıtta pasif kümesi BAŞLANGIÇTAN (kayıttaki hâl) kuruluyor",
     f.includes(".filter((v) => v.id && !v.aktif)"),
   );
+
+  /**
+   * ⛔ K383 (21.11.2026) — ZİNCİRİN ORTA HALKASI. Kutu VARDI (K315), sunucu şeması `aktif`i
+   * OKUYORDU, ama formun gönderdiği JSON (`gonderilecek.varyantlar`) alanı TAŞIMIYORDU →
+   * `z.boolean().default(true)` her kayıtta aktif yazdı; «pasife al» hiç işlemedi (ölçüldü:
+   * kayıt güncellendi, isActive 1 kaldı). Bu bekçi iki ucu ölçüyor, BAĞI ölçmüyordu.
+   * Ölçüt kullanım bloğuna daraltılmış: `gonderilecek` nesnesinin İÇİNDE `aktif: v.aktif`.
+   * _(Anayasa: «zincir, halkalarının varlığıyla değil bağlantısıyla sınanır».)_
+   */
+  const iG = f.indexOf("const gonderilecek = {");
+  const iGson = iG >= 0 ? f.indexOf("};", iG) : -1;
+  const gBlok = iG >= 0 && iGson > iG ? f.slice(iG, iGson) : "";
+  kontrol(
+    "K383 form gönderisi aktif alanını TAŞIYOR (gonderilecek.varyantlar içinde aktif: v.aktif)",
+    gBlok.includes("varyantlar: varyantlar.map((v) => ({") && gBlok.includes("aktif: v.aktif,"),
+  );
+  kontrol("K383 sunucu alanı okuyor; yeni varyant aktif doğar (default true)", a.includes("aktif: z.boolean().default(true),"));
+  kontrol(
+    "K383 düzenleme sayfası kayıttaki hâli forma veriyor (aktif: v.isActive)",
+    kaynakOku("src/app/urunler/[id]/duzenle/page.tsx").includes("aktif: v.isActive,"),
+  );
 }
 
 console.log("\n" + (hata === 0 ? "TÜM KONTROLLER GEÇTİ" : "BAŞARISIZ") + ` (${gecen}/${gecen + hata})\n`);

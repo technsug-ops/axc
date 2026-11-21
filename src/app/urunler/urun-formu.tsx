@@ -202,6 +202,9 @@ export function UrunFormu({
       companySku: v.companySku,
       barcode: v.barcode,
       locationId: v.locationId,
+      /* K383 (21.11.2026): kutu vardı (K315), gönderilen JSON'da alan YOKTU — sunucu
+         varsayılanı (aktif) yazıyordu; kutuyu kaldırıp kaydetmek hiç işlemedi. */
+      aktif: v.aktif,
       secenekler: varyantliMi
         ? v.secenekler.filter((s) => s.ad.trim() || s.deger.trim())
         : [],
